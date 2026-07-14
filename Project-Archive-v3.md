@@ -20,6 +20,8 @@
   - 6. Mission Days
 - Part II — Player Experience, World, and Characters
   - 7. Gameplay Loop
+  - 7A. Onboarding and First-Time Experience
+  - 7B. Auto-Save and Resume
   - 8. World Design
   - 9. Jobs
   - 9A. Living Historical Encounter System
@@ -895,6 +897,129 @@ The player leaves Abigail’s shop with a paper bundle, walks across the market,
 - If accessibility settings slow reading, scene timers and cinematic transitions wait for the player.
 - If a student repeatedly opens Archive Assist, the route remains available without learner-state penalty.
 - Skipping a skippable cinematic marks it viewed for progression but does not count as concept understanding; a later required carrier still supplies the core content.
+
+---
+
+## 7A. Onboarding and First-Time Experience
+
+### Purpose
+
+Onboarding teaches the small verb set, the controls, the Archive fiction, and the player's accessibility setup on the first run, without a separate abstract tutorial level and without adding cognitive load that competes with history. It never introduces a required concept as its sole carrier.
+
+### How It Works
+
+Onboarding is diegetic and embedded in the first synchronization and first Mission Day rather than delivered as a detached lesson. The fiction *is* the tutorial: an Archive Field Agent is being calibrated for their first insertion.
+
+1. **Profile setup first.** Before any fiction, the player selects an Accessibility and Input Profile: reading speed, captions, audio description, input method, and whether Archive Assist may auto-offer. This precedes historical content so every later primer already has a legal presentation form.
+2. **Just-in-time verb primers.** Each core verb from the gameplay loop (Walk, Watch, Talk, Choose, Think, Archive) is introduced exactly once, in context, the first time it is needed, with one short authored prompt, then never repeated.
+3. **The first intake doubles as a controls primer.** The opening Archive synchronization teaches movement, the contextual interact input, and the Archive Assist input as the player performs each for the first time.
+4. **Persistent help.** A low-friction **Archive Manual** overlay is always available on request. It restates controls, the current objective, and accessibility options. It is a `PLAYER_REQUESTED` overlay like Archive Assist, emits no learner evidence, and never changes concept or misconception state.
+5. **Deterministic and offline.** All primers are authored `first_run_only` ActionSpecs. Nothing is generated at runtime; onboarding runs with no network and no runtime AI.
+6. **Not assessed.** Onboarding carries no scored item and no required curriculum obligation. It may model a verb but can never be the required carrier for a concept.
+
+### Design Philosophy
+
+Teach by doing, and teach the least. A student learns to move by moving and to talk by talking to Abigail, not by reading a manual. Protecting first-session cognitive load for the history — not the interface — is the whole point. Instruction is silent once mastered.
+
+### Responsibilities
+
+- **Narrative:** Author the first-synchronization calibration lines and Manual copy.
+- **Gameplay / Level design:** Sequence just-in-time verb introductions across the first district.
+- **Accessibility:** Ensure profile setup precedes fiction and every primer has an accessible equivalent.
+- **Curriculum:** Guarantee no required concept depends on a `first_run_only` primer.
+- **Save/Resume:** Persist onboarding completion so primers never repeat.
+
+### Player Experience
+
+A student launches, chooses how they read, hear, and control the game, then wakes inside the Archive. Within a couple of minutes they have moved, spoken to Abigail, made one low-stakes choice, and started real work — without having read a wall of instructions.
+
+### System Interactions
+
+- ProfileState stores non-learning onboarding completion flags.
+- Scene Graph hosts `first_run_only` trigger volumes.
+- Event Manager gates each primer to the first run and marks it complete on view.
+- Archive Runtime Controller presents the Manual overlay.
+- The Accessibility and Input Profile is set before the first historical content.
+
+### Implementation Notes — High Level
+
+- `first_run_only` ActionSpecs are idempotent and committed by Save/Resume on view, so a resume never replays them.
+- The Archive Manual is always reachable, is skippable content, and emits no evidence.
+- Skipping a primer still marks it complete; the underlying concept, if any, is still delivered by a certified carrier later.
+- Onboarding content is excluded from replay signatures and longitudinal novelty gates; it is fixed scaffolding, not variable experience.
+- No onboarding step blocks progress beyond a single confirmation.
+
+### Boston Example
+
+At the 1765 synchronization the player picks captions and an input method, then Abigail presses a bundle of newspapers into their hands. A one-line prompt shows the move control as they step toward the door; the interact prompt appears at the first delivery; Archive Assist is introduced once when the route first forks; the first Sync explains the Archive verb. By the second delivery, no primers appear and only the Manual remains on request.
+
+### Edge Cases
+
+- **New device / lost flags:** Onboarding flags travel with the player profile and save; if absent, primers re-show harmlessly and never gate required content.
+- **Player skips everything:** The Manual remains available and required carriers still deliver every concept.
+- **Accessibility change mid-game:** The profile is editable and any primer can be replayed from the Manual on request.
+- **Save corruption:** Primers may re-show after recovery; they never affect scoring or block required content.
+
+---
+
+## 7B. Auto-Save and Resume
+
+### Purpose
+
+Auto-Save and Resume guarantee that a student can stop at any moment — a bell rings, a shared device sleeps, the network drops — and later continue from exactly where they were, with no manual saving, no lost progress, and no way to replay a scored item by quitting. It exposes the player-facing contract over the durable Save/Resume machinery owned by the World State Manager (Section 28), Event Manager (Section 29), and Technical Architecture (Section 37).
+
+### How It Works
+
+1. **Continuous auto-save, no manual slots.** The game saves itself; there is no save button and no save-file menu. The player never manages persistence.
+2. **Save points.** State commits at every interaction checkpoint, every Archive Sync boundary, every Mission Day start and end, and every event checkpoint — consistent with the checkpoints already defined in Sections 6, 28, and 37.
+3. **One atomic composite.** A single per-player save composite (World State, Learner Model evidence, Replay profile, and attempt context) is committed atomically by Save/Resume under one transaction ID; authoritative revisions publish only after the commit succeeds.
+4. **Deterministic resume.** Resume restores the exact checkpoint, re-acquires event and Sync locks, and re-pins the immutable content package and RunVariationContext, so determinism and the practically non-repeating guarantee hold across online, offline, and resumed play.
+5. **Beat-level safety.** Quitting mid-encounter or mid-event resumes from that beat's checkpoint or safely restarts the beat; a partial historical outcome is never committed.
+6. **Assessment integrity.** An in-progress scored item resumes on the same form without exposing correctness. An administration interrupted after response collection follows the existing invalidate-and-replace rule; quitting never yields a second scored chance.
+7. **Offline-first.** Auto-save works with no network. Telemetry is a separate idempotent outbox that syncs later and never blocks a resume.
+8. **Crash recovery.** On relaunch the game resumes from the last valid checkpoint; a corrupt save falls back to the last valid Mission Day checkpoint.
+9. **Invisible to the player.** Saving is a silent backend operation. There is no save indicator, no saving animation, and no save/resume prompt. On launch the game simply continues from the last checkpoint; the student never sees or thinks about saving at all.
+
+### Design Philosophy
+
+Classroom sessions are interrupted by design — bells, rotations, shared hardware. Saving is the system's job, never the student's, and it is invisible: the player is never shown a save indicator, a save menu, or a resume prompt. The contract is: no progress anxiety, no lost work, nothing to manage, and no assessment that can be gamed by force-quitting.
+
+### Responsibilities
+
+- **Save/Resume:** Sole owner of durable composite persistence, migration, rollback, and recovery.
+- **World State Manager:** Expose the versioned snapshot/restore interface.
+- **Event Manager:** Commit the composite and outbox atomically under one transaction ID.
+- **Assessment Runtime:** Resume on the same form and enforce invalidate-and-replace on interrupted administrations.
+- **UX:** Keep saving fully invisible — no save indicator, prompt, or manual slots; resume the last checkpoint automatically on launch.
+
+### Player Experience
+
+A student closes the laptop when the bell rings. Next class they reopen the game and are simply standing exactly where they left off — mid-conversation, same day, same city state — with no prompt, nothing repeated, and nothing lost. They never saw a save happen.
+
+### System Interactions
+
+- Interaction checkpoints, Mission Day boundaries, Sync boundaries, and event checkpoints trigger atomic commits.
+- RunVariationContext and the package hash are re-pinned on resume for online/offline/resume selector parity.
+- Save-at-every-boundary signature equivalence is a standing validation requirement (Section 34).
+
+### Implementation Notes — High Level
+
+- There are no user-visible save files or slots; there is one authoritative composite plus a recovery journal.
+- Commit is transactional and all-or-nothing; power loss mid-commit resumes from the last committed checkpoint.
+- Auto-save cadence is bounded so the worst-case lost progress is a single in-progress micro-interaction, never a whole Mission Day.
+- Save is keyed to player identity; the certified-attempt lease and fencing prevent two devices from advancing the same certified attempt, while practice replays resume independently.
+- Auto-Save and Resume must pass the online/offline selector-parity and save-at-every-boundary tests.
+
+### Boston Example
+
+Midway through the King Street delivery on Mission Day 2, class ends and the student closes the Chromebook. Two days later they reopen the game and resume at the same street corner, mid-route, with the same crowd state and the same pending Sync — no repeated content and no lost choices.
+
+### Edge Cases
+
+- **Power loss mid-commit:** The transaction is all-or-nothing; resume from the last committed checkpoint.
+- **Two devices at once:** The certified-attempt lease blocks the second device; independent practice replays are unaffected.
+- **Package updated between sessions:** The active attempt keeps its pinned package or ends at an authored migration checkpoint and starts a new attempt, per Section 0.
+- **Quit during a scored item:** Resume the same form; if the administration was interrupted after collection, invalidate and replace it rather than granting a free retry.
 
 ---
 
