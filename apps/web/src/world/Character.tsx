@@ -3,9 +3,11 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
-import { captureRestPose, prepareLibrary, clipFor } from "./anims.js";
 
-const ANIM_URL = "/world/anims/anim-library.glb";
+// Clips are pre-baked onto the shared Meshy auto-rig skeleton in Blender
+// (assets/pipeline/retarget_to_meshy.py). They bind to every Meshy-rigged
+// character by bone name; no runtime retargeting.
+const ANIM_URL = "/world/anims/meshy-anim-library.glb";
 
 // ---- Error boundary so a missing/failed GLB degrades to a placeholder ----
 class GlbBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
@@ -72,16 +74,13 @@ function RiggedInner(props: { glbKey: string; height: number; clip: string; time
   const actionRef = useRef<THREE.AnimationAction | null>(null);
 
   const rig = useMemo(() => {
-    prepareLibrary(lib.scene, lib.animations);
     const root = skeletonClone(gltf.scene);
     root.traverse((o) => {
       o.castShadow = true;
       o.receiveShadow = false;
       if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).frustumCulled = false;
     });
-    // Skinned-aware bounds: SkinnedMesh.computeBoundingBox() accounts for the
-    // current bone pose; plain Box3.setFromObject uses bind-pose geometry and
-    // lifts some rigs a meter into the air.
+    // Skinned-aware bounds: feet on y=0, height matched to spec.
     const measure = () => {
       root.updateMatrixWorld(true);
       const box = new THREE.Box3();
@@ -111,23 +110,24 @@ function RiggedInner(props: { glbKey: string; height: number; clip: string; time
     root.scale.setScalar(s);
     const box2 = measure();
     root.position.y -= box2.min.y;
-    const rest = captureRestPose(root, "Hips");
-    return { root, rest };
-  }, [gltf.scene, lib.scene, lib.animations, props.height]);
+    return { root };
+  }, [gltf.scene, props.height]);
 
   useEffect(() => {
     const mixer = new THREE.AnimationMixer(rig.root);
     mixerRef.current = mixer;
+    actionRef.current = null;
     return () => {
       mixer.stopAllAction();
       mixerRef.current = null;
+      actionRef.current = null;
     };
   }, [rig]);
 
   useEffect(() => {
     const mixer = mixerRef.current;
     if (!mixer) return;
-    const clip = clipFor(props.glbKey + ":" + props.height, rig.rest, props.clip);
+    const clip = lib.animations.find((c) => c.name === props.clip) ?? lib.animations[0];
     if (!clip) return;
     const next = mixer.clipAction(clip);
     next.reset();
@@ -136,12 +136,10 @@ function RiggedInner(props: { glbKey: string; height: number; clip: string; time
     next.play();
     const prev = actionRef.current;
     if (prev && prev !== next) {
-      // Longer, eased fades between locomotion states read far smoother than
-      // hard 0.25s cuts, especially walk<->run<->idle.
-      next.crossFadeFrom(prev, 0.35, true);
+      next.crossFadeFrom(prev, 0.3, true);
     }
     actionRef.current = next;
-  }, [props.clip, props.glbKey, props.height, rig]);
+  }, [props.clip, props.timeOffset, lib.animations, rig]);
 
   useFrame((_, dt) => {
     if (actionRef.current && props.timeScale !== undefined) {
@@ -187,7 +185,6 @@ function FittedGlbInner(props: { glbKey: string; size?: [number, number, number]
     box.getSize(size);
     let s = props.scale ?? 1;
     if (props.size) {
-      // Fit footprint + height without distorting proportions.
       const sx = props.size[0] / (size.x || 1);
       const sy = props.size[1] / (size.y || 1);
       const sz = props.size[2] / (size.z || 1);

@@ -87,19 +87,19 @@ export const LOCATIONS: Record<string, LocationDef> = {
     id: "BOSTON_STREET", label: "Boston street", anchor: [-6, 0, 1.5], faceY: Math.PI / 2, interior: false,
   },
   MERCER_PRESS: {
-    id: "MERCER_PRESS", label: "Mercer's Press", anchor: [0, 0, 7.2], faceY: 0, interior: true,
+    id: "MERCER_PRESS", label: "Mercer's Press", anchor: [0, 0, 9.0], faceY: 0, interior: true,
     exitAnchor: [0, 0, 2.6], room: { center: [0, 9.6], size: [9, 7], doorSide: "S" },
   },
   THOMAS_COUNTINGHOUSE: {
-    id: "THOMAS_COUNTINGHOUSE", label: "Thomas Bell's counting-house", anchor: [-30, 0, -8.2], faceY: Math.PI, interior: true,
+    id: "THOMAS_COUNTINGHOUSE", label: "Thomas Bell's counting-house", anchor: [-30, 0, -10.0], faceY: Math.PI, interior: true,
     exitAnchor: [-30, 0, -5.4], room: { center: [-30, -10.6], size: [10, 7], doorSide: "N" },
   },
   PIKE_OFFICE: {
-    id: "PIKE_OFFICE", label: "Pike's office", anchor: [14, 0, 7.8], faceY: 0, interior: true,
+    id: "PIKE_OFFICE", label: "Pike's office", anchor: [14, 0, 9.4], faceY: 0, interior: true,
     exitAnchor: [14, 0, 5.2], room: { center: [14, 9.9], size: [8, 6.5], doorSide: "S" },
   },
   CUSTOM_HOUSE: {
-    id: "CUSTOM_HOUSE", label: "The Custom House", anchor: [40, 0, 7.6], faceY: 0, interior: true,
+    id: "CUSTOM_HOUSE", label: "The Custom House", anchor: [40, 0, 9.6], faceY: 0, interior: true,
     exitAnchor: [40, 0, 4.6], room: { center: [40, 10.2], size: [12, 8], doorSide: "S" },
   },
   CUSTOMS_POST: {
