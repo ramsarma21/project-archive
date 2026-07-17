@@ -149,8 +149,9 @@ const INTERIOR_PROPS: Record<string, { glb: string; pos: [number, number, number
   ],
   THOMAS_COUNTINGHOUSE: [
     { glb: "shop-counter", pos: [-30, 0, -12.6], rotY: 0, size: [3, 1.4, 1.4] },
-    { glb: "cloth-bolts", pos: [-33.4, 0, -11.6], rotY: 0.4, size: [2, 1.4, 2] },
+    { glb: "crate-stack", pos: [-33.4, 0, -11.6], rotY: 0.4, size: [2, 1.5, 2] },
     { glb: "crate-stack", pos: [-26.8, 0, -12.4], rotY: -0.3, size: [2.2, 1.8, 1.8] },
+    { glb: "barrel-group", pos: [-33.8, 0, -8.6], rotY: 1.2, size: [1.8, 1.3, 1.5] },
   ],
   PIKE_OFFICE: [
     { glb: "clerk-desk", pos: [14.8, 0, 11.6], rotY: Math.PI, size: [1.8, 1.8, 1.4] },
