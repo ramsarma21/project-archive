@@ -19,6 +19,33 @@ class GlbBoundary extends Component<{ fallback: ReactNode; children: ReactNode }
   }
 }
 
+// Soft radial contact shadow that grounds characters against the street.
+let blobTex: THREE.CanvasTexture | null = null;
+function contactShadowTexture(): THREE.CanvasTexture {
+  if (blobTex) return blobTex;
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const g = c.getContext("2d")!;
+  const grad = g.createRadialGradient(64, 64, 8, 64, 64, 62);
+  grad.addColorStop(0, "rgba(0,0,0,0.42)");
+  grad.addColorStop(0.7, "rgba(0,0,0,0.18)");
+  grad.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 128);
+  blobTex = new THREE.CanvasTexture(c);
+  return blobTex;
+}
+
+export function ContactShadow(props: { radius: number }) {
+  const tex = useMemo(() => contactShadowTexture(), []);
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} renderOrder={1}>
+      <planeGeometry args={[props.radius * 2, props.radius * 2]} />
+      <meshBasicMaterial map={tex} transparent depthWrite={false} />
+    </mesh>
+  );
+}
+
 // Simple period-plausible placeholder person while a character GLB is missing.
 export function PlaceholderPerson(props: { height: number; coat?: string }) {
   const h = props.height;
@@ -37,7 +64,7 @@ export function PlaceholderPerson(props: { height: number; coat?: string }) {
   );
 }
 
-function RiggedInner(props: { glbKey: string; height: number; clip: string; timeOffset?: number }) {
+function RiggedInner(props: { glbKey: string; height: number; clip: string; timeOffset?: number; timeScale?: number }) {
   const url = `/world/characters/${props.glbKey}.glb`;
   const gltf = useGLTF(url);
   const lib = useGLTF(ANIM_URL);
@@ -104,16 +131,22 @@ function RiggedInner(props: { glbKey: string; height: number; clip: string; time
     if (!clip) return;
     const next = mixer.clipAction(clip);
     next.reset();
+    next.enabled = true;
     if (props.timeOffset) next.time = props.timeOffset % clip.duration;
     next.play();
     const prev = actionRef.current;
     if (prev && prev !== next) {
-      next.crossFadeFrom(prev, 0.25, false);
+      // Longer, eased fades between locomotion states read far smoother than
+      // hard 0.25s cuts, especially walk<->run<->idle.
+      next.crossFadeFrom(prev, 0.35, true);
     }
     actionRef.current = next;
   }, [props.clip, props.glbKey, props.height, rig]);
 
   useFrame((_, dt) => {
+    if (actionRef.current && props.timeScale !== undefined) {
+      actionRef.current.timeScale = props.timeScale;
+    }
     mixerRef.current?.update(dt);
   });
 
@@ -125,14 +158,18 @@ export function RiggedCharacter(props: {
   height: number;
   clip: string;
   timeOffset?: number;
+  timeScale?: number;
   coat?: string;
 }) {
   return (
-    <GlbBoundary fallback={<PlaceholderPerson height={props.height} coat={props.coat} />}>
-      <Suspense fallback={<PlaceholderPerson height={props.height} coat={props.coat} />}>
-        <RiggedInner glbKey={props.glbKey} height={props.height} clip={props.clip} timeOffset={props.timeOffset} />
-      </Suspense>
-    </GlbBoundary>
+    <group>
+      <ContactShadow radius={0.55} />
+      <GlbBoundary fallback={<PlaceholderPerson height={props.height} coat={props.coat} />}>
+        <Suspense fallback={<PlaceholderPerson height={props.height} coat={props.coat} />}>
+          <RiggedInner glbKey={props.glbKey} height={props.height} clip={props.clip} timeOffset={props.timeOffset} timeScale={props.timeScale} />
+        </Suspense>
+      </GlbBoundary>
+    </group>
   );
 }
 

@@ -10,7 +10,9 @@ export interface PlayerApi {
 }
 
 const WALK = 2.3;
-const RUN = 4.4;
+const RUN = 4.6;
+const ACCEL = 9; // m/s^2 toward target velocity
+const DECEL = 14;
 
 export function Player(props: {
   apiRef: { current: PlayerApi | null };
@@ -90,6 +92,9 @@ export function Player(props: {
     };
   }, []);
 
+  const velocity = useRef(new THREE.Vector3());
+  const lookTarget = useRef(new THREE.Vector3());
+
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
     const k = keys.current;
@@ -103,29 +108,38 @@ export function Player(props: {
     }
     const running = Boolean(k.ShiftLeft || k.ShiftRight);
     const moving = fwd !== 0 || strafe !== 0;
-    const speed = moving ? (running ? RUN : WALK) : 0;
-    speedRef.current = THREE.MathUtils.lerp(speedRef.current, speed, 0.2);
 
+    // ---- Velocity model: accelerate toward the target velocity, brake to a
+    // stop. This is what makes starts/stops/turns feel weighted, not snappy.
+    const targetVel = new THREE.Vector3();
     if (moving) {
-      const dir = new THREE.Vector3(
-        Math.sin(camYaw.current) * fwd + Math.sin(camYaw.current + Math.PI / 2) * strafe,
-        0,
-        Math.cos(camYaw.current) * fwd + Math.cos(camYaw.current + Math.PI / 2) * strafe,
-      ).normalize();
-
-      const target = api.position.clone().addScaledVector(dir, speed * dt);
+      targetVel
+        .set(
+          Math.sin(camYaw.current) * fwd + Math.sin(camYaw.current + Math.PI / 2) * strafe,
+          0,
+          Math.cos(camYaw.current) * fwd + Math.cos(camYaw.current + Math.PI / 2) * strafe,
+        )
+        .normalize()
+        .multiplyScalar(running ? RUN : WALK);
+    }
+    const rate = moving ? ACCEL : DECEL;
+    const blend = 1 - Math.exp(-rate * dt * 0.6);
+    velocity.current.lerp(targetVel, blend);
+    const speed = velocity.current.length();
+    speedRef.current = speed;
+    if (speed > 0.02) {
+      const step = velocity.current.clone().multiplyScalar(dt);
+      const target = api.position.clone().add(step);
       const r = 0.35;
 
       if (props.room) {
         const [cx, cz] = props.room.center;
         const hx = props.room.size[0] / 2 - r;
         const hz = props.room.size[1] / 2 - r;
-        // Door gap: allow passing slightly beyond the door wall near its center.
         target.x = THREE.MathUtils.clamp(target.x, cx - hx, cx + hx);
         target.z = THREE.MathUtils.clamp(target.z, cz - hz, cz + hz);
         api.position.copy(target);
       } else {
-        // Axis-separated AABB slide.
         const tryAxis = (nx: number, nz: number) => {
           for (const [bx, bz, hx, hz] of props.colliders) {
             if (nx > bx - hx - r && nx < bx + hx + r && nz > bz - hz - r && nz < bz + hz + r) return false;
@@ -135,21 +149,23 @@ export function Player(props: {
         const nx = THREE.MathUtils.clamp(target.x, WORLD_BOUNDS.minX, WORLD_BOUNDS.maxX);
         const nz = THREE.MathUtils.clamp(target.z, WORLD_BOUNDS.minZ, WORLD_BOUNDS.maxZ);
         if (tryAxis(nx, api.position.z)) api.position.x = nx;
+        else velocity.current.x *= 0.4;
         if (tryAxis(api.position.x, nz)) api.position.z = nz;
+        else velocity.current.z *= 0.4;
       }
 
-      const desired = Math.atan2(dir.x, dir.z);
+      // Face the direction of travel; turn rate scales with speed so slow
+      // steps pivot gently and sprints whip around.
+      const desired = Math.atan2(velocity.current.x, velocity.current.z);
       let dh = desired - heading.current;
       while (dh > Math.PI) dh -= Math.PI * 2;
       while (dh < -Math.PI) dh += Math.PI * 2;
-      heading.current += dh * Math.min(1, dt * 10);
-      // Camera yaw eases toward heading while moving (unless the player is
-      // actively dragging to look around).
+      heading.current += dh * (1 - Math.exp(-(6 + speed * 1.6) * dt));
       if (!drag.current.active) {
         let dc = heading.current - camYaw.current;
         while (dc > Math.PI) dc -= Math.PI * 2;
         while (dc < -Math.PI) dc += Math.PI * 2;
-        camYaw.current += dc * Math.min(1, dt * 2.2);
+        camYaw.current += dc * (1 - Math.exp(-2.4 * dt));
       }
     }
 
@@ -158,9 +174,30 @@ export function Player(props: {
       group.current.rotation.y = heading.current;
     }
 
-    // Third-person follow camera with drag pitch.
-    const dist = props.room ? 2.6 : 5.2;
-    const height = (props.room ? 1.7 : 2.5) + camPitch.current * dist;
+    // Third-person follow camera with drag pitch and boom collision: if the
+    // desired position sits inside a building, shorten the boom until clear.
+    const maxDist = props.room ? 2.6 : 5.2;
+    let dist = maxDist;
+    if (!props.room) {
+      const margin = 0.5;
+      for (let tBoom = 1; tBoom >= 0.25; tBoom -= 0.125) {
+        const cx = api.position.x - Math.sin(camYaw.current) * maxDist * tBoom;
+        const cz = api.position.z - Math.cos(camYaw.current) * maxDist * tBoom;
+        let blocked = false;
+        for (const [bx, bz, hx, hz] of props.colliders) {
+          if (cx > bx - hx - margin && cx < bx + hx + margin && cz > bz - hz - margin && cz < bz + hz + margin) {
+            blocked = true;
+            break;
+          }
+        }
+        if (!blocked) {
+          dist = maxDist * tBoom;
+          break;
+        }
+        dist = maxDist * 0.25;
+      }
+    }
+    const height = (props.room ? 1.7 : 2.0 + 0.5 * (dist / maxDist)) + camPitch.current * dist;
     const camPos = new THREE.Vector3(
       api.position.x - Math.sin(camYaw.current) * dist,
       api.position.y + height,
@@ -179,19 +216,28 @@ export function Player(props: {
       // Hard-place the camera on spawn/teleport so it never eases in from a
       // stale position (which read as "first person" on load).
       camera.position.copy(camPos);
+      lookTarget.current.copy(api.position).add(new THREE.Vector3(0, 1.35, 0));
       snapCam.current = false;
     } else {
-      camera.position.lerp(camPos, Math.min(1, dt * 5));
+      // Critically-damped style follow: position eases harder than the look
+      // point, giving the slight camera lag that reads as weight.
+      camera.position.lerp(camPos, 1 - Math.exp(-6 * dt));
+      const lookGoal = api.position.clone().add(new THREE.Vector3(0, 1.35, 0)).addScaledVector(velocity.current, 0.12);
+      lookTarget.current.lerp(lookGoal, 1 - Math.exp(-10 * dt));
     }
-    const look = api.position.clone().add(new THREE.Vector3(0, 1.35, 0));
-    camera.lookAt(look);
+    camera.lookAt(lookTarget.current);
   });
 
-  const clip = speedRef.current > 3 ? "run" : speedRef.current > 0.25 ? "walk" : "idle";
+  const clip = speedRef.current > 3.2 ? "run" : speedRef.current > 0.35 ? "walk" : "idle";
+  // Sync stride cadence to actual ground speed so feet never skate.
+  const timeScale =
+    clip === "walk" ? THREE.MathUtils.clamp(speedRef.current / WALK, 0.6, 1.5)
+    : clip === "run" ? THREE.MathUtils.clamp(speedRef.current / RUN, 0.7, 1.3)
+    : 1;
 
   return (
     <group ref={group}>
-      <RiggedCharacter glbKey="playerboy-rigged" height={1.58} clip={clip} coat="#4a4237" />
+      <RiggedCharacter glbKey="playerboy-rigged" height={1.58} clip={clip} timeScale={timeScale} coat="#4a4237" />
     </group>
   );
 }
