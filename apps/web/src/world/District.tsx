@@ -335,12 +335,12 @@ export function DayLight(props: { t: number; dusk: boolean }) {
         intensity={intensity}
         color={sunColor}
         castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-60}
-        shadow-camera-right={60}
-        shadow-camera-top={60}
-        shadow-camera-bottom={-60}
-        shadow-bias={-0.0004}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-55}
+        shadow-camera-right={55}
+        shadow-camera-top={45}
+        shadow-camera-bottom={-45}
+        shadow-bias={-0.0003}
       />
       {props.dusk && <pointLight position={[44, 3.5, -27]} intensity={30} distance={26} color="#ff9040" />}
     </group>

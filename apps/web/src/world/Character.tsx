@@ -52,18 +52,39 @@ function RiggedInner(props: { glbKey: string; height: number; clip: string; time
       o.receiveShadow = false;
       if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).frustumCulled = false;
     });
-    // Normalize: feet on y=0, height matched to spec.
-    root.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(root);
+    // Skinned-aware bounds: SkinnedMesh.computeBoundingBox() accounts for the
+    // current bone pose; plain Box3.setFromObject uses bind-pose geometry and
+    // lifts some rigs a meter into the air.
+    const measure = () => {
+      root.updateMatrixWorld(true);
+      const box = new THREE.Box3();
+      const tmp = new THREE.Box3();
+      let any = false;
+      root.traverse((o) => {
+        const m = o as THREE.SkinnedMesh;
+        if (m.isSkinnedMesh) {
+          m.computeBoundingBox();
+          if (m.boundingBox) {
+            tmp.copy(m.boundingBox).applyMatrix4(m.matrixWorld);
+            any ? box.union(tmp) : box.copy(tmp);
+            any = true;
+          }
+        } else if ((o as THREE.Mesh).isMesh) {
+          tmp.setFromObject(o);
+          any ? box.union(tmp) : box.copy(tmp);
+          any = true;
+        }
+      });
+      return box;
+    };
+    const box = measure();
     const size = new THREE.Vector3();
     box.getSize(size);
     const s = size.y > 0.01 ? props.height / size.y : 1;
     root.scale.setScalar(s);
-    root.updateMatrixWorld(true);
-    const box2 = new THREE.Box3().setFromObject(root);
+    const box2 = measure();
     root.position.y -= box2.min.y;
     const rest = captureRestPose(root, "Hips");
-    console.log(`[char] ${props.glbKey} rawH=${size.y.toFixed(3)} scale=${s.toFixed(4)} hipsY=${rest.hipsY.toFixed(3)}`);
     return { root, rest };
   }, [gltf.scene, lib.scene, lib.animations, props.height]);
 

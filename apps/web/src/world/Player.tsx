@@ -25,6 +25,7 @@ export function Player(props: {
   const speedRef = useRef(0);
   const camera = useThree((s) => s.camera);
 
+  const snapCam = useRef(true);
   const api = useMemo<PlayerApi>(
     () => ({
       position: new THREE.Vector3(-6, 0, 1.5),
@@ -38,11 +39,15 @@ export function Player(props: {
           group.current.position.copy(this.position);
           group.current.rotation.y = heading.current;
         }
+        snapCam.current = true;
       },
     }),
     [],
   );
   props.apiRef.current = api;
+
+  const drag = useRef<{ active: boolean; lastX: number; lastY: number }>({ active: false, lastX: 0, lastY: 0 });
+  const camPitch = useRef(0);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -53,11 +58,35 @@ export function Player(props: {
     const up = (e: KeyboardEvent) => {
       keys.current[e.code] = false;
     };
+    // Drag anywhere on the canvas to orbit the camera (GTA-style look-around).
+    const pdown = (e: PointerEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.tagName !== "CANVAS") return;
+      drag.current = { active: true, lastX: e.clientX, lastY: e.clientY };
+    };
+    const pmove = (e: PointerEvent) => {
+      if (!drag.current.active) return;
+      const dx = e.clientX - drag.current.lastX;
+      const dy = e.clientY - drag.current.lastY;
+      drag.current.lastX = e.clientX;
+      drag.current.lastY = e.clientY;
+      camYaw.current -= dx * 0.006;
+      camPitch.current = THREE.MathUtils.clamp(camPitch.current + dy * 0.004, -0.5, 0.55);
+    };
+    const pup = () => {
+      drag.current.active = false;
+    };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
+    window.addEventListener("pointerdown", pdown);
+    window.addEventListener("pointermove", pmove);
+    window.addEventListener("pointerup", pup);
     return () => {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
+      window.removeEventListener("pointerdown", pdown);
+      window.removeEventListener("pointermove", pmove);
+      window.removeEventListener("pointerup", pup);
     };
   }, []);
 
@@ -114,11 +143,14 @@ export function Player(props: {
       while (dh > Math.PI) dh -= Math.PI * 2;
       while (dh < -Math.PI) dh += Math.PI * 2;
       heading.current += dh * Math.min(1, dt * 10);
-      // Camera yaw eases toward heading while moving.
-      let dc = heading.current - camYaw.current;
-      while (dc > Math.PI) dc -= Math.PI * 2;
-      while (dc < -Math.PI) dc += Math.PI * 2;
-      camYaw.current += dc * Math.min(1, dt * 2.2);
+      // Camera yaw eases toward heading while moving (unless the player is
+      // actively dragging to look around).
+      if (!drag.current.active) {
+        let dc = heading.current - camYaw.current;
+        while (dc > Math.PI) dc -= Math.PI * 2;
+        while (dc < -Math.PI) dc += Math.PI * 2;
+        camYaw.current += dc * Math.min(1, dt * 2.2);
+      }
     }
 
     if (group.current) {
@@ -126,9 +158,9 @@ export function Player(props: {
       group.current.rotation.y = heading.current;
     }
 
-    // Third-person follow camera.
+    // Third-person follow camera with drag pitch.
     const dist = props.room ? 2.6 : 5.2;
-    const height = props.room ? 1.7 : 2.5;
+    const height = (props.room ? 1.7 : 2.5) + camPitch.current * dist;
     const camPos = new THREE.Vector3(
       api.position.x - Math.sin(camYaw.current) * dist,
       api.position.y + height,
@@ -143,7 +175,14 @@ export function Player(props: {
       camPos.z = THREE.MathUtils.clamp(camPos.z, cz - hz, cz + hz);
       camPos.y = Math.min(camPos.y, 2.45);
     }
-    camera.position.lerp(camPos, Math.min(1, dt * 5));
+    if (snapCam.current) {
+      // Hard-place the camera on spawn/teleport so it never eases in from a
+      // stale position (which read as "first person" on load).
+      camera.position.copy(camPos);
+      snapCam.current = false;
+    } else {
+      camera.position.lerp(camPos, Math.min(1, dt * 5));
+    }
     const look = api.position.clone().add(new THREE.Vector3(0, 1.35, 0));
     camera.lookAt(look);
   });

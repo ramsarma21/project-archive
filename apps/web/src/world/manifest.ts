@@ -72,6 +72,13 @@ export const PROPS: { glb: string; pos: [number, number, number]; rotY: number; 
   { glb: "liberty-elm", pos: [44, 0, -27], rotY: 0, scale: 1.6, collide: [2.4, 2.4] },
   { glb: "hand-cart", pos: [-44, 0, -29], rotY: -1.1, collide: [2.4, 1.6] },
   { glb: "barrel-group", pos: [36, 0, -20], rotY: 0.7, collide: [2.2, 1.6] },
+  // Dressing along the facades so the street reads worked-in, not empty.
+  { glb: "barrel-group", pos: [-9.5, 0, 5.2], rotY: 2.1, collide: [2.0, 1.5] },
+  { glb: "crate-stack", pos: [-33.5, 0, 5.4], rotY: 0.9, collide: [2.0, 1.6] },
+  { glb: "barrel-group", pos: [17.5, 0, -5.4], rotY: -0.6, collide: [2.0, 1.5] },
+  { glb: "crate-stack", pos: [30, 0, 5.2], rotY: 1.7, collide: [2.0, 1.6] },
+  { glb: "hand-cart", pos: [-2, 0, -5.2], rotY: 2.4, collide: [2.4, 1.6] },
+  { glb: "barrel-group", pos: [45, 0, 4.8], rotY: 0.4, collide: [2.0, 1.5] },
 ];
 
 // ---- Locations ----
