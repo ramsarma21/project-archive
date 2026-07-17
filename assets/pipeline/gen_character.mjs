@@ -49,7 +49,7 @@ async function main() {
         topology: "triangle",
         target_polycount: 60000,
         symmetry_mode: "auto",
-        pose_mode: "a-pose",
+        pose_mode: "t-pose",
       }),
     });
     if (!prevRes.ok) { console.error("preview create failed:", prevRes.status, await prevRes.text()); process.exit(1); }

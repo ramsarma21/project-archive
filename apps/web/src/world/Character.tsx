@@ -127,7 +127,14 @@ function RiggedInner(props: { glbKey: string; height: number; clip: string; time
   useEffect(() => {
     const mixer = mixerRef.current;
     if (!mixer) return;
-    const clip = lib.animations.find((c) => c.name === props.clip) ?? lib.animations[0];
+    // Prefer clips baked into the character itself (per-character retarget);
+    // fall back to the shared library for rigs without embedded animations.
+    const own = gltf.animations ?? [];
+    const clip =
+      own.find((c) => c.name === props.clip) ??
+      (own.length === 0 ? lib.animations.find((c) => c.name === props.clip) : undefined) ??
+      own[0] ??
+      lib.animations[0];
     if (!clip) return;
     const next = mixer.clipAction(clip);
     next.reset();
