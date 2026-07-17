@@ -69,6 +69,11 @@ The document fully specifies **"Boston on the Brink"** as the gold-standard refe
 | File | Description |
 | --- | --- |
 | [`Project-Archive-v3.md`](Project-Archive-v3.md) | Canonical game design document (vision, systems, architecture, production, and the Boston reference chapter). |
+| [`Backend-AI-System.md`](Backend-AI-System.md) | Implementation-ready backend and AI architecture: stack, services, schemas, deterministic Director, learning lifecycle, carrier rerouting, persistence, APIs, validation, and build order. |
+| [`Localhost-Text-Slice-Spec.md`](Localhost-Text-Slice-Spec.md) | Prescriptive, zero-autonomy coding directive for the Google-login localhost text vertical slice, built on a headless runtime that can later use the Three.js presenter unchanged. |
+| [`Day-Template.md`](Day-Template.md) | Reusable laws and beat patterns for authoring every Mission Day. |
+| [`Interaction-Spec.md`](Interaction-Spec.md) | Codeable interaction, HUD, timing, feedback, and curriculum micro-specification. |
+| [`Day-1.md`](Day-1.md) | Worked Boston Day 1 scene plan and vertical-slice reference flow. |
 
 ## Status
 

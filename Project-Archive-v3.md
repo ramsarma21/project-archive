@@ -7,6 +7,8 @@
 **Curriculum target:** Texas Grade 8 Social Studies, United States history through 1877  
 **Reference chapter:** Boston, 1765–1774  
 **Version rule:** A shipped content package may be more specific than this document, but it may not contradict it.
+**Backend implementation companion:** [`Backend-AI-System.md`](Backend-AI-System.md) converts these contracts into the concrete vertical-slice stack, schemas, state machines, APIs, validation suite, and build order.
+**Boston Day 1 precedence:** [`Day-1.md`](Day-1.md) is the canonical behavioral acceptance fixture for Boston Day 1. If this GDD's older Day 1 example wording conflicts with the current fixture, the fixture governs and this GDD must be corrected.
 
 ## Contents
 
@@ -125,6 +127,11 @@ Identifiers are typed and globally unique:
 - `season_id`, `chapter_id`, `mission_day_id`, and `scene_node_id` identify authored hierarchy and progression.
 - `action_family_id` identifies one logical opportunity requested by a player or scheduler.
 - `action_id` identifies one executable approved variant or action fallback within that family.
+- `mechanic_family_id` identifies one reusable occupational, traversal, evasion, crowd, object-handling, social-action, or construction mechanic contract.
+- `job_object_id` identifies one authored material/work object whose custody, condition, concealment, and terminal state may persist.
+- `outcome_policy_id` identifies one versioned deterministic mechanic-resolution policy.
+- `authored_terminal_outcome_id` identifies one exact player/world outcome with immutable semantics and declared continuation/deltas.
+- `consequence_state_id` identifies one persistent authored local consequence used by Scene/World eligibility.
 - `asset_bundle_id` identifies immutable playable media.
 - `concept_id`, `misconception_id`, and `evidence_event_id` identify learning semantics.
 
@@ -150,11 +157,11 @@ If a chapter package conflicts with this document, the package fails validation 
 
 ### Purpose
 
-Project Archive exists to deliver the required Grade 8 United States history curriculum as a cinematic historical experience rather than as a conventional sequence of lessons and quizzes. Its diegetic Archive “System” may provide concise authored exposition and assessment whenever doing so is clearer than forcing that content into character dialogue.
+Project Archive exists to deliver the required Grade 8 United States history curriculum as a captivating consequential historical RPG rather than lessons, quizzes, passive dialogue, or a wrapped cinematic slideshow. Its diegetic Archive System provides concise identification, context, and assessment only when world evidence or playable historical work cannot carry the same obligation naturally.
 
 ### How It Works
 
-The player enters compact historical districts, assumes a credible period identity, performs a job, observes fixed historical events, speaks with people whose occupations shape their viewpoints, and periodically preserves an interpretation in the Archive. Beneath that experience, authored graphs guarantee curriculum coverage and an AI Director selects the best legal authored `action_id` for the current state.
+The player enters compact systemic historical districts, assumes a credible period identity, performs occupational work, executes physical routes under pressure, handles objects, makes human commitments, faces uncertain local outcomes, and lives with persistent consequences around fixed recorded events. People, affiliations, documents, environment, and real historical figures reveal perspective through action. Beneath play, authored graphs guarantee curriculum obligations, deterministic systems resolve mechanics instantly, and the AI Director selects the best legal authored `action_id` without blocking on a model.
 
 **Mission**
 
@@ -185,10 +192,10 @@ Enable students to master required historical knowledge and reason from evidence
 1. **Historical presence:** Dense districts, evolving environments, purposeful sound, crowds, and jobs create the feeling of occupying a specific place and moment.
 2. **Character continuity:** One anchor character gives each chapter emotional coherence; other NPCs embody distinct evidence and perspectives.
 3. **Invisible pedagogy:** The fiction motivates actions that also encode, retrieve, organize, and apply curriculum.
-4. **Fixed truth, flexible route:** History, required concepts, and outcomes are fixed. Interaction order and educational support vary within authored bounds.
+4. **Fixed truth, consequential route:** Recorded history and required obligations are fixed. Player action, Job results, relationships, and local consequences vary within authored bounds and persist.
 5. **Directed intelligence:** AI selects approved experiences; no runtime subsystem creates or rewrites player-facing semantic content.
 6. **Content scalability:** New chapters are data-and-asset packages built with one reusable grammar.
-7. **Combinatorial replay, invariant learning:** Authored encounter, route, dialogue, and support combinations make exact playthrough repetition practically rare while every player receives the same required TEKS and fixed historical spine.
+7. **Combinatorial replay, invariant learning:** Authored mechanics, encounters, routes, local outcomes, object/relationship consequences, human exchanges, silence, and support combinations make exact playthrough repetition practically rare while every player receives the same required TEKS and fixed historical spine.
 
 **Core design principles**
 
@@ -197,17 +204,17 @@ Enable students to master required historical knowledge and reason from evidence
 - Mission Days are the primary gameplay unit.
 - One anchor character supports one chapter.
 - Jobs move the player through the curriculum.
-- The environment creates immersion; interactions create learning.
+- Work, environment, evidence, people, mechanics, and consequences create both play and learning.
 - Every meaningful interaction has a curriculum, story, character, or pacing responsibility. Most have more than one.
 - Assessment asks for evidence-based interpretation, not personal opinion.
-- Every runtime choice resolves to an approved action ID or silence.
-- Learning support adapts; historical content and outcomes do not.
-- Replay variation changes optional experience texture, never required learning or assessment standard.
+- Every foreground opportunity is an approved ActionSpec or silence; player mechanic inputs resolve inside that ActionSpec through validated MechanicResult and OutcomePolicy.
+- Learning support and consequence-state carrier routes adapt; recorded historical content/outcomes do not. Local Action Outcomes deliberately vary.
+- Replay variation changes mechanics, encounters, routes, local outcomes, objects, relationships, silence, and support—never required learning or assessment standard.
 - The player is never shamed for uncertainty or a misconception.
 
 ### Design Philosophy
 
-Project Archive is not a free-form historical sandbox, a branching alternate-history story, an AI tutor, or a textbook rendered in 3D. It is a guided historical simulation whose authored constraints produce the feeling of agency without surrendering historical or instructional control.
+Project Archive is not a free-form historical sandbox, a branching alternate-history story, an AI tutor, or a textbook rendered in 3D. It is a bounded consequential historical RPG whose authored constraints create real local agency without surrendering recorded history or required learning.
 
 The moment-to-moment target is:
 
@@ -230,7 +237,7 @@ Both must be true at the same time.
 
 ### Player Experience
 
-A minimally motivated student can follow a simple job and still encounter the required content. A curious student can choose conversational routes, inspect optional evidence, and receive deeper authored variants. Neither student can accidentally skip the chapter’s historical spine or create a false historical outcome.
+A minimally motivated student can follow the Job and still perform the required work, mechanics, evidence actions, and historical spine. A curious student can discover riskier routes, optional perspectives, deeper evidence, and different consequence branches. Neither can accidentally skip a due RequiredCarrierContract or create a false recorded historical outcome; both can produce meaningfully different local Job and relationship results.
 
 ### System Interactions
 
@@ -293,9 +300,9 @@ Each chapter requires a different access path. Boston’s cover progresses from 
 
 - The temporal system only opens self-consistent observation windows.
 - The Scene Graph contains fixed historical outcomes.
-- Player choices alter route, dialogue, evidence order, and support—not recorded events.
+- Player actions alter route, object custody/condition, timing, attention, Job results, relationships, dialogue, evidence order, and support—not recorded events.
 - The Event Manager rejects any state transition outside the approved historical sequence.
-- The content library contains no alternate outcome asset.
+- The content library contains no alternate recorded-historical-outcome asset. It intentionally contains authored local terminal-outcome and consequence assets.
 
 **Why NPCs trust the player**
 
@@ -336,7 +343,7 @@ The player sees a short identity synchronization, then wakes or steps into a wor
 
 - Cover identity selects the player model, costume, tools, default knowledge, and legal access tags.
 - Character Cards define what each NPC initially knows about the cover.
-- Relationship state unlocks authored conversations.
+- Relationship and consequence state unlock authored actions, access, refusals, obligations, conversations, and carrier routes.
 - The Event Manager ensures historical windows and outcomes stay fixed.
 - The Archive preserves selected player responses across chapters and seasons.
 
@@ -354,9 +361,9 @@ Cover identities must be fictional or historically unrecorded enough to avoid co
 
 ### Boston Example
 
-The player synchronizes in 1765 as **Abigail Mercer’s printer’s apprentice**. They wear a printer’s apron, carry Abigail’s delivery ledger, and know the district’s basic routes. Abigail has agreed to take on help during a busy publication day. Thomas recognizes the bundle seal and calls the player “Mercer’s runner.” A routine royal clerk accepts the legal-proof delivery; Captain Ellis does not appear until the 1770 Mission Day.
+The player synchronizes in 1765 as **Abigail Mercer’s printer’s apprentice**. They wear a printer’s apron, operate the press, carry separately tracked print objects, and know the district’s basic routes. Thomas recognizes the bundle seal; a royal-office customer may recognize it later. Delivery, damage, lateness, access, and trust may differ. Captain Ellis does not appear until the 1770 Mission Day.
 
-Across later Mission Days, the same local cover persists. Abigail’s trust moves from supervisory to personal because the player returns, completes work, and survives the city’s escalating tension with her.
+Across later Mission Days, the same local cover persists. Abigail remains the structural anchor, while trust, candor, access, obligations, and reactions depend on the player's committed work and consequences.
 
 ### Edge Cases
 
@@ -380,10 +387,11 @@ flowchart TD
     game[Game] --> season[Season]
     season --> chapter[Chapter]
     chapter --> missionDay[Mission Day]
-    missionDay --> job[Job]
-    job --> livingEncounter[Living Historical Encounter or Silence]
-    livingEncounter --> interactions[Required and Optional Interactions]
-    interactions --> historicalEvent[Historical Event]
+    missionDay --> job[Consequential Job]
+    job --> actions[Work, Route, and Consequential Actions]
+    actions --> livingEncounter[Living Historical Encounters or Silence]
+    livingEncounter --> outcomes[Local Outcomes and Carrier Rerouting]
+    outcomes --> historicalEvent[Fixed Historical Event]
     historicalEvent --> archiveSync[Archive Sync]
     archiveSync --> returnHome[Return to Anchor]
     returnHome --> endDay[End Day]
@@ -402,9 +410,9 @@ flowchart TD
 - **Season:** A major historical era and transfer arc.
 - **Chapter:** One place-centered historical investigation with one driving question and one anchor character.
 - **Mission Day:** One playable historical episode and the fundamental repeatable unit.
-- **Job:** The believable work obligation that routes the player.
-- **Living Historical Encounter:** Short authored interruption selected during a traversal window to create historical life and replay variation without carrying required assessment content.
-- **Interaction:** A bounded unit of observation, conversation, choice, reasoning, or review.
+- **Job:** The believable work obligation that supplies mechanics, material stakes, routes, local outcomes, and a historical work product.
+- **Living Historical Encounter:** Optional authored complication or quiet-life beat selected during traversal to reveal historical perspective and replay variation without becoming a sole required carrier.
+- **Action:** A bounded unit of occupational work, traversal, evasion, object handling, social commitment, observation, conversation, historical reasoning, or review.
 - **Historical Event:** A fixed authored event whose outcome does not depend on the player.
 - **Archive Sync:** One brief, in-world capture of current understanding.
 - **Mission Debrief:** The chapter’s deeper explanation and verification sequence.
@@ -423,8 +431,8 @@ Macro units organize history; Mission Days create play. Chapters are not forty-m
 ### Responsibilities
 
 - Production plans capacity at Season, Chapter, and Mission Day levels.
-- Save systems persist at interaction checkpoints and Mission Day boundaries.
-- Curriculum coverage rolls up from interactions to concepts, chapters, and seasons.
+- Save systems persist at mechanic phases, local-outcome commits, action checkpoints, and Mission Day boundaries without rerolling consequences.
+- Curriculum coverage rolls up from contract-completing actions to concepts, Chapters, and Seasons.
 - Telemetry uses the same IDs as authored content.
 
 ### Player Experience
@@ -445,14 +453,14 @@ Every content object has a stable ID and parent:
 
 - Season owns Chapters.
 - Chapter owns Mission Days, one anchor, one district state family, and one Debrief.
-- Mission Day owns exactly one primary Job, one primary Historical Event, and one required Archive Sync. Additional Archive context cards and non-Sync interactions may appear, but no second Sync is permitted.
+- Mission Day owns exactly one primary Job and one primary Historical Event. It also owns one first-understanding question per new gated concept, delivered through spaced Archive Sync moments: Day 1 uses one question per Sync, while Day 2+ may group up to three short questions in one Sync. Additional Archive context cards and non-Sync interactions may appear.
 - Season owns one Review.
 
 Optional scenes may move within authored windows. Parent-child ownership may not be reassigned at runtime.
 
 ### Boston Example
 
-Boston is one Chapter inside the Colonies and Revolution Season. It contains four Mission Days, each with one newspaper job, several encounters, one fixed historical event, one required Archive Sync, a return to Abigail, and a changed city state. The fourth day leads to the Boston Mission Debrief. Boston evidence returns in the Season Review when the player compares imperial policy in Boston with arguments for independence in Philadelphia.
+Boston is one Chapter inside the Colonies and Revolution Season. It contains four Mission Days, each with one mechanically active print Job, persistent local outcomes, zero to three Living Encounters, one fixed historical event, the required **spaced Archive Sync moments/questions for that day's new concepts and prior-day reassessments** (Day 1 uses three separate one-question Syncs; Day 2+ may group up to three short questions in one Sync), a consequence-state return to Abigail, and a changed city. The fourth day leads to the Boston Mission Debrief. Boston evidence returns in the Season Review when the player compares imperial policy in Boston with arguments for independence in Philadelphia.
 
 ### Edge Cases
 
@@ -592,10 +600,10 @@ Every Chapter is defined by:
 - Three to five likely misconceptions.
 - Multiple occupational and political perspectives.
 - One fixed historical spine.
-- One signature treatment using an existing interaction type.
+- One signature treatment composing approved reusable mechanic and interaction types.
 - One Mission Debrief.
 
-A signature treatment may also be a memorable composition of the Job and several existing interaction types; it is not itself a new interaction type or engine verb.
+A signature treatment is a memorable composition of the Job and approved reusable mechanic/interaction types; it does not invent an unreviewed Chapter-only control scheme.
 
 The driving question must be:
 
@@ -622,12 +630,12 @@ One Chapter should be remembered as a place and a person, not as a list of stand
 
 ### Responsibilities
 
-- **Chapter designer:** Own the driving question, Mission Day arc, fixed sequence, signature treatment, and completion.
+- **Chapter designer:** Own the driving question, Mission Day arc, fixed historical spine, local consequence network, signature treatment, and completion.
 - **Curriculum designer:** Own concept coverage, dependencies, misconceptions, transfer, and assessment.
-- **Narrative designer:** Own anchor arc, NPC perspectives, dialogue, and emotional pacing.
-- **Level designer:** Own district routes, soft funnels, event staging, and state changes.
+- **Narrative designer:** Own anchor/relationship branches, NPC perspectives, human action/dialogue, consequence reactions, and emotional pacing.
+- **Level designer:** Own district routes, mechanic affordances, pressure states, event staging, and consequence-compatible state changes.
 - **Technical art:** Own state variants, characters, crowds, and cinematic budget.
-- **QA:** Verify every required concept has more than one carrier and no required carrier is optional-only.
+- **QA:** Verify every required obligation remains reachable from every legal mechanic/local outcome and no required carrier is optional-only or success-only.
 
 ### Player Experience
 
@@ -640,7 +648,7 @@ The player repeatedly returns to a familiar home base while the district changes
 - Misconception Graph supplies diagnostic choices and clarifications.
 - Character Cards constrain dialogue.
 - World State carries environmental and relationship changes.
-- AI Director selects optional order and support within the fixed spine.
+- OutcomePolicy resolves mechanic results; AI Director selects optional order, consequence-consistent carriers, and support within the fixed historical spine.
 
 ### Implementation Notes — High Level
 
@@ -662,7 +670,7 @@ A Chapter cannot enter asset production until its design package passes:
 **Anchor:** Abigail Mercer — Printer  
 **District:** Print shop, market/Faneuil Hall approach, King Street and Customs House, Old South Meeting House approach, Griffin’s Wharf, harbor frontage  
 **Mission Days:** Stamp Act; Boston Massacre; Tea Party; Port Closure  
-**Signature treatment:** The print-delivery Job composes Dialogue Inquiry, Observation, Evidence Selection, Source Evaluation, and Cause/Consequence interactions while physically carrying changing arguments through the same district. It adds no new engine verb.
+**Signature treatment:** The print-delivery Job composes occupational press work, object protection, contextual traversal, consequential handoffs, brief human exchange, evidence handling, and Diegetic Construction while physically carrying changing arguments through the same district. It uses the reusable core mechanic families rather than a Chapter-specific minigame.
 
 ### Edge Cases
 
@@ -688,9 +696,9 @@ Every Mission Day contains:
 3. **Job:** Receive one believable work obligation.
 4. **Exploration:** Move under player control through the compact district.
 5. **Living Historical Encounters:** During authored traversal windows, experience selected short interruptions or deliberate silence.
-6. **Required/optional interactions:** Complete three to five meaningful curriculum/story interactions, separated by traversal.
+6. **Required/optional actions:** Complete three to five meaningful mechanical, curriculum, character, or story actions integrated with traversal and work.
 7. **Historical Event:** Witness or participate peripherally in one fixed event.
-8. **Archive Sync:** Preserve one interpretation after a meaningful inflection point.
+8. **Archive Sync moments:** Preserve the required first-understanding interpretations and prior-day reassessments after meaningful inflection points. Day 1 uses one question per Sync; Day 2+ may group up to three short questions in a Sync.
 9. **Return:** Rejoin the anchor character and close the work loop.
 10. **End Day:** Commit world, relationship, curriculum-exposure, and learner evidence state.
 
@@ -700,9 +708,9 @@ flowchart LR
     anchor --> job[Job]
     job --> explore[Explore]
     explore --> living[Living Encounters or Silence]
-    living --> interact[3 to 5 Required or Optional Interactions]
+    living --> interact[3 to 5 Required or Optional Actions]
     interact --> event[Fixed Historical Event]
-    event --> sync[One Archive Sync]
+    event --> sync[Required spaced Archive Sync moments]
     sync --> returnNode[Return to Anchor]
     returnNode --> endDayNode[End Day]
 ```
@@ -710,13 +718,13 @@ flowchart LR
 **Reference cadence**
 
 - One primary Job.
-- Three to five meaningful interactions.
-- Two to four authored Living Encounter slots; every normal certified Mission Day presents two to four short encounters when sufficient support-equivalent content is legal. A slot may resolve to silence only as surplus capacity or under a declared `quiet_exception_id`.
+- Three to five meaningful actions.
+- Two to four authored Living Encounter slots. A normal Mission Day presents zero to three selected encounters, targets one to two, and may resolve any slot to silence when interruption would feel artificial. The Chapter—not each day—must still pass its declared cadence, perspective, mechanic, and replay-diversity gates.
 - One primary Historical Event.
-- One required Archive Sync.
+- One first-understanding question per new gated concept, delivered through spaced Sync moments; Day 2+ may group up to three questions per Sync.
 - One return scene.
-- One meaningful traversal, generally 5–20 seconds, between major interactions.
-- Typical duration: 12–20 minutes.
+- Repeated meaningful traversal/actions sized by route pressure and Job need; no fixed duration may reduce traversal to connective walking.
+- Typical duration: 15–30 minutes; a learning-dense foundation day may intentionally use the 25–30 minute end.
 - Chapter total: three to five Mission Days.
 
 Mission Days are historical episodes, not literal consecutive twenty-four-hour periods. The next Mission Day may occur hours, months, or years later. The opening clearly states the date and shows what changed.
@@ -729,30 +737,30 @@ A Chapter-scale continuous rhythm would compress years of causation into one imp
 
 The repeatable shape creates security; the historical content creates surprise. The player knows they will return to Abigail, but does not know what Boston will look like the next time.
 
-Each day alternates:
+Each day sustains:
 
-> experiencing history → living in history → experiencing history
+> work → pressure → decision → execution → consequence → historical action → reflection
 
-Authored interaction is followed by enough traversal and ambient life to restore agency and prevent a dialogue conveyor belt.
+Dialogue and observation support that loop; they do not replace it. Quiet travel and ambient life preserve rhythm without being used to “restore” agency that a prior passive scene removed.
 
 ### Responsibilities
 
-- **Mission designer:** Own objectives, route, interaction order windows, event timing, Sync placement, and return.
+- **Mission designer:** Own objectives, reusable mechanic sequence, route/action windows, local outcomes, event timing, Sync placement, and consequence-state return.
 - **Anchor writer:** Bookend the day without summarizing it like a teacher.
-- **Level design:** Provide natural traversal and multi-channel guidance.
-- **World State Manager:** Load the correct date-state and commit the end state.
+- **Level design:** Provide natural traversal, readable affordances, alternate approaches, pressure states, and multi-channel guidance.
+- **World State Manager:** Load the correct date-state and commit mechanic, Job, object, relationship, event, and end states.
 - **Event Manager:** Validate, lock, and orchestrate the historical event; Runtime Executor presents its media.
-- **AI Director:** Choose among eligible optional interactions and variants; it cannot omit the day’s spine.
+- **AI Director:** Choose among eligible optional actions, encounters, consequence-consistent carriers, and silence; it cannot choose mechanic results or omit due obligations/history.
 
 ### Player Experience
 
-The player starts with a concrete task. They remain in control while walking, looking, and choosing whether to ask or follow. At the defining historical moment, a short cinematic may take control. The Archive captures one thought, then the player returns “home.”
+The player starts with a concrete Job, performs its work, selects and executes routes, handles objects, makes commitments, and lives with local outcomes. During the defining historical moment, only record-conflicting actions lock; non-conflicting movement, aid, protection, and viewpoint actions remain where supportable. Reflection occurs through the Job work product when possible before the player returns home to a consequence-specific response.
 
 ### System Interactions
 
 - Date-state selects environment, crowds, NPC positions, ambient subtitles, and available scenes.
-- Job objectives open route-specific interactions.
-- Event prerequisites consume required Scene/ActionSpec completions and committed RequiredCarrierContracts—never Living Historical Encounter completion or elapsed time.
+- Job/object/outcome state opens route-specific mechanics, actions, consequences, and carriers.
+- Event prerequisites consume required Scene/ActionSpec completions, committed RequiredCarrierContracts, and the authored **activity-clock state** for time-locked fixed events—never Living Historical Encounter completion or real-world elapsed seconds.
 - Archive Sync becomes pending only after its authored historical and evidence threshold.
 - End Day writes a checkpoint and unlocks the next date-state.
 
@@ -760,23 +768,24 @@ The player starts with a concrete task. They remain in control while walking, lo
 
 Required progression is state-based:
 
-- No event starts because five minutes elapsed.
+- No event starts because five real-world minutes elapsed. A time-locked event starts when authored interactions advance the activity clock to its fixed boundary; traversal alone never advances that clock.
 - No Archive Sync opens because three dialogues played unless the authored threshold explicitly requires those evidence carriers.
 - An event can have an earliest and latest eligible point.
 - When a required event reaches its latest point, optional actions leave the eligible set.
+- If an active ActionSpec crosses the fixed boundary, it reaches its next declared safe phase/terminal checkpoint and commits its authored complete/partial/interrupted mapping before the mandatory closure/event action begins; the Event Manager never tears an interaction at an undefined frame.
 
-Normal gameplay conversations use medium shots, work animations, gestures, and subtitles. Full facial performance and lip sync are reserved for authored cinematics and selected anchor close-ups.
+Normal gameplay keeps player agency and work active around brief human exchanges. Full facial performance and lip sync are reserved for authored historical moments and selected anchor close-ups.
 
 ### Boston Example
 
-On 16 December 1773, Abigail asks the player to carry the afternoon edition and a meeting notice toward Old South Meeting House. The player hears Thomas discuss regulated tea trade, reads an authenticated customs notice representing legal authority, and hears a Loyalist shopkeeper warn against mob action. People leave the meeting; a smaller group proceeds to the ships, and the player follows under soft guidance to Griffin’s Wharf. The Tea Party plays as a locked historical event. After control returns, one Archive Sync asks which accumulated factor best explains why protest escalated that night. The player returns to a darkened print shop where Abigail quietly sets tomorrow’s type.
+On 16 December 1773, the player prepares and routes meeting print, negotiates or executes consequence-sensitive handoffs, moves through the Old South overflow, sees Samuel Adams and other documented figures act publicly, protects the meeting decision through a moving crowd, and performs non-conflicting actions while the tea destruction remains fixed. Back at the press, the player sets the causal update as an embedded Sync from the evidence that survived.
 
 ### Edge Cases
 
 - **Player wanders:** Ambient life continues, route cues escalate, a companion waits or reacquires, and an Archive Assist offer may appear after 30 seconds; the route is revealed only after player acceptance.
 - **Player misses an optional interaction:** The required concept remains available through its authored fallback carrier.
 - **Player refuses a required Sync:** It may be deferred until the current conversation or traversal ends, then becomes required before End Day.
-- **Player quits:** Resume at the latest interaction checkpoint with event and Sync locks restored.
+- **Player quits:** Resume at the exact mechanic phase or committed local outcome with pinned uncertainty, object/Job state, and event/Sync locks restored; no reroll or consequence erasure is legal.
 - **Player reaches an event trigger too early:** The world supplies a believable hold scene; the event remains ineligible until prerequisites are met.
 
 ---
@@ -787,95 +796,122 @@ On 16 December 1773, Abigail asks the player to carry the afternoon edition and 
 
 ### Purpose
 
-The gameplay loop defines what the player does from second to second and prevents curriculum delivery from becoming a passive film or visible test.
+The gameplay loop defines what the player does from second to second. Project Archive is a consequential historical RPG, not a wrapped slideshow: the player performs plausible work, moves through physical pressure, makes human decisions, attempts actions that may not succeed, and lives with local consequences while required history and learning remain guaranteed.
 
 ### How It Works
 
 The loop is:
 
-> **Walk → Watch → Talk → Choose → Think → Archive → Repeat**
+> **Work → Move → Notice → Decide → Act → Face Consequences → Adapt → Reflect**
 
-**Walk**
+**Work**
 
-- Move directly through a compact district.
-- Follow people and environmental cues rather than permanent waypoint arrows.
-- Use one contextual interact input and one optional Archive Assist input.
-- Enter authored traversal windows in which a Living Historical Encounter or deliberate silence may be selected.
-- No combat, platforming, crafting, inventory management, skill tree, collectibles, or reputation system.
-- Jumping is omitted unless a later expansion provides a recurring, curriculum-relevant use.
+- Perform the cover identity's job through reusable contextual mechanics: set type, ink and pull a press, carry and protect documents, inspect a proof, make a handoff, sort competing accounts, or complete an era-appropriate equivalent.
+- The occupation is mechanically useful. It is not a costume wrapped around conversations.
+- Work products contain authentic or reviewed evidence, so handling the job can also expose history without an NPC lecture.
 
-**Watch**
+**Move**
 
-- Observe ambient labor, crowds, documents, public arguments, environmental change, and short historical cinematics.
-- Important observations are framed by composition, sound, motion, and proximity.
-- Observation can teach without requiring immediate input.
+- Navigate compact historical districts through streets, crowds, interiors, alleys, yards, low roofs, scaffolds, carts, fences, and other historically reviewed geometry.
+- Contextual traversal may include climbing, vaulting, balancing, squeezing through gaps, dropping, hiding, blending, timing movement, protecting a carried object, and choosing between speed, visibility, and risk.
+- Movement mechanics recur across Chapters with cover- and period-specific applications; they are not one-off spectacle buttons.
+- Combat is outside the canonical core. Contextual traversal and evasion are core.
 
-**Talk**
+**Notice**
 
-- Enter short, authored conversations.
-- Select what to ask, whether to follow, or how to respond.
-- Continue moving during many conversations.
-- Hear profession-grounded perspectives rather than exposition from interchangeable NPCs.
+- Read newspapers, posters, broadsides, maps, legal forms, shop signs, and changes in the environment.
+- Overhear short human exchanges and notice what people are doing before deciding whether to engage.
+- Information lives first in the world and the work. NPCs speak from immediate wants, incomplete knowledge, and relationships; they do not deliver disguised textbook paragraphs.
 
-**Choose**
+**Decide**
 
-- Make two or three bounded dialogue choices; a Living Historical Encounter may expose a fourth control when it is an ordinary route/action option rather than another spoken response.
-- Affect route, interaction order, dialogue variant, and the evidence personally encountered.
-- Never alter a fixed event or ending.
+- Make choices with competing reasons: fast or concealed, honest or evasive, protect the delivery or help someone, trust a person or verify the claim, hand over an item openly or find another route.
+- Options must be materially distinct and plausible. Filler choices, fake choices, and “listen or leave” menus are prohibited.
+- Dialogue becomes a decision when it changes trust, access, information, obligation, or consequence; otherwise it remains brief ambient character behavior.
 
-**Think**
+**Act**
 
-- Predict, distinguish causes, attribute perspectives, assess sources, sequence events, or organize evidence.
-- Most thinking interactions last under 20 seconds.
-- Open-ended reasoning is reserved for Debriefs, Reviews, and rare earned conversations.
+- Carry out the chosen approach through player mechanics rather than selecting a sentence that says the character did it.
+- An attempt is not a guarantee. Ducking out of sight can still fail if a watcher already has line of sight; a hurried climb can spill a bundle; waiting can miss a handoff; a crowd can close a route.
+- Resolution uses authored mechanics, current World State, player execution, and deterministic per-attempt uncertainty. Runtime never invents an outcome.
 
-**Archive**
+**Face Consequences**
 
-- Complete one brief Archive Sync at a historical inflection point.
-- Revisit an optional Archive Memory when useful.
-- Enter a longer Archive environment only at chapter and Season boundaries.
+- Local outcomes persist: a delivery may arrive, arrive late, be damaged, be inspected, or fail; an NPC may trust, resent, remember, refuse, relocate, or offer a later route; a public action may make the player more or less visible.
+- The game does not immediately erase a result, restore a lost prop by magic, or pretend every choice succeeded.
+- Consequences may reshape the remaining Job, scenes, dialogue, handoffs, and end-of-day work. They never change recorded historical events, dates, participants, or outcomes.
 
-**Repeat**
+**Adapt**
 
-- Return to movement immediately.
-- Encounter the next authored opportunity after a meaningful traversal.
-- Preserve variation through ReplayProfileState exposure history and a deterministic per-attempt RunVariationContext.
+- World State commits what actually happened. The Scene Graph exposes only authored continuation branches consistent with those consequences.
+- Event Manager guarantees a legal path forward. AI Director chooses among eligible authored opportunities and may select silence.
+- Curriculum Graph tracks obligations, not one mandatory presentation route. If a consequence makes one required carrier unreachable, an authored contract-equivalent carrier becomes due through the new world path.
+- Adaptation never reverses the player's consequence merely to deliver a lesson. It reroutes the learning through the consequence.
+
+**Reflect**
+
+- Historical reasoning is embedded in a consequential job action whenever possible: set a defensible headline, choose which evidence to print, annotate a route map, organize a dispatch, or justify a handoff.
+- Archive Sync remains available when a concise System intervention is the clearest form, but it is not the automatic ending of every important beat.
+- Open-ended reasoning is reserved for moments whose evidence and stakes support it.
+
+**Replay**
+
+- Encounter different complications, outcome branches, routes, people, and moments of silence under a fresh deterministic RunVariationContext.
+- Preserve fixed historical truth and required learning across the variation.
+- Make exact experiential repetition practically rare through authored possibility, not arbitrary noise.
 
 ### Design Philosophy
 
-The player should feel alternation, not interruption. Walking provides ownership and atmosphere; interactions provide authored meaning; cinematics give fixed history the stage; Archive moments preserve thought without becoming the dominant fiction.
+The player learns because historical knowledge is needed to understand and complete meaningful action. Mechanics, story, and curriculum must point in the same direction.
+
+Uncertainty must feel causal rather than random. The player may not know whether an attempt will work, but the result must make sense afterward from visible conditions, prior state, timing, and execution. Not every route contains a complication; ordinary work and deliberate silence keep the world from behaving like a slot machine.
+
+Player agency changes lived experience and local consequences, not historical truth. Learning invariance guarantees the floor; it does not flatten the game.
 
 ### Responsibilities
 
-- **Gameplay design:** Keep the verb set small and legible.
-- **Level design:** Make movement itself sufficient to find the next beat.
-- **Narrative:** Make dialogue choices sound like human participation.
-- **Curriculum:** Assign a reasoning purpose only where enough evidence exists.
-- **AI Director:** Select the best legal beat and sometimes select silence.
+- **Gameplay design:** Build reusable occupational, traversal, evasion, object-handling, and diegetic-reasoning mechanics.
+- **Level design:** Author routes with readable differences in speed, exposure, mechanical demand, and consequence.
+- **Narrative:** Write concise human behavior around wants and pressure; put exposition into evidence, environment, and work where plausible.
+- **Curriculum:** Bind required learning to multiple action-compatible carriers and certify their equivalence.
+- **World State / Scene Graph:** Persist outcomes and expose consequence-consistent continuations.
+- **AI Director:** Select the best legal authored opportunity or silence without undoing committed consequences.
+- **Accessibility:** Supply agency-preserving equivalents for every required mechanic and route.
 
 ### Player Experience
 
-Within two minutes, a player should have moved, heard a useful ambient line, made one low-cost choice, and seen the next point of interest. Within one Mission Day, the player should have experienced all seven verbs without feeling that the game changed modes.
+Within two minutes, the player should have performed useful work, moved under their own control, learned something from the world, and made one decision with a visible result. Every Mission Day must contain at least one sustained mechanical sequence, at least two consequential decisions, and one historical-reasoning action embedded in the Job. A Mission Day that could be reproduced as a sequence of videos and dialogue menus fails design review.
 
 ### System Interactions
 
-- Movement enters Scene Graph trigger volumes.
-- Traversal windows expose eligible Living Historical Encounter ActionSpecs.
-- Observation completion logs evidence exposure.
-- Dialogue and reasoning choices update learner evidence.
-- Historical events lock conflicting inputs.
-- Archive Syncs consume their prompt once and return control.
+- Player inputs and mechanic results produce typed ExecutionProgress and ExecutionResult values.
+- World State tracks carried-object condition, visibility/attention state, route condition, Job-objective outcomes, NPC consequences, and committed local outcomes.
+- Traversal windows expose eligible Living Historical Encounter ActionSpecs or deliberate silence.
+- Scene Graph maps every declared terminal outcome to an authored continuation and, where needed, a contract-equivalent carrier route.
+- Learner Model consumes only declared evidence from valid reasoning actions; movement skill, route preference, and failure never imply understanding.
+- Historical events lock only inputs that would conflict with the fixed record.
 
 ### Implementation Notes — High Level
 
-The default control state is free movement. Control changes only through explicit, authored states:
+The default control state is free movement with contextual traversal and work inputs. Control changes only through explicit, authored states:
 
-1. **Free movement:** Full character and camera control.
-2. **Soft guidance:** Full movement with an NPC lead, environmental funnel, and optional objective text.
-3. **Cinematic control:** Movement locked for a short fixed event; camera and skip/accessibility behavior are authored.
-4. **Archive overlay:** Locomotion pauses; ambient simulation remains visible but authored progression pauses.
+1. **Free movement:** Full character, camera, contextual traversal, and object-state control.
+2. **Focused mechanic:** A brief occupational, traversal, evasion, handoff, or diegetic-reasoning interaction with declared outcomes.
+3. **Soft guidance:** Full movement with environmental cues, an NPC lead, and optional objective text.
+4. **Crowd / pressure state:** Movement remains player-controlled but speed, space, visibility, and available exits respond to authored World State.
+5. **Historical lock:** Only conflicting actions are disabled during a fixed event; camera and skip/accessibility behavior are authored.
+6. **Archive overlay:** Locomotion pauses only when required for legibility; ambient simulation may continue while progression waits.
 
 Unexpected control seizure is prohibited. A player action or clearly staged event must precede every cinematic lock.
+
+**Outcome-resolution contract**
+
+- Every consequential mechanic declares its input window, readable conditions, deterministic resolution function, legal terminal outcomes, World deltas, continuation nodes, and accessibility equivalents.
+- Hidden uncertainty may select among historically and causally valid outcomes only after player execution and World State are considered. It uses the pinned RunVariationContext and a domain-separated deterministic rank; it is reproducible for QA and resume.
+- The player is never shown fake precision or a success percentage unless the fiction supplies one.
+- After an unexpected result, animation, environment, or dialogue must make the cause legible.
+- Required learning cannot depend on mechanical success. A failed action may change which carrier delivers the same RequiredCarrierContract and may create a harder or different local situation.
+- Accessibility equivalents preserve the decision, information requirement, consequence range, and sense of agency. They may alter timing, input sequence, camera motion, or motor precision without being treated as an easier intellectual path.
 
 **Archive Assist contract**
 
@@ -889,14 +925,15 @@ Unexpected control seizure is prohibited. A player action or clearly staged even
 
 ### Boston Example
 
-The player leaves Abigail’s shop with a paper bundle, walks across the market, watches a stamped notice being argued over, asks Thomas why his customers are angry, chooses to continue the delivery or listen longer, predicts what enforcement may do to the protest, completes a ten-second Sync, and walks back through a changed crowd.
+The player helps pull a Stamp Act notice from Abigail's press, carries three items into a city moving toward protest, and chooses routes based on speed and visibility. A watcher may recognize the anti-Stamp handbill bundle despite an attempted concealment; a crowd surge may force the player to climb a cart and cross a low shed roof or protect the remaining work through the street. A missed handoff changes who receives the handbills and how Abigail responds, but an authored equivalent carrier still delivers the representation obligation. At return, the player sets a sourced headline from the evidence they preserved; that work action functions as the day's formative synthesis.
 
 ### Edge Cases
 
-- If a player supplies no input, NPCs wait, repeat one natural prompt, and then idle; the game does not fail the mission.
+- If a player supplies no input, the world waits where plausible or advances only through an authored non-punitive timeout outcome; the game never invents player intent.
 - If accessibility settings slow reading, scene timers and cinematic transitions wait for the player.
 - If a student repeatedly opens Archive Assist, the route remains available without learner-state penalty.
 - Skipping a skippable cinematic marks it viewed for progression but does not count as concept understanding; a later required carrier still supplies the core content.
+- A local Job objective may fail or resolve imperfectly. Mission Day progression continues through an authored consequence branch; required learning and fixed history do not fail with it.
 
 ---
 
@@ -911,8 +948,8 @@ Onboarding teaches the small verb set, the controls, the Archive fiction, and th
 Onboarding is diegetic and embedded in the first synchronization and first Mission Day rather than delivered as a detached lesson. The fiction *is* the tutorial: an Archive Field Agent is being calibrated for their first insertion.
 
 1. **Profile setup first.** Before any fiction, the player selects an Accessibility and Input Profile: reading speed, captions, audio description, input method, and whether Archive Assist may auto-offer. This precedes historical content so every later primer already has a legal presentation form.
-2. **Just-in-time verb primers.** Each core verb from the gameplay loop (Walk, Watch, Talk, Choose, Think, Archive) is introduced exactly once, in context, the first time it is needed, with one short authored prompt, then never repeated.
-3. **The first intake doubles as a controls primer.** The opening Archive synchronization teaches movement, the contextual interact input, and the Archive Assist input as the player performs each for the first time.
+2. **Just-in-time mechanic primers.** Each reusable input family—movement, contextual traversal, occupational action, object protection/handoff, consequential choice, and Archive Assist—is introduced once in context the first time it is needed, then remains available in the Manual.
+3. **The first Job is the controls primer.** Boston Day 1 teaches movement by carrying paper through the shop, occupational interaction by pulling a printed sheet, contextual traversal during the delivery run, and evidence-based action when the player sets the end-of-day headline.
 4. **Persistent help.** A low-friction **Archive Manual** overlay is always available on request. It restates controls, the current objective, and accessibility options. It is a `PLAYER_REQUESTED` overlay like Archive Assist, emits no learner evidence, and never changes concept or misconception state.
 5. **Deterministic and offline.** All primers are authored `first_run_only` ActionSpecs. Nothing is generated at runtime; onboarding runs with no network and no runtime AI.
 6. **Not assessed.** Onboarding carries no scored item and no required curriculum obligation. It may model a verb but can never be the required carrier for a concept.
@@ -931,7 +968,7 @@ Teach by doing, and teach the least. A student learns to move by moving and to t
 
 ### Player Experience
 
-A student launches, chooses how they read, hear, and control the game, then wakes inside the Archive. Within a couple of minutes they have moved, spoken to Abigail, made one low-stakes choice, and started real work — without having read a wall of instructions.
+A student launches, chooses how they read, hear, and control the game, then wakes inside the Archive. Within a couple of minutes they have pulled a sheet from the press, moved a drying rack, read the work in their hands, and started a real delivery—without having read a wall of instructions.
 
 ### System Interactions
 
@@ -951,7 +988,7 @@ A student launches, chooses how they read, hear, and control the game, then wake
 
 ### Boston Example
 
-At the 1765 synchronization the player picks captions and an input method, then Abigail presses a bundle of newspapers into their hands. A one-line prompt shows the move control as they step toward the door; the interact prompt appears at the first delivery; Archive Assist is introduced once when the route first forks; the first Sync explains the Archive verb. By the second delivery, no primers appear and only the Manual remains on request.
+At the 1765 synchronization the player picks captions and an input method. Abigail calls for help before offering exposition: the player catches a sheet, aligns it on the rack, and reads the Stamp Act notice while handling it. One-line prompts teach movement and contextual work; the first blocked route teaches climb/vault or its selected accessibility equivalent; Archive Assist appears once when the player must weigh routes. By the second delivery, primers disappear and only the Manual remains on request.
 
 ### Edge Cases
 
@@ -971,13 +1008,13 @@ Auto-Save and Resume guarantee that a student can stop at any moment — a bell 
 ### How It Works
 
 1. **Continuous auto-save, no manual slots.** The game saves itself; there is no save button and no save-file menu. The player never manages persistence.
-2. **Save points.** State commits at every interaction checkpoint, every Archive Sync boundary, every Mission Day start and end, and every event checkpoint — consistent with the checkpoints already defined in Sections 6, 28, and 37.
+2. **Save points.** State commits at mechanic phases, deterministic outcome boundaries, object/Job/local-consequence transactions, Archive Sync boundaries, Mission Day start/end, and historical-event checkpoints.
 3. **One atomic composite.** A single per-player save composite (World State, Learner Model evidence, Replay profile, and attempt context) is committed atomically by Save/Resume under one transaction ID; authoritative revisions publish only after the commit succeeds.
 4. **Deterministic resume.** Resume restores the exact checkpoint, re-acquires event and Sync locks, and re-pins the immutable content package and RunVariationContext, so determinism and the practically non-repeating guarantee hold across online, offline, and resumed play.
-5. **Beat-level safety.** Quitting mid-encounter or mid-event resumes from that beat's checkpoint or safely restarts the beat; a partial historical outcome is never committed.
+5. **Beat-level safety.** Quitting mid-action resumes its exact mechanic phase under the same pinned OutcomePolicy/uncertainty or restarts only from a pre-outcome checkpoint with those same inputs. A committed local consequence never rerolls; a partial historical outcome is never committed.
 6. **Assessment integrity.** An in-progress scored item resumes on the same form without exposing correctness. An administration interrupted after response collection follows the existing invalidate-and-replace rule; quitting never yields a second scored chance.
 7. **Offline-first.** Auto-save works with no network. Telemetry is a separate idempotent outbox that syncs later and never blocks a resume.
-8. **Crash recovery.** On relaunch the game resumes from the last valid checkpoint; a corrupt save falls back to the last valid Mission Day checkpoint.
+8. **Crash recovery.** On relaunch the game resumes from the last valid transaction/recovery-journal checkpoint. It may fall back to Mission Day start only when no later committed consequence can be recovered; that attempt is explicitly restarted/invalidated rather than silently treating lost consequences as success.
 9. **Invisible to the player.** Saving is a silent backend operation. There is no save indicator, no saving animation, and no save/resume prompt. On launch the game simply continues from the last checkpoint; the student never sees or thinks about saving at all.
 
 ### Design Philosophy
@@ -998,7 +1035,7 @@ A student closes the laptop when the bell rings. Next class they reopen the game
 
 ### System Interactions
 
-- Interaction checkpoints, Mission Day boundaries, Sync boundaries, and event checkpoints trigger atomic commits.
+- Mechanic-phase, outcome, object/Job/consequence, Mission Day, Sync, and event checkpoints trigger atomic commits.
 - RunVariationContext and the package hash are re-pinned on resume for online/offline/resume selector parity.
 - Save-at-every-boundary signature equivalence is a standing validation requirement (Section 34).
 
@@ -1035,7 +1072,7 @@ Each Chapter uses one dense historical district composed of:
 
 - One anchor home base.
 - Three to six primary destinations.
-- Connecting streets, alleys, interiors, and sightlines.
+- Connecting streets, alleys, interiors, yards, low roofs, work structures, and sightlines.
 - One to four historical-event staging spaces, preferably reusing primary destinations and geometry across date states.
 - A living ambient population.
 - Several date-state variants of the same geometry.
@@ -1065,9 +1102,9 @@ Geometry is reused while state changes communicate history:
 - Ambient lines and occupations.
 - Anchor workplace condition.
 
-**Free-roam philosophy**
+**Systemic-route philosophy**
 
-The player is free to choose a route within the district. Most ambient people and props are non-interactive. Interactable content is deliberately conspicuous through behavior, eye-line, calling, staging, and sound.
+The player is free to choose and physically execute routes within the district. Each major objective has at least two authored approaches that differ meaningfully in speed, visibility, crowd exposure, occupational access, or mechanic demand. Most ambient people and props remain non-interactive, but route affordances are readable through shape, wear, movement, staging, and sound rather than glowing paint.
 
 **Gentle funneling**
 
@@ -1079,40 +1116,41 @@ Important events use at least three simultaneous hooks:
 - Job: the destination lies on or near the event path.
 - Environmental: temporary closure makes the meaningful route easiest.
 
-The irrelevant world remains alive. A baker may work and a cart may pass, but neither opens a meaningless minigame.
+The irrelevant world remains alive. A baker may work and a cart may pass, but neither opens a meaningless minigame. When a cart, ladder, stall, crowd, door, or roof is mechanically available, it has an in-world reason and participates in the current route or consequence.
 
 ### Design Philosophy
 
-> **The environment creates immersion. Interactions create learning.**
+> **The environment creates knowledge, pressure, and playable possibility; the player's actions turn them into experience.**
 
-The world is a historical set, not a systemic sandbox. A facade that sells Boston is more valuable than a room full of searchable barrels. A crowd that naturally turns the player’s head is more valuable than a glowing objective arrow.
+The world is a bounded systemic district, not an unlimited simulation and not a historical set. A facade that sells Boston is valuable; a readable yard, cart, stall, crowd gap, open window, or low roof that supports a plausible action is more valuable still. Selective interactivity must produce decisions and consequences rather than searchable clutter.
 
 ### Responsibilities
 
-- **Level design:** Topology, sightlines, route timing, soft funnels, event staging, and fallback access.
+- **Level design:** Topology, traversal affordances, sightlines, visibility, route timing, pressure states, event staging, and fallback access.
 - **Environment art:** Credible material culture and date-state variants.
 - **Crowd/audio teams:** Attention cues and living background loops.
 - **Historical review:** Architecture, signage, clothing, labor, and spatial claims.
-- **Gameplay:** Interactable affordance language and Archive Assist.
+- **Gameplay:** Contextual traversal, work, object-state, crowd, evasion, and affordance language.
 
 ### Player Experience
 
-The player can walk away from an objective and still see ordinary life. Within seconds, ordinary life points back toward the historical pressure: a baker mentions the harbor, nearby people turn toward bells, or Abigail’s runner appears at the end of the street.
+The player can leave the obvious route and still find coherent physical space, ordinary life, and another way forward. A market surge may close the street but open a stall-and-roof shortcut; a delivery seal may grant a door the crowd cannot use; a damaged bundle may force shelter under an awning and create a different handoff.
 
 ### System Interactions
 
 - World State selects environment-state bundles.
-- Event Manager activates temporary blockers, crowds, and cinematics.
-- Scene Graph tags primary, fallback, and ambient zones.
+- Event Manager activates temporary blockers, watchers, crowd pressure, mechanic opportunities, and historical locks.
+- Scene Graph tags primary, alternate, consequence, fallback, and ambient zones.
 - Living Encounter slots turn selected ordinary-life moments into short foreground ActionSpecs; unselected ambient life remains non-interactive.
 - AI Director may select one eligible attention hook; it does not redesign navigation.
-- Subtitle System renders ambient reinforcement without opening interaction.
+- Subtitle System renders ambient reinforcement without opening interaction. Any character speech occurring outside the player's active foreground dialogue is always accompanied by a speaker-anchored speech indicator and an attributed subtitle, so the source and content of every ambient line, bark, or crowd utterance is unambiguous by default. This speech indicator is visually distinct from the interaction affordance that marks an engageable character: a purely ambient speaker shows only the speech indicator, an engageable character that is also speaking shows both, and the player's current dialogue partner requires neither.
+- **Encounters are opt-in and proximity-gated; participant characters never traverse to force engagement.** An engageable character is anchored to an authored place on a natural route and signaled by a subtle in-world interaction affordance; nearing its zone may play a directional ambient bark that commits the player to nothing, and only entering its zone (plus any authored trigger condition) promotes it to a directly addressed foreground interaction. Routing wide or taking an alternate path legitimately avoids the encounter, and no required carrier may depend on an avoidable encounter. Character intent that would otherwise rely on subtle facial or gaze animation is expressed instead through spoken lines and body staging.
 
 ### Implementation Notes — High Level
 
-Ambient systems use authored loops and barks, not autonomous historical simulation. A Living Historical Encounter is an authored foreground promotion of a valid moment, not emergent AI behavior. Crowd state is a controlled presentation layer with explicit modes such as calm, curious, agitated, dispersing, and restricted.
+Ambient systems use authored loops and barks, not autonomous historical simulation. A Living Historical Encounter is an authored foreground promotion of a valid moment, not emergent AI behavior. Crowd state is a controlled mechanical and presentation layer with explicit modes such as calm, curious, compressing, surging, agitated, dispersing, and restricted; each mechanical mode declares locomotion, visibility, safety, and route effects.
 
-Navigation blockers must have in-world causes and may not trap the player. Archive Assist highlights a route briefly; it never auto-completes the job.
+Navigation blockers must have in-world causes. They may trap the player only inside a short authored pressure sequence with at least one legal player action and an agency-preserving accessibility equivalent. Archive Assist reveals information or an affordance; it never auto-completes the action.
 
 ### Boston Example
 
@@ -1124,6 +1162,7 @@ Boston’s playable circuit connects Abigail’s print shop, the market/Faneuil 
 - **Crowd cue is missed:** Audio, social, and job hooks remain.
 - **Ambient subtitle overload:** A channel budget limits simultaneous lines; required dialogue always wins.
 - **Historical location is uncertain:** Present only the level of spatial certainty supported by sources and document the reconstruction as interpretive.
+- **Traversal attempt fails:** Commit the declared local outcome—delay, noise, fall to a safe lower route, dropped/damaged work, or attention—then expose an authored continuation. Do not teleport the player to success.
 
 ---
 
@@ -1140,10 +1179,11 @@ Each Mission Day has one primary Job. A Chapter uses one coherent job family lin
 Good Jobs:
 
 - Move through several required locations.
-- Produce natural interruptions and conversation.
+- Produce natural mechanical pressure, interruptions, and human interaction.
 - Place the player near historical events without causing them.
 - Make the anchor character a credible supervisor.
-- Use simple contextual actions.
+- Use recurring occupational and traversal mechanics with multiple legal outcomes.
+- Produce a work product that can embody historical reasoning.
 - Continue to make sense as the world changes.
 
 Reference job families include:
@@ -1160,12 +1200,13 @@ A Job consists of:
 - One clear work product.
 - Two to four route objectives.
 - Two to four Living Historical Encounter slots.
-- Three to five required/optional curriculum or story interaction opportunities across the Mission Day.
-- One return condition.
+- Three to five required/optional mechanical, curriculum, or story opportunities across the Mission Day.
+- Declared condition, timing, custody, and delivery outcomes for Job-critical objects.
+- One or more authored return states reflecting what actually happened.
 
 ### Design Philosophy
 
-The Job is a narrative leash that the player accepts because it makes sense, not a list of chores. It should route the player through history while preserving local choice.
+The Job is the central gameplay system: it gives the player useful skills, something material to protect or produce, reasons to take risks, and consequences the world can remember. It routes the player through history without reducing the day to errands or conversations.
 
 The player never gathers arbitrary tokens, crafts unrelated items, or completes an ahistorical errand to unlock a fact.
 
@@ -1174,25 +1215,25 @@ The player never gathers arbitrary tokens, crafts unrelated items, or completes 
 - **Chapter designer:** Choose a job that reaches every required concept.
 - **Narrative:** Give the anchor a real reason to assign it.
 - **Level design:** Place objectives along a compact, legible route.
-- **Gameplay:** Keep work actions contextual and low-friction.
+- **Gameplay:** Make work tactile, readable, reusable, and capable of meaningful success, partial success, and failure outcomes.
 - **Curriculum:** Map each route objective to evidence carriers.
 
 ### Player Experience
 
-The player understands what to do in one sentence. The interesting part is what happens on the way.
+The player understands the goal in one sentence. The interesting part is how they attempt it, what the world does back, what condition the work arrives in, and how they finish the product at home.
 
 ### System Interactions
 
 - Job acceptance activates a Scene Graph route window.
 - Route windows expose date-valid Living Encounter slots without making encounter completion part of the Job requirement.
-- Objective completion updates World State.
-- Job props authorize access and identify the player to NPCs.
+- Objective outcomes update World State; completion is not the only legal result.
+- Job props have tracked custody and condition, authorize access, identify the player to NPCs, and may create risk.
 - Required event eligibility depends on meaningful objectives, not on collecting every optional conversation.
-- Return completion opens the day-end anchor scene.
+- Return state opens the matching day-end anchor and work-product scene.
 
 ### Implementation Notes — High Level
 
-Job verbs are reusable: carry, deliver, retrieve, compare, report, assist, observe, and return. Their presentation changes by profession.
+Job verbs are reusable: handle, operate, carry, protect, conceal, deliver, retrieve, compare, repair, report, assemble, and return. Their presentation changes by profession. Physical execution uses the core contextual mechanics rather than a bespoke minigame for every job.
 
 The UI shows a short current obligation only when needed. It avoids checklists of curriculum concepts.
 
@@ -1204,14 +1245,15 @@ Abigail gives the player three print-shop items:
 - A copy of Boston’s reviewed public instructions for the market route.
 - A legal proof for a clerk near the Customs House.
 
-Those deliveries expose merchant cost, public argument, and the legal effect of the Stamp Act before the day’s protest. The final task is simply “Return the ledger to Abigail.”
+Those deliveries expose merchant cost, public argument, and the legal effect of the Stamp Act before the day’s protest. The anti-Stamp handbill bundle has a timed rider handoff and tracked condition; the legal proof can be inspected, delayed, or damaged; the circular can draw Thomas into a consequential request. The final work product is to set and pull a defensible headline from the evidence the player preserved.
 
 ### Edge Cases
 
 - A player may deliver in either authored order when no historical prerequisite requires otherwise.
-- If a destination is temporarily blocked, an NPC or alternate handoff completes the same work purpose.
-- Losing or abandoning a prop is not simulated; contextual animation restores it at the next objective.
-- A Job never fails because the player chose an optional dialogue response.
+- If a destination is temporarily blocked, the player must execute an alternate route, wait and accept the cost, or trigger a declared handoff consequence; the world does not silently complete the work.
+- Losing, surrendering, damaging, or missing a handoff for a Job prop is simulated through bounded authored states. A replacement appears only when a character plausibly supplies one, and the original consequence remains recorded.
+- A Job objective may succeed, partially succeed, arrive late/damaged, or fail. No outcome may deadlock fixed history, required learning, or Mission Day completion.
+- Dialogue alone cannot arbitrarily fail a Job; a spoken commitment may create a real obligation whose later action and outcome matter.
 
 ---
 
@@ -1219,11 +1261,11 @@ Those deliveries expose merchant cost, public argument, and the legal effect of 
 
 ### Purpose
 
-The Living Historical Encounter System makes travel through historical districts feel spontaneous, inhabited, and replayable while remaining fully authored, historically fixed, and curriculum-safe.
+The Living Historical Encounter System makes travel through historical districts feel spontaneous, inhabited, historically revealing, and replayable while remaining fully authored, historically fixed, and curriculum-safe.
 
 The player should not feel that a city consists only of destinations connected by empty walking. On the way to a Job objective, ordinary life may interrupt: an inspection, argument, blocked route, changed meeting, fallen crate, customs check, rumor, bell, crowd, or unexpected work request.
 
-The player experiences spontaneity. The engine retains complete control.
+The player experiences an authored world whose exact pressures are not predictable. The engine retains deterministic authority and reproducibility; it does not guarantee the player's attempted action will succeed.
 
 ### How It Works
 
@@ -1236,19 +1278,24 @@ flowchart LR
     job[Job Objective] --> traversal[Meaningful Traversal]
     traversal --> resolve[Event Manager Resolves Eligible Encounters]
     resolve --> director[AI Director Ranks Encounter or NO_ACTION]
-    director --> encounter[20 to 60 Second Authored Encounter]
+    director --> encounter[20 to 90 Second Authored Encounter]
     director --> silence[Uninterrupted Travel]
-    encounter --> resume[Resume Job Route]
-    silence --> resume
+    encounter --> outcome[Authored Local Outcome]
+    outcome --> consequence[Outcome-Specific Continuation]
+    silence --> continueRoute[Continue Current Route]
+    consequence --> checkpoint[Next Compatible Historical Checkpoint]
+    continueRoute --> checkpoint
 ```
 
 Each encounter:
 
-- Lasts approximately 20–60 seconds.
-- Uses existing interaction types and controls.
-- Has one clear beginning, short complication, and convergent end.
-- May alter local route, dialogue, pacing, or temporary NPC state.
-- Never changes a Historical Event, required curriculum, Mission Day outcome, or Chapter progression.
+- Lasts approximately 20–90 seconds.
+- Uses existing occupational, traversal, evasion, object-handling, social, and reasoning mechanics.
+- Has one clear setup, a short complication, two or more plausible actions when a decision is offered, and declared terminal outcomes.
+- May alter route, carried-object condition, Job-objective result, visibility, timing, dialogue, access, relationship, pacing, or persistent local NPC/world state.
+- May branch into an outcome-specific continuation rather than reconverging immediately; it must rejoin before the next incompatible fixed historical deadline.
+- Never changes a Historical Event, required curriculum, Chapter order, or completion availability.
+- Always reveals one historically reviewed lived perspective, affiliation, material condition, or institution through what the player must notice and do. A generic obstacle with no historical meaning is not a Living Historical Encounter.
 - Is authored, voiced, animated, reviewed, tagged, and packaged before release.
 - Is selected by `action_id`; no encounter content is generated at runtime.
 
@@ -1260,6 +1307,7 @@ Event Manager computes encounter legality from:
 - Exact historical date/state.
 - Player location and route direction.
 - Current Job and objective.
+- Carried-object custody/condition, visibility/attention, timing, route pressure, and prior mechanic outcomes.
 - World and NPC state.
 - Completed required content.
 - Active concept or misconception state only when an encounter offers approved optional reinforcement.
@@ -1277,6 +1325,7 @@ An encounter is removed before Director ranking if it would:
 - Make required learning depend on optional content.
 - Conflict with an active emotional, Archive, or cinematic beat.
 - Create an inaccessible route or input demand.
+- Produce a terminal outcome with no authored continuation or no contract-equivalent required-learning path.
 
 If no eligible encounter improves the journey, `NO_ACTION` remains valid. Silence is intentional direction, not system failure.
 
@@ -1316,6 +1365,8 @@ Authored examples:
 - A musician or public performer gathers a small crowd.
 
 Civilian encounters may build place and pacing without emitting any learning evidence.
+
+Even when unscored, every civilian encounter declares a **perspective payload**: whose life is visible, what historically grounded pressure or routine the action reveals, and how the mechanic expresses it without a lecture. A dropped dockside crate can reveal wage labor, crowding, or trade dependence; “a crate fell” by itself is insufficient.
 
 **Political Tension**
 
@@ -1367,19 +1418,23 @@ Authored examples:
 
 Environmental presentation cannot imply an unapproved historical event.
 
-#### Choice and Convergence
+Weather or environment alone is not an encounter. It becomes one only when it changes historically meaningful work, access, risk, or perspective—for example, rain threatening political print circulation or a frozen street changing soldier/civilian movement.
 
-Most encounters provide two to four ordinary actions:
+#### Action, Uncertainty, Consequence, and Convergence
+
+When an encounter calls for a decision, it provides two to four materially different, plausible actions such as:
 
 - Cooperate.
-- Explain the Job.
-- Ask one relevant question.
+- Explain or prove the Job.
+- Conceal, surrender, protect, or reroute a carried object.
+- Attempt a contextual climb, vault, blend, timed crossing, or crowd maneuver.
+- Help another person at a cost to time, visibility, or the Job.
 - Wait.
 - Remain quiet.
-- Take an approved side route.
+- Take a faster exposed route or a slower concealed route.
 - Continue working.
 
-Four controls are permitted when at least one is a movement/route action; no more than three are spoken responses. Choices remain plausible for the player’s cover and relationship.
+Four controls are permitted when at least one is a physical route/action control; no more than three are spoken responses. Choices remain plausible for the player's cover, current possessions, observed information, and relationship.
 
 Choices may change:
 
@@ -1387,7 +1442,9 @@ Choices may change:
 - Encounter duration.
 - Which approved perspective appears.
 - Immediate route.
-- Temporary NPC activity.
+- Carried-object custody and condition.
+- Timing, visibility, attention, access, and objective status.
+- Persistent local NPC activity, trust, memory, or later availability.
 - Which equally valid encounter follow-up becomes eligible.
 
 Choices never change:
@@ -1398,15 +1455,34 @@ Choices never change:
 - Chapter/Season order.
 - Summative assessment standard.
 
-Every encounter converges into a declared resume node. Encounter failure cannot fail the Job.
+Every terminal outcome maps to a declared continuation node. Some outcomes may converge immediately; consequential branches may remain distinct until a later historical-state checkpoint. A failed encounter action may fail or degrade a local Job objective. It cannot deadlock the Mission Day, erase the consequence, alter fixed history, or prevent the exact RequiredCarrierContracts due at the next deadline.
+
+**Deterministic uncertainty**
+
+- An action may have more than one legal outcome only when the authored world supports genuine uncertainty.
+- Resolution considers current World State, visible conditions, player input/performance, Accessibility and Input Profile treatment, and a domain-separated deterministic outcome rank derived from the pinned RunVariationContext.
+- Mechanical execution and visible conditions outrank seeded uncertainty. A perfect concealment cannot fail because of a seed when no observer has a plausible line of sight; ducking cannot guarantee success when a watcher already recognized the player.
+- The result is unpredictable to the player but reproducible for QA, save/resume, online/offline parity, and replay validation.
+- Outcome distributions and all selector inputs are declared in ReplayValidationManifest. Runtime AI never estimates success or invents consequences.
+- Surprise must become legible after resolution: the watcher was already facing the alley, the loose tile broke, the rider left when the bell rang, or the crowd closed the gap.
+
+**Outcome calibration**
+
+- The cover identity is competent at ordinary work. A context-suited approach with valid execution normally succeeds or partially succeeds.
+- For every certified ordinary-risk action, the declared probability mass of success plus useful partial success under competent scripted execution is at least 0.70. A lower value requires an explicitly signaled high-risk state, historical/safety review, and a non-punitive alternate path.
+- Failure is a meaningful minority outcome, not the Director's default tool for creating drama. Outcome policies cannot secretly target a learner, accessibility profile, or previous assessment response.
+- Different actions need not share odds. Waiting may reliably lose time; an open handoff may reliably cause recognition; a careful roof crossing may usually work unless rain, damage, or line of sight changes the state.
+- QA reports outcome distributions by action, World-state stratum, and accessibility treatment. Aggregate success cannot hide an unfair or constantly failing route.
 
 #### Practical Replayability
 
 The authored encounter bank is finite, so “infinite replayability” is a product aspiration rather than a literal mathematical claim. The enforceable target is **practically non-repeating, combinatorial play**:
 
 - Each Chapter authors approximately 20–40 encounter families.
-- A normal Chapter presents approximately 6–20 encounters across three to five Mission Days; the four-day Boston reference presents 8–16.
+- A normal Chapter presents approximately 4–12 encounters across three to five Mission Days; the four-day Boston reference presents 4–10. Individual days may remain quiet.
 - Route order, eligible date-state, encounter family, approved variant, player action, adaptive line, and silence choices combine into a much larger playthrough space.
+- Variety must be experiential, not cosmetic: encounter portfolios rotate perspective, affiliation, occupation, stakes, mechanic family, route topology, object risk, outcome shape, intensity, and silence. Renaming the same blocked-cart decision does not create a new experience cluster.
+- Across the complete game, each Chapter publishes a category/perspective/mechanic matrix and limits repeated mechanic-pressure patterns within and across adjacent Mission Days.
 - A cross-run ReplayProfileState tracks family, variant, semantic-cluster, and sequence exposure. A per-attempt RunVariationContext supplies a fresh deterministic variation seed.
 - Unseen or least-recent experience clusters are preferred inside authored utility-equivalence classes; replay state never outranks history, accessibility, required progression, or educational priority.
 - The seed never changes required content, historical events, assessment items, or educational support priority.
@@ -1433,11 +1509,11 @@ The build model-counts the complete versioned executable transition relation: se
 
 ### Design Philosophy
 
-History was lived through ordinary disruptions as well as famous events: inspections, rumors, arguments, closures, changing schedules, military or customs presence, work demands, and everyday inconvenience. Project Archive recreates that texture without pretending to simulate an uncontrolled city.
+History was lived through ordinary disruptions as well as famous events: inspections, rumors, arguments, closures, changing schedules, military or customs presence, work demands, mistakes, bad timing, and other people's choices. Project Archive recreates that texture through a bounded authored simulation without pretending to simulate an uncontrolled city.
 
 The player should think:
 
-> “I wonder what will happen on the way there.”
+> “I wonder what will happen—and whether what I try will work.”
 
 They should not need to know that every possibility was authored.
 
@@ -1453,8 +1529,8 @@ The exact encounter-selection architecture has not been experimentally validated
 
 - **Chapter design:** Define encounter budget, categories, slots, convergence, and relationship to the fixed spine.
 - **Historical review:** Approve date, location, authority, occupation, material culture, and action plausibility.
-- **Narrative:** Author concise setups, choices, outcomes, and profession-first dialogue.
-- **Level design:** Supply safe trigger zones, alternate micro-routes, and resume nodes.
+- **Narrative:** Author concise setups, human choices, causal outcomes, and profession-first dialogue.
+- **Level design:** Supply readable traversal affordances, pressure states, alternate routes, outcome branches, and continuation nodes.
 - **Curriculum:** Confirm that optional reinforcement remains TEKS-aligned and never becomes a sole carrier.
 - **Event Manager:** Resolve hard eligibility, repetition limits, initiation owner, and locks.
 - **AI Director:** Rank legal encounter ActionSpecs or select `NO_ACTION`.
@@ -1471,7 +1547,7 @@ The player receives a clear Job and begins moving. A journey may remain quiet or
 - A messenger announces a location change.
 - A crowd debates a new paper.
 
-Twenty to sixty seconds later, the player is moving toward the same authored objective with history intact.
+Twenty to ninety seconds later, the player may be on a different route, late, noticed, carrying damaged work, or dealing with a changed handoff. History remains intact; the local experience does not reset.
 
 Across replays, the player recognizes the district and fixed historical events but discovers encounters, route variations, lines, and combinations they did not receive before.
 
@@ -1484,8 +1560,8 @@ flowchart TD
     anchor[Anchor Character] --> job[Receive Job]
     job --> travelA[Travel Window]
     travelA --> encounterA[Encounter or Silence]
-    encounterA --> requiredConversation[Required Conversation or Evidence]
-    requiredConversation --> travelB[Travel Window]
+    encounterA --> requiredAction[Required Action or Evidence]
+    requiredAction --> travelB[Travel Window]
     travelB --> encounterB[Encounter or Silence]
     encounterB --> event[Historical Event]
     event --> travelC[Post-Event Travel]
@@ -1500,19 +1576,24 @@ flowchart TD
 - Event Manager filters compiled encounter ActionSpecs.
 - AI Director ranks only the legal set.
 - Runtime presenters play approved media and return typed results.
-- Learner Model receives no understanding or misconception update from an ordinary encounter choice.
+- Learner Model receives no understanding or misconception update from movement skill or an ordinary encounter choice.
 - Living Historical Encounters never satisfy a RequiredCarrierContract. They may reinforce an obligation only after its required carrier is guaranteed elsewhere.
+- Living Encounter outcomes may change which authored required carrier becomes reachable or due; the encounter itself still cannot satisfy the obligation.
 
 ### Implementation Notes — High Level
 
 Each Chapter contains approximately 20–40 encounter families. Every family compiles into one or more ActionSpecs and declares:
 
 - `action_family_id` and executable `action_id` variants.
+- Reusable `mechanic_family_id` values, referenced `job_object_id` values, `outcome_policy_id`/version, exact `authored_terminal_outcome_id` values, and resulting `consequence_state_id` values where applicable.
 - Category and initiation owner.
 - Chapter, Mission Day, date, location, route direction, and slot tags.
 - Required World, NPC, Job, relationship, and progression state.
 - Historical provenance and prohibited states.
 - Setup, choice, convergence, and resume node.
+- Declared mechanic inputs, readable conditions, legal terminal outcomes, deterministic resolution inputs, World/Job deltas, consequence nodes, and latest convergence checkpoint.
+- Perspective payload: person/group/institution or material-life viewpoint, documented affiliation/certainty, historically reviewed proposition, mechanic expression, provenance, and prohibited overgeneralization.
+- Outcome-calibration stratum and competent-execution success/partial/failure mass.
 - Duration and pacing cost.
 - Recent-repeat cooldown and per-run maximum.
 - First-run/replay weighting.
@@ -1521,7 +1602,7 @@ Each Chapter contains approximately 20–40 encounter families. Every family com
 - Accessibility/input requirements.
 - Primary and typed fallback media/actions.
 
-The build emits one versioned **ReplayValidationManifest**, not a possibility-only asset count. It contains package/compiler/selector/encoder hashes; stable signature slot keys and runtime-instance mapping; every family, variant, experience cluster, variation-equivalence class, typed rank field, legal `NO_ACTION`, route/context/resume class, and fallback; the complete eligibility/World/profile transition relation; exposure and attempt-commit mappings; supported accessibility and execution modes; and every certified stratum’s probability law and scripted player policy. Weighted model counting and simulation execute this manifest directly. Any omitted selector input, transition, probability weight, or signature field invalidates replay certification.
+The build emits one versioned **ReplayValidationManifest**, not a possibility-only asset count. It contains package/compiler/selector/encoder hashes; stable signature slot keys and runtime-instance mapping; every family, variant, experience cluster, variation-equivalence class, typed rank field, legal `NO_ACTION`, route/context/resume class, mechanic family, Job object, OutcomePolicy/version/weight, authored terminal outcome, consequence state, and fallback; the complete eligibility/World/profile/mechanic transition relation; exposure and attempt-commit mappings; supported accessibility and execution modes; and every certified stratum’s probability law and scripted player policy. Weighted model counting and simulation execute this manifest directly. Any omitted selector/outcome input, transition, probability weight, or signature field invalidates replay certification.
 
 **Selection diversity**
 
@@ -1538,7 +1619,7 @@ Before seeded ranking during synchronized certified attempts one through five, a
 Family IDs alone do not prove perceived novelty. Each Chapter manifest may strengthen but never weaken these initial numeric gates:
 
 - `encounter_frequency = exposure-reached encounter resolutions / unique reached slot resolutions`. Each reached stable slot contributes exactly once to the denominator. `NO_ACTION`, cancellation/failure before the exposure boundary, and terminal no-exposure contribute zero to the numerator; a missing resolution invalidates the attempt.
-- Every normal Mission Day exposes two to four encounters in every certified stratum when at least two support-equivalent non-silence clusters are schedulable across reached slots. `NO_ACTION` remains legal only in surplus slots or under a package-authored `quiet_exception_id` approved for a specific historical, safety, accessibility, or pacing constraint; exceptions remain in the cadence denominator and cannot weaken collision gates.
+- Each certified Chapter declares a distribution over exposed encounter counts consistent with its duration and historical rhythm. Across certified Boston attempts, the total must remain 4–10 and each Mission Day 0–3, with a preregistered one-to-two-per-day target mean. `NO_ACTION` is always legal when no required action is due and its pacing rank wins; packages must still satisfy collision and perspective/mechanic-diversity gates without forcing interruptions into every traversal.
 - Let `C_t` be the ordered exposed experience-cluster sequence for attempt `t`, `S_t` its distinct-cluster set, and `P_t` the set exposed before the attempt began. Empty `C_t`, unresolved slots, or zero denominators are validation failures. During attempts two through five, the count of clusters in `S_t` but not `P_t` must be at least `ceil(0.50 × |C_t|)` whenever that many unseen clusters are schedulable; otherwise every schedulable cluster in `S_t` but not `P_t` is used before a seen equivalent. A cluster counts unseen at most once per attempt.
 - Against each prior attempt `j` among the first five, set overlap `|S_t ∩ S_j| / |S_t ∪ S_j|` and ordered overlap `LCS(C_t,C_j) / min(|C_t|,|C_j|)` are each at most 0.60. LCS compares exact experience-cluster IDs in order and retains duplicates. If the safety-game model cannot guarantee these limits under every allowed external transition while preserving higher obligations, the content package lacks sufficient replay breadth and fails rather than silently waiving the gate.
 
@@ -1595,7 +1676,7 @@ A crowd forms around a newly delivered paper. The player may stop for one short 
 - **Two players have identical learner/world states:** Independent 128-bit attempt seeds select within the same utility-equivalent legal set; cohort collision gates still apply. Their required obligation set and semantic payload remain identical.
 - **Player repeatedly avoids encounters:** Required learning and progression continue; avoidance is not interpreted as low understanding.
 - **Encounter threatens an event deadline:** Optional encounter leaves the legal set.
-- **Player quits mid-encounter:** Resume from its declared checkpoint or restart the encounter; convergence and Job state remain valid.
+- **Player quits mid-encounter:** Resume the exact declared mechanic phase with pinned OutcomePolicy/uncertainty. A pre-outcome restart retains those inputs; a committed outcome resumes its consequence branch and never rerolls or restores prior Job/object state.
 - **Replay profile unavailable:** Continue the complete core path, but mark replay guarantees unavailable and exclude the attempt from certified uniqueness metrics until the profile snapshot is restored; never silently substitute learner state.
 - **Variation creates category imbalance:** Per-day category caps and authored diversity constraints correct the legal set before ranking.
 
@@ -1631,6 +1712,10 @@ Events range from:
 - Battles represented from an appropriate player role.
 - Economic or workplace changes.
 
+Historical Event nodes represent documented real events, people, policies, and outcomes at the level supported by sources. Fictional connective actions and composite bystanders may place the player nearby or create gameplay pressure, but they cannot be presented as the cause of the event or as newly discovered historical participants.
+
+Living Historical Encounters are different: a watcher noticing the player, a clerk refusing a handoff, a cart blocking a lane, or a fictional household reacting to policy may be invented when the role, affiliation, material conditions, and behavior are plausible for the exact date-state. They create the lived RPG layer without being mislabeled as recorded fact.
+
 **Trigger philosophy**
 
 Events are state-based. The Event Manager exposes an event only when:
@@ -1653,6 +1738,7 @@ The player may:
 - Help a fictional person reach safety.
 - Observe and choose where to look.
 - Make a prediction before the outcome.
+- Perform non-conflicting traversal, protection, aid, work, and escape actions while the event unfolds.
 
 The player may not:
 
@@ -1663,7 +1749,9 @@ The player may not:
 
 ### Design Philosophy
 
-History is allowed to be larger than the player. Short cinematic control is appropriate when free movement would obscure the event. Participation creates proximity; it does not grant causal ownership.
+History is allowed to be larger than the player. Historical locks should disable only actions that could contradict the record; traversal, protection, aid, and viewpoint mechanics remain active where supportable. Cinematic control is appropriate only when playable staging cannot preserve clarity or safety. Participation creates proximity; it does not grant causal ownership.
+
+**Curriculum-integral cinematics are authored once and are route-invariant.** When a cinematic or set-piece carries required curriculum, it is authored a single time, and every legal route the player can take funnels into that same authored delivery, so the required content cannot be missed by choosing a different path. The route the player selects varies only the interactive on-ramp — each path retains its own gameplay element (for example, a state-gated traversal to a vantage, crowd navigation with an unfailable evade, or a hold-to-participate action) and ends by handing control to the shared cinematic through a defined trigger (an observation zone, a camera pan, or a prompt). This is the presentation-layer expression of the RequiredCarrierContract guarantee: player choice changes the approach and the doing, never whether the required moment is received. It is also economical, since one cinematic serves many lightweight on-ramps rather than being re-authored per path. The Event Manager is responsible for ensuring every eligible route resolves into the single authored delivery.
 
 ### Responsibilities
 
@@ -1700,11 +1788,11 @@ Historical figures’ words must be sourced or clearly presented as paraphrased 
 
 ### Boston Example
 
-At the Tea Party, the player reaches the harbor with the crowd but does not decide whether tea is destroyed. The cinematic shows the public movement from Old South Meeting House toward Griffin’s Wharf, men boarding the ships, and tea entering the water. The player may choose which group to watch, but all camera branches converge on the same verified outcome.
+At the Tea Party, the player reaches a consequence-consistent harbor approach and does not decide whether tea is destroyed. They retain non-conflicting crowd, route, protection, handoff, and viewpoint actions while documented men board the ships and destroy the tea. Every branch commits the same verified historical delta while preserving its distinct local object, timing, attention, and relationship state.
 
 ### Edge Cases
 
-- If the player is not at the ideal marker, a short authored repositioning transition places them in a plausible nearby viewpoint.
+- If the player is not at the ideal marker, the event selects a historically supportable viewpoint reachable from the committed route/late/attention state. Repositioning may bridge unplayable geometry but cannot erase lateness, damage, recognition, missed work, or access consequences.
 - If an event is skipped under accessibility settings, a concise approved recap and required evidence carrier remain.
 - If historians dispute a detail, the event avoids false precision or presents the disagreement through sourced perspectives.
 - Event completion is transactional: an interrupted load resumes from a safe event checkpoint and never applies half a world-state update.
@@ -1732,15 +1820,27 @@ The anchor:
 - Earns one or two Archived Conversations.
 - Appears in the Mission Debrief or its emotional transition.
 
-**Relationship progression**
+**Relationship state**
 
-1. **Role trust:** The anchor accepts the player as a worker.
-2. **Reliability:** The player completes ordinary duties.
-3. **Shared pressure:** Both experience a historical disruption.
-4. **Earned candor:** The anchor shares a more personal or uncertain observation.
-5. **Farewell / preservation:** The Chapter closes and the Archive retains the relationship.
+1. **Structural role:** The anchor remains the Chapter's employer/home-base connection so every legal path can continue.
+2. **Reliability:** Exact Job outcomes, honesty, obligations, and aid raise, hold, or lower trust.
+3. **Shared pressure:** Historical disruption creates common experience without guaranteeing agreement.
+4. **Candor/access:** Higher trust may open personal uncertainty, shortcuts, tools, or responsibility; strained trust may produce supervision, refusal, reduced access, or different work.
+5. **Farewell / preservation:** Every legal branch closes the Chapter, but tone, candor, callback, and Archived Conversation eligibility may differ.
 
-The player cannot lose the anchor relationship through a dialogue choice. Tone may vary, but the authored arc converges.
+The structural anchor cannot be removed by one dialogue choice. Trust, access, obligations, reactions, and candor may improve or deteriorate and do not converge merely to preserve a preferred scene. Every relationship state retains required learning and Chapter completion.
+
+Trust moves only from a consequential action the player pays for or refuses to pay for — a Type 3, 14, or resource-spending Type 13 choice with a declared relationship delta. Merely being present, listening, or asking a free probe (Type 2) never changes trust; if it did, the effect tags shown on choices would be dishonest. Each relationship band unlocks concrete, authored affordances rather than tone alone: a raised band may open a shortcut route, faster help, candor, a tool, or extra access, while a strained band may impose supervision, refusal, or reduced access. Every unlock has a fallback so no required carrier depends on reaching a high band.
+
+**Relationship consequences can reshape the world, not just the tone.** A raised band may open concrete affordances the player exploits later (e.g., a trusted merchant reveals a private waterfront route that bypasses a watched street). A strained band may escalate against the player: a mistrustful character can inform an authority, after which the player must avoid or evade that authority to complete objectives. These consequences persist within the Chapter and may carry into later Mission Days as declared World/relationship state.
+
+**Relationship dimensions initialize low-neutral, and never change without a player-legible cause.** Each dimension starts in a guarded, unproven band (approximately a third of range, erring toward caution rather than at zero or at neutral-midpoint), because a stranger is neither trusted nor disliked on arrival; bidirectional dimensions such as political read begin near neutral with a faint lean toward wary. A dimension may then move for exactly two reasons, both of which the player can attribute at the moment of change: a consequential choice the player made (whose effect tag was shown before commit and whose realized change is confirmed after), or the player's graded performance on an activity (whose stake is telegraphed before and whose result is confirmed after, with the cause stated). No dimension may drift ambiently, shift for narrative convenience, or change without a corresponding player-visible cause; if no tagged choice or graded activity accounts for a proposed change, the change is invalid. Displayed standing is always a band, never a numeric value.
+
+A single cause may legitimately cascade into several effects across different characters or world state (one well-executed task can raise one present character's respect and also shape another's later first impression), which is encouraged as a source of realistic consequence. If the affected character cannot yet observe/react, the cause commits a **pending contingent effect**, not a hidden relationship-band mutation. At the authored reveal scene, the current state is reduced into the actual delta and its card/NPC reaction appears in the same transaction. If that reveal scene never occurs and the authored expiry state is reached, the contingent effect expires and the character remains at baseline. A character's relationship surface is not shown until first meeting; prior to that the character is a locked placeholder with no secretly changed band.
+
+**Relationships are dimensional, not a single trust scalar — but most characters track only one dimension.** A character's stance is an authored vector drawn from a shared set such as trust (honesty/reliability), respect (competence, fed by skill/Job outcomes), warmth (personal liking), political read (ally / harmless / threat), and obligation (favors owed). The authoring rule keeps this cheap and legible: **most characters carry exactly one dimension — the one that actually has consequences for dealing with them** (a Loyalist informer is read politically, not for warmth; a smuggler is read for trust, not politics) — while a **chapter's anchor character may carry two or three**, since there is only one such character per chapter and it deepens the relationship the player spends the most time in. Different dimensions unlock different affordances (respect → harder/more responsible work; trust → candor and favors; political read → factional access or hostility; warmth → tone). In pre-Revolution settings the political-read dimension is itself curricular: it models a society sizing up loyalties. No single dimension gates required learning.
+
+**Period-correct authority rule (hard historical constraint).** Any enforcement or pursuit triggered by relationship state must use an authority that actually existed in that place and year. The document must not insert anachronistic enforcers. In the Boston reference Chapter this means 1765 pursuit uses customs officers, the sheriff/constables, and Loyalist informers — **not** British regular troops, who are not stationed in Boston until 1768. The same mechanic escalates to soldiers and sentries only from the 1770 day onward, and that escalation is itself an authored teaching beat about the military occupation. Every era-specific authority is validated against the Chapter's date range at package build.
 
 ### Design Philosophy
 
@@ -1754,7 +1854,7 @@ The anchor is not the teacher. They speak from profession, goals, and lived expe
 - **Curriculum:** Concepts the profession can naturally carry.
 - **Character Card:** Knowledge, perspective, goals, mood, and allowed topics.
 - **World State:** Relationship and day-state.
-- **AI Director:** Select approved variants without changing the arc.
+- **AI Director:** Select only relationship-compatible approved actions/variants; it cannot restore trust or force the preferred arc.
 
 ### Player Experience
 
@@ -1783,7 +1883,7 @@ An anchor package requires:
 
 ### Boston Example
 
-Abigail Mercer begins as a busy printer who needs a runner. By 1770 she is more guarded after violence near King Street. By 1773 public meetings dominate her orders. By the 1774 port closure, fewer customers can pay, relief notices share space with political print, and she trusts the player enough to ask what has changed most—not as a quiz, but because she must decide what the next edition should make clear.
+Abigail Mercer begins as a busy printer who needs a runner. By 1770 she is more guarded after violence near King Street. By 1773 public meetings dominate her orders. By the 1774 port closure, fewer customers can pay and relief notices share space with political print. A reliable player may receive greater candor and responsibility; a careless or dishonest player receives tighter supervision and different work, while the same required historical evidence remains reachable.
 
 ### Edge Cases
 
@@ -1813,7 +1913,7 @@ NPC categories define production depth, dialogue authority, historical risk, int
 
 - Fictional or documented local people with a bounded Chapter role.
 - Carry one or two occupational, political, regional, or social perspectives.
-- Receive short dialogue trees and limited adaptive variants.
+- Receive bounded goals, memory, trust/access, obligation, refusal, action, and consequence-response states rather than dialogue trees alone.
 - May recur across Mission Days when continuity helps.
 
 **Historical figures**
@@ -1823,6 +1923,9 @@ NPC categories define production depth, dialogue authority, historical risk, int
 - Use sourced quotations, documented actions, or carefully reviewed paraphrases.
 - Never deliver invented private confessions or behave as an all-knowing explainer.
 - The player does not replace, command, romance, recruit, or defeat them.
+- Are allowed—and expected—when their documented work is important to the active TEKS: organizing, printing, speaking, defending, governing, commanding, writing, or participating in the fixed event.
+- Enter through action before identification whenever clarity permits. The player may see the person lead, argue, publish, defend, or organize; a brief Archive tag or later source names the person and states the assessed role without stopping the scene for a biography.
+- Do not appear as celebrity cameos. Every appearance, sourced document, or Archive record must advance the required historical-role model or provide necessary context.
 
 **Ambient NPCs**
 
@@ -1840,7 +1943,7 @@ NPC categories define production depth, dialogue authority, historical risk, int
 
 ### Design Philosophy
 
-NPC importance is not measured by name recognition. A fictional merchant may be the clearest experiential scaffold for an assessed economic relationship, but authenticated records carry scored historical evidence. A famous figure may appear only in a public speech. Historical figures preserve the record; fictional workers make ordinary experience playable.
+NPC importance is not measured by name recognition. A fictional merchant may be the clearest experiential scaffold for an assessed economic relationship, but authenticated records carry scored historical evidence. Historical figures perform the documented public history; fictional workers make its ordinary human consequences playable. Both are necessary: a Chapter cannot substitute relatable composites for required real people, and it cannot substitute famous cameos for lived relationships.
 
 ### Responsibilities
 
@@ -1868,11 +1971,14 @@ Each NPC is tagged as anchor, supporting, historical, ambient, or crowd-role. Ca
 
 Historical-figure content requires citation metadata. Composite characters require an internal plausibility note describing occupation, status, and source basis.
 
+Every Chapter package includes a **Required Historical Figure Manifest** mapping each required real person to the assessed role, appearance/document/Archive carriers, item-level provenance, prohibited invented behavior, and later retrieval point. When a visible figure cannot be introduced naturally in-world, the Archive may show one unobtrusive tag after the player notices the action: name, verified role, and no more than one current-purpose line.
+
 ### Boston Example
 
 - **Anchor:** Abigail Mercer — Printer, fictional composite.
 - **Supporting:** Thomas Bell — Merchant; Captain Edward Ellis — British Officer; Edward Clarke — Loyalist Shopkeeper.
-- **Historical figures:** Samuel Adams at a public meeting; Thomas Hutchinson through proclamations and public policy; Crispus Attucks represented in the documented King Street event.
+- **Historical figures:** Samuel Adams through reviewed organizing, political writing, and public-meeting action; Thomas Hutchinson through proclamations and public policy; Crispus Attucks in the documented King Street event; John Adams through the legal defense and trial-source record.
+- **Documented Day 1 action:** Ebenezer McIntosh may be identified while leading the August 14 procession; Benjamin Edes enters through the documented print network and Loyal Nine provenance. Neither becomes a separate assessed biography target.
 - **Ambient:** Apprentices, sailors, market sellers, domestic workers, cart drivers.
 - **Crowds:** Meeting attendees, protesters, observers, soldiers, and workers whose behavior is not uniformly Patriot.
 
@@ -1881,6 +1987,7 @@ Historical-figure content requires citation metadata. Composite characters requi
 - A supporting NPC may quote a circulating rumor, but the dialogue and feedback must mark it as a claim rather than fact.
 - A crowd chant cannot stand as evidence of universal belief.
 - If a historical figure’s presence is uncertain, use a document, reported speech, or fictional witness instead of placing them physically.
+- If involvement is documented but exact location or words are not, show the artifact or public action only at the supported level and identify the person through the Archive or a later source; do not manufacture a private conversation.
 - Ambient lines cannot introduce a required concept without a required fallback carrier.
 
 ---
@@ -1897,22 +2004,24 @@ The Dialogue Bible makes instruction natural, historically credible, age-accessi
 
 1. Characters speak because they want something in the scene.
 2. Profession determines what a character notices, knows, and asks.
-3. Exposition is distributed across people, action, documents, and environment.
-4. One line should carry one main idea.
-5. Historical vocabulary is retained and understood through context.
-6. Questions request help, judgment, prediction, or clarification—not a recitation.
-7. Characters ask for evidence-based interpretation, never the player’s modern political opinion.
-8. Dialogue choices are two or three short, meaningfully distinct responses.
-9. Incorrect options represent plausible partial models or misconceptions, not jokes.
-10. No line depends on runtime generation.
+3. Put factual exposition into what the player handles, reads, sees, and must use before asking a person to explain it.
+4. A character does not explain shared background to someone whose cover identity would already know it.
+5. Dialogue occurs around an action, request, conflict, risk, or consequence. “Ask a topic and receive a paragraph” is prohibited.
+6. One line should carry one main idea; most human turns are fragments or one short sentence.
+7. Historical vocabulary is retained only when context makes its meaning plain to a 13-year-old without a second explanation.
+8. Questions request help, judgment, prediction, a commitment, or clarification—not a recitation.
+9. Characters ask for evidence-based interpretation, never the player’s modern political opinion.
+10. Dialogue options are two or three short, materially distinct actions or commitments. Filler options are prohibited.
+11. Incorrect formative options represent plausible partial models or misconceptions, not jokes.
+12. No line depends on runtime generation.
 
 **Length standards**
 
 - Ambient bark: 2–12 words; normally under 5 seconds.
 - Subtitle-only passing exchange: one or two turns; under 12 seconds.
 - Walk-and-talk beat: one to three short turns at a time; 10–30 seconds before a natural pause.
-- Supporting conversation: 30–75 seconds total.
-- Anchor arrival or return scene: 45–120 seconds.
+- Supporting conversation: normally 10–40 seconds before the player must act; longer only when the player deliberately sustains it.
+- Anchor arrival or return scene: normally 20–60 seconds around active work.
 - Archived Conversation: 45–90 seconds.
 - Historical speech excerpt: only as long as needed for the event; source and adaptation reviewed.
 - Normal speaker turn: one or two sentences and normally no more than 30 spoken words.
@@ -1923,11 +2032,11 @@ The Dialogue Bible makes instruction natural, historically credible, age-accessi
 - Introduce assessed terms such as Parliament, representation, mercantilism, federalism, tariff, abolition, secession, and emancipation in situations that reveal meaning.
 - Avoid invented antique spelling and excessive “thee/thou.”
 - Avoid modern internet slang, therapy language, and twenty-first-century political labels.
-- If a document’s original language is difficult, present a sourced excerpt plus a natural in-world paraphrase from a character with reason to explain it.
+- If a document’s original language is difficult, present a short sourced excerpt with a plain reviewed gloss in the object treatment. Use an in-world paraphrase only when the character has an immediate reason to make it understandable.
 
 **Exposition philosophy**
 
-Never place the complete model in one mouth. Use contrast:
+Do not place the model in mouths by default. Let different people reveal what matters to them through requests, warnings, bargaining, work, and consequences:
 
 - Merchant: practical cost and trade.
 - Officer: imperial debt, law, and order.
@@ -1942,21 +2051,25 @@ An anchor’s question must solve a professional or human problem:
 - Telegraph operator: “Only one report can go first. Which one matters?”
 - Quartermaster: “These numbers do not match what people are saying. What is the situation?”
 
-**Natural reflection**
+**Human-comprehension test**
 
-Do not write:
+Reject a line when:
 
-> “Which factor most contributed to colonial unrest?”
+- A 13-year-old reader cannot paraphrase it after one hearing.
+- It sounds like a balanced essay sentence rather than something the character needs to say now.
+- The character names the lesson instead of dealing with its concrete effect.
+- The same fact could be learned more naturally from the player’s work, a document, a poster, a map, an overheard fragment, or the visible world.
+- Removing the line leaves the scene’s action unchanged.
 
-Write:
+Prefer:
 
-> Abigail sets two versions of the front page beside the player. “Taxes in one. Parliament in the other. Which story are people actually arguing about?”
+> Abigail drops the type tray beside the empty headline space. “You saw it. Set the line.”
 
-The underlying assessment may be identical; the surface language must belong to Abigail.
+The player then constructs the answer through the Job. Abigail may react as a person and editor; she does not restate the rubric.
 
 ### Design Philosophy
 
-The player should feel that they are continuing a conversation, not answering a disguised worksheet. Natural does not mean vague: dialogue still conveys enough explicit history to support STAAR-level reasoning.
+The player should feel that another person needs something from them, not that an NPC has opened a lesson. Natural does not mean vague: required explicit history still arrives through concise reviewed documents, environmental evidence, human stakes, and action-compatible carriers.
 
 ### Responsibilities
 
@@ -1968,7 +2081,7 @@ The player should feel that they are continuing a conversation, not answering a 
 
 ### Player Experience
 
-Characters speak briefly, keep working, walk, gesture, and react to the world. Important lines are concrete. The player can ask a relevant follow-up rather than endure a monologue.
+Characters speak briefly, keep working, interrupt, misunderstand, avoid, bargain, and react to what the player actually did. Important lines are concrete. Conversation changes action or state; otherwise it stays ambient. Lines are one or two short sentences and sound like a person saying a thing, not prose: they imply the point rather than explaining it, and never spell out or lecture the underlying concept, which is instead named by the field-tag layer. Dialogue avoids em dashes and balanced essayistic constructions. Player-facing probe and choice labels are phrased the way the target learner would actually think, casual and on-topic rather than analytically on-the-nose; the learning arrives in the response, not in the label.
 
 ### System Interactions
 
@@ -2002,15 +2115,20 @@ Standard gameplay uses body language, work activity, medium shots, and generic t
 
 **Thomas — Merchant**
 
-> “The stamp is not the largest bill I pay. It is the part where men across the ocean decide the bill and call that consent.”
+Thomas is dragging valuable cloth away from his window while the crowd grows:
 
-Player choices:
+> “Put the circular there. Then help me with this, or get clear.”
 
-- “So the money matters less than who decides?”
-- “But Britain paid for the war here.”
-- “I should finish the delivery.”
+Player actions:
 
-Each response is natural, bounded, and tied to a different authored follow-up. None changes Thomas’s role or the day’s event.
+- Help move/cover the cloth: costs time; trust and rear-gate access increase.
+- Protect the timed handoff: Thomas remembers the refusal; deadline time remains.
+
+While working, Thomas may add:
+
+> “Port taxes, I can plan for. This reaches every desk in town.”
+
+The exchange changes work, time, trust, and access. It does not change the fixed protest.
 
 ### Edge Cases
 
@@ -2113,11 +2231,11 @@ The repeated role labels prepare the player to attribute each argument later.
 
 ### Purpose
 
-The taxonomy limits the engine to a small, reusable set of interactions, gives each one an educational reason, and prevents arbitrary game mechanics from entering Chapter production.
+The taxonomy keeps the engine's mechanics reusable, makes every interaction declare its gameplay and educational responsibility, and prevents arbitrary one-off minigames from entering Chapter production.
 
 ### How It Works
 
-Project Archive has twelve canonical interaction types. Delivery context may vary, but a shipped interaction must declare one primary type. New types require core design, curriculum, UX, and engineering approval.
+Project Archive has fifteen canonical interaction types. Delivery context may vary, and an ActionSpec may compose several types while declaring one primary type. New types require core design, curriculum, UX, accessibility, and engineering approval.
 
 ### Type 1 — Observation
 
@@ -2141,11 +2259,11 @@ Project Archive has twelve canonical interaction types. Delivery context may var
 
 ### Type 3 — Experiential Choice
 
-**Purpose:** Preserve agency over route, stance, and participation without branching history.
+**Purpose:** Preserve agency over route, stance, commitment, and participation without branching recorded history.
 
-**Behavior:** Follow or continue; ask or stay silent; inspect or deliver; stand near one witness or another.
+**Behavior:** Choose between materially different approaches whose local consequences may persist: fast or concealed, protect the Job or help a person, comply or accept scrutiny, inspect or deliver, stand near one witness or another.
 
-**Boston behavior:** Follow the crowd toward the harbor or finish the nearby delivery first. Both authored paths converge before the Tea Party.
+**Boston behavior:** Attempt a visible direct handbill handoff before the rider leaves, conceal it inside retained plain wrapping sheets, or wait out a watcher and risk missing the rider. The historical protest remains fixed; delivery, attention, relationship, and later carrier path may differ.
 
 **Evidence emitted:** Normally none. Route choice is not treated as knowledge.
 
@@ -2239,9 +2357,51 @@ Project Archive has twelve canonical interaction types. Delivery context may var
 
 **Evidence emitted:** Rubric-aligned concept, evidence, reasoning, and misconception tags. Classifier confidence remains technical metadata; learner self-confidence is unknown unless an explicit authored control asks for it. Raw voice is not required for scoring or retention.
 
+### Type 13 — Contextual Skill Action
+
+**Purpose:** Let the player physically perform plausible work, traversal, evasion, crowd navigation, and object handling rather than choosing text that claims the character did it.
+
+**Behavior:** Execute a reusable contextual mechanic—operate, align, carry, protect, climb, vault, balance, squeeze, hide, blend, time, repair, or hand off—against authored World conditions. Outcomes may be complete, partial, delayed, noisy, noticed, damaged, diverted, or failed.
+
+**Boston behavior:** Pull and rack a printed sheet; protect the handbill bundle through a crowd surge; climb a cart and cross a low shed roof when the direct lane closes; execute a timed rider handoff while a watcher scans the market.
+
+**Evidence emitted:** Mechanical and World outcome only. Motor performance, speed, route, and accessibility treatment never prove or disprove historical understanding.
+
+### Type 14 — Consequential Social Action
+
+**Purpose:** Make interaction with an NPC a human commitment or exchange rather than a menu for requesting exposition.
+
+**Behavior:** Promise, refuse, reveal, conceal, bargain, verify, assist, warn, hand over, or accept an obligation. The NPC acts from a current goal and remembers the result through declared World/relationship state.
+
+**Boston behavior:** Agree or refuse when Thomas asks the player to move politically sensitive stock out of sight; tell the clerk the proof will be unusable under the Act, soften the news, or help identify a lawful next step; decide how much to reveal when questioned about the handbill bundle.
+
+**Evidence emitted:** Normally none. A social choice may expose an authored carrier or set up a later reasoning action, but inferred personality, politics, or understanding are prohibited.
+
+### Type 15 — Diegetic Construction
+
+**Purpose:** Turn historical reasoning into the cover identity's real work product rather than a detached quiz.
+
+**Behavior:** Build, edit, arrange, annotate, route, or present a job artifact from evidence already encountered. The action preserves the target reasoning operation and may function as formative or scored evidence when its rubric and accessibility equivalents are approved.
+
+**Boston behavior:** Set tomorrow's headline from reviewed options or movable phrase blocks, choose the evidence line placed beneath it, ink the type, and pull the proof. A representation-centered headline demonstrates the causal distinction more naturally than a floating multiple-choice question.
+
+**Evidence emitted:** Declared rubric-aligned evidence only when the constructed artifact validly measures the target. Mechanical execution of the press is separate from the intellectual selection.
+
+### Choice Legibility and Effect Labeling
+
+A choice is legible only if the player can tell what it will cost before committing. The taxonomy therefore splits every player option into three visible classes, and the UI presents them differently.
+
+1. **Consequential choice (Types 3, 14, and any Type 13 that spends a resource).** Displays one to three short effect tags drawn from a fixed, authored vocabulary — for example `costs time`, `builds trust`, `strains trust`, `risky`, `uses the proof`, `opens the back gate`. Tags name the *kind* of effect, never the hidden outcome roll: `risky` means an outcome draw follows, not that the player will fail. Every Type 3/14 option carries at least one tag; an option with no real cost or gain is not a consequential choice and must be demoted.
+2. **Free probe (Type 2 Dialogue Inquiry).** Carries no stat/risk tag. Asking a question, reading a document, or inspecting the world moves no relationship and carries no hidden risk, but it still spends the interaction's small authored activity-clock cost. Probes are optional perspective and safe to take; “free” means no stat/risk consequence, not no time.
+3. **Skill action (pure Type 13 traversal/handling with no resource stake).** Carries no cost tag; the challenge and its stakes are shown in the world (a closing lane, a scanning watcher), and the accessibility equivalent resolves the same state.
+
+Only consequential choices move relationship, custody, or visibility state. **Every authored interaction, including a free probe, may spend its small authored activity-clock cost;** “free” means free of stat/risk consequences, not free of time. A free probe must never grant or remove trust — trust changes only when the player pays or refuses to pay a real cost for a person. Two options may never advertise identical effect tags while resolving to different underlying state; if the effects differ, the tags must differ. Effect tags name the specific relationship dimension and direction they touch (for example, building or straining trust, earning respect, warming or cooling an anchor, or reading as a threat), so a stat-affecting option always declares which stat it moves and in which direction before commit. Effect tags are authored in the ActionSpec, validated against the option's declared World/relationship deltas, and localized; no tag may be generated at runtime.
+
+**Post-commit micro-feedback.** After the player commits a choice that actually moves a relationship dimension, the client shows a brief, non-blocking, self-dismissing confirmation rendered as the same character-card component used in the Archive People panel, reporting the realized change (for example, that an anchor's trust rose or fell). This feedback fires only in response to a stat-affecting commit — never as an unsolicited interrupt — and for a contingent (outcome-drawn) choice it appears only after the outcome resolves, reporting what actually happened rather than any probability. This confirmation is restricted to relationship state; promotion of a concept from encountered to understood in the Notes journal remains silent, and player-facing status surfaces (People, Notes) are always available on demand but are never pushed as forced popups. Scripted assessment moments and authored flow beats remain the only interactions permitted to interrupt play.
+
 ### Design Philosophy
 
-Interactions reproduce useful historical actions—observe, source, contextualize, corroborate, sequence, explain—without turning them into arbitrary puzzles. Variety comes from context and evidence, not from inventing a new control scheme every Chapter.
+Interactions reproduce useful historical and occupational actions—operate, navigate, protect, hand off, observe, source, contextualize, corroborate, sequence, construct, and explain—without turning them into arbitrary puzzles. The same core mechanics acquire new meaning from profession, world pressure, evidence, and consequences.
 
 ### Responsibilities
 
@@ -2254,7 +2414,7 @@ Interactions reproduce useful historical actions—observe, source, contextualiz
 
 ### Player Experience
 
-Most interactions are one decision and immediate return. The player encounters a mix across a Mission Day rather than repeating the same multiple-choice shell.
+Most spoken interactions are brief; mechanical and consequence sequences may sustain several linked actions. The player encounters a mix across a Mission Day rather than repeating the same multiple-choice shell or walk-and-listen cadence.
 
 ### System Interactions
 
@@ -2269,25 +2429,29 @@ Every interaction declares:
 - Feedback or follow-up behavior.
 - Accessibility treatment.
 - Fallback and timeout behavior.
+- Mechanic conditions and legal outcome mappings when Types 3, 13, 14, or 15 apply.
+- World, Job, relationship, carried-object, visibility, and consequence deltas.
 
 ### Implementation Notes — High Level
 
-Observation, Dialogue Inquiry, and Experiential Choice are primarily experiential. Prediction through Perspective Attribution are formative. Archive Memory is corrective review. Open-Ended Explanation is reserved and higher cost.
+Observation and Dialogue Inquiry are primarily contextual. Experiential Choice, Contextual Skill Action, and Consequential Social Action drive agency and World state. Prediction through Perspective Attribution are formative. Archive Memory is corrective review. Open-Ended Explanation and Diegetic Construction support higher-cost synthesis.
+
+**Camera-assignment principle.** Presentation follows one rule: *first person for "hands on an object," third person for "the player in the world."* Fine-manipulation interactions (reading/comparing documents, operating a tool, carrying/concealing/placing an object, diegetic construction) present in first person, where the object carries the visible motion and the body is not shown performing fine motor work. Movement, traversal, evasion, crowd navigation, social framing, and witnessing fixed events present in third person. This is both an immersion choice and a production constraint: it removes the need for bespoke full-body fine-motor animation. Camera mode is a fixed authored property of each ActionSpec, never inferred from or used to infer player knowledge. The engine composes all content from this closed verb set so that new Mission Days require no new interaction or animation authoring.
 
 No interaction may infer knowledge from movement speed, route preference, camera direction, cosmetic choices, or use of accessibility support.
 
 ### Boston Example
 
-One Tea Party sequence uses the taxonomy without changing mechanics:
+One Tea Party sequence composes the taxonomy:
 
-1. Observe the Old South meeting crowd.
-2. Ask Thomas why the tea remains disputed.
-3. Choose whether to follow immediately or complete a nearby delivery.
-4. Predict the likely official response.
-5. Watch the fixed event.
-6. Select the evidence that best explains escalation.
-7. Later attribute imperial-authority language to Captain Ellis.
-8. Organize the complete causal chain in the Mission Debrief.
+1. Move meeting notices through an increasingly compressed crowd.
+2. Decide whether to protect the delivery, help a fallen person, or take a harder side route.
+3. Execute the chosen crowd/traversal action and accept its consequence.
+4. Verify the meeting and tea evidence while completing the handoff.
+5. Predict the likely official response.
+6. Witness the fixed destruction of the tea from the consequence-consistent vantage.
+7. Construct a short print-shop summary from the strongest evidence.
+8. Later attribute imperial-authority language to Captain Ellis and organize the complete causal chain in the Mission Debrief.
 
 ### Edge Cases
 
@@ -2308,12 +2472,23 @@ The Archive unifies the time-travel fiction, captures the player’s developing 
 
 ### How It Works
 
-The Archive has four player-facing forms:
+The Archive has five player-facing forms:
 
 1. **Mission intake:** Assigns the historical window, cover identity, driving question, and concise prerequisite context.
 2. **Archive Sync:** Briefly captures one interpretation during a Mission Day.
 3. **Archive Memory and Archived Conversation replay:** Retrieves an approved historical moment or a preserved player interaction.
 4. **Mission Debrief / Season Review:** Provides a dedicated environment for deeper organization, explanation, and verification.
+5. **Field tag:** Briefly identifies a verified person, place, document, term, or later-known fact after the player naturally notices it; it never interrupts an active mechanic or historical action.
+
+**Field-tag trigger contract.** A field tag is not a timed pop-up. It may fire only on an *earned trigger*: immediately after the player personally did, handled, overheard, or witnessed the specific thing the tag names, so it reads as putting a name on an experience the player just had (e.g., after Thomas describes the boycott, the tag names "non-importation"). Each concept tags at most once per run — a concept already tagged never re-fires. Tags are silent and peripheral: they settle at the edge of view, never block input, never quiz inline, and can be opened later in the Archive or ignored with no penalty. A soft budget caps field tags per scene (default two) so tagging never feels like spam; when more triggers than the budget are eligible, the AI Director keeps the highest-priority untagged concepts and defers the rest. Every field tag maps to an authored concept/term ID and is validated against the trigger that precedes it; a tag with no preceding earned trigger is invalid.
+
+### Presentation and voice (AR overlay + handler persona)
+
+All player-facing Archive surfaces are presented as a single diegetic **augmented-reality overlay** projected for the player by the Archive apparatus and invisible to period characters. Objective markers, the objectives strip, relationship cards, field tags, route flickers, and the expanded overlay are therefore in-world elements the player perceives, not non-diegetic HUD chrome layered on top. This framing is what justifies on-screen guidance inside a historical setting and keeps every interface element consistent with the fiction.
+
+The Archive speaks to the player through a **handler persona**: a calm, precise, lightly wry assistant that briefs missions, names things through field tags, reflects state changes, and conducts assessment in character by asking the player to confirm an interpretation before it is filed (for example, asking what actually changed before recording the day). This persona is the player-facing voice of the AI Director — the Director decides what and when to reinforce as a systems concern, while the persona is how that is expressed to the player — and it must remain economical (a clipped line rather than a paragraph), supportive rather than instructive, and free of anachronistic or flippant tone.
+
+**Idle handling belongs to the Archive persona, not to world events.** When a player stalls, wanders, or otherwise burns learning time without progressing, the corrective is a gentle, mildly escalating task reminder spoken by the handler — never the spawning of a character encounter or a world-state change to push the player along. Authored living-world events (a character approaching, a shift in the street) are reserved for reinforcing a fact or presenting a perspective on a meaningful trigger; they are finite authored content and must not be repurposed as anti-idle guards, which would both waste them and make the world feel as though it were babysitting the player. Routine traversal across the compressed district is inexpensive by design and does not itself consume the time economy; the time economy is spent on player choices, not on movement. The persona never states the player's interpretation for them, never announces mastery or scores during play, and never narrates required content that a character or object could deliver instead. Its diegetic assessment prompts are the mechanism by which a concept becomes Understood in the Notes journal.
 
 The Archive behaves like a diegetic System interface: authoritative, concise, visually clear, and conveniently timed. It may state:
 
@@ -2332,7 +2507,14 @@ It may provide approved facts, dates, definitions, maps, names, and short causal
 - Frames the mission.
 - Delivers short authored exposition when a character would not plausibly explain required TEKS content.
 - Identifies dates, places, people, terms, and prior events.
+- Names a real historical figure after the player sees a documented public action, using only the role needed for the active standard.
 - Preserves observations and player responses.
+- Reflects meaningful changes in relationship and world state back to the player in plain human language, never as numeric stats, and only when something shifts (for example, that an anchor now finds the player reliable, or that a character has grown wary). It may also deliver a concise callback that links a later consequence to the earlier choice that caused it (for example, noting that a stop was prompted by an informant), making delayed consequences legible without narrating a lecture. It never announces mastery or scores during historical play.
+- Surfaces a lightweight, always-docked **objectives strip** that is the collapsed state of the openable Archive itself rather than a separate widget: expanding it opens the full Archive overlay (with its objectives, people, notes, and routes surfaces) landing on the objectives view, and collapsing it returns to the strip — a single surface with a glance state and a study state, and no separate open control. In its collapsed form it lists the current day's live tasks minimally, checks them off as they complete, and marks any time-sensitive task with a diegetic time-of-day glyph so the player can tell which objectives are on a clock without any numeric timer. The strip evolves with the task set — it begins as the single current objective and becomes the day's task list once those are assigned — and it stays coupled one-to-one with in-world objective markers (the strip conveys what remains; the markers convey where): world-anchored AR pings where an available but unselected destination reads as a distinct color with a live distance readout, and the selected or urgent objective reads as the priority color. Selection follows a **pick-one-focus** rule: at a selection point every pending objective shows (multiple non-priority pings plus matching strip lines), and choosing one collapses the display to a single priority marker and a single strip line while the rest hide. For a **must-do-all, order-free** set (such as the day's several deliveries) the hidden objectives **resurface after each completion** so the player addresses them one at a time until all are done; for a **mutually-exclusive** choice (such as which route to take) the unchosen options vanish permanently. A decision made before leaving an interior yields only the single priority marker outdoors, and the expanded objectives view always lists the full remaining set. The collapsed strip must stay unobtrusive: glyphs over prose, collapsible during action and cutscenes, never occluding the world, and never exceeding a few lines; the expanded overlay follows the free pause-view rules (world and clock do not advance, hidden outcome rolls are never shown). The strip also carries a **persistent day-clock: a diegetic, non-numeric daylight meter** (a sun tracking an arc, never a clock face or countdown) so the player always sees how close dusk (the fixed event) is; it advances **during an interaction in proportion to that beat's authored time-cost** (off the same per-verb cost table that drives day-state escalation) while traversal never moves it. As daylight runs short the Archive handler gives **polite, escalating time-warnings** (distinct from wander-idle nudges), ending in a **must-acknowledge "shops are closing" interrupt** if the clock expires with tasks undone — on acknowledgment, unfinished tasks resolve as missed (with reroute and relationship stakes), and the day funnels into the time-locked fixed event regardless.
+- Provides a per-chapter **Routes** panel that lists every alternate path the player has unlocked (shortcuts, back lanes, concealed routes), each annotated with the player-visible cause that opened it (for example, a relationship band or a discovery) and whether it is currently usable. A route unlocks only from an attributable cause and is announced at the moment of unlock by a brief, non-blocking holographic flicker in the same presentation family as the relationship micro-feedback, so the player always knows a new option exists and why.
+- Is openable by the player on demand as a free, non-diegetic-cost view: opening it does not advance the world, consume the time economy, or reveal hidden outcome rolls. Among its contents is a per-chapter **People** panel that lists every character the player has met (unmet characters appear as locked, unnamed placeholders) and shows each character's authored relationship dimension(s) as a **non-numeric progression indicator with a plain-language band label** rather than a value — a fill indicator for magnitude dimensions (trust, respect, warmth, obligation) and a diverging indicator centered on neutral for bidirectional dimensions (political read). Each character is modeled on the **single dimension that genuinely fits them** (competence-based dealings track respect, a favor owed tracks obligation, a Loyalist tracks political read, a discreet courier tracks trust), with the chapter anchor carrying a few; the system never collapses every relationship into a blanket "trust" bar. The **first time the player meets any character, first contact is announced by a brief, non-blocking holographic unlock flicker** in the same presentation family as the route-unlock flicker and relationship micro-feedback (for example, "person added: [name]"); the locked placeholder resolves into a real card at that instant. Any pending contingent effect whose reveal condition is this meeting realizes now from current state and appears with the same unlock; an expired/unreached effect never changed the band. Indicators can regress as well as advance, and a recently changed indicator may be subtly highlighted on next open. This panel represents social standing only and must never be rendered as, or conflated with, a learning-progress or mastery meter.
+- Provides a player-facing **Notes** journal — diegetically justified because the player's role is to review and report history — that **displays only concepts the player has actually understood.** A concept earns its Notes entry at the moment it reaches **Understanding — its first Archive Sync pass — and the entry (with its "Added to Notes" flicker) is created exactly once, then.** The later applied **demonstration** and any subsequent-day **reassessment** do **not** create or re-announce a Notes entry (the concept is already in Notes); they are confirmed diegetically by the world reacting, never by a duplicate flicker. Notes membership is still governed by the same evidence contract as the backend Assessed-Curriculum Coverage Ledger. The journal never surfaces an "encountered-but-not-understood" state to the player: a concept the player has merely seen or been told is not shown, because a concept the player cannot yet interpret is noise rather than help. Encountered/exposure state is nonetheless tracked **invisibly in the backend**, where it serves as the AI Director's signal for which concepts to reintroduce through later situations for another authentic demonstration opportunity — so reinforcement occurs by replaying the world rather than by quizzing. The fleeting field tag that names a thing in the moment is distinct from a Notes entry and does not create one. Notes entries appear silently and never interrupt active play with mastery announcements or numeric scores. Each entry records the concept name together with a short plain-language description written to aid later recall. Assessment feedback is positive-only and never states that an answer is wrong: earning an entry is confirmed solely by a brief "added to notes" surfacing, while a miss produces no entry and no negative message and is instead handled by the Director reintroducing the concept later, so that an unsuccessful attempt carries no penalty and no discouragement. (This silent-reintroduce handling applies to a concept's *first-time* understanding miss; once a concept is already understood, a later demonstration or reassessment miss is instead corrected **on the spot** with a directional nudge that never gives the answer, and is not returned to the reintroduction pool — see the Concept Learning Lifecycle.)
+- Ends each Mission Day by **blooming full-screen for a warm, celebratory day-end card** (the one moment the overlay goes full-bleed rather than peripheral): a congratulatory handler line, the day's authored artifact of record (e.g., the headline the player set), the concepts moved into Notes that day shown as earned entries, and a light read of who was met and what routes opened. It is positive and encouraging, never a grade, score, or percentage, and dismisses into the invisible save.
 - Presents approved prompts and evidence.
 - Presents concise approved corrective information after formative responses.
 - Offers approved replay.
@@ -2350,11 +2532,12 @@ It may provide approved facts, dates, definitions, maps, names, and short causal
 - Tell the player which political side to support.
 - Change a historical outcome.
 - Replace a historical character as the source of lived context.
+- Interrupt a documented person's action to deliver a biography or turn a famous figure into a collectible cameo.
 - Infer a student’s identity, emotion, disability, or motivation.
 
 ### Design Philosophy
 
-The Archive is the game’s diegetic System: it frames, explains, records, and assesses through authored assets. It is not an improvisational teacher avatar. Historical characters embody lived experience; the Archive efficiently supplies context that would otherwise make their dialogue unnatural.
+The Archive is the game’s diegetic System: it frames, identifies, records, and assesses through authored assets. It is not an improvisational teacher avatar. Historical characters act in the world; documents and work carry most factual exposition; the Archive supplies only the context or identification that would otherwise make dialogue unnatural.
 
 ### Responsibilities
 
@@ -2392,8 +2575,9 @@ The player hears a synthetic chime and a futuristic holographic panel materializ
 - The panel remains legible against every historical environment and has a non-translucent high-contrast accessibility mode.
 - Flicker, glitch, bloom, and motion can be reduced or disabled. Information never depends on those effects.
 
-The Archive UI has four presentation depths:
+The Archive UI has five presentation depths:
 
+- **Field tag:** One to five seconds; name, verified role, and at most one current-purpose line; no input and no locomotion pause.
 - **Context card:** Five to twenty seconds of authored exposition, shown during a load, arrival, observation, or player-requested lookup.
 - **Overlay:** Transparent, one interaction, historical world visible.
 - **Memory view:** Short replay, immediate return.
@@ -2408,10 +2592,39 @@ After the Boston Massacre, the Archive records the inflection, identifies the da
 ### Edge Cases
 
 - Core Archive UI, context, and required prompts are local and have no remote “Archive service” dependency.
-- If the classifier is unavailable, mark formative open input unclassified and use its authored bounded equivalent. A scored administration becomes invalid and uses its preassigned construct-equivalent replacement without prior correctness feedback.
+- Response classification never blocks active-world reaction. Formative open input is classified locally or asynchronously; at the fixed local deadline it commits `UNCLASSIFIED` and launches its preloaded bounded equivalent. A scored administration that cannot classify by its fixed local deadline commits `INVALID_REPLACEMENT_PENDING` and launches the preloaded construct-equivalent replacement without prior correctness feedback. Late results cannot revise the committed administration.
 - If the remote response store or telemetry is unavailable, local gameplay and scoring continue under the SaveRecord/outbox policy.
 - Without open-text retention authorization, store only prompt/rubric version, validated labels, status/confidence, and transaction ID. Authored response IDs apply only to bounded choices.
 - The Archive never exposes one student’s responses to another student.
+
+### Concept Learning Lifecycle (three stages: learn, understand, demonstrate — with cross-day spaced reassessment)
+
+Every required concept advances through three stages, and **all three must occur**. The understanding check and the applied demonstration are **distinct, separated-in-time steps** — not one check — and sync-based *reassessment* is deferred to later days:
+
+1. **Learning (exposure) — tracked interactions only.** The concept is presented through concrete in-world interactions — a witnessed/directed scene the player was routed into, an engaged conversation, or an actively read/handled artifact (a broadside opened into a focus-read, a handled document). Learning requires **breadth: at least three separate occasions spanning at least two different interaction types** (three of one type does not qualify). **Only *tracked* exposures count** — ones for which the engine has positive evidence of engagement (a focus-read was opened, a conversation was entered, an object was handled, a directed scene was played to the player). **Ambient content never counts toward the threshold**: background NPC barks, crowd chatter, and decorative posters the player may walk past unread are passive support only — valuable atmosphere and reinforcement for whoever notices, but unverifiable, so they can neither satisfy an occasion nor gate assessment. If a piece of reading is *meant* to count, it must be authored as a trackable read (an interaction that opens it), not left on a wall. Exposure is backend-only state and never appears in the player-facing Notes journal.
+2. **Understanding (first assessment).** After the exposure threshold is met, an **Archive Sync assesses the concept and it passes.** This is the first, distinct assessment; on passing, the concept becomes Understood and enters Notes.
+3. **Demonstrating (applied game action, same day — NOT another Sync).** On the day a concept is learned, the stage-3 check is an **applied diegetic game action** — setting a headline, selecting evidence, a consequential world choice — that requires using the concept, not an additional Archive Sync. Multiple Syncs are never stacked on the same concept on its learning day (the day carries at most the one understanding Sync plus the applied demonstration). Only after this applied pass is the concept complete for the day.
+
+**Cross-day reassessment is where spaced repetition lives.** Any concept learned **at least one day earlier** is eligible to be reassessed on subsequent days, through **either an in-world game action or an Archive Sync**. Same-day learning uses a Sync only for the understanding check; sync-based re-testing of a concept is deferred to later days, so repetition is genuinely spaced across the Season rather than crammed into the learning day.
+
+**Sync question budget (Day 2+).** On any day after the first, an Archive Sync may pose **up to three questions — a ceiling, not a quota** (it can ask fewer or none when there is nothing worth checking). Each question is either the **understanding** check for a concept learned *that* day or a **reassessment** of a prior-day topic, and every question stays contextual to what the player has actually handled that day. Reassessment questions may **fuse multiple Notes topics into a single synthesis question** — e.g., "which of these events fed that sentiment?" or "the stamp and the lack of a vote — what do they add up to?" — to test whether the player can piece the history together rather than recall concepts in isolation. The three-question ceiling is **per Sync**, and Syncs remain spaced and interleaved across the day (never one recurring quiz block).
+
+**There is no persistent regression/remediation loop after Understanding.** A concept that has not passed its first Understanding check remains incomplete and receives another authentic exposure plus a later retry. Once the first Understanding check has passed, a miss in the same-day demonstration or any later reassessment creates only a **transient correction-required state inside that same interaction**: the player receives a directional nudge and corrects before leaving. The concept is not returned to a future remediation pool. This preserves honest first learning while preventing endless reassessment loops.
+
+**Once a concept is Understood, its checks correct on the spot — never deferred, never re-pooled (loop-prevention, hard rule).** There are two different miss-handling regimes, split by whether the concept is already Understood:
+
+- **First-time understanding check (learning day).** A miss on a concept's *initial* understanding Sync is handled silently and **positive-only** — no "wrong" callout, nothing forced — and the Director quietly re-offers **one authentic exposure and one later retry** through the world. The player may genuinely not grasp it yet, so forcing the first miss would be hollow. **The retry is the bound:** if the player misses again after that re-exposure, the retry holds in place, gives a directional nudge (not the answer), and requires correction before leaving; it does not create another reroute/retry cycle.
+- **Any check on an already-Understood concept — the same-day demonstration, or any later-day reassessment (in an Archive Sync or an in-world scene).** A miss gets **immediate feedback and a forced on-the-spot correction**: the beat holds in place, the handler/NPC gives a **directional nudge** toward the right thinking, and the player must correct it right there before moving on. It is **not** returned to the reintroduction pool for a later re-test. **The nudge does not hand over the answer.** The exact distractor just chosen is removed or permanently de-emphasized; under the three-option cap, the correction therefore terminates in at most two steps. Because the player has already passed Understanding, a hint that points them in the right direction (or rules out the specific wrong pick) is enough to jog them; spelling out the correct answer would be hollow and unearned. Immediate feedback + a bounded nudge is the honest, sufficient response, and it prevents the game from looping forever. The correction stays positive-only (no stat penalty); it is an unmissable but light nudge, never a punishment and never a giveaway.
+
+**Choice-gating.** A concept may not be offered as a selectable player option (for example, a headline choice) until it is at least Understood — unless that very interaction is its authored demonstration/reassessment step *and* the prior stages are already satisfied. A concept the player has only been told to keep in mind is still in Learning and is not a legitimate option.
+
+**Objectives and the day-completion gate.** Each Mission Day, Chapter, and Season declares an explicit required-concept list. A day may not end until every required concept has cleared **all three stages and no required correction interaction remains open**; until then the Event Manager makes approved reroute carriers/checks due and the AI Director selects only among the resulting legal authored actions. Required-understand concepts are distinguished from context/framing material, which is delivered as background and is not threshold-gated.
+
+**Assessment cadence — spaced and interleaved, never batched (spaced repetition).** Same-day, each concept's understanding Sync and its applied demonstration are **separated in time**, and different concepts' Syncs are **interleaved** across the day — not "assess everything at once." Sync-based *reassessment* then lands on later days, so repetition is spaced across the Season. Assessment never feels like a quiz block, and Sync frequency is budgeted so the player is never spammed.
+
+**Notes as the assessment pool.** Every Understood concept enters Notes, and later assessments — including cross-concept synthesis such as identifying which events contributed to a given sentiment — may draw from anything in Notes. Understanding compounds across days, chapters, and Seasons.
+
+**Timing budget.** A Mission Day is approximately 15–30 minutes. Exposures are embedded within normal gameplay beats (a line during an errand, a broadside read while concealing a bundle, an overheard chant) rather than added as separate time, and Syncs are short. Each day's required-concept set — its exposures plus one understanding Sync and one applied demonstration per concept — must fit within this window, which bounds concept density per day. Sync-based reassessment of a concept is deferred to later days, so it never adds to the learning day's budget.
 
 ---
 
@@ -2443,22 +2656,20 @@ Invalid triggers include:
 - The game wants generic engagement.
 - A single line was heard without enough context.
 
-**UX sequence**
+**Presentation modes**
 
-1. A chime announces that a System message is pending after the active beat.
-2. If dialogue or a cinematic is finishing, a small edge indicator waits until the beat clears.
-3. A central holographic panel materializes with the header **SYNCHRONIZATION REQUIRED**.
-4. The historical world remains visible; locomotion and authored progression pause.
-5. The player completes one interaction using large holographic buttons or a compact evidence control.
-6. The System displays one approved confirmation or corrective context line, then **FIELD RECORD UPDATED**. It does not use a punitive red X.
-7. The panel dematerializes and control returns to the exact prior orientation.
+1. **Overlay Sync:** After the active beat, a chime and central **SYNCHRONIZATION REQUIRED** panel present one compact evidence/reasoning control. Use when no natural historical work product can validly capture the target.
+2. **Embedded Sync:** The Archive quietly marks an eligible Diegetic Construction action—such as setting a headline, routing a dispatch, or annotating a map—as the required field-record capture. The player acts through the historical Job; a brief **FIELD RECORD UPDATED** confirmation appears after commit. No separate quiz follows.
+
+In either mode the world remains visible, the player completes exactly one reasoning interaction, and feedback is concise. Embedded Sync is preferred when it preserves the same construct and is understandable without System explanation.
 
 **Cadence and length**
 
-- Exactly one required Sync per Mission Day.
-- Target completion: 10–20 seconds.
-- Hard content maximum: 30 seconds.
-- Exactly one primary interaction.
+- Every newly learned concept receives exactly one first-understanding question; this is the invariant, not one overlay opening per Mission Day.
+- On Day 1, each Sync contains one question and the three concept Syncs are separated across the day.
+- On Day 2 and later, one Sync may group one to three short questions, mixing same-day first-understanding checks and prior-day reassessments.
+- Target completion is 10–20 seconds for one-question Syncs; grouped Syncs have a hard content maximum of 30 seconds.
+- Exactly one primary interaction per question.
 - No multi-page sequence.
 - No open-ended response during a normal Sync.
 
@@ -2471,6 +2682,7 @@ Invalid triggers include:
 - Source evaluation.
 - Perspective Attribution.
 - A very small evidence organization action.
+- Diegetic Construction using bounded evidence or phrase components.
 
 ### Design Philosophy
 
@@ -2486,7 +2698,7 @@ A Sync is a snapshot of current thinking, not a final judgment. It should occur 
 
 ### Player Experience
 
-The player recognizes the visual language of a powerful futuristic System. It is allowed to feel overtly game-like and convenient while remaining diegetic: history continues to be the world, and the Archive is the interface through which the future briefs and tests the field agent.
+The player recognizes the visual language of a powerful futuristic System, but the Archive does not interrupt when the historical job can carry the same thinking. History remains the world; the Archive captures and supports field reasoning rather than turning every inflection into a quiz screen.
 
 ### System Interactions
 
@@ -2511,11 +2723,7 @@ Each Sync ActionSpec declares:
 
 ### Boston Example
 
-After the Stamp Act protest, the overlay asks:
-
-> “Which explanation best connects the Stamp Act to colonial resistance?”
-
-The four approved responses are: higher cost; Parliament imposing an internal tax while colonists lacked representation there; all colonists already wanted independence; and evidence insufficient. The panel responds with the canonical authored context line: “Cost contributed to opposition. The assessed dispute also concerns Parliament taxing colonists who had no representatives in Parliament.” Section 36 owns the exact Sync IDs and response mappings.
+After the Stamp Act has reached three tracked occasions across two types at Pike's, the Archive asks one short first-understanding question about what the stamp actually is. A pass adds Stamp Act to Notes and unlocks the later applied paper-sort demonstration. An initial miss receives one authentic re-exposure and one retry; a second miss on that retry corrects in place. The night headline remains a separate Diegetic Construction demonstration/synthesis, not Sync 1.
 
 ### Edge Cases
 
@@ -2523,6 +2731,7 @@ The four approved responses are: higher cost; Parliament imposing an internal ta
 - **A cinematic is active:** Notification waits until control returns.
 - **Reading takes longer than expected:** Accessibility timing overrides the target; no penalty.
 - **No valid adaptive variant exists:** Play the core approved prompt.
+- **Embedded action becomes impossible:** Use the authored Overlay Sync certified against the same construct; do not restore the lost work product or erase the consequence.
 - **AI returns an illegal, stale, or non-argmax ID:** Event Manager rejects it, re-resolves the legal set, and uses the authoritative deterministic Selection Policy Engine.
 
 ---
@@ -3053,10 +3262,11 @@ These fields are not collapsed into one “mastery percentage.”
 **Update rules**
 
 - Watching or hearing a carrier changes encounter state only.
-- One correct bounded response is positive evidence but does not establish understood.
+- One correct bounded response **without the required prior exposure pattern** is positive evidence but does not establish understood. On a concept's learning day, the declared rule may establish Understanding when the player has already committed the required three tracked post-reveal occasions across at least two interaction types and then passes the concept's first-understanding Sync.
+- An initial first-understanding miss creates a separate versioned re-exposure obligation requiring one new post-miss occasion and one retry; it is not derived from the already-satisfied 3/2 gate. A second miss on that retry corrects in place and closes without another cycle.
 - Explicit “not sure,” inconsistent responses, or missing causal links may support unsure.
 - A misconception flag becomes active only through an authored evidence pattern, not one arbitrary wrong click unless the prompt is uniquely diagnostic.
-- Every understanding transition and conflict precedence is defined by the concept’s versioned rule table. The standard rule requires consistent evidence from at least two distinct interactions, including one retrieval after intervening content or one valid Chapter/Season assessment result.
+- Every understanding transition and conflict precedence is defined by the concept’s versioned rule table. The learning-day rule uses the three-exposure/two-type gate plus a later first-understanding retrieval. Cross-day durable evidence and official assessment remain separate fields and require their own spaced retrieval/assessment records; a Notes entry is not an official mastery score.
 - Season-assessed status requires submission and a valid score from the common blueprint’s assigned reviewed form; formative adaptation cannot award it. An unscored or unclassified response cannot raise assessment-evidence status.
 - Only `OFFICIAL_INITIAL` or policy-approved `AUTHORIZED_RETAKE` may update official Chapter/Season assessed status. `PRACTICE_REPLAY` is stored separately and may emit formative evidence only; it never replaces, averages with, or enters official reporting.
 - A resolved misconception remains in history for spacing decisions but is not treated as currently active.
@@ -3171,6 +3381,8 @@ Each required introduction, retrieval, Debrief, and Review obligation binds a ve
 - Minimum complete-presentation and interaction criteria.
 - Obligation scope and `required_by_state` such as Mission Day end, `chapter_complete`, or `season_complete`.
 - Legal carrier variants, recap/accessibility equivalents, and their human-reviewed semantic-equivalence record.
+- Legal consequence-state predicates for each carrier and the authored reroute that makes another equivalent carrier due when one becomes unreachable.
+- Required player action and work-product criteria when the obligation is carried through a mechanic or Diegetic Construction interaction.
 - Completion statuses that may satisfy the obligation.
 - A semantic hash over the approved contract and bound content versions.
 
@@ -3178,7 +3390,11 @@ Different characters, routes, media, or wording may carry one obligation only wh
 
 **Scope rule**
 
-For the canonical Project Archive release, no core node exists without a current STAAR-eligible Grade 8 TEKS mapping. Contextual details may be attached to a scene for historical coherence, but they remain untracked and unassessed. An expansion must declare a separately approved standards and assessment package; “historically interesting” alone is never sufficient reason to enter any Curriculum Graph.
+For the canonical Project Archive release, the complete Game/Season/Chapter graph covers every current STAAR-eligible Texas Grade 8 Social Studies content standard and every named person, event, cause, consequence, institution, and relationship required by that assessed curriculum. No core node exists without an active standards-package mapping. Contextual details may be attached to a scene for historical coherence, but they remain untracked and unassessed. An expansion must declare a separately approved standards and assessment package; “historically interesting” alone is never sufficient reason to enter any Curriculum Graph.
+
+Coverage is assigned where the history naturally supports compelling play. A standard cannot be inserted into an unrelated Chapter as dialogue, an Archive fact dump, or an optional collectible merely to close a matrix cell. If the required knowledge cannot drive or inform plausible work, evidence, decision, consequence, historical action, or synthesis in the proposed Chapter, production must move it to a better Chapter or redesign the Chapter.
+
+The versioned **Assessed-Curriculum Coverage Ledger** is build-blocking. For every eligible standard and required named role it records: owning Chapter/Mission Day; RequiredCarrierContracts; authenticated evidence; historical figure/event carriers where applicable; mechanic or work-product integration; retrieval and transfer points; assessment blueprint mapping; supported accessibility equivalents; and package/pilot evidence status.
 
 Edges represent:
 
@@ -3188,7 +3404,7 @@ Edges represent:
 - **Retrieval:** A later authored return to an earlier concept.
 - **Transfer:** Application in a new context.
 
-The Graph does not dynamically invent a path. It defines a common required route and optional approved support opportunities.
+The Graph does not dynamically invent content. It defines common required obligations across a finite authored network of world-, action-, and consequence-conditioned carrier paths. Players may reach different carriers; every legal execution must commit the same due RequiredCarrierContracts.
 
 ### Design Philosophy
 
@@ -3220,7 +3436,7 @@ The player never sees a dependency diagram. They experience it as ideas returnin
 Graph validation rejects:
 
 - Required nodes with no scene carriers.
-- Concepts carried only by ambient or optional content.
+- Concepts carried only by ambient, optional, mechanically successful, or consequence-fragile content.
 - Required obligations without a complete RequiredCarrierContract.
 - A carrier, recap, localization, accessibility presentation, or action fallback whose declared contract/version differs from its obligation.
 - A concept that fails its declared minimum independent-carrier diversity.
@@ -3230,7 +3446,7 @@ Graph validation rejects:
 
 The compiler model-checks a universal completion invariant at each deadline: every reachable execution that commits a state named by `required_by_state`, across every legal route/response branch, terminal outcome, fallback, supported accessibility profile, AI-offline mode, and save/resume boundary, has committed every obligation due at that state under its exact RequiredCarrierContract. Chapter obligations are checked at `chapter_complete`; cross-Chapter retrieval and Review obligations remain pending until their authored later Chapter or `season_complete`. Seed simulation supplements but never replaces this proof.
 
-Curriculum dependency edges are authoring and coverage constraints, not learner-mastery gates. They require guaranteed prior carrier exposure and authored ordering. Runtime progression legality exists only in compiled Scene ActionSpecs; the player is never held back because an understanding state is not “understood.”
+Curriculum dependency edges are authoring and coverage constraints, not gates on the fixed historical event. They require guaranteed prior carrier exposure and authored ordering. Runtime progression legality exists only in compiled Scene ActionSpecs: history still fires on schedule, while **End Day** remains gated by the Mission Day's explicit Learning → Understanding → Demonstrating obligations.
 
 ### Boston Example
 
@@ -3266,18 +3482,18 @@ The Graph has two layers:
 - Mission Day arrivals.
 - Anchor briefings and returns.
 - Primary Jobs.
-- Required concept carriers.
+- Required curriculum obligations with at least one legal carrier path from every reachable consequence state.
 - Historical Events.
 - Required Archive Syncs.
 - Mission Debrief.
 
 **Flexible windows**
 
-- Order of selected supporting conversations.
+- Order of selected supporting actions and conversations.
 - Living Historical Encounter slots, selected encounter families, and declared silence.
 - Which approved clarification variant plays.
 - Optional observations and memories.
-- Short route choices.
+- Mechanical routes, outcome branches, carried-object states, Job-result branches, and consequence-specific carrier routes.
 - Amount of breathing room inside authored bounds.
 
 Every node declares:
@@ -3290,16 +3506,18 @@ Every node declares:
 - Incompatible active nodes.
 - Completion result.
 - World-state delta.
+- Job-object, visibility/attention, timing, relationship, and consequence deltas when applicable.
+- Legal terminal outcomes and continuation node for each outcome.
 - Required curriculum-carrier fallback, when applicable.
 - Bound RequiredCarrierContract obligation/version and legal satisfying terminal statuses, when it is a carrier.
 
-All experiential branches converge before the next fixed historical state.
+Experiential branches need not reconverge immediately. They must become compatible before the next fixed historical state that requires a common staging condition, while local consequences may persist through return, later Mission Days, and callbacks.
 
 At build time, each runnable opportunity is compiled into an ActionSpec. Scene nodes remain the authority for progression semantics. Asset bundles contain media and availability metadata only; they do not independently redefine Scene prerequisites, world deltas, curriculum evidence, or locks.
 
 ### Design Philosophy
 
-The Graph creates bounded agency. The player may choose how to arrive at an event and which perspective to hear first; the event and Chapter destination remain fixed.
+The Graph creates bounded but consequential agency. The player may choose and execute an approach, fail or partially succeed, alter local relationships and Job outcomes, and arrive at an event through a different consequence state. The recorded event and Chapter destination remain fixed.
 
 ### Responsibilities
 
@@ -3311,7 +3529,7 @@ The Graph creates bounded agency. The player may choose how to arrive at an even
 
 ### Player Experience
 
-The world appears responsive because conversations and routes vary. It never appears broken because a required event waits, an NPC knows the correct state, and the player always has a coherent next action.
+The world appears responsive because actions produce persistent, state-consistent consequences. It never appears fake because the graph does not erase failure, force an NPC to forget, or silently complete a missed objective. It never appears broken because every terminal outcome has a coherent authored continuation and every due learning obligation has an equivalent reachable carrier.
 
 ### System Interactions
 
@@ -3324,7 +3542,7 @@ The world appears responsive because conversations and routes vary. It never app
 
 ### Implementation Notes — High Level
 
-The Graph is a directed, state-conditioned content graph, not a generative planner. Automated validation checks reachability, deadlocks, duplicate ownership, missing fallback, non-convergent branches, historical ordering, and the universal RequiredCarrierContract completion invariant. Mere existence of one complete core path does not pass.
+The Graph is a directed, state-conditioned action and content graph, not a generative planner. Automated validation checks every mechanic outcome, object/Job state, attention state, consequence branch, convergence deadline, reachability, deadlock, duplicate ownership, missing fallback, historical ordering, and the universal RequiredCarrierContract completion invariant. Mere existence of one successful core path does not pass.
 
 ### Boston Example
 
@@ -3438,7 +3656,7 @@ Links among misconceptions are explanatory only; they never propagate or activat
 
 ### Purpose
 
-The AI Director selects the single best next authored experience at explicit action boundaries from legal options supplied by deterministic systems. Required learning remains highest priority; Living Historical Encounters may serve history, character, pacing, and replay variation without becoming assessments.
+The AI Director is a local deterministic selection boundary that selects the single best next authored experience from legal options. It is not a blocking LLM call. Required learning remains highest priority; Living Historical Encounters may serve history, character, pacing, consequence continuity, and replay variation without becoming assessments.
 
 It is not a teacher.  
 It is not a storyteller.  
@@ -3475,10 +3693,23 @@ Selection is event-driven, not a polling loop. A DecisionRequest is created only
 
 Selecting `NO_ACTION` commits a durable slot-specific SilenceResolution before reevaluation is suppressed. The same slot instance cannot be reconsidered after another trigger or reload unless an authored invalidation rule creates a new slot instance.
 
+**Prepared frontier / zero-wait flow**
+
+While the current action is executing, Event Manager builds a bounded `PreparedFrontier` for every declared terminal outcome:
+
+1. Apply each possible authored outcome to an immutable provisional World/Scene snapshot.
+2. Resolve the next legal player-requested, mandatory, Director-scheduled, and silence candidates.
+3. Compute the authoritative deterministic rank for each frontier.
+4. Prefetch the required primary and fallback assets.
+5. Optionally prepare one additional transition when memory/CPU budgets allow; never speculate so far ahead that stale branches crowd out the immediate frontier.
+
+When the player commits an input or OutcomePolicy resolves, Event Manager selects the matching prepared outcome branch and begins the authored reaction immediately. A stale frontier is discarded and recomputed locally from compiled ActionSpecs; no network or model call is allowed on the critical path.
+
 **Inputs**
 
 - Current Season, Chapter, Mission Day, scene, objective, location, and event state.
-- Anchor and supporting NPC state.
+- Anchor and supporting NPC location, relationship, attention, memory, and consequence state.
+- Current route pressure, carried-object custody/condition, Job-objective outcomes, visibility/attention, timing, and prior mechanic outcomes.
 - Pending required transitions and latest legal points.
 - A request ID and pinned World State, Learner Model, content-package, and asset-readiness revisions.
 - Eligible approved `action_id` values and their soft-ranking metadata.
@@ -3563,6 +3794,7 @@ It does not judge a child:
 
 - Choose a standard, clarification, reinforcement, advanced, or callback line.
 - Choose among eligible optional scene orders.
+- Choose among eligible authored consequence-state carrier routes after Event Manager removes paths made impossible by committed World State.
 - Choose an eligible Living Historical Encounter variant or `NO_ACTION`.
 - Choose an eligible Archive Sync variant.
 - Offer an eligible `FORMATIVE_TARGETED` Archive Memory; the mandatory common pre-assessment window is System-owned.
@@ -3581,10 +3813,11 @@ It does not judge a child:
 - Infer emotion, disability, demographic identity, political belief, or intent.
 - Select an illegal ID even if it seems pedagogically useful.
 - Keep a player in remediation instead of advancing the fixed story.
+- Select the result of a player's mechanic attempt, override the deterministic OutcomePolicy, or reverse a committed consequence.
 
 ### Player Experience
 
-The Director should be invisible. The player experiences a well-paced world in which the right person tends to say the useful line and unnecessary repetition disappears.
+The Director should be invisible. The player experiences a well-paced world in which complications, silence, and follow-ups fit what actually happened; required learning returns through a consequence-consistent action rather than an NPC appearing to recite a missing lesson.
 
 ### System Interactions
 
@@ -3597,7 +3830,7 @@ The Director should be invisible. The player experiences a well-paced world in w
 
 ### Implementation Notes — High Level
 
-The Director may use a constrained model or hybrid to propose an eligible ID or produce diagnostics, but the proposal is advisory. Deterministic code computes the authoritative argmax. The Event Manager accepts the result only when it equals that argmax under the pinned selector version and inputs; otherwise it uses the computed argmax and records a policy-conformance failure.
+Deterministic local code always computes the authoritative argmax. A constrained model may asynchronously propose a future eligible ID or produce diagnostics only when its response deadline precedes the prepared action boundary. Event Manager never waits for it. A late, stale, unavailable, non-argmax, or invalid proposal is discarded without changing timing or selection; the local argmax remains authoritative.
 
 Required safeguards:
 
@@ -3609,8 +3842,11 @@ Required safeguards:
 - Revalidation of both legality and deterministic-argmax conformance after selection.
 - Decision telemetry with input IDs, selected ID, fallback status, and policy version.
 - No chain-of-thought storage requirement.
+- No model request, network response, or remote asset fetch on the player-input-to-world-reaction path.
+- One-outcome-deep PreparedFrontier coverage for every active consequential ActionSpec, including primary/fallback asset readiness.
+- Choice-to-visible-reaction target at or below 150 ms at the 95th percentile on minimum supported hardware, excluding authored anticipation/animation that begins immediately.
 
-If the advisory model fails, times out, returns an unavailable ID, returns stale revisions, or is offline, the Event Manager resolves a fresh legal set and invokes the same deterministic Selection Policy Engine. This is AI-offline default selection, not a media, action, or carrier fallback. Fixed inputs produce the same selected ID in online, offline, resume, and degraded modes.
+If an advisory model fails, times out, returns an unavailable ID, returns stale revisions, or is offline, nothing player-visible changes. Event Manager uses the already prepared local deterministic result or resolves one fresh local legal set. This is normal selection, not a degraded fallback. Fixed inputs produce the same selected ID in online, offline, resume, and model-enabled modes.
 
 During student play, no runtime subsystem may create, rewrite, summarize, translate, or synthesize player-facing semantic content or authored media. Runtime models may return only allowlisted `action_id` values, rubric tags, confidence values, and status codes. Approved templates may be filled only with allowlisted authored values. Speech recognition is input conversion; verbatim assistive text-to-speech and procedural rendering may present approved wording but may not alter meaning.
 
@@ -3663,6 +3899,9 @@ It tracks:
 
 - Current game, Season, Chapter, Mission Day, historical date, and checkpoint.
 - Player cover identity, location, control state, current Job, and objective.
+- Carried-object custody, condition, concealment, and delivery state.
+- Route pressure, visibility/attention, watcher recognition, timing/deadline, and mechanic consequence state.
+- Job-objective terminal outcomes including completed, partial, late, damaged, inspected, confiscated, missed, refused, and failed where authored.
 - Completed, active, pending, and reserved Scene Graph nodes. Blocked and eligible status is derived by the Event Manager and is not persisted.
 - Historical Event status.
 - NPC location, activity, availability, mood, and relationship state.
@@ -3696,7 +3935,7 @@ The AI must query the world, not imagine it. One authoritative state prevents Ab
 
 ### Player Experience
 
-State continuity makes the district feel responsive: a closed shop stays closed, Abigail remembers the day, and patrols reflect the latest event.
+State continuity makes the district feel responsive: a closed shop stays closed, a watcher who recognized the player can identify them later, a confiscated handbill bundle stays gone, Abigail reacts to the actual delivery result, and patrols reflect the latest event.
 
 ### System Interactions
 
@@ -3709,7 +3948,7 @@ State continuity makes the district feel responsive: a closed shop stays closed,
 
 ### Implementation Notes — High Level
 
-State updates occur only on validated action start/completion boundaries. Event completion is atomic. Presentation may interpolate, but authoritative state changes once.
+State updates occur only on validated action start, mechanic-outcome, exposure, and completion boundaries. Consequential outcome commits are atomic. Presentation may interpolate, but authoritative state changes once.
 
 The system supports content-version migration or a safe checkpoint restart; it never silently maps unknown IDs.
 
@@ -3722,6 +3961,9 @@ The system supports content-version migration or a safe checkpoint restart; it n
 - Royal troop occupation: not present in the 1765 state.
 - Harbor: active.
 - Crowd: tense but dispersed.
+- Anti-Stamp handbill bundle: in player custody; timed rider handoff pending.
+- Watcher recognition: none.
+- Delivery/object conditions: intact.
 
 **Mission Day 4 state**
 
@@ -3734,9 +3976,10 @@ The system supports content-version migration or a safe checkpoint restart; it n
 ### Edge Cases
 
 - A selected action with stale prerequisites is rejected and eligibility recalculates.
-- Save corruption returns to the last valid Mission Day checkpoint.
+- Save corruption restores the latest valid transaction/journal checkpoint; if only Mission Day start survives, the active attempt restarts explicitly and never reports unrecoverable local outcomes as completed.
 - Optional visual state may degrade on low hardware; historical and interaction state may not.
 - Learner-model reset does not roll back historical world state.
+- A carrier reroute does not overwrite the World state that made the original carrier unreachable.
 
 ---
 
@@ -3757,11 +4000,11 @@ For each decision point, it:
 5. Revalidates the selected ID and all pinned revisions.
 6. Reserves the action, stages it, and locks incompatible actions.
 7. Sends an immutable ExecutionPlan to the appropriate presenter: Runtime Executor for world/media actions or Archive Runtime Controller for holographic System actions.
-8. Receives zero or more typed nonterminal ExecutionProgress signals and exactly one terminal ExecutionResult.
-9. Validates the result against the ActionSpec’s terminal-outcome mapping; a selected `NO_ACTION` instead prepares its typed SilenceResolution.
+8. Receives zero or more typed nonterminal ExecutionProgress signals, any declared MechanicResult input record, and exactly one terminal ExecutionResult.
+9. For a consequential mechanic, applies the ActionSpec's deterministic OutcomePolicy to pinned World State, validated MechanicResult, Accessibility/Input treatment, and domain-separated RunVariationContext rank to compute one legal `authored_terminal_outcome_id`; for non-mechanical presentation, validates the declared terminal outcome directly. A selected `NO_ACTION` instead prepares its typed SilenceResolution.
 10. Prepares declared World deltas, Learner EvidenceEvents, applicable ReplaySelection/Exposure/Route deltas or SilenceResolution, any due ReplayAttemptCommit, assessment/Archive updates, Scene-slot resolution, and an idempotent audit-outbox record without publishing any revision.
 11. Save/Resume atomically commits the full composite transaction and outbox under one transaction ID; authoritative revisions publish only after success.
-12. Releases locks and recalculates eligibility.
+12. Publishes the matching precomputed `PreparedFrontier` branch, begins the next authored reaction, releases obsolete locks, and extends the frontier in the background.
 
 The legal set may include:
 
@@ -3771,6 +4014,7 @@ The legal set may include:
 - Archive Sync ActionSpec.
 - Archive Memory offer ActionSpec.
 - Ambient ActionSpec.
+- Contextual Skill, Consequential Social Action, or Diegetic Construction ActionSpec.
 - Slot-specific `NO_ACTION` CandidateSpec when legal.
 
 ### Design Philosophy
@@ -3798,10 +4042,11 @@ Only one authored foreground beat competes for attention. Crowds, conversations,
 - Supplies ExecutionPlans to the Runtime Executor and receives nonterminal ExecutionProgress signals plus one terminal ExecutionResult.
 - Sends validated deltas/events to their authoritative state owners.
 - Coordinates Save/Resume durable commit and an idempotent telemetry outbox.
+- Maintains a bounded PreparedFrontier over every declared terminal outcome of the active action and invalidates it on revision mismatch.
 
 ### Implementation Notes — High Level
 
-Each ActionSpec declares reversible `start_effects`, a separate Event Manager mapping for pre-start reservation cancellation, and independent terminal mappings for every exact ExecutionResult status below. World delta, Scene completion, learner evidence, replay exposure, RequiredCarrierContract completion, and recovery are mapped independently. Generic failure commits no historical outcome.
+Each ActionSpec declares reversible `start_effects`, a separate Event Manager mapping for pre-start reservation cancellation, and independent mappings for every exact ExecutionResult status and `authored_terminal_outcome_id`. World delta, Job/object result, relationship/attention result, Scene continuation, learner evidence, replay exposure, RequiredCarrierContract completion, and recovery are mapped independently. Generic technical failure commits no historical outcome; an authored failed player action is a valid outcome and commits its declared local consequence.
 
 `start_effects` are reversible staging/presentation effects and are not an ExecutionResult. A presenter may emit nonterminal `ExecutionProgress.EXPOSURE_REACHED` only at a declared exposure boundary. Event Manager commits the resumable exposure checkpoint while retaining locks and the owning action, then instructs the presenter to continue; progress never executes terminal World/Scene/carrier mappings or recalculates eligibility.
 
@@ -3815,6 +4060,25 @@ Runtime presenters terminate with exactly one ExecutionResult:
 
 Pre-start reservation cancellation is an Event Manager lifecycle result, not an Executor status. Every status has an explicit ActionSpec mapping; no generic “success” delta exists.
 
+**MechanicResult and OutcomePolicy**
+
+- `MechanicResult` is a typed, bounded record of relevant player execution such as attempted approach ID, completed input phases, timing bucket, contact/noise events, protected-object state, and accessibility treatment ID. It contains no inferred intent, ability, or learner judgment.
+- `OutcomePolicy` is immutable deterministic code/data compiled from the ActionSpec. It names visible prerequisite conditions, the fields accepted from MechanicResult, outcome thresholds, legal uncertainty set, domain-separation label, and exact authored terminal outcomes.
+- Mechanical facts resolve first. Seeded uncertainty is consulted only where more than one outcome remains causally valid.
+- Event Manager—not Runtime Executor, AI Director, or a model—computes the authoritative outcome.
+- Save/Resume checkpoints preserve the pinned action, World snapshot, completed mechanic phases, and outcome decision ordinal so restart cannot reroll a consequence.
+- PreparedFrontier precomputes the next legal set, local argmax, continuation, and asset IDs for every exact authored terminal outcome before the player's choice resolves whenever the current action provides enough lead time.
+
+**Canonical uncertain-outcome draw**
+
+OutcomePolicy uses only integer, versioned `PA-CANON-v1` fields. Mechanical/state predicates first remove impossible outcomes. If one outcome remains, it wins without a draw. Otherwise each remaining outcome declares a positive `uncertainty_weight: u64`, candidates sort by canonical `authored_terminal_outcome_id` bytes, and `W = Σ weight` is accumulated in unsigned `u128` with overflow rejected.
+
+Let `R` be the full HMAC output interpreted as an unsigned 256-bit integer:
+
+`HMAC-SHA-256(key = raw_16_byte_attempt_seed, message = ASCII("PA.OUTCOME.RANK.v1") || 0x00 || raw_32_byte_package_hash || str(outcome_policy_id) || str(outcome_policy_version) || str(chapter_attempt_id) || str(action_id) || u32be(outcome_decision_ordinal) || str(domain_label))`.
+
+Compute `bucket = floor(R × W / 2^256)` using exact integer arithmetic. Choose the first canonically ordered outcome whose cumulative weight is greater than `bucket`. The tiny deterministic bucket imbalance, bounded by one preimage in `2^256`, is included in exact model counting. Floating point, runtime model scores, platform entropy, frame time, and resumable retries are prohibited inputs. Package validation publishes cross-platform golden vectors for filtered legal outcomes, canonical bytes, `R`, `bucket`, and the final outcome.
+
 `NO_ACTION` has no presenter. Its SilenceResolution contains runtime slot instance, stable signature slot key, decision ordinal, request ID, pinned revisions, selector version, canonical candidate identity/rank digest, ReplayProfileState revision, RunVariationContext ID, typed `NO_ROUTE`, authored traversal resume-node ID, and transaction ID. Save/Resume commits the resolution, ReplaySelectionDelta, and ReplayRouteDelta to Scene progress and the audit outbox atomically. System-selected silence is distinct from a player choosing an authored “remain quiet” response inside an encounter.
 
 Fallback mechanisms are distinct:
@@ -3823,9 +4087,10 @@ Fallback mechanisms are distinct:
 - **Action fallback (`action_fallback_action_id`):** Alternate approved ActionSpec whose acyclic chain terminates in an ActionSpec with a locally runnable primary/media bundle. Sharing an `action_family_id` is insufficient: a required fallback must bind the exact same obligation and RequiredCarrierContract version.
 - **Curriculum-carrier fallback (`carrier_fallback_action_id`):** Later required ActionSpec that commits the exact same RequiredCarrierContract when an optional non-Living-Encounter carrier is missed.
 - **AI-offline selection:** The same versioned deterministic Selection Policy Engine applied to a freshly resolved legal set.
-- **Interrupted-action recovery:** Event checkpoint or full action restart.
+- **Interrupted-action recovery:** Exact mechanic-phase checkpoint or pre-outcome restart under identical pinned OutcomePolicy/uncertainty; committed authored outcomes never restart or reroll.
+- **Consequence-state carrier reroute:** A later authored ActionSpec that becomes due because the committed outcome made the original carrier impossible; it binds the exact same RequiredCarrierContract without reversing that outcome.
 
-Launch invariant: every required ActionSpec must bind a runnable primary bundle and a legal equivalent path for every supported accessibility/input profile, using either a local media fallback or local action fallback certified against the same RequiredCarrierContract and cognitive demand. Every required curriculum obligation carried by an optional non-Living-Encounter action must also declare a required carrier fallback. A terminal status satisfies an obligation only when its mapping explicitly commits the contract: `COMPLETED` normally qualifies; `SKIPPED_WITH_RECAP` qualifies only when the completed recap itself binds the same contract; cancellation, incomplete presentation, and failure never qualify. Any chain cycle, missing terminal bundle, unsupported profile, semantic mismatch, or required action that fails this invariant prevents Chapter launch.
+Launch invariant: every required ActionSpec must bind a runnable primary bundle and a legal equivalent path for every supported accessibility/input profile, using either a local media fallback or local action fallback certified against the same RequiredCarrierContract and cognitive demand. Every required curriculum obligation carried by an optional non-Living-Encounter action must also declare a required carrier fallback. A technical ExecutionResult satisfies an obligation only when its mapping explicitly commits the contract: `COMPLETED` normally qualifies; `SKIPPED_WITH_RECAP` qualifies only when the completed recap itself binds the same contract; cancellation, incomplete presentation, `FAILED_RETRYABLE`, and `FAILED_TERMINAL` never qualify. An authored local failure/partial `authored_terminal_outcome_id` may satisfy a carrier when the Runtime ExecutionResult is `COMPLETED` and the contract's evidence/reasoning criteria were actually completed; mechanical success is never the criterion. Any chain cycle, missing terminal bundle, unsupported profile, semantic mismatch, or required action that fails this invariant prevents Chapter launch.
 
 ### Boston Example
 
@@ -3906,6 +4171,8 @@ Approved text proceeds to:
 
 At package build, the ActionSpec Compiler binds each immutable ActionSpec to an approved asset bundle. Package load validates hashes and availability only; it never mutates or completes a binding. The AI Director selects the ActionSpec’s `action_id`; it never selects a raw `asset_bundle_id`. Runtime never calls dialogue, voice, subtitle, translation, summary, or animation generation services.
 
+During execution, PreparedFrontier requests the primary and fallback bundles for every declared immediate terminal outcome of the active action. Streaming prioritizes those bundles over distant speculation. If an optional high-cost bundle cannot be ready by the action boundary, Event Manager removes that ActionSpec before selection or uses its already prepared approved fallback; it never waits for generation or a remote model.
+
 ### Design Philosophy
 
 AI expands and validates the possibility space during production. Runtime intelligence chooses within that space. Human-approved content remains the source of truth.
@@ -3983,6 +4250,8 @@ Every anchor, supporting NPC, and historical figure has a Card containing:
 - Name and subtitle role.
 - Historical/fictional/composite status.
 - Date-specific biography and social position.
+- Date-specific organizational, political, institutional, occupational, and community affiliations, each marked documented, inferred, composite, contested, or none.
+- Affiliation visibility: what the player may learn from behavior, clothing/role, source, another person's claim, or Archive field tag.
 - Occupation and daily work.
 - Knowledge boundaries.
 - Perspective and uncertainty.
@@ -4001,7 +4270,7 @@ Cards do not prompt a runtime model to improvise. They constrain authoring, vali
 
 ### Design Philosophy
 
-Perspective is produced by a life, not a label. “Merchant” influences Thomas’s evidence; it does not make every merchant identical. Characters may be informed, biased, uncertain, or wrong within approved historical bounds.
+Perspective is produced by a life, not a label. “Merchant,” “Sons of Liberty,” “Loyalist,” “royal official,” or “Patriot” changes access, incentives, relationships, and evidence; no label makes every member identical. Characters may be informed, biased, uncertain, divided, or wrong within approved historical bounds.
 
 ### Responsibilities
 
@@ -4019,13 +4288,14 @@ Characters remain recognizable across days even as mood and circumstances change
 
 - Subtitle System reads name and role.
 - World State selects mood.
+- Archive field tags may identify a documented affiliation only after the player encounters relevant action/evidence and only at the certainty level in the Card.
 - Scene Graph selects legal scenes.
 - Misconception Graph identifies potential clarifiers.
 - Asset bank maps variants.
 
 ### Implementation Notes — High Level
 
-Card changes are content-version changes and require revalidation of every linked asset. Historical figures receive the narrowest allowed-topic scope.
+Card changes are content-version changes and require revalidation of every linked asset. Historical figures receive the narrowest allowed-topic scope. Fictional/composite affiliations must be historically plausible and clearly marked in production metadata; they cannot be used as proof that every real member of a group behaved the same way.
 
 ### Boston Examples
 
@@ -4217,8 +4487,10 @@ Adaptation provides useful individual support while preserving one historical st
 - Which approved evidence receives subtle framing.
 - Which equivalent formative Archive Sync variant appears.
 - Whether and when an eligible `FORMATIVE_TARGETED` Archive Memory is offered; `COMMON_PREASSESSMENT` timing and catalog are fixed System behavior.
-- Optional scene order inside a convergence window.
+- Which authored, contract-equivalent required carrier becomes due after route, mechanic, Job, or consequence state makes another carrier unreachable.
+- Optional scene order and consequence-consistent scene availability inside an authored window.
 - Which eligible Living Historical Encounter family/variant appears during a traversal window, influenced by ReplayProfileState and RunVariationContext only inside a variation-equivalence class after all higher priorities are equal.
+- Which authored follow-up becomes eligible after Mechanic Outcome Resolver commits an uncertain local result; adaptation never selects that result.
 - Amount of free-roam breathing room within authored bounds.
 - Whether the AI Director selects silence.
 
@@ -4230,7 +4502,7 @@ Adaptation provides useful individual support while preserving one historical st
 - Required concepts, standards, and minimum carriers.
 - Required curriculum coverage and assessment prerequisites across every variation seed.
 - Historical Events and cinematics.
-- Mission Day spine and Chapter completion.
+- Fixed historical spine and Chapter completion availability.
 - Summative Review standard and scored blueprint.
 - Character knowledge boundaries.
 - Approved dialogue wording and media.
@@ -4238,17 +4510,18 @@ Adaptation provides useful individual support while preserving one historical st
 
 **Adaptation hierarchy**
 
-1. Select a different approved line.
-2. Select an equivalent formative prompt.
-3. Frame a different approved evidence carrier.
-4. Offer one optional follow-up or Archive Memory.
-5. Defer support to a later authored Chapter when that context is better.
+1. Honor the committed World/Job consequence and remove impossible carriers or scenes.
+2. Make the contract-equivalent carrier already authored for that consequence state due before its deadline.
+3. Select a different approved action, evidence treatment, or line within that carrier.
+4. Select an equivalent formative construction or prompt.
+5. Offer one optional follow-up or Archive Memory when pacing permits.
+6. Defer non-due support to a later authored moment when that context is better.
 
-No adaptation creates a new scene, encounter, map, ending, or event.
+No adaptation creates a new scene, encounter, route, consequence, map, ending, or event. It activates and ranks only authored branches. Adaptation never restores an item, rewinds a failed handoff, lowers a risk, changes an NPC memory, or fakes success to make a preferred lesson fit.
 
 ### Design Philosophy
 
-Learner Model supplies structured evidence; Event Manager derives legal support opportunities from compiled ActionSpecs; AI Director ranks those legal opportunities. No learning-state component directly selects content. Most educational value comes from strong common authoring; adaptation is a light layer.
+World State first determines what is now true because of the player's actions. Curriculum and Scene contracts then determine which authored carrier paths remain legal and which obligation is due. Learner Model supplies structured evidence; Event Manager resolves the legal opportunities; AI Director ranks them. Adaptation protects the learning floor by rerouting content through the real consequence, never by flattening that consequence.
 
 ### Responsibilities
 
@@ -4261,7 +4534,7 @@ Learner Model supplies structured evidence; Event Manager derives legal support 
 
 ### Player Experience
 
-Two players can compare Boston and recognize the same Chapter. One may hear a concise representation clarification; another may hear an advanced question about whether repeal would resolve the authority dispute.
+Two players can compare Boston and recognize the same historical Chapter while describing materially different runs. One may deliver the handbills cleanly and set the headline from the retained shop copy; another may be recognized by a watcher, miss the rider, and learn the same representation argument while rebuilding the report from a posted town instruction and Abigail's surviving proof.
 
 ### System Interactions
 
@@ -4270,6 +4543,7 @@ Two players can compare Boston and recognize the same Chapter. One may hear a co
 - Asset bank supplies all variants.
 - Telemetry records selected versus fallback paths.
 - Season Review remains comparable.
+- RequiredCarrierContract completion is independent of mechanic success while carrier choice remains consequence-dependent.
 
 ### Implementation Notes — High Level
 
@@ -4281,13 +4555,16 @@ Every adaptive family declares:
 - Maximum frequency.
 - Cooldown.
 - Core fallback.
+- Consequence-state carrier matrix and latest reroute boundary.
+- Prohibited consequence reversals.
 - Later verification point.
 
 ### Boston Examples
 
-- **Unsure:** Abigail adds one approved sentence distinguishing tax amount from authority.
-- **Active `BOS_ALL_INDEPENDENCE`:** Clarke’s contextual non-unanimity scene becomes preferred when legal.
-- **Understood:** Repeated basic explanation is skipped; Abigail asks whether repeal would settle the larger argument.
+- **Handbills delivered:** The player uses the retained shop copy and confirmed delivery state while setting the headline.
+- **Handbills confiscated/refused or handoff missed:** The delivered copy does not appear at the press. The retained shop copy, posted town instruction, and legal proof form the equivalent evidence set for the same representation contract; Abigail reacts to the real loss instead of pretending delivery succeeded.
+- **Active `BOS_ALL_INDEPENDENCE`:** Clarke's contextual non-unanimity consequence scene becomes preferred when legal.
+- **Understood:** Repeated basic explanation is skipped; the headline action requires choosing evidence that distinguishes repeal of one tax from the larger authority dispute.
 - **No reliable state:** Standard core dialogue plays.
 
 ### Edge Cases
@@ -4327,6 +4604,7 @@ flowchart LR
 **Stage 1 — Standards brief**
 
 - Current TEKS and assessed curriculum.
+- Complete Assessed-Curriculum Coverage Ledger with no unowned eligible standard or required named role across the release.
 - Reporting-category obligations.
 - Historical-reasoning targets.
 - Prior and later concept dependencies.
@@ -4338,6 +4616,7 @@ flowchart LR
 - Verified people, places, events, material culture, and quotations.
 - Areas of scholarly uncertainty.
 - Represented and missing perspectives.
+- Required Historical Figure Manifest: assessed role, documented affiliations/actions, physical/source/Archive carriers, provenance, prohibited invention, and retrieval.
 - Source provenance and rights.
 
 **Stage 3 — Experience design**
@@ -4348,6 +4627,7 @@ flowchart LR
 - Mission Days.
 - District and state changes.
 - Historical spine.
+- Core occupational/traversal mechanic families, sustained action sequences, consequential decisions, and local outcome budget.
 - Living Historical Encounter budget, categories, traversal slots, and replay-variation targets.
 - Interaction and Archive cadence.
 
@@ -4355,7 +4635,9 @@ flowchart LR
 
 - Curriculum nodes and transfer.
 - Scene prerequisites, locks, and fallbacks.
+- Mechanic OutcomePolicies, carried-object/Job state, visibility/attention state, consequence continuations, convergence deadlines, and carrier-reroute matrix.
 - Encounter-family source declarations, convergence nodes, repeat rules, and seeded variation metadata for offline ActionSpec compilation.
+- Encounter perspective payloads, affiliation/certainty boundaries, mechanic expression, and outcome-calibration strata.
 - Misconceptions, clarifications, memories, and later checks.
 - Character Cards.
 
@@ -4381,7 +4663,7 @@ flowchart LR
 - Character concept/mesh/optional rig production, including the offline reference chain in Appendix E where appropriate.
 - Voice recording or licensed synthesis.
 - Subtitle and timing.
-- Work, gesture, generic talk, and cinematic animation.
+- Work, traversal, evasion, crowd-pressure, object-condition, consequence, gesture, generic talk, and cinematic animation.
 - Camera and staging.
 - Environment state bundles.
 - Music and sound.
@@ -4391,13 +4673,17 @@ flowchart LR
 - ID and schema validation.
 - ActionSpec Compiler output with source hashes, compiler/schema version, and immutable generated manifest.
 - Graph reachability plus universal RequiredCarrierContract completion model checking.
+- Exhaustive mechanic-outcome, Job/object-state, consequence-persistence, no-reroll-on-resume, and consequence-state carrier-path validation.
 - Required semantic-obligation coverage and independent-carrier diversity.
 - Fallback and asset availability.
-- Supported accessibility-profile coverage for every required carrier, event, route, and scored item.
+- Supported accessibility-profile coverage for every required carrier, mechanic, event, route, and scored item, including parity of meaningful choice, information, ownership, stakes, and consequence range.
+- Supported accessibility-profile coverage for every required mechanic and consequence range without inferring learner weakness.
 - Historical ordering.
+- Required historical-person role coverage and affiliation-certainty validation; fictional composites cannot satisfy a required real-person obligation.
 - Subtitle timing and collision.
 - Performance tiers.
 - Save/resume, online/offline selector parity, and save-at-every-boundary signature equivalence.
+- Deterministic OutcomePolicy golden vectors and online/offline/uninterrupted/resumed mechanic-outcome parity.
 - Complete executable ReplayValidationManifest defined in Section 9A, including transition/probability model and artifact hashes.
 - Deterministic selector golden vectors across supported platforms.
 - Reproducible replay report containing package/selector/signature versions, representative state and player-policy strata, raw collision counts, confidence bounds, concentration, first-five-attempt novelty, historical eligibility, convergence, and required-content invariance.
@@ -4498,7 +4784,7 @@ Exit criterion: Historical reviewers can distinguish fact, plausible connective 
 
 Define:
 
-- Eight to twelve core concepts.
+- The minimum sufficient assessed concept set assigned to this Chapter by the Assessed-Curriculum Coverage Ledger; no numerical quota may add or remove a concept.
 - Factual knowledge.
 - Reasoning skills.
 - Dependencies.
@@ -4520,28 +4806,30 @@ For each day specify:
 
 - Arrival state.
 - Anchor briefing.
-- Job and route.
-- Two to four Living Historical Encounter slots with eligible categories, silence, and convergence.
-- Three to five interactions.
-- Meaningful traversals.
+- Job, material work product, tracked objects, deadlines, and route approaches.
+- Sustained occupational/traversal mechanic sequence and at least two consequential decisions.
+- Two to four Living Historical Encounter slots with eligible categories, perspective payloads, silence, outcome branches, and latest compatible historical checkpoint.
+- Three to five meaningful actions.
+- Mechanic families, readable conditions, OutcomePolicies, authored terminal outcomes, and consequence continuations.
+- Accessibility-agency equivalents preserving choice, stakes, ownership, and consequence range.
 - Fixed event.
-- Archive Sync.
-- Return.
-- State delta.
+- Embedded/overlay Archive Sync.
+- Consequence-state return.
+- World/Job/object/attention/relationship/learning deltas and carrier-reroute matrix.
 
 Exit criterion: The day is playable from start to end on paper.
 
 **Step 6 — Build graphs**
 
-Author fixed spine, optional windows, encounter-family source declarations, replay variation, prerequisites, blockers, fallbacks, concept carriers, misconception opportunities, and cooldowns. The offline ActionSpec Compiler alone emits executable ActionSpecs.
+Author the fixed historical spine, mechanic/consequence graph, optional windows, encounter-family source declarations, replay variation, prerequisites, blockers, OutcomePolicies, fallbacks, RequiredCarrierContracts/reroutes, misconception opportunities, and cooldowns. The offline ActionSpec Compiler alone emits executable ActionSpecs.
 
 Exit criterion: Automated reachability, universal due-obligation completion, and replay-transition validation pass.
 
-**Step 7 — Write core dialogue and interactions**
+**Step 7 — Build the complete playable obligation paths**
 
-Write core path first. Apply Dialogue Bible, historical sources, and interaction templates.
+Build every legal mechanic/outcome/accessibility path through each due obligation before polishing dialogue. Then write concise action-driven human lines, historical evidence treatments, work products, reactions, and media using the Dialogue Bible and source dossier.
 
-Exit criterion: A player on the core path can understand and complete the Chapter without adaptation.
+Exit criterion: Every legal local outcome can continue, preserve its consequence, complete all due obligations, and reach fixed history with adaptation/model services disabled.
 
 **Step 8 — Write bounded variants**
 
@@ -4569,7 +4857,7 @@ Exit criterion: Critical historical, navigation, comprehension, and assessment f
 
 ### Design Philosophy
 
-The team authors from truth and curriculum outward, not from a spectacular cutscene backward. The core path is completed before adaptive variation.
+The team authors from truth and curriculum outward, not from a spectacular cutscene or dialogue script backward. The invariant obligation/historical spine and complete mechanic-outcome network are validated before adaptive/replay breadth.
 
 ### Responsibilities
 
@@ -4589,6 +4877,7 @@ Every workflow artifact maps to a runtime owner:
 - Dossier → approved historical content.
 - Curriculum slice → Curriculum Graph.
 - Beat sheets → Scene Graph.
+- Mechanic/OutcomePolicy/object/consequence specifications → ActionSpec Compiler and World/Scene schemas.
 - Misconceptions → Misconception Graph.
 - Cast → Character Cards.
 - Dialogue/media → asset bank.
@@ -4612,7 +4901,7 @@ The Boston author begins with the 1765–1774 escalation question, not with the 
 
 ### Edge Cases
 
-- If a signature treatment requires a new engine verb, redesign it with the existing taxonomy first.
+- If a signature treatment requires an unreviewed Chapter-only verb, attempt composition from approved mechanic families first; a genuinely reusable platform mechanic requires a versioned engine decision and regression review.
 - If the core path is unclear without a clarification variant, move that information into core.
 - If playtesters consistently miss a required scene, fix level/event design rather than lowering the learning state.
 - If a Chapter would require more than five Mission Days, split it rather than compressing chronology or exceeding the canonical three-to-five-day range.
@@ -4641,7 +4930,7 @@ The Chapter teaches no standalone content outside the current assessed Grade 8 T
 **Primary Job family:** Print-shop production and newspaper/broadside delivery  
 **District:** Print shop, market/Faneuil Hall approach, King Street and Customs House, Old South Meeting House approach, Griffin’s Wharf, harbor frontage  
 **Mission Debrief target:** Analyze the connected causes of the American Revolution represented in Boston  
-**Living Encounter library:** 32 specified family concepts pending final ActionSpec/ReplayValidationManifest evidence; approximately eight intended date-valid families per Mission Day, with two to four normally presented  
+**Living Encounter library:** 32 specified family concepts pending final ActionSpec/ReplayValidationManifest evidence; approximately eight intended date-valid families per Mission Day, with zero to three presented per day, a one-to-two target mean, and four to ten across a completed Chapter attempt
 **Normal Chapter duration:** 55–75 minutes plus a 3–5 minute Debrief
 
 #### Curriculum Scope
@@ -4705,6 +4994,23 @@ By Chapter end, the player must be able to construct this TEKS-aligned explanati
 6. Destruction of the tea produced the Intolerable Acts, including closure of Boston’s port.
 7. Punishing Boston broadened rather than ended resistance and helped turn a local crisis into intercolonial coordination.
 
+#### Per-Day Required-Concept Ledger (the day-end gate)
+
+Only STAAR-assessed content — the 8.4(A) content items and the 8.4(B) roles above — **gates a Mission Day.** Each day carries a **small, event-tied set** of required-understand concepts that must clear all three stages of the Concept Learning Lifecycle (Learning → Understanding → Demonstrating, §"Concept Learning Lifecycle") before the day may end. Concepts learned on earlier days are then **reassessed on later days** (spaced repetition), in world or via Sync. Non-assessed material — organized resistance, non-importation/boycott, Sons of Liberty, committees of correspondence, the military occupation, the propaganda war, Tea Act mechanics, ship/consignee names — is **scene context that stages the assessed concepts and never an independent day-gate.** ("Explicitly not assessed in Boston" applies.)
+
+| Mission Day (fixed event) | New required-understand concepts (STAAR only) | Standard | Reassessed from prior days |
+|---|---|---|---|
+| **Day 1 — Stamp Act · 14 Aug 1765** | ① Post-war British economic policy: French and Indian War debt → new colonial revenue. ② The Stamp Act: an internal tax on printed and legal paper. ③ Lack of representation: "no taxation without representation." | 8.4(A) | — (first day) |
+| **Day 2 — Boston Massacre · 5 Mar 1770** | ④ Crispus Attucks: among the five killed on King Street; his death enters Patriot memory. ⑤ John Adams: defends the soldiers — the rule of law and contested evidence even within Patriot politics. | 8.4(B) | ①–③, in world or Sync |
+| **Day 3 — Tea Party · 16 Dec 1773** | ⑥ Mercantilism: the regulated imperial trade system, felt through the Tea Act monopoly. ⑦ Samuel Adams: organizer and political writer, coordinating resistance and acting publicly at the meeting. | 8.4(A), 8.4(B) | ① ③, ④ ⑤ |
+| **Day 4 — Port Closure · 1 Jun 1774** | ⑧ The Intolerable Acts / Boston Port Act: Britain punishes Boston, and the punishment broadens resistance into intercolonial coordination. | 8.4(A) | full causal chain ①–⑦ → feeds the Debrief |
+
+**Portioning (3 / 2 / 2 / 1 new concepts).** Day 1 front-loads the tightly linked Stamp Act crisis cluster — it is the tutorial/foundation day and the three concepts are one crisis, inseparable in the fiction. Later days add fewer new concepts while carrying **more cross-day reassessment**, so the final day is light on new content and heavy on synthesis — matching the Chapter Debrief and Season Review, which assess the full Required Historical Model causal chain above. Every concept is tied to the day whose fixed event naturally carries it; **no day is padded to a quota.**
+
+**Coverage check.** 8.4(A): Stamp Act (D1), representation (D1), post-war economic policy (D1), mercantilism (D3), Intolerable Acts/Port Act (D4). 8.4(B): Attucks (D2), John Adams (D2), Samuel Adams (D3). All eight assessed items appear exactly once as a new gated concept, then recur only as spaced reassessment.
+
+**Turning this ledger into a playable day is a repeatable procedure, not a redesign.** `Day-Template.md` generalizes Day 1 into reusable **beat archetypes plus the design laws (the reasoning) behind each decision**, with an automation-facing authoring recipe. `Day-1.md` is the worked instance. Days 2–4 are authored by feeding each day's concept set (above) through that template — composition and review, not fresh design.
+
 #### Prerequisite System Brief
 
 Before the first historical insertion, the Archive presents a concise holographic context sequence:
@@ -4747,6 +5053,8 @@ flowchart TD
 ```
 
 The diagram is topological, not a literal historical street map. Final level geometry must use reviewed period maps and state where spatial compression occurs.
+
+**One shared, re-dressed district.** All four Mission Days reuse a single built district — the hero interiors, the street spine, the route network, and four event set-pieces — differentiated only by authored state-layers (lighting, weather, set dressing, crowd/NPC population, open/blocked routes) matching the World Evolution below. Days do not receive separate environments. Space is treated as a gameplay construct: only gameplay pockets and event set-pieces are built, connected by abstracted routes rather than to-scale traversal, and spatial compression is permitted provided no false geographic fact is presented as taught content (street distances are not assessed). Each day carries one iconic authored set-piece image as its memory anchor. Alternate and secret routes are implemented as state over that shared geometry rather than as separate spaces: a route is the same built world with an authored blocker (a barrier, cargo, or a stationed character) that is passable only when the occasion or relationship state calls for it and is otherwise visibly closed, so the traversable world reads identically for all players except when an unlock removes the blocker. This keeps route unlocks cheap (a blocker plus a state flag rather than new level geometry) and makes an opened route feel earned. **Day 1 is the pattern-complete reference build**: it exercises every interaction verb and instantiates every reusable system once, so Days 2–4 are authored as content and state over the same machinery rather than new engineering.
 
 #### Core Cast
 
@@ -4821,7 +5129,7 @@ Andrew Oliver, Thomas Hutchinson, and other officials may be named only where ne
 
 #### Required Carrier Manifest
 
-- **Day 1 required:** Archive policy record; authenticated Stamp Act/legal-form evidence; fixed protest event; Sync 1; `SEA01_CH02_BOSTON.MD01.ACT.ABIGAIL_COST_AUTHORITY_CORE` as the required cost/authority carrier. Thomas and Clarke are optional contextual perspectives.
+- **Day 1 required:** Concise Archive war/debt context with a real period article; reviewed Stamp Act text and legal-form evidence handled through print-shop work; the Custom House revenue proclamation; the fixed August 14 protest sequence; three spaced first-understanding Sync questions (Stamp, representation, postwar revenue policy); and separate same-day applied demonstrations through Pike's sort, the Custom House/cause attribution when ready, and the headline construction/catch-all. Each concept receives three tracked occasions across at least two types through consequence-state carrier variants. No obligation depends on successful delivery or an optional conversation; Thomas and Clarke may carry primary opportunities, but typed fallbacks remain guaranteed. On return after the event, **B11.5's mandatory evidence desk** supplies the minimum approved handled-source/conversation carriers needed to close any remaining deficit, including the fully avoidant/missed-rider path; it also reserves a distinct source for the single post-Sync re-exposure cycle.
 - **Day 2 required:** Fixed King Street event; later verified Crispus Attucks record; authenticated later source packet in Sync 2; John Adams context record. Ellis and Thomas are optional contextual perspectives.
 - **Day 3 required:** `SEA01_CH02_BOSTON.MD03.ACT.TEA_CONTEXT_CORE` for Tea Act/mercantilism; Abigail’s prediction ActionSpec; sourced reconstruction of Samuel Adams’s documented role at the meeting; fixed tea-destruction event; Sync 3. Thomas, Clarke, and the context-only customs official enrich the scene but are not sole carriers.
 - **Day 4 required:** Authenticated Boston Port Act excerpt; reviewed correspondence linked to Samuel Adams; fixed enforcement event; Sync 4. Thomas is optional.
@@ -4831,11 +5139,62 @@ Every optional non-Living-Encounter carrier that may satisfy a curriculum obliga
 
 An optional contextual scene that owns no curriculum obligation needs no carrier fallback. If its metadata claims a required concept obligation, package validation requires the exact RequiredCarrierContract and an explicit contract-equivalent `carrier_fallback_action_id` before build. Living Historical Encounters may reinforce but never satisfy an obligation.
 
+#### Day 1 Job-Object and Required-Carrier Contract Ledger
+
+**Stable Job objects**
+
+- `BOS.MD01.OBJ.THOMAS_CIRCULAR.v1`: one merchant circular; custody transfers to Thomas on delivery.
+- `BOS.MD01.OBJ.PIKE_LEGAL_PROOF.v1`: one reviewed legal proof; custody/condition tracked until delivered, missed, damaged, or returned.
+- `BOS.MD01.OBJ.SHOP_LEGAL_PROOF_COPY.v1`: retained reviewed shop copy showing unchanged form wording and the new paid-stamp requirement; never leaves the shop.
+- `BOS.MD01.OBJ.CARRIER_HANDBILLS.v1`: anti-Stamp handbill delivery bundle; custody, condition, concealment, recognition, and timed handoff tracked independently.
+- `BOS.MD01.OBJ.CUSTOMHOUSE_NOTICE.v1`: Abigail's notice for the Custom House posting board; posting and subscription result tracked independently from whether its proclamation exposure/demonstration reroutes.
+- `BOS.MD01.OBJ.SHOP_STAMP_COPY.v1`: retained shop/source copy; never leaves Abigail's shop and cannot be silently substituted for a failed delivery.
+- `BOS.MD01.OBJ.PLAIN_WRAP.v1`: retained packing/waste sheets available for concealment regardless of circular custody.
+
+**Design-level RequiredCarrierContracts**
+
+- `BOS.MD01.RCC.DEBT_POLICY_INTRO.v1`
+  - Concepts: `BOS_FIW_DEBT_POLICY`.
+  - Canonical propositions: the French and Indian War ended in 1763; British debt increased; Parliament pursued tighter control and colonial revenue.
+  - Required evidence/reasoning: one causal arrow from war to debt to revenue policy.
+  - Due: `BOS_MD01_DEPART_SHOP`.
+  - Core action: `BOS.MD01.ACT.ARCHIVE_DEBT_CONTEXT.v1`; its local accessible recap binds the same contract.
+- `BOS.MD01.RCC.STAMP_INTERNAL_INTRO.v1`
+  - Concepts: `BOS_STAMP_ACT`.
+  - Canonical propositions: the Act takes effect 1 November; covered newspapers/legal and other listed paper uses require paid stamped paper; it is an internal revenue measure rather than only a port duty.
+  - Required evidence/reasoning: handle/read the reviewed sheet and retained shop proof, distinguishing the new paid-stamp requirement from otherwise unchanged document wording.
+  - Due: `BOS_MD01_FIXED_EVENT_START`.
+  - Core action: `BOS.MD01.ACT.PRESS_STAMP_SHEET.v1`, which includes the retained `BOS.MD01.OBJ.SHOP_LEGAL_PROOF_COPY.v1` comparison before departure; `BOS.MD01.ACT.PIKE_COMPARE_PROOF.v1` is an independent reinforcing carrier. If the Pike objective is missed at dusk, the required shop comparison has already completed.
+- `BOS.MD01.RCC.REPRESENTATION_CAUSE.v1`
+  - Concepts: `BOS_REPRESENTATION`, with distinction from `BOS_COST_ONLY` and `BOS_ALL_INDEPENDENCE`.
+  - Canonical propositions: cost contributed to opposition; the deeper dispute involved Parliament imposing an internal tax while colonists lacked representatives there; evidence does not show a unanimous independence demand in 1765.
+  - Required evidence/reasoning: construct a source-supported headline/subhead that distinguishes cause from the night's visible destruction.
+  - Due: `BOS_MD01_END_DAY`.
+  - Core family: `BOS.MD01.ACT.HEADLINE_CONSTRUCT.v2` (new semantic ID: this is a demonstration/synthesis, not the first-understanding Sync).
+  - Satisfying authored outcomes: `HEADLINE_CAUSE_COMPLETE` or `HEADLINE_EDITORIAL_CORRECTION_COMPLETE`. Cost-only, event-only, unsupported, cancelled, or incomplete drafts emit formative evidence but do not satisfy the contract until the player completes the source-backed correction inside the same work sequence.
+- `BOS.MD01.RCC.ORGANIZED_RESISTANCE_EVENT.v1`
+  - Concepts: `BOS_STAMP_ACT`, `BOS_REPRESENTATION`.
+  - Canonical propositions: organized protest targeted stamp distributor Andrew Oliver on 14 August; the fixed sequence included effigies, destruction of a suspected stamp-office structure, the Fort Hill bonfire, and damage to Oliver's property; it is distinct from the 26 August Hutchinson attack.
+  - Required evidence/reasoning: witness the fixed sequence or complete its exact approved reduced-intensity/skip recap.
+  - Due: `BOS_MD01_END_DAY`.
+  - Core action: `BOS.MD01.ACT.AUG14_FIXED_EVENT.v1`.
+
+**Consequence-state carrier matrix**
+
+- `HANDBILLS_DELIVERED_*`: retained shop copy plus the player's event notes populate `BOS.MD01.ACT.HEADLINE_CONSTRUCT.SOURCE_RETAINED.v2`.
+- `HANDBILLS_MISSED`, `HANDBILLS_REFUSED`, or `HANDBILLS_LOST`: the undelivered/damaged state remains true; retained shop copy plus an authenticated posted/town-instruction source populate `BOS.MD01.ACT.HEADLINE_CONSTRUCT.SOURCE_POSTED.v2`.
+- `PIKE_PROOF_DELIVERED_*`: Pike comparison may reinforce the Stamp contract; his exact response affects relationship only.
+- `PIKE_PROOF_MISSED_OR_DAMAGED`: no fictional delivery is committed; the already complete press-sheet carrier remains, and the source tray uses exact object `BOS.MD01.OBJ.SHOP_LEGAL_PROOF_COPY.v1`.
+- `FIXED_EVENT_SKIPPED_WITH_RECAP`: only the exact contract-bound recap can satisfy the event obligation; traversal/crowd skill never counts.
+- Every supported accessibility treatment selects a preapproved mechanic/presentation equivalent before action and preserves the same evidence and Diegetic Construction demand.
+
+The IDs, versions, deadlines, state predicates, and satisfying outcomes above are normative for the reference design. Exact semantic hashes are compiler-derived from final approved source/content bytes at package lock; until those hashes and ActionSpecs exist, the ledger remains `PENDING_PACKAGE_EVIDENCE` and cannot claim `PASS`.
+
 #### Boston Living Encounter Manifest
 
 The 32-family reference design is distributed across authority/government, civilian life, political tension, occupational, and environmental categories. These are specified concepts, not production-complete ActionSpecs; the final manifest must prove every family’s date lock.
 
-- **1765 pool:** Royal clerk inspects covered print work; paper supply is delayed; a handcart blocks the market route; competing handbills draw a crowd; rain threatens uncovered sheets; a customer requests a corrected legal proof; children cross the delivery route; bells summon a gathering. No British troop patrol appears.
+- **1765 pool:** A royal-office customer or clerk checks an ordinary delivery seal without enforcing the not-yet-effective Stamp Act; paper supply is delayed; a handcart blocks the market route; competing handbills draw a crowd; rain threatens uncovered sheets; a customer requests a corrected legal proof; children cross the delivery route; bells summon a gathering. No British troop patrol appears.
 - **1770 pool:** A documented troop-presence paper inspection; soldiers temporarily narrow a street; a print customer seeks the latest sheet; snow slows a wagon; a rumor is explicitly marked unverified; a shop requests spare type; a civilian argument disperses; bells redirect foot traffic.
 - **1773 pool:** A customs-document check; a meeting-location update; a wagon blockage leading past merchant debate; a crowd gathers around a paper; wet weather threatens notices; another printer requests supplies; harbor-watch activity redirects the route; a context-only official changes a legal handoff. No invented British street patrol appears.
 - **1774 pool:** Naval/customs enforcement redirects a wharf route; relief correspondence needs a new handoff; reduced waterfront work blocks an entrance; a merchant moves remaining stock; rain damages an outdoor notice; a crowd reads Port Act news; a permitted food/fuel wagon creates a route change without implying that later relief has already arrived; bells mark a meeting. Captain Ellis never appears physically.
@@ -4867,591 +5226,28 @@ The shipped build manifest expands each family into ActionSpecs with exact prove
 
 ---
 
-### Mission Day 1 — The Stamp Act Crisis
-
-**Date:** 14 August 1765  
-**TEKS target:** 8.4(A): Stamp Act, lack of representation, postwar British economic policy  
-**Instructional process target (unscored):** 8.29(B/D): cause, inference, and historical point of view  
-**Historical Event:** Organized protest against stamp distributor Andrew Oliver; later crowd escalation remains fixed  
-**Primary Job:** Deliver and collect three print-shop items
-
-#### Arrival
-
-The Archive hologram materializes over the press:
-
-> **TEMPORAL INSERTION COMPLETE**  
-> Boston, Massachusetts Bay  
-> 14 August 1765  
-> Cover: Printer’s Apprentice
-
-Then:
-
-> **POLICY RECORD**  
-> Stamp Act passed by Parliament.  
-> Effective date: 1 November 1765.  
-> Stamped paper required for newspapers, legal documents, and other printed material.
-
-The panel closes. Abigail immediately hands the player a drying rack and tells them not to smudge the sheets.
-
-#### Anchor Briefing
-
-Abigail needs:
-
-- A merchant circular delivered to Thomas.
-- A reviewed excerpt from Boston’s documented instructions or petition against the Act carried toward the market.
-- A proof returned from a legal clerk who is uncertain whether work can continue after the Act takes effect.
-
-Her exposition remains occupational:
-
-> “Many legal forms, licenses, newspapers, and other covered papers are about to carry Parliament’s mark. The charge hurts. The part people cannot stop arguing over is who gave Parliament the right to set it.”
-
-#### Route and Interactions
-
-**Interaction 1 — Thomas’s ledger**
-
-- Primary type: Dialogue Inquiry.
-- Player may ask about price, trade, or why merchants support protest.
-- Core line: Thomas explains that business cost matters but decisions made without colonial representation create a larger dispute.
-- Learner evidence: encounter only unless the player selects a causal follow-up.
-
-**Interaction 2 — Legal proof**
-
-- Primary type: Evidence Selection. Observation is the presentation method.
-- The player compares an ordinary legal form with the requirement for stamped paper.
-- The Archive provides the definition of an internal tax in one authored context card.
-- No stamp-design trivia is assessed.
-
-**Interaction 3 — Loyalist warning**
-
-- Primary type: Dialogue Inquiry.
-- Clarke accepts Parliament’s legal authority and fears street coercion.
-- This establishes that resistance is not unanimous.
-
-**Experiential choice**
-
-- Continue the assigned route or pause near the gathering crowd.
-- Both routes see the assessed evidence and converge at the protest staging area.
-
-#### Fixed Historical Event
-
-The event is locked to 14 August 1765: effigies of stamp distributor Andrew Oliver and Lord Bute appear at the Liberty Tree; the procession moves toward Oliver’s dock; a structure believed intended as a stamp office is pulled down; and the crowd later damages Oliver’s property. The sequence ends there. It does not merge in the separate 26 August destruction of Thomas Hutchinson’s house. The player cannot join, stop, or redirect the event, and the scene does not claim Samuel Adams ordered the violence.
-
-#### Archive Sync 1
-
-The hologram panel appears:
-
-> **SYNCHRONIZATION REQUIRED**  
-> Which explanation best connects the Stamp Act to colonial resistance?
-
-Approved responses:
-
-1. “Printed and legal material would cost more.”
-2. “Parliament imposed an internal tax while colonists lacked representation there.”
-3. “All colonists already wanted independence.”
-4. “Evidence insufficient.”
-
-Response 2 is the complete current model. Response 1 is partial and may activate `BOS_COST_ONLY` only with later confirming evidence. Response 3 supports `BOS_ALL_INDEPENDENCE`.
-
-Approved System feedback:
-
-> **ARCHIVE CONTEXT**  
-> Cost contributed to opposition. The assessed dispute also concerns Parliament taxing colonists who had no representatives in Parliament.
-
-#### Return to Abigail
-
-Abigail prints a restrained account that separates opposition to the Act from approval of property destruction. She asks the player to stack two competing broadsides but does not test them again.
-
-#### End-Day State
-
-- Stamp Act, debt-policy context, and representation encountered.
-- Thomas and Clarke encounter flags are stored only if those optional conversations occurred.
-- Protest occurred.
-- Abigail relationship: role trust established.
-- World advances to 1770.
-
-#### Day 1 Edge Cases
-
-- If the player avoids the crowd, the Job route reaches a safe edge viewpoint before the event begins.
-- If the player skips Thomas, Abigail’s core return line carries the required cost/authority distinction; Thomas remains optional flavor only after fallback fires.
-- If the player chooses “all colonists,” Clarke’s scene or later callback becomes preferred, but Day 2 starts normally.
-
----
-
-### Mission Day 2 — King Street
-
-**Date:** 5 March 1770  
-**TEKS target:** 8.4(B): Crispus Attucks and John Adams  
-**Instructional process target (unscored):** 8.29(A/D/F): source type, point of view, corroboration  
-**Historical Event:** Boston Massacre  
-**Primary Job:** Deliver the evening sheet and complete a routine print-shop collection near the Customs House
-
-#### Arrival
-
-The player’s cover is visibly older and more capable. The Archive gives the exact date and only the TEKS-relevant bridge:
-
-> **TEMPORAL INSERTION — BOSTON**  
-> 5 March 1770  
-> Cover status: Senior Print-Shop Apprentice and Runner  
-> Parliament continued economic regulation.  
-> British troops entered Boston in 1768 amid resistance and enforcement disputes.
-
-No troop-regiment trivia is indexed.
-
-#### Anchor Briefing
-
-Abigail refuses to print rumor as fact. Before the shooting, she sends the player to:
-
-- Deliver one sheet near the Customs House.
-- Ask Thomas what he personally observed about current street conditions.
-- Collect a routine print order from a clerk near the Customs House.
-
-> “A crowd’s version and a sentry’s version are still versions. Bring me what each person could actually know.”
-
-#### Route and Interactions
-
-**Interaction 1 — Captain Ellis**
-
-- Primary type: Dialogue Inquiry.
-- Ellis explains orders and the imperial enforcement position.
-- If `BOS_MALICE_ONLY` is suspected, an approved line recalls postwar debt and policy without presenting it as moral justification.
-
-**Interaction 2 — Thomas**
-
-- Primary type: Dialogue Inquiry.
-- Thomas distinguishes what he personally observed from what he heard.
-- Because Thomas is fictional, this scene teaches the distinction experientially but emits no scored source-validity evidence.
-
-**Interaction 3 — King Street conditions**
-
-- Primary type: Observation.
-- Sentry, crowd, winter street, and escalating confrontation are staged.
-- The player may choose a viewing position; no choice changes the event.
-
-#### Fixed Historical Event
-
-The confrontation escalates and British soldiers fire. Three people die immediately and two wounded men die later; five people die as a result, including Crispus Attucks. The scene is brief, non-gratuitous, and fixed. The player cannot save Attucks, provoke the volley, command the soldiers, or change the arrests.
-
-After the scene, the future Archive distinguishes immediate observation from the later verified record:
-
-> **LATER VERIFIED RECORD**  
-> Five people died as a result of the shooting.  
-> Crispus Attucks was among them.
-
-#### Archive Sync 2
-
-> **SYNCHRONIZATION REQUIRED**  
-> *Source Check*  
-> Later authenticated source packet loaded.  
-> Which method gives the Archive the strongest account of what happened on King Street?
-
-Approved responses:
-
-1. Accept Paul Revere’s later engraving—advertised 26 March 1770 and derived from Henry Pelham’s design—as the complete record.
-2. Accept later-1770 defense/trial testimony as the complete record.
-3. Corroborate witness accounts, physical evidence, authorship, and later trial records.
-4. Select whichever source agrees with the player.
-
-Response 3 is the process-standard model. Feedback states:
-
-> **ARCHIVE CONTEXT**  
-> A source reveals both evidence and point of view. Corroboration is required when accounts conflict.
-
-The dates and design relationship are source-provenance metadata, not learner recall targets.
-
-#### Anchor Return — Not Archived
-
-Back at the press that night, Abigail asks how to label a preliminary account:
-
-> “If I call it murder before I sort the witnesses, the word may outrun the evidence. If I print nothing, someone else’s version becomes the record.”  
-> “Tonight, we can print only what we have actually confirmed: soldiers fired; people are dead and wounded; accounts conflict.”
-
-This is a normal anchor return. It is not stored as an Archived Conversation and does not use the later engraving or trial record as if they already existed.
-
-#### John Adams Context Record
-
-At End Day, before the historical jump, the System presents:
-
-> **LATER RECORD — 1770**  
-> John Adams defended the accused British soldiers in court.  
-> His role demonstrates that Patriot politics and commitment to legal defense could coexist.
-
-The Chapter later retrieves the role through an authenticated trial-source excerpt in the Debrief; it does not test trial dates or verdict details.
-
-#### End-Day State
-
-- Crispus Attucks role encountered.
-- John Adams role encountered.
-- Source corroboration attempted.
-- `BOS_ONE_SOURCE` may activate.
-- Abigail relationship: shared pressure; candid conversation becomes eligible on Day 3.
-
-#### Day 2 Edge Cases
-
-- A reduced-intensity setting changes framing and sound, not the five deaths or Attucks’s role.
-- Skipping the cinematic plays an approved factual recap before Sync 2.
-- If a player selects one-source certainty, the next print-related scene uses a contrasting approved source; it does not replay the shooting.
-
----
-
-### Mission Day 3 — Tea at the Harbor
-
-**Date:** 16 December 1773  
-**TEKS target:** 8.4(A): mercantilism, lack of representation, British economic policy; 8.4(B): Samuel Adams  
-**Instructional process target (unscored):** 8.29(B/D): prediction, cause, point of view  
-**Historical Event:** Boston Tea Party  
-**Primary Job:** Deliver meeting notices and the afternoon edition
-
-#### Arrival
-
-> **TEMPORAL INSERTION — BOSTON**  
-> 16 December 1773  
-> Cover status: Printer’s Assistant and Delivery Runner
-
-> **ARCHIVE CONTEXT RECORD**  
-> Tea Act: Parliament allowed the East India Company to sell tea under regulated terms while retaining the disputed tea duty.  
-> Boston opponents connected the tea to Parliament’s claimed taxing authority.
-
-The UI does not ask students to memorize company finances, ship names, or chest counts.
-
-#### Anchor Briefing
-
-Abigail’s shop is crowded. She sends the player to:
-
-- Deliver notices toward Old South Meeting House.
-- Carry Thomas’s copy near the waterfront.
-- Obtain the latest public decision before the press run.
-
-Abigail says:
-
-> “Cheap tea is still tea sold on Parliament’s terms. Print that carelessly and people will think the argument is only about the price.”
-
-**Required Prediction Interaction — Abigail**
-
-- Primary type: Prediction.
-- Abigail asks: “If that tea goes into the harbor tonight, what do you think Parliament does next?”
-- Responses: abandon its authority claim; punish Boston and strengthen enforcement; evidence insufficient.
-- The response is stored for Day 4. This required anchor interaction has a local media fallback and does not depend on optional Thomas content.
-
-#### Route and Interactions
-
-**Interaction 1 — Thomas**
-
-- Primary type: Dialogue Inquiry.
-- Explains how imperial trade rules and selected channels affect merchants.
-- Connects mercantilist regulation to the assessed policy dispute.
-
-**Interaction 2 — Clarke**
-
-- Primary type: Dialogue Inquiry.
-- Argues that destroying property will invite punishment and destabilize trade.
-- Reinforces non-unanimity without making Loyalism a misconception.
-
-**Interaction 3 — Royal customs notice**
-
-- Primary type: Cause and Consequence.
-- A context-only customs official and authenticated notice establish that legal cargo and duties will be enforced.
-- An advanced prompt asks whether cheaper tea resolves an authority dispute.
-
-**Interaction 4 — Old South Meeting House approach**
-
-- Primary type: Observation.
-- Samuel Adams is identified as a prominent organizer, political writer, and speaker at the meeting.
-- Any line uses a sourced or reviewed paraphrase.
-- The scene does not claim he gave a proven secret signal ordering destruction.
-- Production provenance uses the National Park Service December 16 timeline and Massachusetts Historical Society Tea Party document collection. The observed scene is an Archive reconstruction; no post-event newspaper account is presented as a document physically available before the event. Any post-event excerpt appears only under a **LATER RECORD** label.
-
-#### Fixed Historical Event
-
-People leave the meeting; a smaller group proceeds to the ships at Griffin’s Wharf. The player follows under soft guidance. A short cinematic depicts men boarding the tea ships and destroying the cargo. Camera choices may emphasize crowd, waterfront labor, or Abigail’s assistant viewpoint; all converge on the same outcome.
-
-No tea quantity is made a learner target.
-
-Historical characters call the act “the destruction of the tea” or describe what occurred; “Boston Tea Party” is the future Archive/catalog label. If disguise is shown, it uses rough soot, cloaks, and historically reviewed Indigenous motifs—not polished stereotypical costumes. The scene states no exact participant count.
-
-#### Archive Sync 3
-
-> **SYNCHRONIZATION REQUIRED**  
-> *Causal Record*  
-> Which earlier dispute is still visible in tonight’s action?
-
-Responses:
-
-- “Only the retail price of tea.”
-- “Parliament’s authority to regulate and tax colonists without colonial representation.”
-- “A unanimous plan for immediate independence.”
-- “No earlier dispute; this event stands alone.”
-
-The System feedback states the complete TEKS relation and records `BOS_TEA_ALONE`, `BOS_COST_ONLY`, or `BOS_ALL_INDEPENDENCE` where supported.
-
-#### Archived Conversation 1 — Return to Abigail
-
-Abigail has stopped the press to verify what happened. After two completed Mission Days and the shared harbor event, the earned conversation threshold is satisfied.
-
-> “The destruction is a fact. What Britain thinks that destruction means is another matter.”  
-> “After everything that led here, do you think Parliament reads tonight as a dispute over tea—or a challenge to its authority?”
-
-The player selects one of three natural authored responses:
-
-- “A challenge to Parliament’s authority.”
-- “Only a dispute over tea.”
-- “I do not have enough evidence yet.”
-
-After Abigail returns to setting type, the hologram briefly displays **CONVERSATION ARCHIVED**. This conversation is formative and is never scored as a historical source.
-
-#### End-Day State
-
-- Mercantilism applied to the tea policy context.
-- Samuel Adams role encountered.
-- Tea destruction occurred.
-- Prediction stored for Day 4 feedback.
-- First Archived Conversation stored.
-- Port-punishment event unlocked in the next historical window.
-
-#### Day 3 Edge Cases
-
-- If the player wanders, meeting crowds, bells, Thomas, and the Job destination all point toward Old South.
-- If the player delays following, the lead NPC waits and the meaningful district routes converge; the event does not happen offscreen.
-- If the player misses Clarke, Abigail’s later line supplies non-unanimity; Clarke’s personal detail is not required.
-
----
-
-### Mission Day 4 — The Port Closes
-
-**Date:** 1 June 1774  
-**TEKS target:** 8.4(A): Intolerable Acts and their causal role; 8.4(B): Samuel Adams  
-**Instructional process target (unscored):** 8.29(B/C): cause/effect, comparison, visual interpretation  
-**Historical Event:** Boston Port Act takes effect; Royal Navy enforcement restricts most commercial shipping  
-**Primary Job:** Deliver closure notices and relief correspondence
-
-#### Arrival
-
-The harbor loads shortly before the Act’s enforcement begins. Workers and merchants are attempting final business under visible naval pressure. The System displays:
-
-> **TEMPORAL INSERTION — BOSTON**  
-> 1 June 1774  
-> Cover status: Printer’s Assistant and Delivery Runner  
-> The Boston Port Act takes effect today.  
-> It became the first of the punitive measures colonists called the Intolerable Acts.  
-> The Act will close Boston’s port to most commercial shipping until its conditions are met.
-
-The full package of measures is not presented as already complete on this date.
-
-The level does not depict an instantly empty harbor. Limited residual and excepted activity may remain where supported; those statutory details are unscored scene context.
-
-#### Anchor Briefing
-
-Abigail expects her commercial orders to collapse as enforcement begins. She gives the player:
-
-- A closure notice for Thomas.
-- A relief-request copy for the waterfront.
-- A letter recording pledges and correspondence of support from outside Boston; later material aid is not depicted as already delivered that morning.
-
-> “Parliament meant to isolate this town. These letters make it look less isolated by the hour.”
-
-#### Route and Interactions
-
-**Interaction 1 — Harbor frontage**
-
-- Primary type: Observation.
-- Last commercial activity, anxious workers, and naval staging show what is about to be restricted.
-- The System identifies the Port Act as part of the Intolerable Acts.
-
-**Interaction 2 — Thomas**
-
-- Primary type: Cause and Consequence.
-- The player distinguishes immediate commercial effect from broader political effect.
-
-**Interaction 3 — Port Act record**
-
-- Primary type: Source Evaluation.
-- An authenticated excerpt from the Boston Port Act establishes official purpose and context.
-- The player identifies what the source can establish and which point of view its authorship represents.
-- Captain Ellis does not physically return as an unsupported tea/port enforcement authority.
-
-**Interaction 4 — Correspondence and Samuel Adams**
-
-- Primary type: Evidence Organization.
-- Reviewed correspondence is placed on a simple map/causal visual showing pledges of support beyond Boston.
-- Samuel Adams’s role in correspondence and resistance is identified.
-- The player selects what the source can establish: coordination and response, not universal colonial opinion.
-
-#### Fixed Historical Event
-
-Royal Navy enforcement begins restricting most commercial shipping. Waterfront work is severely disrupted rather than represented as universally and instantaneously ended. The player witnesses consequences rather than causing the closure.
-
-The System then resolves the Day 3 prediction:
-
-> **PREDICTION RESOLVED**  
-> Parliament answered the destruction of tea with punishment and stronger enforcement.  
-> The Boston Port Act became part of the measures colonists called the Intolerable Acts.
-
-If the player predicted punishment, the record notes supported reasoning. Otherwise it states the same outcome without a penalty animation.
-
-#### Archive Sync 4
-
-> **SYNCHRONIZATION REQUIRED**  
-> *Synthesis Check*  
-> How did the Intolerable Acts affect the conflict represented in Boston?
-
-Responses:
-
-1. “They ended resistance by isolating one town.”
-2. “They punished Boston and helped turn local grievances into wider colonial coordination.”
-3. “They removed Parliament’s authority over the colonies.”
-4. “They mattered only to tea merchants.”
-
-Response 2 is the complete Chapter model. Feedback links the Port Act to the Intolerable Acts and the growing cause of revolution.
-
-#### Return, Archived Conversation 2, and Chapter Exit
-
-Abigail sets relief notices beside old Stamp Act sheets:
-
-> “Nearly nine years ago this shop argued over a stamp. Now the harbor is closed.”  
-> “If I print one line explaining how we got from there to here, what belongs in it?”
-
-Player responses are authored causal summaries:
-
-- Debt and policy → taxation without representation → resistance → punishment and wider coordination.
-- Tea was destroyed, so the port closed; nothing earlier matters.
-- Everyone wanted independence from the start.
-
-If the player chooses not to answer, Abigail accepts the silence and the Archive stores no player-response reference. Relationship completion and Chapter progression do not depend on archiving an answer.
-
-Abigail gives the player a final bundle addressed beyond Boston. The player carries it to the district boundary. The future hologram opens:
-
-> **HISTORICAL WINDOW COMPLETE**  
-> Required field evidence secured.  
-> Return to Archive for synthesis.
-
-#### End-Day State
-
-- Intolerable Acts and port consequence encountered.
-- Samuel Adams role reinforced.
-- All required 8.4(A) Boston nodes available for Debrief.
-- All Chapter misconceptions have a final diagnostic point.
-- World remains historically fixed; next Chapter moves toward intercolonial response and independence.
-
-#### Day 4 Edge Cases
-
-- Supporting NPCs are optional. The authenticated Boston Port Act excerpt remains the required fallback carrier; an authored closure notice and Abigail line are scaffolds only.
-- If the player declines Archived Conversation input, a bounded response is required only in the Debrief; relationship completion still occurs.
-- If AI is offline, core lines, Sync 4, and Chapter exit follow authored fallback priority.
-
----
-
-### Boston Mission Debrief
-
-#### Structure
-
-**Scoring boundary:** Every scored point maps to 8.4(A) or a relevant 8.4(B) individual role. Chronology, source, point-of-view, and communication process evidence is recorded separately as formative telemetry and never contributes an independent STAAR-aligned point.
-
-**Interaction 1 — Chronology**
-
-Order the assessed cause records:
-
-- Postwar British economic policy.
-- Stamp Act and the representation dispute.
-- Resistance and the destruction of tea as context for punitive policy.
-- Intolerable Acts / Boston Port Act.
-
-The scored relation is the order and cause/effect connection among eligible 8.4(A) content. The Boston Massacre, ship names, tea quantities, and other contextual event trivia are not independent chronology targets.
-
-**Interaction 2 — Causal organization**
-
-Connect:
-
-- French and Indian War debt.
-- British economic and revenue policy.
-- Stamp Act.
-- Lack of representation.
-- Resistance and enforcement.
-- Tea destruction.
-- Intolerable Acts.
-- Wider coordination.
-
-**Interaction 3 — Relevant individual roles**
-
-Match:
-
-- Samuel Adams → organized and communicated resistance.
-- Crispus Attucks → one of the people killed in the Boston Massacre.
-- John Adams → defended the accused soldiers within a legal process.
-
-No other individual is added merely for variety.
-
-**Interaction 4 — Source reasoning**
-
-Given an authenticated Patriot print, a trial-source excerpt documenting John Adams’s defense role, and a second legal/witness record, identify point of view and explain why corroboration is needed. This is John Adams’s second guaranteed carrier.
-
-**Interaction 5 — Open-ended explanation**
-
-> “Using evidence from Boston, explain how British policy after the French and Indian War contributed to organized colonial resistance.”
-
-Prompt-specific rubric:
-
-- **2 points:** Accurate causal claim; at least two relevant TEKS-aligned pieces of evidence; explains the relationship among policy, representation, resistance, and/or Intolerable Acts.
-- **1 point:** Partially accurate claim or evidence with incomplete causal reasoning.
-- **0 points:** A valid, classifiable response that is inaccurate, irrelevant, or unsupported. Blank, unclassifiable, or technically invalid administrations are unscored and follow the replacement/terminal-invalid policy.
-
-The runtime classifier emits allowlisted labels and confidence only. The deterministic Rubric Resolver maps valid labels to score/evidence status and one reviewed feedback asset.
-
-#### Approved Feedback Families
-
-- Complete causal model.
-- Missing postwar debt/policy.
-- Cost-only model.
-- Missing representation.
-- Tea-event isolation.
-- All-colonists/inevitability model.
-- Evidence present but causal link missing.
-- Unclassified / neutral.
-
-#### Archive Memory Options
-
-- **Ellis: Postwar Debt and Policy** for `BOS_MALICE_ONLY`.
-- **Abigail: Stamp Cost Versus Representation** for `BOS_COST_ONLY`.
-- **Clarke: Continued Loyalism** for `BOS_ALL_INDEPENDENCE`.
-- **King Street: Corroborating Accounts** for `BOS_ONE_SOURCE`.
-- **Abigail: Stamp Sheets Beside Port Notice** for `BOS_TEA_ALONE`.
-
-Memories are optional before the first scored submission and do not award points.
-
----
-
-### Season Review Transfer
-
-Boston scored items return only where the Season blueprint requires 8.4(A) or relevant 8.4(B). Process-skill interactions may frame an item or appear as unscored formative telemetry, but they do not supply independent STAAR-aligned points.
-
-Approved callbacks:
-
-- Use a fictional-character Perspective Attribution only as an unscored warmup; the scored authenticated excerpt asks an 8.4(A) content question, while point-of-view analysis remains unscored process evidence.
-- Compare a Boston grievance with a grievance in the Declaration of Independence.
-- Use Boston chronology to distinguish long-term cause from trigger.
-- Explain Samuel Adams, Crispus Attucks, or John Adams in a new item context.
-- Replay Abigail’s final Archived Conversation before an unscored reflection.
-
-The Review does not ask for tea-chest counts, ship names, or fictional-character biography.
+> **Scene scripts moved.** The concrete Mission Day scene scripts (narration, dialogue, and choice-by-choice flow) are maintained in a separate scene-planning document, not in this GDD. This chapter section keeps only the systemic reference design — chapter contract, curriculum scope, cast, carrier manifests, ledgers, and fallback matrix — that the engine and content pipeline build against.
 
 ---
 
 ### Design Philosophy
 
-Boston uses famous events only when they carry assessed content. The Tea Party is not a trivia destination; it connects mercantilism and representation to the Intolerable Acts. The Massacre is not spectacle; it establishes Crispus Attucks’s role and creates a source-corroboration problem. The Archive System handles concise exposition and direct checks so Abigail, Thomas, Ellis, and Clarke can remain people rather than lesson dispensers.
+Boston uses famous events only when they carry assessed content and support compelling play. The Tea Party connects mercantilism and representation to the Intolerable Acts through meeting-print work, crowd movement, real organizers, and consequence-state reporting. The Massacre establishes Crispus Attucks's role through fixed history and turns source protection/corroboration into the player's print job. Documents, mechanics, people, and environment teach first; the Archive identifies or records only what cannot fit naturally.
 
 ### Responsibilities
 
-- **Chapter design:** Preserve the four-day spine and convergence.
+- **Chapter design:** Preserve the four-day fixed historical/obligation spine while authoring persistent local consequence branches and compatible historical checkpoints.
 - **Curriculum:** Enforce the listed TEKS boundary and rubric.
 - **Historical review:** Verify every fixed event, source, role, date, and reconstruction.
-- **Narrative:** Maintain Abigail’s arc and profession-first dialogue.
-- **Level design:** Build the compact district and four readable state bundles.
-- **Archive UX:** Deliver the holographic context, notification, prompt, feedback, and replay panels.
+- **Narrative:** Maintain relationship-state Abigail variants, action-first human writing, real-figure boundaries, and consequence reactions.
+- **Level design:** Build the compact district, reusable mechanics, alternate approaches, pressure states, and four readable historical bundles.
+- **Archive UX:** Deliver minimal context/identification, embedded/overlay field-record capture, feedback, and replay without displacing historical work.
 - **AI Director:** Select only eligible approved support.
 - **Assessment:** Maintain deterministic bounded scoring and the open-response rubric.
 
 ### Player Experience
 
-The player begins by carrying paper through a busy town and ends by carrying relief correspondence through a closed port. The same streets and relationship make the causal change visible. Futuristic System messages efficiently establish dates, policies, terms, and tests; historical characters show what those policies mean in daily life.
+The player begins by operating a press and trying to move political print through a crowd, and ends by carrying relief/correspondence through an enforcement-altered port. The same streets, mechanics, objects, and branching relationship make the causal change playable. Historical work, documents, real public figures, fictional neighbors, and consequences establish the history; restrained Archive tags/records keep dates, roles, and assessment precise.
 
 ### System Interactions
 
@@ -5459,7 +5255,7 @@ The player begins by carrying paper through a busy town and ends by carrying rel
 
 1. Player chooses a cost-only answer on Day 1.
 2. Learner Model marks `BOS_COST_ONLY` suspected.
-3. On Day 2, Event Manager reads the suspected flag and evaluates Ellis’s precompiled low-intensity clarification ActionSpec as legal under its Misconception Graph-derived predicate.
+3. On Day 2, Event Manager reads the suspected flag and evaluates a precompiled source/work action around Ellis's inspected notice as legal under its Misconception Graph-derived predicate; Ellis does not deliver a detached clarification speech.
 4. Event Manager confirms that the ActionSpec does not conflict with the approaching King Street sequence.
 5. AI Director may select Ellis’s approved debt/policy line before the event.
 6. Archive Sync 2 tests sources, not the same misconception again.
@@ -5480,11 +5276,11 @@ These are acceptance criteria, not claims of completed evidence. Before `REQ-BOS
 - All historical-figure content has provenance.
 - Abigail’s composite status and print-trade plausibility are documented.
 - Every System panel is under its reading-time budget.
-- Every adaptive family has a core fallback.
+- Every adaptive/mechanic family has a locally ready core fallback and consequence-compatible continuation.
 - The complete Chapter passes with runtime AI disabled.
 - Online/offline, uninterrupted/resumed, and every supported platform produce the same selector-trace and system-selection signatures for fixed inputs.
-- The complete Boston ReplayValidationManifest passes historical date-state, convergence, accessibility, encounter-frequency, first-five-attempt no-repeat, cohort collision, and concentration gates.
-- Every supported accessibility profile completes all required carriers, events, routes, and scored items with equivalent semantic payload and cognitive demand.
+- The complete Boston ReplayValidationManifest passes historical date-state, compatible-checkpoint, local-outcome persistence, no-reroll, accessibility-agency, encounter-frequency, first-five-attempt no-repeat, cohort collision, and concentration gates.
+- Every supported accessibility profile completes all required carriers, mechanics, events, routes, and scored items while preserving semantic payload, cognitive demand, meaningful choice, ownership, stakes, and consequence range.
 - The Debrief classifier has an invalid-administration path to a preassigned construct-equivalent replacement.
 
 **System UI treatment**
@@ -5494,7 +5290,7 @@ Boston uses the global holographic language:
 - Floating cyan-white panel over a dark translucent projection surface.
 - Header, one concise message, and up to four large response controls on one page; ordinary dialogue remains limited to two or three.
 - Context panels may use one map, timeline, portrait, or document crop.
-- Required Mission-Day Archive Sync prompts use **SYNCHRONIZATION REQUIRED**. Context, prediction-resolution, Memory, Debrief, and Review panels use their own approved headers and do not count as additional Syncs.
+- Overlay Mission-Day Archive Sync prompts use **SYNCHRONIZATION REQUIRED**. Embedded Syncs mark the historical work action unobtrusively and show **FIELD RECORD UPDATED** only after commit. Context, prediction-resolution, Memory, Debrief, and Review panels use their own approved headers and do not count as additional Syncs.
 - Optional Memories use **MEMORY AVAILABLE** with **REVIEW** and **CONTINUE**.
 - High-contrast mode removes translucency, flicker, and bloom.
 
@@ -5502,12 +5298,12 @@ Boston uses the global holographic language:
 
 **Concrete gameplay sequence**
 
-The player walks out of Abigail’s shop on 1 June 1774 expecting a delivery route they already know. Harbor activity is reduced and Royal Navy enforcement is visible. A holographic panel materializes:
+The player prepares closure, relief, and correspondence print on 1 June 1774, then leaves by a route they know into reduced harbor activity and visible Royal Navy enforcement. One brief context tag identifies:
 
 > **CONTEXT RECORD**  
 > The Boston Port Act takes effect today.
 
-The panel dematerializes. Thomas’s shelves are thin, waterfront workers face severe disruption, and reviewed naval/official enforcement restricts the wharf. In one playthrough, a permitted food wagon blocks the direct route and an official checks the player’s correspondence; in another, a merchant moving stock creates a different alley route; in another, the Director chooses silence. All paths rejoin before the player watches enforcement begin. Only then does **PREDICTION RESOLVED** compare the Day 3 response with the Port Act. The player completes one causal Sync and returns to see Abigail place a 1765 stamped-paper proof beside the 1774 port notice. The Chapter’s nearly nine-year causal arc is visible before the Debrief asks for it.
+The tag clears while the player acts. Thomas's shelves are thin, waterfront workers face severe disruption, and reviewed naval/official enforcement changes routes and handoffs. One run may involve a permitted wagon and correspondence inspection; another may require a merchant-yard route; another may stay quiet. Delivery, inspection, aid, object condition, timing, and relationship consequences persist through the fixed enforcement start. Back at the press, the player builds the outbound causal dispatch from the Port Act, changed harbor, relief request, and outside letters; that Diegetic Construction resolves the preserved Day 3 prediction and serves as Sync 4. Abigail's old retained Stamp Act copy beside the Port notice makes the nearly nine-year causal arc visible before Debrief.
 
 ### Edge Cases and Fallback Matrix
 
@@ -5564,7 +5360,7 @@ The panel dematerializes. Thomas’s shelves are thin, waterfront workers face s
 **Student uses accessibility support**
 
 - Extend reading and input time.
-- Preserve TEKS and scoring target.
+- Preserve TEKS/scoring target plus mechanic agency: meaningful choices, relevant information, ownership, stakes, and consequence range.
 - Record presentation mode only for QA, never as a learner weakness.
 
 ---
@@ -5645,6 +5441,8 @@ flowchart TD
 - **ReplayProfileState:** Non-learning, player-scoped cross-run state. Per Chapter it stores atomic `certified_completion_count`, the prior four certified canonical system-selection token sequences/digests, family/variant/experience-cluster exposure counts, deterministic last-seen attempt keys, bounded category history, and active lease ID/owner/epoch; profile-level fields include opaque `profile_id`, schema/package namespace, variation root seed, and revision. It never changes curriculum, learner evidence, or assessment.
 - **RunVariationContext:** Immutable per-Chapter-attempt state containing opaque `save_id` and `chapter_attempt_id`, attempt-start sequence, reserved `certified_completion_ordinal` when applicable, lease ID/epoch, package hash, pinned ReplayProfileState revision/hash, selector/signature versions, and 128-bit attempt seed.
 - **Event Manager / Eligibility Resolver:** Sole legal-set, action-lifecycle, Archive-queue, and transaction coordinator.
+- **PreparedFrontier:** Event Manager-owned bounded cache of provisional outcome snapshots, next legal sets, deterministic selections, continuation IDs, and primary/fallback asset readiness for every declared outcome of the active action. It is disposable acceleration state, never authority.
+- **Mechanic Outcome Resolver:** Deterministic OutcomePolicy executor inside the Event Manager authority boundary. It maps pinned World State, validated MechanicResult, Accessibility/Input treatment, and domain-separated RunVariationContext rank to one authored terminal outcome ID. It never infers ability or learning.
 - **AI Director:** One eligible ID or no action.
 - **Archive Runtime Controller:** Presentation-only controller for approved holographic context, Sync, Memory, and Review actions. It implements the same ExecutionPlan/ExecutionResult presenter contract as Runtime Executor, owns transient panel/input state, and has no authoritative state-write access.
 - **Archive Catalog:** Non-student authored Memory, conversation, and replay asset metadata.
@@ -5653,7 +5451,7 @@ flowchart TD
 - **Response Classifier:** Prompt-specific status and allowlisted labels for rare open responses.
 - **Rubric Resolver:** Deterministically maps valid labels through an authored rubric to score status, EvidenceEvents, and approved feedback.
 - **Approved Asset Database:** Dialogue, voice, subtitle, animation, camera, event, UI, and fallback bundles.
-- **Runtime Executor:** Presents an immutable ExecutionPlan and returns a typed ExecutionResult; it has no authoritative state-write access.
+- **Runtime Executor:** Presents an immutable ExecutionPlan and returns typed ExecutionProgress, bounded MechanicResult input records when declared, and exactly one ExecutionResult; it has no authoritative state-write or outcome-selection access.
 - **Accessibility and Input Profile:** Versioned authority for reading time, contrast, motion/flicker, intensity, subtitle, input, and equivalent-presentation settings. It never updates learner understanding.
 - **Save/Resume:** Sole owner of durable atomic checkpoints, version migration, rollback, and recovery.
 - **Telemetry/Audit Outbox:** Idempotent typed records committed with gameplay transactions and delivered asynchronously.
@@ -5663,24 +5461,26 @@ flowchart TD
 
 1. Load immutable package, ActionSpecs, approved assets, ReplayProfileState, RunVariationContext, and a composite SaveRecord.
 2. At an action boundary, Event Manager pins World, Learner, package, asset, ReplayProfileState, and RunVariationContext revisions.
-3. Resolve legal ActionSpecs and handle legal player requests or request Director ranking.
+3. Resolve legal ActionSpecs and handle legal player requests or compute Director ranking locally.
 4. Revalidate, reserve, stage, and lock one ActionSpec.
 5. Send an immutable ExecutionPlan to Runtime Executor or Archive Runtime Controller.
-6. Receive and validate any declared nonterminal ExecutionProgress checkpoints, then exactly one terminal ExecutionResult.
-7. For every Type 12 input, Assessment Runtime invokes Classifier and pure Rubric Resolver in the ActionSpec’s declared scored or formative mode.
-8. Event Manager prepares the declared World delta, EvidenceEvents, applicable ReplaySelection/Exposure/Route deltas or SilenceResolution, any due ReplayAttemptCommit, assessment updates, Archive references, and audit outbox record.
-9. Save/Resume commits the composite transaction atomically under one transaction ID.
-10. Release locks, deliver telemetry asynchronously, and wait for the next decision trigger.
+6. Receive and validate declared nonterminal ExecutionProgress checkpoints and any bounded MechanicResult, then exactly one terminal ExecutionResult.
+7. For a consequential mechanic, Mechanic Outcome Resolver computes the authoritative authored terminal outcome under the pinned OutcomePolicy; no outcome is rerolled after checkpoint or resume.
+8. For every Type 12 input, Assessment Runtime invokes a local classifier or an asynchronous classifier with a fixed local deadline. Formative timeout commits `UNCLASSIFIED` and the preloaded bounded equivalent; scored timeout commits `INVALID_REPLACEMENT_PENDING` and the preloaded construct-equivalent replacement. Active-world continuation never waits for a remote classification result.
+9. Event Manager prepares the declared World/Job/object/relationship/consequence delta, Scene continuation, EvidenceEvents, applicable ReplaySelection/Exposure/Route deltas or SilenceResolution, any due ReplayAttemptCommit, assessment updates, Archive references, and audit outbox record.
+10. Save/Resume commits the composite transaction atomically under one transaction ID.
+11. Publish the matching PreparedFrontier branch, begin the next authored reaction, release obsolete locks, extend the frontier asynchronously, deliver telemetry asynchronously, and wait for the next decision trigger.
 
 ### Design Philosophy
 
-Deterministic systems own truth, legality, and final selection. Models may advise among allowlisted legal IDs and classify prompt-specific open responses, but they never control the authoritative ranking tuple or argmax. The game remains playable and replay-identical for fixed inputs when model services are absent.
+Deterministic local systems own truth, legality, final action selection, and mechanic outcomes. Models may asynchronously advise among allowlisted future legal IDs and classify prompt-specific open responses, but they never control the authoritative ranking tuple, argmax, OutcomePolicy, or immediate world reaction. The game remains playable, responsive, and replay-identical for fixed inputs when model services are absent.
 
 ### Responsibilities
 
 - Architecture owns contracts and failure isolation.
 - Content systems own immutable packages.
 - Runtime systems own state and execution.
+- Mechanic Outcome Resolver owns authoritative consequential-action resolution.
 - AI systems own constrained inference only.
 - Security/privacy own student-data boundaries.
 - QA owns offline, degraded, resume, and invalid-output paths.
@@ -5697,6 +5497,7 @@ Ownership is exclusive:
 - Current world truth: World State Manager.
 - Legal next actions: Event Manager.
 - Best legal next action: AI Director.
+- Consequential mechanic result: Mechanic Outcome Resolver.
 - Current learning evidence: Learner Model.
 - Cross-run encounter history: ReplayProfileState repository.
 - Per-attempt variation and deterministic seed: RunVariationContext.
@@ -5716,11 +5517,13 @@ Required nonfunctional behavior:
 - Local core path and fallbacks.
 - Versioned schemas and IDs.
 - Deterministic replay for QA.
-- Build-blocking accessibility coverage matrix proving every required carrier, event, route, and scored item has a legal semantic/cognitive equivalent for every supported profile.
+- OutcomePolicy golden vectors and deterministic mechanic-outcome parity across online, offline, uninterrupted, and resumed execution.
+- Build-blocking accessibility coverage matrix proving every required carrier, mechanic, event, route, and scored item has a legal equivalent for every supported profile preserving semantic/cognitive demand, meaningful choice, relevant information, ownership, stakes, and consequence range.
 - Decision and scoring audit logs.
 - Data minimization and role-based access.
 - No runtime generation, rewriting, summarization, translation, or synthesis of player-facing semantic content or authored media.
 - Graceful performance tiers that preserve required content.
+- No loading indicator, frozen NPC, or delayed consequence while a runtime model selects game flow; PreparedFrontier and local deterministic recomputation cover every immediate action boundary.
 
 **Replay state and identity**
 
@@ -5736,7 +5539,7 @@ Save templates and classroom provisioning never clone profile IDs, root seeds, s
 
 **SaveRecord**
 
-A composite SaveRecord contains package ID/hash, schema versions, opaque profile/save IDs, serialized World and Learner snapshots (or immutable content-addressed snapshot references) plus their revisions, ReplayProfileState ID/revision/content hash and either all selection-relevant profile fields or an immutable content-addressed snapshot reference retained through attempt completion, the complete RunVariationContext including lease ID/owner/epoch and reserved certified ordinal, committed transaction IDs, authoritative per-slot ReplaySelection/Exposure/Route state, resolved SilenceResolution state, Scene progress, the Event Manager’s pending Archive queue, pre-overlay camera transform, selected Archive catalog IDs, authorized Response Store references, Assessment form/version/item-order/attempt records, active accessibility profile ID, and any resumable action token. A resumable token pins selected ActionSpec ID, package hash, runtime slot instance, stable signature slot key, selector version, decision ordinal, exposure phase, checkpoint phase, and profile/context revisions. Quiescent, exposure-boundary, event-internal, and Review-item checkpoints are distinct. Raw locks are not stored; the owning action is reconstructed and its declared locks are reacquired.
+A composite SaveRecord contains package ID/hash, schema versions, opaque profile/save IDs, serialized World and Learner snapshots (or immutable content-addressed snapshot references) plus their revisions, ReplayProfileState ID/revision/content hash and either all selection-relevant profile fields or an immutable content-addressed snapshot reference retained through attempt completion, the complete RunVariationContext including lease ID/owner/epoch and reserved certified ordinal, committed transaction IDs, authoritative per-slot ReplaySelection/Exposure/Route state, resolved SilenceResolution state, carried-object/Job/attention/consequence state, Scene progress, the Event Manager’s pending Archive queue, pre-overlay camera transform, selected Archive catalog IDs, authorized Response Store references, Assessment form/version/item-order/attempt records, active accessibility profile ID, and any resumable action token. A resumable token pins selected ActionSpec ID, package hash, runtime slot instance, stable signature slot key, selector version, decision ordinal, exposure phase, mechanic phases, validated MechanicResult fields, computed authored terminal outcome when already resolved, OutcomePolicy version, checkpoint phase, and profile/context revisions. Quiescent, exposure-boundary, mechanic-phase, outcome-commit, event-internal, and Review-item checkpoints are distinct. Raw locks are not stored; the owning action is reconstructed and its declared locks are reacquired.
 
 Save/Resume rejects a replay-profile hash mismatch during an active attempt and uses the persisted pinned snapshot until that attempt completes. Stateless per-decision hashing means no PRNG stream position exists to lose. Package acceptance tests must prove that uninterrupted play and save/resume at every action and exposure boundary produce the same selector-trace and system-selection signatures; no proof is claimed until the corresponding traceability record is `PASS`.
 
@@ -5792,7 +5595,7 @@ Replay telemetry mirrors but never replaces authoritative replay state through a
 
 ### Boston Example
 
-The player completes `SEA01_CH02_BOSTON.MD01.ACT.THOMAS_DIALOGUE_CORE`. Runtime Executor returns its declared completion result; the ActionSpec maps that result to a formative, unscored EvidenceEvent for concept `BOS_FIW_DEBT_POLICY`. After validation, Event Manager coordinates the World State and Learner Model transaction. It then resolves Abigail clarification, ambient traversal, and the next delivery as legal. The Director selects the delivery `action_id` because immediate clarification would repeat the same concept. All media comes from the Boston package.
+The player attempts `BOS.MD01.ACT.HANDBILL_HANDOFF.ROOF.v1`. PreparedFrontier already contains every legal roof outcome and ready asset. Runtime Executor returns bounded MechanicResult fields; Mechanic Outcome Resolver applies the pinned `PA.OUTCOME.RANK.v1` policy and commits `HANDBILLS_DELIVERED_RECOGNIZED`, the exact object custody, watcher recognition, Thomas-gate use, route, and consequence continuation. No learner evidence is inferred from traversal. Event Manager then exposes the consequence-compatible source tray and later `BOS.MD01.ACT.HEADLINE_CONSTRUCT.v2`; the failed concealment remains true while the same representation contract stays reachable. All media and outcomes come from the Boston package, and no model/network call blocks the reaction.
 
 ### Edge Cases
 
@@ -5813,21 +5616,21 @@ These commandments are the fastest acceptance test for any feature, scene, tool,
 
 ### How It Works
 
-1. **History never branches.**
-2. **Historical outcomes never depend on the player.**
-3. **Player agency changes experience, not truth.**
+1. **Recorded historical facts, public acts, participants, dates, and anchor outcomes never branch.**
+2. **Recorded historical outcomes never depend on the player; local Action Outcomes deliberately do.**
+3. **Player agency changes work, routes, objects, timing, attention, access, trust, obligations, and local consequences—not historical truth.**
 4. **Mission Days are the primary gameplay unit.**
 5. **Every Chapter has exactly one anchor character.**
 6. **Every Mission Day has one primary Job.**
-7. **Jobs route the curriculum; they do not add arbitrary chores.**
-8. **The environment creates immersion; interactions create learning.**
-9. **Worlds are compact, dense, alive, and selectively interactive.**
-10. **One meaningful traversal separates major interactions whenever pacing permits.**
+7. **Jobs are gameplay: they create useful mechanics, material stakes, human decisions, and historical work products—not arbitrary chores.**
+8. **Learning lives first in work, evidence, environment, and consequence; dialogue does not disguise a lecture.**
+9. **Worlds are compact, dense, alive, selectively systemic, and physically playable.**
+10. **Meaningful traversal includes decisions, execution, pressure, or discovery—not empty walking between conversations.**
 11. **Historical Events are fixed, authored, and state-triggered.**
-12. **Choices are bounded and converge quickly: normally two or three; a Living Historical Encounter may offer a fourth nonverbal route/action control.**
-13. **No combat, crafting, inventory grind, collectibles, morality, reputation, XP, or skill tree enters the core game.**
+12. **Choices are bounded but consequential: every ordinary decision presents two or three materially distinct actions; three is the absolute cap, and a free probe must fit inside it rather than becoming a fourth option.**
+13. **Contextual traversal, evasion, crowd navigation, object handling, and occupational mechanics are core; combat, inventory grind, collectibles, morality meters, reputation points, XP, and skill trees are not.**
 14. **The Archive frames, explains, records, and assesses; historical characters embody the lived history.**
-15. **One Archive Sync asks one thing.**
+15. **One Archive Sync asks one thing at a time; Day 1 uses one question per Sync, while Day 2+ may group up to three clearly separated short questions.**
 16. **Archived Conversations are rare, earned, and human.**
 17. **Open-ended responses are reserved for meaningful synthesis.**
 18. **Questions ask for evidence-based historical judgment, not personal political opinion.**
@@ -5840,20 +5643,28 @@ These commandments are the fastest acceptance test for any feature, scene, tool,
 25. **Runtime AI returns only allowlisted IDs, rubric tags, confidence values, and status codes; it never creates or rewrites player-facing semantic content or authored media.**
 26. **The Event Manager determines legality; the AI Director chooses within legality.**
 27. **Every runtime AI function has a deterministic fallback.**
-28. **The core path works without adaptation or network AI.**
+28. **The core path means invariant obligations/history across all legal local paths; every one works without adaptation or network AI.**
 29. **Human approval is the final authority on historical and educational content.**
-30. **The player should feel like they are living history, not taking a test.**
-31. **STAAR-eligible Grade 8 TEKS are the canonical release boundary; an expansion must supply an approved replacement standards/assessment package, and contextual history never becomes extra tested content.**
-32. **Living Historical Encounters are authored, optional, convergent, and unscored; no required concept or assessment prerequisite depends on receiving one.**
-33. **Replay variation changes encounter sequence, route texture, and approved variants—not history, required curriculum, events, or assessment standards.**
+30. **The player should feel like they are living history, not taking a test or advancing a wrapped slideshow.**
+31. **The complete canonical release covers 100 percent of current STAAR-eligible Texas Grade 8 Social Studies content TEKS and required named roles through the Assessed-Curriculum Coverage Ledger; an expansion supplies an approved replacement package, and contextual history never becomes extra tested content.**
+32. **Living Historical Encounters are authored, optional, consequence-capable, and unscored; each teaches a reviewed lived perspective or historical condition through action, while no required concept or assessment prerequisite depends on receiving one.**
+33. **Replay variation changes mechanics, encounter sequence, routes, local outcomes, objects, relationships, silence, and approved variants—not recorded history, required curriculum, events, or assessment standards.**
 34. **Replay uniqueness is a release contract: system-selected signatures satisfy the declared within-profile no-repeat and 10,000-attempt cohort collision gates, while committed silence remains a valid authored decision.**
 35. **At every committed `required_by_state`, each legal player path has committed the same versioned RequiredCarrierContracts due there; concept labels, family IDs, or sampled reachability are not substitutes for semantic equivalence.**
 36. **Assessment form, reviewed order, construct, and cognitive demand are independent of replay state, route, learner state, optional exposure, and support history.**
-37. **Every supported accessibility profile preserves required semantic payload and assessment construct; unsupported required paths prevent launch.**
+37. **Every supported accessibility profile preserves semantic payload, assessment construct, meaningful choice, relevant information, player ownership, stakes, and consequence range; unsupported required paths prevent launch.**
+38. **An attempted action is not a promised success; every consequential mechanic resolves from authored World conditions, validated player execution, and deterministic bounded uncertainty.**
+39. **Consequences persist. The game never teleports a failed objective to success, restores a lost object without cause, or makes an NPC forget merely to simplify the lesson.**
+40. **Every legal mechanic outcome has a coherent authored continuation and every due curriculum obligation has a consequence-consistent contract-equivalent carrier path.**
+41. **Adaptation reroutes learning through what happened; it never reverses what happened.**
+42. **Movement skill, reaction time, route choice, and accessibility support never count as evidence of historical understanding.**
+43. **Every dialogue line must pass the 13-year-old paraphrase test and must exist because a person needs to say it now.**
+44. **A Mission Day that can be reproduced as videos plus dialogue menus fails design review.**
+45. **Competent, context-suited action usually works; unexpected failure is a causal minority outcome, never constant sabotage.**
 
 ### Design Philosophy
 
-Constraints are the product. They focus production investment on writing, atmosphere, historical events, characters, and learning evidence rather than on systems that dilute the mission.
+Constraints protect the fusion of game and learning. They focus production investment on reusable mechanics, authored consequences, responsive world state, human writing, historical events, and valid learning evidence rather than passive exposition or unrelated reward systems.
 
 ### Responsibilities
 
@@ -5861,7 +5672,7 @@ Every discipline applies the commandments during review. A violation requires an
 
 ### Player Experience
 
-Consistency builds trust. The player knows they can explore without breaking history, make a mistake without punishment, and return to a recognizable rhythm.
+Consistency builds trust. The player knows they can explore without breaking history, that mistakes have believable local consequences rather than arbitrary punishment, and that the world and learning path will adapt without pretending the mistake never happened.
 
 ### System Interactions
 
@@ -5873,11 +5684,11 @@ Each Chapter requirements matrix maps these rules to evidence: graph validation,
 
 ### Boston Example
 
-One Boston player may encounter a paper inspection, overturned wagon, and meeting update; another may receive a supply request, newspaper crowd, and deliberate silent traversal. Both still encounter the same required Stamp Act, representation, Samuel Adams, Crispus Attucks, John Adams, mercantilism, and Intolerable Acts content; neither can decide whether the fixed historical events occur. Abigail remains the single anchor, and the AI cannot compose a new encounter or speech.
+One Boston player may complete a clean handbill handoff through a quiet market; another may help Thomas, miss the carrier, be recognized by an Oliver customer, spill pages in a crowd surge, and return by a roof route. Those consequences remain true and alter the rest of the run. Both still encounter the same required Stamp Act, representation, Samuel Adams, Crispus Attucks, John Adams, mercantilism, and Intolerable Acts obligations; neither can decide whether the fixed historical events occur. Abigail remains the single anchor, and runtime AI cannot compose a new encounter, mechanic outcome, or speech.
 
 ### Edge Cases
 
-- “It would be fun” does not override a commandment.
+- “It would be fun” does not override history, accessibility, or learning invariance; “it is educational” does not excuse passive or uninteresting play.
 - A Chapter-specific cinematic technique is allowed if it does not create a new core verb.
 - Future expansion may amend commandments only through a versioned engine-design decision and regression review.
 
@@ -5922,6 +5733,9 @@ Metrics are grouped by claim. Before collection, each receives a stable ID in th
 - Voluntary Chapter replay and completion after replay.
 - Mission Day and Chapter completion.
 - Voluntary optional conversation and Memory use.
+- Player-rated agency, consequence clarity, tension, and desire to continue using age-appropriate validated items.
+- Mechanical-action share of active play and longest uninterrupted passive-listening interval.
+- Consequential-choice follow-through: fraction of choices whose distinct World/Job effect the player can later identify.
 - Archive Sync abandonment.
 - Cutscene skip and subtitle/accessibility use, interpreted descriptively rather than as knowledge.
 
@@ -5930,6 +5744,9 @@ Metrics are grouped by claim. Before collection, each receives a stable ID in th
 - Time to first valid objective.
 - Time spent without a legal, discoverable next action.
 - Archive Assist frequency.
+- Contextual-mechanic completion, partial outcome, recovery, and accessibility-equivalent completion by mechanic family.
+- Outcome-causality comprehension: after an unexpected result, whether the player can identify the visible cause without developer explanation.
+- Filler-choice defects, choices with indistinguishable consequences, and dialogue turns failing the 13-year-old paraphrase test.
 - Living Encounter frequency, category balance, route resumption, and opt-out behavior.
 - First-five-attempt family, variant, and experience-cluster novelty plus sequence overlap.
 - System-selection-signature collision probability, maximum-signature probability, confidence bounds, and any-duplicate cohort risk across simulated and observed attempts.
@@ -5937,18 +5754,25 @@ Metrics are grouped by claim. Before collection, each receives a stable ID in th
 - Adult rescue rate in unprompted student tests.
 - Archive Sync median and upper-percentile duration.
 - Dialogue interruption and subtitle collision defects.
+- Player-choice commit to first visible/audible world reaction latency, PreparedFrontier hit rate, local stale-frontier recompute time, and any action boundary blocked by model/network/remote asset work.
 
 **Production and reliability**
 
+- Assessed-curriculum completeness: 100 percent of current STAAR-eligible Grade 8 Social Studies content standards and required named roles own approved Chapter obligations, authenticated evidence, retrieval, assessment mapping, accessibility equivalents, and trace links.
 - Required semantic obligations: 100 percent of contracts due at each committed `required_by_state` on every legal execution, including all supported routes, fallbacks, accessibility profiles, AI-offline paths, and save/resume boundaries.
 - Required concept scope: 100 percent mapped to the active approved standards package; for the canonical release, that package is current STAAR-eligible Grade 8 TEKS.
 - Required event fallback coverage: 100 percent.
+- Legal mechanic terminal outcomes with an authored continuation, persistent World/Job delta, and due-carrier path: 100 percent.
+- Consequence-state branches that silently restore, erase, reroll on resume, or contradict a committed result: zero.
 - Runtime-generated player-facing semantic content or authored media: zero.
 - Critical historical-accuracy defects at content lock: zero.
 - Deadlocks and invalid AI selections escaping revalidation: zero.
+- Immediate gameplay boundaries blocked on runtime model or network selection: zero; choice-to-visible-reaction latency meets the Section 27 target on minimum hardware.
 - AI-offline Chapter completion: 100 percent in automated and QA paths.
 - Required-content and Historical Event invariance across the full selector domain and every legal completion path: 100 percent.
 - Historically invalid encounter/date-state combinations across simulation: zero.
+- Living Encounter families without a reviewed perspective/material-condition payload, provenance, mechanic expression, and prohibited-overgeneralization rule: zero.
+- Ordinary-risk context-suited actions below the 0.70 success-plus-useful-partial threshold in any certified World/accessibility stratum: zero unless explicitly approved as signaled high-risk.
 - Same-profile system-selection-signature repeats during the first five certified completed attempts of every Chapter when a support-equivalent alternative exists: zero.
 - For every Chapter and every certified probability law `D_s`, exact/conservatively bounded weighted model counting—or a statistically powered estimator with simultaneous one-sided preregistered 95 percent bounds—places `p₂,s = Σ p_{i|s}²` at or below `0.01 / C(10000,2)`. Report each stratum and the worst case; an aggregate mixture cannot substitute.
 - For every certified `D_s`, `pmax,s = max_i p_{i|s}` including its simultaneous one-sided upper bound is at most `1.0 × 10⁻⁵`; report the data-dependent maximum and worst stratum.
@@ -5970,6 +5794,14 @@ The initial protocols below are versioned before recruitment; a later protocol m
 
 - Population/task: every required Sync administration reached in `BOS-UX-1` and `BOS-COMP-1`, from panel-open commit through response/continue commit. Abandoned, invalid, and technically failed administrations remain in the completion denominator.
 - Gate: at least 95 percent commit the Sync; among completed administrations, median duration is at or below 20 seconds and 90th percentile at or below 30 seconds, excluding time explicitly added by the active Accessibility and Input Profile. Missing timestamps are technical failures, not exclusions.
+
+**`BOS-GAME-1` — Consequential gameplay and agency**
+
+- Population/task: at least 24 Grade 8 students from at least two classrooms play Boston Day 1 on target hardware without gameplay coaching, including supported accommodations.
+- Gate: at least 90 percent complete the press, route/handoff, crowd, and headline mechanic families without adult control takeover.
+- Consequence legibility: at least 80 percent can identify two things their actions changed locally and one thing they could not change historically.
+- Agency gate: at least 75 percent select the positive response on a preregistered age-appropriate item equivalent to “my choices changed what happened to my work or relationships,” with no supported-profile subgroup showing loss of meaningful options or consequence range.
+- Passive-play defect: no required sequence exceeds the preregistered uninterrupted listen/watch limit without a historically necessary fixed event or accessibility-controlled pause.
 
 **`BOS-COMP-1` — Chapter completion**
 
@@ -5995,7 +5827,7 @@ The initial protocols below are versioned before recruitment; a later protocol m
 
 **Access review**
 
-- For any preregistered demographic or accommodation subgroup with at least 20 participants, a completion gap greater than 10 percentage points or a navigation-rescue gap greater than 10 percentage points triggers a blocking access review.
+- For any preregistered demographic or accommodation subgroup with at least 20 participants, a completion, navigation-rescue, meaningful-choice availability, consequence-severity/range, outcome-legibility, or agency-rating gap greater than the preregistered 10-point threshold triggers a blocking access review.
 - Smaller subgroup samples are reported descriptively as inconclusive and are not used to claim parity.
 - A trigger sets `REQ-PILOT-001` to `BLOCKED`. Closure requires documented remediation and a prospectively registered retest that meets the threshold, or an explicit `WAIVED` traceability record naming approver, evidence-based reason, affected population, mitigation, and expiry. Descriptive inconclusive results cannot close a triggered review.
 
@@ -6065,6 +5897,7 @@ A new content pack supplies:
 - Curriculum, Scene, and Misconception Graphs.
 - Historical dossier and source provenance.
 - Season, Chapter, Mission Day, Job, and event definitions.
+- Reusable mechanic bindings, Job-object schemas, OutcomePolicies, local consequence graph, carrier-reroute matrix, and accessibility-agency equivalents.
 - Character Cards.
 - Approved dialogue, Archive, assessment, voice, subtitle, animation, environment, and fallback assets.
 - Localization, accessibility, telemetry, and evaluation plan.
@@ -6073,9 +5906,10 @@ The engine continues to provide:
 
 - World State.
 - Event eligibility and lifecycle.
+- Mechanic Outcome Resolver, PreparedFrontier, canonical uncertainty, object/consequence persistence, and no-reroll save behavior.
 - AI Director selection contract.
 - Learner evidence model.
-- Interaction presentations.
+- Reusable occupational, traversal, evasion, crowd, object, social-action, Diegetic Construction, and assessment presentations.
 - Archive UX.
 - Save, telemetry, accessibility, and package validation.
 
@@ -6102,11 +5936,11 @@ Expansion means authoring new truth and experiences into stable contracts. It do
 
 ### Player Experience
 
-A player entering a new era recognizes Mission Days, Jobs, the Archive, and interaction grammar while experiencing a distinct place, profession, cast, and historical pressure.
+A player entering a new era recognizes Mission Days, consequential Jobs, core mechanic families, the Archive, and action grammar while experiencing a distinct place, profession, cast, local consequence network, and historical pressure.
 
 ### System Interactions
 
-Package manifests declare engine compatibility and content versions. New interaction types are not required for expansion; signature treatments remix existing types.
+Package manifests declare engine compatibility and content versions. Signature treatments should compose approved types; a new reusable mechanic/interaction type requires a versioned platform decision, accessibility contract, and regression review.
 
 ### Implementation Notes — High Level
 
@@ -6141,19 +5975,23 @@ A Spanish localization of `SEA01_CH02_BOSTON` preserves Season/Chapter, Scene, c
 - **ActionSpec Compiler:** Versioned offline owner that deterministically derives immutable ActionSpecs from authoritative graphs, cards, package policy, and asset manifests.
 - **Approved asset:** Human-reviewed text, media, prompt, rubric, event, or fallback addressable by stable ID.
 - **Archive Memory:** Optional 20–30 second approved replay tied to a misconception or missing relation.
-- **Archive Sync:** One brief formative interaction after a historical inflection point.
+- **Archive Sync:** One brief formative field-record interaction after a historical inflection point, presented either as an Archive overlay or an approved Diegetic Construction action.
 - **Archived Conversation:** Rare, earned anchor conversation preserved for later replay.
 - **Chapter:** One place-centered investigation with one driving question and one anchor.
 - **Character Card:** Authoring and eligibility constraints for a character’s knowledge, perspective, goals, mood, and legal topics.
-- **Core path:** The complete, required, non-adaptive route through a Chapter.
+- **Core path:** The minimum complete authored obligation and historical spine shared across all legal action, outcome, consequence, accessibility, and adaptation paths; it is not one mandatory route.
 - **Curriculum Graph:** Human-authored truth for concepts, dependencies, coverage, retrieval, and transfer.
 - **Eligible action:** An approved action ID whose prerequisites, state, assets, and constraints are currently valid.
 - **Event Manager:** Runtime owner of eligibility, validation, locks, execution orchestration, and state-transaction coordination.
 - **ExecutionPlan / ExecutionProgress / ExecutionResult:** Immutable presentation request, optional typed nonterminal checkpoint signal, and exactly one typed terminal completion/skip/failure response; none gives Executor authority to mutate state.
+- **MechanicResult:** Bounded typed record of relevant player execution returned by Runtime Executor; it contains no inferred ability, intent, or learning judgment.
+- **OutcomePolicy:** Immutable deterministic ActionSpec policy that maps pinned World State, validated MechanicResult, accessibility treatment, and bounded RunVariationContext uncertainty to one authored terminal outcome.
+- **PreparedFrontier:** Disposable Event Manager cache that precomputes the immediate legal continuation and readies assets for every declared outcome of the active action; it accelerates response but never owns truth.
+- **Diegetic Construction:** Historical reasoning performed through the cover identity’s work product, such as setting a headline or routing a dispatch; may serve as formative or scored evidence only under an approved rubric.
 - **Historical Event:** Fixed authored event whose outcome cannot be changed by the player.
-- **Job:** One believable work obligation that routes a Mission Day.
+- **Job:** One believable work obligation that supplies reusable mechanics, material stakes, consequential objectives, historical access, and a work product across a Mission Day.
 - **Learner Model:** Lightweight evidence state for encounter, understanding, confidence, misconceptions, and verification.
-- **Living Historical Encounter:** Optional 20–60 second authored interruption selected during a traversal window; convergent, unscored, and never able to satisfy a RequiredCarrierContract.
+- **Living Historical Encounter:** Optional 20–90 second authored complication or ordinary-life beat selected during a traversal window; may create persistent local consequence branches, remains unscored, and never itself satisfies a RequiredCarrierContract.
 - **Mission Day:** Primary gameplay unit containing anchor, Job, interactions, event, Sync, and return.
 - **Mission Debrief:** Chapter-end organization and explanation sequence.
 - **Misconception Graph:** Authored diagnostic models, support assets, and later checks.
@@ -6184,12 +6022,15 @@ Every Chapter ships with:
 - Chapter contract and driving question.
 - Historical dossier and source log.
 - Standards and assessment map.
+- Complete Assessed-Curriculum Coverage Ledger slice, including required named-role carriers and gameplay-integration review.
 - Curriculum Graph slice and versioned RequiredCarrierContracts.
 - Three to five Mission Day specifications.
 - One cover identity and one anchor Character Card.
 - Supporting, historical, ambient, and crowd character definitions.
+- Required Historical Figure Manifest with assessed roles, appearance/document/Archive carriers, provenance, prohibited inventions, and retrieval points.
 - District map and environment-state plan.
 - Scene Graph with core path, optional windows, locks, and fallbacks.
+- Reusable mechanic specification, OutcomePolicies, carried-object/Job/attention state, consequence branches, convergence deadlines, and carrier-reroute matrix.
 - Living Historical Encounter library of approximately 20–40 families plus the complete executable ReplayValidationManifest, convergence, repeat policy, and replay-validation evidence.
 - Misconception Graph with three to five priority misconceptions.
 - Dialogue and Subtitle Bible compliance report.
@@ -6202,6 +6043,7 @@ Every Chapter ships with:
 - Reproducible replay report covering first-five-attempt no-repeat, cohort collision risk, concentration, semantic-cluster novelty, and required-content invariance.
 - Supported accessibility-profile matrix, privacy/telemetry field allowlists, versioned Metric Registry, and evaluation plan.
 - Universal legal-completion-path carrier proof, save/resume equivalence report, automated validation, and human sign-off record.
+- PreparedFrontier outcome coverage, asset-readiness report, stale-frontier recompute benchmark, and proof that no immediate game-flow boundary waits on runtime model/network work.
 
 ## Appendix C — Reference Sources
 
@@ -6258,19 +6100,21 @@ This Appendix is a release ledger, not a prose assertion that unbuilt evidence e
 - **REQ-REPLAY-001 — Practically non-repeating authored play**  
   **Owner:** Gameplay systems with QA/research. **Source:** Sections 9A, 27–29, 37, and 39. **Evidence:** Complete executable ReplayValidationManifest and artifact hashes, selector/encoder golden vectors, profile lease/attempt transaction tests, first-five semantic no-repeat/cadence/overlap report, and 10,000-attempt cohort collision/concentration proof with simultaneous bounds. **Status:** Contract `SPECIFIED`; Boston evidence `PENDING_PACKAGE_EVIDENCE`.
 - **REQ-RUNTIME-001 — Exclusive runtime ownership and deterministic recovery**  
-  **Owner:** Architecture. **Source:** Sections 27–30 and 37. **Evidence:** Versioned schemas, ActionSpec Compiler manifest, ownership review, failure-injection tests, online/offline parity, and save-at-every-boundary equivalence. **Status:** `PENDING_PACKAGE_EVIDENCE`.
+  **Owner:** Architecture. **Source:** Sections 27–30 and 37. **Evidence:** Versioned schemas, ActionSpec Compiler manifest, ownership review, OutcomePolicy golden vectors, PreparedFrontier latency, failure-injection tests, online/offline parity, and save/resume-at-every-mechanic-boundary no-reroll equivalence. **Status:** `PENDING_PACKAGE_EVIDENCE`.
 - **REQ-ASSESS-001 — Common construct and fair assessment**  
   **Owner:** Assessment with research. **Source:** Sections 19–20, 23, and 39. **Evidence:** Reviewed forms/order variants, allocation-policy audit, accessibility alternatives, rubric reliability, form/order effects, and differential-item-functioning analysis. **Status:** Contract `SPECIFIED`; operational evidence `PENDING_PILOT_EVIDENCE`.
 - **REQ-ACCESS-001 — Accessibility and student-data protection**  
-  **Owner:** Accessibility and privacy. **Source:** Sections 14–15, 23, 33, and 37. **Evidence:** Supported-profile coverage matrix, input/navigation review, telemetry allowlists, policy/version review, retention/deletion tests, and small-cell reporting controls. **Status:** `PENDING_PACKAGE_EVIDENCE`.
+  **Owner:** Accessibility and privacy. **Source:** Sections 7, 14–15, 23, 33, 37–39. **Evidence:** Supported-profile carrier/mechanic matrix proving semantic/cognitive, meaningful-choice, information, ownership, stakes, and consequence-range parity; input/navigation/agency review; telemetry allowlists; policy/version review; retention/deletion tests; and small-cell reporting controls. **Status:** `PENDING_PACKAGE_EVIDENCE`.
 - **REQ-BOS-001 — Boston reference Chapter**  
   **Owner:** Chapter production. **Source:** Section 36. **Evidence:** Final 32-family ActionSpec manifest, all assets/localizations, source records, RequiredCarrierContracts, validation reports, and sign-offs required above. **Status:** Reference design `SPECIFIED`; shippable build `PENDING_PACKAGE_EVIDENCE`. The document must not describe Boston as production-complete until this record is `PASS`.
-- **REQ-PILOT-001 — Student usability, reliability, learning, retention, and access**  
-  **Owner:** Product/research with accessibility and engineering. **Source:** Section 39 protocols `BOS-UX-1`, `BOS-PACE-1`, `BOS-COMP-1`, `BOS-REL-1`, `BOS-LEARN-1`, and Access review. **Evidence:** Versioned Metric Registry, preregistered protocol/power analysis, deidentified result reports, reliability traces, access-review closure or approved waiver, ethics/privacy approvals, and release decision. **Status:** `PENDING_PILOT_EVIDENCE`.
+- **REQ-PILOT-001 — Student usability, gameplay agency, reliability, learning, retention, and access**
+  **Owner:** Product/research with accessibility and engineering. **Source:** Section 39 protocols `BOS-UX-1`, `BOS-PACE-1`, `BOS-GAME-1`, `BOS-COMP-1`, `BOS-REL-1`, `BOS-LEARN-1`, and Access review. **Evidence:** Versioned Metric Registry, preregistered protocol/power analysis, deidentified result reports, gameplay-agency/consequence-legibility results, reliability traces, access-review closure or approved waiver, ethics/privacy approvals, and release decision. **Status:** `PENDING_PILOT_EVIDENCE`.
 - **REQ-PROD-001 — Package and content lock**  
   **Owner:** Production. **Source:** Sections 34–35 and Appendix B. **Evidence:** Immutable signed package, complete trace links, human approvals, performance results, and no unresolved launch-blocking validator failures. **Status:** `PENDING_PACKAGE_EVIDENCE`.
 - **REQ-SCOPE-001 — Canonical standards boundary and expansion**  
-  **Owner:** Product/curriculum. **Source:** Sections 4, 23–24, 38, and 40. **Evidence:** Active standards/assessment package and expansion impact review. **Status:** Canonical current STAAR-eligible Grade 8 content-TEKS boundary `SPECIFIED`.
+  **Owner:** Product/curriculum. **Source:** Sections 4, 23–24, 34, 38–40, and Appendix B. **Evidence:** Active standards/assessment package; complete Assessed-Curriculum Coverage Ledger proving every current STAAR-eligible Grade 8 Social Studies content standard and required named role has approved Chapter ownership, RequiredCarrierContracts, authenticated evidence, gameplay integration, retrieval, assessment mapping, and accessibility equivalents; plus expansion impact review. **Status:** Completeness contract `SPECIFIED`; full-release ledger evidence `PENDING_PACKAGE_EVIDENCE`.
+- **REQ-GAMEPLAY-001 — Consequential historical RPG integration**
+  **Owner:** Gameplay/level/narrative with curriculum, accessibility, and QA. **Source:** Sections 7–15, 25, 29, 33–39. **Evidence:** Mechanic/OutcomePolicy manifests and golden vectors; exhaustive terminal-outcome continuation and carrier-path proof; consequence persistence and no-reroll-on-resume tests; accessibility-equivalent mechanic coverage; dialogue paraphrase review; passive-listening/action-share report; and unprompted student agency, causality, and engagement playtests. **Status:** Foundation and Boston Day 1 design `SPECIFIED`; executable package/pilot evidence `PENDING_PACKAGE_EVIDENCE`.
 - **REQ-MEDIA-001 — Offline authored-media production**  
   **Owner:** Technical art/production. **Source:** Appendices B and E. **Evidence:** Human-approved assets, source/rights records, vendor configuration verification, and no runtime semantic generation. **Status:** Pipeline contract `SPECIFIED`; package evidence `PENDING_PACKAGE_EVIDENCE`.
 
@@ -6380,7 +6224,7 @@ The rigging stage remains **human in the loop** because marker confirmation is r
 2. Open the marker-confirmation UI.
 3. A technical artist verifies joints, hands, feet, pelvis, head, and character orientation.
 4. Confirm and run rigging.
-5. Validate the output with the Project Archive locomotion, work, gesture, and generic-talk animation set.
+5. Validate the output with the Project Archive locomotion, climb, vault, balance, squeeze/drop, object-carry/protection/handoff, crowd-pressure, occupational-work, gesture, consequence-reaction, and generic-talk animation sets required by its ActionSpecs.
 
 Do not pipeline blind rigging. A failed marker placement can make every downstream animation unusable.
 

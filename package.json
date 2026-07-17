@@ -1,0 +1,25 @@
+{
+  "name": "project-archive",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.13.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/* build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "echo \"(lint placeholder)\"",
+    "content:compile": "pnpm --filter @pa/runtime content:compile",
+    "keys:dev": "node scripts/gen-dev-keys.mjs",
+    "db:up": "docker compose up -d",
+    "db:migrate": "pnpm --filter @pa/api migrate",
+    "dev": "concurrently -n api,web -c blue,green \"pnpm --filter @pa/api dev\" \"pnpm --filter @pa/web dev\"",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "concurrently": "9.1.2",
+    "typescript": "5.7.3",
+    "tsx": "4.19.2"
+  }
+}

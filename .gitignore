@@ -1,0 +1,27 @@
+__pycache__/
+*.pyc
+sim/.state/
+
+# node
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# env & secrets
+.env
+.env.local
+.local/keys/
+
+# content build output
+content/**/compiled/
+
+# generated 3D assets (rebuild via assets/pipeline scripts)
+assets/build/
+apps/web/public/world/
+assets/source/characters/
+assets/source/mixamo/
+
+# logs
+*.log
+npm-debug.log*

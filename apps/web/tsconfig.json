@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "noEmit": true,
+    "paths": {
+      "@pa/contracts": ["../../packages/contracts/src/index.ts"],
+      "@pa/runtime": ["../../packages/runtime/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}

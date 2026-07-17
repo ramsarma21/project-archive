@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: project_archive_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: project_archive
+      POSTGRES_PASSWORD: project_archive
+      POSTGRES_DB: project_archive
+    ports:
+      - "55432:5432"
+    volumes:
+      - project_archive_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U project_archive -d project_archive"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  project_archive_pgdata:
