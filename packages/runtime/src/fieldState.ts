@@ -2,6 +2,7 @@ import {
   HEAT_BANDS,
   FIELD_STATE_VERSION,
   FIELD_REPOSITION_ANCHORS,
+  CITED_CONFRONTATION_DEFENSES,
   MICRO_CONCEPT_IDS,
   DeterministicResolutionSchema,
   OpenResponseReferenceSchema,
@@ -187,6 +188,30 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+/**
+ * Knowledge as ammunition: the one cited option armed for the ACTIVE
+ * confrontation. Pure projection of durable state — offered while the player
+ * is actually choosing (and kept visible through the CITED stand-down beat so
+ * the presenter can show the officer's authored reply), and only when the
+ * arming micro has been durably engaged (poster read, lived search,
+ * exchange). Deterministic: first table entry wins. Commit validation remains
+ * CHOOSING-only.
+ */
+export function citedConfrontationOptionFor(field: FieldDurableState) {
+  const confrontation = field.activeConfrontation;
+  if (!confrontation) return null;
+  const projectable =
+    confrontation.phase === "CHOOSING" ||
+    (confrontation.phase === "RESOLVING" &&
+      confrontation.outcome === "CITED_RELEASED");
+  if (!projectable) return null;
+  return (
+    CITED_CONFRONTATION_DEFENSES.find((defense) =>
+      field.engagedMicroIds.includes(defense.microConceptId),
+    ) ?? null
+  );
+}
+
 export function projectFieldRuntimeView(
   field: FieldDurableState,
   world: WorldState,
@@ -228,6 +253,7 @@ export function projectFieldRuntimeView(
     confiscatedObjectIds: confiscatedObjectIds.sort(),
     lastChallenge: clone(field.lastChallenge),
     activeConfrontation: clone(field.activeConfrontation),
+    citedConfrontationOption: clone(citedConfrontationOptionFor(field)),
     confrontationHistory: clone(field.confrontationHistory),
     activeChase: clone(field.activeChase),
     chaseHistory: clone(field.chaseHistory),
@@ -450,6 +476,14 @@ export function applyFieldEvent(
         confrontation.phase = "CHASE_ACTIVE";
         return;
       }
+      if (event.choice === "CITE") {
+        // Knowledge as ammunition: quoting the procedure never rolls dice —
+        // the officer stands down, deterministically. Validation already
+        // guaranteed the arming micro is durably engaged.
+        confrontation.phase = "RESOLVING";
+        confrontation.outcome = "CITED_RELEASED";
+        return;
+      }
       if (event.choice === "COMPLY") {
         const exposed = Object.values(world.jobObjects).some(
           (object) =>
@@ -487,6 +521,30 @@ export function applyFieldEvent(
     }
     case "FIELD_CONFRONTATION_RESOLVED": {
       const confrontation = field.activeConfrontation!;
+      if (event.outcome === "CITED_RELEASED") {
+        // The constable stands down: no search, no clock cost, no raised
+        // heat. Quoting the law in the open cools the street's suspicion —
+        // heat steps DOWN one band (never below CALM).
+        const index = HEAT_BANDS.indexOf(field.heat.band);
+        if (index > 0) {
+          const from = field.heat.band;
+          const to = HEAT_BANDS[index - 1]!;
+          field.heat.authority = "FIELD_EVENTS";
+          field.heat.band = to;
+          field.heat.decay = decayProgress(to);
+          field.heat.history.push({
+            eventId: event.eventId,
+            from,
+            to,
+            cause: "CITED",
+          });
+        }
+        confrontation.outcome = event.outcome;
+        confrontation.phase = "RESOLVING";
+        field.confrontationHistory.push({ ...confrontation });
+        field.activeConfrontation = null;
+        return;
+      }
       const targetHeat =
         event.outcome === "COMPLIED_CONFISCATED" ? "HUNTED" : "WATCHED";
       if (HEAT_BANDS.indexOf(field.heat.band) < HEAT_BANDS.indexOf(targetHeat)) {
@@ -876,7 +934,7 @@ export function assertFieldEventPayload(
       if (field.activeConfrontation.interruptId !== event.interruptId) {
         fail("confrontation decision has the wrong interruptId");
       }
-      if (!["COMPLY", "TALK", "RUN"].includes(event.choice)) {
+      if (!["COMPLY", "TALK", "RUN", "CITE"].includes(event.choice)) {
         fail("invalid confrontation choice");
       }
       if (
@@ -884,6 +942,17 @@ export function assertFieldEventPayload(
         event.choice === "TALK"
       ) {
         fail("failed talk may continue only with comply or run");
+      }
+      if (event.choice === "CITE") {
+        // Runtime-authoritative gating: the cited option exists only while
+        // the runtime is actually offering it — CHOOSING phase, arming micro
+        // durably engaged. A presenter can never invent it.
+        if (field.activeConfrontation.phase !== "CHOOSING") {
+          fail("a cited defense must be raised before talk fails");
+        }
+        if (!citedConfrontationOptionFor(field)) {
+          fail("cited defense requires its durably engaged micro-concept");
+        }
       }
       if (
         field.activeConfrontation.phase !== "CHOOSING" &&
@@ -899,9 +968,12 @@ export function assertFieldEventPayload(
         fail("confrontation resolution has the wrong interruptId");
       }
       if (
-        !["COMPLIED_CLEAR", "COMPLIED_CONFISCATED", "TALK_RELEASED"].includes(
-          event.outcome,
-        )
+        ![
+          "COMPLIED_CLEAR",
+          "COMPLIED_CONFISCATED",
+          "TALK_RELEASED",
+          "CITED_RELEASED",
+        ].includes(event.outcome)
       ) {
         fail("invalid confrontation outcome");
       }

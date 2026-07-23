@@ -337,6 +337,26 @@ input[type="text"] {
   border: 1px solid #fff2bd;
   font-weight: 800;
 }
+/* Knowledge-as-ammunition cited option: reads as an earned card, not a
+   generic reply — teal Archive accent plus the quoted line itself. */
+.confrontation-options button.confrontation-cited {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  color: #06231f;
+  background: #7ce8d5;
+  border: 1px solid #d2fff5;
+}
+.confrontation-options button.confrontation-cited small {
+  font-weight: 500;
+  font-style: italic;
+  opacity: 0.85;
+}
+[data-high-contrast="true"] .confrontation-options button.confrontation-cited {
+  color: #000;
+  background: #00ffd9;
+  border: 2px solid #fff;
+}
 [data-high-contrast="true"] .confrontation-panel {
   color: #fff;
   background: #000;

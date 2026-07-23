@@ -272,7 +272,16 @@ function namedExchange(
           { id: "LATER", label: "Leave him to his files", reply: "Quite.", effects: {} },
         ],
       });
-    case "clarke":
+    case "clarke": {
+      // Knowledge as ammunition (design1 feature 2): a runner who has durably
+      // engaged the non-importation compact answers the loyalist with the
+      // merchants' lawful defense instead of a reckless brush-off. The cited
+      // line takes the hostile slot (three options preserved; the polite exit
+      // and the Loyalist-view teaching option are untouched). The runtime
+      // registry enforces the same gate at commit.
+      const knowsCompact = view.field.engagedMicroIds.includes(
+        MICRO_CONCEPT_IDS.NON_IMPORTATION,
+      );
       return m3Exchange(M3_RUNTIME_RESOLVED, {
         ...common,
         choices: [
@@ -285,29 +294,41 @@ function namedExchange(
               relationships: [{ relationshipId: "CLARKE_POLITICAL_READ", delta: 8, causeId: "clarke-heard-out" }],
             },
           },
-          {
-            id: "CURT",
-            label: "Answer him curtly",
-            reply: "Then I shall remember which side of the street you chose.",
-            effects: {
-              standing: {
-                delta: standingDeltaForCause("CLARKE_INFORMED"),
-                causeId: "CLARKE_INFORMED",
+          knowsCompact
+            ? {
+                id: "CITE_COMPACT",
+                label: "Cite the merchants' compact",
+                reply:
+                  "Hm. Non-importation is at least an argument, not a rope. Merchants keeping their own ledgers — that much is lawful. Mind it stays so.",
+                effects: {
+                  micros: [MICRO_CONCEPT_IDS.NON_IMPORTATION],
+                  relationships: [{ relationshipId: "CLARKE_POLITICAL_READ", delta: 5, causeId: "clarke-cited-compact" }],
+                },
+              }
+            : {
+                id: "CURT",
+                label: "Answer him curtly",
+                reply: "Then I shall remember which side of the street you chose.",
+                effects: {
+                  standing: {
+                    delta: standingDeltaForCause("CLARKE_INFORMED"),
+                    causeId: "CLARKE_INFORMED",
+                  },
+                  identity: { clarkeMarked: true, reason: "clarke-informed" },
+                  heat: {
+                    to:
+                      view.field.heat.band === "CALM"
+                        ? "NOTICED"
+                        : view.field.heat.band,
+                    cause: "DETECTION",
+                  },
+                  relationships: [{ relationshipId: "CLARKE_POLITICAL_READ", delta: -12, causeId: "clarke-curt" }],
+                },
               },
-              identity: { clarkeMarked: true, reason: "clarke-informed" },
-              heat: {
-                to:
-                  view.field.heat.band === "CALM"
-                    ? "NOTICED"
-                    : view.field.heat.band,
-                cause: "DETECTION",
-              },
-              relationships: [{ relationshipId: "CLARKE_POLITICAL_READ", delta: -12, causeId: "clarke-curt" }],
-            },
-          },
           { id: "LATER", label: "Say nothing", reply: "Silence is an answer too.", effects: {} },
         ],
       });
+    }
     case "rider":
       return m3Exchange(M3_RUNTIME_RESOLVED, {
         ...common,

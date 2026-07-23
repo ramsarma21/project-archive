@@ -17,6 +17,7 @@ export type HeatTransitionCause =
   | "CONFISCATION"
   | "DECAY"
   | "VOUCH"
+  | "CITED"
   | "LEGACY_MIGRATION";
 
 export interface HeatTransitionRecord {
@@ -303,7 +304,7 @@ export interface WatcherChallengeRecord {
   reason: "SUSPICION" | "CHECKPOINT" | "CLARKE_INFORMED";
 }
 
-export type ConfrontationChoice = "COMPLY" | "TALK" | "RUN";
+export type ConfrontationChoice = "COMPLY" | "TALK" | "RUN" | "CITE";
 export type ConfrontationPhase =
   | "CHOOSING"
   | "INSPECTING"
@@ -314,9 +315,45 @@ export type ConfrontationOutcome =
   | "COMPLIED_CLEAR"
   | "COMPLIED_CONFISCATED"
   | "TALK_RELEASED"
+  | "CITED_RELEASED"
   | "CHASE_ESCAPED"
   | "CHASE_REFUGE"
   | "CHASE_CAUGHT";
+
+// ---------------------------------------------------------------------------
+// Knowledge as ammunition (design1 feature 2). A durable engaged micro-concept
+// can arm ONE cited dialogue option in a watcher confrontation: the runtime
+// offers it (projected on the field view), validates it, and resolves its
+// deterministic effects. The web renders exactly what the runtime offers —
+// the cited option replaces the generic Talk, preserving the three-option
+// panel. Knowledge is never required: Comply/Talk/Run remain untouched for
+// players without the flag, and the Talk failure path is unchanged.
+// ---------------------------------------------------------------------------
+export interface CitedConfrontationOption {
+  choice: "CITE";
+  microConceptId: MicroConceptId;
+  /** Button label, player voice. */
+  label: string;
+  /** The line the runner actually says. */
+  line: string;
+  /** The officer's stand-down reply. */
+  reply: string;
+}
+
+/**
+ * The authored cited-defense table. Keyed by the durable micro that arms it;
+ * a confrontation offers the FIRST entry whose micro the player has engaged
+ * (exactly one slot per confrontation, Archive-Spec one-consideration rule).
+ */
+export const CITED_CONFRONTATION_DEFENSES: readonly CitedConfrontationOption[] = [
+  {
+    choice: "CITE",
+    microConceptId: "MICRO.WRITS_OF_ASSISTANCE",
+    label: "Quote the writs procedure",
+    line: "Your writ names no man and no house, officer. It is a general warrant — and a general warrant ends where a lawful errand begins.",
+    reply: "…You know the paper better than most clerks. Go on, then — mind the street.",
+  },
+];
 
 export interface ConfrontationRecord extends WatcherChallengeRecord {
   phase: ConfrontationPhase;
@@ -389,6 +426,12 @@ export interface FieldRuntimeView {
   confiscatedObjectIds: string[];
   lastChallenge: WatcherChallengeRecord | null;
   activeConfrontation: ConfrontationRecord | null;
+  /**
+   * The one cited option the runtime offers for the ACTIVE confrontation
+   * (null unless a confrontation is CHOOSING and its arming micro is
+   * durably engaged). Presenters render exactly this — never their own copy.
+   */
+  citedConfrontationOption: CitedConfrontationOption | null;
   confrontationHistory: ConfrontationRecord[];
   activeChase: ChaseRecord | null;
   chaseHistory: ChaseRecord[];
@@ -484,7 +527,8 @@ export type FieldCommittedEvent =
       outcome:
         | "COMPLIED_CLEAR"
         | "COMPLIED_CONFISCATED"
-        | "TALK_RELEASED";
+        | "TALK_RELEASED"
+        | "CITED_RELEASED";
     }
   | (FieldEventMeta & {
       type: "FIELD_IDENTITY_CHANGED";

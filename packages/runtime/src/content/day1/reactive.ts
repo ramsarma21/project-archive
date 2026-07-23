@@ -11,6 +11,12 @@ import { npcFollowups } from "../../assessment/openResponseRegistry.js";
 export interface RegisteredReactiveOutcome {
   sourceId: string;
   outcomeId: string;
+  /**
+   * Knowledge-as-ammunition gate: the outcome resolves only when this
+   * micro-concept is durably engaged (runtime-authoritative — a presenter
+   * offering the option without the flag is rejected at commit).
+   */
+  requiresMicroId?: (typeof MICRO_CONCEPT_IDS)[keyof typeof MICRO_CONCEPT_IDS];
   build: (
     field: FieldDurableState,
   ) => Omit<
@@ -136,6 +142,28 @@ export const REACTIVE_OUTCOME_REGISTRY: readonly RegisteredReactiveOutcome[] = [
     }),
   },
   {
+    // Knowledge as ammunition (design1 feature 2): a runner who has engaged
+    // the non-importation compact can answer Clarke's pressure with the
+    // merchants' own lawful defense instead of a reckless brush-off. Clarke
+    // respects an informed opponent: no marking, no heat, a real read gain.
+    sourceId: "NPC-clarke",
+    outcomeId: "CITE_COMPACT",
+    requiresMicroId: MICRO_CONCEPT_IDS.NON_IMPORTATION,
+    build: () => ({
+      micros: [MICRO_CONCEPT_IDS.NON_IMPORTATION],
+      relationships: [
+        {
+          relationshipId: "CLARKE_POLITICAL_READ",
+          delta: 5,
+          causeId: "clarke-cited-compact",
+        },
+      ],
+      rumors: [
+        "Clarke repeats your words at his counter: the compact is lawful, whatever he thinks of it.",
+      ],
+    }),
+  },
+  {
     sourceId: "NPC-clarke",
     outcomeId: "CURT",
     build: (field) => ({
@@ -229,6 +257,14 @@ export function resolveRegisteredReactiveOutcome(input: {
   if (!registered) {
     throw new Error(
       `FIELD_EVENT_INVALID: unregistered reactive outcome ${input.sourceId}/${input.outcomeId}`,
+    );
+  }
+  if (
+    registered.requiresMicroId &&
+    !input.field.engagedMicroIds.includes(registered.requiresMicroId)
+  ) {
+    throw new Error(
+      `FIELD_EVENT_INVALID: cited outcome ${input.sourceId}/${input.outcomeId} requires engaged ${registered.requiresMicroId}`,
     );
   }
   if (

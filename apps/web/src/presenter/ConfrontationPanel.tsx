@@ -45,7 +45,11 @@ function talkReadout(field: FieldRuntimeView): string {
 }
 
 function aftermathToast(
-  outcome: "COMPLIED_CLEAR" | "COMPLIED_CONFISCATED" | "TALK_RELEASED",
+  outcome:
+    | "COMPLIED_CLEAR"
+    | "COMPLIED_CONFISCATED"
+    | "TALK_RELEASED"
+    | "CITED_RELEASED",
   seized: string[],
 ): string {
   if (outcome === "COMPLIED_CONFISCATED") {
@@ -53,6 +57,9 @@ function aftermathToast(
   }
   if (outcome === "COMPLIED_CLEAR") {
     return "Nothing to seize — waved through. The officer will remember your face.";
+  }
+  if (outcome === "CITED_RELEASED") {
+    return "You quoted the writ back at him and he stood down. The street saw the law argued, not run from.";
   }
   return "Your standing carried it. Released without a search.";
 }
@@ -91,7 +98,8 @@ export function ConfrontationPanel(props: {
         confrontation.phase === "RESOLVING") &&
       (confrontation.outcome === "COMPLIED_CLEAR" ||
         confrontation.outcome === "COMPLIED_CONFISCATED" ||
-        confrontation.outcome === "TALK_RELEASED")
+        confrontation.outcome === "TALK_RELEASED" ||
+        confrontation.outcome === "CITED_RELEASED")
     ) {
       processingKey.current = key;
       // Capture what is about to be seized BEFORE resolution moves custody,
@@ -104,7 +112,8 @@ export function ConfrontationPanel(props: {
               const outcome = confrontation.outcome as
                 | "COMPLIED_CLEAR"
                 | "COMPLIED_CONFISCATED"
-                | "TALK_RELEASED";
+                | "TALK_RELEASED"
+                | "CITED_RELEASED";
               const ok = await submitRef.current({
                 type: "FIELD_CONFRONTATION_RESOLVED",
                 eventId: `M2_RESOLVE_${confrontation.interruptId}_${confrontation.outcome}`,
@@ -196,6 +205,10 @@ export function ConfrontationPanel(props: {
   if (!confrontation || interrupt?.kind !== "CONFRONTATION") return null;
 
   const talkFailed = confrontation.phase === "TALK_FAILED";
+  // Knowledge as ammunition: the runtime projects at most ONE cited option
+  // for the active confrontation. When offered it takes the Talk slot — the
+  // panel always shows exactly three ways out.
+  const citedOption = props.field.citedConfrontationOption;
   const resolving =
     confrontation.phase === "INSPECTING" ||
     confrontation.phase === "RESOLVING" ||
@@ -256,13 +269,17 @@ export function ConfrontationPanel(props: {
             <p role="status">
               {confrontation.outcome === "COMPLIED_CLEAR"
                 ? "Nothing to seize. The officer waves you on."
-                : "Your account is accepted. The watcher releases you."}
+                : confrontation.outcome === "CITED_RELEASED"
+                  ? citedOption?.reply ??
+                    "The officer weighs the words, then stands down."
+                  : "Your account is accepted. The watcher releases you."}
             </p>
-            {/* Archive R5 bridge: names the vocabulary the search just taught
-                implicitly (writs of assistance). One line, once. */}
+            {/* Archive R5 bridge: names the vocabulary the beat just used.
+                One line, once. */}
             <p className="archive-frame">
-              ARCHIVE // That search ran on a writ of assistance — a standing
-              warrant that names no one and never expires.
+              {confrontation.outcome === "CITED_RELEASED"
+                ? "ARCHIVE // You turned a source into a shield. Knowing what a writ permits is worth more than outrunning one."
+                : "ARCHIVE // That search ran on a writ of assistance — a standing warrant that names no one and never expires."}
             </p>
           </>
         )}
@@ -279,15 +296,27 @@ export function ConfrontationPanel(props: {
           >
             Comply — open the bag
           </button>
-          {!talkFailed && (
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => void choose("TALK")}
-            >
-              Talk — answer the watcher
-            </button>
-          )}
+          {!talkFailed &&
+            (citedOption ? (
+              <button
+                type="button"
+                className="confrontation-cited"
+                data-cited-micro={citedOption.microConceptId}
+                disabled={submitting}
+                onClick={() => void choose("CITE")}
+              >
+                {citedOption.label}
+                <small>{citedOption.line}</small>
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => void choose("TALK")}
+              >
+                Talk — answer the watcher
+              </button>
+            ))}
           <button
             type="button"
             disabled={submitting}
