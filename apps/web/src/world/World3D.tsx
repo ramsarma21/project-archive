@@ -107,6 +107,9 @@ import { QuestArrivalTracker } from "./quest/QuestArrivalTracker.js";
 import { resolveQuestMarkers } from "./quest/resolveMarkers.js";
 import { TIMED_RUN_TARGETS } from "./content/day1Ids.js";
 import { FocusReadStaging } from "./content/day1ReadStaging.js";
+// Registers the Day-1 mechanic body stagings into the Player's
+// MechanicBodyStaging seam (content wiring belongs to the shell).
+import "./content/day1MechanicStaging.js";
 
 const ACTOR_STALE_AGE_TICKS = 30;
 
