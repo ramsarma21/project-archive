@@ -7,15 +7,15 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   M1_QA_CONTRACT,
-} from "../../apps/web/src/world/qaChaseContract.ts";
-import { buildDensityTraversalRegistrations } from "../../apps/web/src/world/densityTraversalAdapter.ts";
+} from "../../packages/engine-world/src/qaChaseContract.ts";
+import { buildDensityTraversalRegistrations } from "../../packages/chapter-boston-world/src/world/densityTraversalAdapter.ts";
 import {
   STAMINA_ACTION_DEBIT,
   STAMINA_MAX,
   STAMINA_REGEN_PER_S,
   STAMINA_SPRINT_DRAIN_PER_S,
-} from "../../apps/web/src/world/stamina.ts";
-import { CHASE_TUNING } from "../../apps/web/src/world/stealthManifest.ts";
+} from "../../packages/engine-world/src/stamina.ts";
+import { CHASE_TUNING } from "../../packages/chapter-boston-world/src/world/stealthManifest.ts";
 
 const BASE_URL = process.env.M1_QA_URL ?? "http://127.0.0.1:5173/";
 const OUT = resolve(

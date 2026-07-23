@@ -6,7 +6,7 @@
 // fitted visual bounds + per-placement audit deltas, and emits generated
 // metadata + a human-readable report into assets/build/collision.
 //
-// It does NOT touch apps/web/src/world/manifest.ts, District.tsx, collision.ts,
+// It does NOT touch the chapter-world manifest, District.tsx, collision.ts,
 // or any runtime file, and it does NOT wire the metadata into the shipping app.
 // This is the foundation the later runtime integration consumes.
 //

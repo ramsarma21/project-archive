@@ -1,6 +1,6 @@
 # Boston Act 1 — World Content Manifest (build-ready)
 
-**Status: the exact, placeable list of everything there is to DO in the Act 1 world (Boston, 14 Aug 1765).** Every entry has a real location (grounded in `apps/web/src/world/manifest.ts`), the asset/rig it uses (from the deployed inventory), its trigger, the interaction flow with **authored draft dialogue**, the micro it logs, the state it moves, its animation (no-mocap law), and its build hooks. This is what the world team builds against.
+**Status: the exact, placeable list of everything there is to DO in the Act 1 world (Boston, 14 Aug 1765).** Every entry has a real location (grounded in `packages/chapter-boston-world/src/world/manifest.ts`), the asset/rig it uses (from the deployed inventory), its trigger, the interaction flow with **authored draft dialogue**, the micro it logs, the state it moves, its animation (no-mocap law), and its build hooks. This is what the world team builds against.
 
 **Companions:** design = `Gameplay-Design.md`; quests/NPC system = `Quests-and-NPCs.md`; **alive-world occupants + activity families (TEMPLATES; build the curated Act-1 subset) = `Activity-Expansion.md`**; **look/feel/distinctiveness = `Activity-Feel.md`**; mechanics = `Mechanics-Spec.md`; found-history inspectables = `Environmental-Lore.md`; systems/assets/anim = `Act-1-Production-Plan.md`; spine beats = `Day-1-Build-Script.md`; micro concepts = `Micro-Concepts.md`.
 

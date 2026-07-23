@@ -13,11 +13,13 @@ rendered scenes, the non-black pixel rule (below).
 ## 1. Workspace typechecks
 
 ```sh
-pnpm typecheck            # -r across all workspaces (contracts, runtime, web, api, infra)
+pnpm typecheck            # all package/app projects
 ```
 
-Per-package: `pnpm --filter @pa/contracts typecheck`, `@pa/runtime`, `@pa/web`,
-`@pa/api`. Green = `tsc --noEmit` clean everywhere.
+Per-package includes `@pa/contracts`, `@pa/runtime`, `@pa/engine-world`,
+`@pa/chapter-boston`, `@pa/chapter-boston-world`, `@pa/web`, `@pa/api`, and
+`@pa/infra`.
+Green = `tsc --noEmit` clean everywhere.
 
 ## 2. Runtime tests (deterministic game brain)
 
@@ -31,25 +33,28 @@ Covers the flow/gate/field/assessment logic: `cp1-gate`, `cp1-runtime`,
 `dusk-boundary`, and the content artifact test. Also:
 
 ```sh
-pnpm --filter @pa/runtime assessment:validate   # question-bank validator CLI
+pnpm --filter @pa/chapter-boston assessment:validate -- --require-production
 ```
 
-## 3. Web tests (world logic + collision/stealth/chase)
+## 3. World-engine, chapter-world, and web-shell tests
 
 ```sh
-pnpm --filter @pa/web test              # node --import tsx --test src/world/__tests__/*.test.ts
+pnpm --filter @pa/engine-world test
+pnpm --filter @pa/chapter-boston-world test
+pnpm --filter @pa/web test
 ```
 
-Includes `collisionBroadPhase`, `collisionLos`, `collisionMotion`,
-`cameraOwnership`, `chaseModel`, `chaseFieldGating`, `doorwayContract`,
-`actorRegistry`, `actorRoutes`, `densityTraversalAdapter`, etc. These are the
-determinism guards for movement/LOS/suspicion/chase math (no wall clock, no RNG).
+The engine suite owns synthetic deterministic kernels (`collisionLos`,
+`collisionMotion`, `cameraOwnership`, `chaseFieldGating`, registries, timing).
+The Boston-world suite owns manifest-bound integration (`collisionBroadPhase`,
+`chaseModel`, `doorwayContract`, routes, density, interiors). The web suite
+owns pages, presenter wiring, preferences, and persistence adapters.
 
 ## 4. Content validators
 
 ```sh
-pnpm --filter @pa/runtime content:compile     # regenerate the generated artifact from content/boston/act1/
-pnpm --filter @pa/runtime content:validate     # package validator + generated-hash check
+pnpm --filter @pa/chapter-boston content:compile
+pnpm --filter @pa/chapter-boston content:validate
 ```
 
 `content:validate` runs `content/boston/act1/validate/validate-content.mjs`

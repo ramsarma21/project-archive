@@ -411,7 +411,7 @@ AUTHOR["colonial-door-kit"] = () => {
       }),
     ],
     compose: [
-      { type: "door", ref: "doorwayContract", note: "hinge/opening/trigger world placement owned by apps/web/src/world/doorwayContract.ts, keyed by stable door id" },
+      { type: "door", ref: "doorwayContract", note: "hinge/opening/trigger world placement owned by packages/chapter-boston-world/src/world/doorwayContract.ts, keyed by stable door id" },
     ],
   };
 };

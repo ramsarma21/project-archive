@@ -263,8 +263,8 @@ const manifest = {
   doubleSidedNote: "Front-side (thick) materials for shells and floors so inner backfaces do not stripe/z-fight from inside; ONLY thin partitions are double-sided. Normal maps stay lossless PNG (Non-Color) with exported tangents. Invisible colliders/triggers are added procedurally at placement.",
   integration: {
     status: "INTEGRATED",
-    runtime: "apps/web/src/world/InteriorStructure.tsx + InteriorDirector.tsx",
-    manifest: "apps/web/src/world/interiorManifest.ts (all eight shell keys canonical, yaw 0)",
+    runtime: "packages/engine-world/src/InteriorStructure.tsx + packages/chapter-boston-world/src/world/InteriorDirector.tsx",
+    manifest: "packages/chapter-boston-world/src/world/interiorManifest.ts (all eight shell keys canonical, yaw 0)",
     deployedDir: "apps/web/public/world/structures",
   },
   assets,

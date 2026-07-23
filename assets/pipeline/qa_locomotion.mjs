@@ -3,11 +3,11 @@
 //   node --import tsx assets/pipeline/qa_locomotion.mjs
 import { chromium } from "/tmp/pw-check/node_modules/playwright/index.mjs";
 import { mkdirSync } from "node:fs";
-import { TRAVERSAL_SET } from "../../apps/web/src/world/traversalMarkers.ts";
+import { TRAVERSAL_SET } from "../../packages/chapter-boston-world/src/world/traversalMarkers.ts";
 import {
   buildTraversalEndpoints,
   duckRequestFor,
-} from "../../apps/web/src/world/traversalRegistration.ts";
+} from "../../packages/chapter-boston-world/src/world/traversalRegistration.ts";
 
 const out = "/tmp/locomotion-qa";
 mkdirSync(out, { recursive: true });

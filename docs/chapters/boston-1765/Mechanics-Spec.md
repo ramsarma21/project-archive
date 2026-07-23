@@ -2,7 +2,7 @@
 
 **Status: the canonical spec for every load-bearing gameplay mechanic in the Boston chapter, Act 1 first.** This is the operational half of the creed — *"everything you **do** teaches you"* — built on the delivery hierarchy's top rung: **the historical constraint IS the game constraint** (`Concept-Delivery-Map.md`). Each mechanic encodes its concept into its *rules, costs, and consequences*, so a player can't succeed without internalizing the history.
 
-**Companions:** systems/stealth = `Act-1-Production-Plan.md` (Part D); quests/routes = `Quests-and-NPCs.md`; concepts = `Micro-Concepts.md`; spine = `Day-1-Build-Script.md`; existing rigs = `apps/web/src/world/MechanicRigs.tsx`; anim law = `Production.md` §3.
+**Companions:** systems/stealth = `Act-1-Production-Plan.md` (Part D); quests/routes = `Quests-and-NPCs.md`; concepts = `Micro-Concepts.md`; spine = `Day-1-Build-Script.md`; existing rigs = `packages/chapter-boston-world/src/world/MechanicRigs.tsx`; anim law = `Production.md` §3.
 
 **Every mechanic entry follows one template:**
 - **Verb / do** — the input + compound stages (no 1-second beats — `Gameplay-Design` §6).

@@ -8,7 +8,7 @@ const root = resolve(import.meta.dirname, "../..");
 const sourcePath = resolve(root, "assets/build/collision/collision-manifest.json");
 const outputPath = resolve(
   root,
-  "apps/web/src/world/collisionManifest.generated.ts",
+  "packages/chapter-boston-world/src/world/collisionManifest.generated.ts",
 );
 const source = JSON.parse(readFileSync(sourcePath, "utf8"));
 

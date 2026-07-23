@@ -1,6 +1,6 @@
 # Boston Act 1 — Environmental Lore ("Found History") catalog
 
-**Status: the complete inspectable-object layer for Act 1 (Boston, 14 Aug 1765).** This is the spatial half of the creed — *"everything you **see** teaches you"* (`Concept-Delivery-Map.md`). Where `World-Content.md` §6 lists the poster/sign knowledge interactables, this doc is the **superset**: every object in the world a player can look at and learn from, grounded in the deployed prop/building inventory (`apps/web/src/world/manifest.ts`) with real coordinates.
+**Status: the complete inspectable-object layer for Act 1 (Boston, 14 Aug 1765).** This is the spatial half of the creed — *"everything you **see** teaches you"* (`Concept-Delivery-Map.md`). Where `World-Content.md` §6 lists the poster/sign knowledge interactables, this doc is the **superset**: every object in the world a player can look at and learn from, grounded in the deployed prop/building inventory (`packages/chapter-boston-world/src/world/manifest.ts`) with real coordinates.
 
 **Companions:** systems = `Quests-and-NPCs.md` (§2A living routes); concepts = `Micro-Concepts.md`; delivery model = `Concept-Delivery-Map.md`; grammar = `Interaction-Spec.md` §3 (tracked-read); build manifest = `World-Content.md`.
 

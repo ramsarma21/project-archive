@@ -2,7 +2,7 @@
 
 **Status: the spec for scaling the existing learning-state model to the full Boston chapter** (23 assessed SEs + ~14 micros/Act) and for the two capabilities the new design needs: **provenance logging** (so the Archive can give memory-cued hints) and a **two-track concept classification** (gated facts vs. patterns vs. micros). All changes are **additive and backward-compatible** with `@pa/contracts`.
 
-**Grounding:** the current model lives in `packages/contracts/src/state.ts` and `teks.ts`; mastery UI in `apps/web/src/presenter/MasteryPanel.tsx`; heat/Standing/Threads/Routes persistence landed in M0 (`apps/web/src/world/M0-INTEGRATION-HANDOFF.md`). Consumers: the Archive orchestrator (`Archive-Spec.md` R6/R7), the CP debrief (`Micro-Concepts.md` §4), the delivery model (`Concept-Delivery-Map.md`).
+**Grounding:** the current model lives in `packages/contracts/src/state.ts` and `teks.ts`; world projection lives across `packages/engine-world/` and `packages/chapter-boston-world/`; heat/Standing/Threads/Routes persistence landed in M0 (see `docs/archive/2026-07/M0-INTEGRATION-HANDOFF.md`). Consumers: the Archive orchestrator (`Archive-Spec.md` R6/R7), the CP debrief (`Micro-Concepts.md` §4), the delivery model (`Concept-Delivery-Map.md`).
 
 ---
 

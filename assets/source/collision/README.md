@@ -28,7 +28,7 @@ meters**:
 - Origin is **centered on the asset footprint in X/Z**.
 - `y = 0` is the asset's **feet** (grounded); `+y` is up.
 - This is exactly the pre-rotation, pre-translation box `FittedGlb` builds in
-  `apps/web/src/world/Character.tsx` (uniform **min-axis** fit to the manifest
+  `packages/chapter-boston-world/src/world/Character.tsx` (uniform **min-axis** fit to the manifest
   target size, recenter XZ, drop to ground).
 
 Placement **yaw** and **world position** are applied later at integration time

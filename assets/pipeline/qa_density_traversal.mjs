@@ -4,7 +4,7 @@ import { mkdirSync } from "node:fs";
 import {
   buildDensityTraversalRegistrations,
   densityActionRequest,
-} from "../../apps/web/src/world/densityTraversalAdapter.ts";
+} from "../../packages/chapter-boston-world/src/world/densityTraversalAdapter.ts";
 
 const output = "/tmp/density-traversal-qa";
 const baseUrl = process.env.QA_BASE_URL ?? "http://127.0.0.1:5173";

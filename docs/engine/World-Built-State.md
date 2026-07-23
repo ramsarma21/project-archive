@@ -1,10 +1,10 @@
 # World Built State (Boston 1765)
 
-**Status: implemented and playable.** This documents the world as actually built in `apps/web/src/world/` plus the asset pipeline in `assets/pipeline/`. The machine-readable source of truth is [`apps/web/src/world/manifest.ts`](../../apps/web/src/world/manifest.ts); this file explains it. Grounded historical realism target per `Production.md`; the district is a compressed gameplay construct, topological not literal (no false geography is taught).
+**Status: implemented and playable.** This documents the world as actually built in `packages/engine-world/` and `packages/chapter-boston-world/` plus the asset pipeline in `assets/pipeline/`. The machine-readable source of truth is [`packages/chapter-boston-world/src/world/manifest.ts`](../../packages/chapter-boston-world/src/world/manifest.ts); this file explains it. Grounded historical realism target per `Production.md`; the district is a compressed gameplay construct, topological not literal (no false geography is taught).
 
 ## 1. District topology (meters, y-up)
 
-The built world is **world layout v3 — "the big street"**: one long east-west packed-earth street spine flanked by two enterable building rows and two alley route corridors, running west (the wharf) to east (the town gate / Liberty Tree). The authoritative coordinates are [`apps/web/src/world/manifest.ts`](../../apps/web/src/world/manifest.ts); the full layout law is in [`World-Design-Bible.md`](../design/World-Design-Bible.md) §3. This is the orientation summary; the manifest governs.
+The built world is **world layout v3 — "the big street"**: one long east-west packed-earth street spine flanked by two enterable building rows and two alley route corridors, running west (the wharf) to east (the town gate / Liberty Tree). The authoritative coordinates are [`packages/chapter-boston-world/src/world/manifest.ts`](../../packages/chapter-boston-world/src/world/manifest.ts); the full layout law is in [`World-Design-Bible.md`](../design/World-Design-Bible.md) §3. This is the orientation summary; the manifest governs.
 
 - **Bounds:** x ∈ [−165, +108], z ∈ [−30, +30] (alleys included; the wharf pocket extends z accordingly; harbor water is collider-fenced).
 - **The wharf (x −160 .. −118):** Town Wharf apron west of x ≈ −118, hero brig + sloop + rowboats, warehouses on the north side; the wharf gate joins the street.

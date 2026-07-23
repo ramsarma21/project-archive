@@ -8,7 +8,7 @@ This is the *coding* script: every beat states exactly what is shown, what the p
 - `Day-1.md` — behavioral & curriculum fixture of record. Carriers, tracked payload (12 tracked + 3 Syncs), reroutes, and the fallback pool are **unchanged**. This doc never alters *whether* learning lands, only *how it plays*.
 - `Gameplay-Design.md` — the gameplay/engagement design (two-budget model, six pillars, stealth, Standing, the Act/checkpoint structure). See esp. §7 (stealth), §8 (reactive world), §11A (segment map).
 - `Interaction-Spec.md` — UX micro-rules (markers, glyphs, tracked-read grammar, camera, time model, feedback).
-- `World-Design-Bible.md` + `apps/web/src/world/manifest.ts` — layout, coordinates, assets.
+- `World-Design-Bible.md` + `packages/chapter-boston-world/src/world/manifest.ts` — layout, coordinates, assets.
 
 **Legend for every beat block:**
 

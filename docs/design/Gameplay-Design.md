@@ -174,7 +174,7 @@ The town visibly tenses across the Act/chapter: fresh broadsides appear, the eff
 
 ## 5. Pillar 1 — Route mastery & the traversal spine
 
-The richest fun already owned, and 100% free on the day-clock. The three physically distinct routes (main street / north-alley parkour / earned dock route) plus the authored traversal markers (vaults, ducks, squeezes, roof vantages, balance beam, puddle hops in `apps/web/src/world/traversalMarkers.ts`) are the backbone.
+The richest fun already owned, and 100% free on the day-clock. The three physically distinct routes (main street / north-alley parkour / earned dock route) plus the authored traversal markers (vaults, ducks, squeezes, roof vantages, balance beam, puddle hops in `packages/chapter-boston-world/src/world/traversalMarkers.ts`) are the backbone.
 
 - **Route choice is skill + knowledge expression, not a corridor swap.** Each route has a distinct feel and payoff: the alley is faster-but-technical (chain clean vaults/ducks), the main street is exposed (watchers — §7), the dock is safe-but-earned (Thomas's favor). Mastering the town's geometry is the fun.
 - **Passive learning falls out for free.** Each route runs past different signage, arguments, and world detail. Roofs reveal the effigy being built at the elm; the street carries the boycott argument. Same free clock, different exposure.

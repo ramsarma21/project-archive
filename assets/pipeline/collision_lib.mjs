@@ -1,7 +1,7 @@
 // Shared helpers for the collision-metadata foundation (build + validate).
 //
 // This module is deliberately runtime-free: it never imports the shipping web
-// source, never mutates apps/web/src/world/manifest.ts, and only READS the
+// source, never mutates the chapter-world manifest, and only READS the
 // deployed/optimized GLB set plus authored collision sidecars. Everything it
 // emits lands under assets/build/collision (a generated location), so it can be
 // developed in parallel with active runtime/collision work without racing it.
