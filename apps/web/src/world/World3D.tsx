@@ -46,18 +46,13 @@ import { M4ContentDirector } from "./M4ContentDirector.js";
 import { INTERIOR_HOTSPOT_MICROS } from "./reactiveManifest.js";
 import { traversalBlockerColliders } from "./traversalMarkers.js";
 import {
-  ALL_INTERIOR_LOCATIONS,
-  EXPLORE_LOCATIONS,
   LOCATIONS,
-  MARKER_ANCHORS,
   WORLD_BOUNDS,
   exteriorColliders,
 } from "./manifest.js";
 import { doorAwareBuildingColliders } from "./doorwayContract.js";
 import {
   interiorDef,
-  interiorDoorFacade,
-  interiorExitSensor,
   type InteriorInspectHotspotDef,
 } from "./interiorManifest.js";
 import { buildInteriorCollisionWorld } from "./interiorCollision.js";
@@ -69,23 +64,7 @@ import {
   QuestMarkerHud,
   createQuestMarkerHudStore,
 } from "./QuestMarkerHud.js";
-import {
-  INTERIOR_EXIT_KIND,
-  KIND_THRESHOLDS,
-  questMarkerMeta,
-} from "./questMarkerManifest.js";
-import {
-  IDLE_PARK_EXTRA_M,
-  arrivalReady,
-  planarDistance,
-} from "./questMarkerResolver.js";
 import { createActorRegistry, type ActorRegistry } from "./actorRegistry.js";
-import {
-  beginArrivalAttempt,
-  createArrivalLatch,
-  settleArrivalAttempt,
-  shouldAttemptArrival,
-} from "./questArrivalLatch.js";
 import type { PresenterSpatialState } from "../db.js";
 import {
   advanceFieldClock,
@@ -134,19 +113,12 @@ import {
   crossExploreThresholdBeat,
   type DoorBeatContext,
 } from "./portals/doorBeat.js";
+import { IdleRedirectTracker } from "./quest/IdleRedirectTracker.js";
+import { QuestArrivalTracker } from "./quest/QuestArrivalTracker.js";
+import { resolveQuestMarkers } from "./quest/resolveMarkers.js";
+import { TIMED_RUN_TARGETS } from "./content/day1Ids.js";
 
 const ACTOR_STALE_AGE_TICKS = 30;
-
-// Every leg of the rider errand is part of the same timed run (bell-bounded):
-// the board selection plus the authored travel legs of all three routes.
-const TIMED_RUN_TARGETS = new Set([
-  "RIDER_HANDBILLS",
-  "CLARKE_ROUTE",
-  "CUSTOMS_ROUTE",
-  "RIDER_BACK_LANES",
-  "RIDER_DOCK_GATE",
-  "RIDER_POST_ROUTE",
-]);
 
 function FieldClockDirector(props: {
   clockRef: MutableRefObject<FieldClock>;
@@ -177,118 +149,6 @@ function FieldClockDirector(props: {
       );
     }
   }, -100);
-  return null;
-}
-
-// ---- Gold-marker redirect (Interaction-Spec §1.2a / Day-1 L11) ----------
-// Fires FREE_ROAM_IDLE only on genuine non-progress toward the selected gold
-// marker: no distance progress for a lenient grace period AND the player is
-// either essentially stationary or has drifted net-away from the marker.
-// Walking toward the marker continuously never triggers it.
-const REDIRECT_SAMPLE_MS = 500; // distance sampling cadence
-const REDIRECT_PROGRESS_EPS_M = 1.5; // closer-than-best-so-far that counts as progress
-const REDIRECT_MOVE_EPS_M = 0.08; // per-sample position delta that counts as movement
-const REDIRECT_NO_PROGRESS_MS = 11000; // grace with zero progress before the first nudge
-const REDIRECT_STATIONARY_MS = 6000; // "essentially AFK" window
-const REDIRECT_AWAY_WINDOW_MS = 6000; // net-away comparison window
-const REDIRECT_AWAY_EPS_M = 1.5; // net distance gained over the window that reads as moving away
-const REDIRECT_COOLDOWN_MS = [22000, 35000] as const; // escalating re-fire spacing
-
-function IdleRedirectTracker(props: {
-  markers: ResolvedQuestMarker[];
-  apiRef: { current: PlayerApi | null };
-  busy: boolean;
-  selectedTargetId: string | null;
-  trackingKey: string | null; // cueId + selected target; a change resets all state
-  onIdle: () => void;
-}) {
-  const state = useRef({
-    lastSampleAt: 0,
-    lastPos: null as [number, number] | null,
-    bestDist: Infinity,
-    lastProgressAt: 0,
-    lastMovementAt: 0,
-    samples: [] as { t: number; dist: number }[],
-    fireCount: 0,
-    nextEligibleAt: 0,
-    parked: true,
-  });
-  useEffect(() => {
-    const s = state.current;
-    s.parked = true;
-    s.fireCount = 0;
-    s.nextEligibleAt = 0;
-  }, [props.trackingKey]);
-  useFrame(() => {
-    const s = state.current;
-    const now = performance.now();
-    if (now - s.lastSampleAt < REDIRECT_SAMPLE_MS) return;
-    s.lastSampleAt = now;
-    const api = props.apiRef.current;
-    const marker = props.selectedTargetId
-      ? props.markers.find((m) => m.targetId === props.selectedTargetId)
-      : undefined;
-    const px = api?.position.x ?? 0;
-    const pz = api?.position.z ?? 0;
-    const dist = marker
-      ? planarDistance(px, pz, marker.arrivalAnchor[0], marker.arrivalAnchor[2])
-      : Infinity;
-    // Parking radius is the marker's own arrival radius plus a small margin, so
-    // the nudge never fires while the player is effectively arriving.
-    const parkRadius = marker
-      ? KIND_THRESHOLDS[marker.kind].arrival + IDLE_PARK_EXTRA_M
-      : 0;
-    // Park (the grace restarts fresh) while there is no live gold target,
-    // while any blocking UI or subtitle is up, or once the player is close
-    // enough to be arriving. Escalation state survives a park so the nudge's
-    // own Archive line cannot reset its cooldown.
-    if (!api || !marker || props.busy || dist <= parkRadius) {
-      s.parked = true;
-      return;
-    }
-    if (s.parked) {
-      s.parked = false;
-      s.lastPos = [px, pz];
-      s.bestDist = dist;
-      s.lastProgressAt = now;
-      s.lastMovementAt = now;
-      s.samples = [{ t: now, dist }];
-      return;
-    }
-    if (s.lastPos && Math.hypot(px - s.lastPos[0], pz - s.lastPos[1]) >= REDIRECT_MOVE_EPS_M) {
-      s.lastMovementAt = now;
-    }
-    s.lastPos = [px, pz];
-    if (dist <= s.bestDist - REDIRECT_PROGRESS_EPS_M) {
-      // Real progress toward the gold marker: full reset, including escalation.
-      s.bestDist = dist;
-      s.lastProgressAt = now;
-      s.fireCount = 0;
-      s.nextEligibleAt = 0;
-    }
-    s.samples.push({ t: now, dist });
-    while (
-      s.samples.length > 0 &&
-      now - s.samples[0]!.t > REDIRECT_AWAY_WINDOW_MS + REDIRECT_SAMPLE_MS * 2
-    ) {
-      s.samples.shift();
-    }
-    const oldest = s.samples[0]!;
-    const netAway =
-      now - oldest.t >= REDIRECT_AWAY_WINDOW_MS - REDIRECT_SAMPLE_MS &&
-      dist - oldest.dist >= REDIRECT_AWAY_EPS_M;
-    const stationary = now - s.lastMovementAt >= REDIRECT_STATIONARY_MS;
-    if (
-      now - s.lastProgressAt >= REDIRECT_NO_PROGRESS_MS &&
-      (stationary || netAway) &&
-      now >= s.nextEligibleAt
-    ) {
-      s.fireCount += 1;
-      s.nextEligibleAt =
-        now + REDIRECT_COOLDOWN_MS[Math.min(s.fireCount, REDIRECT_COOLDOWN_MS.length) - 1]!;
-      props.onIdle();
-    }
-  });
   return null;
 }
 
@@ -461,109 +321,6 @@ function FocusReadStaging(props: {
       )}
     </group>
   );
-}
-
-// Proximity arrival + walk-in selection with kind-specific radii, arrival
-// dwell, and selection-confirmation hysteresis (Interaction-Spec marker
-// replacement). Selecting never moves the player: entering an unselected
-// marker only emits FREE_ROAM_SELECT; the subsequently-selected marker must
-// then be dwelt on (past the confirmation window) before FREE_ROAM_GOTO fires.
-//
-// The one-shot key is cueId|targetId — but it latches ONLY once the commit
-// is actually accepted by the runtime. A dropped commit (transient busy /
-// persist round-trip / choreography race) schedules a retry instead of
-// consuming the arrival: latch-before-accept stranded fixed events forever
-// when their single GOTO landed in a guard window (feel-audit-1 P0-6).
-// Latch semantics live in questArrivalLatch.ts (pure, unit-tested).
-function QuestArrivalTracker(props: {
-  markers: ResolvedQuestMarker[];
-  apiRef: { current: PlayerApi | null };
-  busy: boolean;
-  selectedTargetId: string | null;
-  cueId: string | null;
-  onArrive: (targetId: string) => Promise<boolean>;
-  onSelect: (targetId: string) => Promise<boolean>;
-}) {
-  const state = useRef({
-    select: createArrivalLatch(),
-    arrive: createArrivalLatch(),
-    dwellEnter: null as number | null,
-    selectedAt: 0,
-  });
-  useEffect(() => {
-    const s = state.current;
-    s.select = createArrivalLatch();
-    s.arrive = createArrivalLatch();
-    s.dwellEnter = null;
-    s.selectedAt = performance.now();
-  }, [props.selectedTargetId, props.cueId]);
-  useFrame(() => {
-    const s = state.current;
-    const api = props.apiRef.current;
-    if (props.busy || !api) {
-      s.dwellEnter = null;
-      return;
-    }
-    const px = api.position.x;
-    const pz = api.position.z;
-    const now = performance.now();
-    if (!props.selectedTargetId) {
-      // No selection yet: walking into any available marker's arrival radius
-      // selects it. A dropped SELECT retries after a short backoff while the
-      // player remains inside the radius.
-      for (const m of props.markers) {
-        const th = KIND_THRESHOLDS[m.kind];
-        const d = planarDistance(px, pz, m.arrivalAnchor[0], m.arrivalAnchor[2]);
-        if (d <= th.arrival) {
-          if (shouldAttemptArrival(s.select, m.targetId, now, true)) {
-            s.select = beginArrivalAttempt(s.select, m.targetId);
-            void props.onSelect(m.targetId).then((accepted) => {
-              state.current.select = settleArrivalAttempt(
-                state.current.select,
-                m.targetId,
-                accepted !== false,
-                performance.now(),
-              );
-            });
-          }
-          return;
-        }
-      }
-      return;
-    }
-    const marker = props.markers.find((m) => m.targetId === props.selectedTargetId);
-    if (!marker) {
-      s.dwellEnter = null;
-      return;
-    }
-    const th = KIND_THRESHOLDS[marker.kind];
-    const d = planarDistance(px, pz, marker.arrivalAnchor[0], marker.arrivalAnchor[2]);
-    const inside = d <= th.arrival;
-    if (inside) {
-      if (s.dwellEnter === null) s.dwellEnter = now;
-    } else {
-      s.dwellEnter = null;
-    }
-    const dwellMs = s.dwellEnter === null ? 0 : now - s.dwellEnter;
-    const key = `${props.cueId ?? ""}|${marker.targetId}`;
-    const ready = arrivalReady({
-      insideArrival: inside,
-      dwellMs,
-      msSinceSelection: now - s.selectedAt,
-    });
-    if (shouldAttemptArrival(s.arrive, key, now, ready)) {
-      s.arrive = beginArrivalAttempt(s.arrive, key);
-      void props.onArrive(marker.targetId).then((accepted) => {
-        state.current.arrive = settleArrivalAttempt(
-          state.current.arrive,
-          key,
-          accepted !== false,
-          performance.now(),
-        );
-      });
-    }
-  });
-  return null;
 }
 
 export function World3D(props: {
@@ -837,84 +594,17 @@ export function World3D(props: {
     };
   }, [archiveTransit, runtimeLoc, visualInteriorId, props.restoreSpatial]);
 
-  // Resolve each eligible FREE_ROAM target into an explicit quest marker with
-  // an independent VISUAL anchor (where the imported kit is drawn) and ARRIVAL
-  // anchor (where proximity is measured). No silent fallback to the authored
-  // scene location: an unmapped target is skipped (and warned in dev). Only the
-  // dynamic STREET marker derives its anchors from the active interior.
-  const markers: ResolvedQuestMarker[] = useMemo(() => {
-    const request = props.request;
-    if (props.view?.field.activeInterrupt) return [];
-    if (request?.kind !== "FREE_ROAM") return [];
-    const activeInterior = interiorId ? ALL_INTERIOR_LOCATIONS[interiorId] : null;
-    // Inside a presentation-only explore interior the player stands in an
-    // ISOLATED coordinate slot: exterior target anchors are meaningless from
-    // here (the audited "exit marker reports 1098m", feel-audit-1 P1-16).
-    // Only the dynamic STREET/exit marker resolves in the active space.
-    const isolatedExplore = Boolean(
-      interiorId && EXPLORE_LOCATIONS[interiorId],
-    );
-    const out: ResolvedQuestMarker[] = [];
-    for (const target of request.targets) {
-      if (target.marker === "HIDDEN") continue;
-      if (isolatedExplore && target.targetId !== "STREET") continue;
-      if (request.selectedTargetId && target.targetId !== request.selectedTargetId) continue;
-      const forcedGold =
-        request.selectedTargetId === target.targetId || target.marker === "GOLD";
-      if (target.targetId === "STREET") {
-        if (activeInterior) {
-          const inside = interiorExitSensor(activeInterior.id);
-          const facade = interiorDoorFacade(activeInterior.id);
-          const visual: [number, number, number] = [
-            facade[0] + 0.9,
-            facade[1],
-            facade[2] + 0.18,
-          ];
-          out.push({
-            targetId: "STREET",
-            label: target.label,
-            kind: INTERIOR_EXIT_KIND,
-            forcedGold,
-            timed: false,
-            visualAnchor: visual,
-            arrivalAnchor: inside,
-          });
-        } else {
-          // Street ground spot when already outside (return-to-street).
-          const anchor = MARKER_ANCHORS.STREET ?? [0, 0, 1.5];
-          out.push({
-            targetId: "STREET",
-            label: target.label,
-            kind: "GROUND",
-            forcedGold,
-            timed: false,
-            visualAnchor: anchor,
-            arrivalAnchor: anchor,
-          });
-        }
-        continue;
-      }
-      const meta = questMarkerMeta(target.targetId);
-      if (!meta) {
-        if (import.meta.env.DEV) {
-          console.warn(
-            `[quest-marker] no manifest metadata for target "${target.targetId}"; not rendered`,
-          );
-        }
-        continue;
-      }
-      out.push({
-        targetId: target.targetId,
-        label: target.label,
-        kind: meta.kind,
-        forcedGold,
-        timed: TIMED_RUN_TARGETS.has(target.targetId),
-        visualAnchor: meta.visualAnchor,
-        arrivalAnchor: meta.arrivalAnchor,
-      });
-    }
-    return out;
-  }, [props.request, props.view?.field.activeInterrupt, interiorId]);
+  // Marker resolution is pure and unit-tested (quest/resolveMarkers.ts); the
+  // memo only pins it to the same dependency triple as before.
+  const markers: ResolvedQuestMarker[] = useMemo(
+    () =>
+      resolveQuestMarkers({
+        request: props.request,
+        hasActiveInterrupt: Boolean(props.view?.field.activeInterrupt),
+        interiorId,
+      }),
+    [props.request, props.view?.field.activeInterrupt, interiorId],
+  );
 
   const hudStore = useMemo(() => createQuestMarkerHudStore(), []);
 
