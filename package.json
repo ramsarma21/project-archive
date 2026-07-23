@@ -9,7 +9,7 @@
   "scripts": {
     "build": "pnpm -r --filter ./packages/* build",
     "typecheck": "pnpm -r typecheck",
-    "lint": "echo \"(lint placeholder)\"",
+    "lint": "node scripts/check-boundaries.mjs",
     "content:compile": "pnpm --filter @pa/runtime content:compile",
     "keys:dev": "node scripts/gen-dev-keys.mjs",
     "db:up": "docker compose up -d",

@@ -175,3 +175,8 @@ apps/web/public/world/structures/*
 *.log
 npm-debug.log*
 **/cdk.out/
+
+# build / QA artifacts (wave0a: keep out of the repo)
+test-results/
+.pnpm-store/
+apps/web/dist*/
