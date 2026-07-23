@@ -1,5 +1,5 @@
 // SkyDirector: full-day sky rig for the 1765-Boston street (Bible §6).
-// Extends the original DayLight (sun arc + drei Sky) with authored palettes,
+// One sun-arc + drei Sky light rig extended with authored palettes,
 // an overcast/night dome, a horizon gradient band, a drifting cloud layer,
 // moon + stars for the post-boundary evening beats, scene fog management,
 // and the dusk lantern/window-glow warmth. Everything is driven by the pure

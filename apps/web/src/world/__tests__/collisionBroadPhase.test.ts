@@ -2,12 +2,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   blockerIdsAt,
-  bruteForceBlockerIdsAt,
-  bruteForceDepenetrateXZ,
-  bruteForceHeadClearance,
-  bruteForceSegmentOccluderIds,
-  bruteForceSupportBelow,
-  bruteForceSweepXZ,
   collisionBroadPhaseCandidateCount,
   depenetrateXZ,
   headClearance,
@@ -18,6 +12,14 @@ import {
   wallFromOrientedRect,
   type CollisionWorld,
 } from "../collision.js";
+import {
+  bruteForceBlockerIdsAt,
+  bruteForceDepenetrateXZ,
+  bruteForceHeadClearance,
+  bruteForceSegmentOccluderIds,
+  bruteForceSupportBelow,
+  bruteForceSweepXZ,
+} from "./collisionBruteForce.js";
 import { buildExteriorGameplayCollision } from "../gameplayWorld.js";
 import {
   doorAwareBuildingColliders,

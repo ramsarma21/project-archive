@@ -9,15 +9,13 @@ import {
 } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { Sky, useGLTF } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import type { ChoreographyCue } from "@pa/contracts";
 import {
   BUILDINGS,
   PROPS,
   NPCS,
-  AMBIENT,
 } from "./manifest.js";
-import { RiggedCharacter } from "./Character.js";
 import { actorCueFor, DirectedNpc } from "./ActorDirector.js";
 import { atmosphereAt } from "./atmosphere.js";
 import { SkyDirector } from "./SkyDirector.js";
@@ -680,97 +678,6 @@ function Npcs(props: {
   );
 }
 
-function AmbientWalker(props: {
-  glb: string;
-  from: [number, number, number];
-  to: [number, number, number];
-  speed: number;
-  offset: number;
-  reducedMotion: boolean;
-}) {
-  const ref = useRef<THREE.Group>(null);
-  const a = useMemo(() => new THREE.Vector3(...props.from), [props.from]);
-  const b = useMemo(() => new THREE.Vector3(...props.to), [props.to]);
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    if (props.reducedMotion) {
-      ref.current.position.copy(a);
-      ref.current.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
-      return;
-    }
-    const dist = a.distanceTo(b);
-    const period = (dist / props.speed) * 2;
-    const t = ((clock.elapsedTime * 1 + props.offset) % period) / period;
-    const seg = t < 0.5 ? t * 2 : (1 - t) * 2;
-    const from = t < 0.5 ? a : b;
-    const to = t < 0.5 ? b : a;
-    ref.current.position.lerpVectors(from, to, seg);
-    ref.current.rotation.y = Math.atan2(to.x - from.x, to.z - from.z);
-  });
-  return (
-    <group ref={ref}>
-      <RiggedCharacter glbKey={props.glb} height={1.68} clip={props.reducedMotion ? "idle" : "walk"} timeOffset={props.offset} />
-    </group>
-  );
-}
-
-function AmbientFolk(props: { interiorId: string | null; t: number; reducedMotion: boolean }) {
-  if (props.interiorId) return null;
-  const visibleCount = props.t < 0.45 ? 6 : props.t < 0.75 ? 8 : AMBIENT.length;
-  return (
-    <group>
-      {AMBIENT.slice(0, visibleCount).map((a, i) =>
-        a.path ? (
-          <AmbientWalker
-            key={i}
-            glb={a.glb}
-            from={a.pos}
-            to={a.path.to}
-            speed={a.path.speed}
-            offset={i * 3.1}
-            reducedMotion={props.reducedMotion}
-          />
-        ) : (
-          <group key={i} position={a.pos} rotation={[0, a.rotY, 0]}>
-            <RiggedCharacter glbKey={a.glb} height={1.68} clip={a.clip} timeOffset={i * 0.7} coat={i % 2 ? "#54432f" : "#3f4653"} />
-          </group>
-        ),
-      )}
-    </group>
-  );
-}
-
-// ---- Day light rig driven by the runtime clock ----
-export function DayLight(props: { t: number; dusk: boolean }) {
-  const t = props.dusk ? 1 : props.t;
-  const elev = THREE.MathUtils.lerp(58, 7, t);
-  const azim = THREE.MathUtils.lerp(115, 245, t);
-  const phi = THREE.MathUtils.degToRad(90 - elev);
-  const theta = THREE.MathUtils.degToRad(azim);
-  const sun = new THREE.Vector3().setFromSphericalCoords(1, phi, theta);
-  const sunColor = new THREE.Color().lerpColors(new THREE.Color("#fff4e0"), new THREE.Color("#ff8a3d"), t * t);
-  const intensity = THREE.MathUtils.lerp(2.6, 1.0, t);
-  return (
-    <group>
-      <Sky sunPosition={[sun.x * 100, sun.y * 100, sun.z * 100]} turbidity={6 + t * 6} rayleigh={1.2 + t * 2.4} mieCoefficient={0.006} mieDirectionalG={0.8} />
-      <hemisphereLight args={["#c8d9ee", "#8a7355", THREE.MathUtils.lerp(0.75, 0.32, t)]} />
-      <directionalLight
-        position={[sun.x * 60, Math.max(sun.y * 60, 6), sun.z * 60]}
-        intensity={intensity}
-        color={sunColor}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-80}
-        shadow-camera-right={80}
-        shadow-camera-top={60}
-        shadow-camera-bottom={-60}
-        shadow-bias={-0.0003}
-      />
-      {props.dusk && <pointLight position={[95, 3.5, -25]} intensity={30} distance={26} color="#ff9040" />}
-    </group>
-  );
-}
-
 export function District(props: {
   interiorId: string | null;
   t: number;
@@ -828,7 +735,6 @@ export function District(props: {
         reactiveActorsActive={Boolean(props.reactiveActorsActive)}
       />
       <PopulationDirector
-        interiorId={props.interiorId}
         t={props.t}
         dusk={props.dusk}
         dockRouteUnlocked={props.dockRouteUnlocked}

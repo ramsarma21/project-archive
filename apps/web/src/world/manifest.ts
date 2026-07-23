@@ -205,8 +205,9 @@ export const PROPS: PropDef[] = [
   { glb: "scaffold-low", pos: [30, 0, -23.5], rotY: 0, size: [2.8, 2.4, 1.2], collide: [2.6, 1.2] },
   { glb: "firewood-stack", pos: [55, 0, -24.5], rotY: -0.3, size: [2.2, 1.2, 1.0], collide: [2.0, 1.0] },
   // South alley clutter + THE DOCK-ROUTE BLOCKER at x=-40 (chained swing-gate
-  // + stacked cargo; a dockhand idles beside it in AMBIENT). Gate prop and
-  // collider both clear when routes.THOMAS_DOCK_ROUTE === "UNLOCKED".
+  // + stacked cargo; a dockhand idles beside it in the PopulationDirector
+  // roster). Gate prop and collider both clear when
+  // routes.THOMAS_DOCK_ROUTE === "UNLOCKED".
   // Size is LOCAL (pre-rotation): the leaf's own width spans the corridor
   // and rotY turns it across the boardwalk.
   { glb: "fence-gate", pos: [-40, 0, 22.6], rotY: Math.PI / 2, size: [6.0, 2.1, 1.4], collide: [1.6, 7.6], gate: "THOMAS_DOCK_ROUTE" },
@@ -415,94 +416,6 @@ export const INTERIOR_BUILDING_ID: Record<string, string> = {
   ),
 };
 
-// ---- Interior kits (room-local: +z is the back wall, door at -z) -----------
-// Positions are fractions of the room half-extents (margin applied), so one
-// kit fits every room size. `kitPropsFor` resolves to world space.
-export interface KitProp {
-  glb: string;
-  at: [number, number]; // fractional [-1..1] of half extents
-  rotY: number;
-  size: [number, number, number];
-  // Base mount height (m). Wall-mounted props (sconces) and table-top props
-  // (tankards) set this so they seat on a wall/table surface instead of the
-  // floor. Defaults to 0 (floor-standing).
-  baseHeight?: number;
-}
-
-export const INTERIOR_KITS: Record<InteriorKitId, KitProp[]> = {
-  home: [
-    { glb: "hearth-mantel", at: [0, 0.86], rotY: Math.PI, size: [1.8, 1.6, 0.6] },
-    { glb: "bed-fourpost", at: [-0.62, 0.5], rotY: Math.PI / 2, size: [2.0, 1.5, 1.5] },
-    { glb: "table-chairs-set", at: [0.35, -0.05], rotY: 0.4, size: [1.9, 1.1, 1.9] },
-    { glb: "storage-chest", at: [-0.7, -0.55], rotY: 0.15, size: [1.1, 0.7, 0.7] },
-    { glb: "dresser-shelves", at: [0.74, 0.55], rotY: -Math.PI / 2, size: [1.6, 1.9, 0.6] },
-  ],
-  shop: [
-    { glb: "shop-counter-long", at: [0, -0.05], rotY: 0, size: [3.0, 1.1, 1.2] },
-    { glb: "dresser-shelves", at: [0, 0.86], rotY: Math.PI, size: [2.4, 2.0, 0.6] },
-    { glb: "barrel-group", at: [-0.68, 0.5], rotY: 0.7, size: [1.8, 1.2, 1.5] },
-    { glb: "crate-stack", at: [0.7, 0.55], rotY: -0.3, size: [1.6, 1.4, 1.4] },
-    { glb: "storage-chest", at: [0.72, -0.5], rotY: -0.2, size: [1.1, 0.7, 0.7] },
-  ],
-  workroom: [
-    { glb: "clerk-desk", at: [0.45, 0.72], rotY: Math.PI, size: [1.8, 1.6, 1.2] },
-    { glb: "crate-stack", at: [-0.6, 0.62], rotY: 0.4, size: [2.0, 1.6, 1.8] },
-    { glb: "crate-stack", at: [-0.65, -0.35], rotY: -0.2, size: [1.6, 1.2, 1.4] },
-    { glb: "barrel-group", at: [0.65, -0.35], rotY: 1.1, size: [1.8, 1.2, 1.5] },
-    { glb: "spinning-wheel", at: [0.05, 0.15], rotY: -0.5, size: [1.2, 1.3, 0.8] },
-  ],
-  tavern: [
-    { glb: "tavern-bar-barrels", at: [-0.72, 0.3], rotY: Math.PI / 2, size: [1.2, 1.1, 3.2] },
-    { glb: "barrel-group", at: [-0.82, 0.8], rotY: 0.9, size: [1.6, 1.2, 1.4] },
-    { glb: "hearth-mantel", at: [0.45, 0.88], rotY: Math.PI, size: [1.8, 1.6, 0.6] },
-    { glb: "tavern-table-set", at: [0.35, 0.25], rotY: 0.3, size: [1.8, 1.0, 1.8] },
-    { glb: "tavern-table-set", at: [0.55, -0.5], rotY: -0.4, size: [1.8, 1.0, 1.8] },
-    { glb: "tavern-table-set", at: [-0.25, -0.45], rotY: 0.8, size: [1.8, 1.0, 1.8] },
-    // Tankards seat on the first tavern table (surface ≈0.78m), not the floor.
-    { glb: "tankard-cluster", at: [0.35, 0.25], rotY: 0, size: [0.6, 0.3, 0.6], baseHeight: 0.78 },
-  ],
-  church: [
-    { glb: "church-pulpit", at: [0, 0.84], rotY: Math.PI, size: [1.4, 1.9, 1.1] },
-    { glb: "church-pew-block", at: [-0.45, 0.5], rotY: 0, size: [3.6, 0.9, 0.9] },
-    { glb: "church-pew-block", at: [0.45, 0.5], rotY: 0, size: [3.6, 0.9, 0.9] },
-    { glb: "church-pew-block", at: [-0.45, 0.18], rotY: 0, size: [3.6, 0.9, 0.9] },
-    { glb: "church-pew-block", at: [0.45, 0.18], rotY: 0, size: [3.6, 0.9, 0.9] },
-    { glb: "church-pew-block", at: [-0.45, -0.14], rotY: 0, size: [3.6, 0.9, 0.9] },
-    { glb: "church-pew-block", at: [0.45, -0.14], rotY: 0, size: [3.6, 0.9, 0.9] },
-    // Sconces mount high on the side walls (base y≈1.5) and reach out to the
-    // wall (|at.x|>1 pushes past the interior margin so the bracket meets it).
-    { glb: "candle-sconce", at: [-1.12, 0.6], rotY: Math.PI / 2, size: [0.4, 0.8, 0.4], baseHeight: 1.5 },
-    { glb: "candle-sconce", at: [1.12, 0.6], rotY: -Math.PI / 2, size: [0.4, 0.8, 0.4], baseHeight: 1.5 },
-  ],
-  warehouse: [
-    { glb: "crate-stack", at: [-0.65, 0.6], rotY: 0.3, size: [2.6, 2.2, 2.2] },
-    { glb: "crate-stack", at: [-0.15, 0.65], rotY: -0.4, size: [2.4, 2.0, 2.0] },
-    { glb: "crate-stack", at: [0.45, 0.55], rotY: 0.6, size: [2.6, 2.4, 2.2] },
-    { glb: "crate-stack", at: [-0.45, -0.1], rotY: -0.2, size: [2.4, 1.8, 2.0] },
-    { glb: "crate-stack", at: [0.3, -0.05], rotY: 0.9, size: [2.2, 1.6, 1.8] },
-    { glb: "barrel-group", at: [0.75, -0.45], rotY: 1.2, size: [2.0, 1.3, 1.6] },
-    { glb: "clerk-desk", at: [-0.78, -0.6], rotY: 0.4, size: [1.8, 1.6, 1.2] },
-    { glb: "cargo-net-bundle", at: [0.05, -0.55], rotY: 0.2, size: [1.8, 1.2, 1.8] },
-  ],
-};
-
-// Resolve a room's kit into world-space placements (rotates 180° for
-// north-row rooms so the door edge stays clear).
-export function kitPropsFor(loc: LocationDef): { glb: string; pos: [number, number, number]; rotY: number; size: [number, number, number] }[] {
-  const room = loc.room;
-  if (!room) return [];
-  const kit = INTERIOR_KITS[EXPLORE_KIT_ASSIGNMENT[loc.id] ?? "home"] ?? [];
-  const flip = room.doorSide === "N" ? -1 : 1;
-  const hx = room.size[0] / 2 - 0.75;
-  const hz = room.size[1] / 2 - 0.75;
-  return kit.map((p) => ({
-    glb: p.glb,
-    pos: [room.center[0] + p.at[0] * hx * flip, p.baseHeight ?? 0, room.center[1] + p.at[1] * hz * flip] as [number, number, number],
-    rotY: room.doorSide === "N" ? p.rotY + Math.PI : p.rotY,
-    size: p.size,
-  }));
-}
-
 // ---- Free-roam target anchors: runtime targetId -> world position ----------
 export const MARKER_ANCHORS: Record<string, [number, number, number]> = {
   MERCER_PRESS: [-0.31, 0, 8.4],
@@ -539,43 +452,6 @@ export const NPCS: NpcDef[] = [
   { id: "rider", name: "Post rider", glb: "rider-rigged", height: 1.76, pos: [-96.8, 0, -18.2], rotY: 0.9, clip: "idle" },
   { id: "officer", name: "Customs officer", glb: "officer-rigged", height: 1.78, pos: [-56, 0, -4.4], rotY: 1.9, clip: "idle" },
 ];
-
-// Ambient street population (first four stay visible all day; the dockhand
-// guards the chained dock gate per the route-gating law).
-export const AMBIENT: { glb: string; pos: [number, number, number]; rotY: number; clip: string; path?: { to: [number, number, number]; speed: number } }[] = [
-  { glb: "townsman-rigged", pos: [-42.2, 0, 22.6], rotY: 1.4, clip: "idle" }, // dockhand at the chained gate
-  { glb: "townsman-rigged", pos: [-100, 0, 1], rotY: 0.3, clip: "walk", path: { to: [70, 0, -2], speed: 0.85 } },
-  { glb: "townswoman-rigged", pos: [60, 0, 2.6], rotY: -1.2, clip: "walk", path: { to: [-80, 0, 3.4], speed: 0.75 } },
-  { glb: "townsman-rigged", pos: [-52, 0, -4.2], rotY: 0.7, clip: "idle" },
-  { glb: "townswoman-rigged", pos: [-50.8, 0, -4.8], rotY: -2.3, clip: "idle" },
-  { glb: "townsman-rigged", pos: [7.4, 0, 7.2], rotY: -0.8, clip: "idle" },
-  { glb: "townswoman-rigged", pos: [-125, 0, -5], rotY: 2.4, clip: "walk", path: { to: [-155, 0, -4], speed: 0.7 } },
-  { glb: "townswoman-rigged", pos: [33, 0, 1.6], rotY: 2.4, clip: "idle" },
-  { glb: "townsman-rigged", pos: [93, 0, -17], rotY: -0.4, clip: "idle" },
-  { glb: "townsman-rigged", pos: [95.4, 0, -18], rotY: 2.6, clip: "idle" },
-];
-
-// Free-roam target ids that mean "you are heading out to the street".
-export const EXTERIOR_TARGETS = new Set([
-  "STREET",
-  "THOMAS_CIRCULAR",
-  "PIKE_PROOF",
-  "CUSTOMHOUSE_NOTICE",
-  "TOWN_NOTICE_BOARD",
-  "RIDER_HANDBILLS",
-  "MERCER_REPRINT",
-  "MERCER_RETURN",
-  "PIKE_RETURN",
-  "CLARKE_ROUTE",
-  "CUSTOMS_ROUTE",
-  "RIDER_BACK_LANES",
-  "RIDER_DOCK_GATE",
-  "RIDER_POST_ROUTE",
-  "THOMAS_STREET",
-  "PIKE_STREET",
-  "CUSTOMHOUSE_STREET",
-  "CROWD",
-]);
 
 // ---- Zones (for the atmosphere/audio/population directors) -----------------
 export type WorldZone = "WHARF" | "STREET" | "SQUARE" | "ALLEY" | "CHURCHYARD";

@@ -5,7 +5,6 @@
 // so the whole world agrees about the hour. Presentation-only; no game state.
 
 import * as THREE from "three";
-import * as manifest from "./manifest.js";
 
 export type WeatherState = "GLOOM" | "DRIZZLE" | "CLEARING";
 
@@ -249,24 +248,6 @@ export function atmosphereAt(clock: AtmosphereClock, daySeed?: string): Atmosphe
 }
 
 // ---- Zones ------------------------------------------------------------------
-// The layout worker is rebuilding manifest.ts and will export
-// zoneForPosition(x, z). Until it lands we fall back to x-based bands that
-// match World-Design-Bible §3 (wharf west of the gate arch at x≈-118, Town
-// House square at +45..+62, churchyard by the church at +72, alleys |z|>20).
-// TODO(layout): delete fallbackZoneForPosition once manifest exports the real one.
-export type WorldZone = "WHARF" | "STREET" | "SQUARE" | "ALLEY" | "CHURCHYARD";
-
-function fallbackZoneForPosition(x: number, z: number): WorldZone {
-  if (x < -116) return "WHARF";
-  if (x >= 64 && x <= 82 && z < -6) return "CHURCHYARD";
-  if (x >= 43 && x <= 64 && Math.abs(z) < 12) return "SQUARE";
-  if (Math.abs(z) >= 19 && Math.abs(z) <= 30 && x > -118 && x < 82) return "ALLEY";
-  return "STREET";
-}
-
-const manifestZoneForPosition = (manifest as { zoneForPosition?: (x: number, z: number) => WorldZone })
-  .zoneForPosition;
-
-export function zoneForPosition(x: number, z: number): WorldZone {
-  return manifestZoneForPosition ? manifestZoneForPosition(x, z) : fallbackZoneForPosition(x, z);
-}
+// manifest.ts owns the world-zone map; re-export it so atmosphere consumers
+// (audio, population) keep a single import site for schedule + zones.
+export { zoneForPosition, type WorldZone } from "./manifest.js";

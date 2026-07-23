@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { RiggedCharacter, ambientVisibleCount } from "./Character.js";
+import { RiggedCharacter } from "./Character.js";
 import { getDocumentTexture } from "./documentTextures.js";
-import { ALL_INTERIOR_LOCATIONS, EXPLORE_KIT_ASSIGNMENT, WORLD_BOUNDS, type InteriorKitId } from "./manifest.js";
 
 // ---------------------------------------------------------------------------
 // PopulationDirector — ambient 1765 Boston street life (World-Design-Bible §9).
@@ -29,12 +28,6 @@ const MAX_AMBIENT_RIGS = 66;
 // authored 82-rig pool remains intact; each local zone still fills on approach,
 // while 30k-55k triangle rigs no longer render through several city blocks.
 const AMBIENT_CULL_M = 48;
-
-// The v3 big street spans roughly x -118..+80 (wharf out to -160). When the
-// live manifest still holds the compact street, every entry falls back to its
-// authored compact coordinates so nobody walks into the void mid-migration.
-// ADJUST: once layout v3 is the only world, the compact fallbacks can go.
-const BIG_STREET = WORLD_BOUNDS.maxX >= 70;
 
 // ---- deterministic seeding helpers (EventDirector's hash pattern) ----------
 function frac(n: number): number {
@@ -229,15 +222,11 @@ function sampleRoute(route: RouteRuntime, timeS: number, out: RouteSample): Rout
 
 // ---- roster data ------------------------------------------------------------
 
-// `compact` fallbacks exist for the retired compact-street layout. The live
-// world (WORLD_BOUNDS.maxX = 108) is always BIG_STREET, so newer roster entries
-// omit compact and the readers fall back to the big-street coordinates.
 interface WalkSpec {
   kind: "walk";
   points: Pt[];
   speed: number;
   pauses?: number[];
-  compact?: { points: Pt[]; pauses?: number[] };
 }
 
 interface CarrySpec {
@@ -246,14 +235,12 @@ interface CarrySpec {
   to: Pt; // drop (warehouse)
   speed: number;
   dwellS: number;
-  compact?: { from: Pt; to: Pt };
 }
 
 interface PairSpec {
   kind: "pair";
   a: Pt;
   b: Pt;
-  compact?: { a: Pt; b: Pt };
   agitated?: boolean; // leans into argu clips earlier than the global ramp
 }
 
@@ -261,7 +248,6 @@ interface IdlerSpec {
   kind: "idler";
   at: Pt;
   face?: Pt;
-  compact?: { at: Pt; face?: Pt };
   loop: "idle" | "work" | "sweep" | "read" | "crier";
   // Route-gating law (Bible §3): this idler is a diegetic route blocker and
   // steps away once the dock route unlocks.
@@ -272,7 +258,6 @@ interface TrickleSpec {
   kind: "trickle"; // church-goers: yard idle, door walks around phase changes
   gate: Pt;
   door: Pt;
-  compact?: { gate: Pt; door: Pt };
 }
 
 type BehaviorSpec = WalkSpec | CarrySpec | PairSpec | IdlerSpec | TrickleSpec;
@@ -296,7 +281,7 @@ interface PopEntry {
 // market stalls ~[-55..-45, -6.5], Town House square x 45..62, churchyard
 // passage x 61.5..65 with the church at [71.5, north row], alleys z ±20..26.
 // Waypoints thread the PROPS/BARRIERS colliders in manifest.ts — ADJUST both
-// together. Compact fallbacks keep density if the old street ever returns.
+// together.
 const ROSTER: PopEntry[] = [
   // ---- STREET SPINE (10 rigs at dusk; walkers span the FULL street) --------
   {
@@ -305,7 +290,6 @@ const ROSTER: PopEntry[] = [
       kind: "walk", speed: 0.92,
       points: [[-112, -3.2], [-70, -2.6], [-30, -3.2], [20, -2.4], [74, -3.0]],
       pauses: [0, 2.5, 0, 3, 0],
-      compact: { points: [[-45, -1.6], [-20, -1.2], [10, -1.7], [44, -1.3]], pauses: [0, 2.5, 3, 0] },
     },
   },
   {
@@ -314,7 +298,6 @@ const ROSTER: PopEntry[] = [
       kind: "walk", speed: 0.74,
       points: [[76, 2.4], [30, 3.0], [-12, 2.2], [-60, 3.0], [-112, 2.6]],
       pauses: [0, 3.5, 0, 2, 0],
-      compact: { points: [[45, 2.5], [15, 2.9], [-18, 2.3], [-44, 2.7]], pauses: [0, 3.5, 2, 0] },
     },
   },
   {
@@ -323,7 +306,6 @@ const ROSTER: PopEntry[] = [
       kind: "walk", speed: 0.8,
       points: [[-108, 1.4], [-78, 2.2], [-46, 1.2]],
       pauses: [1.5, 0, 4],
-      compact: { points: [[-44, 1.2], [-28, 1.9], [-12, 1.1]], pauses: [1.5, 0, 4] },
     },
   },
   {
@@ -332,7 +314,6 @@ const ROSTER: PopEntry[] = [
       kind: "walk", speed: 0.85,
       points: [[16, -1.6], [46, -2.2], [74, -1.4]],
       pauses: [2, 0, 5],
-      compact: { points: [[8, -1.2], [28, -1.8], [44, -1.1]], pauses: [2, 0, 5] },
     },
   },
   {
@@ -341,7 +322,6 @@ const ROSTER: PopEntry[] = [
       kind: "walk", speed: 1.05,
       points: [[-36, 0.8], [22, 0.5]],
       pauses: [1, 1],
-      compact: { points: [[-16, 0.6], [14, 0.4]], pauses: [1, 1] },
     },
   },
   {
@@ -349,7 +329,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "pair",
       a: [-9.4, -0.3], b: [-8.5, 0.5], // north-west of the well at [-8,-1.5]
-      compact: { a: [-7.2, -1.6], b: [-6.3, -0.9] },
     },
   },
   {
@@ -357,7 +336,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "pair", agitated: true,
       a: [4.0, 7.4], b: [4.8, 6.7], // huddled west of the town notice board
-      compact: { a: [4.4, 3.3], b: [5.2, 2.5] },
     },
   },
   {
@@ -367,7 +345,6 @@ const ROSTER: PopEntry[] = [
       // seated clip in the ambient set yet — stands easy until one lands.
       kind: "idler", loop: "idle",
       at: [-16.5, -9.2], face: [-16.5, -4],
-      compact: { at: [-14.4, 5.6], face: [-14.4, 2] },
     },
   },
   // ---- WHARF (6 rigs: §9 carry loops pier -> warehouse, rope/sweep work) ---
@@ -377,7 +354,6 @@ const ROSTER: PopEntry[] = [
       // Pier base (by the gangplank) -> warehouseN2 door across the apron.
       kind: "carry", speed: 0.95, dwellS: 2.6,
       from: [-143.5, 13], to: [-141.5, -8.5],
-      compact: { from: [-55, -27], to: [-50, -20] },
     },
   },
   {
@@ -387,7 +363,6 @@ const ROSTER: PopEntry[] = [
       // mound collider so the straight carry line clears its NE corner.
       kind: "carry", speed: 0.88, dwellS: 3.1,
       from: [-131.5, 4.5], to: [-128, -8.5],
-      compact: { from: [-53.5, -23.5], to: [-48.5, -18.5] },
     },
   },
   {
@@ -396,7 +371,6 @@ const ROSTER: PopEntry[] = [
       // Pier base -> hero warehouse door (line threads north of the crane).
       kind: "carry", speed: 1.0, dwellS: 2.2,
       from: [-140.5, 15.5], to: [-155.5, -8],
-      compact: { from: [-55.5, -30], to: [-51, -24] },
     },
   },
   {
@@ -404,7 +378,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "idler", loop: "work",
       at: [-144, 5.8], face: [-146, 9], // crane side, working toward the water
-      compact: { at: [-54, -21.5], face: [-54, -26] },
     },
   },
   {
@@ -412,7 +385,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "idler", loop: "sweep",
       at: [-122, -5.4], face: [-122, -7.5], // tends the fish flakes rack
-      compact: { at: [-49.5, -17.5], face: [-52, -18] },
     },
   },
   {
@@ -420,7 +392,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "idler", loop: "work",
       at: [-148.7, 6.2], face: [-150, 7.6], // rope coils by the apron rail
-      compact: { at: [-55.5, -25.5], face: [-53, -24] },
     },
   },
   // ---- MARKET (stalls at x -55..-45 north side, 4 rigs) --------------------
@@ -430,7 +401,6 @@ const ROSTER: PopEntry[] = [
       kind: "walk", speed: 0.66,
       points: [[-58, -3], [-52, -4], [-46, -3.4], [-49, 0.5], [-55, -0.5]],
       pauses: [2, 4, 3, 0, 2],
-      compact: { points: [[-29, -2.5], [-24, 1.5], [-20, -1], [-26, -3]], pauses: [2, 4, 3, 2] },
     },
   },
   {
@@ -438,7 +408,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "idler", loop: "work",
       at: [-52.5, -6.3], face: [-52.5, -2], // in the stall gap, facing the street
-      compact: { at: [-25.8, -6.1], face: [-25.8, -2] },
     },
   },
   {
@@ -446,7 +415,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "pair",
       a: [-47.6, -2.4], b: [-46.8, -3.1], // hagglers by the awning stall
-      compact: { a: [-21.5, 1.6], b: [-20.7, 0.9] },
     },
   },
   // ---- TOWN HOUSE SQUARE (x 45..62, 3 rigs + the §8A bill post) ------------
@@ -455,7 +423,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "idler", loop: "read",
       at: [49.4, -2.2], face: [50, -3.2], // reads the bill on the post
-      compact: { at: [36.9, 2.4], face: [37.5, 1.5] },
     },
   },
   {
@@ -465,7 +432,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "idler", loop: "read",
       at: [50.8, -2.1], face: [50, -3.2],
-      compact: { at: [38.3, 2.5], face: [37.5, 1.5] },
     },
   },
   {
@@ -473,7 +439,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "idler", loop: "crier",
       at: [56, 1.4], face: [49, 0], // announces west across the square
-      compact: { at: [33, -1], face: [37, 0] },
     },
   },
   // ---- CHURCHYARD (passage x 61.5..65, yard pump, church door) -------------
@@ -482,7 +447,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "idler", loop: "idle",
       at: [63.8, -15.5], face: [63.4, -13], // waits by the churchyard pump
-      compact: { at: [47, -1.8], face: [49, -3] },
     },
   },
   {
@@ -490,7 +454,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "trickle",
       gate: [64.5, -6], door: [71, -9.4], // street mouth -> the church door
-      compact: { gate: [43, -0.5], door: [49, -3] },
     },
   },
   // ---- ALLEYS (2 rigs; §9 back lane 1-2) -----------------------------------
@@ -499,7 +462,6 @@ const ROSTER: PopEntry[] = [
     behavior: {
       kind: "idler", loop: "idle",
       at: [-10.5, -22], face: [-10.5, -19], // north alley mid-cut mouth
-      compact: { at: [10, -18], face: [10, -15] },
     },
   },
   {
@@ -509,16 +471,14 @@ const ROSTER: PopEntry[] = [
       // Bible §3); steps away once THOMAS_DOCK_ROUTE unlocks.
       kind: "idler", loop: "idle", hideWhenDockUnlocked: true,
       at: [-42.2, 22.6], face: [-40, 22.8],
-      compact: { at: [-41.8, -16.4], face: [-41, -18] },
     },
   },
 
   // =========================================================================
   // DENSIFICATION PASS (Bible §9): ~3x the ambient cast so every view of the
-  // strip reads as a living 1765 town. New entries omit `compact` (the live
-  // world is always BIG_STREET) and thread the same PROPS/BARRIERS colliders,
-  // markers, door thresholds, hero-actor spots, and traversal landings the
-  // core roster avoids. Distance culling (AMBIENT_CULL_M) keeps the drawn
+  // strip reads as a living 1765 town. These entries thread the same
+  // PROPS/BARRIERS colliders, markers, door thresholds, hero-actor spots,
+  // and traversal landings the core roster avoids. Distance culling (AMBIENT_CULL_M) keeps the drawn
   // count per view near the old budget. z-lanes, speeds, phases, and cluster
   // spacing are varied so no two neighbours read as identical clones.
   // =========================================================================
@@ -793,10 +753,6 @@ function rigCount(entry: PopEntry): number {
   return entry.behavior.kind === "pair" ? 2 : 1;
 }
 
-// Authored spawn pool (all rig instances, ignoring caps/time) — surfaced to the
-// dev population probe so QA can compare pool vs. active vs. drawn counts.
-const TOTAL_POOL_RIGS = ORDERED_ROSTER.reduce((sum, entry) => sum + rigCount(entry), 0);
-
 function stringSeed(id: string): number {
   let acc = 0;
   for (let i = 0; i < id.length; i++) acc = (acc * 31 + id.charCodeAt(i)) % 100000;
@@ -848,8 +804,7 @@ function Walker(props: { entry: PopEntry; reducedMotion: boolean }) {
   const movingRef = useRef(true);
   const [moving, setMoving] = useState(true);
   const route = useMemo(() => {
-    const source = !BIG_STREET && spec.compact ? spec.compact : { points: spec.points, pauses: spec.pauses };
-    return buildRoute(source.points, spec.speed, source.pauses, true);
+    return buildRoute(spec.points, spec.speed, spec.pauses, true);
   }, [spec]);
   const offset = useMemo(() => hash(seed, 3.3) * route.cycleS, [seed, route]);
   const sampleOut = useRef<RouteSample>({ x: 0, z: 0, yaw: 0, moving: false, stepIndex: 0 });
@@ -892,9 +847,8 @@ function CarryWorker(props: { entry: PopEntry; reducedMotion: boolean }) {
   const [mode, setMode] = useState<"loaded" | "empty" | "working">("loaded");
   const modeRef = useRef(mode);
   const route = useMemo(() => {
-    const pts = !BIG_STREET && spec.compact ? spec.compact : { from: spec.from, to: spec.to };
     // cycle: [stand load][walk loaded][stand unload][walk back]
-    return buildRoute([pts.from, pts.to], spec.speed, [spec.dwellS, spec.dwellS], true);
+    return buildRoute([spec.from, spec.to], spec.speed, [spec.dwellS, spec.dwellS], true);
   }, [spec]);
   const offset = useMemo(() => hash(seed, 4.4) * route.cycleS, [seed, route]);
   const sampleOut = useRef<RouteSample>({ x: 0, z: 0, yaw: 0, moving: false, stepIndex: 0 });
@@ -949,8 +903,8 @@ function CarryWorker(props: { entry: PopEntry; reducedMotion: boolean }) {
 function ConversationPair(props: { entry: PopEntry; t: number; reducedMotion: boolean }) {
   const spec = props.entry.behavior as PairSpec;
   const seed = entrySeed(props.entry);
-  const a = !BIG_STREET && spec.compact ? spec.compact.a : spec.a;
-  const b = !BIG_STREET && spec.compact ? spec.compact.b : spec.b;
+  const a = spec.a;
+  const b = spec.b;
   const [bucket, setBucket] = useState(0);
   const bucketRef = useRef(0);
   const periodS = 5.5 + hash(seed, 7.7) * 3;
@@ -990,8 +944,8 @@ function ConversationPair(props: { entry: PopEntry; t: number; reducedMotion: bo
 function Idler(props: { entry: PopEntry; reducedMotion: boolean }) {
   const spec = props.entry.behavior as IdlerSpec;
   const seed = entrySeed(props.entry);
-  const at = !BIG_STREET && spec.compact ? spec.compact.at : spec.at;
-  const face = !BIG_STREET && spec.compact ? spec.compact.face : spec.face;
+  const at = spec.at;
+  const face = spec.face;
   const yaw = face ? faceYaw(at, face) : hash(seed, 2.2) * Math.PI * 2;
   const [bucket, setBucket] = useState(0);
   const bucketRef = useRef(0);
@@ -1044,8 +998,8 @@ function Idler(props: { entry: PopEntry; reducedMotion: boolean }) {
 function ChurchTrickle(props: { entry: PopEntry; t: number; dusk: boolean; reducedMotion: boolean }) {
   const spec = props.entry.behavior as TrickleSpec;
   const seed = entrySeed(props.entry);
-  const gate = !BIG_STREET && spec.compact ? spec.compact.gate : spec.gate;
-  const door = !BIG_STREET && spec.compact ? spec.compact.door : spec.door;
+  const gate = spec.gate;
+  const door = spec.door;
   const windowActive =
     props.dusk || Math.abs(props.t - 0.45) <= 0.06 || Math.abs(props.t - 0.75) <= 0.06;
   const ref = useRef<THREE.Group>(null);
@@ -1096,8 +1050,8 @@ function ChurchTrickle(props: { entry: PopEntry; t: number; dusk: boolean; reduc
 function CivicBillPost() {
   // The paper plane faces local +z; readers stand street-side (+z) of the
   // post, so only a slight skew is applied.
-  const at: Pt = BIG_STREET ? [50, -3.2] : [37.5, 1.5];
-  const rotY = BIG_STREET ? 0.25 : -0.5;
+  const at: Pt = [50, -3.2];
+  const rotY = 0.25;
   const texture = useMemo(() => getDocumentTexture("TOWN_STAMP_NOTICE"), []);
   return (
     <group position={[at[0], 0, at[1]]} rotation={[0, rotY, 0]}>
@@ -1117,135 +1071,15 @@ function CivicBillPost() {
   );
 }
 
-// ---- interior occupants -------------------------------------------------------
-// Quiet bodies in the common rooms while the player is inside (task §5): same
-// interiorId gate as District's Npcs. Spots are room fractions using
-// kitPropsFor's flip convention, so they stay clear of the layout worker's kit
-// dressing (tables / pews / counters) whatever the room size. Runtime hero
-// interiors (Mercer/Thomas/Pike/Customs) carry their story cast and are not in
-// EXPLORE_KIT_ASSIGNMENT, so they never receive ambient occupants here.
-interface OccupantSpec {
-  fx: number;
-  fz: number;
-  ffx: number; // facing target fraction
-  ffz: number;
-  loop: "idle" | "work" | "talk" | "read";
-  feminine?: boolean;
-  lean?: number;
-}
-
-const KIT_OCCUPANTS: Record<InteriorKitId, OccupantSpec[]> = {
-  tavern: [
-    { fx: -0.5, fz: 0.14, ffx: -0.72, ffz: 0.3, loop: "work" }, // barkeep at the bar
-    { fx: 0.12, fz: -0.05, ffx: 0.35, ffz: 0.25, loop: "talk" }, // patron at a table
-    { fx: -0.15, fz: -0.62, ffx: 0.1, ffz: -0.4, loop: "talk", feminine: true }, // patron near the door
-  ],
-  church: [
-    { fx: 0.0, fz: 0.02, ffx: 0, ffz: 0.84, loop: "idle", feminine: true, lean: 0.06 },
-    { fx: 0.0, fz: -0.4, ffx: 0, ffz: 0.84, loop: "idle", lean: 0.06 },
-  ],
-  shop: [
-    { fx: -0.15, fz: 0.28, ffx: 0, ffz: -0.05, loop: "work" }, // keeper behind the counter
-    { fx: 0.1, fz: -0.45, ffx: 0, ffz: -0.05, loop: "idle", feminine: true }, // customer
-  ],
-  workroom: [
-    { fx: 0.32, fz: 0.5, ffx: 0.45, ffz: 0.72, loop: "read" }, // clerk at the desk
-  ],
-  warehouse: [
-    { fx: -0.5, fz: -0.45, ffx: -0.78, ffz: -0.6, loop: "work" },
-  ],
-  home: [
-    { fx: 0.1, fz: -0.35, ffx: 0.35, ffz: -0.05, loop: "idle", feminine: true },
-  ],
-};
-
-function InteriorOccupant(props: { interiorId: string; reducedMotion: boolean }) {
-  const room = ALL_INTERIOR_LOCATIONS[props.interiorId]?.room;
-  const kit = EXPLORE_KIT_ASSIGNMENT[props.interiorId];
-  const [bucket, setBucket] = useState(0);
-  const bucketRef = useRef(0);
-  useFrame(({ clock }) => {
-    if (props.reducedMotion) return;
-    const next = Math.floor(clock.elapsedTime / 9);
-    if (next !== bucketRef.current) {
-      bucketRef.current = next;
-      setBucket(next);
-    }
-  });
-  const occupants = kit ? KIT_OCCUPANTS[kit] : undefined;
-  if (!room || !occupants) return null;
-  const [cx, cz] = room.center;
-  const flip = room.doorSide === "N" ? -1 : 1;
-  const hx = room.size[0] / 2 - 0.75;
-  const hz = room.size[1] / 2 - 0.75;
-  const spot = (fx: number, fz: number): Pt => [cx + fx * hx * flip, cz + fz * hz * flip];
-  return (
-    <group>
-      {occupants.map((o, i) => {
-        const seed = stringSeed(`${props.interiorId}#${i}`);
-        const at = spot(o.fx, o.fz);
-        const facing = spot(o.ffx, o.ffz);
-        const look = seededLook(seed, o.feminine ? "townswoman" : "townsman");
-        let clip = "idle";
-        if (!props.reducedMotion) {
-          switch (o.loop) {
-            case "work": clip = hash(bucket, seed) < 0.7 ? "work1" : "idle"; break;
-            case "read": clip = "work2"; break;
-            case "talk": clip = hash(bucket, seed) < 0.4 ? "talk2" : "idle"; break;
-            case "idle": clip = hash(bucket, seed) < 0.18 ? "talk2" : "idle"; break;
-          }
-        }
-        return (
-          <group key={i} position={[at[0], 0, at[1]]} rotation={[0, faceYaw(at, facing), 0]}>
-            <group rotation={[o.lean ?? 0, 0, 0]}>
-              <RiggedCharacter
-                glbKey={o.feminine ? "townswoman-rigged" : "townsman-rigged"}
-                height={look.height}
-                clip={clip}
-                timeOffset={2.4 + (seed % 5)}
-                timeScale={0.9 + hash(seed, 12.4) * 0.2}
-                tint={look.tint}
-                castShadow={false}
-              />
-            </group>
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-
 // ---- director ------------------------------------------------------------------
 
 export function PopulationDirector(props: {
-  interiorId: string | null;
   t: number;
   dusk: boolean;
   dockRouteUnlocked: boolean;
   reducedMotion: boolean;
 }) {
   useEffect(() => probeArchetypes(), []);
-  const authoredActiveRef = useRef(0);
-  useEffect(() => {
-    if (!import.meta.env.DEV || typeof window === "undefined") return;
-    // Dev-only probe (no production UI): window.__paPopulation() returns the
-    // authored spawn pool, the current cap, the rigs active at this hour, and
-    // the count actually being drawn after distance culling. Used by browser
-    // QA to confirm the ~3x density and the perf cull at each view.
-    (window as unknown as { __paPopulation?: () => unknown }).__paPopulation = () => ({
-      pool: TOTAL_POOL_RIGS,
-      cap: MAX_AMBIENT_RIGS,
-      cullRadiusM: AMBIENT_CULL_M,
-      activeAuthored: authoredActiveRef.current,
-      rendered: ambientVisibleCount(),
-    });
-    return () => {
-      delete (window as unknown as { __paPopulation?: () => unknown }).__paPopulation;
-    };
-  }, []);
-  if (props.interiorId) {
-    return <InteriorOccupant interiorId={props.interiorId} reducedMotion={props.reducedMotion} />;
-  }
   const effT = props.dusk ? 1 : props.t;
   const active: PopEntry[] = [];
   let rigs = 0;
@@ -1260,7 +1094,6 @@ export function PopulationDirector(props: {
     rigs += n;
     active.push(entry);
   }
-  authoredActiveRef.current = rigs;
   return (
     <group>
       <CivicBillPost />
