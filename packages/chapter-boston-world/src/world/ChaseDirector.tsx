@@ -9,7 +9,7 @@ import type {
 import { RiggedCharacter } from "./Character.js";
 import type { PlayerApi } from "./Player.js";
 import { useWorldServices } from "./WorldServicesContext.js";
-import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
+import { dispatchPresentationNotice } from "@pa/engine-world";
 import {
   createChaseState,
   stepChase,

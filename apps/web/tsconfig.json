@@ -5,7 +5,10 @@
     "types": ["vite/client"],
     "noEmit": true,
     "paths": {
+      "@pa/chapter-boston": ["../../packages/chapter-boston/src/index.ts"],
+      "@pa/chapter-boston-world": ["../../packages/chapter-boston-world/src/index.ts"],
       "@pa/contracts": ["../../packages/contracts/src/index.ts"],
+      "@pa/engine-world": ["../../packages/engine-world/src/index.ts"],
       "@pa/runtime": ["../../packages/runtime/src/index.ts"]
     }
   },

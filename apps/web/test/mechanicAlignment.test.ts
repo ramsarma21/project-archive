@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { startingAlignmentFor } from "../../presenter/CompoundMechanicControls.js";
+import { startingAlignmentFor } from "../src/presenter/CompoundMechanicControls.js";
 
 // Feel-audit-1 P1-18 regression: alignment stages must never open pre-solved
 // at dead centre ("100% TRUE" with zero interaction).

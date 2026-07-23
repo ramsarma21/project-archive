@@ -111,7 +111,7 @@ test("compound print uses the imported named ink tools on synthetic hands", () =
   }
   const bytes = readFileSync(
     new URL(
-      "../../../public/world/props/printer-ink-balls.glb",
+      "../../../../../apps/web/public/world/props/printer-ink-balls.glb",
       import.meta.url,
     ),
   );

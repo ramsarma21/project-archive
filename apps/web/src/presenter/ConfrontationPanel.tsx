@@ -4,8 +4,8 @@ import type {
   FieldCommittedEvent,
   FieldRuntimeView,
 } from "@pa/contracts";
-import { dispatchPresentationNotice } from "./noticeArbiter.js";
-import { ambientAudio } from "../world/ambientAudio.js";
+import { dispatchPresentationNotice } from "@pa/engine-world";
+import { ambientAudio } from "@pa/chapter-boston-world";
 
 const CARRIED_LABELS: Record<string, string> = {
   CARRIER_HANDBILLS: "the political handbills",

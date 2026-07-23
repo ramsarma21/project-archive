@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { RuntimeView } from "@pa/contracts";
-import { ambientAudio } from "../world/ambientAudio.js";
+import { ambientAudio } from "@pa/chapter-boston-world";
 
 export function Hud(props: {
   view: RuntimeView | null;

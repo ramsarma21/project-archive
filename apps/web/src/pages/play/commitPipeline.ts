@@ -8,7 +8,7 @@ import type {
   RuntimeView,
 } from "@pa/contracts";
 import type { LocalSave, PresenterSpatialState } from "../../db.js";
-import { presentationCueReady } from "../../presenter/presentationHandoff.js";
+import { presentationCueReady } from "@pa/engine-world";
 
 // ---------------------------------------------------------------------------
 // Commit pipeline core (pure factories, no React and no persistence imports).

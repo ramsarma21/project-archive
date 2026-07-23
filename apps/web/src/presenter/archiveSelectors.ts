@@ -4,7 +4,7 @@ import {
   DAY1_MICRO_DEFINITIONS,
   THREAD_FIGURES,
   type MicroDefinition,
-} from "../world/reactiveManifest.js";
+} from "@pa/chapter-boston-world";
 
 // ---------------------------------------------------------------------------
 // Archive tab data selectors (pure, unit-tested). These reconcile the tab

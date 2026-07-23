@@ -33,7 +33,7 @@ import {
   type WatcherMotion,
 } from "./watcherDetection.js";
 import { detectionStateForSuspicion } from "./stealthStore.js";
-import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
+import { dispatchPresentationNotice } from "@pa/engine-world";
 
 type AlertLevel = "IDLE" | "WARY" | "ALERTED";
 

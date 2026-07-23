@@ -69,9 +69,15 @@ importers:
       '@pa/chapter-boston':
         specifier: workspace:*
         version: link:../../packages/chapter-boston
+      '@pa/chapter-boston-world':
+        specifier: workspace:*
+        version: link:../../packages/chapter-boston-world
       '@pa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@pa/engine-world':
+        specifier: workspace:*
+        version: link:../../packages/engine-world
       '@pa/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
@@ -169,11 +175,91 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  packages/chapter-boston-world:
+    dependencies:
+      '@pa/chapter-boston':
+        specifier: workspace:*
+        version: link:../chapter-boston
+      '@pa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@pa/engine-world':
+        specifier: workspace:*
+        version: link:../engine-world
+      '@pa/runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      '@react-three/drei':
+        specifier: ^9.122.0
+        version: 9.122.0(@react-three/fiber@8.18.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1))(@types/react@18.3.31)(@types/three@0.185.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1)(use-sync-external-store@1.6.0(react@18.3.1))
+      '@react-three/fiber':
+        specifier: ^8.18.0
+        version: 8.18.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1)
+      '@react-three/rapier':
+        specifier: ^1.5.0
+        version: 1.5.0(@react-three/fiber@8.18.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1))(react@18.3.1)(three@0.185.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      three:
+        specifier: ^0.185.1
+        version: 0.185.1
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      '@types/react':
+        specifier: ^18.3.12
+        version: 18.3.31
+      '@types/three':
+        specifier: ^0.185.1
+        version: 0.185.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
   packages/contracts:
     dependencies:
       zod:
         specifier: ^3.24.1
         version: 3.25.76
+
+  packages/engine-world:
+    dependencies:
+      '@pa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      '@react-three/drei':
+        specifier: ^9.122.0
+        version: 9.122.0(@react-three/fiber@8.18.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1))(@types/react@18.3.31)(@types/three@0.185.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1)(use-sync-external-store@1.6.0(react@18.3.1))
+      '@react-three/fiber':
+        specifier: ^8.18.0
+        version: 8.18.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1)
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      '@types/react':
+        specifier: ^18.3.12
+        version: 18.3.31
+      '@types/three':
+        specifier: ^0.185.1
+        version: 0.185.1
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      three:
+        specifier: ^0.185.1
+        version: 0.185.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
 
   packages/runtime:
     dependencies:

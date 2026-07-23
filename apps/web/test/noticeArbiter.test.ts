@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PresentationNoticeArbiter } from "../../presenter/noticeArbiter.js";
+import { PresentationNoticeArbiter } from "@pa/engine-world";
 
 test("notice arbiter prioritizes, deduplicates, and expires captions", () => {
   const arbiter = new PresentationNoticeArbiter();

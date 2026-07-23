@@ -46,14 +46,14 @@ import {
 } from "./interiorManifest.js";
 import { buildInteriorCollisionWorld } from "./interiorCollision.js";
 import { InteriorInspectDirector } from "./InteriorInspectDirector.js";
-import { ContextInspectCard } from "../presenter/ContextInspectCard.js";
+import { ContextInspectCard } from "../ContextInspectCard.js";
 import { QuestMarkerDirector, type ResolvedQuestMarker } from "./QuestMarkerDirector.js";
 import {
   QuestMarkerHud,
   createQuestMarkerHudStore,
 } from "./QuestMarkerHud.js";
 import { createActorRegistry, type ActorRegistry } from "./actorRegistry.js";
-import type { PresenterSpatialState } from "../db.js";
+import type { PresenterSpatialState } from "@pa/engine-world";
 import {
   advanceFieldClock,
   createFieldClock,

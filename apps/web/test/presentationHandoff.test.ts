@@ -4,7 +4,7 @@ import {
   presentationActionSurface,
   presentationCueReady,
   resolveGlobalPresentationLock,
-} from "../../presenter/presentationHandoff.js";
+} from "@pa/engine-world";
 
 test("Mercer ready handoff exposes primer once, then the authored choice", () => {
   assert.equal(

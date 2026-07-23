@@ -15,7 +15,7 @@ import {
   type CommitClient,
   type CommitDeps,
   type PersistDeps,
-} from "../../pages/play/commitPipeline.js";
+} from "../src/pages/play/commitPipeline.js";
 
 // ---------------------------------------------------------------------------
 // Concurrency/acceptance invariants of the Play commit pipeline

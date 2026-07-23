@@ -9,7 +9,7 @@ import {
 } from "./Character.js";
 import { ImportedPivotAsset } from "./ImportedPivotAsset.js";
 import { getDocumentTexture } from "./documentTextures.js";
-import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
+import { dispatchPresentationNotice } from "@pa/engine-world";
 import { ambientAudio } from "./ambientAudio.js";
 
 // ---------------------------------------------------------------------------

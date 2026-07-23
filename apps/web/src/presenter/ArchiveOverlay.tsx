@@ -3,7 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import type { RuntimeView } from "@pa/contracts";
 import { SystemWindow } from "./Controls.js";
 import { OBJ_LABELS } from "./Side.js";
-import { RiggedCharacter } from "../world/Character.js";
+import { RiggedCharacter } from "@pa/chapter-boston-world";
 import { authoredFeedback } from "@pa/chapter-boston";
 import {
   engagedConnections,

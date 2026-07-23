@@ -1,4 +1,4 @@
-import type { PresenterSpatialState } from "../db.js";
+import type { PresenterSpatialState } from "@pa/engine-world";
 import {
   ALL_INTERIOR_LOCATIONS,
   EXPLORE_LOCATIONS,

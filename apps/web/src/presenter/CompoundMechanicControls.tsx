@@ -5,7 +5,7 @@ import type {
   PrintJobVariant,
 } from "@pa/contracts";
 import { useMechanicActionKey } from "./mechanicKeys.js";
-import { ambientAudio } from "../world/ambientAudio.js";
+import { ambientAudio } from "@pa/chapter-boston-world";
 
 type VisualPhase = "READY" | "ACTIVE" | "COMMIT" | "COMPLETE";
 

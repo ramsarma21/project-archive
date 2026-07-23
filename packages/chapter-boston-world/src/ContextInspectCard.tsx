@@ -1,5 +1,5 @@
-import type { InteriorInspectHotspotDef } from "../world/interiorManifest.js";
-import { INTERIOR_SOURCES } from "../world/interiorSources.js";
+import type { InteriorInspectHotspotDef } from "./world/interiorManifest.js";
+import { INTERIOR_SOURCES } from "./world/interiorSources.js";
 
 export function ContextInspectPrompt(props: {
   title: string;

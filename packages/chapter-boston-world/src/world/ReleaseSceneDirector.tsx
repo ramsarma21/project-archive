@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { RiggedCharacter } from "./Character.js";
 import type { PlayerApi } from "./Player.js";
 import { INSPECTOR_OFFICE } from "./stealthManifest.js";
-import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
+import { dispatchPresentationNotice } from "@pa/engine-world";
 
 // The post-catch "chewed out" beat (Act-1-Production-Plan M4): after a CAUGHT
 // chase the player reappears outside the Watch House, visibly later in the

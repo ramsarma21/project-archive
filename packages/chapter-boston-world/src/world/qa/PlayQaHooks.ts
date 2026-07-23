@@ -10,7 +10,7 @@ import {
   qaChaseStartEvents,
   type QaChaseResult,
 } from "../qaChaseContract.js";
-import { presentationCueReady } from "../../presenter/presentationHandoff.js";
+import { presentationCueReady } from "@pa/engine-world";
 import { QA_RUNTIME_ENABLED } from "../qaEnvironment.js";
 
 // QA-only Play-level window hooks, gated on QA_RUNTIME_ENABLED (no-ops in

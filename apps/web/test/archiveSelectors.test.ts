@@ -6,7 +6,7 @@ import {
   engagedConnections,
   metThreadPeople,
   routeRumors,
-} from "../../presenter/archiveSelectors.js";
+} from "../src/presenter/archiveSelectors.js";
 
 // Feel-audit-1 P1-9 (and the audited "CONNECTION ADDED but Connections tab
 // empty" P0 class): the Archive tabs must agree with the game state.

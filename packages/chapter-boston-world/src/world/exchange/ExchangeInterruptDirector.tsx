@@ -37,7 +37,7 @@ import {
 } from "../reactiveManifest.js";
 import { useWorldServices } from "../WorldServicesContext.js";
 import { clampedPanelPosition } from "../panelPlacement.js";
-import { dispatchPresentationNotice } from "../../presenter/noticeArbiter.js";
+import { dispatchPresentationNotice } from "@pa/engine-world";
 import {
   DAY1_FIGURES,
   day1ExchangeFrame,

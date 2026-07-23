@@ -8,7 +8,7 @@ import {
   buildTimeline,
   createTimelineCursor,
   subtitleDurationMs,
-} from "../../presenter/presentationTimeline.js";
+} from "@pa/engine-world";
 
 // Feel-audit-1 P0-1 regression: a wall-clock stall (frozen main thread,
 // hidden tab, timer burst) must never fast-forward a presentation batch past

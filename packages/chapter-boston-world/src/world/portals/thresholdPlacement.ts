@@ -2,7 +2,7 @@ import { LOCATIONS, type LocationDef } from "../manifest.js";
 import { thresholdAnchorForLocation } from "../doorwayContract.js";
 import { interiorLanding } from "../interiorManifest.js";
 import { resolveSpatialRestore } from "../spatialRestore.js";
-import type { PresenterSpatialState } from "../../db.js";
+import type { PresenterSpatialState } from "@pa/engine-world";
 
 // ---------------------------------------------------------------------------
 // Pending-threshold placement state machine (the "stuck in the wall" logic).

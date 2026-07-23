@@ -3,7 +3,7 @@ import { useRef } from "react";
 import type { RuntimeView } from "@pa/contracts";
 import type { PlayerApi } from "./Player.js";
 import { useWorldServices } from "./WorldServicesContext.js";
-import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
+import { dispatchPresentationNotice } from "@pa/engine-world";
 
 // Archive R3 — the routes reminder (Archive-Spec §4): one optional
 // clause surfacing an EARNED capability at the moment of approach. Fires once

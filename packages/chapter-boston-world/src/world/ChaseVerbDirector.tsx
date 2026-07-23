@@ -26,7 +26,7 @@ import {
   INTERACTION_PRIORITIES,
   type InteractionRegistry,
 } from "./interactionRegistry.js";
-import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
+import { dispatchPresentationNotice } from "@pa/engine-world";
 import { ambientAudio } from "./ambientAudio.js";
 import { QA_RUNTIME_ENABLED } from "./qaEnvironment.js";
 

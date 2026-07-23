@@ -4,7 +4,7 @@ import { OnboardingPreferencesSchema } from "@pa/contracts";
 import {
   effectiveReducedMotion,
   standardizedPreferences,
-} from "../../pages/preferences.js";
+} from "../src/pages/preferences.js";
 
 // Design1 kill list (product decision): the pre-game calibration interview
 // is deleted. These tests pin the replacement contract — standardized

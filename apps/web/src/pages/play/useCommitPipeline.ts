@@ -14,7 +14,7 @@ import { pushSave } from "../../api.js";
 import {
   choiceAnimationFor,
   type ChoiceAnimation,
-} from "../../world/choiceAnimations.js";
+} from "@pa/chapter-boston-world";
 import {
   createOnEvent,
   createOnFieldEvent,

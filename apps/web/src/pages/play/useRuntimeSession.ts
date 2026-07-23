@@ -10,12 +10,12 @@ import { BOSTON_DAY1_FLOW_VERSION } from "@pa/chapter-boston";
 import { RuntimeClient } from "../../runtimeClient.js";
 import { getSave, type LocalProfile, type PresenterSpatialState } from "../../db.js";
 import { pullMastery } from "../../api.js";
-import { QA_RUNTIME_ENABLED } from "../../world/qaEnvironment.js";
+import { QA_RUNTIME_ENABLED } from "@pa/chapter-boston-world";
 import {
   qaBootstrapStopBeforeCheckpoint,
   qaCheckpointBootstrapEvent,
   qaCheckpointTargetReached,
-} from "../../world/qa/cp1Bootstrap.js";
+} from "./cp1Bootstrap.js";
 
 // v6 (design1 feature 3): street-level day ending — the day-close beat order
 // changed (final pull -> town-board crier beat -> compressed CP1 -> Day

@@ -16,9 +16,16 @@ import { Hud } from "../presenter/Hud.js";
 import { Side, HoloTasks } from "../presenter/Side.js";
 import { ArchiveOverlay } from "../presenter/ArchiveOverlay.js";
 import { Controls, SystemWindow } from "../presenter/Controls.js";
-import { World3D } from "../world/World3D.js";
-import { documentForReadPanel, getDocumentImageUrl } from "../world/documentTextures.js";
-import type { ChoiceAnimation } from "../world/choiceAnimations.js";
+import {
+  ambientAudio,
+  documentForReadPanel,
+  getDocumentImageUrl,
+  QA_RUNTIME_ENABLED,
+  useFieldEventQaHook,
+  useQaChaseHook,
+  type ChoiceAnimation,
+} from "@pa/chapter-boston-world";
+import { BOSTON_1765_REGISTRATION } from "../chapterRegistration.js";
 import { StealthHud } from "../presenter/StealthHud.js";
 import { ConfrontationPanel } from "../presenter/ConfrontationPanel.js";
 import {
@@ -30,32 +37,22 @@ import {
   PRESENTATION_NOTICE_EVENT,
   PresentationNoticeArbiter,
   type PresentationNotice,
-} from "../presenter/noticeArbiter.js";
-import {
-  createStealthStore,
-  stealthPatchFromRuntimeField,
-} from "../world/stealthStore.js";
-import { ambientAudio } from "../world/ambientAudio.js";
-import {
-  presentationActionSurface,
-  presentationCueReady,
-} from "../presenter/presentationHandoff.js";
-import { QA_RUNTIME_ENABLED } from "../world/qaEnvironment.js";
-import {
   activeStep,
   advanceTimeline,
   buildTimeline,
   createTimelineCursor,
   isSubtitleDirective,
+  presentationActionSurface,
+  presentationCueReady,
   type TimelineStep,
-} from "../presenter/presentationTimeline.js";
+} from "@pa/engine-world";
+import {
+  createStealthStore,
+  stealthPatchFromRuntimeField,
+} from "@pa/chapter-boston-world";
 import { useRuntimeSession } from "./play/useRuntimeSession.js";
 import { useCommitPipeline } from "./play/useCommitPipeline.js";
 import { useOpenResponseFlow } from "../presenter/openResponse/useOpenResponseFlow.js";
-import {
-  useFieldEventQaHook,
-  useQaChaseHook,
-} from "../world/qa/PlayQaHooks.js";
 import {
   DAY_END_COPY,
   MANUAL_COPY,
@@ -86,6 +83,7 @@ export function Play(props: {
   onPreferencesSaved: (profile: LocalProfile) => void;
   onExit: () => void;
 }) {
+  const World3D = BOSTON_1765_REGISTRATION.world.World;
   const { profile, chapterId } = props;
   // The live preference set (design1: no pre-game interview — standardized
   // defaults arrive on the profile; the pause surface edits them in place).
