@@ -575,6 +575,25 @@ export function Player(props: {
 
   const drag = useRef<{ active: boolean; lastX: number; lastY: number }>({ active: false, lastX: 0, lastY: 0 });
   const camPitch = useRef(0);
+  // Interior framing preset (feel-audit-1 P0-8): entering any interior snaps
+  // the boom to a pitched-down establishing frame before control is handed
+  // over. Without it the follow camera spawned at scalp height (base height
+  // 1.7 on a 1.58m rig, pitch carried over from the street, boom collapsed
+  // against the door wall directly behind the landing) and the room was
+  // unreadable until the player manually dragged pitch.
+  const interiorCameraActivePrev = useRef(Boolean(props.interiorCamera));
+  useEffect(() => {
+    const active = Boolean(props.interiorCamera);
+    if (active && !interiorCameraActivePrev.current) {
+      camPitch.current = Math.max(camPitch.current, 0.3);
+      snapCam.current = true;
+    } else if (!active && interiorCameraActivePrev.current) {
+      // Back on the street: restore a neutral follow pitch.
+      camPitch.current = Math.min(camPitch.current, 0.08);
+      snapCam.current = true;
+    }
+    interiorCameraActivePrev.current = active;
+  }, [props.interiorCamera]);
   const previousCameraOwnership = useRef<CameraOwnershipState>({
     owner: props.cameraOwner,
     cameraControlledExternally: props.cameraControlledExternally,
@@ -1164,6 +1183,28 @@ export function Player(props: {
       Boolean(props.interiorCamera);
     const maxDist = props.interiorCamera?.maxBoom ?? 5.2;
     let desiredDist = maxDist;
+    if (interiorActive) {
+      // Keep the boom INSIDE the room by construction: limit it to the ray
+      // exit against the room bounds (minus the inset) instead of letting the
+      // position clamp slam an escaped camera back onto the player's head
+      // through the door gap (feel-audit-1 P0-8).
+      const bounds = collisionWorld.bounds;
+      const inset = props.interiorCamera!.inset;
+      const dirX = -Math.sin(camYaw.current);
+      const dirZ = -Math.cos(camYaw.current);
+      let exit = maxDist;
+      if (Math.abs(dirX) > 1e-6) {
+        const tx =
+          ((dirX > 0 ? bounds.maxX - inset : bounds.minX + inset) - api.position.x) / dirX;
+        if (tx > 0) exit = Math.min(exit, tx);
+      }
+      if (Math.abs(dirZ) > 1e-6) {
+        const tz =
+          ((dirZ > 0 ? bounds.maxZ - inset : bounds.minZ + inset) - api.position.z) / dirZ;
+        if (tz > 0) exit = Math.min(exit, tz);
+      }
+      desiredDist = Math.max(0.8, exit);
+    }
     // On the ground plane only: the boom-shortening ray uses the ground-plan
     // colliders, which no longer describe walls once the player is elevated on
     // a roof/platform or airborne (skip the ray so the crane/warehouse

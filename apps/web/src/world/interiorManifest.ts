@@ -958,7 +958,16 @@ function makeInterior(spec: InteriorSpec): InteriorDef {
       yaw: placement.rotY,
       tags: placement.tags ?? ["furniture"],
     }));
-  const landingLocal: InteriorVec3 = [0, 0, -depth / 2 + 1.45];
+  // Entry landing sits deep enough into the room for the follow camera's
+  // boom to open behind the player (feel-audit-1 P0-8: a 1.45m landing left
+  // the boom pinned against the door wall and every interior entry framed
+  // the back of the player's head). Scales with room depth; small rooms keep
+  // the shallow landing (their camera preset covers the rest).
+  const landingLocal: InteriorVec3 = [
+    0,
+    0,
+    -depth / 2 + Math.min(2.4, Math.max(1.45, depth * 0.3)),
+  ];
   const exitSensorLocal: InteriorVec3 = [0, 0, -depth / 2 + 0.78];
   return {
     id: spec.id,

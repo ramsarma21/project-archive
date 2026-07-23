@@ -497,11 +497,19 @@ export function buildExploreDoorwayProfiles(): DoorwayProfile[] {
     if (RUNTIME_DOOR_BUILDINGS.has(b.id)) continue;
     const loc = EXPLORE_LOCATIONS[exploreLocationId(b.id)];
     if (!loc?.room) continue;
-    // Lateral door lane = room door centre relative to the building footprint
-    // centre, projected onto the facade tangent. For the audited rooms this is
-    // ~0 (centre); a per-GLB visual audit can override per building later.
+    // Lateral door lane = the room's AUTHORED door lane (doorX) relative to
+    // the building footprint centre, projected onto the facade tangent.
+    // Deriving it from the ROOM CENTRE seated warehouseHero's exterior door
+    // + trigger 2m away from its visible modeled door (room centre x=-155,
+    // authored doorX/building x=-153) and the building could not be entered
+    // at all (feel-audit-1 P0-9). doorX is the single source of the lane.
     const auditedLateral = AUDITED_EXPLORE_LATERAL[b.id];
-    const lateral = auditedLateral ?? (loc.room.center[0] - b.pos[0]);
+    // World Δx projected onto the facade tangent (t = rotateY(+x, rotY);
+    // rows are yaw 0 / π so t.x is ±1).
+    const tangentX = Math.round(Math.cos(b.rotY));
+    const lateral =
+      auditedLateral ??
+      tangentX * ((loc.room.doorX ?? loc.room.center[0]) - b.pos[0]);
     out.push({
       doorId: `EXPLORE_${b.id}`,
       buildingId: b.id,

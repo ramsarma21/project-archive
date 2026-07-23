@@ -181,3 +181,36 @@ test("missing measured bounds yields null (renders nothing, no seat guess)", () 
   };
   assert.equal(resolveDoorway(bogus), null);
 });
+
+// Feel-audit-1 P0-9 regression + QA sweep: every explore doorway must seat on
+// the room's AUTHORED door lane (doorX). warehouseHero's lane was derived
+// from the room centre (2m off the visible modeled door), so the building
+// had no reachable trigger at its door and could not be entered.
+test("every explore doorway seats on the authored door lane (doorX)", () => {
+  for (const profile of buildExploreDoorwayProfiles()) {
+    if (profile.lateralCenterAudited) continue; // browser-audited overrides win
+    const resolved = resolveDoorway(profile);
+    assert.ok(resolved, `${profile.doorId} must resolve`);
+    const locId = profile.targetIds[0]!;
+    const room = EXPLORE_LOCATIONS[locId]?.room;
+    assert.ok(room, `${locId} must have a room`);
+    const lane = room.doorX ?? room.center[0];
+    near(
+      resolved.facadePoint[0],
+      lane,
+      0.05,
+      `${profile.doorId} facade lane must sit on the authored doorX`,
+    );
+  }
+});
+
+test("warehouseHero door + trigger sit on its authored red door (P0-9)", () => {
+  const hero = resolveDoorway(
+    buildExploreDoorwayProfiles().find((p) => p.buildingId === "warehouseHero")!,
+  )!;
+  // Authored doorX = -153 (manifest EXPLORE_SPECIALS.warehouseHero).
+  near(hero.facadePoint[0], -153, 0.05, "leaf on the visible door");
+  const loc = EXPLORE_LOCATIONS.EXPLORE_warehouseHero!;
+  const outside = thresholdAnchorForLocation(loc, "OUTSIDE");
+  near(outside[0], -153, 0.6, "exterior trigger reachable at the door");
+});

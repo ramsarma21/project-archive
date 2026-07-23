@@ -11,7 +11,7 @@
 // transforms/materials update in one useFrame; the HUD store is written on a
 // throttle and only when a rendered value changes.
 
-import { Component, Suspense, useMemo, useRef, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
@@ -227,7 +227,29 @@ function QuestMarkerDirectorInner(props: {
   const occludedRef = useRef(false);
 
   useFrame(({ camera, clock }) => {
-    if (built.length === 0) return;
+    const probeHost = props.hostRef.current;
+    if (probeHost) probeHost.dataset.questBuiltCount = String(built.length);
+    if (built.length === 0) {
+      // No live FREE_ROAM markers (a choice/mechanic/read owns the screen):
+      // clear the HUD instead of leaving the last approach label painted
+      // over the modal UI (feel-audit-1 P1-7).
+      if (props.hudStore.getSnapshot().active !== null) {
+        props.hudStore.set({
+          active: null,
+          highContrast: props.highContrast,
+          reducedMotion: props.reducedMotion,
+        });
+        const host = props.hostRef.current;
+        if (host) {
+          host.dataset.questActiveId = "";
+          host.dataset.questState = "";
+          host.dataset.questDistance = "";
+          host.dataset.questOccluded = "";
+          host.dataset.questEdgeVisible = "false";
+        }
+      }
+      return;
+    }
     const api = props.apiRef.current;
     const px = api?.position.x ?? camera.position.x;
     const pz = api?.position.z ?? camera.position.z;
@@ -417,7 +439,29 @@ export function QuestMarkerDirector(props: {
   hostRef: { current: HTMLDivElement | null };
   onSelect: (targetId: string) => void;
 }) {
-  if (props.markers.length === 0) return null;
+  // When the marker set empties (a choice/mechanic/read/interrupt owns the
+  // screen) the inner director unmounts — so the HUD store MUST be cleared
+  // here, or the last label/wedge stays painted over the modal UI and the
+  // stale dataset lingers for QA probes (feel-audit-1 P1-7).
+  const empty = props.markers.length === 0;
+  useEffect(() => {
+    if (!empty) return;
+    props.hudStore.set({
+      active: null,
+      highContrast: props.highContrast,
+      reducedMotion: props.reducedMotion,
+    });
+    const host = props.hostRef.current;
+    if (host) {
+      host.dataset.questActiveId = "";
+      host.dataset.questState = "";
+      host.dataset.questDistance = "";
+      host.dataset.questOccluded = "";
+      host.dataset.questEdgeVisible = "false";
+      host.dataset.questBuiltCount = "0";
+    }
+  }, [empty, props.highContrast, props.hostRef, props.hudStore, props.reducedMotion]);
+  if (empty) return null;
   return (
     <MarkerBoundary>
       <Suspense fallback={null}>

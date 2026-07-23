@@ -98,23 +98,36 @@ function announcementFor(active: QuestHudActive | null): string {
     case "ARRIVING":
       return `Arriving at ${active.label}.`;
     case "NEARBY":
-      return `${active.nearPrompt}: ${active.label}.`;
+      // Never compose "Step outside: Step outside." — when the approach
+      // prompt IS the label, one copy suffices (feel-audit-1 P1-8).
+      return active.nearPrompt === active.label
+        ? `${active.label}.`
+        : `${active.nearPrompt}: ${active.label}.`;
     case "ACTIVE":
     default:
       return `Objective set: ${active.label}.`;
   }
 }
 
-export function QuestMarkerHud(props: { store: QuestMarkerHudStore }) {
+export function QuestMarkerHud(props: {
+  store: QuestMarkerHudStore;
+  // True while any overlay/modal/choice owns the screen: the HUD renders
+  // nothing so no world label can paint over modal UI (feel-audit-1 P1-7).
+  // This is DOM-side and stays authoritative even while the canvas subtree
+  // is briefly suspended during scene-asset preloads.
+  hidden?: boolean;
+}) {
   const snap = useSyncExternalStore(
     props.store.subscribe,
     props.store.getSnapshot,
     props.store.getSnapshot,
   );
-  const active = snap.active;
+  const active = props.hidden ? null : snap.active;
 
   // One announcement per (target, phase) change: never a continuously changing
-  // distance readout (that would spam a screen reader).
+  // distance readout (that would spam a screen reader). The text also clears
+  // after a beat so stale objective lines never linger in the live region
+  // (feel-audit-1 P2-13).
   const [announce, setAnnounce] = useState("");
   const lastKey = useRef("");
   useEffect(() => {
@@ -124,6 +137,11 @@ export function QuestMarkerHud(props: { store: QuestMarkerHudStore }) {
       setAnnounce(announcementFor(active));
     }
   }, [active]);
+  useEffect(() => {
+    if (!announce) return;
+    const timer = window.setTimeout(() => setAnnounce(""), 4500);
+    return () => window.clearTimeout(timer);
+  }, [announce]);
 
   const near = active ? active.state === "NEARBY" || active.state === "ARRIVING" : false;
   const showWorldLabel = Boolean(active && active.onScreen);

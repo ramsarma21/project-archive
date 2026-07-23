@@ -32,6 +32,7 @@ import {
 import { effectChips, MICRO_LABELS } from "./reactiveManifest.js";
 import { useWorldServices } from "./WorldServicesContext.js";
 import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
+import { clampedPanelPosition } from "./panelPlacement.js";
 
 interface ContentPrompt {
   sourceId: string;
@@ -210,7 +211,10 @@ export function M4ContentDirector(props: {
 
   const begin = async (next: ContentPrompt) => {
     if (prompt || committing || !props.enabled || props.exchangesEnabled === false) return;
-    const id = `M4_${next.sourceId}_${props.view.field.interactionOrdinal + 1}`;
+    // The committed-event-count suffix keeps re-engagement after an
+    // Escape-abandon unique (the runtime rejects duplicate eventIds) while
+    // staying deterministic per action history.
+    const id = `M4_${next.sourceId}_${props.view.field.interactionOrdinal + 1}_${services.committedEventCount()}`;
     setCommitting(true);
     const ok = await services.submitFieldEvent({
       type: "FIELD_INTERRUPT_STARTED",
@@ -225,6 +229,31 @@ export function M4ContentDirector(props: {
     props.apiRef.current?.setInputLocked(true);
     props.apiRef.current?.setInteractionClip(next.clip ?? "search");
     setPrompt(next);
+  };
+
+  // Universal Escape dismissal (feel-audit-1 P0-2): abandon the exchange
+  // without committing its outcome. The interrupt resolves (input unlocks,
+  // the suspended plan restores) and no reward/learning effect is recorded —
+  // the same terminal state as never having pressed the action, except the
+  // FIELD_INTERRUPT_STARTED/RESOLVED pair stays in the log.
+  const dismiss = async () => {
+    const activeInterrupt = interruptId.current;
+    if (!prompt || !activeInterrupt || committing || reply) return;
+    setCommitting(true);
+    const resolved = await services.submitFieldEvent({
+      type: "FIELD_INTERRUPT_RESOLVED",
+      eventId: `${activeInterrupt}_RESOLVED`,
+      interruptId: activeInterrupt,
+      outcome: "ABANDONED",
+    });
+    setCommitting(false);
+    if (!resolved) return;
+    props.apiRef.current?.setInputLocked(false);
+    props.apiRef.current?.setInteractionClip(null);
+    interruptId.current = null;
+    setReply(null);
+    setReplyChips([]);
+    setPrompt(null);
   };
 
   const finish = async () => {
@@ -825,6 +854,24 @@ export function M4ContentDirector(props: {
     [props.apiRef, props.interactionRegistry],
   );
 
+  // One keyboard model for every exchange panel (feel-audit-1 P0-2/P1-1):
+  // the advertised numeric hotkey commits, Escape abandons.
+  useEffect(() => {
+    if (!prompt) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (committing || reply) return;
+      if (event.key === "1") {
+        event.preventDefault();
+        void finish();
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        void dismiss();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   const roofKid =
     props.view.field.activities[OPTIONAL_ACTIVITY_IDS.ROOF_KID].stage;
   const dockDone =
@@ -898,6 +945,7 @@ export function M4ContentDirector(props: {
           center
           occlude={false}
           zIndexRange={[25, 10]}
+          calculatePosition={clampedPanelPosition}
         >
           <section className="reactive-exchange" role="dialog" aria-label={prompt.title}>
             <header>{prompt.title}</header>
@@ -913,6 +961,14 @@ export function M4ContentDirector(props: {
               <div className="reactive-exchange-choices">
                 <button type="button" disabled={committing} onClick={() => void finish()}>
                   <kbd>1</kbd> {prompt.action}
+                </button>
+                <button
+                  type="button"
+                  className="exchange-dismiss"
+                  disabled={committing}
+                  onClick={() => void dismiss()}
+                >
+                  <kbd>ESC</kbd> Step away
                 </button>
               </div>
             )}

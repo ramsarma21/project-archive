@@ -4,7 +4,9 @@ import {
   HaulJobControl,
   PostJobControl,
   PrintJobControl,
+  startingAlignmentFor,
 } from "./CompoundMechanicControls.js";
+import { useMechanicActionKey } from "./mechanicKeys.js";
 
 type MechanicPhase = "READY" | "ACTIVE" | "COMMIT" | "COMPLETE";
 
@@ -21,7 +23,9 @@ function emitMechanicVisual(
 
 export function Controls(props: {
   request: InputRequest;
-  onEvent: (e: PresenterEvent) => void;
+  // Returns whether the runtime accepted the event; timer-driven emitters
+  // (the Breather) retry on false instead of latching (feel-audit-1 P0-5).
+  onEvent: (e: PresenterEvent) => void | Promise<boolean>;
   busy: boolean;
   spatialNavigation?: boolean;
   accessibleMechanics?: boolean;
@@ -64,7 +68,7 @@ export function Controls(props: {
         </div>
       );
     case "BREATHER":
-      return <Breather durationMs={request.durationMs} onEvent={onEvent} />;
+      return <Breather request={request} onEvent={onEvent} />;
     case "FREE_ROAM": {
       // Once a stop is committed, control returns to the world: the gold
       // marker and the holo task strip carry the objective. The center of the
@@ -186,23 +190,52 @@ export function SystemWindow(props: { heading: string; children: ReactNode }) {
   );
 }
 
-function Breather(props: { durationMs: number; onEvent: (event: PresenterEvent) => void }) {
+// The breather's completion is presenter-owed: once the duration elapses the
+// runtime is waiting on BREATHER_COMPLETE and nothing else can advance the
+// day. The commit path can transiently drop events (persist round-trips,
+// choreography-ready races — especially just after a resume), so this timer
+// RETRIES until the runtime actually accepts the event. A fire-once timer
+// wedged the whole plan in BREATHER forever (feel-audit-1 P0-5).
+const BREATHER_RETRY_MS = 800;
+
+function Breather(props: {
+  request: Extract<InputRequest, { kind: "BREATHER" }>;
+  onEvent: (event: PresenterEvent) => void | Promise<boolean>;
+}) {
   const onEventRef = useRef(props.onEvent);
   onEventRef.current = props.onEvent;
   useEffect(() => {
-    const timer = window.setTimeout(
-      () => onEventRef.current({ type: "BREATHER_COMPLETE" }),
-      props.durationMs,
-    );
-    return () => window.clearTimeout(timer);
-  }, [props.durationMs]);
+    let cancelled = false;
+    let timer = 0;
+    let attemptInFlight = false;
+    const attempt = async () => {
+      if (cancelled || attemptInFlight) return;
+      attemptInFlight = true;
+      try {
+        const accepted = await onEventRef.current({ type: "BREATHER_COMPLETE" });
+        // Only an explicit `false` (guard-dropped commit) retries; a void
+        // return keeps legacy fire-once semantics.
+        if (cancelled || accepted !== false) return;
+      } finally {
+        attemptInFlight = false;
+      }
+      timer = window.setTimeout(() => void attempt(), BREATHER_RETRY_MS);
+    };
+    timer = window.setTimeout(() => void attempt(), props.request.durationMs);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // Re-arm per presented request instance (a new plan object), not just per
+    // duration value, so consecutive breathers can never share a stale timer.
+  }, [props.request]);
   return null;
 }
 
 function Mechanic(props: {
   promptId: string;
   params: MechanicParams;
-  onEvent: (e: PresenterEvent) => void;
+  onEvent: (e: PresenterEvent) => void | Promise<boolean>;
   busy: boolean;
   accessible: boolean;
 }) {
@@ -314,6 +347,12 @@ function PressControl(props: { prompt: string; onDone: (o: number) => void; busy
     // sheet out of the bed before the next plan replaces this request.
     doneTimer.current = window.setTimeout(() => props.onDone(posRef.current), 950);
   }
+  // The advertised SPACE binding, honored without needing button focus.
+  useMechanicActionKey({
+    enabled: !locked && !props.busy,
+    codes: ["Space"],
+    onDown: commit,
+  });
   return (
     <div className="mechanic-shell mechanic-press">
       <header className="mechanic-header">
@@ -391,6 +430,14 @@ function EffortControl(props: { prompt: string; onDone: (ms: number) => void; bu
     window.clearTimeout(doneTimer.current);
     emitMechanicVisual("EFFORT", 0, false);
   }, []);
+  // "HOLD SPACE" without requiring the button to own keyboard focus
+  // (feel-audit-1 P1-2: keyboard-only players were hard-blocked here).
+  useMechanicActionKey({
+    enabled: !props.busy && !completedRef.current,
+    codes: ["Space", "Enter"],
+    onDown: begin,
+    onUp: end,
+  });
   const ringStyle = { "--mechanic-progress": `${progress * 360}deg` } as CSSProperties;
   const holding = progress > 0 && progress < 1;
   return (
@@ -435,7 +482,7 @@ function EffortControl(props: { prompt: string; onDone: (ms: number) => void; bu
 }
 
 function PlaceControl(props: { prompt: string; onDone: (a: number) => void; busy: boolean }) {
-  const [val, setVal] = useState(0.5);
+  const [val, setVal] = useState(() => startingAlignmentFor("PLACE:LINE_UP"));
   const [locked, setLocked] = useState(false);
   const doneTimer = useRef(0);
   const score = Math.max(0, 1 - Math.abs(val - 0.5) * 2);

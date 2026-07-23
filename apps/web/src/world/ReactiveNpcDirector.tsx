@@ -32,6 +32,7 @@ import {
   type ReactiveActorDefinition,
 } from "./reactiveManifest.js";
 import { useWorldServices } from "./WorldServicesContext.js";
+import { clampedPanelPosition } from "./panelPlacement.js";
 
 interface ExchangeChoice {
   id: string;
@@ -1004,7 +1005,9 @@ export function ReactiveNpcDirector(props: {
   const begin = async (next: Exchange) => {
     if (!props.enabled || props.exchangesEnabled === false || exchange || committing) return;
     const ordinal = props.view.field.interactionOrdinal + 1;
-    const interruptId = `M3_${next.sourceId}_${ordinal}`;
+    // Suffixed with the committed-event count so re-engagement after an
+    // Escape-abandon never reuses the abandoned attempt's eventId.
+    const interruptId = `M3_${next.sourceId}_${ordinal}_${services.committedEventCount()}`;
     setCommitting(true);
     const ok = await services.submitFieldEvent({
       type: "FIELD_INTERRUPT_STARTED",
@@ -1095,12 +1098,38 @@ export function ReactiveNpcDirector(props: {
     setExchange(null);
   };
 
+  // Universal Escape dismissal (feel-audit-1 P0-2): abandon the exchange
+  // without committing an outcome. Input unlocks, the suspended plan
+  // restores, and no effect is recorded.
+  const dismiss = async () => {
+    const interruptId = interruptRef.current;
+    if (!exchange || !interruptId || committing || reply) return;
+    setCommitting(true);
+    const resolved = await services.submitFieldEvent({
+      type: "FIELD_INTERRUPT_RESOLVED",
+      eventId: `${interruptId}_RESOLVED`,
+      interruptId,
+      outcome: "ABANDONED",
+    });
+    setCommitting(false);
+    if (!resolved) return;
+    props.apiRef.current?.setInputLocked(false);
+    props.apiRef.current?.setInteractionClip(null);
+    interruptRef.current = null;
+    setReply(null);
+    setReplyChips([]);
+    setExchange(null);
+  };
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!exchange || committing) return;
+      if (!exchange || committing || reply) return;
       if (/^[123]$/.test(event.key)) {
         const choice = exchange.choices[Number(event.key) - 1];
         if (choice) void finish(choice);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        void dismiss();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -1432,7 +1461,13 @@ export function ReactiveNpcDirector(props: {
         />
       </group>
       {exchange && (
-        <Html position={[exchange.position[0], exchange.position[1] + 2, exchange.position[2]]} center occlude={false} zIndexRange={[20, 10]}>
+        <Html
+          position={[exchange.position[0], exchange.position[1] + 2, exchange.position[2]]}
+          center
+          occlude={false}
+          zIndexRange={[20, 10]}
+          calculatePosition={clampedPanelPosition}
+        >
           <section className="reactive-exchange" role="dialog" aria-label={exchange.title}>
             <header>{exchange.title}</header>
             <p>{reply ?? exchange.line}</p>

@@ -16,6 +16,11 @@ export interface WorldServices {
   fieldTickRef: MutableRefObject<number>;
   stealthStore: StealthStore;
   submitFieldEvent: (event: FieldCommittedEvent) => Promise<boolean>;
+  // Count of committed presenter events. Interrupt ids are suffixed with it
+  // so an exchange re-engaged after an Escape-abandon never reuses the
+  // abandoned attempt's eventId (the runtime rejects duplicate eventIds).
+  // Deterministic: identical action histories produce identical counts.
+  committedEventCount: () => number;
 }
 
 const WorldServicesContext = createContext<WorldServices | null>(null);

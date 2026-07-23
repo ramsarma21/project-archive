@@ -4,6 +4,7 @@ import type {
   PrintJobQuality,
   PrintJobVariant,
 } from "@pa/contracts";
+import { useMechanicActionKey } from "./mechanicKeys.js";
 
 type VisualPhase = "READY" | "ACTIVE" | "COMMIT" | "COMPLETE";
 
@@ -40,6 +41,26 @@ function qualityFor(phases: PrintJobPhaseScores): PrintJobQuality {
   if (average >= 0.85 && minimum >= 0.6) return "CRISP";
   if (minimum < 0.35) return "SMUDGED";
   return "USABLE";
+}
+
+// Alignment stages used to open with the marker dead-centre at "100% TRUE" —
+// five stages of theater with zero challenge (feel-audit-1 P1-18). Each stage
+// now opens with a real offset the player must correct. The offset is a pure
+// hash of the stage key: presentation-only (the committed MECHANIC_RESULT
+// records the player's actual final score, so replay determinism is
+// untouched), stable for a given stage, and varied across stages.
+export function startingAlignmentFor(stageKey: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < stageKey.length; index++) {
+    hash ^= stageKey.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  const unit = ((hash >>> 8) % 1000) / 1000; // 0..1
+  const side = (hash & 1) === 0 ? 1 : -1;
+  // Offset magnitude 0.18..0.38 from centre: always visibly off, never pinned
+  // to the rail.
+  const magnitude = 0.18 + unit * 0.2;
+  return 0.5 + side * magnitude;
 }
 
 function alignmentScore(value: number): number {
@@ -134,6 +155,14 @@ function HoldAdvance(props: {
     raf.current = requestAnimationFrame(tick);
   };
   const holding = progress > 0 && progress < 1;
+  // Honor "HOLD SPACE" from anywhere: the previous button-focus-only
+  // onKeyDown was dead for keyboard-only players (feel-audit-1 P1-2).
+  useMechanicActionKey({
+    enabled: !props.disabled,
+    codes: ["Space", "Enter"],
+    onDown: begin,
+    onUp: stop,
+  });
   return (
     <button
       className={`mechanic-action mechanic-hold${holding ? " holding" : ""}${progress >= 1 ? " held" : ""}`}
@@ -145,12 +174,6 @@ function HoldAdvance(props: {
       }}
       onPointerUp={stop}
       onPointerCancel={stop}
-      onKeyDown={(event) => {
-        if ((event.code === "Space" || event.code === "Enter") && !event.repeat) begin();
-      }}
-      onKeyUp={(event) => {
-        if (event.code === "Space" || event.code === "Enter") stop();
-      }}
     >
       <i className="hold-fill" aria-hidden="true" />
       <span className="hold-label">
@@ -201,7 +224,9 @@ export function PrintJobControl(props: {
   }) => void;
 }) {
   const [stageIndex, setStageIndex] = useState(0);
-  const [alignment, setAlignment] = useState(0.5);
+  const [alignment, setAlignment] = useState(() =>
+    startingAlignmentFor(`${props.variant}:CATCH`),
+  );
   const [inkStrokes, setInkStrokes] = useState(0);
   const [inkExpected, setInkExpected] = useState<"LEFT" | "RIGHT">("LEFT");
   const [inkPenalty, setInkPenalty] = useState(0);
@@ -211,6 +236,29 @@ export function PrintJobControl(props: {
   const inkTimers = useRef<number[]>([]);
   const accessibleInkRunning = useRef(false);
   const stage = PRINT_STAGES[stageIndex]!;
+  const alignmentRef = useRef(alignment);
+  alignmentRef.current = alignment;
+  // One keyboard model across every stage (feel-audit-1 P1-1/P1-2):
+  // Space/Enter commits the align stages; 1/2 daub left/right during INK.
+  const isAlignStage =
+    !props.accessible &&
+    (stage === "CATCH" || stage === "REGISTER" || stage === "PULL");
+  useMechanicActionKey({
+    enabled: isAlignStage && !locked && !props.busy,
+    codes: ["Space", "Enter"],
+    onDown: () => completeStage(alignmentScore(alignmentRef.current)),
+  });
+  const strokeRef = useRef<(side: "LEFT" | "RIGHT") => void>(() => {});
+  useMechanicActionKey({
+    enabled: !props.accessible && stage === "INK" && !locked && !props.busy,
+    codes: ["Digit1", "Numpad1"],
+    onDown: () => strokeRef.current("LEFT"),
+  });
+  useMechanicActionKey({
+    enabled: !props.accessible && stage === "INK" && !locked && !props.busy,
+    codes: ["Digit2", "Numpad2"],
+    onDown: () => strokeRef.current("RIGHT"),
+  });
 
   useEffect(() => {
     emitVisual("PRINT_JOB", stage, 0, "READY");
@@ -229,8 +277,9 @@ export function PrintJobControl(props: {
     setScores(next);
     emitVisual("PRINT_JOB", stage, 1, stage === "PEEL" ? "COMPLETE" : "COMMIT");
     if (stageIndex < PRINT_STAGES.length - 1) {
+      const nextStage = PRINT_STAGES[stageIndex + 1]!;
       setStageIndex((index) => index + 1);
-      setAlignment(0.5);
+      setAlignment(startingAlignmentFor(`${props.variant}:${nextStage}`));
       return;
     }
     setLocked(true);
@@ -328,6 +377,7 @@ export function PrintJobControl(props: {
         });
         if (next === 4) completeStage(Math.max(0.35, 1 - inkPenalty));
       };
+      strokeRef.current = stroke;
       return (
         <div className="ink-stage">
           <div className="ink-pips" aria-label={`${inkStrokes} of 4 strokes`}>
@@ -345,7 +395,7 @@ export function PrintJobControl(props: {
               disabled={props.busy || locked}
               onClick={() => stroke("LEFT")}
             >
-              DAUB LEFT
+              <kbd>1</kbd> DAUB LEFT
               <small>{inkExpected === "LEFT" ? "◈ NEXT" : "\u00a0"}</small>
             </button>
             <button
@@ -353,7 +403,7 @@ export function PrintJobControl(props: {
               disabled={props.busy || locked}
               onClick={() => stroke("RIGHT")}
             >
-              DAUB RIGHT
+              <kbd>2</kbd> DAUB RIGHT
               <small>{inkExpected === "RIGHT" ? "◈ NEXT" : "\u00a0"}</small>
             </button>
           </div>
@@ -405,7 +455,7 @@ export function PrintJobControl(props: {
           onClick={() => completeStage(alignmentScore(alignment))}
         >
           {stage === "CATCH" ? "CATCH SHEET" : stage === "REGISTER" ? "SET REGISTER" : "PULL BAR"}
-          <kbd>SLIDE CENTRE · THEN CLICK</kbd>
+          <kbd>SLIDE CENTRE · SPACE / CLICK</kbd>
         </button>
       </>
     );
@@ -524,8 +574,16 @@ export function PostJobControl(props: {
   }) => void;
 }) {
   const [stage, setStage] = useState<(typeof POST_STAGES)[number]>("LINE_UP");
-  const [alignment, setAlignment] = useState(0.5);
+  const [alignment, setAlignment] = useState(() =>
+    startingAlignmentFor("POST_JOB:LINE_UP"),
+  );
   const scores = useRef({ lineUp: 0.7, tackLeft: 0.7, tackRight: 0.7 });
+  const finishRef = useRef<() => void>(() => {});
+  useMechanicActionKey({
+    enabled: !props.busy,
+    codes: ["Space", "Enter"],
+    onDown: () => finishRef.current(),
+  });
   const finishStage = () => {
     if (stage === "LINE_UP") {
       scores.current.lineUp = props.accessible ? 0.75 : alignmentScore(alignment);
@@ -541,6 +599,7 @@ export function PostJobControl(props: {
       props.onDone({ phases: scores.current, accessible: props.accessible });
     }
   };
+  finishRef.current = finishStage;
   const trueness = alignmentScore(alignment);
   return (
     <div className="mechanic-shell mechanic-place">

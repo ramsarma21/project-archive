@@ -58,6 +58,14 @@ import {
   type QaChaseResult,
 } from "../world/qaChaseContract.js";
 import { QA_RUNTIME_ENABLED } from "../world/qaEnvironment.js";
+import {
+  activeStep,
+  advanceTimeline,
+  buildTimeline,
+  createTimelineCursor,
+  type TimelineStep,
+} from "../presenter/presentationTimeline.js";
+import type { PresenterSpatialState } from "../db.js";
 
 const DAY1_FLOW_VERSION = 5;
 
@@ -113,6 +121,14 @@ export function Play(props: {
   const runtimeCommitInFlightRef = useRef(false);
   const revisionRef = useRef(0);
   const cloudRevisionRef = useRef(0);
+  // Live presenter-side spatial snapshot (player transform + visual interior),
+  // mirrored by World3D every few frames. Persisted with each save so a resume
+  // restores the last committed position instead of the day-start spawn
+  // (feel-audit-1 P0-11). Purely presentational: replay determinism is
+  // untouched because committed events never depend on it.
+  const presenterSpatialRef = useRef<PresenterSpatialState | null>(null);
+  const [restoreSpatial, setRestoreSpatial] =
+    useState<PresenterSpatialState | null>(null);
   const [primersSeen, setPrimersSeen] = useState(() => new Set(profile.onboarding?.primersSeen ?? []));
   const [readyCueId, setReadyCueId] = useState<string | null>(null);
   const [choiceAnimation, setChoiceAnimation] = useState<ChoiceAnimation | null>(null);
@@ -215,6 +231,9 @@ export function Play(props: {
           save?.status === "COMPLETE" || save?.flowVersion !== DAY1_FLOW_VERSION
             ? []
             : save.committedEvents;
+        if (prior.length > 0 && save?.presenterSpatial) {
+          setRestoreSpatial(save.presenterSpatial);
+        }
         eventsRef.current = [...prior];
         revisionRef.current = save?.revision ?? 0;
         cloudRevisionRef.current = profile.cloudRevision ?? save?.revision ?? 0;
@@ -288,6 +307,32 @@ export function Play(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.profileId]);
 
+  // Save & exit refreshes the LOCAL save's presenter spatial snapshot so it
+  // captures WHERE the player left, not just where the last runtime event
+  // committed (feel-audit-1 P0-11: walking commits nothing, so exiting at
+  // the wharf used to leave the snapshot back at the previous exchange).
+  // The event log and revision are untouched (revision must always equal the
+  // committed event count for cloud replay validation), so this never
+  // affects determinism or cloud consistency.
+  async function persistAndExit() {
+    try {
+      const spatial = presenterSpatialRef.current;
+      if (spatial && view) {
+        const existing = await getSave(profile.profileId);
+        if (
+          existing &&
+          existing.flowVersion === DAY1_FLOW_VERSION &&
+          existing.committedEvents.length === eventsRef.current.length
+        ) {
+          await putSave({ ...existing, presenterSpatial: spatial });
+        }
+      }
+    } catch (cause) {
+      console.error("Exit-time save failed; the last committed save stands", cause);
+    }
+    props.onExit();
+  }
+
   async function persist(status: "IN_PROGRESS" | "COMPLETE") {
     const baseRevision = revisionRef.current;
     const save = {
@@ -299,6 +344,7 @@ export function Play(props: {
       revision: baseRevision + 1,
       status,
       updatedAt: new Date().toISOString(),
+      presenterSpatial: presenterSpatialRef.current ?? undefined,
     };
     await putSave(save);
     revisionRef.current = save.revision;
@@ -317,7 +363,13 @@ export function Play(props: {
     }
   }
 
-  async function onEvent(ev: PresenterEvent) {
+  // Commits an ordinary presenter event. Returns true only when the runtime
+  // accepted and persisted it. A `false` return means the event was DROPPED
+  // by a transient guard (commit in flight, busy, choreography not ready):
+  // one-shot emitters (breather timers, debrief form selection, quest
+  // arrivals) MUST retry on false instead of latching, or the game idles
+  // forever — the soft-lock class behind feel-audit-1 P0-4/P0-5/P0-6.
+  async function onEvent(ev: PresenterEvent): Promise<boolean> {
     const client = clientRef.current;
     if (
       !client ||
@@ -327,7 +379,7 @@ export function Play(props: {
       (plan &&
         plan.request.kind !== "CHECKPOINT_DEBRIEF" &&
         readyCueId !== plan.cueId)
-    ) return;
+    ) return false;
     runtimeCommitInFlightRef.current = true;
     setBusy(true);
     const priorEvents = eventsRef.current;
@@ -353,6 +405,7 @@ export function Play(props: {
       setReport(snap.report);
       setDone(r.done);
       await persist(r.done ? "COMPLETE" : "IN_PROGRESS");
+      return true;
     } catch (cause) {
       if (!runtimeAdvanced) eventsRef.current = priorEvents;
       console.error("Could not complete game action", cause);
@@ -361,6 +414,7 @@ export function Play(props: {
           ? "This account has newer cloud progress. Return to profiles to reload it."
           : "That action could not be completed. Return to profiles and try again.",
       );
+      return false;
     } finally {
       setChoiceAnimation(null);
       runtimeCommitInFlightRef.current = false;
@@ -414,12 +468,15 @@ export function Play(props: {
         return true;
       } catch (cause) {
         if (!runtimeAdvanced) eventsRef.current = priorEvents;
+        // Surface commit exceptions in EVERY mode. Swallowing them in dev hid
+        // the underlying failure behind the audited "silent drop to the home
+        // screen with nothing actionable in console" (feel-audit-1 P0-3).
         console.error("Could not commit durable field event", event, cause);
-        if (!import.meta.env.DEV) {
-          setError(
-            "A field event could not be committed. Return to profiles and try again.",
-          );
-        }
+        setError(
+          `A field action could not be committed (${
+            cause instanceof Error ? cause.message : String(cause)
+          }). Save & exit, then resume.`,
+        );
         return false;
       } finally {
         runtimeCommitInFlightRef.current = false;
@@ -641,6 +698,7 @@ export function Play(props: {
 
   const onFieldEventRef = useRef(onFieldEvent);
   onFieldEventRef.current = onFieldEvent;
+  const committedEventCount = useCallback(() => eventsRef.current.length, []);
   const qaStartInFlightRef = useRef(false);
   const qaSnapshotRef = useRef({
     request: plan?.request ?? null,
@@ -795,10 +853,6 @@ export function Play(props: {
 
   useEffect(() => {
     const directives = plan?.present ?? [];
-    let index = 0;
-    let timer = 0;
-    let cancelled = false;
-    let timelineLocation = presentationOriginLocation;
     setActiveSubtitle(null);
     setActiveReadPanel(null);
     setPresentationLocationId(presentationOriginLocation);
@@ -828,48 +882,47 @@ export function Play(props: {
       return;
     }
     setSpeaking(true);
-    const showNext = () => {
-      if (cancelled) return;
-      while (index < directives.length) {
-        const directive = directives[index]!;
-        const directiveLocation = directive.locationId;
-        if (directiveLocation && directiveLocation !== timelineLocation) {
-          timelineLocation = directiveLocation;
-          setPresentationLocationId(directiveLocation);
-          timer = window.setTimeout(showNext, 420);
-          return;
-        }
-        index += 1;
-        if (directive.kind === "SCENE") {
-          if (directive.text.trim()) {
-            setActiveSubtitle(directive);
-            timer = window.setTimeout(() => {
-              setActiveSubtitle(null);
-              timer = window.setTimeout(showNext, 140);
-            }, subtitleDuration(directive, profile.onboarding?.readingSpeed ?? "STANDARD"));
-            return;
-          }
-          timer = window.setTimeout(showNext, 380);
-          return;
-        }
-        if (directive.kind === "READ_PANEL") {
-          setActiveReadPanel(directive);
-          timer = window.setTimeout(() => {
-            setActiveReadPanel(null);
-            timer = window.setTimeout(showNext, 180);
-          }, readPanelDuration(directive, profile.onboarding?.readingSpeed ?? "STANDARD"));
-          return;
-        }
-        if (isSubtitleDirective(directive)) {
-          setActiveSubtitle(directive);
-          timer = window.setTimeout(() => {
-            setActiveSubtitle(null);
-            timer = window.setTimeout(showNext, 140);
-          }, subtitleDuration(directive, profile.onboarding?.readingSpeed ?? "STANDARD"));
-          return;
-        }
+    // Frame-driven runner over the compiled timeline. requestAnimationFrame
+    // does not run while the tab is hidden, and advanceTimeline clamps each
+    // frame's delta, so a main-thread stall or background gap pauses the
+    // presentation instead of expiring it wholesale. With the previous
+    // setTimeout chain, a stall burst completed the entire batch unseen —
+    // the audited "arrival dialogue never played" defect (feel-audit-1 P0-1).
+    const steps = buildTimeline(
+      directives,
+      presentationOriginLocation,
+      profile.onboarding?.readingSpeed ?? "STANDARD",
+    );
+    let cursor = createTimelineCursor(steps);
+    let cancelled = false;
+    let raf = 0;
+    let lastFrameAt = performance.now();
+    let appliedStepIndex = -1;
+    const applyStep = (step: TimelineStep | null) => {
+      if (step === null) return;
+      if (step.kind === "LOCATION") {
+        setActiveSubtitle(null);
+        setActiveReadPanel(null);
+        setPresentationLocationId(step.locationId);
+      } else if (step.kind === "SUBTITLE") {
+        setActiveReadPanel(null);
+        setActiveSubtitle(step.directive);
+      } else if (step.kind === "READ_PANEL") {
+        setActiveSubtitle(null);
+        setActiveReadPanel(
+          step.directive as Extract<PresentationDirective, { kind: "READ_PANEL" }>,
+        );
+      } else {
+        setActiveSubtitle(null);
+        setActiveReadPanel(null);
       }
-      if (index >= directives.length) {
+    };
+    const frame = (now: number) => {
+      if (cancelled) return;
+      const delta = now - lastFrameAt;
+      lastFrameAt = now;
+      cursor = advanceTimeline(steps, cursor, delta);
+      if (cursor.done) {
         if (cueId) presentedTimelineCuesRef.current.add(cueId);
         setActiveSubtitle(null);
         setActiveReadPanel(null);
@@ -877,11 +930,23 @@ export function Play(props: {
         setPresentationLocationId(null);
         return;
       }
+      if (cursor.stepIndex !== appliedStepIndex) {
+        appliedStepIndex = cursor.stepIndex;
+        applyStep(activeStep(steps, cursor));
+      }
+      raf = requestAnimationFrame(frame);
     };
-    showNext();
+    raf = requestAnimationFrame((now) => {
+      lastFrameAt = now;
+      if (cursor.stepIndex !== appliedStepIndex) {
+        appliedStepIndex = cursor.stepIndex;
+        applyStep(activeStep(steps, cursor));
+      }
+      raf = requestAnimationFrame(frame);
+    });
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      cancelAnimationFrame(raf);
       setActiveSubtitle(null);
       setActiveReadPanel(null);
       setSpeaking(false);
@@ -896,6 +961,18 @@ export function Play(props: {
 
   const dayEnd = transcript.find((d) => d.kind === "DAY_END_CARD") as (PresentationDirective & { kind: "DAY_END_CARD" }) | undefined;
   const [showLog, setShowLog] = useState(false);
+  // Escape always closes the log (feel-audit-1 P0-7: the panel overlapped its
+  // own toggle and there was no keyboard escape).
+  useEffect(() => {
+    if (!showLog) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setShowLog(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showLog]);
   // The opened read shows the authored document artwork itself (same canvas
   // as the world object); panels with no matching document keep the plain
   // parchment card.
@@ -907,13 +984,15 @@ export function Play(props: {
     presentationCueReady(plan?.cueId, readyCueId);
   const openResponseActive =
     view?.field.activeInterrupt?.kind === "OPEN_RESPONSE";
+  // The Log is a read-only side panel: it must never gate mechanic input or
+  // freeze the world (feel-audit-1 P0-7). It intentionally does NOT feed
+  // interactionBusy or movementLocked.
   const interactionBusy =
     busy ||
     !choreographyReady ||
     speaking ||
     showManual ||
     showArchive ||
-    showLog ||
     openResponseActive ||
     cinematicBeat;
   // An archive-only re-present (e.g. the gold-marker redirect nudge after
@@ -941,7 +1020,6 @@ export function Play(props: {
     view?.field.activeInterrupt?.kind === "CONFRONTATION" ||
     showManual ||
     showArchive ||
-    showLog ||
     openResponseActive ||
     cinematicBeat;
   const pendingPrimer = primerFor(plan?.request ?? null, primersSeen);
@@ -1040,7 +1118,7 @@ export function Play(props: {
         profileName={profile.displayName}
         exitDisabled={interactionBusy}
         onManual={() => setShowManual(true)}
-        onExit={props.onExit}
+        onExit={() => void persistAndExit()}
       />
       <div className="world-wrap">
         <World3D
@@ -1059,6 +1137,10 @@ export function Play(props: {
           choreographyReady={choreographyReady}
           choiceAnimation={choiceAnimation}
           stealthStore={stealthStore}
+          restoreSpatial={restoreSpatial}
+          spatialSnapshotRef={presenterSpatialRef}
+          committedEventCount={committedEventCount}
+          overlayActive={Boolean(primer) || centralControlsBlocked}
           onChoreographyReady={markChoreographyReady}
           onWebglStatus={setWebglAvailable}
           onEvent={onEvent}
@@ -1109,6 +1191,29 @@ export function Play(props: {
           </div>
         )}
         <div className="world-cinematic-ui">
+          {!error &&
+            !done &&
+            !cinematicBeat &&
+            !interactionBusy &&
+            (plan?.request.kind === "FREE_ROAM" ||
+              plan?.request.kind === "BREATHER") &&
+            !view?.field.activeInterrupt &&
+            (view?.openResponse.eligible.length ?? 0) > 0 && (
+              // Docked corner chip; rendered only while actually clickable.
+              // The old in-overlay disabled state painted an empty dark bar
+              // across mid-screen (feel-audit-1 P1-6 / pill artifact).
+              <button
+                type="button"
+                className="open-response-offer"
+                onClick={() =>
+                  void beginOpenResponse(
+                    view!.openResponse.eligible[0]!.promptId,
+                  )
+                }
+              >
+                ✎ Optional reflection available
+              </button>
+            )}
           <div className="subtitles" role="log" aria-live="polite" aria-relevant="additions">
             {activeSubtitle && (
               <div
@@ -1135,14 +1240,17 @@ export function Play(props: {
           <div
             className={`world-controls-overlay request-${plan?.request.kind.toLowerCase() ?? "loading"}${centralControlsBlocked ? " is-blocked" : ""}${speaking ? " is-speaking" : ""}${primer && !view?.field.activeInterrupt ? " has-primer" : ""}${
               view?.field.activeInterrupt?.kind === "CHASE" ||
+              // A reactive exchange owns the screen with its own world-anchored
+              // panel: the central overlay must not paint an empty band
+              // beneath it (feel-audit-1 P1-6 empty-bar artifact).
+              view?.field.activeInterrupt?.kind === "REACTIVE_EXCHANGE" ||
               (!primer &&
                 !error &&
                 !done &&
                 webglAvailable &&
                 !view?.field.activeInterrupt &&
                 plan?.request.kind === "FREE_ROAM" &&
-                plan.request.selectedTargetId &&
-                (view?.openResponse.eligible.length ?? 0) === 0)
+                plan.request.selectedTargetId)
                 ? " is-empty"
                 : ""
             }`}
@@ -1178,35 +1286,16 @@ export function Play(props: {
                 onDone={() => void onEvent({ type: "CONTINUE" })}
               />
             ) : plan ? (
-              <>
-                {(plan.request.kind === "FREE_ROAM" ||
-                  plan.request.kind === "BREATHER") &&
-                  !view?.field.activeInterrupt &&
-                  (view?.openResponse.eligible.length ?? 0) > 0 && (
-                    <button
-                      type="button"
-                      className="open-response-offer"
-                      disabled={interactionBusy}
-                      onClick={() =>
-                        void beginOpenResponse(
-                          view!.openResponse.eligible[0]!.promptId,
-                        )
-                      }
-                    >
-                      Optional reflection available
-                    </button>
-                  )}
-                <Controls
-                  request={plan.request}
-                  onEvent={onEvent}
-                  busy={interactionBusy}
-                  spatialNavigation={webglAvailable}
-                  accessibleMechanics={
-                    Boolean(profile.onboarding?.reducedMotion) ||
-                    profile.onboarding?.inputMethod === "KEYBOARD_ONLY"
-                  }
-                />
-              </>
+              <Controls
+                request={plan.request}
+                onEvent={onEvent}
+                busy={interactionBusy}
+                spatialNavigation={webglAvailable}
+                accessibleMechanics={
+                  Boolean(profile.onboarding?.reducedMotion) ||
+                  profile.onboarding?.inputMethod === "KEYBOARD_ONLY"
+                }
+              />
             ) : (
               <span className="muted">Synchronizing…</span>
             )}
@@ -1320,26 +1409,6 @@ function isSubtitleDirective(directive: PresentationDirective): directive is Sub
     directive.kind === "ARCHIVE" ||
     directive.kind === "AMBIENT_CHATTER"
   );
-}
-
-function subtitleDuration(
-  directive: SubtitleDirective,
-  readingSpeed: "RELAXED" | "STANDARD" | "BRISK",
-): number {
-  const words = directive.text.trim().split(/\s+/).length;
-  const base = 650 + (words / 2.7) * 1000;
-  const pace = readingSpeed === "RELAXED" ? 1.3 : readingSpeed === "BRISK" ? 0.82 : 1;
-  return Math.max(1700, Math.min(6500, base * pace));
-}
-
-function readPanelDuration(
-  directive: Extract<PresentationDirective, { kind: "READ_PANEL" }>,
-  readingSpeed: "RELAXED" | "STANDARD" | "BRISK",
-): number {
-  const words = `${directive.title} ${directive.body}`.trim().split(/\s+/).length;
-  const base = 1200 + (words / 3.2) * 1000;
-  const pace = readingSpeed === "RELAXED" ? 1.35 : readingSpeed === "BRISK" ? 0.82 : 1;
-  return Math.max(3200, Math.min(9000, base * pace));
 }
 
 type PrimerId = "ARCHIVE" | "MOVEMENT" | "READ" | "WORK" | "CHOICE";

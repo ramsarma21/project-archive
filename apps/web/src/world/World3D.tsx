@@ -88,6 +88,14 @@ import {
   planarDistance,
 } from "./questMarkerResolver.js";
 import { createActorRegistry, type ActorRegistry } from "./actorRegistry.js";
+import { resolveSpatialRestore } from "./spatialRestore.js";
+import {
+  beginArrivalAttempt,
+  createArrivalLatch,
+  settleArrivalAttempt,
+  shouldAttemptArrival,
+} from "./questArrivalLatch.js";
+import type { PresenterSpatialState } from "../db.js";
 import {
   advanceFieldClock,
   createFieldClock,
@@ -306,6 +314,33 @@ function IdleRedirectTracker(props: {
   return null;
 }
 
+// Mirrors the live player transform into the presenter spatial snapshot that
+// is persisted with every save (feel-audit-1 P0-11). Presentation-only.
+function SpatialSnapshotProbe(props: {
+  apiRef: { current: PlayerApi | null };
+  sinkRef: MutableRefObject<PresenterSpatialState | null> | undefined;
+  interiorId: string | null;
+  runtimeLocationId: string;
+  enabled: boolean;
+}) {
+  const lastWriteAt = useRef(0);
+  useFrame(() => {
+    if (!props.sinkRef || !props.enabled) return;
+    const now = performance.now();
+    if (now - lastWriteAt.current < 400) return;
+    lastWriteAt.current = now;
+    const api = props.apiRef.current;
+    if (!api) return;
+    props.sinkRef.current = {
+      pos: [api.position.x, api.position.y, api.position.z],
+      yaw: api.facingY,
+      interiorId: props.interiorId,
+      locationId: props.runtimeLocationId,
+    };
+  });
+  return null;
+}
+
 // Mirrors the live player position onto the wrapper element so QA tooling
 // (and tests) can observe movement without reaching into the scene graph.
 function PlayerPosProbe(props: {
@@ -330,13 +365,16 @@ function PlayerPosProbe(props: {
       delete qaWindow.__PA_QA_TELEPORT__;
     };
   }, [props.apiRef]);
-  useFrame(({ scene }) => {
+  useFrame(({ scene, camera }) => {
     if (!QA_RUNTIME_ENABLED) return;
     const now = performance.now();
     if (now - lastWriteAt.current < 100) return;
     lastWriteAt.current = now;
     const api = props.apiRef.current;
     const host = props.hostRef.current;
+    if (host) {
+      host.dataset.cameraPos = `${camera.position.x.toFixed(2)},${camera.position.y.toFixed(2)},${camera.position.z.toFixed(2)}`;
+    }
     if (api && host) {
       let objectCount = 0;
       let visibleMeshCount = 0;
@@ -614,26 +652,32 @@ function ExplorePortals(props: {
 // replacement). Selecting never moves the player: entering an unselected
 // marker only emits FREE_ROAM_SELECT; the subsequently-selected marker must
 // then be dwelt on (past the confirmation window) before FREE_ROAM_GOTO fires.
-// The one-shot key is cueId|targetId so each objective arrives exactly once.
+//
+// The one-shot key is cueId|targetId — but it latches ONLY once the commit
+// is actually accepted by the runtime. A dropped commit (transient busy /
+// persist round-trip / choreography race) schedules a retry instead of
+// consuming the arrival: latch-before-accept stranded fixed events forever
+// when their single GOTO landed in a guard window (feel-audit-1 P0-6).
+// Latch semantics live in questArrivalLatch.ts (pure, unit-tested).
 function QuestArrivalTracker(props: {
   markers: ResolvedQuestMarker[];
   apiRef: { current: PlayerApi | null };
   busy: boolean;
   selectedTargetId: string | null;
   cueId: string | null;
-  onArrive: (targetId: string) => void;
-  onSelect: (targetId: string) => void;
+  onArrive: (targetId: string) => Promise<boolean>;
+  onSelect: (targetId: string) => Promise<boolean>;
 }) {
   const state = useRef({
-    selectFired: null as string | null,
-    arriveFiredKey: null as string | null,
+    select: createArrivalLatch(),
+    arrive: createArrivalLatch(),
     dwellEnter: null as number | null,
     selectedAt: 0,
   });
   useEffect(() => {
     const s = state.current;
-    s.selectFired = null;
-    s.arriveFiredKey = null;
+    s.select = createArrivalLatch();
+    s.arrive = createArrivalLatch();
     s.dwellEnter = null;
     s.selectedAt = performance.now();
   }, [props.selectedTargetId, props.cueId]);
@@ -646,21 +690,29 @@ function QuestArrivalTracker(props: {
     }
     const px = api.position.x;
     const pz = api.position.z;
+    const now = performance.now();
     if (!props.selectedTargetId) {
       // No selection yet: walking into any available marker's arrival radius
-      // selects it (one-shot per target). Selection collapses the field.
+      // selects it. A dropped SELECT retries after a short backoff while the
+      // player remains inside the radius.
       for (const m of props.markers) {
         const th = KIND_THRESHOLDS[m.kind];
         const d = planarDistance(px, pz, m.arrivalAnchor[0], m.arrivalAnchor[2]);
         if (d <= th.arrival) {
-          if (s.selectFired !== m.targetId) {
-            s.selectFired = m.targetId;
-            props.onSelect(m.targetId);
+          if (shouldAttemptArrival(s.select, m.targetId, now, true)) {
+            s.select = beginArrivalAttempt(s.select, m.targetId);
+            void props.onSelect(m.targetId).then((accepted) => {
+              state.current.select = settleArrivalAttempt(
+                state.current.select,
+                m.targetId,
+                accepted !== false,
+                performance.now(),
+              );
+            });
           }
           return;
         }
       }
-      s.selectFired = null;
       return;
     }
     const marker = props.markers.find((m) => m.targetId === props.selectedTargetId);
@@ -670,7 +722,6 @@ function QuestArrivalTracker(props: {
     }
     const th = KIND_THRESHOLDS[marker.kind];
     const d = planarDistance(px, pz, marker.arrivalAnchor[0], marker.arrivalAnchor[2]);
-    const now = performance.now();
     const inside = d <= th.arrival;
     if (inside) {
       if (s.dwellEnter === null) s.dwellEnter = now;
@@ -679,16 +730,21 @@ function QuestArrivalTracker(props: {
     }
     const dwellMs = s.dwellEnter === null ? 0 : now - s.dwellEnter;
     const key = `${props.cueId ?? ""}|${marker.targetId}`;
-    if (
-      s.arriveFiredKey !== key &&
-      arrivalReady({
-        insideArrival: inside,
-        dwellMs,
-        msSinceSelection: now - s.selectedAt,
-      })
-    ) {
-      s.arriveFiredKey = key;
-      props.onArrive(marker.targetId);
+    const ready = arrivalReady({
+      insideArrival: inside,
+      dwellMs,
+      msSinceSelection: now - s.selectedAt,
+    });
+    if (shouldAttemptArrival(s.arrive, key, now, ready)) {
+      s.arrive = beginArrivalAttempt(s.arrive, key);
+      void props.onArrive(marker.targetId).then((accepted) => {
+        state.current.arrive = settleArrivalAttempt(
+          state.current.arrive,
+          key,
+          accepted !== false,
+          performance.now(),
+        );
+      });
     }
   });
   return null;
@@ -715,9 +771,21 @@ export function World3D(props: {
   choreographyReady: boolean;
   choiceAnimation: ChoiceAnimation | null;
   stealthStore: StealthStore;
+  // Committed presenter-event count (see WorldServices.committedEventCount).
+  committedEventCount?: () => number;
+  // True while any DOM overlay owns the center of the screen (primer cards,
+  // day-end, debrief): world-anchored HUD labels hide (feel-audit-1 P1-7).
+  overlayActive?: boolean;
+  // Presenter spatial restore point from the loaded save (feel-audit-1
+  // P0-11), applied once at spawn when it matches the resumed context.
+  restoreSpatial?: PresenterSpatialState | null;
+  // Live snapshot sink persisted with each save.
+  spatialSnapshotRef?: MutableRefObject<PresenterSpatialState | null>;
   onChoreographyReady: (cueId: string) => void;
   onWebglStatus: (available: boolean) => void;
-  onEvent: (ev: PresenterEvent) => void;
+  // Returns whether the runtime accepted the event (see Play.onEvent); the
+  // arrival tracker retries dropped commits instead of latching.
+  onEvent: (ev: PresenterEvent) => void | Promise<boolean>;
   onFieldEvent: (event: FieldCommittedEvent) => Promise<boolean>;
 }) {
   const apiRef = useRef<PlayerApi | null>(null);
@@ -1024,7 +1092,15 @@ export function World3D(props: {
           };
           setVisualInteriorId(runtimeLoc.id);
         } else {
-          api.teleport(runtimeLoc.anchor, runtimeLoc.faceY);
+          // Resume restore (feel-audit-1 P0-11): re-seat the body at the
+          // persisted presenter position when it matches the resumed
+          // context; the authored scene anchor is the fallback.
+          const restored = resolveSpatialRestore(props.restoreSpatial, runtimeLoc);
+          if (restored) {
+            api.teleport(restored.pos, restored.faceY);
+          } else {
+            api.teleport(runtimeLoc.anchor, runtimeLoc.faceY);
+          }
         }
         return;
       }
@@ -1056,7 +1132,7 @@ export function World3D(props: {
       cancelled = true;
       if (timer !== null) window.clearTimeout(timer);
     };
-  }, [archiveTransit, runtimeLoc, visualInteriorId]);
+  }, [archiveTransit, runtimeLoc, visualInteriorId, props.restoreSpatial]);
 
   // Resolve each eligible FREE_ROAM target into an explicit quest marker with
   // an independent VISUAL anchor (where the imported kit is drawn) and ARRIVAL
@@ -1068,9 +1144,17 @@ export function World3D(props: {
     if (props.view?.field.activeInterrupt) return [];
     if (request?.kind !== "FREE_ROAM") return [];
     const activeInterior = interiorId ? ALL_INTERIOR_LOCATIONS[interiorId] : null;
+    // Inside a presentation-only explore interior the player stands in an
+    // ISOLATED coordinate slot: exterior target anchors are meaningless from
+    // here (the audited "exit marker reports 1098m", feel-audit-1 P1-16).
+    // Only the dynamic STREET/exit marker resolves in the active space.
+    const isolatedExplore = Boolean(
+      interiorId && EXPLORE_LOCATIONS[interiorId],
+    );
     const out: ResolvedQuestMarker[] = [];
     for (const target of request.targets) {
       if (target.marker === "HIDDEN") continue;
+      if (isolatedExplore && target.targetId !== "STREET") continue;
       if (request.selectedTargetId && target.targetId !== request.selectedTargetId) continue;
       const forcedGold =
         request.selectedTargetId === target.targetId || target.marker === "GOLD";
@@ -1236,12 +1320,14 @@ export function World3D(props: {
       fieldTickRef,
       stealthStore: props.stealthStore,
       submitFieldEvent: props.onFieldEvent,
+      committedEventCount: props.committedEventCount ?? (() => 0),
     }),
     [
       activeSpaceId,
       actorRegistry,
       gameplayWorld,
       props.onFieldEvent,
+      props.committedEventCount,
       props.stealthStore,
     ],
   );
@@ -1349,16 +1435,18 @@ export function World3D(props: {
         motion: props.choiceAnimation?.motion ?? basePlayerActorCue.motion,
       }
     : null;
-  const onArrive = (targetId: string) => {
-    if (activeChase) return;
+  // Both handlers resolve with whether the runtime ACCEPTED the commit; the
+  // arrival tracker retries dropped commits instead of latching (P0-6).
+  const onArrive = async (targetId: string): Promise<boolean> => {
+    if (activeChase) return false;
     const crossesDoor =
       DOOR_TARGETS.has(targetId) ||
       (targetId === "STREET" && Boolean(interiorId));
     if (!crossesDoor) {
-      props.onEvent({ type: "FREE_ROAM_GOTO", targetId });
-      return;
+      const accepted = await props.onEvent({ type: "FREE_ROAM_GOTO", targetId });
+      return accepted !== false;
     }
-    if (doorTimer.current !== null) return;
+    if (doorTimer.current !== null) return false;
     if (targetId !== "STREET") {
       const destination = Object.values(INTERIORS).find((def) =>
         doorwayForBuilding(def.buildingId)?.targetIds.includes(targetId),
@@ -1371,20 +1459,38 @@ export function World3D(props: {
     );
     setDoorTarget(targetId);
     const delay = props.reducedMotion ? 220 : 1500;
-    doorTimer.current = window.setTimeout(() => {
-      props.onEvent({ type: "FREE_ROAM_GOTO", targetId });
+    return new Promise<boolean>((resolveArrival) => {
       doorTimer.current = window.setTimeout(() => {
-        doorTimer.current = null;
-        setDoorTarget(null);
-        apiRef.current?.setInteractionClip(null);
-        apiRef.current?.setInputLocked(false);
-      }, props.reducedMotion ? 0 : 450);
-    }, delay);
+        void (async () => {
+          const accepted = await props.onEvent({ type: "FREE_ROAM_GOTO", targetId });
+          if (accepted === false) {
+            // The commit was dropped: unwind the door beat so the tracker can
+            // retry a full arrival instead of stranding a half-open door.
+            doorTimer.current = null;
+            setDoorTarget(null);
+            apiRef.current?.setInteractionClip(null);
+            apiRef.current?.setInputLocked(false);
+            resolveArrival(false);
+            return;
+          }
+          doorTimer.current = window.setTimeout(() => {
+            doorTimer.current = null;
+            setDoorTarget(null);
+            apiRef.current?.setInteractionClip(null);
+            apiRef.current?.setInputLocked(false);
+          }, props.reducedMotion ? 0 : 450);
+          resolveArrival(true);
+        })();
+      }, delay);
+    });
   };
-  const onSelect = (targetId: string) => {
-    if (activeChase) return;
-    if (props.request?.kind !== "FREE_ROAM" || props.request.selectedTargetId) return;
-    props.onEvent({ type: "FREE_ROAM_SELECT", targetId });
+  const onSelect = async (targetId: string): Promise<boolean> => {
+    if (activeChase) return false;
+    if (props.request?.kind !== "FREE_ROAM" || props.request.selectedTargetId) {
+      return false;
+    }
+    const accepted = await props.onEvent({ type: "FREE_ROAM_SELECT", targetId });
+    return accepted !== false;
   };
   // Explore-room threshold crossings: same door-swing beat as the errand
   // interiors, but purely presentational (no runtime event). The teleport is
@@ -1745,6 +1851,13 @@ export function World3D(props: {
               field={props.view?.field ?? null}
               assist={props.chaseAssist}
             />
+            <SpatialSnapshotProbe
+              apiRef={apiRef}
+              sinkRef={props.spatialSnapshotRef}
+              interiorId={interiorId}
+              runtimeLocationId={runtimeLocationId}
+              enabled={spawned.current && !archiveTransit}
+            />
             {activeInterior && (
               <InteriorInspectDirector
                 def={activeInterior}
@@ -1783,7 +1896,21 @@ export function World3D(props: {
           />
         </WorldServicesProvider>
       </Canvas>
-      {!archiveTransit && <QuestMarkerHud store={hudStore} />}
+      {!archiveTransit && (
+        <QuestMarkerHud
+          store={hudStore}
+          hidden={
+            props.busy ||
+            Boolean(props.overlayActive) ||
+            (props.request?.kind !== "FREE_ROAM" &&
+              props.request?.kind !== "BREATHER") ||
+            Boolean(
+              props.view?.field.activeInterrupt &&
+                props.view.field.activeInterrupt.kind !== "CHASE",
+            )
+          }
+        />
+      )}
       {inspectOpen && (
         <ContextInspectCard
           hotspot={inspectOpen}

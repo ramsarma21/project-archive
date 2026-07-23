@@ -80,31 +80,65 @@ function GateCard(props: {
   );
 }
 
+// How often the FORM_SELECTION phase re-attempts a dropped selection commit.
+const FORM_SELECTION_RETRY_MS = 700;
+
 export function CheckpointDebrief(props: {
   request: CheckpointDebriefRequest;
   dayRecord?: DayEndCard;
   busy: boolean;
   highContrast: boolean;
   reducedMotion: boolean;
-  onEvent: (event: PresenterEvent) => void;
+  // Returns whether the runtime accepted the event (see Play.onEvent).
+  onEvent: (event: PresenterEvent) => void | Promise<boolean>;
 }) {
   const { request } = props;
-  const selectedRef = useRef<string | null>(null);
+  const onEventRef = useRef(props.onEvent);
+  onEventRef.current = props.onEvent;
+  // DEBRIEF_FORM_SELECTED is presenter-owed: the runtime proposes the form
+  // and waits. The commit can be transiently dropped (the plan lands while
+  // the DAY_END persist round-trip is still in flight), so this effect
+  // retries until the runtime accepts. A latch-first, fire-once emission
+  // stranded the debrief on "Locking your authored Day Record…" forever
+  // (feel-audit-1 P0-4).
+  const acceptedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (
-      request.phase !== "FORM_SELECTION" ||
-      !request.proposedSelection ||
-      selectedRef.current === request.proposedSelection.formId
-    ) {
+    if (request.phase !== "FORM_SELECTION" || !request.proposedSelection) {
       return;
     }
-    selectedRef.current = request.proposedSelection.formId;
-    props.onEvent({
-      type: "DEBRIEF_FORM_SELECTED",
-      checkpointId: request.checkpointId,
-      selection: request.proposedSelection,
-    });
-  }, [props.onEvent, request]);
+    const formId = request.proposedSelection.formId;
+    if (acceptedRef.current === formId) return;
+    let cancelled = false;
+    let timer = 0;
+    let attemptInFlight = false;
+    const attempt = async () => {
+      if (cancelled || attemptInFlight || acceptedRef.current === formId) return;
+      attemptInFlight = true;
+      try {
+        const accepted = await onEventRef.current({
+          type: "DEBRIEF_FORM_SELECTED",
+          checkpointId: request.checkpointId,
+          selection: request.proposedSelection!,
+        });
+        // Void-returning presenters keep legacy fire-once semantics; only an
+        // explicit `false` (guard-dropped commit) schedules a retry.
+        if (accepted !== false) {
+          acceptedRef.current = formId;
+          return;
+        }
+      } finally {
+        attemptInFlight = false;
+      }
+      if (!cancelled) {
+        timer = window.setTimeout(() => void attempt(), FORM_SELECTION_RETRY_MS);
+      }
+    };
+    void attempt();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [request]);
 
   const formId =
     request.state.selection?.formId ?? request.proposedSelection?.formId ?? "";

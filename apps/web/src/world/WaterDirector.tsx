@@ -345,16 +345,33 @@ function Bobbing(props: {
 }
 
 // ---- Harbor haze sprite (Bible §6) -------------------------------------------
+// A horizontal mist BAND fading out toward its top and bottom edges. The
+// previous radial blob rendered as a giant dome silhouette on the horizon
+// (the audited "white dome" in the P0-10 harbor shots): a 130m-wide radial
+// gradient reads as a round hill, not as haze.
 function useHazeTexture(): THREE.CanvasTexture {
   return useMemo(() => {
     const c = document.createElement("canvas");
-    c.width = c.height = 128;
+    c.width = 256;
+    c.height = 128;
     const g = c.getContext("2d")!;
-    const grad = g.createRadialGradient(64, 64, 6, 64, 64, 62);
-    grad.addColorStop(0, "rgba(215,222,228,0.5)");
-    grad.addColorStop(1, "rgba(215,222,228,0)");
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 128, 128);
+    const vertical = g.createLinearGradient(0, 0, 0, 128);
+    vertical.addColorStop(0, "rgba(215,222,228,0)");
+    vertical.addColorStop(0.45, "rgba(215,222,228,0.42)");
+    vertical.addColorStop(0.75, "rgba(215,222,228,0.5)");
+    vertical.addColorStop(1, "rgba(215,222,228,0)");
+    g.fillStyle = vertical;
+    g.fillRect(0, 0, 256, 128);
+    // Soften the horizontal ends so the band never shows a hard seam.
+    const horizontal = g.createLinearGradient(0, 0, 256, 0);
+    horizontal.addColorStop(0, "rgba(0,0,0,1)");
+    horizontal.addColorStop(0.18, "rgba(0,0,0,0)");
+    horizontal.addColorStop(0.82, "rgba(0,0,0,0)");
+    horizontal.addColorStop(1, "rgba(0,0,0,1)");
+    g.globalCompositeOperation = "destination-out";
+    g.fillStyle = horizontal;
+    g.fillRect(0, 0, 256, 128);
+    g.globalCompositeOperation = "source-over";
     return new THREE.CanvasTexture(c);
   }, []);
 }
@@ -382,13 +399,21 @@ export function WaterDirector(props: { atmo: Atmosphere; reducedMotion: boolean 
     <group>
       <WaterPlane atmo={props.atmo} reducedMotion={rm} />
       <HarborHaze atmo={props.atmo} />
-      {/* hero brig, moored along the pier south face with the 3m clear apron */}
-      <Bobbing position={[-137, WATER_Y, 21.5]} rotY={0.06} phase={0.3} reducedMotion={rm}>
-        <FittedGlb glbKey="ship-brig-hero" size={[17, 15, 6]} fallback={null} />
+      {/* Hero brig, moored along the pier south face. FittedGlb grounds the
+          hull's LOWEST point at group y=0, so every hull must be sunk by its
+          draft or the keel rides ON the surface and the ship reads as
+          floating in mid-air (feel-audit-1 P0-10). Pulled in to z≈19.6 so
+          the boarding gangplank at z≈14–16 actually reaches the hull. */}
+      <Bobbing position={[-137, WATER_Y, 19.6]} rotY={0.06} phase={0.3} reducedMotion={rm}>
+        <group position={[0, -1.0, 0]}>
+          <FittedGlb glbKey="ship-brig-hero" size={[17, 15, 6]} fallback={null} />
+        </group>
       </Bobbing>
-      {/* small sloop nearer the gate */}
+      {/* small sloop nearer the gate, hull seated below the waterline */}
       <Bobbing position={[-122.5, WATER_Y, 19]} rotY={-0.35} phase={2.1} amp={0.05} reducedMotion={rm}>
-        <FittedGlb glbKey="ship-sloop" size={[9.5, 9, 3.4]} fallback={null} />
+        <group position={[0, -0.7, 0]}>
+          <FittedGlb glbKey="ship-sloop" size={[9.5, 9, 3.4]} fallback={null} />
+        </group>
       </Bobbing>
       {/* background snow at anchor, out in the haze; FittedGlb grounds the hull's
           lowest point at y=0, so sink it to seat the below-waterline hull in the water */}

@@ -3,6 +3,7 @@ import { CHAPTER_ID } from "@pa/contracts";
 import { Home } from "./pages/Home.js";
 import { Onboarding } from "./pages/Onboarding.js";
 import { Play } from "./pages/Play.js";
+import { AppErrorBoundary } from "./AppErrorBoundary.js";
 import { getSession, apiStatus, pullSave, saveOnboardingPreferences } from "./api.js";
 import { getSave, listProfiles, putSave, upsertProfile, type LocalProfile } from "./db.js";
 
@@ -74,6 +75,7 @@ export function App() {
             revision: remoteSave.revision,
             status: remoteSave.status,
             updatedAt: remoteSave.updatedAt,
+            presenterSpatial: remoteSave.presenterSpatial,
           });
         }
         signedInProfile = mirrored;
@@ -168,13 +170,17 @@ export function App() {
 
   if (view.name === "play") {
     return (
-      <Play
-        profile={view.profile}
-        chapterId={CHAPTER_ID}
-        apiUp={apiUp}
-        onEditPreferences={(profile) => setView({ name: "onboarding", profile, returnTo: "play" })}
-        onExit={() => { void refresh(); setView({ name: "home" }); }}
-      />
+      <AppErrorBoundary
+        onReset={() => { void refresh(); setView({ name: "home" }); }}
+      >
+        <Play
+          profile={view.profile}
+          chapterId={CHAPTER_ID}
+          apiUp={apiUp}
+          onEditPreferences={(profile) => setView({ name: "onboarding", profile, returnTo: "play" })}
+          onExit={() => { void refresh(); setView({ name: "home" }); }}
+        />
+      </AppErrorBoundary>
     );
   }
 

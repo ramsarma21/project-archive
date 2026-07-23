@@ -101,8 +101,13 @@ export const SIDE_JOB_ANCHORS = {
     barrel: [-135.2, 0, 1.1] as const,
     barrelInteract: [-135.2, 0, 3.0] as const,
     gangplank: [-140, 0, 14.2] as const,
-    deckInteract: [-140, 0, 13.0] as const,
-    deck: [-139, 0.8, 19.2] as const,
+    // At the pier end of the gangplank so the prompt is offered while
+    // standing ON the plank, not only back on the deck (feel-audit-1 P1-3).
+    deckInteract: [-140, 0, 14.6] as const,
+    // On the brig's actual deck (hull re-moored at z≈19.6 and seated in the
+    // water — feel-audit-1 P0-10: the delivery point used to hover on bare
+    // planks nowhere near a ship).
+    deck: [-139, 1.35, 18.6] as const,
   },
   // The ropewalk trades job (Act-1-Vertical-Slice §3 activity-family pillar).
   // Local coords inside EXPLORE_ropewalk (34 x 12 hall): the ropemaker works

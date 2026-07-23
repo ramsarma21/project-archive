@@ -59,6 +59,9 @@ input[type="text"] {
   grid-column: 1 / -1; display: flex; align-items: center; gap: 18px; padding: 10px 16px;
   border-bottom: 1px solid rgba(126, 227, 216, 0.18);
   background: linear-gradient(90deg, rgba(5, 10, 16, 0.97), rgba(8, 19, 27, 0.94));
+  /* Above every in-world overlay (checkpoint modal sits at z-index 10):
+     Save & exit must never be covered (feel-audit-1 P0-4). */
+  position: relative; z-index: 20;
 }
 .feed { overflow-y: auto; padding: 24px 28px; }
 .side {
@@ -565,9 +568,12 @@ input[type="text"] {
 }
 .read-ornament { margin-top: 18px; color: rgba(58, 45, 24, 0.65); font-size: 17px; text-align: center; }
 
-.log-toggle { position: absolute; top: 10px; right: 12px; font-size: 12px; padding: 5px 12px; background: rgba(10,14,20,0.6); }
+/* The toggle stacks ABOVE the panel it opens so "Hide log" is always
+   clickable (feel-audit-1 P0-7: the panel painted over its own close
+   button); Escape also closes the log. */
+.log-toggle { position: absolute; z-index: 12; top: 10px; right: 12px; font-size: 12px; padding: 5px 12px; background: rgba(10,14,20,0.6); }
 .world-report-toggle { position: absolute; z-index: 6; top: 10px; right: 72px; margin: 0; padding: 5px 12px; font-size: 12px; background: rgba(10,14,20,0.6); }
-.log-panel { position: absolute; top: 0; right: 0; bottom: 0; width: min(430px, 80%); background: rgba(10,14,20,0.94); border-left: 1px solid var(--line); overflow: hidden; display: flex; }
+.log-panel { position: absolute; z-index: 11; top: 0; right: 0; bottom: 0; width: min(430px, 80%); background: rgba(10,14,20,0.94); border-left: 1px solid var(--line); overflow: hidden; display: flex; padding-top: 42px; }
 .log-panel .feed { flex: 1; }
 
 .world-controls-overlay {
@@ -1876,6 +1882,22 @@ input[type="text"] {
 .reactive-exchange-choices kbd {
   margin-right: 7px; color: var(--gold); font: 850 10px ui-monospace, monospace;
 }
+/* The universal "step away" affordance on single-action read panels. */
+.reactive-exchange-choices .exchange-dismiss {
+  border-color: rgba(126, 227, 216, 0.2);
+  background: rgba(10, 24, 30, 0.6);
+  color: #9fc4c0;
+}
+
+/* Diagnostic error boundary card (feel-audit-1 P0-3). */
+.game-error-card { max-width: 720px; }
+.game-error-detail {
+  max-height: 260px; overflow: auto; margin: 12px 0; padding: 10px 12px;
+  border: 1px solid rgba(255, 120, 120, 0.4); border-radius: 4px;
+  background: rgba(30, 8, 8, 0.55); color: #ffc9c9;
+  font: 400 11px/1.45 ui-monospace, monospace; white-space: pre-wrap;
+  text-align: left;
+}
 
 .archive-standing {
   display: grid; grid-template-columns: auto auto; gap: 3px 12px;
@@ -2064,18 +2086,26 @@ input[type="text"] {
   transform: translateX(-50%);
 }
 
+/* Docked corner chip, never a centered band over the world (feel-audit-1
+   P1-6 / P0 pill artifact). Rendered only while actually clickable. */
 .open-response-offer {
-  width: 100%;
-  margin-bottom: 8px;
-  padding: 10px 14px;
+  position: fixed;
+  right: 16px;
+  bottom: 18px;
+  z-index: 8;
+  width: auto;
+  margin: 0;
+  padding: 8px 12px;
   border: 1px solid rgba(255, 217, 122, 0.7);
   border-radius: 4px;
-  background: rgba(255, 217, 122, 0.1);
+  background: rgba(20, 16, 6, 0.88);
   color: #ffe7a8;
-  font: 750 12px/1.3 ui-monospace, monospace;
+  font: 750 11px/1.3 ui-monospace, monospace;
   letter-spacing: 0.06em;
   cursor: pointer;
+  pointer-events: auto;
 }
+.open-response-offer:hover { background: rgba(255, 217, 122, 0.18); }
 .open-response-backdrop {
   position: fixed;
   inset: 0;

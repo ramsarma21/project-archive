@@ -4,8 +4,13 @@ import type { RuntimeView } from "@pa/contracts";
 import { SystemWindow } from "./Controls.js";
 import { OBJ_LABELS } from "./Side.js";
 import { RiggedCharacter } from "../world/Character.js";
-import { DAY1_MICRO_DEFINITIONS } from "../world/reactiveManifest.js";
 import { authoredFeedback } from "@pa/runtime";
+import {
+  engagedConnections,
+  metThreadPeople,
+  routeRumors,
+  type ThreadPersonEntry,
+} from "./archiveSelectors.js";
 
 // The full Archive interface: the holo task strip's expanded state (Day-1 §4A,
 // Interaction-Spec §1.5). A free pause view: opening it never advances the
@@ -255,7 +260,13 @@ function PeoplePane(props: { view: RuntimeView }) {
   const metRoster = ROSTER.filter((spec) =>
     v.peopleMet.some((name) => name.toLowerCase().includes(spec.matchKey)),
   );
-  if (metRoster.length === 0) {
+  // Field-thread figures (Ned, Sarah) register through durable thread MET
+  // flags, not the authored-flow peopleMet list. Without them PEOPLE said
+  // "no one met" while THREADS narrated the meeting (feel-audit-1 P1-9).
+  const threadPeople = metThreadPeople(v).filter(
+    (person) => !metRoster.some((spec) => spec.id === person.id),
+  );
+  if (metRoster.length === 0 && threadPeople.length === 0) {
     return <p className="archive-ov-empty">No one met yet.</p>;
   }
   return (
@@ -263,7 +274,48 @@ function PeoplePane(props: { view: RuntimeView }) {
       {metRoster.map((spec) => (
         <PersonCard key={spec.id} spec={spec} relationships={v.relationships} />
       ))}
+      {threadPeople.map((person) => (
+        <ThreadPersonCard key={person.id} person={person} />
+      ))}
     </div>
+  );
+}
+
+// Thread trust runs -10..10; map onto the four-band track.
+function threadTrustBandIndex(trust: number): number {
+  if (trust <= 0) return 0;
+  if (trust <= 2) return 1;
+  if (trust <= 5) return 2;
+  return 3;
+}
+
+function ThreadPersonCard(props: { person: ThreadPersonEntry }) {
+  const { person } = props;
+  const idx = threadTrustBandIndex(person.trust);
+  return (
+    <article className="archive-ov-card">
+      <Portrait glbKey={person.glbKey} name={person.name} />
+      <header className="archive-ov-card-head">
+        <strong>{person.name}</strong>
+        <small>{person.role}</small>
+      </header>
+      <div className="archive-ov-bands">
+        <div className={`archive-ov-band${idx === 0 ? " low" : ""}`}>
+          <div className="archive-ov-band-head">
+            <span>Trust</span>
+            <strong>{TRUST_BANDS[idx]}</strong>
+          </div>
+          <div className="archive-ov-band-track" aria-label={`Trust: ${TRUST_BANDS[idx]}`}>
+            {[0, 1, 2, 3].map((i) => (
+              <i key={i} className={i < idx ? "lit" : i === idx ? "band" : ""} />
+            ))}
+          </div>
+        </div>
+        {person.breadcrumb && <small className="archive-ov-person-note">{person.breadcrumb}</small>}
+      </div>
+      <i className="archive-ov-card-corner tl" aria-hidden="true" />
+      <i className="archive-ov-card-corner br" aria-hidden="true" />
+    </article>
   );
 }
 
@@ -363,10 +415,9 @@ function DivergingBar(props: { label: string; value: number }) {
 
 function NotesPane(props: { view: RuntimeView }) {
   const notes = props.view.notes;
-  const micros = DAY1_MICRO_DEFINITIONS.filter((definition) =>
-    props.view.field.engagedMicroIds.includes(definition.id),
-  );
-  if (notes.length === 0 && micros.length === 0) {
+  // Micro-concept records live under CONNECTIONS (their completion chips say
+  // "Connection added" — feel-audit-1 P1-9); NOTES keeps the macro records.
+  if (notes.length === 0) {
     return <p className="archive-ov-empty">No records earned yet.</p>;
   }
   return (
@@ -377,15 +428,6 @@ function NotesPane(props: { view: RuntimeView }) {
           <span className="archive-ov-record-copy">
             <strong>{n.concept}</strong>
             <small>{n.body}</small>
-          </span>
-        </div>
-      ))}
-      {micros.map((micro) => (
-        <div className="archive-ov-record micro" key={micro.id}>
-          <span className="archive-ov-record-sigil" aria-hidden="true" />
-          <span className="archive-ov-record-copy">
-            <strong>{micro.label}</strong>
-            <small>Encountered through a completed field interaction.</small>
           </span>
         </div>
       ))}
@@ -452,9 +494,10 @@ function ThreadsPane(props: { view: RuntimeView }) {
 
 function RoutesPane(props: { view: RuntimeView }) {
   const routes = props.view.routesUnlocked;
+  const leads = routeRumors(props.view);
   return (
     <div className="archive-ov-routes">
-      {routes.length === 0 && (
+      {routes.length === 0 && leads.length === 0 && (
         <p className="archive-ov-empty">No alternate ways opened yet.</p>
       )}
       {routes.map((label) => (
@@ -463,6 +506,15 @@ function RoutesPane(props: { view: RuntimeView }) {
           <span className="archive-ov-record-copy">
             <strong>{label}</strong>
             <small>{ROUTE_CAUSES[label] ?? "Opened in the field"}</small>
+          </span>
+        </div>
+      ))}
+      {leads.map((rumor) => (
+        <div className="archive-ov-record" key={rumor}>
+          <span className="archive-ov-record-sigil" aria-hidden="true" />
+          <span className="archive-ov-record-copy">
+            <strong>Route lead (rumor)</strong>
+            <small>{rumor}</small>
           </span>
         </div>
       ))}
@@ -476,13 +528,28 @@ function ConnectionsPane(props: {
 }) {
   const { view } = props;
   const cards = view.openResponse.archiveConnections;
+  // The micro-concept connections the "CONNECTION ADDED" completion chips
+  // announce. They used to land under NOTES while this tab stayed empty
+  // (feel-audit-1 P1-9 / the audited "rewards never appear" P0 class).
+  const micros = engagedConnections(view);
   return (
     <div className="archive-ov-notes">
-      {cards.length === 0 && view.openResponse.evidence.length === 0 && (
-        <p className="archive-ov-empty">
-          Connections appear after related sources have been encountered.
-        </p>
-      )}
+      {cards.length === 0 &&
+        micros.length === 0 &&
+        view.openResponse.evidence.length === 0 && (
+          <p className="archive-ov-empty">
+            Connections appear after related sources have been encountered.
+          </p>
+        )}
+      {micros.map((micro) => (
+        <div className="archive-ov-record micro" key={micro.id}>
+          <span className="archive-ov-record-sigil" aria-hidden="true" />
+          <span className="archive-ov-record-copy">
+            <strong>{micro.label}</strong>
+            <small>Connection recorded from a completed field interaction.</small>
+          </span>
+        </div>
+      ))}
       {cards.map((card) => (
         <div className="archive-ov-record gold" key={card.cardId}>
           <span className="archive-ov-record-sigil gold" aria-hidden="true" />
