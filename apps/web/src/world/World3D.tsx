@@ -78,6 +78,9 @@ import {
   type WorldServices,
 } from "./WorldServicesContext.js";
 import { ChaseDirector } from "./ChaseDirector.js";
+import { ChaseVerbDirector } from "./ChaseVerbDirector.js";
+import type { ChaseObstacleEvent } from "./chaseModel.js";
+import { toppleStackPropKeys } from "./chaseVerbs.js";
 import {
   contextualInteractionsAllowedDuringInterrupt,
   explorePortalsAllowedDuringChase,
@@ -226,6 +229,15 @@ export function World3D(props: {
   const [chaseCameraYaw, setChaseCameraYaw] = useState(Math.PI / 2);
   const appliedRepositionRef = useRef<string | null>(null);
   const [releaseSceneActive, setReleaseSceneActive] = useState(false);
+  // Chase context verbs (design1 feature 1): toppled stacks stay down for the
+  // whole session; the committed obstacle log feeds the deterministic chase
+  // sim through ChaseDirector.
+  const [toppledStackIds, setToppledStackIds] = useState<string[]>([]);
+  const chaseObstaclesRef = useRef<ChaseObstacleEvent[]>([]);
+  const toppledPropKeys = useMemo(
+    () => toppleStackPropKeys(toppledStackIds),
+    [toppledStackIds],
+  );
   // The DOM layer (Play) hides the center controls while the chewed-out beat
   // plays so the constable's line is never buried under the task board.
   useEffect(() => {
@@ -249,10 +261,11 @@ export function World3D(props: {
       ...exteriorColliders(
         dockRouteUnlocked ? { THOMAS_DOCK_ROUTE: "UNLOCKED" } : {},
         doorAwareBuildingColliders(activeDoorTarget),
+        toppledPropKeys,
       ),
       ...traversalBlockerColliders(),
     ],
-    [activeDoorTarget, dockRouteUnlocked],
+    [activeDoorTarget, dockRouteUnlocked, toppledPropKeys],
   );
   const includeDensityCollision = useMemo(
     () =>
@@ -773,6 +786,7 @@ export function World3D(props: {
               t={t}
               dusk={dusk}
               dockRouteUnlocked={dockRouteUnlocked}
+              hiddenPropKeys={toppledPropKeys}
               reducedMotion={props.reducedMotion}
               choreography={choreography}
               clock={districtClock}
@@ -863,7 +877,22 @@ export function World3D(props: {
                     activeDoorTarget !== "EXPLORE_tavern",
                 )
               }
+              obstaclesRef={chaseObstaclesRef}
               onCameraYaw={setChaseCameraYaw}
+              qaHostRef={hostRef}
+            />
+            <ChaseVerbDirector
+              chase={activeChase}
+              apiRef={apiRef}
+              interactionRegistry={interactionRegistry}
+              toppledStackIds={toppledStackIds}
+              onToppleStack={(stackId) =>
+                setToppledStackIds((ids) =>
+                  ids.includes(stackId) ? ids : [...ids, stackId],
+                )
+              }
+              obstaclesRef={chaseObstaclesRef}
+              reducedMotion={props.reducedMotion}
               qaHostRef={hostRef}
             />
             <ExchangeInterruptDirector

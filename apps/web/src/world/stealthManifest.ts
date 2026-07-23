@@ -337,6 +337,15 @@ export const CHASE_TUNING = {
   obstacleDelaySeconds: 0.3,
   interiorTransferDelaySeconds: 1.4,
   caughtClockUnits: 2,
+  // Chase context verbs (design1 feature 1). A toppled stack costs the
+  // pursuer a real, readable stumble; the tavern cut leaves him checking the
+  // doorway — briefly if he watched you go in, longer if he lost you.
+  stumbleDelaySeconds: 2.0,
+  // Spill radius, not stack radius: staves roll across the lane, so a pursuer
+  // skirting the stack's collider still hits the spill.
+  stumbleRadiusM: 2.6,
+  tavernCutSeenPauseSeconds: 0.8,
+  tavernCutUnseenPauseSeconds: 1.6,
 } as const;
 
 export function volumesForSpace(spaceId: string): readonly StealthVolume[] {

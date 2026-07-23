@@ -609,12 +609,20 @@ function Buildings() {
   );
 }
 
-function Props3D(props: { dockRouteUnlocked: boolean }) {
+function Props3D(props: {
+  dockRouteUnlocked: boolean;
+  // Prop instances re-rendered elsewhere (e.g. chase-verb toppled stacks own
+  // the same imported GLB tipped over) are hidden here so exactly one copy of
+  // the asset is ever visible.
+  hiddenPropKeys?: ReadonlySet<string>;
+}) {
+  const hiddenPropKeys = props.hiddenPropKeys;
   const placements = useMemo(
     () =>
       PROPS.filter(
         (prop) =>
-          !(props.dockRouteUnlocked && prop.gate === "THOMAS_DOCK_ROUTE"),
+          !(props.dockRouteUnlocked && prop.gate === "THOMAS_DOCK_ROUTE") &&
+          !hiddenPropKeys?.has(`${prop.glb}@${prop.pos[0]},${prop.pos[2]}`),
       ).map((prop, index) => ({
         id: `prop-${index}`,
         glb: prop.glb,
@@ -629,7 +637,7 @@ function Props3D(props: { dockRouteUnlocked: boolean }) {
               ? undefined
               : ([2.6, 2.6, 2.6] as [number, number, number])),
       })),
-    [props.dockRouteUnlocked],
+    [props.dockRouteUnlocked, hiddenPropKeys],
   );
   return (
     <StaticFittedBatches
@@ -683,6 +691,7 @@ export function District(props: {
   t: number;
   dusk: boolean;
   dockRouteUnlocked: boolean;
+  hiddenPropKeys?: ReadonlySet<string>;
   reducedMotion: boolean;
   choreography: ChoreographyCue | null;
   clock: { spentUnits: number; fixedEventBoundary: number } | null;
@@ -726,7 +735,10 @@ export function District(props: {
       <Ground />
       <DensityDirector />
       <Buildings />
-      <Props3D dockRouteUnlocked={props.dockRouteUnlocked} />
+      <Props3D
+        dockRouteUnlocked={props.dockRouteUnlocked}
+        hiddenPropKeys={props.hiddenPropKeys}
+      />
       <Npcs
         interiorId={props.interiorId}
         t={props.t}

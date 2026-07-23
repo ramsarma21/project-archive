@@ -38,6 +38,24 @@ export interface ChaseWorldQuery {
   ): ChaseSweepResult;
 }
 
+/**
+ * A committed mid-chase obstacle (design1 chase verbs): a toppled barrel
+ * stack or a slammed doorway. When the pursuer first comes within `radiusM`
+ * of it (at or after its commit `tick`), he stumbles/pauses for
+ * `delaySeconds`. One-shot per obstacle id — the id lands in
+ * `ChaseState.stumbledObstacleIds` and never fires again. Fully deterministic:
+ * the same committed obstacle list against the same inputs replays the same
+ * stumble on the same tick.
+ */
+export interface ChaseObstacleEvent {
+  id: string;
+  x: number;
+  z: number;
+  tick: number;
+  delaySeconds: number;
+  radiusM: number;
+}
+
 export interface ChaseState {
   phase: ChasePhase;
   pursuer: ChasePoint;
@@ -48,6 +66,10 @@ export interface ChaseState {
   shakeSeconds: number;
   corneredSeconds: number;
   obstacleDelaySeconds: number;
+  /** Seconds left in a visible chase-verb stumble (presentation reads this). */
+  stumbleSeconds: number;
+  /** Obstacle ids that already tripped the pursuer (one-shot each). */
+  stumbledObstacleIds: readonly string[];
   refugeSeconds: number;
   refugeId: string | null;
   targetWaypointId: string | null;
@@ -67,6 +89,8 @@ export interface ChaseStepInput {
   movementBlocked: boolean;
   actionSerial: number;
   refuge: { id: string; holdSeconds: number } | null;
+  /** Committed chase-verb obstacles (toppled stacks, slammed doors). */
+  obstacles?: readonly ChaseObstacleEvent[];
   graph: ChaseRouteGraph;
   world: ChaseWorldQuery;
   pursuerSpeed: number;
@@ -130,6 +154,8 @@ export function createChaseState(input: {
     shakeSeconds: 0,
     corneredSeconds: 0,
     obstacleDelaySeconds: 0,
+    stumbleSeconds: 0,
+    stumbledObstacleIds: [],
     refugeSeconds: 0,
     refugeId: null,
     targetWaypointId: null,
@@ -375,10 +401,31 @@ export function stepChase(
   }
 
   let delay = Math.max(0, state.obstacleDelaySeconds - dt);
+  let stumble = Math.max(0, state.stumbleSeconds - dt);
   if (input.actionSerial !== state.lastActionSerial) {
     delay = Math.max(delay, CHASE_TUNING.traversalDelaySeconds);
     state = { ...state, lastActionSerial: input.actionSerial };
   }
+  // Chase-verb obstacles: the pursuer trips over a toppled stack (or checks a
+  // slammed doorway) the first time he reaches it. One-shot per obstacle id,
+  // deterministic per committed tick + position.
+  for (const obstacle of input.obstacles ?? []) {
+    if (obstacle.tick > input.tick) continue;
+    if (state.stumbledObstacleIds.includes(obstacle.id)) continue;
+    if (
+      Math.hypot(state.pursuer.x - obstacle.x, state.pursuer.z - obstacle.z) >
+      obstacle.radiusM
+    ) {
+      continue;
+    }
+    state = {
+      ...state,
+      stumbledObstacleIds: [...state.stumbledObstacleIds, obstacle.id],
+    };
+    delay = Math.max(delay, obstacle.delaySeconds);
+    stumble = Math.max(stumble, obstacle.delaySeconds);
+  }
+  state = { ...state, stumbleSeconds: stumble };
   if (delay > 0) {
     return {
       state: {

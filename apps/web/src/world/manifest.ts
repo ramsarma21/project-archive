@@ -469,12 +469,17 @@ export function zoneForPosition(x: number, z: number): WorldZone {
 export function exteriorColliders(
   routes: Record<string, string> = {},
   buildingOverride?: [number, number, number, number][],
+  // Prop instances whose blocking is dynamically lifted (e.g. chase-verb
+  // toppled stacks: the spilled staves are low scatter, passable for player
+  // and pursuer alike — the pursuer pays with the authored stumble instead).
+  excludedPropKeys?: ReadonlySet<string>,
 ): [number, number, number, number][] {
   const out: [number, number, number, number][] = buildingOverride
     ? [...buildingOverride]
     : BUILDINGS.map((b) => [b.pos[0], b.pos[2], b.size[0] / 2, b.size[2] / 2]);
   for (const p of PROPS) {
     if (p.gate && routes[p.gate] === "UNLOCKED") continue;
+    if (excludedPropKeys?.has(`${p.glb}@${p.pos[0]},${p.pos[2]}`)) continue;
     if (p.collide) out.push([p.pos[0], p.pos[2], p.collide[0] / 2, p.collide[1] / 2]);
   }
   for (const bar of BARRIERS) out.push([bar.pos[0], bar.pos[1], bar.size[0] / 2, bar.size[1] / 2]);

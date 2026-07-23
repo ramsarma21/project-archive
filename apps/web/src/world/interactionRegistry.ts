@@ -4,6 +4,10 @@ export const INTERACTION_PRIORITIES = {
   SIDE_JOB_THREAD: 300,
   STORY_NPC: 400,
   SAFETY_TRAVERSAL: 500,
+  // Mid-chase context verbs (topple a stack, cut through the tavern) outrank
+  // ordinary traversal while a pursuit is live — during a chase the one F
+  // glyph must always be the escape verb, never a flavor read.
+  CHASE_VERB: 550,
   BLOCKING_AUTHORED: 600,
 } as const;
 
@@ -17,7 +21,8 @@ export type InteractionKind =
   | "THREAD"
   | "SIDE_JOB"
   | "KNOWLEDGE"
-  | "FLAVOR";
+  | "FLAVOR"
+  | "CHASE_VERB";
 
 export interface InteractionCandidate {
   id: string;

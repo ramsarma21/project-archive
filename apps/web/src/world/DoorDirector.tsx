@@ -40,7 +40,7 @@ export const DOOR_TARGETS = new Set([
 
 const EXTERIOR_DOORS = resolveAllExteriorDoorways();
 
-interface RenderDoor {
+export interface RenderDoor {
   doorId: string;
   targetIds: string[];
   leafCenter: Vec3;
@@ -182,7 +182,9 @@ function DoorKitInner(props: {
   );
 }
 
-function AnimatedDoor(props: {
+// Exported for reuse by other directors that seat an imported door-kit leaf
+// on an authored wall (e.g. the tavern back door in ChaseVerbDirector).
+export function AnimatedDoor(props: {
   door: RenderDoor;
   open: boolean;
   reducedMotion: boolean;

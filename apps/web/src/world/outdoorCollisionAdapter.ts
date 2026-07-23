@@ -23,6 +23,18 @@ import {
   type PropDef,
 } from "./manifest.js";
 import { TRAVERSAL_SET } from "./traversalMarkers.js";
+import { CHASE_TOPPLE_STACKS, propInstanceKey } from "./chaseVerbs.js";
+
+// Chase-verb topple stacks follow the same fail-open contract as route-gated
+// props: when World3D omits a toppled stack's tuple from exteriorColliders,
+// its full-height sidecar hull must vanish with it — the spilled staves are
+// low, passable scatter (the pursuer pays the authored stumble instead of
+// pathing around a ghost wall).
+const TOPPLEABLE_PROP_KEYS = new Set(
+  CHASE_TOPPLE_STACKS.map((stack) =>
+    propInstanceKey(stack.glb, stack.pos[0], stack.pos[2]),
+  ),
+);
 
 export type LegacyCollider = [number, number, number, number];
 
@@ -130,9 +142,15 @@ function visibleLegacyProps(
   return PROPS.flatMap((prop) => {
     const tuple = legacyTupleForProp(prop);
     // A route-gated visual is absent exactly when exteriorColliders omits its
-    // tuple. Fail open: never retain collision without the imported owner.
+    // tuple, and a toppled chase-verb stack loses its standing hull the same
+    // way. Fail open: never retain collision without the imported owner.
+    const dynamicallyLifted =
+      Boolean(prop.gate) ||
+      TOPPLEABLE_PROP_KEYS.has(
+        propInstanceKey(prop.glb, prop.pos[0], prop.pos[2]),
+      );
     if (
-      prop.gate &&
+      dynamicallyLifted &&
       (!tuple ||
         !legacyColliders.some((collider) => tupleMatches(tuple, collider)))
     ) {

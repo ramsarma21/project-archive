@@ -268,6 +268,136 @@ test("CONFIRM_RESOLVE pauses the same bounded outcome until confirmed", () => {
   assert.equal(state.phase, "ENDED");
 });
 
+test("toppled-stack obstacle stumbles the pursuer for the authored ~2s, once", () => {
+  // Obstacle directly on the pursuer's line, committed at tick 1.
+  const obstacle = {
+    id: "TOPPLE_TEST",
+    x: 0.5,
+    z: 0,
+    tick: 1,
+    delaySeconds: CHASE_TUNING.stumbleDelaySeconds,
+    radiusM: CHASE_TUNING.stumbleRadiusM,
+  };
+  let state = activeState({ x: 0, y: 0, z: 0 }, { x: 10, y: 0, z: 0 });
+  state = stepChase(
+    state,
+    input(1, { x: 10, y: 0, z: 0 }, { obstacles: [obstacle] }),
+  ).state;
+  assert.deepEqual(state.stumbledObstacleIds, ["TOPPLE_TEST"]);
+  assert.equal(state.stumbleSeconds, CHASE_TUNING.stumbleDelaySeconds);
+  assert.deepEqual(state.velocity, { x: 0, y: 0, z: 0 });
+  const heldX = state.pursuer.x;
+
+  // The stumble holds the pursuer in place for its full authored duration.
+  const stumbleTicks = Math.round(
+    CHASE_TUNING.stumbleDelaySeconds / FIELD_DT,
+  );
+  for (let tick = 2; tick < 1 + stumbleTicks; tick++) {
+    state = stepChase(
+      state,
+      input(tick, { x: 10, y: 0, z: 0 }, { obstacles: [obstacle] }),
+    ).state;
+    assert.equal(state.pursuer.x, heldX, `pursuer held at tick ${tick}`);
+  }
+  // After the stumble drains, he moves again — and the SAME obstacle can
+  // never trip him twice.
+  for (let tick = 1 + stumbleTicks; tick <= 3 + stumbleTicks; tick++) {
+    state = stepChase(
+      state,
+      input(tick, { x: 10, y: 0, z: 0 }, { obstacles: [obstacle] }),
+    ).state;
+  }
+  assert.ok(state.pursuer.x > heldX, "pursuer recovers and closes again");
+  assert.deepEqual(state.stumbledObstacleIds, ["TOPPLE_TEST"]);
+});
+
+test("stumble timing is deterministic across replays of the same inputs", () => {
+  const obstacle = {
+    id: "TOPPLE_REPLAY",
+    x: 1,
+    z: 0,
+    tick: 3,
+    delaySeconds: CHASE_TUNING.stumbleDelaySeconds,
+    radiusM: CHASE_TUNING.stumbleRadiusM,
+  };
+  function run(): ChaseState {
+    let state = activeState({ x: 0, y: 0, z: 0 }, { x: 12, y: 0, z: 0 });
+    for (let tick = 1; tick <= 200; tick++) {
+      state = stepChase(
+        state,
+        input(tick, { x: 12, y: 0, z: 0 }, { obstacles: [obstacle] }),
+      ).state;
+    }
+    return state;
+  }
+  assert.deepEqual(run(), run());
+});
+
+test("an obstacle committed in the future or out of reach never trips", () => {
+  const future = {
+    id: "TOPPLE_FUTURE",
+    x: 0.5,
+    z: 0,
+    tick: 50,
+    delaySeconds: 2,
+    radiusM: 1.7,
+  };
+  const far = {
+    id: "TOPPLE_FAR",
+    x: 0.5,
+    z: 30,
+    tick: 1,
+    delaySeconds: 2,
+    radiusM: 1.7,
+  };
+  const state = stepChase(
+    activeState({ x: 0, y: 0, z: 0 }, { x: 10, y: 0, z: 0 }),
+    input(1, { x: 10, y: 0, z: 0 }, { obstacles: [future, far] }),
+  ).state;
+  assert.deepEqual(state.stumbledObstacleIds, []);
+  assert.equal(state.stumbleSeconds, 0);
+  assert.ok(state.pursuer.x > 0, "pursuer keeps running");
+});
+
+test("tavern-cut door pause holds the pursuer at the doorway then releases", () => {
+  // Pursuer chases toward the door; the cut committed the door obstacle with
+  // the unseen (longer) pause. LOS through the row is broken after the cut.
+  const doorway = {
+    id: "CHASE_TAVERN_CUT_DOOR",
+    x: 4,
+    z: 0,
+    tick: 1,
+    delaySeconds: CHASE_TUNING.tavernCutUnseenPauseSeconds,
+    radiusM: 1.6,
+  };
+  const blockedWorld = { ...OPEN_WORLD, segmentClear: () => false };
+  let state = activeState({ x: 3, y: 0, z: 0 }, { x: 30, y: 0, z: 0 });
+  state = stepChase(
+    state,
+    input(1, { x: 30, y: 0, z: 0 }, {
+      obstacles: [doorway],
+      world: blockedWorld,
+    }),
+  ).state;
+  assert.deepEqual(state.stumbledObstacleIds, ["CHASE_TAVERN_CUT_DOOR"]);
+  assert.equal(
+    state.stumbleSeconds,
+    CHASE_TUNING.tavernCutUnseenPauseSeconds,
+  );
+  // While he checks the doorway with sight broken and the gap open, the
+  // escape (shake) clock accumulates — the cut is a real escape tool.
+  state = stepChase(
+    state,
+    input(2, { x: 30, y: 0, z: 0 }, {
+      dt: CHASE_TUNING.shakeHoldSeconds,
+      obstacles: [doorway],
+      world: blockedWorld,
+    }),
+  ).state;
+  assert.equal(state.phase, "SHAKEN");
+  assert.equal(state.outcome, "ESCAPED");
+});
+
 test("high-latency field catch-up remains bounded without pursuer tunneling", () => {
   const advanced = advanceFieldClock(createFieldClock(1), 1);
   assert.equal(advanced.steps, 5);

@@ -13,6 +13,7 @@ import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
 import {
   createChaseState,
   stepChase,
+  type ChaseObstacleEvent,
   type ChaseOutcome,
   type ChaseState,
 } from "./chaseModel.js";
@@ -134,6 +135,8 @@ export function ChaseDirector(props: {
   reducedMotion: boolean;
   ownsCamera: boolean;
   suspended: boolean;
+  /** Committed chase-verb obstacles for this pursuit (ChaseVerbDirector). */
+  obstaclesRef: { current: ChaseObstacleEvent[] };
   onCameraYaw: (yaw: number) => void;
   qaHostRef: { current: HTMLDivElement | null };
 }) {
@@ -153,6 +156,8 @@ export function ChaseDirector(props: {
   const cameraLook = useRef(new THREE.Vector3());
   const outcomeReadyTick = useRef<number | null>(null);
   const caughtLockActive = useRef(false);
+  const wasStumbling = useRef(false);
+  const announcedStumbles = useRef(0);
   const [pursuerClip, setPursuerClip] = useState("run");
   // React mirror of the sim phase, only for presentation (the shout bubble).
   const [phaseView, setPhaseView] = useState<string>("IDLE");
@@ -213,6 +218,8 @@ export function ChaseDirector(props: {
     lastTickRef.current = services.fieldTickRef.current;
     resolutionStarted.current = false;
     outcomeReadyTick.current = null;
+    wasStumbling.current = false;
+    announcedStumbles.current = 0;
     setPursuerClip("run");
     services.stealthStore.patch({
       chaseActive: true,
@@ -388,6 +395,7 @@ export function ChaseDirector(props: {
           movementBlocked: player.motion.blocked,
           actionSerial: player.motion.actionSerial,
           refuge: currentRefuge(services.spaceId, player),
+          obstacles: props.obstaclesRef.current,
           graph,
           world: services.gameplayWorld,
           // A recognized face gets chased harder: once the watch knows you
@@ -434,6 +442,9 @@ export function ChaseDirector(props: {
       host.dataset.chaseShakeSeconds = state.shakeSeconds.toFixed(3);
       host.dataset.chaseCorneredSeconds = state.corneredSeconds.toFixed(3);
       host.dataset.chaseTargetWaypoint = state.targetWaypointId ?? "";
+      host.dataset.chaseStumbleSeconds = state.stumbleSeconds.toFixed(3);
+      host.dataset.chaseStumbledObstacles =
+        state.stumbledObstacleIds.join(",");
     }
     if (
       state.outcome &&
@@ -450,6 +461,30 @@ export function ChaseDirector(props: {
       // plants and yells (shout clip), then breaks into the run.
       if (state.phase === "STARTING") setPursuerClip("shout");
       else if (state.phase === "ACTIVE") setPursuerClip("run");
+    }
+    // Chase-verb stumble presentation: the pursuer visibly catches himself in
+    // the spilled stack (reach pose + caption), then recovers into the run.
+    if (state.phase === "ACTIVE") {
+      const stumbling = state.stumbleSeconds > 0;
+      if (stumbling !== wasStumbling.current) {
+        wasStumbling.current = stumbling;
+        setPursuerClip(stumbling ? "reach" : "run");
+      }
+      if (state.stumbledObstacleIds.length > announcedStumbles.current) {
+        announcedStumbles.current = state.stumbledObstacleIds.length;
+        const lastId = state.stumbledObstacleIds.at(-1) ?? "";
+        if (!lastId.includes("TAVERN")) {
+          dispatchPresentationNotice({
+            id: `chase:${chase.chaseId}:stumble:${lastId}`,
+            kind: "CHASE",
+            speaker: "CONSTABLE",
+            text: "— DAMN the barrels! Hold there!",
+            cooldownMs: 6_000,
+            durationMs: 2_000,
+            captions: true,
+          });
+        }
+      }
     }
     const resolvingConfirm =
       props.assist === "CONFIRM_RESOLVE" &&
