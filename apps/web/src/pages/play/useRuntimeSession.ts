@@ -19,7 +19,10 @@ import {
 // v6 (design1 feature 3): street-level day ending — the day-close beat order
 // changed (final pull -> town-board crier beat -> compressed CP1 -> Day
 // Record card last), so older event logs no longer replay against this flow.
-export const DAY1_FLOW_VERSION = 6;
+// v7 (design1 feature 4): effigy participation — the fixed event's first
+// Continue became the pin-your-handbill hold and the aftermath Continue was
+// folded into the walk back, changing the fixed-event beat sequence.
+export const DAY1_FLOW_VERSION = 7;
 
 // Boot/init session state for Play: the runtime worker client, the committed
 // event log, save/cloud revisions, the presenter spatial snapshot pair, and

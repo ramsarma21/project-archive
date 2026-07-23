@@ -768,21 +768,36 @@ function* fixedEvent(ctx: Ctx): Sub<void> {
   ctx.world.controlState = "FIXED_EVENT";
   ctx.world.fixedEvent = "ACTIVE";
   ctx.dialogue("CROWD", TEXT.crowd.organizer1);
-  ctx.dialogue("CROWD", TEXT.crowd.organizer2);
   ctx.narrate(`BANNER\n${TEXT.crowd.banner}`);
   ctx.narrate(`FIELD TAG\n${TEXT.crowd.libertyTreeTag}`);
-  ctx.narrate(TEXT.crowd.eventNarration);
   exposure(ctx, EXPOSURES.REP_B11);
+  // Participation verb (design1 feature 4): the day's press work pays off in
+  // the protest. Carrying your own printed handbill to the effigy and pinning
+  // it REPLACES a Continue click; the crowd's reaction and the unique Archive
+  // card make the climax the player's. The documented event itself (the
+  // march, Kilby Street, Fort Hill) remains fixed and unalterable.
+  ctx.narrate(TEXT.crowd.handbillLane);
+  yield* effortHold(
+    ctx,
+    "BOS.MD01.ACT.PIN_HANDBILL_EFFIGY.v1",
+    "Carry your handbill to the effigy and hold to pin it.",
+  );
+  ctx.addNotes({
+    concept: "Your words at the elm",
+    body: TEXT.crowd.handbillPinned,
+  });
+  ctx.dialogue("CROWD", TEXT.crowd.organizer2);
+  ctx.narrate(TEXT.crowd.eventNarration);
   yield* waitContinue(ctx, undefined, "BOS.MD01.CUE.FIXED_EVENT_MARCH.v1");
   // The documented August 14 record continues: the Kilby Street building, the
   // Fort Hill bonfire, and Oliver's house. The runner witnesses; nothing here
-  // is playable or alterable.
+  // is playable or alterable. The aftermath lines present over the walk back
+  // to the press (the second Continue click is gone).
   ctx.narrate(TEXT.crowd.eventNarration2);
   ctx.archive(TEXT.crowd.eventAftermath);
   ctx.world.fixedEvent = "COMPLETE";
   ctx.world.objectives.RETURN_TO_PRESS = "SELECTED";
   ctx.countSpacing();
-  yield* waitContinue(ctx, undefined, "BOS.MD01.CUE.FIXED_EVENT_AFTERMATH.v1");
 }
 
 // ---------------------------------------------------------------------------

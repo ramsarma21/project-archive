@@ -1,7 +1,11 @@
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import { STAGE_ANCHORS } from "../choreography.js";
-import { CarriedClothBolt } from "../MechanicRigs.js";
+import { CarriedClothBolt, useMechanicVisual } from "../MechanicRigs.js";
 import { registerMechanicBodyStaging } from "../mechanicBodyStaging.js";
+import { ImportedTexturedProp } from "../Character.js";
+import { getDocumentTexture } from "../documentTextures.js";
 
 // ---------------------------------------------------------------------------
 // Day-1 mechanic body stagings (CONTENT). Exact clips, anchors, and
@@ -108,6 +112,75 @@ registerMechanicBodyStaging({
   },
   carriedProp: (_promptId, reducedMotion) => (
     <CarriedClothBolt reducedMotion={reducedMotion} />
+  ),
+});
+
+// The handbill carried to the effigy during the pin hold (design1 feature 4):
+// the player's own printed sheet, held ahead at chest height while the walk-to
+// plays out, hidden once the pin commits (the EffigyRig then shows it pinned).
+function CarriedHandbill(props: { reducedMotion: boolean }) {
+  const vis = useMechanicVisual();
+  const ref = useRef<THREE.Group>(null);
+  const texture = useMemo(() => getDocumentTexture("ANTI_STAMP_HANDBILL"), []);
+  useFrame(() => {
+    const g = ref.current;
+    if (!g) return;
+    const s = vis.current;
+    g.visible = !props.reducedMotion && !s.sawCommit && s.progress < 0.999;
+  });
+  return (
+    <group
+      ref={ref}
+      position={[0.16, 1.12, 0.32]}
+      rotation={[-0.7, 0, 0.06]}
+      visible={false}
+    >
+      <ImportedTexturedProp texture={texture} size={[0.24, 0.1, 0.32]} />
+    </group>
+  );
+}
+
+// Pin your handbill at the effigy (design1 feature 4): a real walk-to — the
+// staged body crosses from wherever the player stands to the effigy's open
+// northwest side as the hold rises, then reaches up to pin. Reduced motion
+// keeps the pose-only equivalent (same commit, no travel animation).
+registerMechanicBodyStaging({
+  match: (promptId) => promptId.includes("PIN_HANDBILL_EFFIGY"),
+  stagesOnAnchor: false,
+  executionClip: (_promptId, walking) => ({
+    clip: walking ? "walk" : "reach",
+  }),
+  stage: ({ body, progress, active, reducedMotion, playerX, playerZ, heading }) => {
+    if (reducedMotion) {
+      body.rotation.x -= 0.12 * progress; // the reach-up, pose only
+      return { walking: false };
+    }
+    if (active || progress > 0) {
+      // The effigy hangs at [91.9, -20.3]; pin from its open northwest side.
+      const pinSpot: [number, number] = [91.15, -19.55];
+      const t = Math.min(1, progress / 0.72);
+      const eased = t * t * (3 - 2 * t);
+      const dx = (pinSpot[0] - playerX) * eased;
+      const dz = (pinSpot[1] - playerZ) * eased;
+      const cos = Math.cos(heading);
+      const sin = Math.sin(heading);
+      body.position.x += dx * cos - dz * sin;
+      body.position.z += dx * sin + dz * cos;
+      const walkYaw = Math.atan2(91.9 - playerX, -20.3 - playerZ);
+      body.rotation.y = walkYaw - heading;
+      if (progress > 0.72) {
+        // At the effigy: reach up to pin.
+        const reach = (progress - 0.72) / 0.28;
+        body.rotation.x -= 0.18 * reach;
+        body.position.y += reach * 0.08;
+      }
+    }
+    const walking =
+      active && progress > 0.01 && progress < 0.72;
+    return { walking };
+  },
+  carriedProp: (_promptId, reducedMotion) => (
+    <CarriedHandbill reducedMotion={reducedMotion} />
   ),
 });
 

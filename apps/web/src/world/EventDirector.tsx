@@ -8,6 +8,8 @@ import {
   RiggedCharacter,
 } from "./Character.js";
 import { ImportedPivotAsset } from "./ImportedPivotAsset.js";
+import { getDocumentTexture } from "./documentTextures.js";
+import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
 
 // ---------------------------------------------------------------------------
 // Presentation-only staging of the August 14 fixed event at the great elm:
@@ -23,6 +25,7 @@ export const EVENT_CUES = {
   CLIMB: "BOS.MD01.ACT.EVENT_CLIMB.v1",
   PUSH: "BOS.MD01.ACT.EVENT_PUSH.v1",
   CHANT: "BOS.MD01.ACT.EVENT_CHANT.v1",
+  PIN: "BOS.MD01.ACT.PIN_HANDBILL_EFFIGY.v1",
   MARCH: "BOS.MD01.CUE.FIXED_EVENT_MARCH.v1",
   AFTERMATH: "BOS.MD01.CUE.FIXED_EVENT_AFTERMATH.v1",
 } as const;
@@ -33,6 +36,7 @@ const PEAK_CUES = new Set<string>([
   EVENT_CUES.CLIMB,
   EVENT_CUES.PUSH,
   EVENT_CUES.CHANT,
+  EVENT_CUES.PIN,
 ]);
 
 type EventPhase = "PRE" | "FORMING" | "PEAK" | "MARCH" | "AFTERMATH";
@@ -75,6 +79,8 @@ interface MarchState {
   effigyPos: THREE.Vector3;
   carry: THREE.Vector3;
   progress: number;
+  /** Scene-clock time of the handbill-pin cheer (crowd surge window). */
+  cheerAt: number | null;
 }
 
 function createMarchState(): MarchState {
@@ -85,6 +91,7 @@ function createMarchState(): MarchState {
     effigyPos: EFFIGY_HANG.clone(),
     carry: EFFIGY_GROUND.clone(),
     progress: 0,
+    cheerAt: null,
   };
 }
 
@@ -249,6 +256,16 @@ function CrowdFigure(props: {
     let rigid = false;
     let swayScale = 1;
 
+    // The pin cheer: everyone leans into it for a beat (design1 feature 4).
+    if (
+      !marching &&
+      m.cheerAt !== null &&
+      now - m.cheerAt < 2.6 &&
+      slot.role !== "CARRY"
+    ) {
+      swayScale = 2.6;
+      desiredClip = slot.id % 2 === 0 ? "argu1" : "argue2";
+    }
     if (marching) {
       if (signalE < LOWER_S + 0.9) swayScale = 2.2; // the surge as the leader calls it
       if (slot.role === "CARRY") {
@@ -484,6 +501,7 @@ function EffigyRig(props: {
   phase: EventPhase;
   marchSignal: boolean;
   march: MutableRefObject<MarchState>;
+  pinned: boolean;
   reducedMotion: boolean;
 }) {
   const body = useRef<THREE.Group>(null);
@@ -492,6 +510,13 @@ function EffigyRig(props: {
     "/world/posters/placard-andrew-oliver.png",
   );
   placard.colorSpace = THREE.SRGBColorSpace;
+  // The player's own printed handbill, pinned below the placard (design1
+  // feature 4). Same imported/generated document-texture path as every other
+  // staged paper; it rides the effigy through the lowering and the march.
+  const handbill = useMemo(
+    () => getDocumentTexture("ANTI_STAMP_HANDBILL"),
+    [],
+  );
   const effigyAttachments = useMemo(
     () => [
       {
@@ -502,6 +527,14 @@ function EffigyRig(props: {
               texture={placard}
               size={[0.42, 0.15, 0.3]}
             />
+            {props.pinned && (
+              <group position={[0.06, -0.005, 0.34]} rotation={[0, 0, -0.08]}>
+                <ImportedTexturedProp
+                  texture={handbill}
+                  size={[0.24, 0.12, 0.3]}
+                />
+              </group>
+            )}
           </group>
         ),
       },
@@ -510,7 +543,7 @@ function EffigyRig(props: {
         content: <group name="event-effigy-hang-anchor" />,
       },
     ],
-    [placard],
+    [placard, handbill, props.pinned],
   );
 
   useFrame(({ clock }, rawDt) => {
@@ -872,6 +905,49 @@ export function EventDirector(props: {
   const phase = derivePhase(props.cueId, props.dusk || props.lateDay, props.postEvent);
   const march = useRef<MarchState>(createMarchState());
   const [marchSignal, setMarchSignal] = useState(false);
+  // Handbill pinned (design1 feature 4): live from the pin hold's completion
+  // beat, and derived from cue order on resume (any cue at/after the march
+  // means the pin beat already committed).
+  const [pinnedLive, setPinnedLive] = useState(false);
+  const pinned =
+    pinnedLive ||
+    props.cueId === EVENT_CUES.MARCH ||
+    props.cueId === EVENT_CUES.AFTERMATH ||
+    props.postEvent;
+  useEffect(() => {
+    if (props.cueId !== EVENT_CUES.PIN) return;
+    const onVisual = (raw: Event) => {
+      const detail = (
+        raw as CustomEvent<{ kind?: string; phase?: string }>
+      ).detail;
+      if (detail?.kind !== "EFFORT" || detail.phase !== "COMPLETE") return;
+      setPinnedLive(true);
+      march.current.cheerAt = null; // set from the next frame's clock below
+      window.dispatchEvent(
+        new CustomEvent("pa:effigy-pinned", { detail: {} }),
+      );
+      window.dispatchEvent(
+        new CustomEvent("pa:identity-audio", { detail: { key: "CHEER" } }),
+      );
+      dispatchPresentationNotice({
+        id: "effigy:handbill-pinned",
+        kind: "ARCHIVE_NOTICE",
+        speaker: "CROWD",
+        text: "The elm roars. Hands slap your shoulders as your printed words go up with the rest.",
+        durationMs: 3_200,
+        cooldownMs: 60_000,
+        captions: true,
+      });
+    };
+    window.addEventListener("pa:mechanic-visual", onVisual);
+    return () => window.removeEventListener("pa:mechanic-visual", onVisual);
+  }, [props.cueId]);
+  // Stamp the cheer window on the scene clock the frame after the pin lands.
+  useFrame(({ clock }) => {
+    if (pinnedLive && march.current.cheerAt === null) {
+      march.current.cheerAt = clock.elapsedTime;
+    }
+  });
 
   // "To Fort Hill!" is the causal trigger: the leader calls it, the crowd
   // lowers the effigy and moves. Falls back to a timer if the line was missed.
@@ -898,7 +974,13 @@ export function EventDirector(props: {
 
   return (
     <group>
-      <EffigyRig phase={phase} marchSignal={marchSignal} march={march} reducedMotion={props.reducedMotion} />
+      <EffigyRig
+        phase={phase}
+        marchSignal={marchSignal}
+        march={march}
+        pinned={pinned}
+        reducedMotion={props.reducedMotion}
+      />
       {crowdVisible && phase !== "AFTERMATH" && (
         <>
           {CROWD_SLOTS.filter((slot) => phase !== "FORMING" || slot.forming).map((slot) => (

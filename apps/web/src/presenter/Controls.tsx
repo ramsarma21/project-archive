@@ -431,10 +431,12 @@ function EffortControl(props: { prompt: string; onDone: (ms: number) => void; bu
     emitMechanicVisual("EFFORT", 0, false);
   }, []);
   // "HOLD SPACE" without requiring the button to own keyboard focus
-  // (feel-audit-1 P1-2: keyboard-only players were hard-blocked here).
+  // (feel-audit-1 P1-2: keyboard-only players were hard-blocked here). F is
+  // bound too: hold verbs staged in the world (pin the handbill, pin the
+  // page) read as "hold F" — the game's one interaction key.
   useMechanicActionKey({
     enabled: !props.busy && !completedRef.current,
-    codes: ["Space", "Enter"],
+    codes: ["Space", "Enter", "KeyF"],
     onDown: begin,
     onUp: end,
   });
@@ -475,7 +477,7 @@ function EffortControl(props: { prompt: string; onDone: (ms: number) => void; bu
         <span className="hold-label">
           {completedRef.current ? "SECURED" : holding ? "KEEP HOLDING…" : "HOLD TO STEADY"}
         </span>
-        <kbd>{completedRef.current ? "" : "HOLD SPACE · OR HOLD CLICK"}</kbd>
+        <kbd>{completedRef.current ? "" : "HOLD F / SPACE · OR HOLD CLICK"}</kbd>
       </button>
     </div>
   );

@@ -30,17 +30,25 @@ export function qaCheckpointTargetReached(
   return request.phase === "FORM_SELECTION";
 }
 
-// Extra pre-checkpoint stop for the street-level ending (design1 feature 3):
-// `?qaCp1=street` halts the fast-forward the moment the town-board walk is
-// offered, so browser QA can drive the crier/pin beat live.
+// Extra pre-checkpoint stops (design1): `?qaCp1=street` halts the
+// fast-forward the moment the town-board walk is offered; `?qaCp1=effigy`
+// halts at the pin-your-handbill hold inside the fixed event — so browser QA
+// can drive those beats live.
 export function qaBootstrapStopBeforeCheckpoint(
   request: InputRequest,
   target: string,
 ): boolean {
-  return (
+  if (
     target === "street" &&
     request.kind === "FREE_ROAM" &&
     request.targets.some((candidate) => candidate.targetId === "TOWN_NOTICE_BOARD")
+  ) {
+    return true;
+  }
+  return (
+    target === "effigy" &&
+    request.kind === "MECHANIC" &&
+    request.promptId.includes("PIN_HANDBILL_EFFIGY")
   );
 }
 

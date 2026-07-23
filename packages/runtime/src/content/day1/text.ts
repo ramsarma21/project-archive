@@ -87,6 +87,10 @@ export const TEXT = {
     organizer1: "Andrew Oliver! The Crown's man for the stamps!",
     organizer2: "To Fort Hill!",
     banner: "We were never asked. No stamp, no tax, but by our own consent.",
+    handbillLane:
+      "One of today's handbills is still folded in your coat. The words you set in type this morning.\nThe crowd opens a lane toward the effigy, and papers are already going up on it.",
+    handbillPinned:
+      "Your handbill hangs on the effigy with the rest. Words you printed, in the middle of all of it.",
     libertyTreeTag:
       "Liberty Tree: the elm where the crowd hung the effigy of Andrew Oliver, the stamp distributor.",
     eventNarration:

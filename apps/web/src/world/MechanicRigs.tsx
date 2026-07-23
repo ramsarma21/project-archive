@@ -33,7 +33,7 @@ interface MechanicVisualState {
   commitAt: number;
 }
 
-function useMechanicVisual(): { current: MechanicVisualState } {
+export function useMechanicVisual(): { current: MechanicVisualState } {
   const state = useRef<MechanicVisualState>({
     kind: null,
     stage: null,

@@ -151,6 +151,9 @@ function mechanicEvent(
         };
         break;
       case "MECHANIC":
+        if (request.promptId.includes("PIN_HANDBILL_EFFIGY")) {
+          markEnding("EFFIGY_PIN");
+        }
         if (request.promptId.includes("FINAL_PRESS_PULL")) {
           markEnding("FINAL_PULL");
         }
@@ -222,10 +225,11 @@ function mechanicEvent(
   ]) {
     equal(session.ctx.world.objectives[objective], "COMPLETED");
   }
-  // The verdict ordering: the ending is street-first, forms-last.
+  // The verdict ordering: the climax is participatory, the ending is
+  // street-first, and the forms come before the celebration card.
   equal(
     endingOrder.join(" -> "),
-    "FINAL_PULL -> BOARD_BEAT -> CP1 -> DAY_END",
-    "street-level ending order",
+    "EFFIGY_PIN -> FINAL_PULL -> BOARD_BEAT -> CP1 -> DAY_END",
+    "participatory climax + street-level ending order",
   );
 }
