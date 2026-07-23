@@ -408,9 +408,12 @@ async function startConfrontation(page, suffix) {
 
 async function drivePrintJob(page, prefix, accessible) {
   if (accessible) {
+    // The press intro presentation (spoken beat + busy envelope) legitimately
+    // runs past 15s under the software renderer before the mechanic overlay
+    // unhides (is-blocked/is-speaking); allow it to finish.
     await page.getByRole("button", { name: /COMPLETE CATCH/i }).waitFor({
       state: "visible",
-      timeout: 15000,
+      timeout: 45000,
     });
     await shot(page, `${prefix}-catch`);
     for (const stage of ["CATCH", "INK", "REGISTER", "PULL", "PEEL"]) {
@@ -435,7 +438,9 @@ async function drivePrintJob(page, prefix, accessible) {
   }
 
   const catchButton = page.getByRole("button", { name: /CATCH SHEET/i });
-  await catchButton.waitFor({ state: "visible", timeout: 15000 });
+  // See the accessible branch above: the intro presentation can hold the
+  // overlay hidden past 15s on the software renderer.
+  await catchButton.waitFor({ state: "visible", timeout: 45000 });
   await shot(page, `${prefix}-catch`);
   await catchButton.click();
 

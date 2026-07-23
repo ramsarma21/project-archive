@@ -35,7 +35,7 @@ import { EntryDirector, useEntryDoorTarget } from "./EntryDirector.js";
 import { TraversalDirector } from "./TraversalDirector.js";
 import { InteractionDirector } from "./InteractionDirector.js";
 import { createInteractionRegistry } from "./interactionRegistry.js";
-import { ReactiveNpcDirector } from "./ReactiveNpcDirector.js";
+import { ExchangeInterruptDirector } from "./exchange/ExchangeInterruptDirector.js";
 import { M4ContentDirector } from "./M4ContentDirector.js";
 import { INTERIOR_HOTSPOT_MICROS } from "./reactiveManifest.js";
 import { traversalBlockerColliders } from "./traversalMarkers.js";
@@ -867,7 +867,7 @@ export function World3D(props: {
               onCameraYaw={setChaseCameraYaw}
               qaHostRef={hostRef}
             />
-            <ReactiveNpcDirector
+            <ExchangeInterruptDirector
               view={props.view!}
               apiRef={apiRef}
               interactionRegistry={interactionRegistry}

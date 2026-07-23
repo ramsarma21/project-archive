@@ -16,7 +16,7 @@
 // directed named cast, watchers, pursuers, and lightweight thread figures.
 
 export type ActorKind =
-  | "DIRECTED_NPC" // named cast staged by ActorDirector / ReactiveNpcDirector
+  | "DIRECTED_NPC" // named cast staged by ActorDirector / ExchangeInterruptDirector
   | "WATCHER" // posted/patrol officer with authoritative forward for vision cones
   | "PURSUER" // chase actor with authoritative steering motion
   | "THREAD_FIGURE"; // lightweight Ned/Sarah-style breadcrumb figures

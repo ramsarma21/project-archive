@@ -174,7 +174,7 @@ const report = {
 async function sourceProbe() {
   let devSourceAvailable = true;
   for (const path of [
-    "src/world/ReactiveNpcDirector.tsx",
+    "src/world/exchange/ExchangeInterruptDirector.tsx",
     "src/world/InteractionDirector.tsx",
     "src/pages/Play.tsx",
   ]) {
