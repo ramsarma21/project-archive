@@ -1004,6 +1004,37 @@ input[type="text"] {
   text-transform: uppercase;
 }
 .checkpoint-day-record strong { color: #fff3d6; font-family: Georgia, serif; font-size: 22px; }
+/* Compressed street-level debrief (design1 feature 3): opt-in long form. */
+.checkpoint-annotate-toggle {
+  display: block;
+  margin: 2px 0 12px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  color: #7ee3d8;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.checkpoint-annotate {
+  border-left: 2px solid rgba(126, 227, 216, 0.4);
+  padding-left: 12px;
+  margin-bottom: 14px;
+}
+.checkpoint-annotation-label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: #cfe8e4;
+}
+.checkpoint-annotation-label input {
+  padding: 8px 10px;
+  background: rgba(8, 24, 22, 0.8);
+  border: 1px solid rgba(126, 227, 216, 0.45);
+  color: #eefcf9;
+  border-radius: 4px;
+  font: inherit;
+}
 .checkpoint-macros { display: grid; gap: 8px; margin: 10px 0 18px; padding: 0; list-style: none; }
 .checkpoint-macros li {
   display: flex; gap: 10px; align-items: center; padding: 10px 12px;

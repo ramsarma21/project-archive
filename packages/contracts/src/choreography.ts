@@ -8,6 +8,11 @@ export const DAY1_CUES = {
   PRESS_PIKE_PROOF: "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
   STAMP_PROOF_COMPARE: "BOS.MD01.CUE.STAMP_PROOF_COMPARE.v1",
   LEAVE_MERCER: "BOS.MD01.CUE.LEAVE_MERCER.v1",
+  // Street-level day ending (design1 feature 3): the walk from the final
+  // pull out to the town board, and the pin-the-page beat where the crier
+  // shouts the player's chosen headline.
+  STREET_HEADLINE_WALK: "BOS.MD01.CUE.STREET_HEADLINE_WALK.v1",
+  POST_HEADLINE_BOARD: "BOS.MD01.ACT.POST_HEADLINE_BOARD.v1",
 } as const;
 
 export type ChoreographyActorId =

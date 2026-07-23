@@ -9,6 +9,7 @@ export const OBJ_LABELS: Record<string, string> = {
   OBSERVE_CROWD: "See the gathering crowd",
   RETURN_TO_PRESS: "Return to the press",
   SET_HEADLINE: "Set tomorrow's headline",
+  POST_THE_PAGE: "Post your page on the town board",
 };
 
 const SIDE_JOB_LABELS: Record<string, string> = {

@@ -108,6 +108,7 @@ export class Ctx {
       bankVersion: null,
       committedEventId: null,
       transitionEventId: null,
+      annotation: null,
       nextInsertion: null,
       carryover: null,
     };

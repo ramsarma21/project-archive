@@ -312,6 +312,12 @@ export function* cp1CheckpointFlow(ctx: Ctx): Sub<void> {
   }
   ctx.checkpoint.status = "COMMITTED";
   ctx.checkpoint.committedEventId = event.eventId;
+  // Optional player-authored one-liner from the compressed street debrief
+  // ("annotate the full record"). Never assessed; trimmed and bounded.
+  ctx.checkpoint.annotation =
+    event.type === "DEBRIEF_COMMITTED" && event.annotation?.trim()
+      ? event.annotation.trim().slice(0, 160)
+      : null;
   ctx.checkpoint.carryover = carryover(ctx);
   ctx.checkpoint.nextInsertion = {
     chapterId: NEXT_CHAPTER_ID,

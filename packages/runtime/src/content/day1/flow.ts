@@ -138,12 +138,18 @@ export function* day1Flow(ctx: Ctx): Flow {
   yield* eventOnramp(ctx);
   yield* fixedEvent(ctx);
 
-  // ---- Return, deficit closure, demonstrations, close ----
+  // ---- Return, page-setting (deficit closure folded in), demonstrations ----
   yield* returnToMercer(ctx, outcomes);
   yield* deficitClosure(ctx);
   yield* headlineDemonstrations(ctx);
+  // ---- Street-level ending (design1 feature 3): final pull -> the page goes
+  // to the town board with the crier shouting the player's headline -> the
+  // compressed CP1 debrief -> the celebratory Day Record card LAST. The
+  // session's final memory is the day, not paperwork.
   yield* dayClose(ctx);
+  yield* streetHeadlineBeat(ctx);
   yield* cp1CheckpointFlow(ctx);
+  yield* dayRecordCard(ctx);
 }
 
 // ---------------------------------------------------------------------------
@@ -844,9 +850,12 @@ function* presentFallback(ctx: Ctx, def: ExposureDef): Sub<void> {
   };
   const body = bodyMap[def.exposureId] ?? "";
   if (def.type === "HANDS_ON" || def.type === "ARTICLE") {
-    ctx.archive("Pull the source and read it before we file.");
-    ctx.emit({ kind: "READ_PANEL", objectId: def.exposureId, title: "Source", body });
-    yield* waitContinue(ctx, "I've read it");
+    // Folded into the page-setting scene (design1 kill list): Abigail hands
+    // the source across the stone as part of building tomorrow's page — not
+    // as end-of-day bookkeeping.
+    ctx.dialogue("ABIGAIL", "Before we set the page, read this once more. I print nothing we cannot stand behind.");
+    ctx.emit({ kind: "READ_PANEL", objectId: def.exposureId, title: "On the composing stone", body });
+    yield* waitContinue(ctx, "It holds up");
   } else {
     ctx.dialogue("ABIGAIL", body);
     yield* waitContinue(ctx);
@@ -888,8 +897,10 @@ function* dayClose(ctx: Ctx): Sub<void> {
     "BOS.MD01.ACT.FINAL_PRESS_PULL.v1",
     "FINAL_PAGE",
   );
+  // The page is the player's to carry to the board now; Abigail takes the
+  // rest of the run.
   ctx.world.jobObjects.FINAL_PAGE = {
-    custody: "ABIGAIL",
+    custody: "PLAYER",
     condition: finalPrint.quality,
   };
   ctx.dialogue(
@@ -908,8 +919,51 @@ function* dayClose(ctx: Ctx): Sub<void> {
   if (!dayCompletionSatisfied(ctx.learner)) {
     throw new Error("RUNTIME_DEADLOCK: day-end gate not satisfied");
   }
+}
 
+// The exterior ending beat: carry the fresh page to the town board, the
+// crier shouts YOUR headline, and the printed page is posted where the town
+// reads it. The day pays off on the street, in the fiction, before any
+// debrief.
+function* streetHeadlineBeat(ctx: Ctx): Sub<void> {
+  ctx.world.objectives.POST_THE_PAGE = "SELECTED";
+  yield* leaveInterior(ctx, "BOS.MD01.CUE.STREET_HEADLINE_LEAVE.v1");
+  ctx.world.controlState = "FREE_ROAM";
+  yield* freeRoam(
+    ctx,
+    [
+      {
+        targetId: "TOWN_NOTICE_BOARD",
+        label: "Take the page to the town board",
+        marker: "GOLD",
+      },
+    ],
+    false,
+    DAY1_CUES.STREET_HEADLINE_WALK,
+  );
+  ctx.world.controlState = "INTERACTION";
+  ctx.scene("BOSTON_STREET", TEXT.streetEnding.scene);
+  // The crier takes up the player's chosen headline (subtitle-attributed
+  // line: the crier is subtitle-only by approved limit).
+  ctx.dialogue("CRIER", `${ctx.selectedHeadline}! Tomorrow's page, hot off Mercer's press!`, true);
+  yield* effortHold(
+    ctx,
+    DAY1_CUES.POST_HEADLINE_BOARD,
+    "Hold to pin tomorrow's page to the town board.",
+  );
+  ctx.narrate(TEXT.streetEnding.posted);
+  ctx.dialogue("CROWD", TEXT.streetEnding.passerby);
+  ctx.world.objectives.POST_THE_PAGE = "COMPLETED";
+  ctx.spendTime(0);
+  ctx.countSpacing();
+}
+
+// The celebratory Day Record card is the LAST beat of the day: it renders
+// after CP1 files, so the session's closing memory is the day's record, not
+// a form. Confirming it completes the run.
+function* dayRecordCard(ctx: Ctx): Sub<void> {
   ctx.world.controlState = "DAY_END";
+  ctx.world.locationId = "BOSTON_STREET";
   ctx.emit({
     kind: "DAY_END_CARD",
     card: {
@@ -920,7 +974,5 @@ function* dayClose(ctx: Ctx): Sub<void> {
       routesUnlocked: ctx.routesUnlocked,
     },
   });
-  // Confirming the Day Record enters CP1. The save remains IN_PROGRESS until
-  // the checkpoint is committed and the Act transition is recorded.
   yield* waitDayEnd(ctx);
 }

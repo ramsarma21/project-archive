@@ -37,6 +37,7 @@ export type Speaker =
   | "RIDER"
   | "OFFICER"
   | "CROWD"
+  | "CRIER" // the town crier: subtitle-attributed lines only (approved limit)
   | "PLAYER"
   | "NARRATOR";
 

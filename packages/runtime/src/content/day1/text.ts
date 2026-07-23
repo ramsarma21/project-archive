@@ -136,8 +136,16 @@ export const TEXT = {
     finalPage:
       "TAXED WITHOUT A VOICE\nBy order of Parliament, to raise revenue after the war.\nSource: a court deed.",
   },
-  abigailEnd: "Get some rest. Street'll be worse tomorrow, not better. Be here early.",
-  dayRecordHeader: "Day one, filed. You held together better than most first days.",
+  abigailEnd:
+    "Don't file that away in a drawer. Take it to the town board yourself, let the street read what it did today. Then rest. Be here early.",
+  streetEnding: {
+    scene:
+      "The street holds the last of the light.\nThe town crier is already at the board, filling his lungs.",
+    posted:
+      "Your page hangs square on the town board, paste still wet.\nPeople slow as they pass. One reads the headline aloud to another.",
+    passerby: "That's the plain truth of it, and about time someone set it in type.",
+  },
+  dayRecordHeader: "Day one, printed, posted, and shouted down the street. You held together better than most first days.",
   ambient: {
     PRINTER_PAPER: { speaker: "NARRATOR", text: 'Printer: "Paper costs enough before Parliament puts its mark on it."' },
     MERCHANT_NOTICE: { speaker: "NARRATOR", text: 'Merchant: "Another notice. Always another notice."' },

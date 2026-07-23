@@ -11,11 +11,15 @@ import { getSave, type LocalProfile, type PresenterSpatialState } from "../../db
 import { pullMastery } from "../../api.js";
 import { QA_RUNTIME_ENABLED } from "../../world/qaEnvironment.js";
 import {
+  qaBootstrapStopBeforeCheckpoint,
   qaCheckpointBootstrapEvent,
   qaCheckpointTargetReached,
 } from "../../world/qa/cp1Bootstrap.js";
 
-export const DAY1_FLOW_VERSION = 5;
+// v6 (design1 feature 3): street-level day ending — the day-close beat order
+// changed (final pull -> town-board crier beat -> compressed CP1 -> Day
+// Record card last), so older event logs no longer replay against this flow.
+export const DAY1_FLOW_VERSION = 6;
 
 // Boot/init session state for Play: the runtime worker client, the committed
 // event log, save/cloud revisions, the presenter spatial snapshot pair, and
@@ -130,7 +134,10 @@ export function useRuntimeSession(args: {
             ? new URLSearchParams(window.location.search).get("qaCp1")
             : null;
         if (qaCp1Target) {
-          for (let step = 0; r.plan && step < 160; step += 1) {
+          for (let step = 0; r.plan && step < 200; step += 1) {
+            if (qaBootstrapStopBeforeCheckpoint(r.plan.request, qaCp1Target)) {
+              break;
+            }
             if (
               r.plan.request.kind === "CHECKPOINT_DEBRIEF" &&
               qaCheckpointTargetReached(r.plan.request, qaCp1Target)

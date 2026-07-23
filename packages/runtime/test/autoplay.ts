@@ -61,6 +61,8 @@ function respond(req: InputRequest, mode: Mode, missedFirst: Set<string>): Prese
           checkpointId: req.checkpointId,
           formId,
           bankVersion: req.state.bankVersion ?? "",
+          // Exercises the optional never-scored annotation line end to end.
+          annotation: "Set it in type and let the street read it.",
         };
       }
       if (req.phase === "TRANSITION") {

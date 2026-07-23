@@ -42,6 +42,11 @@ function cpIndex(
   });
   equal(committed.isDone, false);
   equal(committed.ctx.checkpoint.status, "COMMITTED");
+  equal(
+    committed.ctx.checkpoint.annotation,
+    "Set it in type and let the street read it.",
+    "optional annotation rides the commit and replays",
+  );
   equal(committed.plan?.request.kind, "CHECKPOINT_DEBRIEF");
   equal(
     committed.plan?.request.kind === "CHECKPOINT_DEBRIEF"

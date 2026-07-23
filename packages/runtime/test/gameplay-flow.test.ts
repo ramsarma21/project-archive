@@ -113,6 +113,12 @@ function mechanicEvent(
   ];
   let sawCollapsedSelection = false;
   let sawMainStreetLeg = false;
+  // Street-level ending order (design1 feature 3): final pull -> town-board
+  // beat -> CP1 debrief -> Day Record card LAST.
+  const endingOrder: string[] = [];
+  const markEnding = (label: string) => {
+    if (endingOrder.at(-1) !== label) endingOrder.push(label);
+  };
 
   for (let step = 0; !session.isDone && step < 500; step += 1) {
     const plan = session.plan;
@@ -122,7 +128,10 @@ function mechanicEvent(
 
     switch (request.kind) {
       case "CONTINUE":
+        event = { type: "CONTINUE" };
+        break;
       case "DAY_END":
+        markEnding("DAY_END");
         event = { type: "CONTINUE" };
         break;
       case "ACK":
@@ -142,6 +151,12 @@ function mechanicEvent(
         };
         break;
       case "MECHANIC":
+        if (request.promptId.includes("FINAL_PRESS_PULL")) {
+          markEnding("FINAL_PULL");
+        }
+        if (request.promptId.includes("POST_HEADLINE_BOARD")) {
+          markEnding("BOARD_BEAT");
+        }
         event = mechanicEvent(request);
         break;
       case "FREE_ROAM": {
@@ -169,6 +184,7 @@ function mechanicEvent(
         break;
       }
       case "CHECKPOINT_DEBRIEF": {
+        markEnding("CP1");
         const formId =
           request.state.selection?.formId ??
           request.proposedSelection?.formId ??
@@ -202,7 +218,14 @@ function mechanicEvent(
     "RIDER_HANDBILLS",
     "RETURN_TO_PRESS",
     "SET_HEADLINE",
+    "POST_THE_PAGE",
   ]) {
     equal(session.ctx.world.objectives[objective], "COMPLETED");
   }
+  // The verdict ordering: the ending is street-first, forms-last.
+  equal(
+    endingOrder.join(" -> "),
+    "FINAL_PULL -> BOARD_BEAT -> CP1 -> DAY_END",
+    "street-level ending order",
+  );
 }

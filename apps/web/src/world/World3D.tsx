@@ -29,6 +29,7 @@ import {
   headCamBeat,
 } from "./FirstPersonCamera.js";
 import { EventDirector } from "./EventDirector.js";
+import { StreetEndingDirector } from "./StreetEndingDirector.js";
 import { MechanicRigs } from "./MechanicRigs.js";
 import { DoorDirector } from "./DoorDirector.js";
 import { EntryDirector, useEntryDoorTarget } from "./EntryDirector.js";
@@ -803,6 +804,12 @@ export function World3D(props: {
                 props.view?.objectives?.RETURN_TO_PRESS === "SELECTED" ||
                 props.view?.objectives?.RETURN_TO_PRESS === "COMPLETED"
               }
+            />
+            <StreetEndingDirector
+              view={props.view ?? null}
+              interiorId={interiorId}
+              present={props.present}
+              reducedMotion={props.reducedMotion}
             />
             <Player
               apiRef={apiRef}

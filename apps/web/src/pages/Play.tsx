@@ -671,7 +671,6 @@ export function Play(props: {
             ) : plan?.request.kind === "CHECKPOINT_DEBRIEF" ? (
               <CheckpointDebrief
                 request={plan.request}
-                dayRecord={dayEnd?.card}
                 busy={interactionBusy}
                 highContrast={Boolean(profile.onboarding?.highContrast)}
                 reducedMotion={Boolean(profile.onboarding?.reducedMotion)}
@@ -680,7 +679,7 @@ export function Play(props: {
             ) : dayEnd && plan?.request.kind === "DAY_END" ? (
               <DayEnd
                 card={dayEnd.card}
-                doneLabel="Begin CP1 debrief"
+                doneLabel="Close the day"
                 onDone={() => void onEvent({ type: "CONTINUE" })}
               />
             ) : plan ? (

@@ -141,6 +141,8 @@ export interface Cp1CheckpointState {
   bankVersion: string | null;
   committedEventId: string | null;
   transitionEventId: string | null;
+  /** Optional player-authored one-liner filed with the commit (never scored). */
+  annotation: string | null;
   nextInsertion: {
     chapterId: string;
     status: "PENDING_CONTENT" | "READY";
@@ -193,6 +195,12 @@ export type CheckpointPresenterEvent =
       checkpointId: typeof CP1_CHECKPOINT_ID;
       formId: string;
       bankVersion: string;
+      /**
+       * Optional one-line player annotation from the compressed street-level
+       * debrief ("annotate the full record"). Never assessed, never scored;
+       * additive so historical commit events replay unchanged.
+       */
+      annotation?: string;
     }
   | {
       type: "ACT_TRANSITIONED";

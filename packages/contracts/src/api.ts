@@ -48,7 +48,7 @@ const PRESENTER_EVENT_KEYS: Readonly<Record<string, readonly string[]>> = {
   DEBRIEF_FORM_SELECTED: ["type", "checkpointId", "selection"],
   DEBRIEF_ANSWERED: ["type", "checkpointId", "formId", "itemId", "optionId"],
   DEBRIEF_CONTINUED: ["type", "checkpointId", "formId"],
-  DEBRIEF_COMMITTED: ["type", "eventId", "checkpointId", "formId", "bankVersion"],
+  DEBRIEF_COMMITTED: ["type", "eventId", "checkpointId", "formId", "bankVersion", "annotation"],
   ACT_TRANSITIONED: ["type", "eventId", "checkpointId", "formId", "targetChapterId"],
   FIELD_HEAT_TRANSITION: ["type", "eventId", "interruptId", "from", "to", "cause"],
   FIELD_HEAT_DECAY_CHECKPOINT: ["type", "eventId", "interruptId", "band", "elapsedSeconds", "paused"],

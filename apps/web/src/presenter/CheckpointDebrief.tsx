@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import type {
   CheckpointDebriefRequest,
   CheckpointGateState,
-  DayEndCard,
   PresenterEvent,
 } from "@pa/contracts";
 import { SystemWindow } from "./Controls.js";
@@ -11,6 +10,16 @@ const MACRO_LABELS: Record<string, string> = {
   "RCC.DEBT_POLICY_INTRO": "Postwar debt and British revenue policy",
   "RCC.STAMP_INTERNAL_INTRO": "The Stamp Act as an internal tax",
   "RCC.REPRESENTATION_CAUSE": "Representation as a cause of resistance",
+};
+
+// Compressed street-level debrief (design1 feature 3): each required macro
+// reads as one of the three things a printer stands behind at the board —
+// the headline, the cause line, the evidence — not as an exam category. The
+// item stems and options themselves are the untouched authored bank content.
+const MACRO_KICKERS: Record<string, string> = {
+  "RCC.REPRESENTATION_CAUSE": "The headline you'd defend",
+  "RCC.DEBT_POLICY_INTRO": "The cause you'd print under it",
+  "RCC.STAMP_INTERNAL_INTRO": "Your best evidence",
 };
 
 const GATE_HEADING: Record<CheckpointGateState["hintKind"], string> = {
@@ -85,7 +94,6 @@ const FORM_SELECTION_RETRY_MS = 700;
 
 export function CheckpointDebrief(props: {
   request: CheckpointDebriefRequest;
-  dayRecord?: DayEndCard;
   busy: boolean;
   highContrast: boolean;
   reducedMotion: boolean;
@@ -177,8 +185,11 @@ export function CheckpointDebrief(props: {
         role="status"
         aria-live="polite"
       >
-        <SystemWindow heading="ARCHIVE // CP1">
-          <p className="checkpoint-copy">Locking your authored Day Record…</p>
+        <SystemWindow heading="ARCHIVE // BEFORE YOU GO">
+          <p className="checkpoint-copy">
+            The page is on the board. Three quick calls before the street has
+            it…
+          </p>
         </SystemWindow>
       </div>
     );
@@ -199,99 +210,27 @@ export function CheckpointDebrief(props: {
   }
 
   if (request.phase === "REVIEW") {
-    const micros = request.state.selection?.microItemIds.length ?? 0;
     return (
-      <div className={rootClass} data-checkpoint-phase="REVIEW">
-        <SystemWindow heading="ARCHIVE // CP1 DEBRIEF">
-          <header className="checkpoint-title">
-            <span>CHECKPOINT ONE</span>
-            <h2>Act 1 Day Record</h2>
-          </header>
-          {props.dayRecord && (
-            <section className="checkpoint-day-record">
-              <span>ARTIFACT OF RECORD</span>
-              <strong>{props.dayRecord.selectedHeadline}</strong>
-            </section>
-          )}
-          <section aria-labelledby="checkpoint-macros">
-            <h3 id="checkpoint-macros">Fixed Day Record</h3>
-            <ul className="checkpoint-macros">
-              {request.state.macroOutcomes.map((outcome) => (
-                <li key={outcome.conceptId}>
-                  <span aria-hidden="true" />
-                  {MACRO_LABELS[outcome.conceptId] ?? outcome.conceptId}
-                </li>
-              ))}
-            </ul>
-          </section>
-          {micros > 0 && (
-            <section
-              className="checkpoint-enrichment-summary"
-              aria-labelledby="checkpoint-enrichment"
-            >
-              <h3 id="checkpoint-enrichment">From what you explored</h3>
-              <p>
-                Your completed field interactions opened an optional enrichment
-                record. It remains separate from required learning and progression.
-              </p>
-            </section>
-          )}
-          <section className="checkpoint-carry" aria-labelledby="checkpoint-carry">
-            <h3 id="checkpoint-carry">Carried forward</h3>
-            <p>
-              Relationships, known-face and heat consequences, town Standing,
-              Threads, routes, custody, and learner evidence remain attached to
-              the next insertion.
-            </p>
-          </section>
-          {!request.readyToCommit ? (
-            <button
-              autoFocus
-              className="checkpoint-confirm"
-              disabled={props.busy}
-              onClick={() =>
-                props.onEvent({
-                  type: "DEBRIEF_CONTINUED",
-                  checkpointId: request.checkpointId,
-                  formId,
-                })
-              }
-            >
-              CONTINUE TO FILE
-            </button>
-          ) : (
-            <button
-              autoFocus
-              className="checkpoint-confirm"
-              disabled={props.busy}
-              onClick={() =>
-                props.onEvent({
-                  type: "DEBRIEF_COMMITTED",
-                  eventId: `${formId}.COMMIT.v1`,
-                  checkpointId: request.checkpointId,
-                  formId,
-                  bankVersion: request.state.bankVersion ?? "",
-                })
-              }
-            >
-              COMMIT CHECKPOINT
-            </button>
-          )}
-        </SystemWindow>
-      </div>
+      <CheckpointReview
+        request={request}
+        formId={formId}
+        rootClass={rootClass}
+        busy={props.busy}
+        onEvent={props.onEvent}
+      />
     );
   }
 
   return (
     <div className={rootClass} data-checkpoint-phase="TRANSITION">
-      <SystemWindow heading="ARCHIVE // ACT TRANSITION">
+      <SystemWindow heading="ARCHIVE // FILED">
         <header className="checkpoint-title">
-          <span>ACT ONE COMPLETE</span>
-          <h2>Next insertion pending</h2>
+          <span>DAY ONE STANDS</span>
+          <h2>Your record is in the ledger</h2>
         </header>
         <p className="checkpoint-copy">
-          The 1770 Boston segment is not installed yet. This is a stable
-          reinsertion point; CP1 will not reroll.
+          Everything you did today carries forward with you. The next Boston
+          insertion is still being prepared; nothing here will reroll.
         </p>
         <button
           autoFocus
@@ -309,8 +248,120 @@ export function CheckpointDebrief(props: {
             })
           }
         >
-          FILE ACT TRANSITION
+          DONE FOR THE DAY
         </button>
+      </SystemWindow>
+    </div>
+  );
+}
+
+// Compressed review (design1 feature 3): one tap to file, one tap to commit.
+// The long-form record is an OPT-IN expander ("annotate the full record")
+// carrying the optional never-scored one-liner on the commit event.
+function CheckpointReview(props: {
+  request: CheckpointDebriefRequest;
+  formId: string;
+  rootClass: string;
+  busy: boolean;
+  onEvent: (event: PresenterEvent) => void;
+}) {
+  const { request, formId } = props;
+  const [annotateOpen, setAnnotateOpen] = useState(false);
+  const [annotation, setAnnotation] = useState("");
+  const micros = request.state.selection?.microItemIds.length ?? 0;
+  return (
+    <div className={props.rootClass} data-checkpoint-phase="REVIEW">
+      <SystemWindow heading="ARCHIVE // THE RECORD">
+        <header className="checkpoint-title">
+          <span>DAY ONE</span>
+          <h2>{request.readyToCommit ? "Put it in the ledger" : "Your day, in three calls"}</h2>
+        </header>
+        <ul className="checkpoint-macros">
+          {request.state.macroOutcomes.map((outcome) => (
+            <li key={outcome.conceptId}>
+              <span aria-hidden="true" />
+              {MACRO_KICKERS[outcome.conceptId] ??
+                MACRO_LABELS[outcome.conceptId] ??
+                outcome.conceptId}
+            </li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          className="checkpoint-annotate-toggle"
+          aria-expanded={annotateOpen}
+          onClick={() => setAnnotateOpen((open) => !open)}
+        >
+          {annotateOpen ? "Close the full record" : "Annotate the full record (optional)"}
+        </button>
+        {annotateOpen && (
+          <section className="checkpoint-annotate" aria-label="The full record">
+            <ul className="checkpoint-macros">
+              {request.state.macroOutcomes.map((outcome) => (
+                <li key={`full-${outcome.conceptId}`}>
+                  <span aria-hidden="true" />
+                  {MACRO_LABELS[outcome.conceptId] ?? outcome.conceptId}
+                </li>
+              ))}
+            </ul>
+            {micros > 0 && (
+              <p className="checkpoint-copy">
+                What you explored beyond the run rides along as enrichment. It
+                never touches your progress.
+              </p>
+            )}
+            <p className="checkpoint-copy">
+              Relationships, the watch's memory of your face, town Standing,
+              Threads, routes, and what you carry all come with you.
+            </p>
+            <label className="checkpoint-annotation-label">
+              A line of your own for the record
+              <input
+                type="text"
+                maxLength={160}
+                placeholder="(optional)"
+                value={annotation}
+                onChange={(event) => setAnnotation(event.currentTarget.value)}
+              />
+            </label>
+          </section>
+        )}
+        {!request.readyToCommit ? (
+          <button
+            autoFocus
+            className="checkpoint-confirm"
+            disabled={props.busy}
+            onClick={() =>
+              props.onEvent({
+                type: "DEBRIEF_CONTINUED",
+                checkpointId: request.checkpointId,
+                formId,
+              })
+            }
+          >
+            FILE IT
+          </button>
+        ) : (
+          <button
+            autoFocus
+            className="checkpoint-confirm"
+            disabled={props.busy}
+            onClick={() =>
+              props.onEvent({
+                type: "DEBRIEF_COMMITTED",
+                eventId: `${formId}.COMMIT.v1`,
+                checkpointId: request.checkpointId,
+                formId,
+                bankVersion: request.state.bankVersion ?? "",
+                ...(annotation.trim()
+                  ? { annotation: annotation.trim() }
+                  : {}),
+              })
+            }
+          >
+            PRINT THE RECORD
+          </button>
+        )}
       </SystemWindow>
     </div>
   );
@@ -328,6 +379,7 @@ function CheckpointQuestion(props: {
   const item = request.item!;
   const gate = request.gate;
   const isMicro = item.tier === "MICRO";
+  const total = request.state.selection?.itemIds.length ?? 0;
   // Answers stay locked until the gate's dwell+pause elapses. No gate =
   // immediately ready. The keyed remount (per attempt) resets this.
   const [gateReady, setGateReady] = useState(!gate);
@@ -335,17 +387,17 @@ function CheckpointQuestion(props: {
   return (
     <div className={props.rootClass} data-checkpoint-phase="QUESTION">
       <SystemWindow
-        heading={
-          isMicro ? "ARCHIVE // FROM WHAT YOU EXPLORED" : "ARCHIVE // DAY RECORD"
-        }
+        heading={`TOMORROW'S PAGE // ${request.state.currentItemIndex + 1} OF ${total}`}
       >
         <div className={`checkpoint-tier ${isMicro ? "micro" : "macro"}`}>
-          {isMicro ? "OPTIONAL ENRICHMENT" : "FIXED DAY RECORD"}
+          {isMicro
+            ? "From what you explored"
+            : MACRO_KICKERS[item.conceptId] ?? "The record you stand behind"}
         </div>
         {isMicro && !gate && (
           <p className="checkpoint-enrichment-note">
-            This question comes only from an interaction you completed. It is
-            enrichment and does not affect progression or your learning record.
+            You earned this one out on the street. It rides along for interest
+            only.
           </p>
         )}
         <h2 className="checkpoint-stem">{item.stem}</h2>
@@ -385,10 +437,6 @@ function CheckpointQuestion(props: {
             );
           })}
         </div>
-        <p className="checkpoint-progress" aria-live="polite">
-          Record {request.state.currentItemIndex + 1} of{" "}
-          {request.state.selection?.itemIds.length ?? 0}
-        </p>
       </SystemWindow>
     </div>
   );
@@ -397,13 +445,13 @@ function CheckpointQuestion(props: {
 export function ActTransitionComplete(props: { onExit: () => void }) {
   return (
     <div className="checkpoint-debrief" data-checkpoint-phase="COMPLETE">
-      <SystemWindow heading="ARCHIVE // REINSERTION STABLE">
+      <SystemWindow heading="ARCHIVE // DAY ONE STANDS">
         <header className="checkpoint-title">
-          <span>ACT ONE FILED</span>
-          <h2>Next insertion pending</h2>
+          <span>YOUR PAGE IS ON THE BOARD</span>
+          <h2>Boston will wake up reading it</h2>
         </header>
         <p className="checkpoint-copy">
-          Your complete event-sourced record and carryover are preserved.
+          Everything you did today is kept, exactly as you did it.
         </p>
         <button autoFocus className="checkpoint-confirm" onClick={props.onExit}>
           BACK TO PROFILES
