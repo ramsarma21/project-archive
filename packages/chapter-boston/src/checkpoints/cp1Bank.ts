@@ -17,16 +17,18 @@ import {
 // review-pending placeholder otherwise.
 //
 // Era scoping (Archive assessment invariant): CP1 = Boston Day 1, 1765, and
-// may select ONLY era-appropriate items. Two owner items are 1765-scope and
-// become production CP1 macro items (actScope = [CP1]):
-//   Q5  -> RCC.DEBT_POLICY_INTRO       (1764-1767 revenue acts / war debt)
-//   Q24 -> RCC.REPRESENTATION_CAUSE    (1765 Virginia Stamp Act Resolutions)
+// may select ONLY era-appropriate items. Three owner items are 1765-scope and
+// are the production CP1 macro items (actScope = [CP1]):
+//   Q5    -> RCC.DEBT_POLICY_INTRO       (1764-1767 revenue acts / war debt)
+//   STAMP -> RCC.STAMP_INTERNAL_INTRO    (1765 Stamp Act colonial response)
+//   Q24   -> RCC.REPRESENTATION_CAUSE    (1765 Virginia Stamp Act Resolutions)
 // The remaining post-1765 (1770s-1790s) items are banked toward FUTURE
 // checkpoints with lineage tags; their actScope excludes CP1 so CP1 selection
 // and the CP1 validator requirements exclude them.
 //
-// RCC.STAMP_INTERNAL_INTRO still has NO owner item — production CP1 therefore
-// stays blocked on that one macro (surfaced by the validator / CLI report).
+// All three required CP1 macros now hold an OWNER_PROVIDED, 1765-scope item, so
+// production CP1 selection is UNBLOCKED (surfaced by the validator / CLI
+// report). The engineering fixtures below are the QA-only draft path.
 // ============================================================================
 
 const OWNER_PROVENANCE = "user-supplied 2026-07-23";
@@ -83,6 +85,50 @@ const OWNER_ITEMS: AssessmentItem[] = [
       { optionId: "J", text: "wanted to expand royal governors' powers", rationale: "adopted to oppose taxation without representation, not expand governor powers." },
     ],
     correctOptionId: "H",
+  },
+  {
+    itemId: "BANK.BOSTON.USER.STAMP.v1",
+    itemVersion: "v1",
+    tier: "MACRO",
+    conceptId: CP1_REQUIRED_MACROS[1], // RCC.STAMP_INTERNAL_INTRO
+    teksTags: ["8.4(A)"],
+    era: "1765",
+    actScope: CP1_SCOPE,
+    // Owner content ties the Stamp Act response to the representation cause;
+    // carry that lineage for cross-checkpoint reporting (does not change CP1
+    // selection, which is governed by conceptId + actScope).
+    conceptLineage: ["RCC.STAMP_INTERNAL_INTRO", "RCC.REPRESENTATION_CAUSE"],
+    provenance: OWNER_PROVENANCE,
+    approvalStatus: "OWNER_PROVIDED",
+    difficulty: "ON_LEVEL",
+    stem: "Which of the following best describes the primary way American colonists responded to the passage of the Stamp Act in 1765?",
+    options: [
+      {
+        optionId: "A",
+        text: "They gladly paid the new tax to help fund the British military's defense of the colonies.",
+        rationale:
+          "The colonists fiercely opposed the tax rather than willingly paying it. They believed the tax was unjust because they had no elected representatives in the British Parliament to consent to the tax on their behalf.",
+      },
+      {
+        optionId: "B",
+        text: "They immediately drafted the Declaration of Independence to separate from Great Britain.",
+        rationale:
+          "While the Stamp Act caused significant anger and unified the colonies in protest, the colonists did not draft the Declaration of Independence until 1776, more than a decade later. At this point in 1765, they were still fighting for their rights as British subjects.",
+      },
+      {
+        optionId: "C",
+        text: "They organized widespread boycotts of British goods and formed protest groups like the Sons of Liberty.",
+        rationale:
+          "The Stamp Act placed a direct tax on many printed materials in the colonies, leading to widespread outrage. In response, colonists organized boycotts (non-importation agreements) against British goods and formed groups like the Sons of Liberty to protest the act, arguing that it violated their right to 'no taxation without representation.'",
+      },
+      {
+        optionId: "D",
+        text: "They requested that the French military intervene and protect them from British tax collectors.",
+        rationale:
+          "The colonists did not seek French military intervention during the Stamp Act crisis. The American alliance with France was not sought or secured until after the American Revolution had officially begun in the 1770s.",
+      },
+    ],
+    correctOptionId: "C",
   },
 
   // -- POST-1765 items banked for FUTURE checkpoints ------------------------
@@ -361,14 +407,16 @@ const OWNER_ITEMS: AssessmentItem[] = [
   },
 ];
 
-// Production CP1 bank. Now carries the owner-provided items: two 1765-scope
-// macros (DEBT_POLICY, REPRESENTATION) plus post-1765 items banked for future
-// checkpoints (era-scoped out of CP1). The bank is approved-for-use
-// (OWNER_PROVIDED) but production CP1 selection remains BLOCKED because there
-// is still no owner item for RCC.STAMP_INTERNAL_INTRO (see validator report).
+// Production CP1 bank. Carries the owner-provided items: all three 1765-scope
+// macros (DEBT_POLICY, STAMP_INTERNAL, REPRESENTATION) plus post-1765 items
+// banked for future checkpoints (era-scoped out of CP1). The bank is
+// approved-for-use (OWNER_PROVIDED) and production CP1 selection is now
+// UNBLOCKED: every required macro has a production-eligible item (see validator
+// report). Version bumped owner.1 -> owner.2 with the Stamp Act item; the bump
+// affects only new runs (committed forms replay from their stored bankVersion).
 export const CP1_PRODUCTION_BANK: AssessmentQuestionBank = {
   bankId: "BOS.ACT01.CP1.PRODUCTION",
-  bankVersion: "0.1.0-owner.1",
+  bankVersion: "0.1.0-owner.2",
   approvalStatus: "OWNER_PROVIDED",
   items: OWNER_ITEMS,
 };

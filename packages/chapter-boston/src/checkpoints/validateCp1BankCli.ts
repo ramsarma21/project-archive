@@ -32,7 +32,8 @@ const development = validateQuestionBank(CP1_DEVELOPMENT_FIXTURE_BANK, CP1_SPEC,
 
 // Per-macro production eligibility: does the production bank hold a CP1-scoped,
 // production-approved item for each required macro? Surfaces which of the three
-// fixed CP1 macros are covered and which still block the production gate.
+// fixed CP1 macros are covered; all three are now covered by owner items, so
+// none block the production gate.
 const macroEligibility = CP1_REQUIRED_MACROS.map((conceptId) => {
   const candidates = CP1_PRODUCTION_BANK.items.filter(
     (item) =>

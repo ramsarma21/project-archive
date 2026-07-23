@@ -112,31 +112,63 @@ function seed(value: number): Uint8Array {
     threw = error instanceof Error && /ASSESSMENT_BANK_INVALID/.test(error.message);
   }
   assert(threw, "production must reject draft fixtures");
-  // The production bank now carries the owner-provided items. Two of the three
-  // CP1 macros are production-eligible (DEBT_POLICY via Q5, REPRESENTATION via
-  // Q24); STAMP_INTERNAL still has no owner item, so production CP1 stays
-  // BLOCKED on that one macro. The report must surface exactly that.
+  // The production bank now carries an owner item for every CP1 macro
+  // (DEBT_POLICY via Q5, STAMP_INTERNAL via the Stamp Act item, REPRESENTATION
+  // via Q24), so production CP1 selection is UNBLOCKED. The report is clean.
   const report = validateQuestionBank(CP1_PRODUCTION_BANK, CP1_SPEC, {
     production: true,
   });
-  assert(report.valid === false, "production stays blocked on the missing macro");
-  assert(
-    report.missingContent.some((line) => line.includes("RCC.STAMP_INTERNAL_INTRO")),
-    "STAMP_INTERNAL_INTRO must be surfaced as missing",
-  );
-  assert(
-    !report.missingContent.some((line) => line.includes("RCC.DEBT_POLICY_INTRO")),
-    "DEBT_POLICY is now covered by an owner item",
-  );
-  assert(
-    !report.missingContent.some((line) => line.includes("RCC.REPRESENTATION_CAUSE")),
-    "REPRESENTATION is now covered by an owner item",
-  );
-  // Exactly the STAMP macro blocks the gate.
-  assert(
-    report.errors.some((line) => line.includes("RCC.STAMP_INTERNAL_INTRO")),
-    "the missing STAMP macro is the hard error keeping the gate blocked",
-  );
+  assert(report.valid === true, "production is unblocked: all three macros covered");
+  assert(report.errors.length === 0, "no hard errors remain");
+  for (const macro of CP1_REQUIRED_MACROS) {
+    assert(
+      !report.missingContent.some((line) => line.includes(macro)),
+      `no required macro is missing: ${macro}`,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Production selection: with allowDraft=false the production bank supplies all
+// three required CP1 macros, each from an OWNER_PROVIDED item. This is the real
+// student-path form; draft fixtures are never eligible here.
+// ---------------------------------------------------------------------------
+{
+  for (let value = 0; value < 64; value += 1) {
+    const result = selectDebrief({
+      checkpoint: CP1_SPEC,
+      attemptSeed: seed(value),
+      bank: CP1_PRODUCTION_BANK,
+      engagedMicroIds: [],
+      allowDraft: false,
+    });
+    const macros = result.items.filter((item) => item.tier === "MACRO");
+    deepEqual(
+      macros.map((item) => item.conceptId),
+      [...CP1_REQUIRED_MACROS],
+    );
+    for (const item of macros) {
+      assert(
+        item.approvalStatus === "OWNER_PROVIDED",
+        `production macro ${item.itemId} must be owner-provided`,
+      );
+      assert(isCp1ScopedItem(item), `production macro ${item.itemId} must be CP1-scoped`);
+    }
+    // The Stamp Act macro is the newly ingested owner item.
+    const stamp = macros.find((item) => item.conceptId === CP1_REQUIRED_MACROS[1]);
+    assert(stamp?.itemId === "BANK.BOSTON.USER.STAMP.v1", "STAMP macro is the owner item");
+    assert(stamp!.era === "1765");
+    assert(stamp!.provenance === "user-supplied 2026-07-23");
+    assert(
+      correctOptionExplanation(stamp!)?.includes("Sons of Liberty"),
+      "correct-option rationale carries the Sons of Liberty response",
+    );
+    // No draft fixtures leaked into the production form.
+    assert(
+      result.items.every((item) => !item.itemId.startsWith("BOS.CP1.")),
+      "no draft fixture item is selectable in production",
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

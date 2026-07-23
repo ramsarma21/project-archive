@@ -4,6 +4,8 @@ import type {
 } from "@pa/contracts";
 import {
   CP1_DEVELOPMENT_FIXTURE_BANK,
+  CP1_PRODUCTION_BANK,
+  CP1_REQUIRED_MACROS,
   createDay1Session,
 } from "../src/index.js";
 import { autoplay } from "./autoplay.js";
@@ -145,6 +147,10 @@ function cpIndex(
 }
 
 {
+  // With all three CP1 macros OWNER_PROVIDED, PRODUCTION mode (the default) now
+  // serves the real owner bank instead of the CONTENT_BLOCKED gate. The student
+  // path selects the production bank and advances into the questions; no draft
+  // fixtures ever appear in production.
   const qaRun = autoplay(seed, "happy");
   const dayEndIndex = cpIndex(qaRun.events, "DEBRIEF_FORM_SELECTED");
   const production = createDay1Session({
@@ -153,20 +159,36 @@ function cpIndex(
   });
   equal(production.plan?.request.kind, "CHECKPOINT_DEBRIEF");
   if (production.plan?.request.kind !== "CHECKPOINT_DEBRIEF") {
-    throw new Error("expected production content gate");
+    throw new Error("expected production form selection");
   }
-  equal(production.plan.request.phase, "CONTENT_BLOCKED");
-  assert((production.plan.request.contentIssues?.length ?? 0) > 0);
-  equal(production.isDone, false);
-  const before = production.committedEvents.length;
-  let rejected = false;
-  try {
-    production.advance({ type: "CONTINUE" });
-  } catch (error) {
-    rejected =
-      error instanceof Error &&
-      /ASSESSMENT_CONTENT_BLOCKED/.test(error.message);
+  const request = production.plan.request;
+  equal(request.phase, "FORM_SELECTION");
+  const proposed = request.proposedSelection;
+  assert(proposed, "production proposes a real form");
+  equal(proposed!.bankVersion, "0.1.0-owner.2", "form rides the production bank");
+  equal(proposed!.macroItemIds.length, 3, "all three CP1 macros in the form");
+  // Every selected macro item is an OWNER_PROVIDED item covering each required
+  // macro concept exactly once.
+  const coveredConcepts = new Set<string>();
+  for (const itemId of proposed!.macroItemIds) {
+    const item = CP1_PRODUCTION_BANK.items.find((i) => i.itemId === itemId);
+    assert(item, `selected item ${itemId} lives in the production bank`);
+    equal(item!.approvalStatus, "OWNER_PROVIDED", `${itemId} is owner-provided`);
+    coveredConcepts.add(item!.conceptId);
   }
-  assert(rejected, "blocked production gate must reject presenter input");
-  equal(production.committedEvents.length, before);
+  for (const macro of CP1_REQUIRED_MACROS) {
+    assert(coveredConcepts.has(macro), `production form covers macro ${macro}`);
+  }
+  // Committing the proposed form is accepted and advances into the questions —
+  // the gate is unblocked, not rejected.
+  const after = production.advance({
+    type: "DEBRIEF_FORM_SELECTED",
+    checkpointId: request.checkpointId,
+    selection: proposed!,
+  });
+  assert(
+    after.plan?.request.kind === "CHECKPOINT_DEBRIEF" &&
+      after.plan.request.phase === "QUESTION",
+    "production advances into the question phase, unblocked",
+  );
 }
