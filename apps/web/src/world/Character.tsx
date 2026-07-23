@@ -100,21 +100,6 @@ const ANIM_THROTTLE_STEP_S = 0.5;
 const throttleScratch = new THREE.Vector3();
 const viewCullScratch = new THREE.Vector3();
 
-// Ambient far-cull probe: rigs that opt into distance culling report whether
-// they are currently drawn so a dev harness can read the live rendered count
-// (see ambientVisibleCount). The set is keyed by a stable per-rig probeId and
-// only mutated on visibility transitions, so the per-frame cost is a no-op
-// once a crowd settles. Non-ambient (hero) rigs never register.
-const _ambientVisible = new Set<string>();
-function reportAmbientVisible(id: string | undefined, visible: boolean): void {
-  if (!id) return;
-  if (visible) _ambientVisible.add(id);
-  else _ambientVisible.delete(id);
-}
-export function ambientVisibleCount(): number {
-  return _ambientVisible.size;
-}
-
 function RiggedInner(props: {
   glbKey: string;
   height: number;
@@ -297,7 +282,6 @@ function RiggedInner(props: {
       const cull = props.cullBeyondM ?? Infinity;
       if (dist > cull) {
         if (rig.root.visible) rig.root.visible = false;
-        reportAmbientVisible(props.probeId, false);
         return;
       }
       const perspective = camera as THREE.PerspectiveCamera;
@@ -315,12 +299,10 @@ function RiggedInner(props: {
           Math.abs(viewCullScratch.y) > halfHeight + 4
         ) {
           if (rig.root.visible) rig.root.visible = false;
-          reportAmbientVisible(props.probeId, false);
           return;
         }
       }
       if (!rig.root.visible) rig.root.visible = true;
-      reportAmbientVisible(props.probeId, true);
       if (dist > ANIM_THROTTLE_DISTANCE_M) {
         // Mid rig: bank time and step the mixer coarsely (~2 Hz).
         throttleAccum.current += dt;
@@ -338,8 +320,6 @@ function RiggedInner(props: {
     }
     mixer.update(dt);
   });
-
-  useEffect(() => () => reportAmbientVisible(props.probeId, false), [props.probeId]);
 
   return <primitive object={rig.root} />;
 }
