@@ -5,6 +5,7 @@ import type {
   PrintJobVariant,
 } from "@pa/contracts";
 import { useMechanicActionKey } from "./mechanicKeys.js";
+import { ambientAudio } from "../world/ambientAudio.js";
 
 type VisualPhase = "READY" | "ACTIVE" | "COMMIT" | "COMPLETE";
 
@@ -276,6 +277,16 @@ export function PrintJobControl(props: {
     const next = { ...scores, [key]: Math.max(0, Math.min(1, score)) };
     setScores(next);
     emitVisual("PRINT_JOB", stage, 1, stage === "PEEL" ? "COMPLETE" : "COMMIT");
+    // Identity audio (design1 feature 5): the platen thunk lands on the pull
+    // commit — full weight only for a near-perfect pull — and the bright
+    // paper snap on the final peel. Missing files stay silent.
+    if (stage === "PULL") {
+      ambientAudio.playIdentity(
+        "press-pull-thunk",
+        score >= 0.92 ? 0.5 : 0.35,
+      );
+    }
+    if (stage === "PEEL") ambientAudio.playIdentity("paper-snap");
     if (stageIndex < PRINT_STAGES.length - 1) {
       const nextStage = PRINT_STAGES[stageIndex + 1]!;
       setStageIndex((index) => index + 1);
@@ -307,31 +318,31 @@ export function PrintJobControl(props: {
         // Accessible confirm preserves the same object-space alternating
         // action, but deterministically supplies a usable rhythm score.
         accessibleInkRunning.current = true;
+        ambientAudio.playIdentity("ink-dab-1");
         emitVisual("PRINT_JOB", stage, 0.25, "ACTIVE", {
           inkSide: "LEFT",
           inkStroke: 1,
           inkValid: true,
         });
         inkTimers.current.push(
-          window.setTimeout(
-            () =>
-              emitVisual("PRINT_JOB", stage, 0.5, "ACTIVE", {
-                inkSide: "RIGHT",
-                inkStroke: 2,
-                inkValid: true,
-              }),
-            190,
-          ),
-          window.setTimeout(
-            () =>
-              emitVisual("PRINT_JOB", stage, 0.75, "ACTIVE", {
-                inkSide: "LEFT",
-                inkStroke: 3,
-                inkValid: true,
-              }),
-            380,
-          ),
           window.setTimeout(() => {
+            ambientAudio.playIdentity("ink-dab-2");
+            emitVisual("PRINT_JOB", stage, 0.5, "ACTIVE", {
+              inkSide: "RIGHT",
+              inkStroke: 2,
+              inkValid: true,
+            });
+          }, 190),
+          window.setTimeout(() => {
+            ambientAudio.playIdentity("ink-dab-1");
+            emitVisual("PRINT_JOB", stage, 0.75, "ACTIVE", {
+              inkSide: "LEFT",
+              inkStroke: 3,
+              inkValid: true,
+            });
+          }, 380),
+          window.setTimeout(() => {
+            ambientAudio.playIdentity("ink-dab-2");
             emitVisual("PRINT_JOB", stage, 1, "ACTIVE", {
               inkSide: "RIGHT",
               inkStroke: 4,
@@ -370,6 +381,8 @@ export function PrintJobControl(props: {
         const next = inkStrokes + 1;
         setInkStrokes(next);
         setInkExpected(side === "LEFT" ? "RIGHT" : "LEFT");
+        // Alternating leather-on-metal dabs (identity audio, design1 #5).
+        ambientAudio.playIdentity(side === "LEFT" ? "ink-dab-1" : "ink-dab-2");
         emitVisual("PRINT_JOB", stage, next / 4, "ACTIVE", {
           inkSide: side,
           inkStroke: next,

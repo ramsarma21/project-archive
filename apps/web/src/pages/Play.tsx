@@ -30,6 +30,7 @@ import {
   createStealthStore,
   stealthPatchFromRuntimeField,
 } from "../world/stealthStore.js";
+import { ambientAudio } from "../world/ambientAudio.js";
 import {
   presentationActionSurface,
   presentationCueReady,
@@ -186,6 +187,7 @@ export function Play(props: {
   // Post-commit micro-feedback: relationship cards and unlock flickers slide
   // in at the screen edge, non-blocking, and auto-dismiss. They never pause
   // the dialogue timeline (Day-1 §5 / Interaction-Spec §9).
+  const quillAlternate = useRef(false);
   useEffect(() => {
     const feedback = (plan?.present ?? []).filter(
       (directive) => directive.kind === "RELATIONSHIP_CARD" || directive.kind === "FLICKER",
@@ -193,6 +195,16 @@ export function Play(props: {
     if (feedback.length === 0) return;
     feedback.forEach((directive, slot) => {
       const showTimer = window.setTimeout(() => {
+        // Identity audio (design1 #5): quill scratch as a note files into the
+        // Archive; a small coin clink under relationship/standing receipts.
+        if (directive.kind === "FLICKER" && directive.flicker === "NOTES_ADDED") {
+          quillAlternate.current = !quillAlternate.current;
+          ambientAudio.playIdentity(
+            quillAlternate.current ? "quill-scratch-1" : "quill-scratch-2",
+          );
+        } else if (directive.kind === "RELATIONSHIP_CARD") {
+          ambientAudio.playIdentity("coin-clink", 0.28);
+        }
         holoCardSeq.current += 1;
         const id = holoCardSeq.current;
         const card: HoloCard =

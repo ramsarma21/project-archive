@@ -1083,6 +1083,11 @@ export function World3D(props: {
               clock={districtClock}
               interiorId={interiorId}
               dusk={dusk}
+              hunted={
+                props.view?.field.heat.band === "HUNTED" ||
+                Boolean(activeChase)
+              }
+              reducedMotion={props.reducedMotion}
             />
           </>
         )}

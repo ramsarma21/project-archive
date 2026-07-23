@@ -49,6 +49,50 @@ const ONESHOT_NAMES = ["church-bell", "gull-cry", "cart-passby", "dog-bark", "do
 
 type SoundName = (typeof BED_NAMES)[number] | (typeof ONESHOT_NAMES)[number];
 
+// ---------------------------------------------------------------------------
+// Identity audio (design1 feature 5). Composed one-shots + one looping chase
+// layer live in /audio/identity/ with an authored manifest
+// (assets/build/audio/identity-manifest.json — a synced copy may appear at
+// /audio/identity/identity-manifest.json). These are COMPOSED identity
+// moments: when a file is missing or fails to decode the moment simply stays
+// silent — never a synth substitute. Playback routes through the same master
+// gain, so the HUD mute toggle governs identity audio too.
+// ---------------------------------------------------------------------------
+export const IDENTITY_ONESHOT_NAMES = [
+  "press-pull-thunk",
+  "paper-snap",
+  "ink-dab-1",
+  "ink-dab-2",
+  "crowd-swell-sting",
+  "bell-toll-daylight",
+  "quill-scratch-1",
+  "quill-scratch-2",
+  "coin-clink",
+  "constable-whistle",
+  "cheer-short",
+] as const;
+export type IdentityOneShotName = (typeof IDENTITY_ONESHOT_NAMES)[number];
+const IDENTITY_DRUM = "chase-drum-layer";
+// Gain guidance from the authored identity manifest.
+export const IDENTITY_GAIN: Record<IdentityOneShotName, number> = {
+  "press-pull-thunk": 0.5,
+  "paper-snap": 0.4,
+  "ink-dab-1": 0.35,
+  "ink-dab-2": 0.35,
+  "crowd-swell-sting": 0.5,
+  "bell-toll-daylight": 0.5,
+  "quill-scratch-1": 0.3,
+  "quill-scratch-2": 0.3,
+  "coin-clink": 0.4,
+  "constable-whistle": 0.55,
+  "cheer-short": 0.5,
+};
+const CHASE_DRUM_GAIN = 0.3;
+
+// DOM-side dispatch surface: world directors fire identity moments without
+// importing the engine. detail: { key, gain? }.
+export const IDENTITY_AUDIO_EVENT = "pa:identity-audio";
+
 const MUTE_KEY = "pa-audio-muted";
 const MASTER_LEVEL = 0.9;
 const CROSSFADE_TC = 0.35; // setTargetAtTime constant: ~1s to settle
@@ -163,6 +207,13 @@ class AmbientAudioEngine {
   private oneShotNextAt = new Map<string, number>();
   private oneShotRnd = mulberry32(hashString("boston-1765-ambient"));
   private state: AudioWorldState | null = null;
+  // Identity layer (design1 feature 5): decoded composed buffers (absent
+  // entries stay silent), the chase drum loop, and QA-visible play counts.
+  private identityBuffers = new Map<string, AudioBuffer>();
+  private identityFiles: Record<string, string> = {};
+  private identityDrum: Bed | null = null;
+  private identityDrumTarget = 0;
+  private identityPlays: Record<string, number> = {};
 
   constructor() {
     let storedMute = false;
@@ -180,6 +231,14 @@ class AmbientAudioEngine {
       };
       window.addEventListener("pointerdown", unlock);
       window.addEventListener("keydown", unlock);
+      window.addEventListener(IDENTITY_AUDIO_EVENT, (raw) => {
+        const detail = (raw as CustomEvent<{ key?: string; gain?: number }>).detail;
+        if (!detail?.key) return;
+        // Friendly aliases used by dispatchers (EventDirector CHEER, etc.).
+        const name =
+          detail.key === "CHEER" ? "cheer-short" : (detail.key as IdentityOneShotName);
+        this.playIdentity(name, detail.gain);
+      });
     }
   }
 
@@ -240,10 +299,32 @@ class AmbientAudioEngine {
     this.scheduleRandomOneShots(state, zone);
   }
 
-  debugState(): { muted: boolean; ready: boolean; zone: string | null; beds: Record<string, number> } {
+  debugState(): {
+    muted: boolean;
+    ready: boolean;
+    zone: string | null;
+    beds: Record<string, number>;
+    identity: {
+      loaded: string[];
+      drumGain: number;
+      plays: Record<string, number>;
+    };
+  } {
     const beds: Record<string, number> = {};
     for (const [name, bed] of this.beds) beds[name] = Number(bed.gain.gain.value.toFixed(3));
-    return { muted: this.muted, ready: this.ready, zone: this.lastZone, beds };
+    return {
+      muted: this.muted,
+      ready: this.ready,
+      zone: this.lastZone,
+      beds,
+      identity: {
+        loaded: [...this.identityBuffers.keys()].sort(),
+        drumGain: Number(
+          (this.identityDrum?.gain.gain.value ?? 0).toFixed(3),
+        ),
+        plays: { ...this.identityPlays },
+      },
+    };
   }
 
   playOneShot(name: SoundName, gain = 0.7): void {
@@ -256,6 +337,39 @@ class AmbientAudioEngine {
     g.gain.value = gain;
     src.connect(g).connect(this.master);
     src.start();
+  }
+
+  /**
+   * Play a composed identity moment. Missing/undecoded files no-op silently
+   * (graceful absence); the master gain (mute toggle) governs output.
+   */
+  playIdentity(name: IdentityOneShotName, gain?: number): void {
+    const ctx = this.ctx;
+    const buffer = this.identityBuffers.get(name);
+    this.identityPlays[name] = (this.identityPlays[name] ?? 0) + 1;
+    if (!ctx || !this.master || !buffer) return;
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const g = ctx.createGain();
+    g.gain.value = gain ?? IDENTITY_GAIN[name] ?? 0.4;
+    src.connect(g).connect(this.master);
+    src.start();
+  }
+
+  /**
+   * The HUNTED heartbeat-drum layer: ramps under the street bed on enter,
+   * fades out on exit (manifest gain guidance; never exceeds the beds).
+   * Reduced-motion profiles get a calmer layer.
+   */
+  setChaseDrum(active: boolean, reducedMotion = false): void {
+    const target = active ? (reducedMotion ? 0.16 : CHASE_DRUM_GAIN) : 0;
+    this.identityDrumTarget = target;
+    if (!this.ctx || !this.identityDrum) return;
+    this.identityDrum.gain.gain.setTargetAtTime(
+      target,
+      this.ctx.currentTime,
+      CROSSFADE_TC,
+    );
   }
 
   // ---- internals --------------------------------------------------------------
@@ -278,11 +392,28 @@ class AmbientAudioEngine {
       this.master.gain.value = 0;
       this.master.connect(ctx.destination);
       await this.loadManifest();
-      await Promise.all(
-        [...BED_NAMES, ...ONESHOT_NAMES].map(async (name) => {
+      await this.loadIdentityManifest();
+      await Promise.all([
+        ...[...BED_NAMES, ...ONESHOT_NAMES].map(async (name) => {
           this.buffers.set(name, await this.loadBuffer(name));
         }),
-      );
+        ...[...IDENTITY_ONESHOT_NAMES, IDENTITY_DRUM].map(async (name) => {
+          const buffer = await this.loadIdentityBuffer(name);
+          if (buffer) this.identityBuffers.set(name, buffer);
+        }),
+      ]);
+      // The chase drum is a looping layer with its own gain (starts silent).
+      const drumBuffer = this.identityBuffers.get(IDENTITY_DRUM);
+      if (drumBuffer) {
+        const source = ctx.createBufferSource();
+        source.buffer = drumBuffer;
+        source.loop = true;
+        const gain = ctx.createGain();
+        gain.gain.value = this.identityDrumTarget;
+        source.connect(gain).connect(this.master);
+        source.start();
+        this.identityDrum = { gain, source };
+      }
       for (const name of BED_NAMES) {
         const buffer = this.buffers.get(name);
         if (!buffer) continue;
@@ -329,6 +460,35 @@ class AmbientAudioEngine {
       this.manifestLoaded = true;
     } catch {
       // manifest missing: fall back to name.mp3/name.wav probing
+    }
+  }
+
+  // A synced identity manifest can override file names; absent, the authored
+  // conventional names (<name>.wav) are probed directly.
+  private async loadIdentityManifest(): Promise<void> {
+    try {
+      const res = await fetch("/audio/identity/identity-manifest.json");
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        sounds?: { name: string; file: string }[];
+      };
+      for (const s of data.sounds ?? []) this.identityFiles[s.name] = s.file;
+    } catch {
+      // no synced manifest: conventional names below
+    }
+  }
+
+  private async loadIdentityBuffer(name: string): Promise<AudioBuffer | null> {
+    const ctx = this.ctx!;
+    const file = this.identityFiles[name] ?? `${name}.wav`;
+    try {
+      const res = await fetch(`/audio/identity/${file}`);
+      if (!res.ok) return null;
+      const bytes = await res.arrayBuffer();
+      return await ctx.decodeAudioData(bytes);
+    } catch {
+      // Composed identity audio degrades to silence — never a synth stand-in.
+      return null;
     }
   }
 

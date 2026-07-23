@@ -5,6 +5,7 @@ import type {
   FieldRuntimeView,
 } from "@pa/contracts";
 import { dispatchPresentationNotice } from "./noticeArbiter.js";
+import { ambientAudio } from "../world/ambientAudio.js";
 
 const CARRIED_LABELS: Record<string, string> = {
   CARRIER_HANDBILLS: "the political handbills",
@@ -123,20 +124,20 @@ export function ConfrontationPanel(props: {
               if (ok) {
                 // The panel unmounts the moment the interrupt clears; the
                 // consequence summary persists as an Archive toast so the
-                // outcome never just "vanishes".
-                window.setTimeout(
-                  () =>
-                    dispatchPresentationNotice({
-                      id: `confrontation:${confrontation.interruptId}:aftermath`,
-                      kind: "ARCHIVE_NOTICE",
-                      speaker: "ARCHIVE",
-                      text: aftermathToast(outcome, seized),
-                      durationMs: 4_200,
-                      cooldownMs: 30_000,
-                      captions: true,
-                    }),
-                  100,
-                );
+                // outcome never just "vanishes". A small coin clink lands
+                // under the receipt (identity audio, design1 #5).
+                window.setTimeout(() => {
+                  ambientAudio.playIdentity("coin-clink");
+                  dispatchPresentationNotice({
+                    id: `confrontation:${confrontation.interruptId}:aftermath`,
+                    kind: "ARCHIVE_NOTICE",
+                    speaker: "ARCHIVE",
+                    text: aftermathToast(outcome, seized),
+                    durationMs: 4_200,
+                    cooldownMs: 30_000,
+                    captions: true,
+                  });
+                }, 100);
                 return;
               }
               await new Promise((resolve) => window.setTimeout(resolve, 100));

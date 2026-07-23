@@ -10,6 +10,7 @@ import {
 import { ImportedPivotAsset } from "./ImportedPivotAsset.js";
 import { getDocumentTexture } from "./documentTextures.js";
 import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
+import { ambientAudio } from "./ambientAudio.js";
 
 // ---------------------------------------------------------------------------
 // Presentation-only staging of the August 14 fixed event at the great elm:
@@ -962,6 +963,14 @@ export function EventDirector(props: {
     const timer = window.setTimeout(() => setMarchSignal(true), 2500);
     return () => window.clearTimeout(timer);
   }, [props.cueId]);
+  // Identity audio (design1 #5): the crowd swell + fife/drum sting fires once
+  // as the procession is called.
+  const swellPlayed = useRef(false);
+  useEffect(() => {
+    if (!marchSignal || swellPlayed.current) return;
+    swellPlayed.current = true;
+    ambientAudio.playIdentity("crowd-swell-sting");
+  }, [marchSignal]);
   useEffect(() => {
     if (props.cueId !== EVENT_CUES.MARCH) return;
     const called = props.present.some(

@@ -33,6 +33,7 @@ import { ALL_INTERIOR_LOCATIONS } from "./manifest.js";
 import { thresholdAnchorForLocation } from "./doorwayContract.js";
 import type { StaminaAssist } from "./stamina.js";
 import { QA_RUNTIME_ENABLED } from "./qaEnvironment.js";
+import { ambientAudio } from "./ambientAudio.js";
 
 const PURSUER_ID = "M1_PURSUER";
 
@@ -574,6 +575,8 @@ export function ChaseDirector(props: {
   const startPhase = props.chase !== null && phaseView === "STARTING";
   useEffect(() => {
     if (!startPhase || !props.chase) return;
+    // The watchman's pea-whistle rides the shout (identity audio, design1 #5).
+    ambientAudio.playIdentity("constable-whistle");
     dispatchPresentationNotice({
       id: `chase:${props.chase.chaseId}:start`,
       kind: "CHASE",
