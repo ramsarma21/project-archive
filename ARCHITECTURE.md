@@ -11,11 +11,13 @@ specs see [`docs/engine/`](docs/engine/); for the worked chapter see
 
 ## 1. System overview
 
-### Dependency direction (strict, one-way; wave3 chapter split)
+### Dependency direction (strict, one-way; wave4 world split)
 
 ```
-@pa/contracts  →  @pa/runtime  →  @pa/chapter-boston  →  apps/web  (presenter)
-   (protocol)       (engine)        (chapter content)  \→  apps/api  (persistence / grading)
+@pa/contracts  →  @pa/runtime       →  @pa/chapter-boston       →  apps/api
+      \───────→  @pa/engine-world  →  @pa/chapter-boston-world  →  apps/web
+                                      ↑
+                              @pa/chapter-boston
 ```
 
 - **`packages/contracts`** — PROTOCOL ONLY: events, plans, saves, field/
@@ -43,11 +45,22 @@ specs see [`docs/engine/`](docs/engine/); for the worked chapter see
   `content/chapters/*`) so the existing pnpm workspace glob, raw-TS exports,
   and package-graph direction (chapter → engine → contracts) all apply with
   zero build config.
+- **`packages/engine-world`** — the chapter-agnostic browser world engine:
+  deterministic collision/LOS and locomotion kernels, actor/interaction
+  registries, camera ownership, traversal resolution, field timing, HUD stores,
+  imported-asset/interior structure loaders, and presentation arbitration. Its
+  public `ChapterWorldDefinition` is the typed seam between world content and
+  the web shell. It has zero Boston ids, literals, or chapter imports.
+- **`packages/chapter-boston-world`** — Boston's browser world content and
+  composition: exterior/interior manifests, density, atmosphere, routes,
+  choreography, document art, set-piece directors, and the assembled
+  `BOSTON_1765_WORLD`. It depends on `@pa/engine-world` and
+  `@pa/chapter-boston`; neither dependency points back.
 - **`apps/web`** — the React + React-Three-Fiber presenter. Renders runtime state
-  into the 3D world (`src/world/`), owns input, cameras, directors, and HUD. It
-  never invents game truth; it projects it and feeds player actions back as
-  events. Its worker entry (`src/runtime.worker.ts`) is the single place the
-  chapter package is registered with the engine.
+  through public package surfaces. It owns pages, persistence, styles, public
+  `/world/...` and `/audio/...` assets, and QA bootstraps. Its
+  `src/chapterRegistration.ts` pairs `BOSTON_1765_CHAPTER` with
+  `BOSTON_1765_WORLD`; the worker remains runtime-only.
 - **`apps/api`** — Fastify service for Google login, save persistence
   (event-sourced records in Postgres), and open-response grading
   (`src/grading/`). Server-side replay validation goes through the chapter
@@ -101,8 +114,8 @@ Sync/demonstration → breather). See
 
 | Domain | Authoritative source |
 |---|---|
-| **Exterior world** (bounds, buildings, props, anchors, colliders) | [`apps/web/src/world/manifest.ts`](apps/web/src/world/manifest.ts) |
-| **Interiors** (36 isolated scene slots, dimensions, hotspots, entry zones) | [`apps/web/src/world/interiorManifest.ts`](apps/web/src/world/interiorManifest.ts) |
+| **Exterior world** (bounds, buildings, props, anchors, colliders) | [`packages/chapter-boston-world/src/world/manifest.ts`](packages/chapter-boston-world/src/world/manifest.ts) |
+| **Interiors** (36 isolated scene slots, dimensions, hotspots, entry zones) | [`packages/chapter-boston-world/src/world/interiorManifest.ts`](packages/chapter-boston-world/src/world/interiorManifest.ts) |
 | **Behavior fixture** (the canonical Boston Day 1 acceptance flow) | [`docs/chapters/boston-1765/Day-1.md`](docs/chapters/boston-1765/Day-1.md) |
 | **Per-beat build script** (animation/input/skill/code hooks) | [`docs/chapters/boston-1765/Day-1-Build-Script.md`](docs/chapters/boston-1765/Day-1-Build-Script.md) |
 | **World look/layout/atmosphere law** | [`docs/design/World-Design-Bible.md`](docs/design/World-Design-Bible.md) |
@@ -122,15 +135,15 @@ Start at the symptom; open the listed owner(s) first.
 
 | Symptom | Owning module(s) |
 |---|---|
-| **Collision / out-of-bounds / walking through things** | [`apps/web/src/world/collision.ts`](apps/web/src/world/collision.ts), [`apps/web/src/world/gameplayWorld.ts`](apps/web/src/world/gameplayWorld.ts), the rect colliders + `WORLD_BOUNDS` in [`manifest.ts`](apps/web/src/world/manifest.ts) |
-| **Doors / interior transitions / ping-pong** | [`apps/web/src/world/DoorDirector.tsx`](apps/web/src/world/DoorDirector.tsx), [`apps/web/src/world/EntryDirector.tsx`](apps/web/src/world/EntryDirector.tsx), [`apps/web/src/world/doorwayContract.ts`](apps/web/src/world/doorwayContract.ts), [`apps/web/src/world/interiorManifest.ts`](apps/web/src/world/interiorManifest.ts) |
-| **Camera stuck / input locked / mouse-look wrong** | [`apps/web/src/world/cameraOwnership.ts`](apps/web/src/world/cameraOwnership.ts), [`apps/web/src/world/CameraDirector.tsx`](apps/web/src/world/CameraDirector.tsx), [`apps/web/src/world/FirstPersonCamera.tsx`](apps/web/src/world/FirstPersonCamera.tsx), [`apps/web/src/world/Player.tsx`](apps/web/src/world/Player.tsx) |
-| **Quest markers wrong / missing / misplaced** | [`apps/web/src/world/QuestMarkerDirector.tsx`](apps/web/src/world/QuestMarkerDirector.tsx), [`apps/web/src/world/QuestMarkerHud.tsx`](apps/web/src/world/QuestMarkerHud.tsx), [`apps/web/src/world/questMarkerResolver.ts`](apps/web/src/world/questMarkerResolver.ts) |
+| **Collision / out-of-bounds / walking through things** | engine kernel [`packages/engine-world/src/collision.ts`](packages/engine-world/src/collision.ts), Boston assembly [`packages/chapter-boston-world/src/world/gameplayWorld.ts`](packages/chapter-boston-world/src/world/gameplayWorld.ts), and [`manifest.ts`](packages/chapter-boston-world/src/world/manifest.ts) |
+| **Doors / interior transitions / ping-pong** | [`packages/chapter-boston-world/src/world/DoorDirector.tsx`](packages/chapter-boston-world/src/world/DoorDirector.tsx), [`EntryDirector.tsx`](packages/chapter-boston-world/src/world/EntryDirector.tsx), [`doorwayContract.ts`](packages/chapter-boston-world/src/world/doorwayContract.ts), [`interiorManifest.ts`](packages/chapter-boston-world/src/world/interiorManifest.ts) |
+| **Camera stuck / input locked / mouse-look wrong** | engine policy [`packages/engine-world/src/cameraOwnership.ts`](packages/engine-world/src/cameraOwnership.ts), Boston renderer [`packages/chapter-boston-world/src/world/CameraDirector.tsx`](packages/chapter-boston-world/src/world/CameraDirector.tsx), [`FirstPersonCamera.tsx`](packages/chapter-boston-world/src/world/FirstPersonCamera.tsx), [`Player.tsx`](packages/chapter-boston-world/src/world/Player.tsx) |
+| **Quest markers wrong / missing / misplaced** | engine HUD [`packages/engine-world/src/QuestMarkerHud.tsx`](packages/engine-world/src/QuestMarkerHud.tsx), Boston resolver/director [`packages/chapter-boston-world/src/world/QuestMarkerDirector.tsx`](packages/chapter-boston-world/src/world/QuestMarkerDirector.tsx) and [`questMarkerResolver.ts`](packages/chapter-boston-world/src/world/questMarkerResolver.ts) |
 | **Concept credit not given / learning gate won't open** | [`packages/runtime/src/learner.ts`](packages/runtime/src/learner.ts), [`packages/runtime/src/engine/ctx.ts`](packages/runtime/src/engine/ctx.ts) |
 | **Micro / Standing / heat / threads state wrong** | [`packages/contracts/src/field.ts`](packages/contracts/src/field.ts), [`packages/runtime/src/fieldState.ts`](packages/runtime/src/fieldState.ts), [`packages/chapter-boston/src/day1/reactive.ts`](packages/chapter-boston/src/day1/reactive.ts) — **not** `learner.ts` (that owns the macro lifecycle only) |
 | **CP1 / debrief assessment selection** | [`packages/runtime/src/assessment/gate.ts`](packages/runtime/src/assessment/gate.ts), [`packages/runtime/src/assessment/selectDebrief.ts`](packages/runtime/src/assessment/selectDebrief.ts), [`packages/chapter-boston/src/checkpoints/cp1Bank.ts`](packages/chapter-boston/src/checkpoints/cp1Bank.ts); the `VITE_CP1_ALLOW_DRAFT_BANK` flag in [`apps/web/src/pages/Play.tsx`](apps/web/src/pages/Play.tsx) selects the draft vs. production bank |
 | **Open-response grading / rubric resolution** | [`apps/api/src/grading/`](apps/api/src/grading/), [`packages/chapter-boston/src/openResponse.ts`](packages/chapter-boston/src/openResponse.ts), [`packages/runtime/src/assessment/rubricResolver.ts`](packages/runtime/src/assessment/rubricResolver.ts) |
-| **Stealth / watchers / chase** | [`apps/web/src/world/WatcherDirector.tsx`](apps/web/src/world/WatcherDirector.tsx), [`apps/web/src/world/ChaseDirector.tsx`](apps/web/src/world/ChaseDirector.tsx), [`apps/web/src/world/chaseModel.ts`](apps/web/src/world/chaseModel.ts), [`apps/web/src/world/chaseFieldGating.ts`](apps/web/src/world/chaseFieldGating.ts) |
+| **Stealth / watchers / chase** | Boston directors/model under [`packages/chapter-boston-world/src/world/`](packages/chapter-boston-world/src/world/), with generic gating/store/field kernels under [`packages/engine-world/src/`](packages/engine-world/src/) |
 | **Missing / black / wrong assets** | asset pipeline verify + sync in [`assets/pipeline/`](assets/pipeline/) and the **Imported Visible World** rule ([`.cursor/rules/imported-visible-world-assets.mdc`](.cursor/rules/imported-visible-world-assets.mdc)) — production never renders a primitive fallback |
 | **Save / replay determinism / drift** | [`packages/contracts/src/save.ts`](packages/contracts/src/save.ts), [`packages/runtime/src/seed.ts`](packages/runtime/src/seed.ts) |
 
@@ -150,7 +163,8 @@ Start at the symptom; open the listed owner(s) first.
 - Stealth, suspicion, heat, spot-checks, and chase outcomes are pure functions of
   authored patrols + player state + attempt seed (tested in the `collisionLos`,
   `chaseModel`, `chaseFieldGating` suites under
-  [`apps/web/src/world/__tests__/`](apps/web/src/world/__tests__/)).
+  [`packages/engine-world/src/__tests__/`](packages/engine-world/src/__tests__/)
+  and [`packages/chapter-boston-world/src/world/__tests__/`](packages/chapter-boston-world/src/world/__tests__/)).
 - The content artifact ([`packages/chapter-boston/src/generated/act1OpenResponseContent.generated.ts`](packages/chapter-boston/src/generated/act1OpenResponseContent.generated.ts))
   is **generated, hash-validated, and never hand-edited** — regenerate from
   `content/boston/act1/` via `pnpm --filter @pa/chapter-boston content:compile`.

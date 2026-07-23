@@ -14,7 +14,7 @@ import {
 // FREE_ROAM_GOTO landed in a transient guard window, was dropped, and the
 // event could never re-arm without a save/exit/resume cycle.
 
-const KEY = "BOS.MD01.CUE.WALK_TO_LIBERTY_TREE.v1|CROWD";
+const KEY = "CHAPTER.TEST.CUE.ARRIVAL.v1|TARGET";
 
 test("a dropped commit leaves the latch clear and retries after backoff", () => {
   let state = createArrivalLatch();

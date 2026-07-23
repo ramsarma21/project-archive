@@ -2,9 +2,10 @@
 
 How to build a **new chapter using only content and assets** — no engine changes.
 The runtime, presenter, stealth/chase, assessment, and pipeline are all built and
-chapter-agnostic; a new chapter is authored data (a content package + world
-placement + assets + beats) laid over them. If you find yourself editing
-`packages/` or `apps/` logic, stop: that is engine work, not chapter authoring.
+chapter-agnostic; a new chapter is authored data in two sibling packages
+(runtime content + browser world content), plus app-owned assets. If you find
+yourself editing `packages/runtime`, `packages/engine-world`, or app logic,
+stop: that is engine/integration work, not chapter authoring.
 
 The Boston 1765 chapter is the gold-standard reference. Mirror it.
 
@@ -51,7 +52,7 @@ Hard safety rule: interactables (NPC chats, posters, objects, side-jobs) carry
 **MICRO only** — never a required macro carrier — so the path-invariant guarantee
 holds no matter what a student engages or skips.
 
-## 3. Content package layout
+## 3. Runtime content package layout
 
 Create `content/<city>/<act>/` mirroring [`../../content/boston/act1/`](../../content/boston/act1/)
 exactly:
@@ -76,18 +77,30 @@ All player-facing text obeys the project fiction rules in `allowlists.json` /
 artifact and re-validate:
 
 ```sh
-pnpm --filter @pa/runtime content:compile     # regenerate the generated artifact
-pnpm --filter @pa/runtime content:validate     # validator + generated-hash check
+pnpm --filter @pa/chapter-boston content:compile
+pnpm --filter @pa/chapter-boston content:validate
 ```
 
-Never hand-edit `packages/runtime/src/content/generated/*.generated.ts`.
+Never hand-edit generated chapter artifacts.
 
 ## 4. World content against manifest coordinates
 
-Place the chapter's world content — anchors, hero stops, notice surfaces, event
-staging, watcher posts, refuge markers — as **data** against the real coordinates
-in [`../../apps/web/src/world/manifest.ts`](../../apps/web/src/world/manifest.ts)
-and [`../../apps/web/src/world/interiorManifest.ts`](../../apps/web/src/world/interiorManifest.ts).
+Create a sibling browser package like
+[`../../packages/chapter-boston-world/`](../../packages/chapter-boston-world/).
+It may depend on `@pa/chapter-boston` and `@pa/engine-world`; the engine must
+never depend on it. Place anchors, hero stops, notice surfaces, event staging,
+watcher posts, refuge markers, atmosphere, and imported-asset keys as content
+against its exterior/interior manifests.
+
+Export one `ChapterWorldDefinition` (Boston's is `BOSTON_1765_WORLD`) from the
+package root. The minimum public shape pairs the chapter id with the world
+component, stealth projection factory, document-art resolver, and QA capability
+flags. Keep all other files private package internals. Add exactly one app
+registration that pairs the runtime `ChapterDefinition` with this world
+definition; app pages import package roots only.
+
+Public asset URLs remain app-owned (`/world/...`, `/audio/...`). A chapter-world
+package authors keys and paths but does not copy assets into its package.
 Reuse the existing district where a day re-dresses it (see the multi-day reuse map
 in [`../design/World-Design-Bible.md`](../design/World-Design-Bible.md)); a route
 is *state*, not new geometry. Keep the west/southwest harbor water open — never
@@ -139,7 +152,8 @@ hooks. Open-response authoring specifics are in
 - [ ] Every concept classified (`MACRO_GATED` / `PATTERN` / `MICRO`); macros live only on the spine.
 - [ ] Content package complete and mirroring `content/boston/act1/`; validator green.
 - [ ] Artifact regenerated; generated-hash validator passes.
-- [ ] World content placed against real manifest coordinates; harbor exclusion respected.
+- [ ] Sibling chapter-world package exports a typed `ChapterWorldDefinition`; app registration pairs it with the runtime chapter.
+- [ ] World content placed against its real manifest coordinates; harbor exclusion respected.
 - [ ] All new visible assets shipped through the full pipeline; no primitive fallbacks.
 - [ ] Behavior fixture + per-beat build script authored; spacing/fiction laws obeyed.
 - [ ] Debrief form authored; SME approval logged; drafts gated.

@@ -87,21 +87,21 @@ test("synthetic field interrupts inherit authored choreography readiness", () =>
   assert.equal(
     presentationCueReady(
       "PA.FIELD.INTERRUPT.M2_CHECKPOINT_1",
-      "BOS.MD01.CUE.ROAM.v1",
+      "CHAPTER.TEST.CUE.ROAM.v1",
     ),
     true,
   );
   assert.equal(
     presentationCueReady(
-      "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
-      "BOS.MD01.CUE.ROAM.v1",
+      "CHAPTER.TEST.ACT.MECHANIC.v1",
+      "CHAPTER.TEST.CUE.ROAM.v1",
     ),
     false,
   );
   assert.equal(
     presentationCueReady(
-      "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
-      "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
+      "CHAPTER.TEST.ACT.MECHANIC.v1",
+      "CHAPTER.TEST.ACT.MECHANIC.v1",
     ),
     true,
   );

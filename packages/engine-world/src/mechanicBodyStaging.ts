@@ -10,8 +10,8 @@ import type { ReactNode } from "react";
 // displacement curve, and optionally parenting a carried prop.
 //
 // The Player keeps only the generic blend/apply loop; every prompt-specific
-// clip/anchor/curve lives in a registered implementation (Day-1's are in
-// world/content/day1MechanicStaging.tsx, wired by the World3D shell).
+// clip/anchor/curve lives in a chapter-registered implementation wired by the
+// composition shell.
 // Registration order matters: the first registration whose match() accepts
 // the prompt id wins, so specific matchers register before catch-alls.
 // ---------------------------------------------------------------------------

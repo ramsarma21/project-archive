@@ -1,20 +1,17 @@
 #!/usr/bin/env node
-// Architecture boundary check (wave0a; hardened in wave3).
+// Architecture boundary check (wave0a; hardened in waves 3 and 4).
 // Dependency-free, plain Node + fs walk.
 //
-// The engine/content split is DONE (wave3): @pa/contracts is protocol-only
-// and @pa/runtime is a chapter-agnostic engine. These rules keep it that way:
+// The engine/content split is DONE: protocol/runtime (wave3) and the web world
+// engine (wave4) are chapter-agnostic. These rules keep it that way:
 //
 // (a) ERROR — no content imports in the engine or contracts. Any import whose
 //     specifier reaches a content layer (a "content/" path or a chapter
 //     package "@pa/chapter-*") from packages/runtime/src or
-//     packages/contracts/src fails the build. The allowlist is GONE (debt
-//     burned to zero in wave3); do not reintroduce one.
-// (b) ERROR — zero "BOS." literals in packages/contracts/src and
-//     packages/runtime/src (comments included: chapter vocabulary belongs in
-//     chapter packages, full stop).
-// (c) WARN — "BOS." literals in the web GENERIC-ENGINE world modules stay
-//     visible-but-nonblocking until Wave 4 flips them to ERROR.
+//     packages/contracts/src or packages/engine-world/src fails the build.
+// (b) ERROR — zero "BOS." literals in any engine/protocol package.
+// (c) ERROR — apps/web imports world packages only through their public roots;
+//     the app never reaches package internals or a relative src/world path.
 //
 // Usage: node scripts/check-boundaries.mjs
 
@@ -33,6 +30,7 @@ const toPosix = (p) => p.split(sep).join("/");
 const ENGINE_SCAN_DIRS = [
   "packages/runtime/src",
   "packages/contracts/src",
+  "packages/engine-world/src",
 ];
 
 const CODE_EXT = new Set([".ts", ".tsx", ".mts", ".cts"]);
@@ -101,48 +99,37 @@ for (const abs of engineFiles) {
 }
 
 // ---------------------------------------------------------------------------
-// (c) "BOS." literals in web GENERIC-ENGINE world modules (WARN until wave 4)
+// (c) app world-package public-surface boundary (ERROR)
 // ---------------------------------------------------------------------------
 
-const GENERIC_ENGINE_WORLD = [
-  "collision.ts",
-  "playerMotion.ts",
-  "playerInput.ts",
-  "stamina.ts",
-  "gameplayWorld.ts",
-  "actorRegistry.ts",
-  "interactionRegistry.ts",
-  "interactionResolver.ts",
-  "cameraOwnership.ts",
-  "fieldSimulation.ts",
-  "chaseModel.ts",
-  "watcherDetection.ts",
-].map((f) => `apps/web/src/world/${f}`);
-
-const bosWarnings = [];
-for (const rel of GENERIC_ENGINE_WORLD) {
-  const abs = join(ROOT, rel);
-  if (!existsSync(abs)) continue;
-  const lines = readFileSync(abs, "utf8").split("\n");
-  lines.forEach((line, idx) => {
-    if (BOS_RE.test(line)) {
-      bosWarnings.push(`${rel}:${idx + 1}  ${line.trim().slice(0, 120)}`);
+const appFiles = [];
+const appSrc = join(ROOT, "apps/web/src");
+if (existsSync(appSrc)) walk(appSrc, appFiles);
+const appImportViolations = [];
+for (const abs of appFiles) {
+  const rel = toPosix(relative(ROOT, abs));
+  const src = readFileSync(abs, "utf8");
+  let m;
+  SPEC_RE.lastIndex = 0;
+  while ((m = SPEC_RE.exec(src)) !== null) {
+    const spec = m[1];
+    if (
+      spec.startsWith("@pa/engine-world/") ||
+      spec.startsWith("@pa/chapter-boston-world/") ||
+      /(?:^|\/)world\//.test(spec)
+    ) {
+      appImportViolations.push(`${rel}  ->  ${spec}`);
     }
-  });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // report
 // ---------------------------------------------------------------------------
 
-console.log(`boundary-check: scanned ${engineFiles.length} engine/protocol files`);
-
-if (bosWarnings.length) {
-  console.log(`\n  BOS.* literals in GENERIC-ENGINE world modules (warn until wave 4, ${bosWarnings.length}):`);
-  for (const w of bosWarnings) console.log(`    warn: ${w}`);
-} else {
-  console.log("\n  no BOS.* literals in GENERIC-ENGINE world modules");
-}
+console.log(
+  `boundary-check: scanned ${engineFiles.length} engine/protocol files and ${appFiles.length} web app files`,
+);
 
 let failed = false;
 if (violations.length) {
@@ -158,8 +145,14 @@ if (bosViolations.length) {
   for (const v of bosViolations) console.error(`    error: ${v}`);
   console.error("  Chapter vocabulary belongs in the chapter package (@pa/chapter-boston).");
 }
+if (appImportViolations.length) {
+  failed = true;
+  console.error(`\n  FAIL: ${appImportViolations.length} web app world deep import(s):`);
+  for (const v of appImportViolations) console.error(`    error: ${v}`);
+  console.error("  apps/web must import @pa/engine-world and @pa/chapter-boston-world through package roots.");
+}
 
 if (failed) process.exit(1);
 
-console.log("\nboundary-check: OK (engine/protocol are chapter-clean)");
+console.log("\nboundary-check: OK (engine/protocol are chapter-clean; app world imports are public)");
 process.exit(0);
