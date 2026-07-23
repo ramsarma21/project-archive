@@ -1,20 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   DayEndCard,
-  ExecutionPlan,
-  FieldCommittedEvent,
   InputRequest,
-  MasteryReport,
-  MechanicRawResult,
-  OpenResponseReference,
   PresentationDirective,
-  PresenterEvent,
-  RuntimeView,
 } from "@pa/contracts";
-import { PACKAGE_ID } from "@pa/contracts";
-import { RuntimeClient } from "../runtimeClient.js";
-import { getSave, putSave, upsertProfile, type LocalProfile } from "../db.js";
-import { pullMastery, pushSave, saveOnboardingPreferences } from "../api.js";
+import { upsertProfile, type LocalProfile } from "../db.js";
+import { saveOnboardingPreferences } from "../api.js";
 import { Feed } from "../presenter/Feed.js";
 import { Hud } from "../presenter/Hud.js";
 import { Side, HoloTasks } from "../presenter/Side.js";
@@ -22,22 +13,14 @@ import { ArchiveOverlay } from "../presenter/ArchiveOverlay.js";
 import { Controls, SystemWindow } from "../presenter/Controls.js";
 import { World3D } from "../world/World3D.js";
 import { documentForReadPanel, getDocumentImageUrl } from "../world/documentTextures.js";
-import { choiceAnimationFor, type ChoiceAnimation } from "../world/choiceAnimations.js";
+import type { ChoiceAnimation } from "../world/choiceAnimations.js";
 import { StealthHud } from "../presenter/StealthHud.js";
 import { ConfrontationPanel } from "../presenter/ConfrontationPanel.js";
 import {
   ActTransitionComplete,
   CheckpointDebrief,
 } from "../presenter/CheckpointDebrief.js";
-import {
-  OpenResponsePanel,
-  type RetentionConsent,
-} from "../presenter/OpenResponsePanel.js";
-import { submitOpenResponse } from "../gradingClient.js";
-import {
-  authoredFallbackForPrompt,
-  authoredFeedback,
-} from "@pa/runtime";
+import { OpenResponsePanel } from "../presenter/OpenResponsePanel.js";
 import {
   PRESENTATION_NOTICE_EVENT,
   PresentationNoticeArbiter,
@@ -51,23 +34,33 @@ import {
   presentationActionSurface,
   presentationCueReady,
 } from "../presenter/presentationHandoff.js";
-import {
-  M1_QA_CONTRACT,
-  qaChaseEligibility,
-  qaChaseStartEvents,
-  type QaChaseResult,
-} from "../world/qaChaseContract.js";
 import { QA_RUNTIME_ENABLED } from "../world/qaEnvironment.js";
 import {
   activeStep,
   advanceTimeline,
   buildTimeline,
   createTimelineCursor,
+  isSubtitleDirective,
   type TimelineStep,
 } from "../presenter/presentationTimeline.js";
-import type { PresenterSpatialState } from "../db.js";
-
-const DAY1_FLOW_VERSION = 5;
+import { useRuntimeSession } from "./play/useRuntimeSession.js";
+import { useCommitPipeline } from "./play/useCommitPipeline.js";
+import { useOpenResponseFlow } from "../presenter/openResponse/useOpenResponseFlow.js";
+import {
+  useFieldEventQaHook,
+  useQaChaseHook,
+} from "../world/qa/PlayQaHooks.js";
+import {
+  DAY_END_COPY,
+  MANUAL_COPY,
+  PRIMER_CARD_COPY,
+  manualArchiveRows,
+  manualMoveRows,
+  objectiveLabel,
+  primerFor,
+  type Primer,
+  type PrimerId,
+} from "./play/playCopy.js";
 
 interface HoloCard {
   id: number;
@@ -86,15 +79,27 @@ export function Play(props: {
   onExit: () => void;
 }) {
   const { profile, chapterId } = props;
-  const [transcript, setTranscript] = useState<PresentationDirective[]>([]);
-  const [plan, setPlan] = useState<ExecutionPlan | null>(null);
-  const [view, setView] = useState<RuntimeView | null>(null);
-  const [report, setReport] = useState<MasteryReport | null>(null);
+  // Boot/init session: runtime worker client, committed event log, revisions,
+  // presenter spatial snapshot pair, and all runtime-derived presenter state.
+  const session = useRuntimeSession({ profile, chapterId, apiUp: props.apiUp });
+  const {
+    eventsRef,
+    runtimeCommitInFlightRef,
+    presenterSpatialRef,
+    transcript,
+    plan,
+    view,
+    busy,
+    done,
+    error,
+    restoreSpatial,
+    presentationLocationId,
+    setPresentationLocationId,
+    presentationOriginLocation,
+  } = session;
   const [showManual, setShowManual] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [webglAvailable, setWebglAvailable] = useState(true);
-  const [busy, setBusy] = useState(true);
-  const [done, setDone] = useState(false);
   // A world-side cinematic beat (e.g. the Watch House chewed-out scene) hides
   // the center controls so its dialogue is never buried under the task board.
   const [cinematicBeat, setCinematicBeat] = useState(false);
@@ -110,25 +115,11 @@ export function Play(props: {
     window.addEventListener("pa:cinematic-beat", onBeat);
     return () => window.removeEventListener("pa:cinematic-beat", onBeat);
   }, []);
-  const [error, setError] = useState<string | null>(null);
-  const clientRef = useRef<RuntimeClient | null>(null);
   const playRootRef = useRef<HTMLDivElement | null>(null);
   const stealthStore = useMemo(
     () => createStealthStore(),
     [profile.profileId],
   );
-  const eventsRef = useRef<PresenterEvent[]>([]);
-  const runtimeCommitInFlightRef = useRef(false);
-  const revisionRef = useRef(0);
-  const cloudRevisionRef = useRef(0);
-  // Live presenter-side spatial snapshot (player transform + visual interior),
-  // mirrored by World3D every few frames. Persisted with each save so a resume
-  // restores the last committed position instead of the day-start spawn
-  // (feel-audit-1 P0-11). Purely presentational: replay determinism is
-  // untouched because committed events never depend on it.
-  const presenterSpatialRef = useRef<PresenterSpatialState | null>(null);
-  const [restoreSpatial, setRestoreSpatial] =
-    useState<PresenterSpatialState | null>(null);
   const [primersSeen, setPrimersSeen] = useState(() => new Set(profile.onboarding?.primersSeen ?? []));
   const [readyCueId, setReadyCueId] = useState<string | null>(null);
   const [choiceAnimation, setChoiceAnimation] = useState<ChoiceAnimation | null>(null);
@@ -137,17 +128,7 @@ export function Play(props: {
     Extract<PresentationDirective, { kind: "READ_PANEL" }> | null
   >(null);
   const [speaking, setSpeaking] = useState(false);
-  const [openResponsePhase, setOpenResponsePhase] = useState<
-    "COMPOSE" | "PENDING" | "FEEDBACK"
-  >("COMPOSE");
-  const [openResponseFeedback, setOpenResponseFeedback] = useState<string[]>([]);
-  const [openResponseFallback, setOpenResponseFallback] = useState(false);
-  const [openResponseRetained, setOpenResponseRetained] = useState(false);
-  const [openResponseCloseEnabled, setOpenResponseCloseEnabled] = useState(false);
-  const openResponseDwellTimer = useRef(0);
   const presentedTimelineCuesRef = useRef(new Set<string>());
-  const [presentationLocationId, setPresentationLocationId] = useState<string | null>(null);
-  const [presentationOriginLocation, setPresentationOriginLocation] = useState<string | null>(null);
   const markChoreographyReady = useCallback((cueId: string) => {
     // Synthetic field-interrupt plans suspend an already-ready authored cue.
     // They must never replace that cue's readiness token, or resuming the exact
@@ -160,12 +141,47 @@ export function Play(props: {
   const holoCardTimers = useRef<number[]>([]);
   useEffect(() => () => {
     for (const timer of holoCardTimers.current) window.clearTimeout(timer);
-    window.clearTimeout(openResponseDwellTimer.current);
   }, []);
   useEffect(() => {
     if (!view?.field) return;
     stealthStore.patch(stealthPatchFromRuntimeField(view.field));
   }, [stealthStore, view?.field]);
+
+  // Commit pipeline: persist/onEvent/onFieldEvent with single-flight,
+  // rollback, and acceptance propagation (pure core in play/commitPipeline.ts).
+  const { onEvent, onFieldEvent, persistAndExit, committedEventCount } =
+    useCommitPipeline({
+      session,
+      profile,
+      chapterId,
+      apiUp: props.apiUp,
+      readyCueId,
+      setChoiceAnimation,
+      onExit: props.onExit,
+    });
+
+  // Optional open-response reflection flow (three-phase state machine).
+  const openResponse = useOpenResponseFlow({
+    view,
+    plan,
+    busy,
+    profile,
+    apiUp: props.apiUp,
+    onFieldEvent,
+  });
+
+  // QA-only window hooks (no-ops in production builds).
+  useFieldEventQaHook(onFieldEvent);
+  useQaChaseHook({
+    playRootRef,
+    commitInFlightRef: runtimeCommitInFlightRef,
+    eventsRef,
+    onFieldEvent,
+    plan,
+    view,
+    error,
+    readyCueId,
+  });
 
   // Post-commit micro-feedback: relationship cards and unlock flickers slide
   // in at the screen edge, non-blocking, and auto-dismiss. They never pause
@@ -206,625 +222,6 @@ export function Play(props: {
       holoCardTimers.current.push(showTimer);
     });
   }, [plan?.cueId, plan?.present]);
-
-  useEffect(() => {
-    let client: RuntimeClient;
-    try {
-      client = new RuntimeClient();
-    } catch (cause) {
-      console.error("Could not create game worker", cause);
-      setError("The game could not start on this device.");
-      setBusy(false);
-      return;
-    }
-    clientRef.current = client;
-    let disposed = false;
-    (async () => {
-      try {
-        const [save, cloudMastery] = await Promise.all([
-          getSave(profile.profileId),
-          props.apiUp && profile.source === "GOOGLE"
-            ? pullMastery(profile.profileId)
-            : Promise.resolve(null),
-        ]);
-        const prior =
-          save?.status === "COMPLETE" || save?.flowVersion !== DAY1_FLOW_VERSION
-            ? []
-            : save.committedEvents;
-        if (prior.length > 0 && save?.presenterSpatial) {
-          setRestoreSpatial(save.presenterSpatial);
-        }
-        eventsRef.current = [...prior];
-        revisionRef.current = save?.revision ?? 0;
-        cloudRevisionRef.current = profile.cloudRevision ?? save?.revision ?? 0;
-        let r = await client.init({
-          profileId: profile.profileId,
-          chapterId,
-          variationRootSeedHex: profile.variationRootSeedHex,
-          priorEvents: prior,
-          assessmentMode:
-            import.meta.env.VITE_CP1_ALLOW_DRAFT_BANK === "true"
-              ? "QA_DRAFT"
-              : "PRODUCTION",
-          openResponseContentMode:
-            import.meta.env.VITE_OPEN_RESPONSE_AUTHOR_DRAFT === "true"
-              ? "AUTHOR_DRAFT_QA"
-              : "PRODUCTION",
-        });
-        let bootstrapEvents = [...prior];
-        const qaCp1Target =
-          QA_RUNTIME_ENABLED &&
-          import.meta.env.VITE_CP1_ALLOW_DRAFT_BANK === "true"
-            ? new URLSearchParams(window.location.search).get("qaCp1")
-            : null;
-        if (qaCp1Target) {
-          for (let step = 0; r.plan && step < 160; step += 1) {
-            if (
-              r.plan.request.kind === "CHECKPOINT_DEBRIEF" &&
-              qaCheckpointTargetReached(r.plan.request, qaCp1Target)
-            ) {
-              break;
-            }
-            const event = qaCheckpointBootstrapEvent(r.plan.request);
-            const advanced = await client.advance(event);
-            bootstrapEvents.push(event);
-            r = {
-              plan: advanced.plan as ExecutionPlan,
-              transcript: [...r.transcript, ...advanced.newDirectives],
-              committedEventCount: advanced.committedEventCount,
-            };
-            if (!advanced.plan) break;
-          }
-        }
-        if (disposed) return;
-        eventsRef.current = bootstrapEvents;
-        setTranscript(r.transcript);
-        const snap = await client.snapshot();
-        if (disposed) return;
-        setView(snap.view);
-        setPresentationOriginLocation(snap.view.locationId);
-        setPresentationLocationId(snap.view.locationId);
-        setPlan(r.plan);
-        setReport(
-          cloudMastery && cloudMastery.saveRevision === save?.revision
-            ? cloudMastery.report
-            : snap.report,
-        );
-        setDone(snap.done);
-      } catch (cause) {
-        if (!disposed) {
-          console.error("Could not initialize game", cause);
-          setError("Your game could not be loaded. Return to profiles and try again.");
-        }
-      } finally {
-        if (!disposed) setBusy(false);
-      }
-    })();
-    return () => {
-      disposed = true;
-      client.dispose();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile.profileId]);
-
-  // Save & exit refreshes the LOCAL save's presenter spatial snapshot so it
-  // captures WHERE the player left, not just where the last runtime event
-  // committed (feel-audit-1 P0-11: walking commits nothing, so exiting at
-  // the wharf used to leave the snapshot back at the previous exchange).
-  // The event log and revision are untouched (revision must always equal the
-  // committed event count for cloud replay validation), so this never
-  // affects determinism or cloud consistency.
-  async function persistAndExit() {
-    try {
-      const spatial = presenterSpatialRef.current;
-      if (spatial && view) {
-        const existing = await getSave(profile.profileId);
-        if (
-          existing &&
-          existing.flowVersion === DAY1_FLOW_VERSION &&
-          existing.committedEvents.length === eventsRef.current.length
-        ) {
-          await putSave({ ...existing, presenterSpatial: spatial });
-        }
-      }
-    } catch (cause) {
-      console.error("Exit-time save failed; the last committed save stands", cause);
-    }
-    props.onExit();
-  }
-
-  async function persist(status: "IN_PROGRESS" | "COMPLETE") {
-    const baseRevision = revisionRef.current;
-    const save = {
-      profileId: profile.profileId,
-      chapterId,
-      packageId: PACKAGE_ID,
-      flowVersion: DAY1_FLOW_VERSION,
-      committedEvents: eventsRef.current,
-      revision: baseRevision + 1,
-      status,
-      updatedAt: new Date().toISOString(),
-      presenterSpatial: presenterSpatialRef.current ?? undefined,
-    };
-    await putSave(save);
-    revisionRef.current = save.revision;
-    if (props.apiUp && profile.source === "GOOGLE") {
-      const cloudBaseRevision = cloudRevisionRef.current;
-      const result = await pushSave(profile.profileId, {
-        baseRevision: cloudBaseRevision,
-        record: { ...save, saveId: profile.profileId, variationRootSeedHex: profile.variationRootSeedHex },
-      });
-      if (result.conflict) throw new Error("Cloud progress changed in another session.");
-      if (result.ok) {
-        cloudRevisionRef.current = save.revision;
-        await upsertProfile({ ...profile, cloudRevision: save.revision });
-        if (result.mastery) setReport(result.mastery);
-      }
-    }
-  }
-
-  // Commits an ordinary presenter event. Returns true only when the runtime
-  // accepted and persisted it. A `false` return means the event was DROPPED
-  // by a transient guard (commit in flight, busy, choreography not ready):
-  // one-shot emitters (breather timers, debrief form selection, quest
-  // arrivals) MUST retry on false instead of latching, or the game idles
-  // forever — the soft-lock class behind feel-audit-1 P0-4/P0-5/P0-6.
-  async function onEvent(ev: PresenterEvent): Promise<boolean> {
-    const client = clientRef.current;
-    if (
-      !client ||
-      runtimeCommitInFlightRef.current ||
-      busy ||
-      error ||
-      (plan &&
-        plan.request.kind !== "CHECKPOINT_DEBRIEF" &&
-        readyCueId !== plan.cueId)
-    ) return false;
-    runtimeCommitInFlightRef.current = true;
-    setBusy(true);
-    const priorEvents = eventsRef.current;
-    const originLocation = presentationLocationId ?? view?.locationId ?? null;
-    let runtimeAdvanced = false;
-    try {
-      if (ev.type === "CHOICE_SELECTED") {
-        const animation = choiceAnimationFor(ev.choiceId);
-        setChoiceAnimation(animation);
-        if (!profile.onboarding?.reducedMotion) {
-          await new Promise((resolve) => window.setTimeout(resolve, animation.durationMs));
-        }
-      }
-      const r = await client.advance(ev);
-      runtimeAdvanced = true;
-      eventsRef.current = [...priorEvents, ev];
-      setTranscript((t) => [...t, ...r.newDirectives]);
-      const snap = await client.snapshot();
-      setView(snap.view);
-      setPresentationOriginLocation(originLocation);
-      setPresentationLocationId(originLocation);
-      setPlan(r.plan);
-      setReport(snap.report);
-      setDone(r.done);
-      await persist(r.done ? "COMPLETE" : "IN_PROGRESS");
-      return true;
-    } catch (cause) {
-      if (!runtimeAdvanced) eventsRef.current = priorEvents;
-      console.error("Could not complete game action", cause);
-      setError(
-        cause instanceof Error && cause.message.includes("Cloud progress")
-          ? "This account has newer cloud progress. Return to profiles to reload it."
-          : "That action could not be completed. Return to profiles and try again.",
-      );
-      return false;
-    } finally {
-      setChoiceAnimation(null);
-      runtimeCommitInFlightRef.current = false;
-      setBusy(false);
-    }
-  }
-
-  const onFieldEvent = useCallback(
-    async (event: FieldCommittedEvent): Promise<boolean> => {
-      const client = clientRef.current;
-      const systemCleanup = event.type === "FIELD_REPOSITION_APPLIED";
-      const reactiveEnvelope =
-        view?.field.activeInterrupt?.kind === "REACTIVE_EXCHANGE";
-      if (
-        !client ||
-        runtimeCommitInFlightRef.current ||
-        (busy && !systemCleanup && !reactiveEnvelope) ||
-        error ||
-        (!presentationCueReady(plan?.cueId, readyCueId) &&
-          !systemCleanup &&
-          !reactiveEnvelope)
-      ) {
-        return false;
-      }
-      runtimeCommitInFlightRef.current = true;
-      setBusy(true);
-      const priorEvents = eventsRef.current;
-      const originLocation =
-        presentationLocationId ?? view?.locationId ?? null;
-      let runtimeAdvanced = false;
-      try {
-        const result = await client.submitFieldEvent(event);
-        runtimeAdvanced = true;
-        // Invalid/context-inappropriate field events reject in the worker
-        // before they are ever admitted to the authoritative save log.
-        eventsRef.current = [...priorEvents, event];
-        if (result.newDirectives.length > 0) {
-          setTranscript((current) => [
-            ...current,
-            ...result.newDirectives,
-          ]);
-        }
-        const snap = await client.snapshot();
-        setView(snap.view);
-        setPresentationOriginLocation(originLocation);
-        setPresentationLocationId(originLocation);
-        setPlan(result.plan);
-        setReport(snap.report);
-        setDone(result.done);
-        await persist(result.done ? "COMPLETE" : "IN_PROGRESS");
-        return true;
-      } catch (cause) {
-        if (!runtimeAdvanced) eventsRef.current = priorEvents;
-        // Surface commit exceptions in EVERY mode. Swallowing them in dev hid
-        // the underlying failure behind the audited "silent drop to the home
-        // screen with nothing actionable in console" (feel-audit-1 P0-3).
-        console.error("Could not commit durable field event", event, cause);
-        setError(
-          `A field action could not be committed (${
-            cause instanceof Error ? cause.message : String(cause)
-          }). Save & exit, then resume.`,
-        );
-        return false;
-      } finally {
-        runtimeCommitInFlightRef.current = false;
-        setBusy(false);
-      }
-    },
-    [
-      busy,
-      error,
-      plan,
-      presentationLocationId,
-      readyCueId,
-      view?.field.activeInterrupt?.kind,
-      view?.locationId,
-    ],
-  );
-
-  const beginOpenResponse = useCallback(
-    async (promptId: string) => {
-      if (
-        !view ||
-        (plan?.request.kind !== "FREE_ROAM" &&
-          plan?.request.kind !== "BREATHER") ||
-        view?.field.activeInterrupt ||
-        busy
-      ) {
-        return;
-      }
-      const interruptId = `OPEN_${promptId}_${view.field.interactionOrdinal + 1}`;
-      const opened = await onFieldEvent({
-        type: "FIELD_OPEN_RESPONSE_STARTED",
-        eventId: `${interruptId}_START`,
-        interruptId,
-        promptId,
-      });
-      if (opened) {
-        setOpenResponsePhase("COMPOSE");
-        setOpenResponseFeedback([]);
-        setOpenResponseFallback(false);
-        setOpenResponseRetained(false);
-        setOpenResponseCloseEnabled(false);
-      }
-    },
-    [busy, onFieldEvent, plan?.request.kind, view?.field],
-  );
-
-  const submitActiveOpenResponse = useCallback(
-    async (responseText: string, consent: RetentionConsent | null) => {
-      const prompt = view?.openResponse.activePrompt;
-      const interrupt = view?.field.activeInterrupt;
-      if (
-        !prompt ||
-        interrupt?.kind !== "OPEN_RESPONSE" ||
-        openResponsePhase !== "COMPOSE"
-      ) {
-        return;
-      }
-      setOpenResponsePhase("PENDING");
-      let response: OpenResponseReference = {
-        responseId: `local-${crypto.randomUUID()}`,
-        attemptId: `BOS.ACT01.${profile.profileId}`,
-        promptId: prompt.promptId,
-        promptVersion: prompt.version,
-        submittedAt: new Date().toISOString(),
-        storage: "LOCAL_EPHEMERAL" as const,
-      };
-      let resolution = authoredFallbackForPrompt(prompt.promptId);
-      if (
-        profile.source === "GOOGLE" &&
-        props.apiUp &&
-        consent
-      ) {
-        const result = await submitOpenResponse({
-          profileId: profile.profileId,
-          attemptId: response.attemptId,
-          body: {
-            promptId: prompt.promptId,
-            promptVersion: prompt.version,
-            responseText,
-            idempotencyKey: interrupt.interruptId,
-            consent: {
-              granted: true,
-              policyVersion: consent.policyVersion,
-              retainedForEducatorReview: true,
-              retentionDays: consent.retentionDays,
-            },
-          },
-        });
-        if (result.ok) {
-          response = result.value.response;
-          resolution = result.value.resolution;
-          setOpenResponseRetained(
-            result.value.response.storage === "ENCRYPTED_SERVER",
-          );
-        }
-      }
-      const committed = await onFieldEvent({
-        type: "FIELD_OPEN_RESPONSE_SUBMITTED",
-        eventId: `${interrupt.interruptId}_SUBMITTED`,
-        interruptId: interrupt.interruptId,
-        promptId: prompt.promptId,
-        response,
-        resolution,
-      });
-      if (!committed) {
-        setOpenResponsePhase("COMPOSE");
-        return;
-      }
-      setOpenResponseFeedback(
-        resolution.feedbackIds
-          .map((feedbackId) => authoredFeedback(feedbackId))
-          .filter((line): line is string => Boolean(line)),
-      );
-      setOpenResponseFallback(
-        resolution.status === "AUTHORED_FALLBACK",
-      );
-      if (response.storage !== "ENCRYPTED_SERVER") {
-        setOpenResponseRetained(false);
-      }
-      setOpenResponsePhase("FEEDBACK");
-      setOpenResponseCloseEnabled(false);
-      window.clearTimeout(openResponseDwellTimer.current);
-      openResponseDwellTimer.current = window.setTimeout(
-        () => setOpenResponseCloseEnabled(true),
-        profile.onboarding?.reducedMotion ? 700 : 1200,
-      );
-    },
-    [
-      onFieldEvent,
-      openResponsePhase,
-      profile.onboarding?.reducedMotion,
-      profile.profileId,
-      profile.source,
-      props.apiUp,
-      view?.field.activeInterrupt,
-      view?.openResponse.activePrompt,
-    ],
-  );
-
-  const closeActiveOpenResponse = useCallback(async () => {
-    const interrupt = view?.field.activeInterrupt;
-    if (
-      interrupt?.kind !== "OPEN_RESPONSE" ||
-      openResponsePhase !== "FEEDBACK" ||
-      !openResponseCloseEnabled
-    ) {
-      return;
-    }
-    const closed = await onFieldEvent({
-      type: "FIELD_INTERRUPT_RESOLVED",
-      eventId: `${interrupt.interruptId}_RESOLVED`,
-      interruptId: interrupt.interruptId,
-      outcome: openResponseFallback
-        ? "AUTHORED_FALLBACK"
-        : "FORMATIVE_CLASSIFIED",
-    });
-    if (closed) {
-      setOpenResponsePhase("COMPOSE");
-      setOpenResponseFeedback([]);
-      setOpenResponseFallback(false);
-      setOpenResponseRetained(false);
-      setOpenResponseCloseEnabled(false);
-    }
-  }, [
-    onFieldEvent,
-    openResponseCloseEnabled,
-    openResponseFallback,
-    openResponsePhase,
-    view?.field.activeInterrupt,
-  ]);
-
-  useEffect(() => {
-    const prompt = view?.openResponse.activePrompt;
-    if (!prompt || view?.field.activeInterrupt?.kind !== "OPEN_RESPONSE") return;
-    const existing = view.openResponse.evidence.find(
-      (record) => record.response.promptId === prompt.promptId,
-    );
-    if (!existing || openResponsePhase === "PENDING") return;
-    if (openResponsePhase !== "FEEDBACK") {
-      setOpenResponseFeedback(
-        existing.resolution.feedbackIds
-          .map((feedbackId) => authoredFeedback(feedbackId))
-          .filter((line): line is string => Boolean(line)),
-      );
-      setOpenResponseFallback(
-        existing.resolution.status === "AUTHORED_FALLBACK",
-      );
-      setOpenResponseRetained(
-        existing.response.storage === "ENCRYPTED_SERVER",
-      );
-      setOpenResponsePhase("FEEDBACK");
-      setOpenResponseCloseEnabled(false);
-      window.clearTimeout(openResponseDwellTimer.current);
-      openResponseDwellTimer.current = window.setTimeout(
-        () => setOpenResponseCloseEnabled(true),
-        profile.onboarding?.reducedMotion ? 700 : 1200,
-      );
-    }
-  }, [
-    openResponsePhase,
-    profile.onboarding?.reducedMotion,
-    view?.field.activeInterrupt,
-    view?.openResponse,
-  ]);
-
-  useEffect(() => {
-    if (!QA_RUNTIME_ENABLED) return;
-    type FieldQaWindow = Window & {
-      __PA_FIELD_EVENT__?: (
-        event: FieldCommittedEvent,
-      ) => Promise<boolean>;
-    };
-    const qaWindow = window as FieldQaWindow;
-    qaWindow.__PA_FIELD_EVENT__ = onFieldEvent;
-    return () => {
-      delete qaWindow.__PA_FIELD_EVENT__;
-    };
-  }, [onFieldEvent]);
-
-  const onFieldEventRef = useRef(onFieldEvent);
-  onFieldEventRef.current = onFieldEvent;
-  const committedEventCount = useCallback(() => eventsRef.current.length, []);
-  const qaStartInFlightRef = useRef(false);
-  const qaSnapshotRef = useRef({
-    request: plan?.request ?? null,
-    field: view?.field ?? null,
-    error,
-    choreographyReady: presentationCueReady(plan?.cueId, readyCueId),
-  });
-  qaSnapshotRef.current = {
-    request: plan?.request ?? null,
-    field: view?.field ?? null,
-    error,
-    choreographyReady: presentationCueReady(plan?.cueId, readyCueId),
-  };
-
-  useEffect(() => {
-    if (!QA_RUNTIME_ENABLED) return;
-    type QaWindow = Window & {
-      __PA_QA_CHASE__?: () => Promise<QaChaseResult>;
-    };
-    const qaWindow = window as QaWindow;
-    const publish = (result: QaChaseResult): QaChaseResult => {
-      const root = playRootRef.current;
-      if (root) {
-        root.dataset.qaChaseStatus = result.status;
-        root.dataset.qaChaseReason = result.reason;
-      }
-      window.dispatchEvent(
-        new CustomEvent<QaChaseResult>(M1_QA_CONTRACT.resultEvent, {
-          detail: result,
-        }),
-      );
-      return result;
-    };
-    const start = async (): Promise<QaChaseResult> => {
-      const eligibility = qaChaseEligibility({
-        ...qaSnapshotRef.current,
-        busy: runtimeCommitInFlightRef.current,
-      });
-      if (eligibility) return publish(eligibility);
-      if (qaStartInFlightRef.current) {
-        return publish({
-          ok: false,
-          status: "BUSY",
-          reason: "A QA chase start is already in flight.",
-        });
-      }
-      qaStartInFlightRef.current = true;
-      const field = qaSnapshotRef.current.field!;
-      const suffix = `${field.seedHex.slice(-8)}_${eventsRef.current.length}`;
-      const built = qaChaseStartEvents({
-        suffix,
-        heatBand: field.heat.band,
-      });
-      // Keep one eligibility snapshot for the interrupt envelope. React
-      // publishes the intermediate CONFRONTATION plan after event one; using a
-      // newly rendered callback for event two would reject on that transient
-      // cue even though the runtime is correctly waiting for CHASE_STARTED.
-      const commitEnvelopeEvent = onFieldEventRef.current;
-      try {
-        for (const event of built.events) {
-          if (playRootRef.current) {
-            playRootRef.current.dataset.qaChaseStep =
-              `COMMITTING_${event.type}`;
-          }
-          const committed = await commitEnvelopeEvent(event);
-          if (!committed) {
-            return publish({
-              ok: false,
-              status: "COMMIT_REJECTED",
-              reason: `Runtime rejected ${event.type}.`,
-              interruptId: built.interruptId,
-              chaseId: built.chaseId,
-            });
-          }
-          if (playRootRef.current) {
-            playRootRef.current.dataset.qaChaseStep =
-              `COMMITTED_${event.type}`;
-          }
-        }
-        return publish({
-          ok: true,
-          status: "STARTED",
-          reason: "QA chase started.",
-          interruptId: built.interruptId,
-          chaseId: built.chaseId,
-        });
-      } finally {
-        qaStartInFlightRef.current = false;
-      }
-    };
-    qaWindow.__PA_QA_CHASE__ = start;
-    const root = playRootRef.current;
-    if (root) {
-      root.dataset.qaChaseHook = "READY";
-      root.dataset.qaChaseStatus = "IDLE";
-      root.dataset.qaChaseReason = "";
-    }
-    const onCommand = () => {
-      void start().then((result) => {
-        console.info(`[m1-qa] ${result.status}: ${result.reason}`);
-      });
-    };
-    const onKey = (event: KeyboardEvent) => {
-      const target = event.target;
-      const editable =
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        (target instanceof HTMLElement && target.isContentEditable);
-      if (
-        event.code === M1_QA_CONTRACT.shortcutCode &&
-        !event.repeat &&
-        !editable
-      ) {
-        onCommand();
-      }
-    };
-    window.addEventListener(M1_QA_CONTRACT.startEvent, onCommand);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      if (qaWindow.__PA_QA_CHASE__ === start) {
-        delete qaWindow.__PA_QA_CHASE__;
-      }
-      window.removeEventListener(M1_QA_CONTRACT.startEvent, onCommand);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, []);
 
   async function dismissPrimer(id: PrimerId) {
     const onboarding = profile.onboarding;
@@ -982,6 +379,7 @@ export function Play(props: {
   const choreographyReady =
     plan?.request.kind === "CHECKPOINT_DEBRIEF" ||
     presentationCueReady(plan?.cueId, readyCueId);
+  const beginOpenResponse = openResponse.begin;
   const openResponseActive =
     view?.field.activeInterrupt?.kind === "OPEN_RESPONSE";
   // The Log is a read-only side panel: it must never gate mechanic input or
@@ -1092,7 +490,7 @@ export function Play(props: {
       data-interaction-busy={interactionBusy ? "true" : "false"}
       data-checkpoint-status={view?.checkpoint.status ?? ""}
       data-open-response-phase={
-        openResponseActive ? openResponsePhase : ""
+        openResponseActive ? openResponse.phase : ""
       }
       data-open-response-eligible={
         view?.openResponse.eligible
@@ -1381,104 +779,28 @@ export function Play(props: {
         <OpenResponsePanel
           prompt={view.openResponse.activePrompt}
           authenticated={profile.source === "GOOGLE" && props.apiUp}
-          phase={openResponsePhase}
-          feedback={openResponseFeedback}
-          fallback={openResponseFallback}
-          retained={openResponseRetained}
-          closeEnabled={openResponseCloseEnabled}
+          phase={openResponse.phase}
+          feedback={openResponse.feedback}
+          fallback={openResponse.fallback}
+          retained={openResponse.retained}
+          closeEnabled={openResponse.closeEnabled}
           onSubmit={(responseText, consent) =>
-            void submitActiveOpenResponse(responseText, consent)
+            void openResponse.submit(responseText, consent)
           }
-          onClose={() => void closeActiveOpenResponse()}
+          onClose={() => void openResponse.close()}
         />
       )}
     </div>
   );
 }
 
-type SubtitleDirective = Extract<
-  PresentationDirective,
-  { kind: "SCENE" | "DIALOGUE" | "NARRATION" | "ARCHIVE" | "AMBIENT_CHATTER" }
->;
-
-function isSubtitleDirective(directive: PresentationDirective): directive is SubtitleDirective {
-  return (
-    directive.kind === "DIALOGUE" ||
-    directive.kind === "SCENE" ||
-    directive.kind === "NARRATION" ||
-    directive.kind === "ARCHIVE" ||
-    directive.kind === "AMBIENT_CHATTER"
-  );
-}
-
-type PrimerId = "ARCHIVE" | "MOVEMENT" | "READ" | "WORK" | "CHOICE";
-interface Primer {
-  id: PrimerId;
-  title: string;
-  body: string;
-  control: string;
-}
-
-function primerFor(request: InputRequest | null, seen: ReadonlySet<PrimerId>): Primer | null {
-  if (!request) return null;
-  let primer: Primer | null = null;
-  switch (request.kind) {
-    case "CONTINUE":
-    case "ACK":
-      primer = {
-        id: "ARCHIVE",
-        title: "Archive channel ready",
-        body: "Archive records provide context and objectives. They never make a choice for you.",
-        control: "Confirm once to continue.",
-      };
-      break;
-    case "FREE_ROAM":
-      primer = {
-        id: "MOVEMENT",
-        title: "Move through the field",
-        body: "Follow the gold objective marker. Exploration costs no time until you commit to an activity.",
-        control: "WASD/arrows walk; Shift sprints; Space jumps; Shift+Space running-jumps; C crouches; F uses marked objects.",
-      };
-      break;
-    case "FOCUS_READ":
-      primer = {
-        id: "READ",
-        title: "Examine field evidence",
-        body: "Important documents can be opened and read in place. Skippable records never hide required history.",
-        control: "Open the highlighted record, or choose Skip.",
-      };
-      break;
-    case "MECHANIC":
-      primer = {
-        id: "WORK",
-        title: "Complete the work",
-        body: "Job actions use a focused control. The result changes local details, not fixed historical events.",
-        control: "Follow the prompt, then commit the action once.",
-      };
-      break;
-    case "CHOICE":
-      primer = {
-        id: "CHOICE",
-        title: "Choose your approach",
-        body: "Choices can change routes, time, and relationships. Short tags preview those immediate stakes.",
-        control: "Select one response to commit it.",
-      };
-      break;
-    case "BREATHER":
-    case "DAY_END":
-    case "CHECKPOINT_DEBRIEF":
-      break;
-  }
-  return primer && !seen.has(primer.id) ? primer : null;
-}
-
 function PrimerCard(props: { primer: Primer; onContinue: () => void }) {
   return (
-    <SystemWindow heading="FIELD PRIMER // FIRST USE">
+    <SystemWindow heading={PRIMER_CARD_COPY.heading}>
       <h3 className="system-title" id={`primer-${props.primer.id}`}>{props.primer.title}</h3>
       <p className="system-text">{props.primer.body}</p>
       <small className="system-note">{props.primer.control}</small>
-      <button className="system-confirm" onClick={props.onContinue}>ACKNOWLEDGE</button>
+      <button className="system-confirm" onClick={props.onContinue}>{PRIMER_CARD_COPY.confirm}</button>
     </SystemWindow>
   );
 }
@@ -1497,38 +819,35 @@ function ArchiveManual(props: {
       <div className="overlay-body archive-manual" onClick={(event) => event.stopPropagation()}>
         <div className="mastery-head">
           <div>
-            <div className="archive-kicker">ARCHIVE // FIELD MANUAL</div>
-            <h2>Insertion controls</h2>
+            <div className="archive-kicker">{MANUAL_COPY.kicker}</div>
+            <h2>{MANUAL_COPY.heading}</h2>
           </div>
-          <button className="btn-ghost" onClick={props.onClose}>Close</button>
+          <button className="btn-ghost" onClick={props.onClose}>{MANUAL_COPY.close}</button>
         </div>
         <section className="manual-objective">
-          <span>ACTIVE OBJECTIVE</span>
+          <span>{MANUAL_COPY.objectiveKicker}</span>
           <strong>{objectiveLabel(props.request)}</strong>
         </section>
         <div className="manual-grid">
           <section>
-            <h3>Move and observe</h3>
+            <h3>{MANUAL_COPY.moveSection}</h3>
             <dl>
-              <div><dt>Walk</dt><dd>WASD or arrow keys</dd></div>
-              <div><dt>Run</dt><dd>Hold Shift while moving</dd></div>
-              <div><dt>Look</dt><dd>{settings?.inputMethod === "KEYBOARD_ONLY" ? "Fixed follow camera" : "Drag on the world"}</dd></div>
-              <div><dt>Interact</dt><dd>F uses the nearest contextual object; enter quest markers to arrive</dd></div>
-              <div><dt>Inspect</dt><dd>F opens optional teal Archive context when no traversal action has priority</dd></div>
+              {manualMoveRows(settings).map((row) => (
+                <div key={row.term}><dt>{row.term}</dt><dd>{row.description}</dd></div>
+              ))}
             </dl>
           </section>
           <section>
-            <h3>Archive interface</h3>
+            <h3>{MANUAL_COPY.archiveSection}</h3>
             <dl>
-              <div><dt>Choose</dt><dd>Click, or Tab then Enter</dd></div>
-              <div><dt>Read</dt><dd>Open highlighted records when prompted</dd></div>
-              <div><dt>Log</dt><dd>Review recent dialogue from the world panel</dd></div>
-              <div><dt>Assist</dt><dd>{settings?.archiveAssistAutoOffer ? "May offer help after a pause" : "Manual request only"}</dd></div>
+              {manualArchiveRows(settings).map((row) => (
+                <div key={row.term}><dt>{row.term}</dt><dd>{row.description}</dd></div>
+              ))}
             </dl>
           </section>
         </div>
         <section className="manual-settings">
-          <h3>Accessibility profile</h3>
+          <h3>{MANUAL_COPY.settingsSection}</h3>
           <div className="manual-tags">
             <span>{settings?.readingSpeed.toLowerCase() ?? "standard"} reading</span>
             <span>{settings?.captions ? "captions on" : "captions off"}</span>
@@ -1542,31 +861,16 @@ function ArchiveManual(props: {
             </span>
           </div>
           <button className="btn-ghost" disabled={props.busy} onClick={props.onEditPreferences}>
-            Adjust interface profile
+            {MANUAL_COPY.adjustButton}
           </button>
           <button className="btn-ghost" disabled={props.busy} onClick={props.onReplayPrimers}>
-            Replay first-use primers
+            {MANUAL_COPY.replayButton}
           </button>
         </section>
-        <p className="manual-footnote">Opening the Manual never changes progress, evidence, or assessment.</p>
+        <p className="manual-footnote">{MANUAL_COPY.footnote}</p>
       </div>
     </div>
   );
-}
-
-function objectiveLabel(request: InputRequest | null): string {
-  if (!request) return "Synchronizing field record…";
-  switch (request.kind) {
-    case "FREE_ROAM": return "Reach a marked destination";
-    case "CHOICE": return request.frame;
-    case "MECHANIC": return request.params.prompt;
-    case "FOCUS_READ": return `Examine ${request.title}`;
-    case "ACK": return request.text;
-    case "BREATHER": return "Move through the world";
-    case "DAY_END": return "Complete the day";
-    case "CHECKPOINT_DEBRIEF": return "Complete Checkpoint One";
-    case "CONTINUE": return request.label ?? "Continue the current scene";
-  }
 }
 
 // The end-of-day record is the one moment the System window goes big: a
@@ -1579,14 +883,14 @@ function DayEnd(props: {
   const c = props.card;
   return (
     <div className="system-dayend">
-      <SystemWindow heading="ARCHIVE // DAY ONE FILED">
+      <SystemWindow heading={DAY_END_COPY.heading}>
         <p className="system-text">{c.headerLine}</p>
         <figure className="dayend-artifact">
-          <figcaption className="dayend-artifact-kicker">ARTIFACT OF RECORD</figcaption>
+          <figcaption className="dayend-artifact-kicker">{DAY_END_COPY.artifactKicker}</figcaption>
           <div className="dayend-artifact-headline">{c.selectedHeadline}</div>
         </figure>
         <section className="dayend-records" aria-label="Records added to Notes">
-          <h3 className="dayend-section-title">RECORDS ADDED TO NOTES</h3>
+          <h3 className="dayend-section-title">{DAY_END_COPY.notesTitle}</h3>
           {c.notes.map((n) => (
             <div className="dayend-entry" key={n.concept}>
               <span className="dayend-entry-sigil" aria-hidden="true" />
@@ -1600,16 +904,16 @@ function DayEnd(props: {
         <section className="dayend-ledger" aria-label="Field connections">
           <div className="dayend-holo-row">
             <span className="dayend-glyph" aria-hidden="true" />
-            <span className="dayend-holo-label">PEOPLE MET</span>
-            <span className="dayend-holo-value">{c.peopleMet.join(", ") || "No one new today"}</span>
+            <span className="dayend-holo-label">{DAY_END_COPY.peopleLabel}</span>
+            <span className="dayend-holo-value">{c.peopleMet.join(", ") || DAY_END_COPY.peopleEmpty}</span>
           </div>
           <div className="dayend-holo-row gold">
             <span className="dayend-glyph" aria-hidden="true" />
-            <span className="dayend-holo-label">ROUTES UNLOCKED</span>
-            <span className="dayend-holo-value">{c.routesUnlocked.join(", ") || "None today"}</span>
+            <span className="dayend-holo-label">{DAY_END_COPY.routesLabel}</span>
+            <span className="dayend-holo-value">{c.routesUnlocked.join(", ") || DAY_END_COPY.routesEmpty}</span>
           </div>
         </section>
-        <button className="system-confirm" onClick={props.onDone}>{props.doneLabel ?? "Back to profiles"}</button>
+        <button className="system-confirm" onClick={props.onDone}>{props.doneLabel ?? DAY_END_COPY.defaultDone}</button>
       </SystemWindow>
     </div>
   );
@@ -1659,163 +963,3 @@ function GlobalNoticeHud(props: { blocked: boolean; captions: boolean }) {
   );
 }
 
-function qaCheckpointTargetReached(
-  request: Extract<InputRequest, { kind: "CHECKPOINT_DEBRIEF" }>,
-  target: string,
-): boolean {
-  if (target === "question") return request.phase === "QUESTION";
-  if (target === "review") {
-    return request.phase === "REVIEW" && !request.readyToCommit;
-  }
-  if (target === "commit") {
-    return request.phase === "REVIEW" && Boolean(request.readyToCommit);
-  }
-  if (target === "transition") return request.phase === "TRANSITION";
-  return request.phase === "FORM_SELECTION";
-}
-
-function qaCheckpointBootstrapEvent(request: InputRequest): PresenterEvent {
-  switch (request.kind) {
-    case "CONTINUE":
-    case "DAY_END":
-      return { type: "CONTINUE" };
-    case "ACK":
-      return { type: "ACK" };
-    case "BREATHER":
-      return { type: "BREATHER_COMPLETE" };
-    case "FOCUS_READ":
-      return { type: "FOCUS_READ_OPENED", objectId: request.objectId };
-    case "FREE_ROAM":
-      return {
-        type: "FREE_ROAM_GOTO",
-        targetId: request.selectedTargetId ?? request.targets[0]!.targetId,
-      };
-    case "CHOICE": {
-      const correctIds = new Set([
-        "WALK_IN",
-        "HELP",
-        "MAIN_FAST",
-        "CALM_CONCEAL",
-        "QUICK",
-        "CLIMB",
-        "REVENUE",
-        "TAXED_NO_VOICE",
-        "CAUSE_PARLIAMENT",
-        "EV_DEED",
-        "STAMP_SYNC.CROWN_TAX",
-        "REP_SYNC.NO_ELECTED_VOICE",
-        "POLICY_SYNC.WAR_DEBT",
-      ]);
-      const option =
-        request.options.find(
-          (candidate) =>
-            correctIds.has(candidate.choiceId) && !candidate.disabled,
-        ) ?? request.options.find((candidate) => !candidate.disabled)!;
-      return {
-        type: "CHOICE_SELECTED",
-        promptId: request.promptId,
-        choiceId: option.choiceId,
-      };
-    }
-    case "MECHANIC":
-      return {
-        type: "MECHANIC_RESULT",
-        promptId: request.promptId,
-        result: qaMechanicResult(request),
-      };
-    case "CHECKPOINT_DEBRIEF": {
-      const formId =
-        request.state.selection?.formId ??
-        request.proposedSelection?.formId ??
-        "";
-      if (request.phase === "FORM_SELECTION" && request.proposedSelection) {
-        return {
-          type: "DEBRIEF_FORM_SELECTED",
-          checkpointId: request.checkpointId,
-          selection: request.proposedSelection,
-        };
-      }
-      if (request.phase === "QUESTION" && request.item) {
-        return {
-          type: "DEBRIEF_ANSWERED",
-          checkpointId: request.checkpointId,
-          formId,
-          itemId: request.item.itemId,
-          optionId: request.item.correctOptionId,
-        };
-      }
-      if (request.phase === "REVIEW" && !request.readyToCommit) {
-        return {
-          type: "DEBRIEF_CONTINUED",
-          checkpointId: request.checkpointId,
-          formId,
-        };
-      }
-      if (request.phase === "REVIEW") {
-        return {
-          type: "DEBRIEF_COMMITTED",
-          eventId: `${formId}.COMMIT.QA`,
-          checkpointId: request.checkpointId,
-          formId,
-          bankVersion: request.state.bankVersion ?? "",
-        };
-      }
-      if (request.phase === "TRANSITION") {
-        return {
-          type: "ACT_TRANSITIONED",
-          eventId: `${formId}.TRANSITION.QA`,
-          checkpointId: request.checkpointId,
-          formId,
-          targetChapterId: request.state.nextInsertion!.chapterId,
-        };
-      }
-      throw new Error("QA CP1 bootstrap reached the production content gate");
-    }
-  }
-}
-
-function qaMechanicResult(
-  request: Extract<InputRequest, { kind: "MECHANIC" }>,
-): MechanicRawResult {
-  const { kind } = request.params;
-  if (kind === "PRESS") return { kind, stopOffset: 0.5 };
-  if (kind === "EFFORT") return { kind, holdMs: 1500 };
-  if (kind === "PLACE") return { kind, alignment: 0.5 };
-  if (kind === "PRINT_JOB") {
-    return {
-      kind,
-      phases: {
-        catch: 0.95,
-        ink: 0.95,
-        register: 0.95,
-        pull: 0.95,
-        peel: 0.95,
-      },
-      quality: "CRISP",
-      accessible: true,
-    };
-  }
-  if (kind === "HAUL_JOB") {
-    return {
-      kind,
-      phases: { load: 0.9, balance: 0.9, thread: 0.9 },
-      accessible: true,
-    };
-  }
-  if (kind === "POST_JOB") {
-    return {
-      kind,
-      phases: { lineUp: 0.9, tackLeft: 0.9, tackRight: 0.9 },
-      accessible: true,
-    };
-  }
-  return {
-    kind,
-    assignments: (request.params.sortItems ?? []).map((item) => ({
-      itemId: item.itemId,
-      bucketId: ["deed", "writ", "newspaper"].includes(item.itemId)
-        ? "NEEDS_STAMP"
-        : "DOES_NOT",
-    })),
-  };
-}
