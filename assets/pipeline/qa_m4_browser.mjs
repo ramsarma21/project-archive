@@ -476,12 +476,22 @@ async function drivePrintJob(page, prefix, accessible) {
   await page.waitForTimeout(110);
   await right.click();
 
-  const register = page.getByRole("button", { name: /SET REGISTER/i });
-  await register.waitFor({ state: "visible", timeout: 10000 });
-  await register.click();
-  const pull = page.getByRole("button", { name: /PULL BAR/i });
-  await pull.waitFor({ state: "visible", timeout: 10000 });
-  await pull.click();
+  // Register and pull are single stage actions: completeStage() silently
+  // drops a click that lands while the presenter is momentarily busy (same
+  // hazard the accessible branch retries around), which would strand the
+  // print in MECHANIC. Retry until each button is consumed.
+  for (const pattern of [/SET REGISTER/i, /PULL BAR/i]) {
+    const stageButton = page.getByRole("button", { name: pattern });
+    await stageButton.waitFor({ state: "visible", timeout: 10000 });
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const live =
+        (await stageButton.isVisible().catch(() => false)) &&
+        (await stageButton.isEnabled().catch(() => false));
+      if (!live) break;
+      await stageButton.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(300);
+    }
+  }
   // Peel is a press-and-hold (HoldAdvance, 700ms). Press at the button's
   // bounding-box centre and hold past the duration; retry until the button is
   // consumed (locked/disabled or removed), so a mousedown that misses the
@@ -584,9 +594,13 @@ const browser = await chromium.launch({
   executablePath: EXECUTABLE,
   headless: process.env.M4_QA_HEADED !== "1",
   args: [
-    ...(process.env.M4_QA_HEADED === "1"
-      ? ["--use-angle=metal"]
-      : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]),
+    // Proven headless Metal-ANGLE config shared with the M3/M1 harnesses:
+    // real GPU rendering keeps the frame-driven mechanics (hold-to-peel,
+    // presentation timelines) honest, where SwiftShader at single-digit fps
+    // starves them. Set M4_QA_SWIFTSHADER=1 for GPU-less hosts.
+    ...(process.env.M4_QA_SWIFTSHADER === "1"
+      ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
+      : ["--use-angle=metal"]),
     "--enable-webgl",
     "--ignore-gpu-blocklist",
     "--disable-dev-shm-usage",
@@ -597,8 +611,12 @@ try {
   if (!ONLY || ONLY === "print") await scenario("print", eventSets.print, false, "?atmoT=0.35", async (page) => {
     await ensureMercerInterior(page);
     await drivePrintJob(page, "m4-b2", false);
+    // Post-print presentation can hold the plan transition past the 30s
+    // default under ambient load on the software renderer.
     await page.waitForFunction(
       () => document.querySelector('[data-game-root="play"]')?.getAttribute("data-plan-request") === "FOCUS_READ",
+      null,
+      { timeout: 60000 },
     );
     await shot(page, "m4-b2-complete");
   }, "KEYBOARD_MOUSE");
@@ -609,6 +627,8 @@ try {
     await drivePrintJob(page, "m4-b2-accessible", true);
     await page.waitForFunction(
       () => document.querySelector('[data-game-root="play"]')?.getAttribute("data-plan-request") === "FOCUS_READ",
+      null,
+      { timeout: 60000 },
     );
     await shot(page, "m4-b2-accessible-complete");
   });
@@ -618,6 +638,8 @@ try {
     await drivePrintJob(page, "m4-reprint", false);
     await page.waitForFunction(
       () => document.querySelector('[data-game-root="play"]')?.getAttribute("data-plan-request") !== "MECHANIC",
+      null,
+      { timeout: 60000 },
     );
     await shot(page, "m4-reprint-complete");
   }, "KEYBOARD_MOUSE");
@@ -628,7 +650,7 @@ try {
     await page.waitForFunction(
       () => document.querySelector('[data-game-root="play"]')?.getAttribute("data-plan-request") !== "MECHANIC",
       undefined,
-      { timeout: 30000 },
+      { timeout: 60000 },
     );
     await shot(page, "m4-b12-complete");
   }, "KEYBOARD_MOUSE");
@@ -767,30 +789,6 @@ try {
     await shot(page, "m4-roof-board-scaffold");
     await teleport(page, -30.2, 7.2, 0);
     await shot(page, "m4-static-dog");
-    const dog = page.getByRole("button", { name: /Pet the dog/i });
-    if (await dog.isVisible().catch(() => false)) {
-      await dog.click();
-      await page.waitForTimeout(250);
-      await shot(page, "m4-dog-reaction");
-    } else {
-      report.errors.push("street:interaction:Pet the dog prompt missing");
-    }
-    await teleport(page, 6, 6.45, 0);
-    const crier = page.getByRole("button", { name: /Take up the cry/i });
-    const crierVisible = await crier
-      .waitFor({ state: "visible", timeout: 3000 })
-      .then(() => true)
-      .catch(() => false);
-    if (crierVisible) {
-      await crier.click();
-      await page.waitForFunction(
-        () => document.querySelector('[data-game-root="play"]')?.getAttribute("data-field-interrupt") === "REACTIVE_EXCHANGE",
-      );
-      await page.locator(".reactive-exchange button").click();
-      await page.waitForFunction(
-        () => document.querySelector('[data-game-root="play"]')?.getAttribute("data-field-interrupt") === "",
-      );
-    }
     if (
       (await page
         .locator('[data-game-root="play"]')
@@ -798,21 +796,63 @@ try {
     ) {
       await page.getByRole("button", { name: /Comply/ }).click();
       await waitFreeRoamReady(page);
+      await teleport(page, -30.2, 7.2, 0);
     }
-    await teleport(page, 6.35, 6.55, 0);
-    await page.waitForTimeout(500);
-    const blockingCrier = page.getByRole("button", {
-      name: /Take up the cry/i,
-    });
-    if (await blockingCrier.isVisible().catch(() => false)) {
+    const dog = page.getByRole("button", { name: /Pet the dog/i });
+    // Speaking/notice windows can suppress glyphs for seconds; wait rather
+    // than snapshot.
+    const dogVisible = await dog
+      .waitFor({ state: "visible", timeout: 8000 })
+      .then(() => true)
+      .catch(() => false);
+    if (dogVisible) {
+      await dog.click();
+      await page.waitForTimeout(250);
+      await shot(page, "m4-dog-reaction");
+    } else {
+      report.errors.push("street:interaction:Pet the dog prompt missing");
+    }
+    // The crier offer's SIDE_JOB glyph outranks the noticeboard KNOWLEDGE
+    // reads while it stands in the same pocket, and flavor/reply notices
+    // ("speaking") suppress glyphs for seconds at a time on the software
+    // renderer. Consume whatever crier prompt currently wins, then read —
+    // a bounded loop instead of one-shot visibility snapshots.
+    const knowledge = page.getByRole("button", { name: /Read Stamp schedule/i });
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      if (
+        (await page
+          .locator('[data-game-root="play"]')
+          .getAttribute("data-field-interrupt")) === "CONFRONTATION"
+      ) {
+        await page.getByRole("button", { name: /Comply/ }).click();
+        await waitFreeRoamReady(page);
+      }
+      await teleport(page, 6.35, 6.55, 0);
+      if (
+        await knowledge
+          .waitFor({ state: "visible", timeout: 4000 })
+          .then(() => true)
+          .catch(() => false)
+      ) {
+        break;
+      }
+      const blockingCrier = page.getByRole("button", {
+        name: /Take up the cry/i,
+      });
+      const crierBlocks = await blockingCrier
+        .waitFor({ state: "visible", timeout: 8000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!crierBlocks) continue;
       await blockingCrier.click();
       await page.waitForFunction(
         () =>
           document
             .querySelector('[data-game-root="play"]')
-            ?.getAttribute("data-field-interrupt") ===
-          "REACTIVE_EXCHANGE",
+            ?.getAttribute("data-field-interrupt") === "REACTIVE_EXCHANGE",
       );
+      // First button = the advertised action (the panel also renders the
+      // ESC "Step away" affordance).
       await page.locator(".reactive-exchange button").first().click();
       await page.waitForFunction(
         () =>
@@ -820,12 +860,9 @@ try {
             .querySelector('[data-game-root="play"]')
             ?.getAttribute("data-field-interrupt") === "",
       );
-      await teleport(page, 6.35, 6.55, 0);
-      await page.waitForTimeout(500);
     }
-    const knowledge = page.getByRole("button", { name: /Read Stamp schedule/i });
     try {
-      await knowledge.waitFor({ state: "visible", timeout: 10000 });
+      await knowledge.waitFor({ state: "visible", timeout: 15000 });
     } catch (error) {
       const diagnostics = await page.evaluate(() => ({
         glyphs: [...document.querySelectorAll(".interaction-glyph")].map(
@@ -886,7 +923,7 @@ try {
           "REACTIVE_EXCHANGE",
       );
     }
-    await page.locator(".reactive-exchange button").click();
+    await page.locator(".reactive-exchange button").first().click();
     await page.waitForFunction(
       () => document.querySelector('[data-game-root="play"]')?.getAttribute("data-field-interrupt") === "",
     );

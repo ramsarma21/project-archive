@@ -29,6 +29,7 @@ import {
   type Session,
 } from "@pa/runtime";
 import "../content/day1Exchanges.js";
+import "../content/day1M4Content.js";
 import {
   exchangeCompletionEvent,
   exchangeInterruptId,
@@ -40,6 +41,7 @@ import {
   type Exchange,
 } from "../exchange/exchangeSources.js";
 import { day1ExchangeFrame } from "../content/day1Exchanges.js";
+import { day1M4Frame } from "../content/day1M4Content.js";
 
 const SEED = "31".repeat(32);
 
@@ -187,7 +189,8 @@ function assertCompletable(exchange: Exchange | null, sourceId: string): asserts
 
 // --- 1. Registry inventory ---------------------------------------------------
 
-const STAGE_A_INVENTORY: Record<string, string> = {
+const DAY1_INVENTORY: Record<string, string> = {
+  // Legacy ReactiveNpcDirector sources (wave-2 stage A)
   "NPC-abigail": "NAMED_CAST",
   "NPC-thomas": "NAMED_CAST",
   "NPC-pike": "NAMED_CAST",
@@ -203,6 +206,50 @@ const STAGE_A_INVENTORY: Record<string, string> = {
   "SJ-ropewalk-hook": "SIDE_JOB",
   "SJ-ropewalk-close": "SIDE_JOB",
   "SJ-tavern-note-handoff": "SIDE_JOB",
+  // Legacy M4ContentDirector sources (wave-2 stage B)
+  "KN-noticeboard-revenue": "KNOWLEDGE",
+  "KN-noticeboard-stamp": "KNOWLEDGE",
+  "KN-liberty-bill": "KNOWLEDGE",
+  "KN-nonimport": "KNOWLEDGE",
+  "KN-townmeeting": "KNOWLEDGE",
+  "KN-noconsent": "KNOWLEDGE",
+  "KN-wharfage": "KNOWLEDGE",
+  "KN-sign-printer": "KNOWLEDGE",
+  "KN-sign-tavern": "KNOWLEDGE",
+  "KN-sign-baker": "KNOWLEDGE",
+  "KN-sign-chandler": "KNOWLEDGE",
+  "KN-watchhouse": "KNOWLEDGE",
+  "KN-coinpaper": "KNOWLEDGE",
+  "KN-typecase": "KNOWLEDGE",
+  "KN-effigy": "KNOWLEDGE",
+  "KN-fishflakes": "KNOWLEDGE",
+  "KN-cargomark": "KNOWLEDGE",
+  "KN-ropewalk-front": "KNOWLEDGE",
+  "KN-marketstall": "KNOWLEDGE",
+  "KN-elm": "KNOWLEDGE",
+  "KN-assembly": "KNOWLEDGE",
+  "KN-churchyard": "KNOWLEDGE",
+  "KN-clarkedoor": "KNOWLEDGE",
+  "KN-laundry": "KNOWLEDGE",
+  "KN-firewood": "KNOWLEDGE",
+  "SJ-roof-kid-offer": "SIDE_JOB",
+  "SJ-roof-kid-reached": "SIDE_JOB",
+  "SJ-crier-offer": "SIDE_JOB",
+  "SJ-crier-call-1": "SIDE_JOB",
+  "SJ-crier-call-2": "SIDE_JOB",
+  "SJ-crier-call-3": "SIDE_JOB",
+  "CH-agitator-dare-offer": "CHALLENGE",
+  "CH-agitator-dare-drop": "CHALLENGE",
+  "CH-rooftop-run-start": "CHALLENGE",
+  "CH-rooftop-run-goal": "CHALLENGE",
+  "CH-lose-watch-start": "CHALLENGE",
+  "CH-lose-watch-result": "CHALLENGE",
+  "CH-lose-watch-backdown": "CHALLENGE",
+  "INFO-tavern-keeper": "INFO_FIGURE",
+  "INFO-dockhand": "INFO_FIGURE",
+  "INFO-goodwife": "INFO_FIGURE",
+  "FLV-dog": "FLAVOR",
+  "FLV-gulls": "FLAVOR",
 };
 
 test("day-1 exchange registry is explicit, owned, and duplicate-free", () => {
@@ -210,20 +257,70 @@ test("day-1 exchange registry is explicit, owned, and duplicate-free", () => {
   const inventory = Object.fromEntries(
     sources.map((source) => [source.sourceId, source.owner]),
   );
-  assert.deepEqual(inventory, STAGE_A_INVENTORY);
+  assert.deepEqual(inventory, DAY1_INVENTORY);
   assert.equal(
     new Set(sources.map((source) => source.sourceId)).size,
     sources.length,
     "duplicate source ids registered",
   );
+  // Flavor verbs are the only ambient (non-interrupt) registrations.
+  assert.deepEqual(
+    sources
+      .filter((source) => source.kind === "AMBIENT")
+      .map((source) => source.sourceId)
+      .sort(),
+    ["FLV-dog", "FLV-gulls"],
+  );
 });
 
 // --- 2. Reconstruction coverage ----------------------------------------------
+
+// Sources whose authored content requires durable field history before the
+// exchange exists at all (the lose-the-watch dare settles a provoked chase or
+// confrontation). One escaped chase populates both histories.
+function loseWatchPreconditionEvents(serial: string): PresenterEvent[] {
+  return [
+    {
+      type: "FIELD_WATCHER_CHALLENGE",
+      eventId: `${serial}-challenge`,
+      interruptId: `${serial}-interrupt`,
+      challengeId: `${serial}-challenge-id`,
+      watcherId: "WATCH-patrol",
+      reason: "SUSPICION",
+    },
+    {
+      type: "FIELD_CHASE_STARTED",
+      eventId: `${serial}-chase-start`,
+      interruptId: `${serial}-interrupt`,
+      chaseId: `${serial}-chase`,
+      sourceId: "WATCH-patrol",
+    },
+    {
+      type: "FIELD_CHASE_RESOLVED",
+      eventId: `${serial}-chase-resolved`,
+      interruptId: `${serial}-interrupt`,
+      chaseId: `${serial}-chase`,
+      outcome: "ESCAPED",
+    },
+  ];
+}
+
+const COVERAGE_PRECONDITIONS: Record<string, PresenterEvent[]> = {
+  "CH-lose-watch-result": loseWatchPreconditionEvents("cov-lw-result"),
+  "CH-lose-watch-backdown": loseWatchPreconditionEvents("cov-lw-backdown"),
+};
+
+const applied = new Set<string>();
 
 test("every registered source id reconstructs a completable exchange from a STARTED-only save", () => {
   const driver = interruptDriver(freshSession());
   for (const source of registeredExchangeSources()) {
     if (source.kind !== "EXCHANGE") continue;
+    const preconditions = COVERAGE_PRECONDITIONS[source.sourceId];
+    if (preconditions && !applied.has(source.sourceId)) {
+      applied.add(source.sourceId);
+      for (const event of preconditions) driver.session.advance(event);
+    }
     const view = driver.start(source.sourceId);
     assert.equal(
       view.field.activeInterrupt?.sourceId,
@@ -430,6 +527,90 @@ test("engine-built field events are byte-identical to the legacy directors", () 
   assert.equal(rope.choices[1]!.actionClip, "talk");
 });
 
+test("M4 field events stay byte-identical to the legacy M4ContentDirector", async () => {
+  const session = freshSession();
+  const view = session.ctx.view() as RuntimeView;
+  const seed = engineFieldSeed(view);
+
+  // Knowledge read: M4_ interrupt id, single READ outcome, micros payload.
+  const stamp = resolveExchangeForSource(
+    "KN-noticeboard-stamp",
+    view,
+    "EXTERIOR",
+    0,
+    seed,
+  );
+  assertCompletable(stamp, "KN-noticeboard-stamp");
+  assert.equal(stamp.engine.interruptIdPrefix, "M4");
+  assert.equal(stamp.engine.beginClip, "search");
+  assert.equal(stamp.engine.dismissButton, true);
+  assert.deepEqual([...stamp.engine.panelZRange], [25, 10]);
+  const stampId = exchangeInterruptId(stamp, 3, 12);
+  assert.equal(stampId, "M4_KN-noticeboard-stamp_4_12");
+  const read = stamp.choices[0]!;
+  assert.equal(read.actionClip, undefined, "M4 prompts keep the begin clip");
+  assert.equal(
+    JSON.stringify(exchangeCompletionEvent(stamp, read, stampId, 3)),
+    JSON.stringify({
+      type: "FIELD_REACTIVE_COMPLETED",
+      eventId: "M4_KN-noticeboard-stamp_4_12_COMPLETE_READ",
+      interruptId: "M4_KN-noticeboard-stamp_4_12",
+      completion: {
+        interactionId: "KN-noticeboard-stamp:4",
+        sourceId: "KN-noticeboard-stamp",
+        outcomeId: "READ",
+        micros: [MICRO_CONCEPT_IDS.STAMP_WHAT_COUNTS],
+      },
+    }),
+  );
+
+  // The crier's third call carries the completion payload (micros, standing,
+  // rumor) exactly as authored.
+  const call3 = resolveExchangeForSource("SJ-crier-call-3", view, "EXTERIOR", 0, seed);
+  assertCompletable(call3, "SJ-crier-call-3");
+  assert.equal(call3.engine.beginClip, "argu1");
+  assert.equal(call3.choices[0]!.id, "CALL_3");
+  const call3Effects = call3.choices[0]!.effects;
+  assert.equal(call3Effects.activities?.[0]?.stage, "COMPLETED");
+  assert.deepEqual(call3Effects.micros, [MICRO_CONCEPT_IDS.NEWS_NETWORKS]);
+  assert.equal(
+    call3Effects.standing?.delta,
+    standingDeltaForCause("CRIER_COMPLETED"),
+  );
+
+  // The lose-the-watch provocation submits its patrol challenge inside the
+  // resolution dwell (afterCommit), with the legacy serial-derived ids.
+  const provoke = resolveExchangeForSource(
+    "CH-lose-watch-start",
+    view,
+    "EXTERIOR",
+    0,
+    seed,
+  );
+  assertCompletable(provoke, "CH-lose-watch-start");
+  const submitted: PresenterEvent[] = [];
+  await provoke.choices[0]!.afterCommit?.({
+    view,
+    submitFieldEvent: async (event) => {
+      submitted.push(event);
+      return true;
+    },
+  });
+  assert.equal(
+    JSON.stringify(submitted),
+    JSON.stringify([
+      {
+        type: "FIELD_WATCHER_CHALLENGE",
+        eventId: "M4_LOSE_WATCH_CHALLENGE_1",
+        interruptId: "M4_LOSE_WATCH_INT_1",
+        challengeId: "M4_LOSE_WATCH_1",
+        watcherId: "WATCH-patrol",
+        reason: "SUSPICION",
+      },
+    ]),
+  );
+});
+
 test("engine-built events drive a full exchange arc through the real runtime", () => {
   const session = freshSession();
   const submit = (event: PresenterEvent) => session.advance(event);
@@ -496,7 +677,38 @@ test("every interaction candidate hands off a registered source id", () => {
         `${candidate.id} offers unregistered source ${candidate.sourceId}`,
       );
     }
+    for (const candidate of day1M4Frame(view, spaceId)) {
+      const sourceId =
+        candidate.activate.kind === "EXCHANGE"
+          ? candidate.activate.sourceId
+          : candidate.activate.flavorId;
+      assert.ok(
+        isExchangeSourceRegistered(sourceId, view),
+        `${candidate.id} offers unregistered source ${sourceId}`,
+      );
+    }
   }
+  // The M4 exterior frame offers knowledge reads, both flavor verbs, and the
+  // always-available optional activities on a fresh street save.
+  const exterior = day1M4Frame(view, "EXTERIOR");
+  const ids = exterior.map((candidate) => candidate.id);
+  assert.ok(ids.includes("M4:KN-noticeboard-stamp"));
+  assert.ok(ids.includes("M4:FLV-dog"));
+  assert.ok(ids.includes("M4:FLV-gulls"));
+  assert.ok(ids.includes("M4:SJ-roof-kid-offer"));
+  assert.ok(ids.includes("M4:SJ-crier-offer"));
+  assert.ok(ids.includes("M4:CH-agitator-dare-offer"));
+  assert.ok(ids.includes("M4:CH-lose-watch-start"));
+  assert.ok(ids.includes("M4:INFO-goodwife"));
+  // Rooftop run stays hidden until the roof-kid job reveals it, and the
+  // rumor figures gate on their job completions.
+  assert.ok(!ids.includes("M4:CH-rooftop-run-start"));
+  assert.ok(!ids.includes("M4:INFO-dockhand"));
+  assert.ok(
+    !day1M4Frame(view, "EXPLORE_tavern")
+      .map((candidate) => candidate.id)
+      .includes("M4:INFO-tavern-keeper"),
+  );
 });
 
 // --- 5. Presentation invariants pinned at the source level --------------------

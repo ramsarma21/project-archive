@@ -36,7 +36,6 @@ import { TraversalDirector } from "./TraversalDirector.js";
 import { InteractionDirector } from "./InteractionDirector.js";
 import { createInteractionRegistry } from "./interactionRegistry.js";
 import { ExchangeInterruptDirector } from "./exchange/ExchangeInterruptDirector.js";
-import { M4ContentDirector } from "./M4ContentDirector.js";
 import { INTERIOR_HOTSPOT_MICROS } from "./reactiveManifest.js";
 import { traversalBlockerColliders } from "./traversalMarkers.js";
 import { LOCATIONS, exteriorColliders } from "./manifest.js";
@@ -868,14 +867,6 @@ export function World3D(props: {
               qaHostRef={hostRef}
             />
             <ExchangeInterruptDirector
-              view={props.view!}
-              apiRef={apiRef}
-              interactionRegistry={interactionRegistry}
-              enabled={reactiveActorsActive}
-              exchangesEnabled={exchangesEnabled}
-              reducedMotion={props.reducedMotion}
-            />
-            <M4ContentDirector
               view={props.view!}
               apiRef={apiRef}
               interactionRegistry={interactionRegistry}

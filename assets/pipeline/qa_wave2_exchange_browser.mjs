@@ -683,7 +683,74 @@ try {
     await shot(page, "12-keeper-completed");
   });
 
-  // 5. Escape-abandon on a reconstructed panel (fix-wave P0-2): no outcome
+  // 5. M4 poster read (stage B): candidate click on the wharfage schedule
+  //    (far west wharf — no wandering STORY_NPC can outrank the read glyph
+  //    there), reload mid-panel, complete via the single advertised action,
+  //    and the ESC "Step away" affordance renders on the reconstructed panel.
+  await scenario("m4-poster-read", {}, async (page) => {
+    await openViaCandidate(
+      page,
+      { x: -139, z: -10.4 },
+      /Read Wharfage schedule/i,
+    );
+    const before = await panelSnapshot(page);
+    assert(before.title === "Wharfage schedule", `poster title ${before.title}`);
+    await shot(page, "15-poster-before-reload");
+    const resumed = await reloadMidExchange(page, "m4-poster-read");
+    assert(
+      resumed.title === before.title && resumed.body === before.body,
+      "poster panel changed across reload",
+    );
+    assert(
+      resumed.buttons.some((label) => /Step away/i.test(label ?? "")),
+      "reconstructed M4 panel lost its ESC affordance",
+    );
+    await shot(page, "16-poster-after-reload");
+    const finish = page.getByRole("button", { name: /Finish reading/i });
+    await finish.evaluate((element) => element.click());
+    await page.locator(".exchange-effect-chips").waitFor({
+      state: "visible",
+      timeout: 8000,
+    });
+    await shot(page, "17-poster-reply-chips");
+    await waitResolved(page);
+  });
+
+  // 6. M4 challenge (stage B): the agitator's dare accepted through a full
+  //    save -> reload -> complete cycle.
+  await scenario("m4-challenge", {}, async (page) => {
+    await openViaCandidate(
+      page,
+      { x: -16, z: 6 },
+      /Accept the watched crossing/i,
+    );
+    const before = await panelSnapshot(page);
+    assert(
+      before.title === "Agitator's dare",
+      `challenge title ${before.title}`,
+    );
+    await shot(page, "18-challenge-before-reload");
+    const resumed = await reloadMidExchange(page, "m4-challenge");
+    assert(
+      resumed.title === before.title && resumed.body === before.body,
+      "challenge panel changed across reload",
+    );
+    await shot(page, "19-challenge-after-reload");
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("1");
+    await waitResolved(page);
+    // Accepting flips the dare ACCEPTED: the drop-off exchange now exists at
+    // the Custom House contact (openViaCandidate handles the watcher
+    // spot-checks that Custom House teleports can trip).
+    await openViaCandidate(page, { x: 50, z: 8 }, /Hand over the bundle/i);
+    await shot(page, "20-challenge-dropoff-panel");
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("1");
+    await waitResolved(page);
+    await shot(page, "21-challenge-completed");
+  });
+
+  // 7. Escape-abandon on a reconstructed panel (fix-wave P0-2): no outcome
   //    commits, input unlocks, and the exchange can be re-engaged. Ned is a
   //    fixed-position thread figure, so the panel anchor is deterministic
   //    (wandering cast anchors can legitimately fall behind the camera, where

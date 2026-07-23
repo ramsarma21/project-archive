@@ -93,9 +93,15 @@ export function useExchangeInterrupt(props: {
     }
     const sourceId = interrupt.sourceId ?? "";
     if (!isExchangeSourceRegistered(sourceId, props.view)) {
-      // Wave-2 stage A: M4ContentDirector still owns its sources and QA
-      // harnesses drive synthetic interrupts; both must stay untouched here.
-      // Stage B replaces this silent return with a loud unregistered report.
+      // The registry is complete (wave-2 stage B): an unregistered id in a
+      // save is either a QA-synthesized interrupt driven externally (leave it
+      // alone) or a missing registration — report it, never silently wedge.
+      if (!warnedUnregistered.current.has(sourceId)) {
+        warnedUnregistered.current.add(sourceId);
+        console.warn(
+          `[exchange] active interrupt source ${sourceId} has no registered exchange source; leaving it to its external driver`,
+        );
+      }
       return;
     }
     const completed = [...props.view.field.reactiveCompletions]
