@@ -6,12 +6,12 @@ import { ContactShadow, RiggedCharacter } from "./Character.js";
 import { STAGE_ANCHORS } from "./choreography.js";
 import { applyProceduralMotion } from "./ActorDirector.js";
 import { clipForMotion, PLAYER_ACTION_CLIPS } from "./animationManifest.js";
-import { CarriedClothBolt, mechanicStageOffset } from "./MechanicRigs.js";
+import { mechanicStageOffset } from "./MechanicRigs.js";
+import { mechanicBodyStagingFor } from "./mechanicBodyStaging.js";
 import {
   type CollisionWorld,
   supportBelow,
   sweepXZ,
-  blockerIdsAt,
   depenetrateXZ,
   positionClear,
   CAPSULE_RADIUS,
@@ -61,25 +61,8 @@ import {
   isLegacyDensityBarrierCollider,
   isLegacyPropCollider,
   isLegacyTraversalCollider,
-  routeBlockerMatrix,
 } from "./outdoorCollisionAdapter.js";
-import { QA_RUNTIME_ENABLED } from "./qaEnvironment.js";
-
-// Execution clips per mechanic (Interaction-Spec §6): once the player has
-// engaged the hold at least once, the rig plays the authored action clip
-// instead of the generic pose. Purely presentational.
-function mechanicClipFor(
-  promptId: string | null,
-  armed: boolean,
-  haulWalking: boolean,
-): { clip: string; loopOnce?: boolean } | null {
-  if (!promptId || !armed) return null;
-  if (promptId.includes("EVENT_CLIMB")) return { clip: "climbUp", loopOnce: true };
-  if (promptId.includes("EVENT_CHANT")) return { clip: "cheer1" };
-  if (promptId.includes("CUSTOMS_SLIP")) return { clip: "crouchWalk" };
-  if (promptId.includes("THOMAS_HAUL")) return { clip: haulWalking ? "carryWalk" : "carry" };
-  return null;
-}
+import { usePlayerQaHooks } from "./qa/playerQaHooks.js";
 
 // Authored affordance the traversal layer asks the player to execute. The
 // player is the sole owner of the transform, so the director submits a request
@@ -476,102 +459,14 @@ export function Player(props: {
   useEffect(() => {
     props.apiRef.current = api;
   });
-  useEffect(() => {
-    if (!QA_RUNTIME_ENABLED) return;
-    const onQaCommand = (
-      event: Event,
-    ) => {
-      const detail = (
-        event as CustomEvent<{
-          teleport?: [number, number, number];
-          faceY?: number;
-          stamina?: number;
-        }>
-      ).detail;
-      if (detail?.teleport) api.teleport(detail.teleport, detail.faceY);
-      // Dev/QA-only chase-stamina seed. Lets the M1 exhausted-catch harness
-      // reach the zero-stamina precondition deterministically: the feel-tuned
-      // 0.14/s drain would otherwise need ~7s of unobstructed sprint, which
-      // overruns the authored QA street segment. Gated by QA_RUNTIME_ENABLED,
-      // so it is never present in production builds.
-      if (typeof detail?.stamina === "number" && Number.isFinite(detail.stamina)) {
-        staminaRef.current = createStamina(detail.stamina);
-      }
-    };
-    window.addEventListener("pa:qa-player-command", onQaCommand);
-    return () => window.removeEventListener("pa:qa-player-command", onQaCommand);
-  }, [api]);
-  useEffect(() => {
-    if (!QA_RUNTIME_ENABLED) return;
-    type CollisionProbeWindow = Window & {
-      __paCollision?: (probe?: {
-        x?: number;
-        y?: number;
-        z?: number;
-        radius?: number;
-        height?: number;
-      }) => unknown;
-    };
-    const target = window as CollisionProbeWindow;
-    target.__paCollision = (probe = {}) => {
-      const state = motionRef.current;
-      const point = {
-        x: probe.x ?? state.pos.x,
-        y: probe.y ?? state.pos.y,
-        z: probe.z ?? state.pos.z,
-      };
-      const radius = probe.radius ?? CAPSULE_RADIUS;
-      const height = probe.height ?? state.capsuleHeight;
-      return {
-        point,
-        radius,
-        height,
-        hitIds: blockerIdsAt(
-          worldRef.current,
-          point,
-          radius,
-          height,
-        ),
-        lastSafe:
-          safeHistoryRef.current[safeHistoryRef.current.length - 1] ?? null,
-        blockers: worldRef.current.blockers.map((blocker) => ({
-          id: blocker.id,
-          bounds: [
-            blocker.minX,
-            blocker.maxX,
-            blocker.minZ,
-            blocker.maxZ,
-            blocker.baseY,
-            blocker.topY,
-          ],
-          footprint: blocker.footprint ?? null,
-          tags: [...blocker.tags],
-        })),
-        platforms: worldRef.current.platforms.map((platform) => ({
-          id: platform.id,
-          bounds: [
-            platform.minX,
-            platform.maxX,
-            platform.minZ,
-            platform.maxZ,
-            platform.y,
-          ],
-          polygon: platform.polygon ?? null,
-        })),
-        routes: routeBlockerMatrix(props.colliders),
-      };
-    };
-    if (
-      new URLSearchParams(window.location.search).get("collisionDebug") === "1"
-    ) {
-      console.info(
-        "[collisionDebug] call window.__paCollision({x,y,z}) for IDs, bounds, hits, routes and last-safe",
-      );
-    }
-    return () => {
-      delete target.__paCollision;
-    };
-  }, [props.colliders]);
+  usePlayerQaHooks({
+    api,
+    motionRef,
+    worldRef,
+    safeHistoryRef,
+    staminaRef,
+    colliders: props.colliders,
+  });
 
   const drag = useRef<{ active: boolean; lastX: number; lastY: number }>({ active: false, lastX: 0, lastY: 0 });
   const camPitch = useRef(0);
@@ -1028,7 +923,8 @@ export function Player(props: {
           // (climb, push, chant, slip) face and drive the right direction.
           const promptId = props.mechanicPromptId ?? "";
           const staged =
-            (promptId.includes("EVENT_") || promptId.includes("CUSTOMS_SLIP") || props.headCam) &&
+            (Boolean(mechanicBodyStagingFor(promptId)?.stagesOnAnchor) ||
+              props.headCam) &&
             STAGE_ANCHORS[props.actorCue.anchorId];
           const [offX, offZ] = mechanicStageOffset(promptId);
           const fromX = staged ? staged[0] + offX : api.position.x;
@@ -1058,13 +954,14 @@ export function Player(props: {
       body.current.rotation.y = 0;
       const promptId = props.mechanicPromptId ?? "";
       const progress = mechanicProgress.current;
+      const staging = mechanicBodyStagingFor(promptId);
       // Third-person executions are staged for the authored anchor: the
       // event shots frame CROWD_PLAYER and the checkpoint shot frames
       // CUSTOMS_PLAYER. Ease the visible body onto the anchor so the action
       // happens where those cameras look, wherever the walk-up ended.
       // Head-camera first-person beats stage the same way so the eye camera
       // and the work object line up deterministically.
-      if (promptId.includes("EVENT_") || promptId.includes("CUSTOMS_SLIP") || props.headCam) {
+      if (staging?.stagesOnAnchor || props.headCam) {
         const anchor = props.actorCue ? STAGE_ANCHORS[props.actorCue.anchorId] : undefined;
         if (anchor) {
           stageBlend.current = props.reducedMotion
@@ -1081,71 +978,23 @@ export function Player(props: {
           body.current.position.z += wx * sin + wz * cos;
         }
       }
-      if (promptId.includes("EVENT_CLIMB")) {
-        // Mount the crate perch: rise to its top as the hold progresses,
-        // stepping slightly toward the faced crowd. This is authored beat
-        // displacement (the clip itself is root-neutral).
-        body.current.position.y += progress * 0.68;
-        body.current.position.z += progress * 0.24;
-      } else if (promptId.includes("EVENT_PUSH")) {
-        // Shove-steps: forward drive with a push cadence and a lean.
-        body.current.position.z += progress * 0.85 + Math.sin(progress * Math.PI * 5) * 0.06;
-        body.current.rotation.x += 0.13 + Math.max(0, Math.sin(progress * Math.PI * 5)) * 0.05;
-      } else if (promptId.includes("EVENT_CHANT")) {
-        body.current.position.y += Math.max(0, Math.sin(clock.elapsedTime * 7)) * 0.06 * progress;
-        body.current.rotation.z += Math.sin(clock.elapsedTime * 3.5) * 0.04 * progress;
-      } else if (promptId.includes("CUSTOMS_SLIP")) {
-        // Weave through the crossing traffic: a wide crouched arc past the
-        // officer's line rather than a shoulder lean.
-        body.current.position.x += Math.sin(progress * Math.PI) * 1.05;
-        body.current.position.z += progress * 0.6;
-        body.current.rotation.z -= 0.09 * progress;
-      } else if (promptId.includes("THOMAS_HAUL")) {
-        // Shuttle run: walk from wherever the player stands to the cloth
-        // stack, then carry the bolt across to the counter as the hold
-        // rises. Completion leaves the carrier at the counter for the beat.
-        if (props.reducedMotion) {
-          body.current.rotation.x += 0.08 * progress;
-        } else if (mechanicActive.current || progress > 0) {
-          const haulStack = STAGE_ANCHORS.THOMAS_WORK ?? [-70.55, 0.85, -14.5];
-          const haulCounter = STAGE_ANCHORS.THOMAS_COUNTER ?? [-69.55, 1.05, -15.7];
-          let fromX: number;
-          let fromZ: number;
-          let toX: number;
-          let toZ: number;
-          let t: number;
-          if (progress < 0.3) {
-            t = progress / 0.3;
-            fromX = 0;
-            fromZ = 0;
-            toX = haulStack[0] - api.position.x;
-            toZ = haulStack[2] - api.position.z;
-          } else {
-            t = (progress - 0.3) / 0.7;
-            fromX = haulStack[0] - api.position.x;
-            fromZ = haulStack[2] - api.position.z;
-            toX = haulCounter[0] - api.position.x;
-            toZ = haulCounter[2] - api.position.z;
-          }
-          const eased = t * t * (3 - 2 * t);
-          const dx = THREE.MathUtils.lerp(fromX, toX, eased);
-          const dz = THREE.MathUtils.lerp(fromZ, toZ, eased);
-          const cos = Math.cos(heading.current);
-          const sin = Math.sin(heading.current);
-          body.current.position.x += dx * cos - dz * sin;
-          body.current.position.z += dx * sin + dz * cos;
-          const walkYaw = Math.atan2(toX - fromX, toZ - fromZ);
-          body.current.rotation.y = walkYaw - heading.current;
-          body.current.rotation.x += 0.05;
-        }
-        const walking =
-          !props.reducedMotion &&
-          mechanicActive.current &&
-          progress > 0.01 &&
-          progress < 0.99;
-        if (walking !== haulWalkingRef.current) {
-          haulWalkingRef.current = walking;
-          setHaulWalking(walking);
+      // Authored per-mechanic displacement curve (registered content; the
+      // Day-1 set lives in content/day1MechanicStaging.tsx).
+      const stageResult = staging?.stage?.({
+        body: body.current,
+        promptId,
+        progress,
+        active: mechanicActive.current,
+        elapsedTime: clock.elapsedTime,
+        reducedMotion: props.reducedMotion,
+        playerX: api.position.x,
+        playerZ: api.position.z,
+        heading: heading.current,
+      });
+      if (stageResult && stageResult.walking !== undefined) {
+        if (stageResult.walking !== haulWalkingRef.current) {
+          haulWalkingRef.current = stageResult.walking;
+          setHaulWalking(stageResult.walking);
         }
       }
       if (!props.headCam && !mechanicActive.current && progress === 0) {
@@ -1300,7 +1149,14 @@ export function Player(props: {
     camera.lookAt(lookTarget.current);
   });
 
-  const mechanicClip = mechanicClipFor(props.mechanicPromptId, mechanicArmed, haulWalking);
+  // Execution clips per mechanic (Interaction-Spec §6): once the player has
+  // engaged the hold at least once, the rig plays the authored action clip
+  // instead of the generic pose. Purely presentational; clip choice comes
+  // from the registered mechanic staging.
+  const renderStaging = mechanicBodyStagingFor(props.mechanicPromptId);
+  const mechanicClip = mechanicArmed
+    ? renderStaging?.executionClip?.(props.mechanicPromptId ?? "", haulWalking) ?? null
+    : null;
   // Traversal/free-jump action clips (jump/runJump/vault/climb/duck) outrank
   // the free-walk locomotion set while a motion action runs; beats and
   // mechanics still win over everything.
@@ -1335,9 +1191,10 @@ export function Player(props: {
             coat="#4a4237"
             contactShadow={false}
           />
-          {(props.mechanicPromptId ?? "").includes("THOMAS_HAUL") && (
-            <CarriedClothBolt reducedMotion={props.reducedMotion} />
-          )}
+          {renderStaging?.carriedProp?.(
+            props.mechanicPromptId ?? "",
+            props.reducedMotion,
+          ) ?? null}
         </group>
       </group>
     </>
