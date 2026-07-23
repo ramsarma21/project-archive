@@ -5,8 +5,8 @@
 //   PLAYWRIGHT_BROWSERS_PATH=/tmp/pw-browsers node --import tsx assets/pipeline/qa_inspect_card.mjs
 import { chromium } from "/tmp/pw-check/node_modules/playwright/index.mjs";
 import { resolve } from "node:path";
-import { createDay1Session } from "../../packages/runtime/src/index.ts";
-import { CHAPTER_ID, PACKAGE_ID } from "../../packages/contracts/src/index.ts";
+import { createDay1Session } from "../../packages/chapter-boston/src/index.ts";
+import { CHAPTER_ID, PACKAGE_ID } from "../../packages/chapter-boston/src/index.ts";
 
 const BASE_URL = process.env.SLICE_QA_URL ?? "http://localhost:5183/";
 const SEED = "42".repeat(32);

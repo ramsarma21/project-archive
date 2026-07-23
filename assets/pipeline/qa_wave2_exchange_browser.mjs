@@ -14,8 +14,8 @@
 import { chromium } from "/tmp/pw-check/node_modules/playwright/index.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createDay1Session } from "../../packages/runtime/src/index.ts";
-import { CHAPTER_ID, PACKAGE_ID } from "../../packages/contracts/src/index.ts";
+import { createDay1Session } from "../../packages/chapter-boston/src/index.ts";
+import { CHAPTER_ID, PACKAGE_ID } from "../../packages/chapter-boston/src/index.ts";
 
 const BASE_URL = process.env.W2_QA_URL ?? "http://127.0.0.1:5188/";
 const OUT = resolve(

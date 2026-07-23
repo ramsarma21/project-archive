@@ -1,13 +1,14 @@
 import { chromium } from "/tmp/pw-check/node_modules/playwright/index.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { resolveRubricObservation } from "../../packages/runtime/src/index.ts";
 import {
+  BOSTON_DAY1_FLOW_VERSION,
   CP1_BANK_REGISTRY,
   CP1_PRODUCTION_BANK,
   createDay1Session,
   openResponsePackages,
-  resolveRubricObservation,
-} from "../../packages/runtime/src/index.ts";
+} from "../../packages/chapter-boston/src/index.ts";
 
 const BASE_URL =
   process.env.COGNITIVE_QA_URL ?? "http://127.0.0.1:5183/";
@@ -242,7 +243,7 @@ async function seedProfile(page, input) {
   );
   await evaluateStable(
     page,
-    async ({ profile, events, seed }) => {
+    async ({ profile, events, seed, flowVersion }) => {
       const request = indexedDB.open("project-archive");
       await new Promise((resolvePromise, reject) => {
         request.onerror = () => reject(request.error);
@@ -257,7 +258,7 @@ async function seedProfile(page, input) {
             chapterId: "PA.SEA01.CH02.BOSTON.v1",
             packageId: "PA.BOSTON.DAY1.TEXT.v1",
             variationRootSeedHex: seed,
-            flowVersion: 5,
+            flowVersion,
             committedEvents: events,
             revision: events.length,
             status: "IN_PROGRESS",
@@ -271,7 +272,14 @@ async function seedProfile(page, input) {
         };
       });
     },
-    { profile: input.profile, events: input.events, seed: SEED },
+    {
+      profile: input.profile,
+      events: input.events,
+      seed: SEED,
+      // The current chapter flow version (stale saves are discarded by the
+      // web boot path, which would silently reset this scenario to B0).
+      flowVersion: BOSTON_DAY1_FLOW_VERSION,
+    },
   );
 }
 
@@ -316,7 +324,9 @@ async function enterPlay(page) {
         "data-speaking",
       ) === "false",
     null,
-    { timeout: 60_000 },
+    // The flow-v7 opening replays more presentation beats on resume than the
+    // v5-era 60s allowed for.
+    { timeout: 150_000 },
   );
 }
 
@@ -390,13 +400,13 @@ async function submitPanel(page, authenticated = false) {
     );
   if (authenticated) {
     const submit = panel.getByRole("button", {
-      name: "Submit reflection",
+      name: "Set it down",
     });
     assert(await submit.isDisabled(), "consent-denied submit was enabled");
     await panel.locator('input[type="checkbox"]').check();
   }
   await panel
-    .getByRole("button", { name: "Submit reflection" })
+    .getByRole("button", { name: "Set it down" })
     .click();
   await page.waitForSelector(".open-response-feedback", {
     timeout: 10_000,
@@ -555,7 +565,7 @@ try {
     await page.waitForTimeout(1_000);
     await page
       .getByRole("button", {
-        name: "Return to the exact prior objective",
+        name: "Back to the street",
       })
       .click();
     await page.waitForSelector(".open-response-panel", {

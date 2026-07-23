@@ -12,13 +12,13 @@ import { chromium } from "/tmp/pw-check/node_modules/playwright/index.mjs";
 import { mkdirSync } from "node:fs";
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createDay1Session } from "../../packages/runtime/src/index.ts";
 import {
   CHAPTER_ID,
+  MICRO_CONCEPT_IDS,
   PACKAGE_ID,
   THREAD_IDS,
-  MICRO_CONCEPT_IDS,
-} from "../../packages/contracts/src/index.ts";
+  createDay1Session,
+} from "../../packages/chapter-boston/src/index.ts";
 
 const BASE_URL = process.env.SLICE_QA_URL ?? "http://127.0.0.1:5183/";
 const OUT = resolve(process.env.SLICE_QA_OUT ?? "test-results/slice-visual-qa");

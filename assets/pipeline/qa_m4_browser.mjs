@@ -4,8 +4,8 @@
 import { chromium } from "/tmp/pw-check/node_modules/playwright/index.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createDay1Session } from "../../packages/runtime/src/index.ts";
-import { CHAPTER_ID, PACKAGE_ID } from "../../packages/contracts/src/index.ts";
+import { createDay1Session } from "../../packages/chapter-boston/src/index.ts";
+import { BOSTON_DAY1_FLOW_VERSION, CHAPTER_ID, PACKAGE_ID } from "../../packages/chapter-boston/src/index.ts";
 
 const BASE_URL = process.env.M4_QA_URL ?? "http://127.0.0.1:5190/";
 const OUT = resolve(process.env.M4_QA_OUT ?? "test-results/m4-browser-qa");
@@ -206,7 +206,7 @@ async function bootstrap(
   );
   await evaluateStable(
     page,
-    async ({ profileId, events, reducedMotion, highContrast, inputMethod, seed, chapterId, packageId }) => {
+    async ({ profileId, events, reducedMotion, highContrast, inputMethod, seed, chapterId, packageId, flowVersion }) => {
       const request = indexedDB.open("project-archive");
       await new Promise((resolvePromise, reject) => {
         request.onerror = () => reject(request.error);
@@ -238,7 +238,7 @@ async function bootstrap(
             profileId,
             chapterId,
             packageId,
-            flowVersion: 5,
+            flowVersion,
             committedEvents: events,
             revision: 1,
             status: "IN_PROGRESS",
@@ -261,6 +261,7 @@ async function bootstrap(
       seed: SEED,
       chapterId: CHAPTER_ID,
       packageId: PACKAGE_ID,
+      flowVersion: BOSTON_DAY1_FLOW_VERSION,
     },
   );
 }
