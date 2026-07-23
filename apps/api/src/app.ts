@@ -11,13 +11,12 @@ import {
   type MasteryReport,
   type PresenterEvent,
 } from "@pa/contracts";
-import { buildMasteryReport } from "@pa/runtime";
 import {
-  BOSTON_1765_CHAPTER,
-  CHAPTER_ID,
-  PACKAGE_ID,
-  createDay1Session,
-} from "@pa/chapter-boston";
+  buildMasteryReport,
+  createChapterSession,
+  type ChapterDefinition,
+} from "@pa/runtime";
+import { CHAPTERS } from "./chapters.js";
 import { migrate, query, transaction } from "./db.js";
 import {
   buildGoogleAuthUrl,
@@ -56,12 +55,16 @@ async function requireOwner(req: FastifyRequest, profileId: string) {
   return { user };
 }
 
+// Server-side replay validation through the chapter registry: rebuild the
+// session from seed + committed events for the SAVE'S chapter and derive the
+// authoritative mastery report from it.
 function masteryFromEvents(
+  chapter: ChapterDefinition,
   profileId: string,
   variationRootSeedHex: string,
   events: PresenterEvent[],
 ): { report: MasteryReport; done: boolean } {
-  const session = createDay1Session({
+  const session = createChapterSession(chapter, {
     variationRootSeedHex,
     priorEvents: events,
     assessmentMode: "PRODUCTION",
@@ -75,15 +78,15 @@ function masteryFromEvents(
       session.ctx.learner,
       {
         profileId,
-        packageId: PACKAGE_ID,
-        chapterId: CHAPTER_ID,
+        packageId: chapter.packageId,
+        chapterId: chapter.chapterId,
         variationRootSeedHex,
         committedEventCount: events.length,
         generatedAt: new Date().toISOString(),
       },
       session.ctx.checkpoint,
       undefined,
-      BOSTON_1765_CHAPTER.report,
+      chapter.report,
     ),
   };
 }
@@ -293,11 +296,19 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
       const parsed = PutSaveRequestSchema.safeParse(req.body);
       if (!parsed.success) return reply.code(400).send({ error: "SAVE_INVALID" });
       const { baseRevision, record } = parsed.data;
+      // Chapter registry lookup by the save's own chapterId. An unknown
+      // chapter is a clean 400 — the API refuses what it cannot replay.
+      const chapter = CHAPTERS.get(record.chapterId);
+      if (!chapter) {
+        return reply.code(400).send({
+          error: "SAVE_INVALID",
+          message: `unknown chapterId ${record.chapterId}`,
+        });
+      }
       if (
         record.profileId !== req.params.profileId ||
         record.saveId !== req.params.profileId ||
-        record.chapterId !== CHAPTER_ID ||
-        record.packageId !== PACKAGE_ID ||
+        record.packageId !== chapter.packageId ||
         record.revision !== record.committedEvents.length
       ) {
         return reply.code(400).send({ error: "SAVE_INVALID" });
@@ -323,6 +334,7 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
           }
 
           const { report, done } = masteryFromEvents(
+            chapter,
             req.params.profileId,
             seed,
             record.committedEvents as PresenterEvent[],

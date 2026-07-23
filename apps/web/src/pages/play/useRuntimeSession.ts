@@ -6,6 +6,7 @@ import type {
   PresenterEvent,
   RuntimeView,
 } from "@pa/contracts";
+import { BOSTON_DAY1_FLOW_VERSION } from "@pa/chapter-boston";
 import { RuntimeClient } from "../../runtimeClient.js";
 import { getSave, type LocalProfile, type PresenterSpatialState } from "../../db.js";
 import { pullMastery } from "../../api.js";
@@ -22,7 +23,8 @@ import {
 // v7 (design1 feature 4): effigy participation — the fixed event's first
 // Continue became the pin-your-handbill hold and the aftermath Continue was
 // folded into the walk back, changing the fixed-event beat sequence.
-export const DAY1_FLOW_VERSION = 7;
+// The value is owned by the chapter package (single source; wave3).
+export const DAY1_FLOW_VERSION = BOSTON_DAY1_FLOW_VERSION;
 
 // Boot/init session state for Play: the runtime worker client, the committed
 // event log, save/cloud revisions, the presenter spatial snapshot pair, and

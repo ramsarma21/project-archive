@@ -146,6 +146,31 @@ test("save identity, seed, and revision invariants are server-owned", async () =
   assert.equal(response.statusCode, 400, response.body);
 });
 
+test("an unregistered chapterId is a clean 400 from the chapter registry", async () => {
+  const response = await app.inject({
+    method: "PUT",
+    url: `/v1/profiles/${profileId}/save`,
+    headers: { cookie: `pa_session=${sessionId}` },
+    payload: {
+      baseRevision: 1,
+      record: {
+        saveId: profileId,
+        profileId,
+        chapterId: "PA.SEA01.CH99.PHILADELPHIA.v1",
+        packageId: PACKAGE_ID,
+        variationRootSeedHex: seed,
+        flowVersion: 5,
+        committedEvents: [{ type: "CONTINUE" }],
+        revision: 2,
+        status: "IN_PROGRESS",
+        updatedAt: new Date().toISOString(),
+      },
+    },
+  });
+  assert.equal(response.statusCode, 400, response.body);
+  assert.equal(JSON.parse(response.body).error, "SAVE_INVALID");
+});
+
 test("open responses are encrypted, CSRF-protected, idempotent, and profile-scoped", async () => {
   const cookie = `pa_session=${sessionId}`;
   const csrf = csrfTokenForSession(sessionId);
