@@ -11,6 +11,38 @@ export const OBJ_LABELS: Record<string, string> = {
   SET_HEADLINE: "Set tomorrow's headline",
 };
 
+const SIDE_JOB_LABELS: Record<string, string> = {
+  "SJ-tavern-note": "A quiet note",
+  "SJ-dock-haul": "A barrel before the tide",
+  "SJ-roof-kid": "The boy on the scaffold",
+  "SJ-crier": "Take up the cry",
+  "SJ-ropewalk": "A strand down the walk",
+  "CH-agitator-dare": "The watched crossing",
+  "CH-rooftop-run": "The short roof-board run",
+  "CH-lose-the-watch": "Lose the watch",
+};
+
+// Live (accepted, in-progress) side jobs for the task strip. Mid-job the HUD
+// used to point 139m away at the main errand while the job's own breadcrumbs
+// lived only in the Log (feel-audit-1 P1-10).
+export function activeSideJobs(
+  view: RuntimeView | null,
+): { activityId: string; label: string; breadcrumb: string | null }[] {
+  if (!view) return [];
+  return Object.values(view.field.activities)
+    .filter(
+      (activity) =>
+        activity.stage !== "AVAILABLE" &&
+        activity.stage !== "DORMANT" &&
+        activity.stage !== "COMPLETED",
+    )
+    .map((activity) => ({
+      activityId: activity.activityId,
+      label: SIDE_JOB_LABELS[activity.activityId] ?? activity.activityId,
+      breadcrumb: activity.breadcrumb,
+    }));
+}
+
 // Selected -> saturated gold; available (runtime "ACTIVE") -> neutral aged
 // brass (never a literal blue world marker, per the marker replacement spec);
 // finished work checks off; closed work greys out.
@@ -76,6 +108,13 @@ export function HoloTasks(props: {
                     ? "Closed"
                     : "Available"}
             </small>
+          </div>
+        ))}
+        {activeSideJobs(v).map((job) => (
+          <div key={job.activityId} className="travel-objective side-job">
+            <span className="dot side-job" />
+            <span>{job.label}</span>
+            <small>{job.breadcrumb ?? "Side job in progress"}</small>
           </div>
         ))}
       </div>

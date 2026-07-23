@@ -6,12 +6,42 @@ import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.j
 import { chooseAvailableClip, PLAYER_ACTION_CLIPS } from "./animationManifest.js";
 
 // ---- Error boundary so a missing/failed GLB degrades to a placeholder ----
-class GlbBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
+// TRANSIENT failures retry (feel-audit-1 P1-12): dev-server hiccups and
+// aborted in-flight fetches (net::ERR_ABORTED on double-mount churn) used to
+// latch `failed` for the whole session, leaving imported-only rigs invisible
+// — markers and exchanges attached to empty air, a QA fail state under the
+// imported-visible-world law. Each retry evicts the rejected loader cache
+// entry (onBeforeRetry) and re-suspends with exponential backoff.
+class GlbBoundary extends Component<
+  {
+    fallback: ReactNode;
+    children: ReactNode;
+    onBeforeRetry?: () => void;
+    maxRetries?: number;
+  },
+  { failed: boolean; attempts: number }
+> {
+  state = { failed: false, attempts: 0 };
+  private retryTimer = 0;
   static getDerivedStateFromError() {
     return { failed: true };
   }
-  componentDidCatch() {}
+  componentDidCatch(error: unknown) {
+    const max = this.props.maxRetries ?? 3;
+    if (this.state.attempts >= max) {
+      console.error("GLB load failed permanently after retries", error);
+      return;
+    }
+    const delay = 600 * 2 ** this.state.attempts;
+    window.clearTimeout(this.retryTimer);
+    this.retryTimer = window.setTimeout(() => {
+      this.props.onBeforeRetry?.();
+      this.setState((state) => ({ failed: false, attempts: state.attempts + 1 }));
+    }, delay);
+  }
+  componentWillUnmount() {
+    window.clearTimeout(this.retryTimer);
+  }
   render() {
     return this.state.failed ? this.props.fallback : this.props.children;
   }
@@ -344,10 +374,16 @@ export function RiggedCharacter(props: {
     props.showFallback === false
       ? null
       : <PlaceholderPerson height={props.height} coat={props.coat} />;
+  const glbKey = props.glbKey;
   return (
     <group>
       {props.contactShadow !== false && <ContactShadow radius={0.55} />}
-      <GlbBoundary fallback={fallback}>
+      <GlbBoundary
+        fallback={fallback}
+        onBeforeRetry={() =>
+          useGLTF.clear(`/world/characters/${glbKey}.glb?v=production-cast-6`)
+        }
+      >
         <Suspense fallback={fallback}>
           <RiggedInner
             glbKey={props.glbKey}
@@ -408,7 +444,10 @@ export function FittedGlb(props: {
   fallback: ReactNode;
 }) {
   return (
-    <GlbBoundary fallback={props.fallback}>
+    <GlbBoundary
+      fallback={props.fallback}
+      onBeforeRetry={() => useGLTF.clear(`/world/props/${props.glbKey}.glb`)}
+    >
       <Suspense fallback={props.fallback}>
         <FittedGlbInner glbKey={props.glbKey} size={props.size} scale={props.scale} />
       </Suspense>
@@ -462,7 +501,10 @@ export function ImportedStructure(props: {
   rotateShell?: boolean;
 }) {
   return (
-    <GlbBoundary fallback={null}>
+    <GlbBoundary
+      fallback={null}
+      onBeforeRetry={() => useGLTF.clear(`/world/structures/${props.glbKey}.glb`)}
+    >
       <Suspense fallback={null}>
         <ImportedStructureInner {...props} />
       </Suspense>
@@ -522,11 +564,15 @@ export function ImportedTexturedProp(props: {
   size: [number, number, number];
   texture: THREE.Texture;
 }) {
+  const glbKey = props.glbKey ?? "int-paper-surface-flat";
   return (
-    <GlbBoundary fallback={null}>
+    <GlbBoundary
+      fallback={null}
+      onBeforeRetry={() => useGLTF.clear(`/world/props/${glbKey}.glb`)}
+    >
       <Suspense fallback={null}>
         <ImportedTexturedPropInner
-          glbKey={props.glbKey ?? "int-paper-surface-flat"}
+          glbKey={glbKey}
           size={props.size}
           texture={props.texture}
         />
@@ -581,7 +627,10 @@ export function ImportedSurface(props: {
   relief?: number;
 }) {
   return (
-    <GlbBoundary fallback={null}>
+    <GlbBoundary
+      fallback={null}
+      onBeforeRetry={() => useGLTF.clear(`/world/props/${props.glbKey}.glb`)}
+    >
       <Suspense fallback={null}>
         <ImportedSurfaceInner
           glbKey={props.glbKey}

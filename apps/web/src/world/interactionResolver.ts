@@ -15,6 +15,13 @@ export interface ResolvedInteraction {
 
 export const INTERACTION_HYSTERESIS_M = 0.35;
 
+// Within arm's reach the facing gate is waived: standing ON an anchor with a
+// slightly-off heading used to produce dead silence (or offer a FARTHER
+// candidate whose facing happened to pass) — the audited gangplank/notice-
+// board fussiness (feel-audit-1 P1-3). Facing still gates approach-range
+// offers so distant prompts never fire at the player's back.
+export const INTERACTION_FACING_WAIVER_M = 0.75;
+
 function eligible(
   candidate: InteractionCandidate,
   player: InteractionPlayer,
@@ -35,7 +42,9 @@ function eligible(
   const inverse = distance > 0.001 ? 1 / distance : 1;
   const facing =
     player.facingX * dx * inverse + player.facingZ * dz * inverse;
-  if (facing < candidate.facingDot) return null;
+  if (distance > INTERACTION_FACING_WAIVER_M && facing < candidate.facingDot) {
+    return null;
+  }
   if (
     candidate.losRequired &&
     !segmentClear(

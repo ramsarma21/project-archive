@@ -6,6 +6,7 @@ import {
   type InteractionCandidate,
 } from "../interactionRegistry.js";
 import {
+  INTERACTION_FACING_WAIVER_M,
   INTERACTION_HYSTERESIS_M,
   resolveInteraction,
 } from "../interactionResolver.js";
@@ -84,6 +85,33 @@ test("LOS, facing, enabled, and isolated space fail closed", () => {
       null,
     );
   }
+});
+
+test("facing is waived at arm's reach (feel-audit-1 P1-3)", () => {
+  assert.equal(INTERACTION_FACING_WAIVER_M, 0.75);
+  // Standing essentially on the anchor with an off heading still offers it…
+  const onAnchor = candidate("on-anchor", INTERACTION_PRIORITIES.SIDE_JOB_THREAD, [-0.5, 0, 0], { facingDot: 0.2 });
+  assert.equal(
+    resolveInteraction({
+      candidates: [onAnchor],
+      player,
+      currentId: null,
+      segmentClear: () => true,
+    })?.candidate.id,
+    "on-anchor",
+  );
+  // …and the NEAREST eligible wins over a farther facing-aligned twin.
+  const near = candidate("near", INTERACTION_PRIORITIES.KNOWLEDGE, [-0.4, 0, 0], { facingDot: 0.2 });
+  const far = candidate("far", INTERACTION_PRIORITIES.KNOWLEDGE, [1.4, 0, 0], { facingDot: 0.2 });
+  assert.equal(
+    resolveInteraction({
+      candidates: [far, near],
+      player,
+      currentId: null,
+      segmentClear: () => true,
+    })?.candidate.id,
+    "near",
+  );
 });
 
 test("hysteresis keeps current peer but never masks higher priority", () => {

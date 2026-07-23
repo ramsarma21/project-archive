@@ -674,6 +674,9 @@ input[type="text"] {
 .travel-objective small { grid-column: 2; color: rgba(160, 237, 242, 0.74); font-size: 9px; letter-spacing: 0.15px; }
 .travel-objective .dot { background: var(--archive); box-shadow: 0 0 9px var(--archive); transform: rotate(45deg); border-radius: 1px; }
 .travel-objective.gold .dot { background: var(--gold); box-shadow: 0 0 9px var(--gold); }
+/* Live side jobs ride under the main errands (feel-audit-1 P1-10). */
+.travel-objective.side-job .dot { background: #8fd0a8; box-shadow: 0 0 8px rgba(143, 208, 168, 0.6); }
+.travel-objective.side-job small { color: rgba(178, 224, 197, 0.8); }
 .timed-glyph { margin-right: 5px; color: #ffca55; font-weight: 900; text-shadow: 0 0 9px rgba(255, 183, 55, 0.8); }
 
 /* ---- Holographic People-card feedback (post-commit, non-blocking) ---- */
