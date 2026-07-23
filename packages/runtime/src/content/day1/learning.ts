@@ -77,7 +77,15 @@ export function* runRetrySync(ctx: Ctx, concept: ConceptId): Sub<void> {
 // Run any due initial Syncs (priority order, spacing-gated). anyLock defers.
 export function* maybeRunSyncs(ctx: Ctx, anyLock: boolean): Sub<void> {
   for (const concept of CONCEPT_PRIORITY) {
-    if (canPresentInitialSync(ctx.learner, concept, ctx.interactionsSinceLastSync, anyLock)) {
+    if (
+      canPresentInitialSync(
+        ctx.learner,
+        concept,
+        ctx.interactionsSinceLastSync,
+        anyLock,
+        ctx.chapter.content.minimumInteractionsBetweenSyncs,
+      )
+    ) {
       yield* runInitialSync(ctx, concept);
     }
   }
@@ -94,7 +102,13 @@ export function* runReexposureAndRetry(ctx: Ctx, concept: ConceptId): Sub<void> 
   ctx.countSpacing();
   // manufacture spacing so the retry can present
   if (c.pendingReexposure) c.pendingReexposure.spacingInteractionsSince = 2;
-  if (canPresentRetrySync(ctx.learner, concept)) {
+  if (
+    canPresentRetrySync(
+      ctx.learner,
+      concept,
+      ctx.chapter.content.minimumInteractionsBetweenSyncs,
+    )
+  ) {
     yield* runRetrySync(ctx, concept);
   }
 }

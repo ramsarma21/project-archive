@@ -9,40 +9,24 @@ import {
   type FieldCommittedEvent,
   type FieldDurableState,
   type FieldInterruptPlan,
-  CP1_CHECKPOINT_ID,
   type AssessmentQuestionBank,
   type Cp1CheckpointState,
   type DeterministicResolution,
 } from "@pa/contracts";
-import { initialWorldState, advanceClock, bumpInteractionOrdinal } from "../world.js";
+import { advanceClock, bumpInteractionOrdinal } from "../world.js";
 import { initialLearnerState, commitExposure } from "../learner.js";
-import { LORE_MACRO_SUPPORT } from "../content/day1/tables.js";
-import { TEXT } from "../content/day1/text.js";
 import {
   applyFieldEvent,
   assertFieldEventPayload,
+  compileFieldVocabulary,
   initialFieldState,
   projectFieldRuntimeView,
   syncLegacyFieldCompatibility,
+  type CompiledFieldVocabulary,
 } from "../fieldState.js";
 import { deriveFieldSeedHex } from "../seed.js";
-import {
-  CP1_BANK_REGISTRY,
-  CP1_PRODUCTION_BANK,
-} from "../assessment/questionBank.js";
-import {
-  eligibleOpenResponses,
-  eligibleArchiveConnections,
-  npcFollowups,
-  openResponsePackage,
-  sourcePacket,
-} from "../assessment/openResponseRegistry.js";
-import { canonicalSourceIds } from "../content/provenance.js";
 import { resolutionMatchesPackage } from "../assessment/rubricResolver.js";
-import {
-  eligibleNpcFollowupsForField,
-  resolveRegisteredReactiveOutcome,
-} from "../content/day1/reactive.js";
+import type { ChapterDefinition } from "./chapter.js";
 
 export interface Yielded {
   present: PresentationDirective[];
@@ -61,14 +45,18 @@ export interface AssessmentRuntimeConfig {
 }
 
 // Mutable run context. Rebuilt from scratch and replayed on every resume, so
-// determinism depends only on the seed + committed events.
+// determinism depends only on the seed + committed events. All chapter
+// content arrives through the injected ChapterDefinition; this module never
+// imports from a content package.
 export class Ctx {
+  readonly chapter: ChapterDefinition;
   world: WorldState;
   learner: LearnerState;
   field: FieldDurableState;
   attemptSeed: Uint8Array;
   readonly fieldSeedHex: string;
   readonly assessment: AssessmentRuntimeConfig;
+  readonly fieldVocab: CompiledFieldVocabulary;
   checkpoint: Cp1CheckpointState;
 
   buffer: PresentationDirective[] = [];
@@ -76,7 +64,7 @@ export class Ctx {
   peopleMet: string[] = [];
   routesUnlocked: string[] = [];
   notesEntries: { concept: string; body: string }[] = [];
-  selectedHeadline = "TAXED WITHOUT A VOICE";
+  selectedHeadline: string;
   pressQuality?: "CRISP" | "USABLE" | "SMUDGED";
   private txCounter = 0;
   private fieldEventIds = new Set<string>();
@@ -84,21 +72,25 @@ export class Ctx {
 
   constructor(
     attemptSeed: Uint8Array,
-    assessment: AssessmentRuntimeConfig = {
-      mode: "PRODUCTION",
-      openResponseContentMode: "PRODUCTION",
-      activeBankVersion: CP1_PRODUCTION_BANK.bankVersion,
-      banks: CP1_BANK_REGISTRY,
-    },
+    chapter: ChapterDefinition,
+    assessment?: AssessmentRuntimeConfig,
   ) {
-    this.world = initialWorldState();
-    this.learner = initialLearnerState();
-    this.field = initialFieldState(this.world);
+    this.chapter = chapter;
+    this.fieldVocab = compileFieldVocabulary(chapter.fieldVocabulary);
+    this.world = chapter.content.createInitialWorldState();
+    this.learner = initialLearnerState(chapter.content.learnerConceptIds);
+    this.field = initialFieldState(this.world, this.fieldVocab);
     this.attemptSeed = attemptSeed;
     this.fieldSeedHex = deriveFieldSeedHex(attemptSeed);
-    this.assessment = assessment;
+    this.selectedHeadline = chapter.content.defaultHeadline;
+    this.assessment = assessment ?? {
+      mode: "PRODUCTION",
+      openResponseContentMode: "PRODUCTION",
+      activeBankVersion: chapter.assessment.productionBankVersion,
+      banks: chapter.assessment.banks,
+    };
     this.checkpoint = {
-      checkpointId: CP1_CHECKPOINT_ID,
+      checkpointId: chapter.assessment.checkpoint.checkpointId,
       status: "NOT_STARTED",
       selection: null,
       responses: [],
@@ -117,7 +109,7 @@ export class Ctx {
   applyFieldEvent(event: FieldCommittedEvent): void {
     if (
       event.type === "FIELD_REACTIVE_OUTCOME_SELECTED" &&
-      event.sourceId.startsWith("BOS.ACT01.DLG.") &&
+      event.sourceId.startsWith(this.chapter.content.authorDraftSourcePrefix) &&
       this.assessment.openResponseContentMode !== "AUTHOR_DRAFT_QA"
     ) {
       throw new Error(
@@ -130,7 +122,7 @@ export class Ctx {
             type: "FIELD_REACTIVE_COMPLETED",
             eventId: event.eventId,
             interruptId: event.interruptId,
-            completion: resolveRegisteredReactiveOutcome({
+            completion: this.chapter.content.reactiveOutcomeResolver({
               field: this.field,
               interactionId: event.interactionId,
               sourceId: event.sourceId,
@@ -138,18 +130,19 @@ export class Ctx {
             }),
           }
         : event;
-    assertFieldEventPayload(appliedEvent, this.field, this.world);
+    assertFieldEventPayload(appliedEvent, this.field, this.world, this.fieldVocab);
     if (this.fieldEventIds.has(event.eventId)) {
       throw new Error(`FIELD_EVENT_INVALID: duplicate eventId ${event.eventId}`);
     }
-    applyFieldEvent(this.field, this.world, appliedEvent);
+    applyFieldEvent(this.field, this.world, appliedEvent, this.fieldVocab);
     this.fieldEventIds.add(event.eventId);
     // Found-History Tier-A bridge: a free-roam knowledge inspect that supports
     // a required macro also commits the mapped tracked exposure (with
     // provenance). Idempotent by exposureId; deterministic on replay because
     // field events replay in committed order.
     if (appliedEvent.type === "FIELD_REACTIVE_COMPLETED") {
-      const support = LORE_MACRO_SUPPORT[appliedEvent.completion.sourceId];
+      const support =
+        this.chapter.content.loreMacroSupport[appliedEvent.completion.sourceId];
       if (support) {
         for (const def of support) {
           commitExposure(
@@ -190,7 +183,9 @@ export class Ctx {
       );
     }
     for (const completion of Object.values(this.field.reactiveCompletions)) {
-      for (const sourceId of canonicalSourceIds(completion.sourceId)) {
+      for (const sourceId of this.chapter.content.canonicalSourceIds(
+        completion.sourceId,
+      )) {
         sourceInteractions[sourceId] = Math.min(
           sourceInteractions[sourceId] ?? Number.POSITIVE_INFINITY,
           completion.interactionOrdinal,
@@ -198,7 +193,9 @@ export class Ctx {
       }
     }
     for (const engagement of Object.values(this.field.microEngagements)) {
-      for (const sourceId of canonicalSourceIds(engagement.sourceId)) {
+      for (const sourceId of this.chapter.content.canonicalSourceIds(
+        engagement.sourceId,
+      )) {
         sourceInteractions[sourceId] = Math.min(
           sourceInteractions[sourceId] ?? Number.POSITIVE_INFINITY,
           engagement.interactionOrdinal,
@@ -207,7 +204,7 @@ export class Ctx {
     }
     const allowAuthorDraft =
       this.assessment.openResponseContentMode === "AUTHOR_DRAFT_QA";
-    return eligibleOpenResponses({
+    return this.chapter.content.openResponse.eligible({
       sourceInteractions,
       engagedMicroConceptIds: new Set(this.field.engagedMicroIds),
       currentInteractionOrdinal: this.world.currentInteractionOrdinal,
@@ -220,7 +217,7 @@ export class Ctx {
   }
 
   assertOpenResponseEligible(promptId: string): void {
-    const requested = openResponsePackage(promptId, {
+    const requested = this.chapter.content.openResponse.package(promptId, {
       allowAuthorDraft:
         this.assessment.openResponseContentMode === "AUTHOR_DRAFT_QA",
     });
@@ -240,11 +237,16 @@ export class Ctx {
     promptId: string,
     resolution: DeterministicResolution,
   ): void {
-    const entry = openResponsePackage(promptId, {
+    const entry = this.chapter.content.openResponse.package(promptId, {
       allowAuthorDraft:
         this.assessment.openResponseContentMode === "AUTHOR_DRAFT_QA",
     });
-    if (!entry || !resolutionMatchesPackage(entry.rubric, resolution)) {
+    if (
+      !entry ||
+      !resolutionMatchesPackage(entry.rubric, resolution, {
+        legacyRubricIds: this.chapter.assessment.legacyRubricIds,
+      })
+    ) {
       throw new Error(
         `OPEN_RESPONSE_INVALID: resolution is not in the authored package`,
       );
@@ -328,9 +330,8 @@ export class Ctx {
   }
 
   private emitWarning(stage: WarningStage): void {
-    const line =
-      stage === "FINAL" ? TEXT.clockWarnings.FINAL : stage === "SECOND" ? TEXT.clockWarnings.SECOND : TEXT.clockWarnings.FIRST;
-    this.archive(line);
+    if (stage === "NONE") return;
+    this.archive(this.chapter.content.clockWarningLines[stage]);
   }
 
   // Register one committed interaction that counts for Sync spacing.
@@ -352,7 +353,7 @@ export class Ctx {
   view(): import("@pa/contracts").RuntimeView {
     const learner: Record<string, { understanding: string; demonstration: string; occasions: number; types: number }> = {};
     for (const [k, v] of Object.entries(this.learner)) {
-      const name = k.includes("STAMP") ? "Stamp Act" : k.includes("REPRESENTATION") ? "Representation" : "Postwar revenue";
+      const name = this.chapter.content.conceptShortNames[k] ?? k;
       learner[name] = {
         understanding: v.understanding,
         demonstration: v.demonstration,
@@ -362,20 +363,23 @@ export class Ctx {
     }
     const allowAuthorDraft =
       this.assessment.openResponseContentMode === "AUTHOR_DRAFT_QA";
+    const openResponse = this.chapter.content.openResponse;
     const visibleNpcFollowups = allowAuthorDraft
-      ? [...eligibleNpcFollowupsForField(this.field)]
+      ? [...openResponse.eligibleNpcFollowupsForField(this.field)]
       : [];
     if (
       allowAuthorDraft &&
       this.activeFieldInterrupt?.kind === "REACTIVE_EXCHANGE" &&
-      this.activeFieldInterrupt.sourceId?.startsWith("BOS.ACT01.DLG.") &&
+      this.activeFieldInterrupt.sourceId?.startsWith(
+        this.chapter.content.authorDraftSourcePrefix,
+      ) &&
       !visibleNpcFollowups.some(
         (node) => node.nodeId === this.activeFieldInterrupt?.sourceId,
       )
     ) {
-      const active = npcFollowups({ allowAuthorDraft: true }).find(
-        (node) => node.nodeId === this.activeFieldInterrupt?.sourceId,
-      );
+      const active = openResponse
+        .npcFollowups({ allowAuthorDraft: true })
+        .find((node) => node.nodeId === this.activeFieldInterrupt?.sourceId);
       if (active) visibleNpcFollowups.push(active);
     }
     const engagedSourcePacketIds = new Set(
@@ -404,6 +408,7 @@ export class Ctx {
         this.world,
         this.fieldSeedHex,
         this.activeFieldInterrupt,
+        this.fieldVocab,
       ),
       checkpoint: structuredClone(this.checkpoint),
       openResponse: {
@@ -413,7 +418,7 @@ export class Ctx {
         activePrompt:
           this.activeFieldInterrupt?.kind === "OPEN_RESPONSE"
             ? structuredClone(
-                openResponsePackage(
+                openResponse.package(
                   this.activeFieldInterrupt.sourceId ?? "",
                   {
                     allowAuthorDraft:
@@ -432,22 +437,23 @@ export class Ctx {
         npcFollowups: visibleNpcFollowups.map((node) =>
           structuredClone(node),
         ),
-        archiveConnections: eligibleArchiveConnections({
-          engagedSourcePacketIds,
-          allowAuthorDraft,
-        }).map((card) => ({
-          ...structuredClone(card),
-          artifactRefs: [
-            ...new Set(
-              card.citations.flatMap(
-                (sourceId) =>
-                  sourcePacket(sourceId)?.backingRefs.filter((ref) =>
-                    ref.startsWith("poster-"),
-                  ) ?? [],
+        archiveConnections: openResponse
+          .archiveConnections({
+            engagedSourcePacketIds,
+            allowAuthorDraft,
+          })
+          .map((card) => ({
+            ...structuredClone(card),
+            artifactRefs: [
+              ...new Set(
+                card.citations.flatMap((sourceId) =>
+                  openResponse
+                    .sourcePacketBackingRefs(sourceId)
+                    .filter((ref) => ref.startsWith("poster-")),
+                ),
               ),
-            ),
-          ],
-        })),
+            ],
+          })),
       },
     };
   }

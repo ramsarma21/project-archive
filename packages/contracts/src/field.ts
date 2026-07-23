@@ -376,6 +376,13 @@ export interface RepositionIntent {
   reason: "RELEASE" | "REFUGE" | "REROUTE";
 }
 
+// A chapter-authored, runtime-validated reposition target. The vocabulary of
+// anchor ids is chapter content (see FieldVocabulary.repositionAnchors).
+export interface FieldRepositionAnchor {
+  locationId: string;
+  reason: RepositionIntent["reason"];
+}
+
 export const FIELD_REPOSITION_ANCHORS = {
   INSPECTOR_OFFICE_RELEASE: {
     locationId: "BOSTON_STREET",

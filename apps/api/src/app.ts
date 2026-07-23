@@ -13,7 +13,11 @@ import {
   type MasteryReport,
   type PresenterEvent,
 } from "@pa/contracts";
-import { buildMasteryReport, createDay1Session } from "@pa/runtime";
+import {
+  BOSTON_1765_CHAPTER,
+  buildMasteryReport,
+  createDay1Session,
+} from "@pa/runtime";
 import { migrate, query, transaction } from "./db.js";
 import {
   buildGoogleAuthUrl,
@@ -78,6 +82,8 @@ function masteryFromEvents(
         generatedAt: new Date().toISOString(),
       },
       session.ctx.checkpoint,
+      undefined,
+      BOSTON_1765_CHAPTER.report,
     ),
   };
 }

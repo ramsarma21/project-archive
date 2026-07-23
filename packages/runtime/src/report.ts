@@ -3,43 +3,18 @@ import {
   type MasteryReport,
   type MasteryConceptRow,
   type MasteryStage,
-  CONCEPT_TEKS,
-  CONCEPT_META,
-  MICRO_CONCEPT_IDS,
   type ConceptId,
   type Cp1CheckpointState,
   type MicroConceptId,
 } from "@pa/contracts";
-
-const MICRO_LABELS: Record<MicroConceptId, string> = {
-  [MICRO_CONCEPT_IDS.SALUTARY_NEGLECT_END]: "The end of salutary neglect",
-  [MICRO_CONCEPT_IDS.PORT_TOWN_BOSTON]: "Boston as a port town",
-  [MICRO_CONCEPT_IDS.HARD_COIN_SCARCITY]: "Hard-coin scarcity",
-  [MICRO_CONCEPT_IDS.PRINTERS_ROLE]: "Printers' role",
-  [MICRO_CONCEPT_IDS.VICE_ADMIRALTY_COURTS]: "Vice-admiralty courts",
-  [MICRO_CONCEPT_IDS.STAMP_WHAT_COUNTS]: "What the stamp covers",
-  [MICRO_CONCEPT_IDS.ANDREW_OLIVER]: "Andrew Oliver",
-  [MICRO_CONCEPT_IDS.LIBERTY_TREE]: "The Liberty Tree",
-  [MICRO_CONCEPT_IDS.LOYAL_NINE]: "The Loyal Nine",
-  [MICRO_CONCEPT_IDS.EFFIGY_PROTEST]: "Effigy protest",
-  [MICRO_CONCEPT_IDS.NON_IMPORTATION]: "Non-importation",
-  [MICRO_CONCEPT_IDS.NEWS_NETWORKS]: "News networks",
-  [MICRO_CONCEPT_IDS.WRITS_OF_ASSISTANCE]: "Writs of assistance",
-  [MICRO_CONCEPT_IDS.LOYALIST_VIEW]: "The Loyalist view",
-};
+import type { ChapterReportSpec } from "./engine/chapter.js";
 
 // A concept gates day-completion only if it is MACRO_GATED. Unknown concepts
 // default to gated (safe: never silently drop a required carrier); MICRO/PATTERN
 // concepts are tracked and reported but never block the day.
-function isGatedConcept(conceptId: string): boolean {
-  const meta = CONCEPT_META[conceptId];
+function isGatedConcept(spec: ChapterReportSpec, conceptId: string): boolean {
+  const meta = spec.conceptMeta[conceptId];
   return !meta || meta.class === "MACRO_GATED";
-}
-
-function conceptName(conceptId: string): string {
-  if (conceptId.includes("STAMP")) return "Stamp Act";
-  if (conceptId.includes("REPRESENTATION")) return "Representation";
-  return "Postwar revenue policy";
 }
 
 function stageOf(row: { understanding: string; demonstration: string; distinctOccasionCount: number }): MasteryStage {
@@ -71,18 +46,20 @@ export interface ReportMeta {
 // Derive a per-student mastery report from the (event-sourced) learner state.
 // This is a read-only projection: it never mutates state and is reproducible
 // from the same seed + committed events, which is what makes it auditable.
+// All concept/TEKS/micro labeling comes from the chapter's report spec.
 export function buildMasteryReport(
   learner: LearnerState,
   meta: ReportMeta,
-  checkpoint?: Cp1CheckpointState,
-  engagedMicroIds?: readonly MicroConceptId[],
+  checkpoint: Cp1CheckpointState | undefined,
+  engagedMicroIds: readonly MicroConceptId[] | undefined,
+  spec: ChapterReportSpec,
 ): MasteryReport {
   const concepts: MasteryConceptRow[] = [];
   for (const [conceptId, c] of Object.entries(learner)) {
-    const teks = CONCEPT_TEKS[conceptId as ConceptId];
+    const teks = spec.conceptTeks[conceptId];
     concepts.push({
       conceptId,
-      conceptName: conceptName(conceptId),
+      conceptName: spec.conceptNames[conceptId] ?? conceptId,
       teksCode: teks?.code ?? "",
       teksClause: teks?.text ?? "",
       stage: stageOf(c),
@@ -96,7 +73,7 @@ export function buildMasteryReport(
   }
   // Completion is gated on the required (MACRO_GATED) carriers only. Micro/
   // pattern concepts enrich and are reported, but never block the day.
-  const gatedConcepts = concepts.filter((r) => isGatedConcept(r.conceptId));
+  const gatedConcepts = concepts.filter((r) => isGatedConcept(spec, r.conceptId));
   const masteredCount = gatedConcepts.filter((r) => r.stage === "MASTERED").length;
   const requiredCount = gatedConcepts.length;
   const report: MasteryReport = {
@@ -118,7 +95,7 @@ export function buildMasteryReport(
   if (engagedMicroIds && engagedMicroIds.length > 0) {
     report.engagedMicros = engagedMicroIds.map((microId) => ({
       microId,
-      label: MICRO_LABELS[microId] ?? microId,
+      label: spec.microLabels[microId] ?? microId,
     }));
   }
   if (checkpoint) {

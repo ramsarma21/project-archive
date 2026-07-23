@@ -1,9 +1,9 @@
 import {
-  CP1_CHECKPOINT_ID,
   type AssessmentItem,
   type CheckpointDebriefRequest,
   type CheckpointGateState,
   type CheckpointPresenterEvent,
+  type ConceptId,
   type PresenterEvent,
 } from "@pa/contracts";
 import type { Ctx, Sub } from "../../engine/ctx.js";
@@ -13,20 +13,20 @@ import {
 } from "../../assessment/selectDebrief.js";
 import { validateQuestionBank } from "../../assessment/validateQuestionBank.js";
 import { computeGateState } from "../../assessment/gate.js";
+import { CP1_CHECKPOINT_ID } from "./cp1Ids.js";
 
 const NEXT_CHAPTER_ID = "PA.SEA01.CH02.BOSTON.1770.PENDING.v1";
 
 // CP1 assessment concept ids -> learner ConceptIds (for the penalty curve's
-// spaced re-test flag). Kept local; the gate module holds the same mapping
-// for memory cues.
-import { CP1_REQUIRED_MACROS, CONCEPTS, type ConceptId } from "@pa/contracts";
-const MACRO_TO_LEARNER: Record<string, ConceptId> = {
-  [CP1_REQUIRED_MACROS[0]]: CONCEPTS.POSTWAR_REVENUE,
-  [CP1_REQUIRED_MACROS[1]]: CONCEPTS.STAMP_SCOPE,
-  [CP1_REQUIRED_MACROS[2]]: CONCEPTS.REPRESENTATION,
-};
-function macroLearnerConcept(assessmentConceptId: string): ConceptId | null {
-  return MACRO_TO_LEARNER[assessmentConceptId] ?? null;
+// spaced re-test flag). SINGLE SOURCE: the chapter definition's gate maps.
+function macroLearnerConcept(
+  ctx: Ctx,
+  assessmentConceptId: string,
+): ConceptId | null {
+  return (
+    ctx.chapter.assessment.gateMaps.assessmentToLearner[assessmentConceptId] ??
+    null
+  );
 }
 
 function* requestCheckpoint(
@@ -108,7 +108,10 @@ export function* cp1CheckpointFlow(ctx: Ctx): Sub<void> {
     );
   }
   const production = ctx.assessment.mode === "PRODUCTION";
-  const validation = validateQuestionBank(activeBank, { production });
+  const checkpointSpec = ctx.chapter.assessment.checkpoint;
+  const validation = validateQuestionBank(activeBank, checkpointSpec, {
+    production,
+  });
   if (!validation.valid) {
     ctx.archive(
       "CP1 is staged, but approved assessment content has not been installed.",
@@ -133,6 +136,7 @@ export function* cp1CheckpointFlow(ctx: Ctx): Sub<void> {
   const proposed = selectDebrief({
     attemptSeed: ctx.attemptSeed,
     bank: activeBank,
+    checkpoint: checkpointSpec,
     engagedMicroIds: ctx.field.engagedMicroIds,
     allowDraft,
     maxEnrichment: 2,
@@ -163,6 +167,7 @@ export function* cp1CheckpointFlow(ctx: Ctx): Sub<void> {
     const expected = selectDebrief({
       attemptSeed: ctx.attemptSeed,
       bank: selectedBank,
+      checkpoint: checkpointSpec,
       engagedMicroIds: ctx.field.engagedMicroIds,
       allowDraft,
       maxEnrichment: 2,
@@ -174,6 +179,7 @@ export function* cp1CheckpointFlow(ctx: Ctx): Sub<void> {
     }
     selectedItems = resolveSelectedItems(
       selectedBank,
+      checkpointSpec,
       event.selection,
       allowDraft,
     );
@@ -228,7 +234,13 @@ export function* cp1CheckpointFlow(ctx: Ctx): Sub<void> {
       // Wrong answer: extend the ladder. Every wrong pick counts as an
       // attempt (friction repeats); the option set shrinks from attempt 3 on.
       wrongOptionIds.push(event.optionId);
-      gate = computeGateState(ctx.learner, item, wrongOptionIds, ctx.field);
+      gate = computeGateState(
+        ctx.learner,
+        item,
+        wrongOptionIds,
+        ctx.chapter.assessment.gateMaps,
+        ctx.field,
+      );
     }
 
     const hintsUsed = wrongOptionIds.length;
@@ -251,7 +263,7 @@ export function* cp1CheckpointFlow(ctx: Ctx): Sub<void> {
         hintsUsed,
       });
       if (hintsUsed >= 2) {
-        const learnerConcept = macroLearnerConcept(item.conceptId);
+        const learnerConcept = macroLearnerConcept(ctx, item.conceptId);
         if (learnerConcept) {
           const state = ctx.learner[learnerConcept];
           if (state && !state.pendingReexposure) {

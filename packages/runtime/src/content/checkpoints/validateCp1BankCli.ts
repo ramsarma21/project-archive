@@ -1,23 +1,32 @@
-import {
-  CP1_REQUIRED_MACROS,
-  isCp1ScopedItem,
-  isProductionApprovedStatus,
-} from "@pa/contracts";
+import { MICRO_CONCEPT_IDS, isCheckpointScopedItem, isProductionApprovedStatus } from "@pa/contracts";
 import {
   CP1_DEVELOPMENT_FIXTURE_BANK,
   CP1_PRODUCTION_BANK,
-} from "./questionBank.js";
-import { validateQuestionBank } from "./validateQuestionBank.js";
+} from "./cp1Bank.js";
+import { validateQuestionBank } from "../../assessment/validateQuestionBank.js";
+import type { CheckpointSpec } from "../../engine/chapter.js";
+import {
+  CP1_CHECKPOINT_ID,
+  CP1_FORM_ID_PREFIX,
+  CP1_REQUIRED_MACROS,
+} from "./cp1Ids.js";
 
 declare const process: {
   argv: string[];
   exitCode?: number;
 };
 
-const production = validateQuestionBank(CP1_PRODUCTION_BANK, {
+const CP1_SPEC: CheckpointSpec = {
+  checkpointId: CP1_CHECKPOINT_ID,
+  requiredMacroConceptIds: CP1_REQUIRED_MACROS,
+  microConceptIds: Object.values(MICRO_CONCEPT_IDS),
+  formIdPrefix: CP1_FORM_ID_PREFIX,
+};
+
+const production = validateQuestionBank(CP1_PRODUCTION_BANK, CP1_SPEC, {
   production: true,
 });
-const development = validateQuestionBank(CP1_DEVELOPMENT_FIXTURE_BANK, {
+const development = validateQuestionBank(CP1_DEVELOPMENT_FIXTURE_BANK, CP1_SPEC, {
   production: false,
 });
 
@@ -29,7 +38,7 @@ const macroEligibility = CP1_REQUIRED_MACROS.map((conceptId) => {
     (item) =>
       item.tier === "MACRO" &&
       item.conceptId === conceptId &&
-      isCp1ScopedItem(item) &&
+      isCheckpointScopedItem(item, CP1_CHECKPOINT_ID) &&
       isProductionApprovedStatus(item.approvalStatus),
   );
   return {

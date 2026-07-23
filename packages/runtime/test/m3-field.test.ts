@@ -4,7 +4,7 @@ import {
   type FieldCommittedEvent,
   type PresenterEvent,
 } from "@pa/contracts";
-import { Ctx, Session } from "../src/index.js";
+import { BOSTON_1765_CHAPTER, Ctx, Session } from "../src/index.js";
 import type { Flow } from "../src/engine/ctx.js";
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -73,7 +73,7 @@ function runExchange(
 
 // Thread effects are atomic, replayable, and idempotent by interaction id.
 {
-  const session = new Session(new Ctx(seed), roamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow);
   const originalPlan = session.plan;
   const learnerBefore = JSON.stringify(session.ctx.learner);
   const events = runExchange(session, "ned", {
@@ -100,7 +100,7 @@ function runExchange(
   );
   equal(JSON.stringify(session.ctx.learner), learnerBefore, "optional content changed required learning");
 
-  const replay = new Session(new Ctx(seed), roamFlow, events);
+  const replay = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow, events);
   deepEqual(replay.ctx.view().field, session.ctx.view().field, "reactive replay diverged");
   runExchange(session, "ned-repeat", {
     interactionId: "THR-ned:fetch",
@@ -116,7 +116,7 @@ function runExchange(
 
 // Tavern note and dock haul preserve custody and charge time only at completion.
 {
-  const session = new Session(new Ctx(seed), roamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow);
   const learnerBefore = JSON.stringify(session.ctx.learner);
   runExchange(session, "tavern-accept", {
     interactionId: "tavern:accept",

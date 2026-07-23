@@ -1,73 +1,10 @@
-import {
-  DAY1_CLOCK,
-  BASELINES,
-  warningStageForUnits,
-  phaseForUnits,
-  type WorldState,
-  type WarningStage,
-} from "@pa/contracts";
+import type { WorldState, WarningStage, DayPhase } from "@pa/contracts";
 
-export function initialWorldState(): WorldState {
-  return {
-    revision: "0",
-    locationId: "ARCHIVE_TRANSIT",
-    controlState: "ARCHIVE",
-    clock: {
-      spentUnits: 0,
-      fixedEventBoundary: DAY1_CLOCK.fixedEventBoundary,
-      warningStage: "NONE",
-      phase: "MORNING",
-    },
-    currentInteractionOrdinal: 0,
-    lastSyncCompletionInteractionOrdinal: null,
-    firstErrandCompletionRecorded: false,
-    fixedEvent: "NOT_STARTED",
-    objectives: {
-      REPORT_TO_MERCER: "ACTIVE",
-      THOMAS_CIRCULAR: "NOT_YET_ELIGIBLE",
-      PIKE_PROOF: "NOT_YET_ELIGIBLE",
-      RIDER_HANDBILLS: "NOT_YET_ELIGIBLE",
-      CUSTOMHOUSE_NOTICE: "NOT_YET_ELIGIBLE",
-      OBSERVE_CROWD: "NOT_YET_ELIGIBLE",
-      RETURN_TO_PRESS: "NOT_YET_ELIGIBLE",
-      SET_HEADLINE: "NOT_YET_ELIGIBLE",
-    },
-    jobObjects: {
-      THOMAS_CIRCULAR: { custody: "ABIGAIL", condition: "INTACT" },
-      PIKE_PROOF: { custody: "ABIGAIL", condition: "UNPRINTED" },
-      CARRIER_HANDBILLS: { custody: "ABIGAIL", condition: "INTACT", concealment: "EXPOSED" },
-      CUSTOMHOUSE_NOTICE: { custody: "ABIGAIL", condition: "INTACT" },
-      // The plain wrap is the concealment tool, not contraband: it rides
-      // folded away (HIDDEN) so a customs inspection never reads it as an
-      // exposed carried good. Without this, COMPLIED_CLEAR is unreachable.
-      PLAIN_WRAP: { custody: "ABIGAIL", condition: "INTACT", concealment: "HIDDEN" },
-      TAVERN_NOTE: { custody: "THOMAS", condition: "INTACT", concealment: "HIDDEN" },
-      DOCK_BARREL: { custody: "DOCKHAND", condition: "INTACT", concealment: "EXPOSED" },
-      FINAL_PAGE: { custody: "ABIGAIL", condition: "UNPRINTED" },
-    },
-    printJobs: {},
-    relationships: {
-      ABIGAIL_TRUST: BASELINES.abigailTrust,
-      ABIGAIL_RESPECT: BASELINES.abigailRespect,
-      ABIGAIL_WARMTH: BASELINES.abigailWarmth,
-      THOMAS_OBLIGATION: BASELINES.thomasObligation,
-      PIKE_RESPECT: BASELINES.pikeRespect,
-      CLARKE_POLITICAL_READ: BASELINES.clarkePoliticalRead,
-      RIDER_TRUST: BASELINES.riderTrust,
-    },
-    routes: {
-      THOMAS_DOCK_ROUTE: "LOCKED",
-    },
-    attention: {
-      watcherHeat: 0,
-      clarkeInformed: false,
-      recognized: false,
-      politicalSympathy: false,
-    },
-    pendingContingentEffects: [],
-    realizedHiddenEffects: [],
-  };
-}
+// Generic day-clock machinery. The initial WorldState (locations, objectives,
+// job objects, relationships, clock tuning) is chapter content and arrives
+// via ChapterDefinition.content.createInitialWorldState(); the warning
+// thresholds live on world.clock.warningAt so replay projection depends only
+// on the seeded state.
 
 export interface ClockAdvanceResult {
   crossedWarnings: WarningStage[];
@@ -75,6 +12,26 @@ export interface ClockAdvanceResult {
 }
 
 const WARNING_ORDER: WarningStage[] = ["FIRST", "SECOND", "FINAL"];
+
+export function warningStageForUnits(
+  spentUnits: number,
+  warningAt: WorldState["clock"]["warningAt"],
+): WarningStage {
+  if (spentUnits >= warningAt.final) return "FINAL";
+  if (spentUnits >= warningAt.second) return "SECOND";
+  if (spentUnits >= warningAt.first) return "FIRST";
+  return "NONE";
+}
+
+export function phaseForUnits(
+  spentUnits: number,
+  warningAt: WorldState["clock"]["warningAt"],
+): DayPhase {
+  if (spentUnits >= warningAt.final) return "DUSK";
+  if (spentUnits >= warningAt.second) return "AFTERNOON";
+  if (spentUnits >= warningAt.first) return "MIDDAY";
+  return "MORNING";
+}
 
 // Advance the clock by `units`. Returns every newly-crossed warning, in order,
 // and whether the fixed-event boundary was reached. Traversal (0) never
@@ -87,8 +44,8 @@ export function advanceClock(world: WorldState, units: number): ClockAdvanceResu
   world.clock.spentUnits = after;
 
   const prevStage = world.clock.warningStage;
-  const newStage = warningStageForUnits(after);
-  world.clock.phase = phaseForUnits(after);
+  const newStage = warningStageForUnits(after, world.clock.warningAt);
+  world.clock.phase = phaseForUnits(after, world.clock.warningAt);
 
   const crossedWarnings: WarningStage[] = [];
   if (newStage !== prevStage && newStage !== "NONE") {
@@ -101,7 +58,7 @@ export function advanceClock(world: WorldState, units: number): ClockAdvanceResu
   }
 
   const reachedBoundary =
-    before < DAY1_CLOCK.fixedEventBoundary && after >= DAY1_CLOCK.fixedEventBoundary;
+    before < world.clock.fixedEventBoundary && after >= world.clock.fixedEventBoundary;
 
   return { crossedWarnings, reachedBoundary };
 }

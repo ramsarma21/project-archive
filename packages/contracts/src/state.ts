@@ -65,6 +65,9 @@ export type LearnerState = Record<ConceptId, ConceptLearningState>;
 export interface DayClockState {
   spentUnits: number;
   fixedEventBoundary: number;
+  // Chapter clock tuning, seeded with the initial world state so the pure
+  // clock machinery needs no content import. Never projected into views.
+  warningAt: { first: number; second: number; final: number };
   warningStage: WarningStage;
   phase: DayPhase;
 }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Flow } from "../src/engine/ctx.js";
 import {
+  BOSTON_1765_CHAPTER,
   CP1_BANK_REGISTRY,
   CP1_PRODUCTION_BANK,
   Ctx,
@@ -42,7 +43,7 @@ function* roam(_ctx: Ctx): Flow {
 
 // Prerequisites + spacing satisfied so the compare prompt is eligible to open.
 function eligibleCtx(): Ctx {
-  const ctx = new Ctx(new Uint8Array(16).fill(3), {
+  const ctx = new Ctx(new Uint8Array(16).fill(3), BOSTON_1765_CHAPTER, {
     mode: "QA_DRAFT",
     openResponseContentMode: "AUTHOR_DRAFT_QA",
     activeBankVersion: CP1_PRODUCTION_BANK.bankVersion,

@@ -1,6 +1,4 @@
 import {
-  CONCEPTS,
-  SYNC_RULES,
   type ConceptId,
   type LearnerState,
   type ConceptLearningState,
@@ -8,7 +6,11 @@ import {
   type ExposureProvenance,
 } from "@pa/contracts";
 
-export function initialLearnerState(): LearnerState {
+// Chapter-parameterized: the concept list (and its durable insertion order)
+// is supplied by ChapterDefinition.content.learnerConceptIds.
+export function initialLearnerState(
+  conceptIds: readonly ConceptId[],
+): LearnerState {
   const mk = (): ConceptLearningState => ({
     exposures: [],
     distinctOccasionCount: 0,
@@ -22,11 +24,11 @@ export function initialLearnerState(): LearnerState {
     priorDayReassessment: "NOT_DUE",
     misconceptionIds: [],
   });
-  return {
-    [CONCEPTS.POSTWAR_REVENUE]: mk(),
-    [CONCEPTS.STAMP_SCOPE]: mk(),
-    [CONCEPTS.REPRESENTATION]: mk(),
-  } as LearnerState;
+  const learner = {} as LearnerState;
+  for (const conceptId of conceptIds) {
+    learner[conceptId] = mk();
+  }
+  return learner;
 }
 
 // Commit a tracked exposure. Idempotent per exposureId. Only tracked registry
@@ -55,30 +57,33 @@ export function commitExposure(
   return true;
 }
 
-// Whether a concept's initial Sync may be presented now.
+// Whether a concept's initial Sync may be presented now. The spacing minimum
+// is chapter tuning (ChapterDefinition.content.minimumInteractionsBetweenSyncs).
 export function canPresentInitialSync(
   learner: LearnerState,
   concept: ConceptId,
   interactionsSinceLastSync: number,
   anyLockActive: boolean,
+  minimumInteractionsBetweenSyncs: number,
 ): boolean {
   const c = learner[concept];
   if (anyLockActive) return false;
   if (c.understanding === "UNDERSTOOD") return false;
   if (c.understanding !== "NOT_ASSESSED") return false;
   if (c.learningGate !== "READY") return false;
-  return interactionsSinceLastSync >= SYNC_RULES.minimumInteractionsBetweenSyncs;
+  return interactionsSinceLastSync >= minimumInteractionsBetweenSyncs;
 }
 
 export function canPresentRetrySync(
   learner: LearnerState,
   concept: ConceptId,
+  minimumInteractionsBetweenSyncs: number,
 ): boolean {
   const c = learner[concept];
   if (c.understanding !== "REEXPOSURE_REQUIRED") return false;
   const re = c.pendingReexposure;
   if (!re || !re.reexposureCommitted) return false;
-  return re.spacingInteractionsSince >= SYNC_RULES.minimumInteractionsBetweenSyncs;
+  return re.spacingInteractionsSince >= minimumInteractionsBetweenSyncs;
 }
 
 // Apply an initial Sync answer. Returns whether Notes should flicker (added once).

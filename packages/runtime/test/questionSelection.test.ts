@@ -1,20 +1,25 @@
 import {
-  CP1_CHECKPOINT_ID,
-  CP1_REQUIRED_MACROS,
   MICRO_CONCEPT_IDS,
   correctOptionExplanation,
-  isCp1ScopedItem,
+  isCheckpointScopedItem,
   type AssessmentItem,
   type AssessmentQuestionBank,
   type MicroConceptId,
 } from "@pa/contracts";
 import {
+  BOSTON_1765_CHAPTER,
+  CP1_CHECKPOINT_ID,
   CP1_DEVELOPMENT_FIXTURE_BANK,
   CP1_PRODUCTION_BANK,
+  CP1_REQUIRED_MACROS,
   resolveSelectedItems,
   selectDebrief,
   validateQuestionBank,
 } from "../src/index.js";
+
+const CP1_SPEC = BOSTON_1765_CHAPTER.assessment.checkpoint;
+const isCp1ScopedItem = (item: AssessmentItem) =>
+  isCheckpointScopedItem(item, CP1_CHECKPOINT_ID);
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
   if (!condition) throw new Error(message);
@@ -35,6 +40,7 @@ function seed(value: number): Uint8Array {
   for (let value = 0; value < 64; value += 1) {
     for (const _route of routes) {
       const result = selectDebrief({
+        checkpoint: CP1_SPEC,
         attemptSeed: seed(value),
         bank: CP1_DEVELOPMENT_FIXTURE_BANK,
         engagedMicroIds: [],
@@ -58,6 +64,7 @@ function seed(value: number): Uint8Array {
   ] as MicroConceptId[];
   for (let value = 0; value < 96; value += 1) {
     const result = selectDebrief({
+      checkpoint: CP1_SPEC,
       attemptSeed: seed(value),
       bank: CP1_DEVELOPMENT_FIXTURE_BANK,
       engagedMicroIds: engaged,
@@ -69,6 +76,7 @@ function seed(value: number): Uint8Array {
     assert(micros.every((item) => engaged.includes(item.conceptId as MicroConceptId)));
   }
   const empty = selectDebrief({
+    checkpoint: CP1_SPEC,
     attemptSeed: seed(7),
     bank: CP1_DEVELOPMENT_FIXTURE_BANK,
     engagedMicroIds: [],
@@ -79,6 +87,7 @@ function seed(value: number): Uint8Array {
 
 {
   const input = {
+    checkpoint: CP1_SPEC,
     attemptSeed: seed(42),
     bank: CP1_DEVELOPMENT_FIXTURE_BANK,
     engagedMicroIds: Object.values(MICRO_CONCEPT_IDS),
@@ -91,6 +100,7 @@ function seed(value: number): Uint8Array {
   let threw = false;
   try {
     selectDebrief({
+        checkpoint: CP1_SPEC,
         attemptSeed: seed(1),
         bank: CP1_DEVELOPMENT_FIXTURE_BANK,
         engagedMicroIds: [],
@@ -104,7 +114,7 @@ function seed(value: number): Uint8Array {
   // CP1 macros are production-eligible (DEBT_POLICY via Q5, REPRESENTATION via
   // Q24); STAMP_INTERNAL still has no owner item, so production CP1 stays
   // BLOCKED on that one macro. The report must surface exactly that.
-  const report = validateQuestionBank(CP1_PRODUCTION_BANK, {
+  const report = validateQuestionBank(CP1_PRODUCTION_BANK, CP1_SPEC, {
     production: true,
   });
   assert(report.valid === false, "production stays blocked on the missing macro");
@@ -172,6 +182,7 @@ function seed(value: number): Uint8Array {
   assert(post1765Ids.has("BANK.BOSTON.USER.Q39.v1"));
   for (let value = 0; value < 96; value += 1) {
     const result = selectDebrief({
+      checkpoint: CP1_SPEC,
       attemptSeed: seed(value),
       bank: expanded,
       engagedMicroIds: [],
@@ -224,6 +235,7 @@ function seed(value: number): Uint8Array {
     items: [q5!, q24!, devStamp!],
   };
   const { selection, items } = selectDebrief({
+    checkpoint: CP1_SPEC,
     attemptSeed: seed(3),
     bank,
     engagedMicroIds: [],
@@ -244,7 +256,7 @@ function seed(value: number): Uint8Array {
     "correct-option rationale doubles as the explanation",
   );
   // resolveSelectedItems round-trips the same rationales back from itemIds.
-  const resolved = resolveSelectedItems(bank, selection, true);
+  const resolved = resolveSelectedItems(bank, CP1_SPEC, selection, true);
   const resolvedQ24 = resolved.find(
     (item) => item.itemId === "BANK.BOSTON.USER.Q24.v1",
   );

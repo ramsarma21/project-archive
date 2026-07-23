@@ -1,42 +1,46 @@
 import type { PresenterEvent } from "@pa/contracts";
-import { Ctx } from "./engine/ctx.js";
-import { Session } from "./engine/driver.js";
-import { day1Flow } from "./content/day1/flow.js";
-import { deriveAttemptSeed } from "./seed.js";
-import { CHAPTER_ID } from "@pa/contracts";
 import {
-  CP1_BANK_REGISTRY,
-  CP1_DEVELOPMENT_FIXTURE_BANK,
-  CP1_PRODUCTION_BANK,
-} from "./assessment/questionBank.js";
+  createChapterSession,
+  type CreateChapterSessionOptions,
+} from "./engine/chapter.js";
+import type { Session } from "./engine/driver.js";
 import type { AssessmentRuntimeConfig } from "./engine/ctx.js";
+import { BOSTON_1765_CHAPTER } from "./content/bostonChapter.js";
 
+// ---- Generic engine surface ----
 export { Ctx } from "./engine/ctx.js";
+export type { Flow, Sub, Yielded, AssessmentRuntimeConfig } from "./engine/ctx.js";
 export { Session } from "./engine/driver.js";
-export { day1Flow } from "./content/day1/flow.js";
+export {
+  createChapterRegistry,
+  createChapterSession,
+} from "./engine/chapter.js";
+export type {
+  ArchiveConnectionCard,
+  ChapterDefinition,
+  ChapterOpenResponseContent,
+  ChapterRegistry,
+  ChapterReportSpec,
+  CheckpointSpec,
+  CreateChapterSessionOptions,
+  FieldVocabulary,
+  FlowCueDefaults,
+  GateContentMaps,
+  TrackedExposureDef,
+} from "./engine/chapter.js";
 export { deriveAttemptSeed, deriveFieldSeedHex, draw, bytesToHex } from "./seed.js";
 export {
   applyFieldEvent,
   assertFieldEventPayload,
+  compileFieldVocabulary,
   initialFieldState,
   projectFieldRuntimeView,
   syncLegacyFieldCompatibility,
 } from "./fieldState.js";
+export type { CompiledFieldVocabulary } from "./fieldState.js";
 export { resolveOutcome } from "./outcome.js";
 export { buildMasteryReport } from "./report.js";
 export type { ReportMeta } from "./report.js";
-export * from "./content/day1/tables.js";
-export { TEXT } from "./content/day1/text.js";
-export {
-  eligibleNpcFollowupsForField,
-  resolveRegisteredReactiveOutcome,
-} from "./content/day1/reactive.js";
-export { DAY1_CUES } from "./content/day1/choreography.js";
-export {
-  CP1_BANK_REGISTRY,
-  CP1_DEVELOPMENT_FIXTURE_BANK,
-  CP1_PRODUCTION_BANK,
-} from "./assessment/questionBank.js";
 export {
   selectDebrief,
   resolveSelectedItems,
@@ -51,6 +55,30 @@ export {
   unclassifiedResolution,
   resolutionMatchesPackage,
 } from "./assessment/rubricResolver.js";
+
+// ---- Boston chapter content (tracked debt: leaves this barrel when the
+// chapter package lands; consumers move to @pa/chapter-boston) ----
+export { BOSTON_1765_CHAPTER, BOSTON_DAY1_FLOW_VERSION } from "./content/bostonChapter.js";
+export { day1Flow } from "./content/day1/flow.js";
+export * from "./content/day1/tables.js";
+export { TEXT } from "./content/day1/text.js";
+export {
+  eligibleNpcFollowupsForField,
+  resolveRegisteredReactiveOutcome,
+} from "./content/day1/reactive.js";
+export { DAY1_CUES } from "./content/day1/choreography.js";
+export {
+  CP1_BANK_REGISTRY,
+  CP1_DEVELOPMENT_FIXTURE_BANK,
+  CP1_PRODUCTION_BANK,
+} from "./content/checkpoints/cp1Bank.js";
+export {
+  CP1_ASSESSMENT_TO_LEARNER,
+  CP1_CHECKPOINT_ID,
+  CP1_FORM_ID_PREFIX,
+  CP1_MICRO_SOURCE_LABELS,
+  CP1_REQUIRED_MACROS,
+} from "./content/checkpoints/cp1Ids.js";
 export {
   openResponsePackages,
   openResponsePackage,
@@ -79,8 +107,9 @@ export {
   canonicalSourceIds,
 } from "./content/provenance.js";
 
-// Create a Boston Day 1 session for a profile. attemptStartSequence defaults to
-// 0 for the first attempt. Determinism comes from the variation root seed.
+// Create a Boston Day 1 session for a profile. attemptStartSequence defaults
+// to 0 for the first attempt. Determinism comes from the variation root seed.
+// One-liner over the generic chapter session factory.
 export function createDay1Session(opts: {
   variationRootSeedHex: string;
   attemptStartSequence?: number;
@@ -89,20 +118,8 @@ export function createDay1Session(opts: {
   openResponseContentMode?: "PRODUCTION" | "AUTHOR_DRAFT_QA";
   assessmentConfig?: AssessmentRuntimeConfig;
 }): Session {
-  const seed = deriveAttemptSeed(opts.variationRootSeedHex, CHAPTER_ID, opts.attemptStartSequence ?? 0);
-  const assessmentMode = opts.assessmentMode ?? "PRODUCTION";
-  const ctx = new Ctx(
-    seed,
-    opts.assessmentConfig ?? {
-      mode: assessmentMode,
-      openResponseContentMode:
-        opts.openResponseContentMode ?? "PRODUCTION",
-      activeBankVersion:
-        assessmentMode === "QA_DRAFT"
-          ? CP1_DEVELOPMENT_FIXTURE_BANK.bankVersion
-          : CP1_PRODUCTION_BANK.bankVersion,
-      banks: CP1_BANK_REGISTRY,
-    },
+  return createChapterSession(
+    BOSTON_1765_CHAPTER,
+    opts as CreateChapterSessionOptions,
   );
-  return new Session(ctx, day1Flow, opts.priorEvents ?? []);
 }

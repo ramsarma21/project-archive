@@ -1,10 +1,12 @@
 import {
-  CP1_CHECKPOINT_ID,
-  CP1_REQUIRED_MACROS,
   MICRO_CONCEPT_IDS,
   type AssessmentItem,
   type AssessmentQuestionBank,
 } from "@pa/contracts";
+import {
+  CP1_CHECKPOINT_ID,
+  CP1_REQUIRED_MACROS,
+} from "./cp1Ids.js";
 
 // ============================================================================
 // Owner-provided STAAR-style assessment content (ingested 2026-07-23).

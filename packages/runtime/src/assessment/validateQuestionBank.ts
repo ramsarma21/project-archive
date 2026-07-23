@@ -1,10 +1,9 @@
 import {
-  CP1_REQUIRED_MACROS,
-  MICRO_CONCEPT_IDS,
-  isCp1ScopedItem,
+  isCheckpointScopedItem,
   isProductionApprovedStatus,
   type AssessmentQuestionBank,
 } from "@pa/contracts";
+import type { CheckpointSpec } from "../engine/chapter.js";
 
 export interface BankValidationOptions {
   production: boolean;
@@ -16,15 +15,15 @@ export interface BankValidationResult {
   missingContent: string[];
 }
 
-const microIds = new Set<string>(Object.values(MICRO_CONCEPT_IDS));
-const macroIds = new Set<string>(CP1_REQUIRED_MACROS);
-
 export function validateQuestionBank(
   bank: AssessmentQuestionBank,
+  checkpoint: CheckpointSpec,
   options: BankValidationOptions,
 ): BankValidationResult {
   const errors: string[] = [];
   const missingContent: string[] = [];
+  const microIds = new Set<string>(checkpoint.microConceptIds);
+  const macroIds = new Set<string>(checkpoint.requiredMacroConceptIds);
   if (!bank.bankId.trim()) errors.push("bankId is required");
   if (!bank.bankVersion.trim()) errors.push("bankVersion is required");
   if (options.production && !isProductionApprovedStatus(bank.approvalStatus)) {
@@ -39,17 +38,17 @@ export function validateQuestionBank(
     }
     if (itemIds.has(item.itemId)) errors.push(`duplicate itemId ${item.itemId}`);
     itemIds.add(item.itemId);
-    // CP1 concept-membership is enforced only for CP1-scoped items. Post-1765
-    // items banked for future checkpoints carry lineage concept ids and are
-    // excluded here (and from CP1 selection) by their actScope.
-    const cp1Scoped = isCp1ScopedItem(item);
-    if (cp1Scoped && item.tier === "MACRO" && !macroIds.has(item.conceptId)) {
+    // Checkpoint concept-membership is enforced only for items scoped to THIS
+    // checkpoint. Items banked for future checkpoints carry lineage concept
+    // ids and are excluded here (and from selection) by their actScope.
+    const scoped = isCheckpointScopedItem(item, checkpoint.checkpointId);
+    if (scoped && item.tier === "MACRO" && !macroIds.has(item.conceptId)) {
       errors.push(`${item.itemId} has invalid MACRO concept ${item.conceptId}`);
     }
-    if (cp1Scoped && item.tier === "MICRO" && !microIds.has(item.conceptId)) {
+    if (scoped && item.tier === "MICRO" && !microIds.has(item.conceptId)) {
       errors.push(`${item.itemId} has invalid MICRO concept ${item.conceptId}`);
     }
-    if (!cp1Scoped && !String(item.conceptId).trim()) {
+    if (!scoped && !String(item.conceptId).trim()) {
       errors.push(`${item.itemId} must carry a non-empty lineage concept id`);
     }
     if (!item.stem.trim()) errors.push(`${item.itemId} has an empty stem`);
@@ -69,27 +68,27 @@ export function validateQuestionBank(
     if (item.teksTags === undefined) {
       errors.push(`${item.itemId} must include TEKS metadata (an explicit array)`);
     }
-    // Approved macro TEKS tags are required only for CP1-scoped macros (the
-    // ones that can actually be selected at CP1).
+    // Approved macro TEKS tags are required only for checkpoint-scoped macros
+    // (the ones that can actually be selected here).
     if (
       options.production &&
-      cp1Scoped &&
+      scoped &&
       item.tier === "MACRO" &&
       (item.teksTags?.length ?? 0) === 0
     ) {
       errors.push(`${item.itemId} is missing approved macro TEKS tags`);
     }
   }
-  for (const conceptId of CP1_REQUIRED_MACROS) {
+  for (const conceptId of checkpoint.requiredMacroConceptIds) {
     const candidates = bank.items.filter(
       (item) =>
         item.tier === "MACRO" &&
         item.conceptId === conceptId &&
-        isCp1ScopedItem(item),
+        isCheckpointScopedItem(item, checkpoint.checkpointId),
     );
     if (candidates.length === 0) {
       missingContent.push(`Required approved macro variant: ${conceptId}`);
-      // A production bank that cannot supply a required CP1 macro is not
+      // A production bank that cannot supply a required macro is not
       // selectable; surface it as a hard error so the gate stays blocked.
       if (options.production) {
         errors.push(`no production-eligible macro variant for ${conceptId}`);
@@ -105,7 +104,7 @@ export function validateQuestionBank(
   const eligibleMicros = bank.items.filter(
     (item) =>
       item.tier === "MICRO" &&
-      isCp1ScopedItem(item) &&
+      isCheckpointScopedItem(item, checkpoint.checkpointId) &&
       (!options.production || isProductionApprovedStatus(item.approvalStatus)),
   );
   if (eligibleMicros.length === 0) {
@@ -120,9 +119,10 @@ export function validateQuestionBank(
 
 export function assertSelectableBank(
   bank: AssessmentQuestionBank,
+  checkpoint: CheckpointSpec,
   production: boolean,
 ): void {
-  const result = validateQuestionBank(bank, { production });
+  const result = validateQuestionBank(bank, checkpoint, { production });
   if (!result.valid) {
     throw new Error(`ASSESSMENT_BANK_INVALID: ${result.errors.join("; ")}`);
   }

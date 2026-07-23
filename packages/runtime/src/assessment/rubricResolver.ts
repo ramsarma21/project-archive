@@ -13,11 +13,6 @@ export interface RubricResolutionContext {
   allowedEvidenceIds: ReadonlySet<string>;
 }
 
-const LEGACY_RUBRIC_IDS = new Set([
-  "BOS.ACT01.RUBRIC.COMPARE_ECONOMIC_EVIDENCE.v1",
-  "BOS.ACT01.RUBRIC.NEWS_STRATEGY.v1",
-]);
-
 function fallbackFeedback(rubric: OpenResponseRubric): string {
   return (
     rubric.observationFeedback?.UNCLASSIFIED ??
@@ -258,6 +253,14 @@ export function resolveClassifierResult(
 export function resolutionMatchesPackage(
   rubric: OpenResponseRubric,
   resolution: DeterministicResolution,
+  options?: {
+    /**
+     * Chapter-supplied rubric ids from BEFORE the packaged-content era whose
+     * stored resolutions remain acceptable on replay
+     * (ChapterDefinition.assessment.legacyRubricIds).
+     */
+    legacyRubricIds?: readonly string[];
+  },
 ): boolean {
   if (resolution.purpose !== "FORMATIVE") return false;
   if (
@@ -266,7 +269,7 @@ export function resolutionMatchesPackage(
   ) {
     return (
       !resolution.outcome &&
-      LEGACY_RUBRIC_IDS.has(resolution.rubricId) &&
+      (options?.legacyRubricIds ?? []).includes(resolution.rubricId) &&
       ["EVIDENCE_CONNECTED", "PARTIAL_CONNECTION", "NEEDS_SOURCE_REVISIT", "UNCLASSIFIED"].includes(
         resolution.label,
       )

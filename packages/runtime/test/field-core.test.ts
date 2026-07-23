@@ -8,14 +8,18 @@ import {
   type PresenterEvent,
 } from "@pa/contracts";
 import {
+  BOSTON_1765_CHAPTER,
   Ctx,
   Session,
   applyFieldEvent,
   assertFieldEventPayload,
+  compileFieldVocabulary,
   initialFieldState,
 } from "../src/index.js";
 import type { Flow } from "../src/engine/ctx.js";
-import { initialWorldState } from "../src/world.js";
+
+const VOCAB = compileFieldVocabulary(BOSTON_1765_CHAPTER.fieldVocabulary);
+const initialWorldState = BOSTON_1765_CHAPTER.content.createInitialWorldState;
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
   if (!condition) throw new Error(message);
@@ -93,7 +97,7 @@ const seed = new Uint8Array(16).fill(17);
 // Heat decay, Standing bands, stable Thread flags, and micro idempotence.
 {
   const world = initialWorldState();
-  const field = initialFieldState(world);
+  const field = initialFieldState(world, VOCAB);
   const events: FieldCommittedEvent[] = [
     {
       type: "FIELD_HEAT_TRANSITION",
@@ -149,8 +153,8 @@ const seed = new Uint8Array(16).fill(17);
     },
   ];
   for (const event of events) {
-    assertFieldEventPayload(event, field, world);
-    applyFieldEvent(field, world, event);
+    assertFieldEventPayload(event, field, world, VOCAB);
+    applyFieldEvent(field, world, event, VOCAB);
   }
   equal(field.heat.band, "NOTICED");
   equal(field.heat.decay.elapsedSeconds, 30);
@@ -230,7 +234,7 @@ const interruptEvents: PresenterEvent[] = [
 
 // Escape keeps carried goods, leaves heat HUNTED, and resumes the exact spine.
 {
-  const ctx = new Ctx(seed);
+  const ctx = new Ctx(seed, BOSTON_1765_CHAPTER);
   ctx.world.jobObjects.CARRIER_HANDBILLS = {
     custody: "PLAYER",
     condition: "INTACT",
@@ -280,7 +284,7 @@ const interruptEvents: PresenterEvent[] = [
 // Interrupts suspend and restore the exact selected FREE_ROAM plan. Durable
 // effects replay identically and never touch the learner state.
 {
-  const ctx = new Ctx(seed);
+  const ctx = new Ctx(seed, BOSTON_1765_CHAPTER);
   const session = new Session(ctx, selectedRoamFlow);
   const originalPlan = session.plan;
   assert(originalPlan?.request.kind === "FREE_ROAM");
@@ -298,12 +302,12 @@ const interruptEvents: PresenterEvent[] = [
   equal(ctx.view().field.activeInterrupt, null);
   assert(ctx.view().field.seedHex.length === 32, "field seed must be a derived 128-bit hex value");
 
-  const replay = new Session(new Ctx(seed), selectedRoamFlow, interruptEvents);
+  const replay = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), selectedRoamFlow, interruptEvents);
   deepEqual(replay.plan, originalPlan, "reload must restore the same selected FREE_ROAM plan");
   deepEqual(replay.ctx.view().field, ctx.view().field, "reload must reproduce the durable field slice");
   equal(replay.ctx.fieldSeedHex, ctx.fieldSeedHex, "same attempt seed must derive the same field seed");
 
-  const midInterrupt = new Session(new Ctx(seed), selectedRoamFlow, interruptEvents.slice(0, 3));
+  const midInterrupt = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), selectedRoamFlow, interruptEvents.slice(0, 3));
   equal(midInterrupt.plan?.fieldInterrupt?.kind, "CHASE");
   assert(midInterrupt.plan?.request.kind === "FREE_ROAM");
   equal(midInterrupt.plan.request.selectedTargetId, "PIKE_PROOF");
@@ -321,7 +325,7 @@ const interruptEvents: PresenterEvent[] = [
 {
   const throughIntent = interruptEvents.slice(0, 7);
   const midResolution = new Session(
-    new Ctx(seed),
+    new Ctx(seed, BOSTON_1765_CHAPTER),
     selectedRoamFlow,
     throughIntent,
   );
@@ -339,7 +343,7 @@ const interruptEvents: PresenterEvent[] = [
   equal(midResolution.ctx.view().field.pendingReposition, null);
 
   const replay = new Session(
-    new Ctx(seed),
+    new Ctx(seed, BOSTON_1765_CHAPTER),
     selectedRoamFlow,
     [
       ...interruptEvents,
@@ -356,7 +360,7 @@ const interruptEvents: PresenterEvent[] = [
 
 // Reactive exchanges use the same suspend/commit/resume envelope.
 {
-  const session = new Session(new Ctx(seed), selectedRoamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), selectedRoamFlow);
   const originalPlan = session.plan;
   session.advance({
     type: "FIELD_INTERRUPT_STARTED",
@@ -385,7 +389,7 @@ const interruptEvents: PresenterEvent[] = [
 // Legacy heat remains authoritative until the first semantic transition, then
 // cannot overwrite the field authority.
 {
-  const ctx = new Ctx(seed);
+  const ctx = new Ctx(seed, BOSTON_1765_CHAPTER);
   ctx.world.attention.watcherHeat = 2;
   ctx.syncLegacyFieldCompatibility();
   equal(ctx.field.heat.band, "WATCHED");
@@ -415,7 +419,7 @@ const interruptEvents: PresenterEvent[] = [
 // Deterministic talk success commits heat + writs micro atomically and resumes
 // the exact selected route without touching carried goods or learner state.
 {
-  const session = new Session(new Ctx(seed), selectedRoamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), selectedRoamFlow);
   const originalPlan = session.plan;
   const learnerBefore = JSON.stringify(session.ctx.learner);
   const events: PresenterEvent[] = [
@@ -455,7 +459,7 @@ const interruptEvents: PresenterEvent[] = [
   equal(JSON.stringify(session.ctx.learner), learnerBefore);
 
   const replay = new Session(
-    new Ctx(seed),
+    new Ctx(seed, BOSTON_1765_CHAPTER),
     selectedRoamFlow,
     [...events, resolve],
   );
@@ -467,7 +471,7 @@ const interruptEvents: PresenterEvent[] = [
 // available, confiscates only exposed carried goods, advances time, and cannot
 // dead-end the suspended route.
 {
-  const ctx = new Ctx(seed);
+  const ctx = new Ctx(seed, BOSTON_1765_CHAPTER);
   ctx.world.jobObjects.CARRIER_HANDBILLS = {
     custody: "PLAYER",
     condition: "INTACT",
@@ -535,7 +539,7 @@ const interruptEvents: PresenterEvent[] = [
 
 // Malformed and invalid-context field events reject without entering the log.
 {
-  const session = new Session(new Ctx(seed), selectedRoamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), selectedRoamFlow);
   throws(
     () => session.advance({
       type: "FIELD_STANDING_DELTA",
@@ -552,14 +556,14 @@ const interruptEvents: PresenterEvent[] = [
   );
   equal(session.committedEvents.length, 0);
 
-  const nonRoam = new Session(new Ctx(seed), continueFlow);
+  const nonRoam = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), continueFlow);
   throws(
     () => nonRoam.advance(interruptEvents[0]!),
     "only during FREE_ROAM",
   );
   equal(nonRoam.committedEvents.length, 0);
 
-  const invalidReposition = new Session(new Ctx(seed), selectedRoamFlow);
+  const invalidReposition = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), selectedRoamFlow);
   invalidReposition.advance(interruptEvents[0]!);
   invalidReposition.advance(interruptEvents[2]!);
   throws(

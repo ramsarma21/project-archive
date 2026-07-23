@@ -1,7 +1,5 @@
 import {
-  CP1_CHECKPOINT_ID,
-  CP1_REQUIRED_MACROS,
-  isCp1ScopedItem,
+  isCheckpointScopedItem,
   isProductionApprovedStatus,
   type AssessmentItem,
   type AssessmentQuestionBank,
@@ -10,10 +8,12 @@ import {
 } from "@pa/contracts";
 import { draw } from "../seed.js";
 import { assertSelectableBank } from "./validateQuestionBank.js";
+import type { CheckpointSpec } from "../engine/chapter.js";
 
 export interface SelectDebriefOptions {
   attemptSeed: Uint8Array;
   bank: AssessmentQuestionBank;
+  checkpoint: CheckpointSpec;
   engagedMicroIds: readonly MicroConceptId[];
   allowDraft: boolean;
   maxEnrichment?: number;
@@ -26,29 +26,35 @@ function eligible(
   return allowDraft || isProductionApprovedStatus(item.approvalStatus);
 }
 
-// CP1 (Boston Day 1, 1765) may select ONLY era-appropriate items. This holds
-// regardless of allowDraft: post-1765 items banked toward future checkpoints
-// are never selected here, even when their concept id happens to alias a CP1
-// macro (their actScope excludes CP1). See isCp1ScopedItem.
-function selectableForCp1(
+// A checkpoint may select ONLY era-appropriate items. This holds regardless
+// of allowDraft: items banked toward future checkpoints are never selected
+// here, even when their concept id happens to alias a required macro (their
+// actScope excludes this checkpoint). See isCheckpointScopedItem.
+function selectableForCheckpoint(
   item: AssessmentItem,
+  checkpoint: CheckpointSpec,
   allowDraft: boolean,
 ): boolean {
-  return eligible(item, allowDraft) && isCp1ScopedItem(item);
+  return (
+    eligible(item, allowDraft) &&
+    isCheckpointScopedItem(item, checkpoint.checkpointId)
+  );
 }
 
 function rank(
   attemptSeed: Uint8Array,
+  checkpointId: string,
   bankVersion: string,
   item: AssessmentItem,
 ): number {
   return draw(
     attemptSeed,
-    `${CP1_CHECKPOINT_ID}|${bankVersion}|${item.tier}|${item.conceptId}|${item.itemId}`,
+    `${checkpointId}|${bankVersion}|${item.tier}|${item.conceptId}|${item.itemId}`,
   );
 }
 
 function stableFormId(
+  formIdPrefix: string,
   bankVersion: string,
   itemIds: readonly string[],
   seedDraw: number,
@@ -59,26 +65,27 @@ function stableFormId(
     hash ^= value.charCodeAt(i);
     hash = Math.imul(hash, 0x01000193);
   }
-  return `BOS.ACT01.CP1.FORM.${(hash >>> 0).toString(16).padStart(8, "0")}`;
+  return `${formIdPrefix}${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
 export function selectDebrief(options: SelectDebriefOptions): {
   selection: DebriefFormSelection;
   items: AssessmentItem[];
 } {
-  assertSelectableBank(options.bank, !options.allowDraft);
-  const macros = CP1_REQUIRED_MACROS.map((conceptId) => {
+  const checkpoint = options.checkpoint;
+  assertSelectableBank(options.bank, checkpoint, !options.allowDraft);
+  const macros = checkpoint.requiredMacroConceptIds.map((conceptId) => {
     const candidates = options.bank.items
       .filter(
         (item) =>
           item.tier === "MACRO" &&
           item.conceptId === conceptId &&
-          selectableForCp1(item, options.allowDraft),
+          selectableForCheckpoint(item, checkpoint, options.allowDraft),
       )
       .sort(
         (a, b) =>
-          rank(options.attemptSeed, options.bank.bankVersion, a) -
-            rank(options.attemptSeed, options.bank.bankVersion, b) ||
+          rank(options.attemptSeed, checkpoint.checkpointId, options.bank.bankVersion, a) -
+            rank(options.attemptSeed, checkpoint.checkpointId, options.bank.bankVersion, b) ||
           a.itemId.localeCompare(b.itemId),
       );
     const selected = candidates[0];
@@ -93,12 +100,12 @@ export function selectDebrief(options: SelectDebriefOptions): {
       (item) =>
         item.tier === "MICRO" &&
         engaged.has(item.conceptId) &&
-        selectableForCp1(item, options.allowDraft),
+        selectableForCheckpoint(item, checkpoint, options.allowDraft),
     )
     .sort(
       (a, b) =>
-        rank(options.attemptSeed, options.bank.bankVersion, a) -
-          rank(options.attemptSeed, options.bank.bankVersion, b) ||
+        rank(options.attemptSeed, checkpoint.checkpointId, options.bank.bankVersion, a) -
+          rank(options.attemptSeed, checkpoint.checkpointId, options.bank.bankVersion, b) ||
         a.itemId.localeCompare(b.itemId),
     )
     .slice(0, Math.max(0, Math.min(2, options.maxEnrichment ?? 2)));
@@ -106,21 +113,23 @@ export function selectDebrief(options: SelectDebriefOptions): {
   const itemIds = items.map((item) => item.itemId);
   const seedDraw = draw(
     options.attemptSeed,
-    `${CP1_CHECKPOINT_ID}|${options.bank.bankVersion}|FORM`,
+    `${checkpoint.checkpointId}|${options.bank.bankVersion}|FORM`,
   );
   const macroItemIds = macros.map((item) => item.itemId);
   const microItemIds = micros.map((item) => item.itemId);
   const coreFormId = stableFormId(
+    checkpoint.formIdPrefix,
     options.bank.bankVersion,
     macroItemIds,
     seedDraw,
   );
   const selection: DebriefFormSelection = {
-    checkpointId: CP1_CHECKPOINT_ID,
+    checkpointId: checkpoint.checkpointId,
     coreFormId,
     enrichmentSupplementId:
       microItemIds.length > 0
         ? stableFormId(
+            checkpoint.formIdPrefix,
             `${options.bank.bankVersion}|ENRICHMENT`,
             microItemIds,
             seedDraw,
@@ -139,6 +148,7 @@ export function selectDebrief(options: SelectDebriefOptions): {
 
 export function resolveSelectedItems(
   bank: AssessmentQuestionBank,
+  checkpoint: CheckpointSpec,
   selection: DebriefFormSelection,
   allowDraft: boolean,
 ): AssessmentItem[] {
@@ -151,19 +161,19 @@ export function resolveSelectedItems(
   const byId = new Map(bank.items.map((item) => [item.itemId, item]));
   const items = selection.itemIds.map((itemId) => {
     const item = byId.get(itemId);
-    if (!item || !selectableForCp1(item, allowDraft)) {
+    if (!item || !selectableForCheckpoint(item, checkpoint, allowDraft)) {
       throw new Error(`DEBRIEF_EVENT_INVALID: unavailable item ${itemId}`);
     }
     return item;
   });
   const macros = items.filter((item) => item.tier === "MACRO");
   if (
-    macros.length !== CP1_REQUIRED_MACROS.length ||
-    CP1_REQUIRED_MACROS.some(
+    macros.length !== checkpoint.requiredMacroConceptIds.length ||
+    checkpoint.requiredMacroConceptIds.some(
       (conceptId) => !macros.some((item) => item.conceptId === conceptId),
     )
   ) {
-    throw new Error("DEBRIEF_EVENT_INVALID: form omits a required CP1 macro");
+    throw new Error("DEBRIEF_EVENT_INVALID: form omits a required checkpoint macro");
   }
   return items;
 }

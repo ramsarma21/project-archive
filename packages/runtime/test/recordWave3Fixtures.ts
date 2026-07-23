@@ -9,7 +9,11 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CHAPTER_ID, PACKAGE_ID } from "@pa/contracts";
-import { buildMasteryReport, createDay1Session } from "../src/index.js";
+import {
+  BOSTON_1765_CHAPTER,
+  buildMasteryReport,
+  createDay1Session,
+} from "../src/index.js";
 import { autoplay } from "./autoplay.js";
 import { WAVE3_CASES, pinnedMeta, type Wave3Fixture } from "./wave3-fixtures.helper.js";
 
@@ -46,6 +50,7 @@ for (const c of WAVE3_CASES) {
       meta,
       replayed.ctx.checkpoint,
       replayed.ctx.field.engagedMicroIds,
+      BOSTON_1765_CHAPTER.report,
     ),
   };
   const file = join(OUT_DIR, `${c.name}.json`);

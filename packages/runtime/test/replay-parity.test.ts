@@ -11,7 +11,11 @@ import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildMasteryReport, createDay1Session } from "../src/index.js";
+import {
+  BOSTON_1765_CHAPTER,
+  buildMasteryReport,
+  createDay1Session,
+} from "../src/index.js";
 import { WAVE3_CASES, firstDiffPath, type Wave3Fixture } from "./wave3-fixtures.helper.js";
 
 const FIXTURE_DIR = join(dirname(fileURLToPath(import.meta.url)), "fixtures", "wave3");
@@ -40,6 +44,7 @@ for (const c of WAVE3_CASES) {
       fixture.meta,
       session.ctx.checkpoint,
       session.ctx.field.engagedMicroIds,
+      BOSTON_1765_CHAPTER.report,
     );
 
     // Byte-exact comparison (round-tripped through JSON exactly like the

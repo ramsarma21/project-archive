@@ -5,7 +5,7 @@ import {
   type FieldCommittedEvent,
   type PresenterEvent,
 } from "@pa/contracts";
-import { Ctx, Session } from "../src/index.js";
+import { BOSTON_1765_CHAPTER, Ctx, Session } from "../src/index.js";
 import type { Flow } from "../src/engine/ctx.js";
 
 // The alive-world learning bridges: free-roam knowledge inspects reinforce
@@ -69,7 +69,7 @@ function exchangeEvents(
 
 // 1. Tier-A lore inspect commits the mapped macro exposure with provenance.
 {
-  const session = new Session(new Ctx(seed), roamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow);
   for (const event of exchangeEvents("lore1", {
     interactionId: "KN-noticeboard-stamp:1",
     sourceId: "KN-noticeboard-stamp",
@@ -110,7 +110,7 @@ function exchangeEvents(
 // 2. Living-route completion unlocks an owned route (world flag + label),
 //    and the whole log replays deterministically.
 {
-  const session = new Session(new Ctx(seed), roamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow);
   for (const event of exchangeEvents("note", {
     interactionId: "SJ-tavern-note-handoff:1",
     sourceId: "SJ-tavern-note-handoff",
@@ -129,7 +129,7 @@ function exchangeEvents(
     session.ctx.routesUnlocked.includes("The laundry-lane cut (north back alley)"),
     "route label reaches the Archive ROUTES list",
   );
-  const replay = new Session(new Ctx(seed), roamFlow, [...session.committedEvents]);
+  const replay = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow, [...session.committedEvents]);
   equal(
     replay.ctx.world.routes.NORTH_ALLEY_ROUTE,
     "UNLOCKED",
@@ -145,7 +145,7 @@ function exchangeEvents(
 // 3. The ropewalk job stages AVAILABLE -> ACCEPTED -> READY_HANDOFF ->
 //    COMPLETED, engages PORT_TOWN_BOSTON, and applies Standing exactly once.
 {
-  const session = new Session(new Ctx(seed), roamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow);
   const stages: [string, string, Record<string, unknown>][] = [
     ["SJ-ropewalk-offer", "AVAILABLE", { activities: [{ activityId: OPTIONAL_ACTIVITY_IDS.ROPEWALK, stage: "ACCEPTED" }] }],
     ["SJ-ropewalk-hook", "ACCEPTED", { activities: [{ activityId: OPTIONAL_ACTIVITY_IDS.ROPEWALK, stage: "READY_HANDOFF" }] }],
@@ -193,7 +193,7 @@ function exchangeEvents(
 // 4. A chase teaches the writ and marks the face regardless of outcome:
 //    escaping still sets identity.recognized and engages WRITS_OF_ASSISTANCE.
 {
-  const session = new Session(new Ctx(seed), roamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow);
   const events: PresenterEvent[] = [
     {
       type: "FIELD_WATCHER_CHALLENGE",
@@ -230,7 +230,7 @@ function exchangeEvents(
     session.ctx.field.engagedMicroIds.includes(MICRO_CONCEPT_IDS.WRITS_OF_ASSISTANCE),
     "running from the writ still teaches the writ",
   );
-  const replay = new Session(new Ctx(seed), roamFlow, [...session.committedEvents]);
+  const replay = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow, [...session.committedEvents]);
   equal(replay.ctx.field.identity.recognized, true, "recognized survives replay");
 }
 

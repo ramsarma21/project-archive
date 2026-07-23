@@ -37,21 +37,21 @@ const SCAN_FILES = [
 // normalized so the specifier starts at "content/". Anything here is warned
 // about as debt; anything not here is a NEW violation and fails the check.
 const ALLOWLIST = {
-  "packages/runtime/src/engine/ctx.ts": [
-    "content/day1/tables.js",
-    "content/day1/text.js",
-    "content/day1/reactive.js",
-    "content/provenance.js",
-  ],
+  // wave3 stage 1: engine/ctx.ts debt burned to ZERO (ChapterDefinition
+  // injection); the barrel's re-export debt remains until the chapter package
+  // lands and consumers move to @pa/chapter-boston.
   "packages/runtime/src/assessment/openResponseRegistry.ts": [
     "content/generated/act1OpenResponseContent.generated.js",
   ],
   "packages/runtime/src/index.ts": [
+    "content/bostonChapter.js",
     "content/day1/flow.js",
     "content/day1/tables.js",
     "content/day1/text.js",
     "content/day1/reactive.js",
     "content/day1/choreography.js",
+    "content/checkpoints/cp1Bank.js",
+    "content/checkpoints/cp1Ids.js",
     "content/provenance.js",
   ],
 };

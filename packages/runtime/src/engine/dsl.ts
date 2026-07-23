@@ -18,20 +18,21 @@ function* request(ctx: Ctx, req: InputRequest, cueId: string): Sub<PresenterEven
   return ev;
 }
 
-export function* waitContinue(ctx: Ctx, label?: string, cueId = `BOS.MD01.CUE.CONTINUE.${label ?? "DEFAULT"}.v1`): Sub<void> {
+export function* waitContinue(ctx: Ctx, label?: string, cueId?: string): Sub<void> {
   const req: InputRequest = label ? { kind: "CONTINUE", label } : { kind: "CONTINUE" };
-  yield* request(ctx, req, cueId);
+  yield* request(ctx, req, cueId ?? ctx.chapter.content.cues.continueCue(label));
 }
 
-export function* waitAck(ctx: Ctx, text: string, cueId = "BOS.MD01.CUE.ACK.v1"): Sub<void> {
-  yield* request(ctx, { kind: "ACK", text }, cueId);
+export function* waitAck(ctx: Ctx, text: string, cueId?: string): Sub<void> {
+  yield* request(ctx, { kind: "ACK", text }, cueId ?? ctx.chapter.content.cues.ackCue());
 }
 
 // Final Day Record confirmation. The card renders while this request is
 // active; CONTINUE commits mission completion.
-export function* waitDayEnd(ctx: Ctx, cueId = "BOS.MD01.CUE.DAY_END.v1"): Sub<void> {
+export function* waitDayEnd(ctx: Ctx, cueId?: string): Sub<void> {
+  const cue = cueId ?? ctx.chapter.content.cues.dayEndCue();
   while (true) {
-    const ev = yield* request(ctx, { kind: "DAY_END" }, cueId);
+    const ev = yield* request(ctx, { kind: "DAY_END" }, cue);
     if (ev.type === "CONTINUE") return;
   }
 }
@@ -75,9 +76,13 @@ export function* focusRead(
   objectId: string,
   title: string,
   teaser: string,
-  cueId = `BOS.MD01.CUE.READ.${objectId}.v1`,
+  cueId?: string,
 ): Sub<boolean> {
-  const ev = yield* request(ctx, { kind: "FOCUS_READ", objectId, title, teaser }, cueId);
+  const ev = yield* request(
+    ctx,
+    { kind: "FOCUS_READ", objectId, title, teaser },
+    cueId ?? ctx.chapter.content.cues.readCue(objectId),
+  );
   return ev.type === "FOCUS_READ_OPENED";
 }
 
@@ -96,8 +101,9 @@ export function* freeRoam(
   ctx: Ctx,
   targets: FreeRoamTarget[],
   canProceed: boolean,
-  cueId = `BOS.MD01.CUE.ROAM.${targets.map((target) => target.targetId).join("_")}.v1`,
+  cueId?: string,
 ): Sub<PresenterEvent> {
+  cueId ??= ctx.chapter.content.cues.roamCue(targets.map((target) => target.targetId));
   let selectedTargetId = targets.length === 1 ? targets[0]?.targetId : undefined;
   // Keep the Today strip and the world markers describing the same state:
   // the one live selection is gold/SELECTED, the rest of the set stays ACTIVE.

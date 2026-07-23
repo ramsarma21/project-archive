@@ -5,23 +5,10 @@ import type {
 } from "./field.js";
 import type { FormativeEvidenceRecord } from "./openResponse.js";
 
-export const CP1_CHECKPOINT_ID = "BOS.ACT01.CP1.v1" as const;
-export const CP1_REQUIRED_MACROS = [
-  "RCC.DEBT_POLICY_INTRO",
-  "RCC.STAMP_INTERNAL_INTRO",
-  "RCC.REPRESENTATION_CAUSE",
-] as const;
-
-export type Cp1MacroConceptId = (typeof CP1_REQUIRED_MACROS)[number];
-export type AssessmentConceptId =
-  | Cp1MacroConceptId
-  | MicroConceptId
-  // Lineage/era-scoped concept ids for items banked toward future checkpoints
-  // (e.g. the post-1765 "RCL.*" lineage concepts). Widened to string so those
-  // banked items can carry a stable, non-CP1 concept id without being mistaken
-  // for a CP1 macro/micro. `(string & {})` keeps literal-union autocomplete for
-  // the known ids while remaining additive/non-breaking.
-  | (string & {});
+// Assessment concept ids are chapter vocabulary (macro RCC.*, micro, and
+// lineage/era-scoped ids banked toward future checkpoints). The protocol
+// keeps them as plain strings; chapter packages own the concrete unions.
+export type AssessmentConceptId = string;
 export type AssessmentTier = "MACRO" | "MICRO";
 // DRAFT: engineering fixture. SME_APPROVED: subject-matter reviewer sign-off.
 // OWNER_PROVIDED: real product-owner-supplied content, approved for use and
@@ -72,8 +59,9 @@ export interface AssessmentItem {
   /**
    * Checkpoint/act scopes in which this item may be selected. When present, a
    * checkpoint selects the item only if its checkpoint id is listed (see
-   * isCp1ScopedItem). Absent = unrestricted (legacy fixtures stay selectable).
-   * Post-1765 items scope to future checkpoints so CP1 excludes them.
+   * isCheckpointScopedItem). Absent = unrestricted (legacy fixtures stay
+   * selectable). Later-era items scope to future checkpoints so earlier
+   * checkpoints exclude them.
    */
   actScope?: readonly string[];
   /**
@@ -87,14 +75,17 @@ export interface AssessmentItem {
 }
 
 /**
- * True when an item is eligible for CP1 (Boston Day 1, 1765) selection: either
- * unrestricted (no actScope — legacy fixtures) or explicitly scoped to the CP1
- * checkpoint. Post-1765 items scoped to future checkpoints return false and are
- * excluded from CP1 selection and CP1 validator requirements.
+ * True when an item is eligible for the given checkpoint's selection: either
+ * unrestricted (no actScope — legacy fixtures) or explicitly scoped to that
+ * checkpoint. Items scoped to other/future checkpoints return false and are
+ * excluded from selection and validator requirements.
  */
-export function isCp1ScopedItem(item: AssessmentItem): boolean {
+export function isCheckpointScopedItem(
+  item: AssessmentItem,
+  checkpointId: string,
+): boolean {
   return (
-    item.actScope === undefined || item.actScope.includes(CP1_CHECKPOINT_ID)
+    item.actScope === undefined || item.actScope.includes(checkpointId)
   );
 }
 
@@ -117,8 +108,8 @@ export interface AssessmentQuestionBank {
 }
 
 export interface DebriefFormSelection {
-  checkpointId: typeof CP1_CHECKPOINT_ID;
-  /** Route-independent required CP1 identity (macro items only). */
+  checkpointId: string;
+  /** Route-independent required checkpoint identity (macro items only). */
   coreFormId?: string;
   /** Optional enrichment identity; never changes the required core form. */
   enrichmentSupplementId?: string | null;
@@ -141,7 +132,7 @@ export interface DebriefResponseRecord {
 
 export interface MacroOutcomeRecord {
   itemId: string;
-  conceptId: Cp1MacroConceptId;
+  conceptId: AssessmentConceptId;
   correct: boolean;
   hintsUsed?: number;
 }
@@ -196,12 +187,12 @@ export interface ActCarryoverProjection {
   microEngagements: MicroEngagementRecord[];
   sourceProvenance: SourceEngagementRecord[];
   formativeEvidence: FormativeEvidenceRecord[];
-  checkpointId: typeof CP1_CHECKPOINT_ID;
+  checkpointId: string;
   checkpointVersion: string;
 }
 
 export interface Cp1CheckpointState {
-  checkpointId: typeof CP1_CHECKPOINT_ID;
+  checkpointId: string;
   status: CheckpointProgress;
   selection: DebriefFormSelection | null;
   responses: DebriefResponseRecord[];
@@ -230,7 +221,7 @@ export type CheckpointDebriefPhase =
 
 export interface CheckpointDebriefRequest {
   kind: "CHECKPOINT_DEBRIEF";
-  checkpointId: typeof CP1_CHECKPOINT_ID;
+  checkpointId: string;
   phase: CheckpointDebriefPhase;
   state: Cp1CheckpointState;
   proposedSelection?: DebriefFormSelection;
@@ -244,25 +235,25 @@ export interface CheckpointDebriefRequest {
 export type CheckpointPresenterEvent =
   | {
       type: "DEBRIEF_FORM_SELECTED";
-      checkpointId: typeof CP1_CHECKPOINT_ID;
+      checkpointId: string;
       selection: DebriefFormSelection;
     }
   | {
       type: "DEBRIEF_ANSWERED";
-      checkpointId: typeof CP1_CHECKPOINT_ID;
+      checkpointId: string;
       formId: string;
       itemId: string;
       optionId: string;
     }
   | {
       type: "DEBRIEF_CONTINUED";
-      checkpointId: typeof CP1_CHECKPOINT_ID;
+      checkpointId: string;
       formId: string;
     }
   | {
       type: "DEBRIEF_COMMITTED";
       eventId: string;
-      checkpointId: typeof CP1_CHECKPOINT_ID;
+      checkpointId: string;
       formId: string;
       bankVersion: string;
       /**
@@ -275,7 +266,7 @@ export type CheckpointPresenterEvent =
   | {
       type: "ACT_TRANSITIONED";
       eventId: string;
-      checkpointId: typeof CP1_CHECKPOINT_ID;
+      checkpointId: string;
       formId: string;
       targetChapterId: string;
     };

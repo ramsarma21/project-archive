@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Flow } from "../src/engine/ctx.js";
 import {
+  BOSTON_1765_CHAPTER,
   CP1_BANK_REGISTRY,
   CP1_PRODUCTION_BANK,
   Ctx,
@@ -172,16 +173,20 @@ test("canonical resolver derives the complete authored outcome set and legacy ma
     "STRONG_RESPONSE",
   );
   assert.equal(
-    resolutionMatchesPackage(entry.rubric, {
-      purpose: "FORMATIVE",
-      status: "FORMATIVE_CLASSIFIED",
-      label: "EVIDENCE_CONNECTED",
-      criterionIds: ["CRIT.COMPARES_SOURCE_CLAIMS"],
-      evidenceIds: ["EV.REVENUE_PURPOSE"],
-      feedbackIds: ["FB.COMPARE.CONNECTED.v1"],
-      rubricId: "BOS.ACT01.RUBRIC.COMPARE_ECONOMIC_EVIDENCE.v1",
-      rubricVersion: "1.0.0",
-    }),
+    resolutionMatchesPackage(
+      entry.rubric,
+      {
+        purpose: "FORMATIVE",
+        status: "FORMATIVE_CLASSIFIED",
+        label: "EVIDENCE_CONNECTED",
+        criterionIds: ["CRIT.COMPARES_SOURCE_CLAIMS"],
+        evidenceIds: ["EV.REVENUE_PURPOSE"],
+        feedbackIds: ["FB.COMPARE.CONNECTED.v1"],
+        rubricId: "BOS.ACT01.RUBRIC.COMPARE_ECONOMIC_EVIDENCE.v1",
+        rubricVersion: "1.0.0",
+      },
+      { legacyRubricIds: BOSTON_1765_CHAPTER.assessment.legacyRubricIds },
+    ),
     true,
   );
 });
@@ -234,7 +239,7 @@ function* roam(_ctx: Ctx): Flow {
 }
 
 function eligibleCtx(): Ctx {
-  const ctx = new Ctx(new Uint8Array(16).fill(5), {
+  const ctx = new Ctx(new Uint8Array(16).fill(5), BOSTON_1765_CHAPTER, {
     mode: "QA_DRAFT",
     openResponseContentMode: "AUTHOR_DRAFT_QA",
     activeBankVersion: CP1_PRODUCTION_BANK.bankVersion,
@@ -307,7 +312,7 @@ test("open response suspends exact roam and cannot close before submission", () 
 });
 
 test("stable named-NPC outcomes resolve effects from the runtime registry", () => {
-  const ctx = new Ctx(new Uint8Array(16).fill(7));
+  const ctx = new Ctx(new Uint8Array(16).fill(7), BOSTON_1765_CHAPTER);
   const session = new Session(ctx, roam);
   session.advance({
     type: "FIELD_INTERRUPT_STARTED",
@@ -329,7 +334,7 @@ test("stable named-NPC outcomes resolve effects from the runtime registry", () =
     true,
   );
   assert.equal(ctx.world.relationships.THOMAS_OBLIGATION, 3);
-  const invalid = new Session(new Ctx(new Uint8Array(16).fill(8)), roam);
+  const invalid = new Session(new Ctx(new Uint8Array(16).fill(8), BOSTON_1765_CHAPTER), roam);
   invalid.advance({
     type: "FIELD_INTERRUPT_STARTED",
     eventId: "bad-start",

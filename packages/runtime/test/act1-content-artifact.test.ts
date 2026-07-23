@@ -16,8 +16,8 @@ import {
   openResponsePackages,
   validateAct1OpenResponseArtifact,
 } from "../src/assessment/openResponseRegistry.js";
-import { initialFieldState } from "../src/fieldState.js";
-import { initialWorldState } from "../src/world.js";
+import { compileFieldVocabulary, initialFieldState } from "../src/fieldState.js";
+import { BOSTON_1765_CHAPTER } from "../src/content/bostonChapter.js";
 import { eligibleNpcFollowupsForField } from "../src/content/day1/reactive.js";
 import { HISTORICAL_SOURCE_REGISTRY } from "../src/content/provenance.js";
 
@@ -120,8 +120,11 @@ test("all twelve prompts enforce prerequisites, spacing, draft gate and cap four
 });
 
 test("all six NPC followups and five Archive cards use source gates", () => {
-  const world = initialWorldState();
-  const field = initialFieldState(world);
+  const world = BOSTON_1765_CHAPTER.content.createInitialWorldState();
+  const field = initialFieldState(
+    world,
+    compileFieldVocabulary(BOSTON_1765_CHAPTER.fieldVocabulary),
+  );
   const requiredSources = new Set(
     npcFollowups({ allowAuthorDraft: true }).flatMap((node) => [
       ...node.gate.completedSources,

@@ -7,10 +7,17 @@ import {
   MICRO_CONCEPT_IDS,
   type PresenterEvent,
 } from "@pa/contracts";
-import { Ctx, Session } from "../src/index.js";
+import {
+  BOSTON_1765_CHAPTER,
+  Ctx,
+  Session,
+  compileFieldVocabulary,
+} from "../src/index.js";
 import type { Flow } from "../src/engine/ctx.js";
 import { citedConfrontationOptionFor } from "../src/fieldState.js";
 import { resolveRegisteredReactiveOutcome } from "../src/content/day1/reactive.js";
+
+const VOCAB = compileFieldVocabulary(BOSTON_1765_CHAPTER.fieldVocabulary);
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
   if (!condition) throw new Error(message);
@@ -87,16 +94,16 @@ const CHALLENGE: PresenterEvent = {
 
 // The option is offered ONLY with the durable engagement, only while choosing.
 {
-  const session = new Session(new Ctx(seed), roamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow);
   session.advance(CHALLENGE);
   equal(
     session.ctx.view().field.citedConfrontationOption,
     null,
     "no engagement -> no cited option",
   );
-  equal(citedConfrontationOptionFor(session.ctx.field), null);
+  equal(citedConfrontationOptionFor(session.ctx.field, VOCAB), null);
 
-  const armed = new Session(new Ctx(seed), roamFlow, [WRITS_ENGAGED, CHALLENGE]);
+  const armed = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow, [WRITS_ENGAGED, CHALLENGE]);
   const offered = armed.ctx.view().field.citedConfrontationOption;
   assert(offered, "engaged writs -> cited option offered");
   equal(offered!.microConceptId, MICRO_CONCEPT_IDS.WRITS_OF_ASSISTANCE);
@@ -106,7 +113,7 @@ const CHALLENGE: PresenterEvent = {
 // A presenter can never invent the option: CITE without engagement rejects,
 // and the confrontation stays exactly where it was (failure paths unchanged).
 {
-  const session = new Session(new Ctx(seed), roamFlow);
+  const session = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow);
   session.advance(CHALLENGE);
   throws(
     () =>
@@ -132,7 +139,7 @@ const CHALLENGE: PresenterEvent = {
 // Armed cite: the constable stands down deterministically — no search, no
 // clock cost, no recognized flag, and heat steps DOWN one band (CITED cause).
 {
-  const ctx = new Ctx(seed);
+  const ctx = new Ctx(seed, BOSTON_1765_CHAPTER);
   const session = new Session(ctx, roamFlow);
   const originalPlan = session.plan;
   const events: PresenterEvent[] = [
@@ -172,14 +179,14 @@ const CHALLENGE: PresenterEvent = {
   deepEqual(session.plan, originalPlan, "suspended route resumes exactly");
 
   // Replay safety: the same committed log reproduces the same field state.
-  const replay = new Session(new Ctx(seed), roamFlow, [...events, resolve]);
+  const replay = new Session(new Ctx(seed, BOSTON_1765_CHAPTER), roamFlow, [...events, resolve]);
   deepEqual(replay.ctx.view().field, ctx.view().field);
 }
 
 // Cite is a CHOOSING-only card: after a failed talk the recovery options stay
 // exactly comply-or-run, even with the micro engaged.
 {
-  const ctx = new Ctx(seed);
+  const ctx = new Ctx(seed, BOSTON_1765_CHAPTER);
   const session = new Session(ctx, roamFlow);
   session.advance(WRITS_ENGAGED);
   session.advance({
@@ -223,7 +230,7 @@ const CHALLENGE: PresenterEvent = {
 // Exchange side: the merchant-defense outcome resolves only with the
 // non-importation engagement; effects are deterministic.
 {
-  const ctx = new Ctx(seed);
+  const ctx = new Ctx(seed, BOSTON_1765_CHAPTER);
   throws(
     () =>
       resolveRegisteredReactiveOutcome({

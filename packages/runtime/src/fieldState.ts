@@ -1,20 +1,15 @@
 import {
   HEAT_BANDS,
   FIELD_STATE_VERSION,
-  FIELD_REPOSITION_ANCHORS,
-  CITED_CONFRONTATION_DEFENSES,
-  MICRO_CONCEPT_IDS,
   DeterministicResolutionSchema,
   OpenResponseReferenceSchema,
-  OPTIONAL_ACTIVITY_IDS,
   OPTIONAL_ACTIVITY_STAGES,
-  THREAD_IDS,
   THREAD_STATUSES,
-  THREAD_STABLE_FLAGS,
   heatBandForLegacyWatcherHeat,
   legacyFieldIdentity,
   normalizeConcealment,
   standingBandForPoints,
+  type CitedConfrontationOption,
   type FieldCommittedEvent,
   type FieldDurableState,
   type FieldInterruptPlan,
@@ -25,8 +20,7 @@ import {
   type WorldState,
 } from "@pa/contracts";
 import { advanceClock } from "./world.js";
-import { canonicalSourceIds } from "./content/provenance.js";
-import { ACT1_OPEN_RESPONSE_PACKAGE_HASH } from "./assessment/openResponseRegistry.js";
+import type { FieldVocabulary } from "./engine/chapter.js";
 
 const HEAT_DECAY_SECONDS: Record<HeatBand, number | null> = {
   CALM: null,
@@ -35,11 +29,29 @@ const HEAT_DECAY_SECONDS: Record<HeatBand, number | null> = {
   HUNTED: 45,
 };
 
-const MICRO_IDS = new Set<string>(Object.values(MICRO_CONCEPT_IDS));
-const THREAD_ID_SET = new Set<string>(Object.values(THREAD_IDS));
-const THREAD_FLAGS = new Set<string>(THREAD_STABLE_FLAGS);
+// Chapter vocabulary compiled into lookup sets once per session. The reducer
+// and assertions below are generic engine machinery parameterized by this.
+export interface CompiledFieldVocabulary {
+  readonly raw: FieldVocabulary;
+  readonly microIds: ReadonlySet<string>;
+  readonly threadIds: ReadonlySet<string>;
+  readonly threadFlags: ReadonlySet<string>;
+  readonly activityIds: ReadonlySet<string>;
+}
+
+export function compileFieldVocabulary(
+  vocab: FieldVocabulary,
+): CompiledFieldVocabulary {
+  return {
+    raw: vocab,
+    microIds: new Set<string>(vocab.microConceptIds),
+    threadIds: new Set<string>(vocab.threadIds),
+    threadFlags: new Set<string>(vocab.threadFlags),
+    activityIds: new Set<string>(vocab.activityIds),
+  };
+}
+
 const THREAD_STATUS_SET = new Set<string>(THREAD_STATUSES);
-const ACTIVITY_ID_SET = new Set<string>(Object.values(OPTIONAL_ACTIVITY_IDS));
 const ACTIVITY_STAGE_SET = new Set<string>(OPTIONAL_ACTIVITY_STAGES);
 const HEAT_BAND_SET = new Set<string>(HEAT_BANDS);
 const CUSTODY = new Set([
@@ -74,7 +86,10 @@ function decayProgress(band: HeatBand): FieldDurableState["heat"]["decay"] {
   };
 }
 
-export function initialFieldState(world: WorldState): FieldDurableState {
+export function initialFieldState(
+  world: WorldState,
+  vocab: CompiledFieldVocabulary,
+): FieldDurableState {
   const band = heatBandForLegacyWatcherHeat(world.attention.watcherHeat);
   return {
     version: FIELD_STATE_VERSION,
@@ -89,64 +104,8 @@ export function initialFieldState(world: WorldState): FieldDurableState {
       band: "NEUTRAL",
       history: [],
     },
-    threads: {
-      [THREAD_IDS.NED]: {
-        threadId: THREAD_IDS.NED,
-        flags: {},
-        status: "UNMET",
-        trust: 0,
-        breadcrumb: null,
-      },
-      [THREAD_IDS.SARAH]: {
-        threadId: THREAD_IDS.SARAH,
-        flags: {},
-        status: "UNMET",
-        trust: 0,
-        breadcrumb: null,
-      },
-    },
-    activities: {
-      [OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE]: {
-        activityId: OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE,
-        stage: "AVAILABLE",
-        breadcrumb: null,
-      },
-      [OPTIONAL_ACTIVITY_IDS.DOCK_HAUL]: {
-        activityId: OPTIONAL_ACTIVITY_IDS.DOCK_HAUL,
-        stage: "AVAILABLE",
-        breadcrumb: null,
-      },
-      [OPTIONAL_ACTIVITY_IDS.ROOF_KID]: {
-        activityId: OPTIONAL_ACTIVITY_IDS.ROOF_KID,
-        stage: "AVAILABLE",
-        breadcrumb: null,
-      },
-      [OPTIONAL_ACTIVITY_IDS.CRIER]: {
-        activityId: OPTIONAL_ACTIVITY_IDS.CRIER,
-        stage: "AVAILABLE",
-        breadcrumb: null,
-      },
-      [OPTIONAL_ACTIVITY_IDS.ROPEWALK]: {
-        activityId: OPTIONAL_ACTIVITY_IDS.ROPEWALK,
-        stage: "AVAILABLE",
-        breadcrumb: null,
-      },
-      [OPTIONAL_ACTIVITY_IDS.AGITATOR_DARE]: {
-        activityId: OPTIONAL_ACTIVITY_IDS.AGITATOR_DARE,
-        stage: "AVAILABLE",
-        breadcrumb: null,
-      },
-      [OPTIONAL_ACTIVITY_IDS.ROOFTOP_RUN]: {
-        activityId: OPTIONAL_ACTIVITY_IDS.ROOFTOP_RUN,
-        stage: "DORMANT",
-        breadcrumb: null,
-      },
-      [OPTIONAL_ACTIVITY_IDS.LOSE_WATCH]: {
-        activityId: OPTIONAL_ACTIVITY_IDS.LOSE_WATCH,
-        stage: "AVAILABLE",
-        breadcrumb: null,
-      },
-    },
+    threads: vocab.raw.initialThreads(),
+    activities: vocab.raw.initialActivities(),
     rumors: [],
     appliedRelationshipCauses: [],
     reactiveCompletions: {},
@@ -197,7 +156,10 @@ function clone<T>(value: T): T {
  * exchange). Deterministic: first table entry wins. Commit validation remains
  * CHOOSING-only.
  */
-export function citedConfrontationOptionFor(field: FieldDurableState) {
+export function citedConfrontationOptionFor(
+  field: FieldDurableState,
+  vocab: CompiledFieldVocabulary,
+): CitedConfrontationOption | null {
   const confrontation = field.activeConfrontation;
   if (!confrontation) return null;
   const projectable =
@@ -206,7 +168,7 @@ export function citedConfrontationOptionFor(field: FieldDurableState) {
       confrontation.outcome === "CITED_RELEASED");
   if (!projectable) return null;
   return (
-    CITED_CONFRONTATION_DEFENSES.find((defense) =>
+    vocab.raw.citedDefenses.find((defense) =>
       field.engagedMicroIds.includes(defense.microConceptId),
     ) ?? null
   );
@@ -217,6 +179,7 @@ export function projectFieldRuntimeView(
   world: WorldState,
   seedHex: string,
   activeInterrupt: FieldInterruptPlan | null,
+  vocab: CompiledFieldVocabulary,
 ): FieldRuntimeView {
   const concealmentByObjectId: FieldRuntimeView["concealmentByObjectId"] = {};
   const carriedObjectIds: string[] = [];
@@ -253,7 +216,7 @@ export function projectFieldRuntimeView(
     confiscatedObjectIds: confiscatedObjectIds.sort(),
     lastChallenge: clone(field.lastChallenge),
     activeConfrontation: clone(field.activeConfrontation),
-    citedConfrontationOption: clone(citedConfrontationOptionFor(field)),
+    citedConfrontationOption: clone(citedConfrontationOptionFor(field, vocab)),
     confrontationHistory: clone(field.confrontationHistory),
     activeChase: clone(field.activeChase),
     chaseHistory: clone(field.chaseHistory),
@@ -266,6 +229,7 @@ export function applyFieldEvent(
   field: FieldDurableState,
   world: WorldState,
   event: FieldCommittedEvent,
+  vocab: CompiledFieldVocabulary,
 ): void {
   switch (event.type) {
     case "FIELD_HEAT_TRANSITION":
@@ -324,6 +288,7 @@ export function applyFieldEvent(
         field,
         event.record.sourceId,
         event.record.interactionOrdinal,
+        vocab,
       );
       return;
     }
@@ -342,6 +307,7 @@ export function applyFieldEvent(
         field,
         completion.sourceId,
         interactionOrdinal,
+        vocab,
       );
       if (
         completion.standing &&
@@ -581,17 +547,22 @@ export function applyFieldEvent(
           }
         }
       }
-      const recordId = `WRITS_${confrontation.challengeId}`;
-      if (!field.microEngagements[recordId]) {
-        const record = {
-          recordId,
-          microConceptId: MICRO_CONCEPT_IDS.WRITS_OF_ASSISTANCE,
-          sourceId: confrontation.challengeId,
-          interactionOrdinal: world.currentInteractionOrdinal,
-        };
-        field.microEngagements[recordId] = record;
-        if (!field.engagedMicroIds.includes(record.microConceptId)) {
-          field.engagedMicroIds.push(record.microConceptId);
+      // A resolved stop teaches the chapter's confrontation micro (if any),
+      // recorded idempotently against the challenge id.
+      const confrontationMicro = vocab.raw.confrontationMicro;
+      if (confrontationMicro) {
+        const recordId = `${confrontationMicro.confrontationRecordPrefix}${confrontation.challengeId}`;
+        if (!field.microEngagements[recordId]) {
+          const record = {
+            recordId,
+            microConceptId: confrontationMicro.microConceptId,
+            sourceId: confrontation.challengeId,
+            interactionOrdinal: world.currentInteractionOrdinal,
+          };
+          field.microEngagements[recordId] = record;
+          if (!field.engagedMicroIds.includes(record.microConceptId)) {
+            field.engagedMicroIds.push(record.microConceptId);
+          }
         }
       }
       confrontation.outcome = event.outcome;
@@ -627,20 +598,23 @@ export function applyFieldEvent(
       // your face known to the watch (design: "the watch remembers faces
       // that run"), exactly like complying does.
       field.identity.recognized = true;
-      // Running from a writ-backed stop teaches the writ as surely as
-      // submitting to it — record the micro on every chase resolution (the
+      // Running from a challenge teaches the chapter's confrontation micro as
+      // surely as submitting to it — record it on every chase resolution (the
       // comply/talk path records it via FIELD_CONFRONTATION_RESOLVED).
-      const recordId = `WRITS_CHASE_${event.chaseId}`;
-      if (!field.microEngagements[recordId]) {
-        const record = {
-          recordId,
-          microConceptId: MICRO_CONCEPT_IDS.WRITS_OF_ASSISTANCE,
-          sourceId: resolved.sourceId,
-          interactionOrdinal: world.currentInteractionOrdinal,
-        };
-        field.microEngagements[recordId] = record;
-        if (!field.engagedMicroIds.includes(record.microConceptId)) {
-          field.engagedMicroIds.push(record.microConceptId);
+      const chaseMicro = vocab.raw.confrontationMicro;
+      if (chaseMicro) {
+        const recordId = `${chaseMicro.chaseRecordPrefix}${event.chaseId}`;
+        if (!field.microEngagements[recordId]) {
+          const record = {
+            recordId,
+            microConceptId: chaseMicro.microConceptId,
+            sourceId: resolved.sourceId,
+            interactionOrdinal: world.currentInteractionOrdinal,
+          };
+          field.microEngagements[recordId] = record;
+          if (!field.engagedMicroIds.includes(record.microConceptId)) {
+            field.engagedMicroIds.push(record.microConceptId);
+          }
         }
       }
       if (field.activeConfrontation) {
@@ -703,7 +677,10 @@ function engageSourcePackets(
   field: FieldDurableState,
   backingSourceId: string,
   interactionOrdinal: number,
+  vocab: CompiledFieldVocabulary,
 ): void {
+  const { canonicalSourceIds, contentPackageHash } =
+    vocab.raw.sourceEngagement;
   for (const sourcePacketId of canonicalSourceIds(backingSourceId)) {
     const recordId = `${sourcePacketId}:${backingSourceId}`;
     if (field.sourceEngagements[recordId]) continue;
@@ -712,7 +689,7 @@ function engageSourcePackets(
       sourcePacketId,
       backingSourceId,
       interactionOrdinal,
-      contentPackageHash: ACT1_OPEN_RESPONSE_PACKAGE_HASH,
+      contentPackageHash,
       reviewStatus: "HISTORICAL_REVIEW_PENDING",
     };
   }
@@ -734,6 +711,7 @@ export function assertFieldEventPayload(
   event: FieldCommittedEvent,
   field: FieldDurableState,
   world: WorldState,
+  vocab: CompiledFieldVocabulary,
 ): void {
   nonEmpty(event.eventId, "eventId");
   if ("interruptId" in event && event.interruptId !== undefined) {
@@ -781,12 +759,12 @@ export function assertFieldEventPayload(
       nonEmpty(event.causeId, "causeId");
       return;
     case "FIELD_THREAD_PATCH": {
-      if (!THREAD_ID_SET.has(event.threadId)) fail("unknown threadId");
+      if (!vocab.threadIds.has(event.threadId)) fail("unknown threadId");
       if (!event.flags || typeof event.flags !== "object") fail("thread flags must be an object");
       const entries = Object.entries(event.flags);
       if (entries.length === 0) fail("thread patch cannot be empty");
       for (const [flag, value] of entries) {
-        if (!THREAD_FLAGS.has(flag) || typeof value !== "boolean") fail(`invalid stable thread flag ${flag}`);
+        if (!vocab.threadFlags.has(flag) || typeof value !== "boolean") fail(`invalid stable thread flag ${flag}`);
       }
       return;
     }
@@ -794,7 +772,7 @@ export function assertFieldEventPayload(
       if (!event.record || typeof event.record !== "object") fail("micro record is required");
       nonEmpty(event.record.recordId, "record.recordId");
       nonEmpty(event.record.sourceId, "record.sourceId");
-      if (!MICRO_IDS.has(event.record.microConceptId)) fail("unknown microConceptId");
+      if (!vocab.microIds.has(event.record.microConceptId)) fail("unknown microConceptId");
       if (!Number.isInteger(event.record.interactionOrdinal) || event.record.interactionOrdinal < 0) {
         fail("interactionOrdinal must be a non-negative integer");
       }
@@ -824,13 +802,13 @@ export function assertFieldEventPayload(
         nonEmpty(completion.standing.causeId, "completion.standing.causeId");
       }
       for (const patch of completion.threads ?? []) {
-        if (!THREAD_ID_SET.has(patch.threadId)) fail("unknown completion threadId");
+        if (!vocab.threadIds.has(patch.threadId)) fail("unknown completion threadId");
         if (patch.status !== undefined && !THREAD_STATUS_SET.has(patch.status)) {
           fail("unknown completion thread status");
         }
         if (patch.flags) {
           for (const [flag, value] of Object.entries(patch.flags)) {
-            if (!THREAD_FLAGS.has(flag) || typeof value !== "boolean") {
+            if (!vocab.threadFlags.has(flag) || typeof value !== "boolean") {
               fail(`invalid completion thread flag ${flag}`);
             }
           }
@@ -843,10 +821,10 @@ export function assertFieldEventPayload(
         }
       }
       for (const micro of completion.micros ?? []) {
-        if (!MICRO_IDS.has(micro)) fail("unknown completion microConceptId");
+        if (!vocab.microIds.has(micro)) fail("unknown completion microConceptId");
       }
       for (const patch of completion.activities ?? []) {
-        if (!ACTIVITY_ID_SET.has(patch.activityId)) fail("unknown optional activity");
+        if (!vocab.activityIds.has(patch.activityId)) fail("unknown optional activity");
         if (!ACTIVITY_STAGE_SET.has(patch.stage)) fail("unknown optional activity stage");
       }
       for (const change of completion.custody ?? []) {
@@ -950,7 +928,7 @@ export function assertFieldEventPayload(
         if (field.activeConfrontation.phase !== "CHOOSING") {
           fail("a cited defense must be raised before talk fails");
         }
-        if (!citedConfrontationOptionFor(field)) {
+        if (!citedConfrontationOptionFor(field, vocab)) {
           fail("cited defense requires its durably engaged micro-concept");
         }
       }
@@ -1035,10 +1013,7 @@ export function assertFieldEventPayload(
       nonEmpty(event.anchorId, "anchorId");
       if (!["RELEASE", "REFUGE", "REROUTE"].includes(event.reason)) fail("invalid reposition reason");
       {
-        const anchor =
-          FIELD_REPOSITION_ANCHORS[
-            event.anchorId as keyof typeof FIELD_REPOSITION_ANCHORS
-          ];
+        const anchor = vocab.raw.repositionAnchors[event.anchorId];
         if (
           !anchor ||
           anchor.locationId !== event.locationId ||
@@ -1060,12 +1035,18 @@ export function assertFieldEventPayload(
   }
 }
 
-export function microId(value: string): MicroConceptId {
-  if (!MICRO_IDS.has(value)) fail(`unknown micro concept ${value}`);
+export function microId(
+  value: string,
+  vocab: CompiledFieldVocabulary,
+): MicroConceptId {
+  if (!vocab.microIds.has(value)) fail(`unknown micro concept ${value}`);
   return value as MicroConceptId;
 }
 
-export function threadId(value: string): ThreadId {
-  if (!THREAD_ID_SET.has(value)) fail(`unknown thread ${value}`);
+export function threadId(
+  value: string,
+  vocab: CompiledFieldVocabulary,
+): ThreadId {
+  if (!vocab.threadIds.has(value)) fail(`unknown thread ${value}`);
   return value as ThreadId;
 }
