@@ -7,7 +7,7 @@
 // for tests and QA inspection.
 
 import { useSyncExternalStore } from "react";
-import type { StealthStore } from "@pa/chapter-boston-world";
+import type { StealthStore } from "./stealthStore.js";
 
 export function StealthHud(props: {
   store: StealthStore;

@@ -26,7 +26,7 @@ import {
   type ChoiceAnimation,
 } from "@pa/chapter-boston-world";
 import { BOSTON_1765_REGISTRATION } from "../chapterRegistration.js";
-import { StealthHud } from "../presenter/StealthHud.js";
+import { StealthHud } from "@pa/engine-world";
 import { ConfrontationPanel } from "../presenter/ConfrontationPanel.js";
 import {
   ActTransitionComplete,
