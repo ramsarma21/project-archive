@@ -64,7 +64,6 @@ import {
   interiorDoorFacade,
   interiorExitSensor,
   interiorLanding,
-  interiorPoint,
   type InteriorInspectHotspotDef,
 } from "./interiorManifest.js";
 import { buildInteriorCollisionWorld } from "./interiorCollision.js";
@@ -130,7 +129,9 @@ import { WatcherDirector } from "./WatcherDirector.js";
 import { ConfrontationInspectionRig } from "./ConfrontationInspectionRig.js";
 import { INSPECTOR_OFFICE } from "./stealthManifest.js";
 import type { StaminaAssist } from "./stamina.js";
-import { QA_RUNTIME_ENABLED } from "./qaEnvironment.js";
+import { useSmoothedNumber } from "./hooks/useSmoothedNumber.js";
+import { PlayerPosProbe } from "./qa/QaProbes.js";
+import { useQaDoorHooks } from "./qa/QaDoorHooks.js";
 
 const ACTOR_STALE_AGE_TICKS = 30;
 
@@ -175,31 +176,6 @@ function FieldClockDirector(props: {
     }
   }, -100);
   return null;
-}
-
-function useSmoothedNumber(target: number, durationMs: number): number {
-  const [value, setValue] = useState(target);
-  const current = useRef(target);
-  useEffect(() => {
-    if (durationMs <= 0) {
-      current.current = target;
-      setValue(target);
-      return;
-    }
-    const from = current.current;
-    const started = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const linear = Math.min(1, (now - started) / durationMs);
-      const eased = 1 - Math.pow(1 - linear, 3);
-      current.current = THREE.MathUtils.lerp(from, target, eased);
-      setValue(current.current);
-      if (linear < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, durationMs]);
-  return value;
 }
 
 // ---- Gold-marker redirect (Interaction-Spec §1.2a / Day-1 L11) ----------
@@ -337,108 +313,6 @@ function SpatialSnapshotProbe(props: {
       interiorId: props.interiorId,
       locationId: props.runtimeLocationId,
     };
-  });
-  return null;
-}
-
-// Mirrors the live player position onto the wrapper element so QA tooling
-// (and tests) can observe movement without reaching into the scene graph.
-function PlayerPosProbe(props: {
-  apiRef: { current: PlayerApi | null };
-  hostRef: { current: HTMLDivElement | null };
-  actors: ActorRegistry;
-  stealthStore: StealthStore;
-  field: RuntimeView["field"] | null;
-  assist: StaminaAssist;
-}) {
-  const lastWriteAt = useRef(0);
-  useEffect(() => {
-    if (!QA_RUNTIME_ENABLED) return;
-    type QaWindow = Window & {
-      __PA_QA_TELEPORT__?: (x: number, z: number, faceY?: number) => void;
-    };
-    const qaWindow = window as QaWindow;
-    qaWindow.__PA_QA_TELEPORT__ = (x, z, faceY) => {
-      props.apiRef.current?.teleport([x, 0, z], faceY);
-    };
-    return () => {
-      delete qaWindow.__PA_QA_TELEPORT__;
-    };
-  }, [props.apiRef]);
-  useFrame(({ scene, camera }) => {
-    if (!QA_RUNTIME_ENABLED) return;
-    const now = performance.now();
-    if (now - lastWriteAt.current < 100) return;
-    lastWriteAt.current = now;
-    const api = props.apiRef.current;
-    const host = props.hostRef.current;
-    if (host) {
-      host.dataset.cameraPos = `${camera.position.x.toFixed(2)},${camera.position.y.toFixed(2)},${camera.position.z.toFixed(2)}`;
-    }
-    if (api && host) {
-      let objectCount = 0;
-      let visibleMeshCount = 0;
-      scene.traverse((object) => {
-        objectCount += 1;
-        if (object.visible && (object as THREE.Mesh).isMesh) {
-          visibleMeshCount += 1;
-        }
-      });
-      host.dataset.sceneObjectCount = String(objectCount);
-      host.dataset.sceneVisibleMeshCount = String(visibleMeshCount);
-      host.dataset.playerPos = `${api.position.x.toFixed(2)},${api.position.z.toFixed(2)}`;
-      host.dataset.playerPos3d = `${api.position.x.toFixed(3)},${api.position.y.toFixed(3)},${api.position.z.toFixed(3)}`;
-      host.dataset.playerMotion = api.motion.phase;
-      host.dataset.playerSpeed = api.motion.speed.toFixed(3);
-      host.dataset.playerClip = api.motion.clip;
-      host.dataset.playerSprinting = String(api.motion.sprinting);
-      host.dataset.playerCrouched = String(api.motion.crouched);
-      host.dataset.playerStamina = api.motion.stamina.toFixed(3);
-      host.dataset.playerMovementIntent = String(api.motion.movementIntent);
-      host.dataset.playerBlocked = String(api.motion.blocked);
-      host.dataset.playerFacing = `${api.motion.facingX.toFixed(3)},${api.motion.facingZ.toFixed(3)}`;
-      host.dataset.playerActionSerial = String(api.motion.actionSerial);
-      host.dataset.playerInputLocked = String(api.motion.inputLocked);
-      const stealth = props.stealthStore.getSnapshot();
-      host.dataset.chaseActive = String(stealth.chaseActive);
-      host.dataset.chaseState = stealth.chaseState;
-      host.dataset.chaseStamina = stealth.stamina.toFixed(3);
-      host.dataset.chaseConfirmResolve = String(stealth.confirmResolve);
-      host.dataset.chaseAssist = props.assist;
-      const pursuer = props.actors.get("M1_PURSUER");
-      host.dataset.pursuerRegistered = String(Boolean(pursuer));
-      host.dataset.pursuerPosition = pursuer
-        ? `${pursuer.position.x.toFixed(3)},${pursuer.position.y.toFixed(3)},${pursuer.position.z.toFixed(3)}`
-        : "";
-      host.dataset.pursuerForward = pursuer
-        ? `${pursuer.forwardVec.x.toFixed(3)},${pursuer.forwardVec.y.toFixed(3)},${pursuer.forwardVec.z.toFixed(3)}`
-        : "";
-      host.dataset.pursuerVelocity = pursuer?.velocity
-        ? `${pursuer.velocity.x.toFixed(3)},${pursuer.velocity.y.toFixed(3)},${pursuer.velocity.z.toFixed(3)}`
-        : "";
-      host.dataset.pursuerSpace = pursuer?.spaceId ?? "";
-      host.dataset.chaseOutcome =
-        props.field?.chaseHistory.at(-1)?.outcome ?? "";
-      const namedIds = [
-        "abigail",
-        "thomas",
-        "pike",
-        "clarke",
-        "rider",
-      ];
-      const namedActors = namedIds
-        .map((id) => props.actors.get(id))
-        .filter((actor) => Boolean(actor));
-      host.dataset.namedActorIds = namedActors
-        .map((actor) => actor!.id)
-        .join(",");
-      host.dataset.namedActorPositions = namedActors
-        .map(
-          (actor) =>
-            `${actor!.id}:${actor!.position.x.toFixed(2)},${actor!.position.z.toFixed(2)}`,
-        )
-        .join(";");
-    }
   });
   return null;
 }
@@ -891,77 +765,14 @@ export function World3D(props: {
     if (doorTimer.current !== null) window.clearTimeout(doorTimer.current);
     if (exploreTimer.current !== null) window.clearTimeout(exploreTimer.current);
   }, []);
-  useEffect(() => {
-    if (!QA_RUNTIME_ENABLED) return;
-    type DoorQaWindow = Window & {
-      __PA_QA_DOOR__?: (
-        targetId: string | null,
-        interiorId?: string | null,
-      ) => void;
-      __PA_QA_INTERIOR__?: (
-        interiorId: string,
-        view?: "LANDING" | "CENTER",
-      ) => void;
-    };
-    const qaWindow = window as DoorQaWindow;
-    // A QA-forced interior/door override must be authoritative: cancel any
-    // in-flight presentation threshold beat (door swing / explore transfer)
-    // so a previously-queued casual transfer cannot land a frame later and
-    // clobber the forced space (e.g. a post-refuge tavern entry bleeding into
-    // the next generic-interior transfer). Dev/QA-only.
-    const cancelInFlightThresholdBeats = () => {
-      if (exploreTimer.current !== null) {
-        window.clearTimeout(exploreTimer.current);
-        exploreTimer.current = null;
-      }
-      if (doorTimer.current !== null) {
-        window.clearTimeout(doorTimer.current);
-        doorTimer.current = null;
-      }
-      apiRef.current?.setInteractionClip(null);
-      apiRef.current?.setInputLocked(false);
-    };
-    qaWindow.__PA_QA_DOOR__ = (targetId, nextInterior) => {
-      cancelInFlightThresholdBeats();
-      if (nextInterior !== undefined) {
-        qaInteriorOverride.current = true;
-        setVisualInteriorId(nextInterior);
-      }
-      setDoorTarget(targetId);
-    };
-    qaWindow.__PA_QA_INTERIOR__ = (nextInterior, view = "LANDING") => {
-      const def = interiorDef(nextInterior);
-      if (!def) throw new Error(`unknown QA interior ${nextInterior}`);
-      cancelInFlightThresholdBeats();
-      qaInteriorOverride.current = true;
-      preloadInteriorAssets(def);
-      setDoorTarget(null);
-      setVisualInteriorId(nextInterior);
-      let attempts = 0;
-      const place = () => {
-        const api = apiRef.current;
-        if (api) {
-          const destination =
-            view === "CENTER"
-              ? interiorPoint(nextInterior, [
-                  0,
-                  0,
-                  Math.min(0, -def.dimensions[2] / 2 + 6),
-                ])
-              : interiorLanding(nextInterior);
-          api.teleport(destination, 0);
-          return;
-        }
-        attempts += 1;
-        if (attempts < 40) window.setTimeout(place, 60);
-      };
-      window.setTimeout(place, 80);
-    };
-    return () => {
-      delete qaWindow.__PA_QA_DOOR__;
-      delete qaWindow.__PA_QA_INTERIOR__;
-    };
-  }, []);
+  useQaDoorHooks({
+    apiRef,
+    doorTimer,
+    exploreTimer,
+    qaInteriorOverride,
+    setDoorTarget,
+    setVisualInteriorId,
+  });
 
   const runtimeLocationId = props.view?.locationId ?? "ARCHIVE_TRANSIT";
   const locationId = props.presentationLocationId ?? runtimeLocationId;
