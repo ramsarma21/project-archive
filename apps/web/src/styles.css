@@ -2222,6 +2222,56 @@ input[type="text"] {
   border-color: #ffe07a;
   box-shadow: 0 0 0 3px rgba(255, 224, 122, 0.16);
 }
+/* Quiet length hint (design1 kill list: the counter is gone). */
+.open-response-hint {
+  font-size: 12px;
+  font-style: italic;
+  color: #b9d9d2;
+  opacity: 0.85;
+}
+/* First-use hint: a docked, non-modal one-liner. Never a "!" box. */
+.first-use-hint {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(560px, 82vw);
+  padding: 7px 12px;
+  background: rgba(7, 22, 20, 0.82);
+  border: 1px solid rgba(126, 227, 216, 0.35);
+  border-radius: 999px;
+  color: #dff7f1;
+  font-size: 13px;
+  pointer-events: auto;
+  z-index: 6;
+}
+.first-use-hint-sigil {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7ee3d8;
+  box-shadow: 0 0 8px rgba(126, 227, 216, 0.8);
+  flex: none;
+}
+.first-use-hint button {
+  background: none;
+  border: none;
+  color: #9fcdc5;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.pa-reduced-motion .first-use-hint { transition: none; }
+[data-high-contrast="true"] .first-use-hint,
+.pa-high-contrast .first-use-hint {
+  background: #000;
+  border: 2px solid #fff;
+  color: #fff;
+}
 .open-response-count {
   margin: 5px 0 12px;
   color: var(--archive);

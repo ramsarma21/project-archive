@@ -35,7 +35,9 @@ export function Hud(props: {
       >
         {muted ? "♪ Sound off" : "♪ Sound on"}
       </button>
-      <button className="btn-ghost archive-manual-button" onClick={props.onManual}>Archive Manual</button>
+      {/* The manual folded into the pause surface (design1 kill list): one
+          quiet Menu button instead of a manual advertisement. */}
+      <button className="btn-ghost archive-manual-button" onClick={props.onManual}>Menu</button>
       <button
         className="btn-ghost"
         disabled={props.exitDisabled}

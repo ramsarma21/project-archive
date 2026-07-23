@@ -105,7 +105,8 @@ function announcementFor(active: QuestHudActive | null): string {
         : `${active.nearPrompt}: ${active.label}.`;
     case "ACTIVE":
     default:
-      return `Objective set: ${active.label}.`;
+      // Player voice, not system-speak (design1 kill list).
+      return `Next: ${active.label}.`;
   }
 }
 

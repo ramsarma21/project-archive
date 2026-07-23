@@ -6,44 +6,38 @@ import type { InputRequest, OnboardingPreferences } from "@pa/contracts";
 // the authored strings and their request-kind mappings live here.
 // ---------------------------------------------------------------------------
 
+// First-encounter hints (design1 kill list): the three stacked ACKNOWLEDGE
+// primer modals became contextual one-line hints — non-modal, non-stacking,
+// no "!" iconography, shown once per id. The persistence contract is
+// unchanged: the same PrimerId set lands in onboarding.primersSeen and the
+// pause menu's replay control clears it.
 export type PrimerId = "ARCHIVE" | "MOVEMENT" | "READ" | "WORK" | "CHOICE";
 export interface Primer {
   id: PrimerId;
-  title: string;
-  body: string;
-  control: string;
+  /** One line, player voice. */
+  hint: string;
 }
 
 const PRIMER_COPY: Record<PrimerId, Primer> = {
   ARCHIVE: {
     id: "ARCHIVE",
-    title: "Archive channel ready",
-    body: "Archive records provide context and objectives. They never make a choice for you.",
-    control: "Confirm once to continue.",
+    hint: "The blue voice is your Archive — context and directions, never your choices.",
   },
   MOVEMENT: {
     id: "MOVEMENT",
-    title: "Move through the field",
-    body: "Follow the gold objective marker. Exploration costs no time until you commit to an activity.",
-    control: "WASD/arrows walk; Shift sprints; Space jumps; Shift+Space running-jumps; C crouches; F uses marked objects.",
+    hint: "WASD to walk, Shift to run, F to use things. Wandering costs no daylight.",
   },
   READ: {
     id: "READ",
-    title: "Examine field evidence",
-    body: "Important documents can be opened and read in place. Skippable records never hide required history.",
-    control: "Open the highlighted record, or choose Skip.",
+    hint: "You can step in and read it, or keep moving — your call.",
   },
   WORK: {
     id: "WORK",
-    title: "Complete the work",
-    body: "Job actions use a focused control. The result changes local details, not fixed historical events.",
-    control: "Follow the prompt, then commit the action once.",
+    hint: "Follow your hands: one committed action finishes the job.",
   },
   CHOICE: {
     id: "CHOICE",
-    title: "Choose your approach",
-    body: "Choices can change routes, time, and relationships. Short tags preview those immediate stakes.",
-    control: "Select one response to commit it.",
+    hint: "The small tags under each choice are the cost, up front.",
   },
 };
 
@@ -74,11 +68,6 @@ export function primerFor(request: InputRequest | null, seen: ReadonlySet<Primer
   }
   return primer && !seen.has(primer.id) ? primer : null;
 }
-
-export const PRIMER_CARD_COPY = {
-  heading: "FIELD PRIMER // FIRST USE",
-  confirm: "ACKNOWLEDGE",
-} as const;
 
 export function objectiveLabel(request: InputRequest | null): string {
   if (!request) return "Synchronizing field record…";
@@ -113,17 +102,23 @@ export interface ManualRow {
   description: string;
 }
 
+// The pause surface (design1 kill list): the Archive Manual folded in here.
+// Reading-pace and accessibility tuning live behind "Interface &
+// accessibility" (the full interview, reachable any time) with smart
+// defaults applied at first play.
 export const MANUAL_COPY = {
-  kicker: "ARCHIVE // FIELD MANUAL",
-  heading: "Insertion controls",
-  close: "Close",
-  objectiveKicker: "ACTIVE OBJECTIVE",
-  moveSection: "Move and observe",
-  archiveSection: "Archive interface",
-  settingsSection: "Accessibility profile",
-  adjustButton: "Adjust interface profile",
-  replayButton: "Replay first-use primers",
-  footnote: "Opening the Manual never changes progress, evidence, or assessment.",
+  kicker: "PAUSED // THE STREET WAITS",
+  heading: "Catch your breath",
+  close: "Back to the street",
+  objectiveKicker: "WHERE YOU LEFT IT",
+  moveSection: "Getting around",
+  archiveSection: "Your Archive",
+  settingsSection: "Tuned for you",
+  settingsNote:
+    "Started with smart defaults. Reading pace, captions, contrast, motion, and chase assists are yours to change here, any time.",
+  adjustButton: "Interface & accessibility",
+  replayButton: "Replay first-time hints",
+  footnote: "Pausing never changes progress, evidence, or your record.",
 } as const;
 
 export function manualMoveRows(

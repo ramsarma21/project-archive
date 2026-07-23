@@ -3,7 +3,11 @@ import type { OnboardingPreferences } from "@pa/contracts";
 import { saveOnboardingPreferences } from "../api.js";
 import { upsertProfile, type LocalProfile } from "../db.js";
 
-const DEFAULTS: Omit<OnboardingPreferences, "completedAt"> = {
+// Smart defaults (design1 kill list): first play starts in-world immediately
+// with these; the full interview lives behind the pause menu's "Interface &
+// accessibility" (this same component), preserving every saved-preference
+// contract.
+export const ONBOARDING_SMART_DEFAULTS: Omit<OnboardingPreferences, "completedAt"> = {
   version: 1,
   readingSpeed: "STANDARD",
   captions: true,
@@ -14,6 +18,7 @@ const DEFAULTS: Omit<OnboardingPreferences, "completedAt"> = {
   reducedMotion: false,
   chaseAssist: "STANDARD",
 };
+const DEFAULTS = ONBOARDING_SMART_DEFAULTS;
 
 export function Onboarding(props: {
   profile: LocalProfile;
@@ -93,7 +98,7 @@ export function Onboarding(props: {
           <section className="calibration-step">
             <div className="archive-status">PERCEPTION CHANNELS</div>
             <h2>Set what the Archive presents.</h2>
-            <p>These options can be changed later from the Archive Manual.</p>
+            <p>These options can be changed any time from the pause menu.</p>
             <div className="toggle-list">
               <Toggle
                 checked={preferences.captions}

@@ -44,10 +44,10 @@ export function Controls(props: {
       );
     case "ACK":
       return (
-        <SystemWindow heading="MANDATORY NOTIFICATION">
+        <SystemWindow heading="ARCHIVE // BEFORE YOU MOVE ON">
           <p className="system-text">{request.text}</p>
           <button className="system-confirm" disabled={busy} onClick={() => onEvent({ type: "ACK" })}>
-            ACKNOWLEDGE
+            Understood
           </button>
         </SystemWindow>
       );
@@ -132,8 +132,10 @@ export function Controls(props: {
         </div>
       );
       if (isArchiveSync) {
+        // Prediction framing, not test framing (design1 kill list): the
+        // Archive asks for your read of the street, and the world answers.
         return (
-          <SystemWindow heading="ARCHIVE SYNC // CONFIRM YOUR READ">
+          <SystemWindow heading="ARCHIVE // CALL IT">
             <p className="system-text">{request.frame}</p>
             {options}
           </SystemWindow>

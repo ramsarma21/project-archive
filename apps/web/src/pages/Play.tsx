@@ -54,7 +54,6 @@ import {
 import {
   DAY_END_COPY,
   MANUAL_COPY,
-  PRIMER_CARD_COPY,
   manualArchiveRows,
   manualMoveRows,
   objectiveLabel,
@@ -432,15 +431,16 @@ export function Play(props: {
     showArchive ||
     openResponseActive ||
     cinematicBeat;
-  const pendingPrimer = primerFor(plan?.request ?? null, primersSeen);
+  // First-use hints are contextual and NON-BLOCKING (design1 kill list): the
+  // action surface never waits on them, so primerPending is always false.
   const actionSurface = presentationActionSurface({
     choreographyReady,
     presentationActive: speaking,
-    primerPending: Boolean(pendingPrimer),
+    primerPending: false,
   });
-  const primer =
-    actionSurface === "PRIMER" && !view?.field.activeInterrupt
-      ? pendingPrimer
+  const hint =
+    actionSurface === "REQUEST" && !view?.field.activeInterrupt && !done
+      ? primerFor(plan?.request ?? null, primersSeen)
       : null;
   const centralControlsBlocked = actionSurface === "BLOCKED" && !error;
 
@@ -498,7 +498,7 @@ export function Play(props: {
       data-choreography-ready={choreographyReady ? "true" : "false"}
       data-active-subtitle={activeSubtitle ? "true" : "false"}
       data-active-read-panel={activeReadPanel ? "true" : "false"}
-      data-primer={primer?.id ?? ""}
+      data-primer={hint?.id ?? ""}
       data-interaction-busy={interactionBusy ? "true" : "false"}
       data-checkpoint-status={view?.checkpoint.status ?? ""}
       data-open-response-phase={
@@ -550,7 +550,7 @@ export function Play(props: {
           restoreSpatial={restoreSpatial}
           spatialSnapshotRef={presenterSpatialRef}
           committedEventCount={committedEventCount}
-          overlayActive={Boolean(primer) || centralControlsBlocked}
+          overlayActive={centralControlsBlocked}
           onChoreographyReady={markChoreographyReady}
           onWebglStatus={setWebglAvailable}
           onEvent={onEvent}
@@ -578,7 +578,6 @@ export function Play(props: {
           <HoloTasks
             view={view}
             hidden={
-              Boolean(primer) ||
               done ||
               showArchive ||
               Boolean(view?.field.activeInterrupt)
@@ -601,6 +600,13 @@ export function Play(props: {
           </div>
         )}
         <div className="world-cinematic-ui">
+          {hint && !cinematicBeat && !error && (
+            <FirstUseHint
+              key={hint.id}
+              hint={hint}
+              onSeen={(id) => void dismissPrimer(id)}
+            />
+          )}
           {!error &&
             !done &&
             !cinematicBeat &&
@@ -648,14 +654,13 @@ export function Play(props: {
             )}
           </div>
           <div
-            className={`world-controls-overlay request-${plan?.request.kind.toLowerCase() ?? "loading"}${centralControlsBlocked ? " is-blocked" : ""}${speaking ? " is-speaking" : ""}${primer && !view?.field.activeInterrupt ? " has-primer" : ""}${
+            className={`world-controls-overlay request-${plan?.request.kind.toLowerCase() ?? "loading"}${centralControlsBlocked ? " is-blocked" : ""}${speaking ? " is-speaking" : ""}${
               view?.field.activeInterrupt?.kind === "CHASE" ||
               // A reactive exchange owns the screen with its own world-anchored
               // panel: the central overlay must not paint an empty band
               // beneath it (feel-audit-1 P1-6 empty-bar artifact).
               view?.field.activeInterrupt?.kind === "REACTIVE_EXCHANGE" ||
-              (!primer &&
-                !error &&
+              (!error &&
                 !done &&
                 webglAvailable &&
                 !view?.field.activeInterrupt &&
@@ -676,8 +681,6 @@ export function Play(props: {
                 reducedMotion={Boolean(profile.onboarding?.reducedMotion)}
                 onFieldEvent={onFieldEvent}
               />
-            ) : primer ? (
-              <PrimerCard primer={primer} onContinue={() => void dismissPrimer(primer.id)} />
             ) : done && view?.checkpoint.status === "TRANSITIONED" ? (
               <ActTransitionComplete onExit={props.onExit} />
             ) : plan?.request.kind === "CHECKPOINT_DEBRIEF" ? (
@@ -777,7 +780,10 @@ export function Play(props: {
         <ArchiveManual
           profile={profile}
           request={plan?.request ?? null}
-          busy={interactionBusy}
+          // Only a live runtime commit blocks the pause actions — the pause
+          // overlay itself sets interactionBusy, which used to disable its
+          // own preference/replay buttons.
+          busy={busy}
           onEditPreferences={() => props.onEditPreferences({
             ...profile,
             onboarding: profile.onboarding ? { ...profile.onboarding, primersSeen: [...primersSeen] } : undefined,
@@ -805,14 +811,46 @@ export function Play(props: {
   );
 }
 
-function PrimerCard(props: { primer: Primer; onContinue: () => void }) {
+// First-use hint (design1 kill list): one quiet line, docked out of the way,
+// never modal, never stacking, no "!" iconography. It marks itself seen after
+// one readable display (or on dismiss), preserving the primersSeen contract.
+function FirstUseHint(props: {
+  hint: Primer;
+  onSeen: (id: PrimerId) => void;
+}) {
+  const [visible, setVisible] = useState(true);
+  const seenRef = useRef(false);
+  const markSeen = () => {
+    if (seenRef.current) return;
+    seenRef.current = true;
+    props.onSeen(props.hint.id);
+  };
+  useEffect(() => {
+    const seenTimer = window.setTimeout(markSeen, 6_000);
+    const hideTimer = window.setTimeout(() => setVisible(false), 8_000);
+    return () => {
+      window.clearTimeout(seenTimer);
+      window.clearTimeout(hideTimer);
+    };
+    // One display per hint id (keyed remount).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.hint.id]);
+  if (!visible) return null;
   return (
-    <SystemWindow heading={PRIMER_CARD_COPY.heading}>
-      <h3 className="system-title" id={`primer-${props.primer.id}`}>{props.primer.title}</h3>
-      <p className="system-text">{props.primer.body}</p>
-      <small className="system-note">{props.primer.control}</small>
-      <button className="system-confirm" onClick={props.onContinue}>{PRIMER_CARD_COPY.confirm}</button>
-    </SystemWindow>
+    <div className="first-use-hint" role="status" data-hint-id={props.hint.id}>
+      <span className="first-use-hint-sigil" aria-hidden="true" />
+      <span>{props.hint.hint}</span>
+      <button
+        type="button"
+        aria-label="Dismiss hint"
+        onClick={() => {
+          markSeen();
+          setVisible(false);
+        }}
+      >
+        ×
+      </button>
+    </div>
   );
 }
 
@@ -859,6 +897,7 @@ function ArchiveManual(props: {
         </div>
         <section className="manual-settings">
           <h3>{MANUAL_COPY.settingsSection}</h3>
+          <p className="manual-footnote">{MANUAL_COPY.settingsNote}</p>
           <div className="manual-tags">
             <span>{settings?.readingSpeed.toLowerCase() ?? "standard"} reading</span>
             <span>{settings?.captions ? "captions on" : "captions off"}</span>

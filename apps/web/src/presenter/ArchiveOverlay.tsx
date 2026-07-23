@@ -546,7 +546,9 @@ function ConnectionsPane(props: {
           <span className="archive-ov-record-sigil" aria-hidden="true" />
           <span className="archive-ov-record-copy">
             <strong>{micro.label}</strong>
-            <small>Connection recorded from a completed field interaction.</small>
+            {/* A quotable memory with its place/person, not metadata
+                (design1 kill list). */}
+            <small>{micro.memory}</small>
           </span>
         </div>
       ))}
@@ -597,8 +599,8 @@ function ConnectionsPane(props: {
         >
           <span className="archive-thread-mark" aria-hidden="true" />
           <div>
-            <strong>Formative reflection</strong>
-            <small>Supportive evidence—not a grade or official score</small>
+            <strong>Your line, filed</strong>
+            <small>Kept with the day. Never a mark, never a score.</small>
             {record.resolution.feedbackIds.map((feedbackId) => (
               <p key={feedbackId}>
                 {authoredFeedback(feedbackId) ??

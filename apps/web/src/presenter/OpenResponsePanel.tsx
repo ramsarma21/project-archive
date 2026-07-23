@@ -59,8 +59,8 @@ export function OpenResponsePanel(props: {
         aria-describedby="open-response-prompt"
       >
         <header>
-          <span>ARCHIVE // OPTIONAL REFLECTION</span>
-          <strong>Formative—not a grade</strong>
+          <span>ARCHIVE // A LINE OF YOUR OWN</span>
+          <strong>Say it the way you would print it</strong>
         </header>
         <h2 id="open-response-title">{props.prompt.title}</h2>
         <p id="open-response-prompt">{props.prompt.prompt}</p>
@@ -68,12 +68,8 @@ export function OpenResponsePanel(props: {
         {props.phase !== "FEEDBACK" ? (
           <>
             <label htmlFor="open-response-text">
-              Your response
-              <small>
-                Aim for {props.prompt.expectedWords.min}–
-                {props.prompt.expectedWords.max} words. Spelling and grammar
-                are not graded.
-              </small>
+              Your line
+              <small>A sentence or two in your own words is plenty.</small>
             </label>
             <textarea
               ref={textarea}
@@ -101,15 +97,16 @@ export function OpenResponsePanel(props: {
                 }
               }}
             />
-            <div
-              className={`open-response-count${validLength ? "" : " invalid"}`}
-              aria-live="off"
-            >
-              {length} / {props.prompt.responseChars.max} characters
-              {length < props.prompt.responseChars.min
-                ? ` · ${props.prompt.responseChars.min - length} more required`
-                : ""}
-            </div>
+            {/* Length validation is unchanged underneath (the grading service
+                keeps its contract); the UI only offers a quiet hint instead
+                of a live counter (design1 kill list). */}
+            {length > 0 && !validLength && (
+              <div className="open-response-hint" aria-live="off">
+                {length < props.prompt.responseChars.min
+                  ? "Give it one more beat and it can hold the page."
+                  : "Trim it a little; a page line runs short."}
+              </div>
+            )}
             {props.authenticated ? (
               <fieldset className="open-response-privacy">
                 <legend>Encrypted educator review</legend>
@@ -163,18 +160,16 @@ export function OpenResponsePanel(props: {
                 )
               }
             >
-              {props.phase === "PENDING"
-                ? "Securing response…"
-                : "Submit reflection"}
+              {props.phase === "PENDING" ? "Setting it down…" : "Set it down"}
             </button>
             <small className="open-response-required">
-              Once started, submission completes this optional interaction.
-              Classification never blocks the story.
+              Optional, and never marked. Finish the line and the street takes
+              you back.
             </small>
           </>
         ) : (
           <div className="open-response-feedback">
-            <h3>{props.fallback ? "Reflection recorded" : "A connection to carry forward"}</h3>
+            <h3>{props.fallback ? "Filed with the day" : "A connection to carry forward"}</h3>
             {props.feedback.map((line) => (
               <p key={line}>{line}</p>
             ))}
@@ -196,7 +191,7 @@ export function OpenResponsePanel(props: {
               disabled={!props.closeEnabled}
               onClick={props.onClose}
             >
-              Return to the exact prior objective
+              Back to the street
             </button>
           </div>
         )}

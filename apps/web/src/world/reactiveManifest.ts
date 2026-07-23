@@ -127,6 +127,11 @@ export interface MicroDefinition {
   id: MicroConceptId;
   label: string;
   sourceLinks: readonly string[];
+  /**
+   * A quotable one-line memory with a place or a person (design1 kill list):
+   * the Archive keeps what the street actually said, not database metadata.
+   */
+  memory: string;
 }
 
 // Human-readable chips for the feedback line under an exchange reply: every
@@ -146,7 +151,8 @@ export function effectChips(
 ): string[] {
   const chips: string[] = [];
   for (const micro of effects.micros ?? []) {
-    chips.push(`Connection added: ${microLabels.get(micro) ?? "historical context"}`);
+    // Discovery voice, not flashcard voice (design1 kill list).
+    chips.push(`You've connected it: ${microLabels.get(micro) ?? "another piece of the day"}`);
   }
   if (effects.standing) {
     chips.push(
@@ -175,20 +181,20 @@ export function effectChips(
 }
 
 export const DAY1_MICRO_DEFINITIONS: readonly MicroDefinition[] = [
-  { id: MICRO_CONCEPT_IDS.SALUTARY_NEGLECT_END, label: "The end of salutary neglect", sourceLinks: ["KN-noticeboard", "NPC-pike", "NPC-thomas"] },
-  { id: MICRO_CONCEPT_IDS.PORT_TOWN_BOSTON, label: "Boston as a port town", sourceLinks: ["SJ-dock-haul", "THR-sarah", "NPC-thomas"] },
-  { id: MICRO_CONCEPT_IDS.HARD_COIN_SCARCITY, label: "Hard-coin scarcity", sourceLinks: ["KN-coinpaper", "NPC-pike"] },
-  { id: MICRO_CONCEPT_IDS.PRINTERS_ROLE, label: "Printers' role", sourceLinks: ["THR-ned", "KN-typecase", "NPC-abigail"] },
-  { id: MICRO_CONCEPT_IDS.VICE_ADMIRALTY_COURTS, label: "Vice-admiralty courts", sourceLinks: ["NPC-pike", "KN-customhouse"] },
-  { id: MICRO_CONCEPT_IDS.STAMP_WHAT_COUNTS, label: "What the Stamp Act covered", sourceLinks: ["KN-noticeboard", "KN-pike-records"] },
-  { id: MICRO_CONCEPT_IDS.ANDREW_OLIVER, label: "Andrew Oliver", sourceLinks: ["KN-effigy"] },
-  { id: MICRO_CONCEPT_IDS.LIBERTY_TREE, label: "The Liberty Tree", sourceLinks: ["KN-liberty-bill"] },
-  { id: MICRO_CONCEPT_IDS.LOYAL_NINE, label: "The Loyal Nine", sourceLinks: ["SJ-tavern-note"] },
-  { id: MICRO_CONCEPT_IDS.EFFIGY_PROTEST, label: "Effigy protest", sourceLinks: ["KN-liberty-bill"] },
-  { id: MICRO_CONCEPT_IDS.NON_IMPORTATION, label: "Non-importation", sourceLinks: ["THR-sarah", "SJ-tavern-note", "NPC-thomas"] },
-  { id: MICRO_CONCEPT_IDS.NEWS_NETWORKS, label: "News networks", sourceLinks: ["NPC-rider", "NPC-abigail"] },
-  { id: MICRO_CONCEPT_IDS.WRITS_OF_ASSISTANCE, label: "Writs of assistance", sourceLinks: ["KN-customhouse", "B9-inspection"] },
-  { id: MICRO_CONCEPT_IDS.LOYALIST_VIEW, label: "The Loyalist view", sourceLinks: ["NPC-clarke"] },
+  { id: MICRO_CONCEPT_IDS.SALUTARY_NEGLECT_END, label: "The end of salutary neglect", sourceLinks: ["KN-noticeboard", "NPC-pike", "NPC-thomas"], memory: "The whole street agrees: London used to look away. It has stopped looking away." },
+  { id: MICRO_CONCEPT_IDS.PORT_TOWN_BOSTON, label: "Boston as a port town", sourceLinks: ["SJ-dock-haul", "THR-sarah", "NPC-thomas"], memory: "Thomas, at his counting-house: know the wharf and you know half of Boston's troubles." },
+  { id: MICRO_CONCEPT_IDS.HARD_COIN_SCARCITY, label: "Hard-coin scarcity", sourceLinks: ["KN-coinpaper", "NPC-pike"], memory: "Pike, over his files: the duty wants specie, and Boston trades in paper promises." },
+  { id: MICRO_CONCEPT_IDS.PRINTERS_ROLE, label: "Printers' role", sourceLinks: ["THR-ned", "KN-typecase", "NPC-abigail"], memory: "Abigail, at the press: a printer decides what the town can hear." },
+  { id: MICRO_CONCEPT_IDS.VICE_ADMIRALTY_COURTS, label: "Vice-admiralty courts", sourceLinks: ["NPC-pike", "KN-customhouse"], memory: "Pike, at his office: a Crown judge and no local jury. That difference matters." },
+  { id: MICRO_CONCEPT_IDS.STAMP_WHAT_COUNTS, label: "What the Stamp Act covered", sourceLinks: ["KN-noticeboard", "KN-pike-records"], memory: "The notice by the board: newspapers and legal papers, stamped from the first of November." },
+  { id: MICRO_CONCEPT_IDS.ANDREW_OLIVER, label: "Andrew Oliver", sourceLinks: ["KN-effigy"], memory: "The crowd at the elm named him: Oliver, the Crown's man for the stamps." },
+  { id: MICRO_CONCEPT_IDS.LIBERTY_TREE, label: "The Liberty Tree", sourceLinks: ["KN-liberty-bill"], memory: "The old elm past the east gate: the town's notices hang from it now, and tonight, more than notices." },
+  { id: MICRO_CONCEPT_IDS.LOYAL_NINE, label: "The Loyal Nine", sourceLinks: ["SJ-tavern-note"], memory: "Ned, half-whispering by the press: the men at the elm use printers' boys as runners too." },
+  { id: MICRO_CONCEPT_IDS.EFFIGY_PROTEST, label: "Effigy protest", sourceLinks: ["KN-liberty-bill"], memory: "At the elm: somebody planned every step of it, and nobody waited for permission." },
+  { id: MICRO_CONCEPT_IDS.NON_IMPORTATION, label: "Non-importation", sourceLinks: ["THR-sarah", "SJ-tavern-note", "NPC-thomas"], memory: "Sarah, at her stall: half the trade gone since the duties." },
+  { id: MICRO_CONCEPT_IDS.NEWS_NETWORKS, label: "News networks", sourceLinks: ["NPC-rider", "NPC-abigail"], memory: "The rider, reins in hand: press to tavern, tavern to saddle, then every road out of Boston." },
+  { id: MICRO_CONCEPT_IDS.WRITS_OF_ASSISTANCE, label: "Writs of assistance", sourceLinks: ["KN-customhouse", "B9-inspection"], memory: "On the customs road: a writ that names no one, expires never, and opens any bag." },
+  { id: MICRO_CONCEPT_IDS.LOYALIST_VIEW, label: "The Loyalist view", sourceLinks: ["NPC-clarke"], memory: "Clarke, from his doorway: the Crown feeds this town, and a crowd with a rope is not liberty." },
 ] as const;
 
 export const MICRO_LABELS: ReadonlyMap<string, string> = new Map(

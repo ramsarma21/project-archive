@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CHAPTER_ID } from "@pa/contracts";
 import { Home } from "./pages/Home.js";
-import { Onboarding } from "./pages/Onboarding.js";
+import { Onboarding, ONBOARDING_SMART_DEFAULTS } from "./pages/Onboarding.js";
 import { Play } from "./pages/Play.js";
 import { AppErrorBoundary } from "./AppErrorBoundary.js";
 import { getSession, apiStatus, pullSave, saveOnboardingPreferences } from "./api.js";
@@ -118,6 +118,32 @@ export function App() {
     }
   }
 
+  // First play starts in-world in seconds (design1 kill list): a profile
+  // without saved preferences gets smart defaults applied and goes straight
+  // to Play. The full interview remains reachable from the pause menu
+  // ("Interface & accessibility") and preserves the same saved contract.
+  async function enterPlay(profile: LocalProfile): Promise<void> {
+    if (profile.onboarding) {
+      setView({ name: "play", profile });
+      return;
+    }
+    const onboarding = {
+      ...ONBOARDING_SMART_DEFAULTS,
+      completedAt: new Date().toISOString(),
+    };
+    const withDefaults: LocalProfile = { ...profile, onboarding };
+    await upsertProfile(withDefaults);
+    if (withDefaults.source === "GOOGLE") {
+      void saveOnboardingPreferences(withDefaults.profileId, onboarding);
+    }
+    setProfiles((current) =>
+      current.map((item) =>
+        item.profileId === withDefaults.profileId ? withDefaults : item,
+      ),
+    );
+    setView({ name: "play", profile: withDefaults });
+  }
+
   useEffect(() => {
     const url = new URL(window.location.href);
     const enterGame = url.searchParams.get("auth") === "success";
@@ -126,13 +152,7 @@ export function App() {
       window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     }
     void refresh().then((profile) => {
-      if (enterGame && profile) {
-        setView(
-          profile.onboarding
-            ? { name: "play", profile }
-            : { name: "onboarding", profile, returnTo: "home" },
-        );
-      }
+      if (enterGame && profile) void enterPlay(profile);
     });
   }, []);
 
@@ -205,11 +225,7 @@ export function App() {
       googleName={googleName}
       onPlay={(p) => {
         if (p.source === "GOOGLE" && p.profileId !== activeGoogleProfileId) return;
-        setView(
-          p.onboarding
-            ? { name: "play", profile: p }
-            : { name: "onboarding", profile: p, returnTo: "home" },
-        );
+        void enterPlay(p);
       }}
       onChanged={() => refresh().then(() => undefined)}
     />
