@@ -15,6 +15,12 @@ export const OnboardingPreferencesSchema = z.object({
     .optional(),
   primersSeen: z.array(z.enum(["ARCHIVE", "MOVEMENT", "READ", "WORK", "CHOICE"])).optional(),
   completedAt: z.string(),
+  // The pre-game calibration interview is gone (design1 kill list, product
+  // decision): new profiles receive standardized defaults with
+  // `calibrated: false`; the first explicit save from the pause settings
+  // surface flips it true. Optional keeps every existing stored preference
+  // set (which was explicitly chosen) valid — absent means calibrated.
+  calibrated: z.boolean().optional(),
 });
 export type OnboardingPreferences = z.infer<typeof OnboardingPreferencesSchema>;
 

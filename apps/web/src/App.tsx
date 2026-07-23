@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
 import { CHAPTER_ID } from "@pa/contracts";
 import { Home } from "./pages/Home.js";
-import { Onboarding, ONBOARDING_SMART_DEFAULTS } from "./pages/Onboarding.js";
+import {
+  effectiveReducedMotion,
+  osPrefersReducedMotion,
+  standardizedPreferences,
+} from "./pages/preferences.js";
 import { Play } from "./pages/Play.js";
 import { AppErrorBoundary } from "./AppErrorBoundary.js";
 import { getSession, apiStatus, pullSave, saveOnboardingPreferences } from "./api.js";
 import { getSave, listProfiles, putSave, upsertProfile, type LocalProfile } from "./db.js";
 
+// The pre-game calibration interview is deleted (design1 kill list, product
+// decision): profile -> straight into Play with standardized preferences.
 type View =
   | { name: "home" }
-  | { name: "onboarding"; profile: LocalProfile; returnTo: "home" | "play" }
   | { name: "play"; profile: LocalProfile };
 
 export function App() {
@@ -118,19 +123,16 @@ export function App() {
     }
   }
 
-  // First play starts in-world in seconds (design1 kill list): a profile
-  // without saved preferences gets smart defaults applied and goes straight
-  // to Play. The full interview remains reachable from the pause menu
-  // ("Interface & accessibility") and preserves the same saved contract.
+  // Every play entry goes straight in-world: a profile without stored
+  // preferences receives the standardized defaults (calibrated: false) —
+  // there is no upfront interview. Existing profiles with explicitly chosen
+  // preferences keep them verbatim. Settings live in the pause surface.
   async function enterPlay(profile: LocalProfile): Promise<void> {
     if (profile.onboarding) {
       setView({ name: "play", profile });
       return;
     }
-    const onboarding = {
-      ...ONBOARDING_SMART_DEFAULTS,
-      completedAt: new Date().toISOString(),
-    };
+    const onboarding = standardizedPreferences();
     const withDefaults: LocalProfile = { ...profile, onboarding };
     await upsertProfile(withDefaults);
     if (withDefaults.source === "GOOGLE") {
@@ -157,16 +159,32 @@ export function App() {
   }, []);
 
   const viewProfile = view.name === "home" ? null : view.profile;
+  // Uncalibrated (standardized-default) profiles follow the OS
+  // prefers-reduced-motion query LIVE; explicit choices always win.
+  const [osReduced, setOsReduced] = useState(() => osPrefersReducedMotion());
+  useEffect(() => {
+    try {
+      const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const onChange = () => setOsReduced(query.matches);
+      query.addEventListener("change", onChange);
+      return () => query.removeEventListener("change", onChange);
+    } catch {
+      return undefined;
+    }
+  }, []);
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("pa-high-contrast", Boolean(viewProfile?.onboarding?.highContrast));
-    root.classList.toggle("pa-reduced-motion", Boolean(viewProfile?.onboarding?.reducedMotion));
+    root.classList.toggle(
+      "pa-reduced-motion",
+      effectiveReducedMotion(viewProfile?.onboarding, osReduced),
+    );
     root.dataset.readingSpeed = viewProfile?.onboarding?.readingSpeed ?? "STANDARD";
     return () => {
       root.classList.remove("pa-high-contrast", "pa-reduced-motion");
       delete root.dataset.readingSpeed;
     };
-  }, [viewProfile?.profileId, viewProfile?.onboarding]);
+  }, [viewProfile?.profileId, viewProfile?.onboarding, osReduced]);
 
   if (loading) {
     return <div className="center"><div className="card"><h1>Project Archive</h1><p className="sub">Loading…</p></div></div>;
@@ -197,23 +215,18 @@ export function App() {
           profile={view.profile}
           chapterId={CHAPTER_ID}
           apiUp={apiUp}
-          onEditPreferences={(profile) => setView({ name: "onboarding", profile, returnTo: "play" })}
+          osReducedMotion={osReduced}
+          onPreferencesSaved={(profile) => {
+            setProfiles((current) =>
+              current.map((item) =>
+                item.profileId === profile.profileId ? profile : item,
+              ),
+            );
+            setView({ name: "play", profile });
+          }}
           onExit={() => { void refresh(); setView({ name: "home" }); }}
         />
       </AppErrorBoundary>
-    );
-  }
-
-  if (view.name === "onboarding") {
-    return (
-      <Onboarding
-        profile={view.profile}
-        onCancel={() => setView(view.returnTo === "play" ? { name: "play", profile: view.profile } : { name: "home" })}
-        onComplete={(profile) => {
-          setProfiles((current) => current.map((item) => item.profileId === profile.profileId ? profile : item));
-          setView({ name: "play", profile });
-        }}
-      />
     );
   }
 

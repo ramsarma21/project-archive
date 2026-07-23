@@ -2,7 +2,7 @@ import type { InputRequest, OnboardingPreferences } from "@pa/contracts";
 
 // ---------------------------------------------------------------------------
 // Play-shell COPY BLOCKS (content). The presenter components that render
-// these (PrimerCard / DayEnd / ArchiveManual in Play.tsx) stay engine; only
+// these (FirstUseHint / DayEnd / PauseMenu in Play.tsx) stay engine; only
 // the authored strings and their request-kind mappings live here.
 // ---------------------------------------------------------------------------
 
@@ -115,8 +115,8 @@ export const MANUAL_COPY = {
   archiveSection: "Your Archive",
   settingsSection: "Tuned for you",
   settingsNote:
-    "Started with smart defaults. Reading pace, captions, contrast, motion, and chase assists are yours to change here, any time.",
-  adjustButton: "Interface & accessibility",
+    "Changes apply the moment you make them and stay with this profile.",
+  motionFollowsSystem: "Following your system's motion setting",
   replayButton: "Replay first-time hints",
   footnote: "Pausing never changes progress, evidence, or your record.",
 } as const;

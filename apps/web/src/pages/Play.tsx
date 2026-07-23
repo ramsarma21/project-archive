@@ -2,10 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   DayEndCard,
   InputRequest,
+  OnboardingPreferences,
   PresentationDirective,
 } from "@pa/contracts";
 import { upsertProfile, type LocalProfile } from "../db.js";
 import { saveOnboardingPreferences } from "../api.js";
+import {
+  effectiveReducedMotion,
+  standardizedPreferences,
+} from "./preferences.js";
 import { Feed } from "../presenter/Feed.js";
 import { Hud } from "../presenter/Hud.js";
 import { Side, HoloTasks } from "../presenter/Side.js";
@@ -75,10 +80,20 @@ export function Play(props: {
   profile: LocalProfile;
   chapterId: string;
   apiUp: boolean;
-  onEditPreferences: (profile: LocalProfile) => void;
+  /** Live OS prefers-reduced-motion state (uncalibrated profiles follow it). */
+  osReducedMotion: boolean;
+  /** Preferences saved from the pause settings surface (calibrated: true). */
+  onPreferencesSaved: (profile: LocalProfile) => void;
   onExit: () => void;
 }) {
   const { profile, chapterId } = props;
+  // The live preference set (design1: no pre-game interview — standardized
+  // defaults arrive on the profile; the pause surface edits them in place).
+  const [prefs, setPrefs] = useState<OnboardingPreferences>(
+    () => profile.onboarding ?? standardizedPreferences(),
+  );
+  const reducedMotion = effectiveReducedMotion(prefs, props.osReducedMotion);
+  const highContrast = Boolean(prefs.highContrast);
   // Boot/init session: runtime worker client, committed event log, revisions,
   // presenter spatial snapshot pair, and all runtime-derived presenter state.
   const session = useRuntimeSession({ profile, chapterId, apiUp: props.apiUp });
@@ -120,7 +135,7 @@ export function Play(props: {
     () => createStealthStore(),
     [profile.profileId],
   );
-  const [primersSeen, setPrimersSeen] = useState(() => new Set(profile.onboarding?.primersSeen ?? []));
+  const [primersSeen, setPrimersSeen] = useState(() => new Set(prefs.primersSeen ?? []));
   const [readyCueId, setReadyCueId] = useState<string | null>(null);
   const [choiceAnimation, setChoiceAnimation] = useState<ChoiceAnimation | null>(null);
   const [activeSubtitle, setActiveSubtitle] = useState<PresentationDirective | null>(null);
@@ -234,29 +249,46 @@ export function Play(props: {
     });
   }, [plan?.cueId, plan?.present]);
 
+  // The primers-seen persistence contract is unchanged: hints file into the
+  // same preference record (never flipping `calibrated`).
   async function dismissPrimer(id: PrimerId) {
-    const onboarding = profile.onboarding;
-    if (!onboarding || primersSeen.has(id)) return;
+    if (primersSeen.has(id)) return;
     const nextSeen = [...primersSeen, id];
     setPrimersSeen(new Set(nextSeen));
-    const nextOnboarding = { ...onboarding, primersSeen: nextSeen };
-    const nextProfile = { ...profile, onboarding: nextOnboarding };
-    await upsertProfile(nextProfile);
+    const nextOnboarding = { ...prefs, primersSeen: nextSeen };
+    setPrefs(nextOnboarding);
+    await upsertProfile({ ...profile, onboarding: nextOnboarding });
     if (profile.source === "GOOGLE") {
       void saveOnboardingPreferences(profile.profileId, nextOnboarding);
     }
   }
 
   async function replayPrimers() {
-    const onboarding = profile.onboarding;
-    if (!onboarding) return;
     setPrimersSeen(new Set());
-    const nextOnboarding = { ...onboarding, primersSeen: [] };
+    const nextOnboarding = { ...prefs, primersSeen: [] };
+    setPrefs(nextOnboarding);
     await upsertProfile({ ...profile, onboarding: nextOnboarding });
     if (profile.source === "GOOGLE") {
       void saveOnboardingPreferences(profile.profileId, nextOnboarding);
     }
     setShowManual(false);
+  }
+
+  // Pause-surface settings save: the first explicit save calibrates the
+  // profile (stored choices win over the OS follow from then on).
+  async function savePreferences(next: OnboardingPreferences) {
+    const nextOnboarding: OnboardingPreferences = {
+      ...next,
+      primersSeen: [...primersSeen],
+      calibrated: true,
+    };
+    setPrefs(nextOnboarding);
+    const nextProfile = { ...profile, onboarding: nextOnboarding };
+    await upsertProfile(nextProfile);
+    if (profile.source === "GOOGLE") {
+      void saveOnboardingPreferences(profile.profileId, nextOnboarding);
+    }
+    props.onPreferencesSaved(nextProfile);
   }
 
   useEffect(() => {
@@ -299,7 +331,7 @@ export function Play(props: {
     const steps = buildTimeline(
       directives,
       presentationOriginLocation,
-      profile.onboarding?.readingSpeed ?? "STANDARD",
+      prefs.readingSpeed,
     );
     let cursor = createTimelineCursor(steps);
     let cancelled = false;
@@ -364,7 +396,7 @@ export function Play(props: {
     plan?.cueId,
     plan?.present,
     presentationOriginLocation,
-    profile.onboarding?.readingSpeed,
+    prefs.readingSpeed,
   ]);
 
   const dayEnd = transcript.find((d) => d.kind === "DAY_END_CARD") as (PresentationDirective & { kind: "DAY_END_CARD" }) | undefined;
@@ -488,12 +520,11 @@ export function Play(props: {
       data-last-chase-outcome={
         view?.field.chaseHistory.at(-1)?.outcome ?? ""
       }
-      data-chase-assist={profile.onboarding?.chaseAssist ?? "STANDARD"}
-      data-input-method={
-        profile.onboarding?.inputMethod ?? "KEYBOARD_MOUSE"
-      }
-      data-high-contrast={String(Boolean(profile.onboarding?.highContrast))}
-      data-reduced-motion={String(Boolean(profile.onboarding?.reducedMotion))}
+      data-chase-assist={prefs.chaseAssist ?? "STANDARD"}
+      data-input-method={prefs.inputMethod}
+      data-high-contrast={String(highContrast)}
+      data-reduced-motion={String(reducedMotion)}
+      data-prefs-calibrated={String(prefs.calibrated !== false)}
       data-speaking={speaking ? "true" : "false"}
       data-choreography-ready={choreographyReady ? "true" : "false"}
       data-active-subtitle={activeSubtitle ? "true" : "false"}
@@ -538,10 +569,10 @@ export function Play(props: {
           present={activeSubtitle ? [activeSubtitle] : []}
           busy={interactionBusy || Boolean(error)}
           movementLocked={movementLocked || Boolean(error)}
-          keyboardOnly={profile.onboarding?.inputMethod === "KEYBOARD_ONLY"}
-          reducedMotion={Boolean(profile.onboarding?.reducedMotion)}
-          highContrast={Boolean(profile.onboarding?.highContrast)}
-          chaseAssist={profile.onboarding?.chaseAssist ?? "STANDARD"}
+          keyboardOnly={prefs.inputMethod === "KEYBOARD_ONLY"}
+          reducedMotion={reducedMotion}
+          highContrast={highContrast}
+          chaseAssist={prefs.chaseAssist ?? "STANDARD"}
           readPanelActive={Boolean(activeReadPanel)}
           cueId={plan?.cueId ?? null}
           choreographyReady={choreographyReady}
@@ -559,8 +590,8 @@ export function Play(props: {
         <StealthHud
           store={stealthStore}
           dev={QA_RUNTIME_ENABLED}
-          highContrast={Boolean(profile.onboarding?.highContrast)}
-          reducedMotion={Boolean(profile.onboarding?.reducedMotion)}
+          highContrast={highContrast}
+          reducedMotion={reducedMotion}
         />
         <GlobalNoticeHud
           blocked={
@@ -572,7 +603,7 @@ export function Play(props: {
             ) ||
             (cinematicBeat && cinematicOwner !== "RELEASE_CINEMATIC")
           }
-          captions={profile.onboarding?.captions !== false}
+          captions={prefs.captions !== false}
         />
         {webglAvailable && !error && (
           <HoloTasks
@@ -678,7 +709,7 @@ export function Play(props: {
             ) : cinematicBeat || openResponseActive ? null : view?.field.activeInterrupt?.kind === "CONFRONTATION" ? (
               <ConfrontationPanel
                 field={view.field}
-                reducedMotion={Boolean(profile.onboarding?.reducedMotion)}
+                reducedMotion={reducedMotion}
                 onFieldEvent={onFieldEvent}
               />
             ) : done && view?.checkpoint.status === "TRANSITIONED" ? (
@@ -687,8 +718,8 @@ export function Play(props: {
               <CheckpointDebrief
                 request={plan.request}
                 busy={interactionBusy}
-                highContrast={Boolean(profile.onboarding?.highContrast)}
-                reducedMotion={Boolean(profile.onboarding?.reducedMotion)}
+                highContrast={highContrast}
+                reducedMotion={reducedMotion}
                 onEvent={onEvent}
               />
             ) : dayEnd && plan?.request.kind === "DAY_END" ? (
@@ -704,8 +735,7 @@ export function Play(props: {
                 busy={interactionBusy}
                 spatialNavigation={webglAvailable}
                 accessibleMechanics={
-                  Boolean(profile.onboarding?.reducedMotion) ||
-                  profile.onboarding?.inputMethod === "KEYBOARD_ONLY"
+                  reducedMotion || prefs.inputMethod === "KEYBOARD_ONLY"
                 }
               />
             ) : (
@@ -777,17 +807,15 @@ export function Play(props: {
         />
       )}
       {showManual && (
-        <ArchiveManual
-          profile={profile}
+        <PauseMenu
+          prefs={prefs}
+          osReducedMotion={props.osReducedMotion}
           request={plan?.request ?? null}
           // Only a live runtime commit blocks the pause actions — the pause
           // overlay itself sets interactionBusy, which used to disable its
           // own preference/replay buttons.
           busy={busy}
-          onEditPreferences={() => props.onEditPreferences({
-            ...profile,
-            onboarding: profile.onboarding ? { ...profile.onboarding, primersSeen: [...primersSeen] } : undefined,
-          })}
+          onSave={(next) => void savePreferences(next)}
           onReplayPrimers={() => void replayPrimers()}
           onClose={() => setShowManual(false)}
         />
@@ -854,15 +882,37 @@ function FirstUseHint(props: {
   );
 }
 
-function ArchiveManual(props: {
-  profile: LocalProfile;
+// The pause surface owns settings outright (design1: the pre-game interview
+// is deleted; this is the only place preferences are edited). Every control
+// applies immediately through onSave, which marks the profile calibrated.
+function PauseMenu(props: {
+  prefs: OnboardingPreferences;
+  osReducedMotion: boolean;
   request: InputRequest | null;
   busy: boolean;
-  onEditPreferences: () => void;
+  onSave: (next: OnboardingPreferences) => void;
   onReplayPrimers: () => void;
   onClose: () => void;
 }) {
-  const settings = props.profile.onboarding;
+  const settings = props.prefs;
+  const uncalibrated = settings.calibrated === false;
+  const motionShown = effectiveReducedMotion(settings, props.osReducedMotion);
+  const set = (patch: Partial<OnboardingPreferences>) =>
+    props.onSave({ ...settings, ...patch });
+  const toggle = (
+    label: string,
+    key: "captions" | "audioDescription" | "highContrast" | "archiveAssistAutoOffer",
+  ) => (
+    <label className="pause-setting-toggle">
+      <input
+        type="checkbox"
+        checked={Boolean(settings[key])}
+        disabled={props.busy}
+        onChange={(event) => set({ [key]: event.target.checked })}
+      />
+      <span>{label}</span>
+    </label>
+  );
   return (
     <div className="overlay manual-overlay" onClick={props.onClose}>
       <div className="overlay-body archive-manual" onClick={(event) => event.stopPropagation()}>
@@ -895,24 +945,70 @@ function ArchiveManual(props: {
             </dl>
           </section>
         </div>
-        <section className="manual-settings">
+        <section className="manual-settings" data-settings-calibrated={String(!uncalibrated)}>
           <h3>{MANUAL_COPY.settingsSection}</h3>
           <p className="manual-footnote">{MANUAL_COPY.settingsNote}</p>
-          <div className="manual-tags">
-            <span>{settings?.readingSpeed.toLowerCase() ?? "standard"} reading</span>
-            <span>{settings?.captions ? "captions on" : "captions off"}</span>
-            <span>{settings?.audioDescription ? "audio description on" : "audio description off"}</span>
-            {settings?.highContrast && <span>high contrast</span>}
-            {settings?.reducedMotion && <span>reduced motion</span>}
-            <span>
-              chase assist: {(settings?.chaseAssist ?? "STANDARD")
-                .toLowerCase()
-                .replaceAll("_", " ")}
-            </span>
+          <div className="pause-setting-row" role="group" aria-label="Reading pace">
+            <span className="pause-setting-label">Reading pace</span>
+            {(["RELAXED", "STANDARD", "BRISK"] as const).map((speed) => (
+              <button
+                key={speed}
+                className={settings.readingSpeed === speed ? "seg-btn active" : "seg-btn"}
+                aria-pressed={settings.readingSpeed === speed}
+                disabled={props.busy}
+                onClick={() => set({ readingSpeed: speed })}
+              >
+                {speed === "RELAXED" ? "Unhurried" : speed === "STANDARD" ? "Steady" : "Brisk"}
+              </button>
+            ))}
           </div>
-          <button className="btn-ghost" disabled={props.busy} onClick={props.onEditPreferences}>
-            {MANUAL_COPY.adjustButton}
-          </button>
+          <div className="pause-setting-row" role="group" aria-label="Input">
+            <span className="pause-setting-label">Input</span>
+            {(["KEYBOARD_MOUSE", "KEYBOARD_ONLY"] as const).map((method) => (
+              <button
+                key={method}
+                className={settings.inputMethod === method ? "seg-btn active" : "seg-btn"}
+                aria-pressed={settings.inputMethod === method}
+                disabled={props.busy}
+                onClick={() => set({ inputMethod: method })}
+              >
+                {method === "KEYBOARD_MOUSE" ? "Keyboard + mouse" : "Keyboard only"}
+              </button>
+            ))}
+          </div>
+          <div className="pause-setting-row" role="group" aria-label="Chase assist">
+            <span className="pause-setting-label">Chase assist</span>
+            <select
+              value={settings.chaseAssist ?? "STANDARD"}
+              disabled={props.busy}
+              onChange={(event) =>
+                set({ chaseAssist: event.target.value as OnboardingPreferences["chaseAssist"] })
+              }
+            >
+              <option value="STANDARD">Standard</option>
+              <option value="SLOW_PURSUER">Slower pursuers</option>
+              <option value="AUTO_STAMINA">Auto stamina</option>
+              <option value="CONFIRM_RESOLVE">Confirm to resolve</option>
+            </select>
+          </div>
+          <div className="pause-setting-toggles">
+            {toggle("Captions", "captions")}
+            {toggle("Audio description", "audioDescription")}
+            {toggle("High contrast", "highContrast")}
+            <label className="pause-setting-toggle">
+              <input
+                type="checkbox"
+                checked={motionShown}
+                disabled={props.busy}
+                onChange={(event) => set({ reducedMotion: event.target.checked })}
+              />
+              <span>Reduced motion</span>
+              {uncalibrated && (
+                <small className="pause-setting-note">{MANUAL_COPY.motionFollowsSystem}</small>
+              )}
+            </label>
+            {toggle("Offer Archive pauses", "archiveAssistAutoOffer")}
+          </div>
           <button className="btn-ghost" disabled={props.busy} onClick={props.onReplayPrimers}>
             {MANUAL_COPY.replayButton}
           </button>
