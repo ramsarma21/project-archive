@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "paths": {
+      "@pa/chapter-boston": ["../chapter-boston/src/index.ts"],
+      "@pa/contracts": ["../contracts/src/index.ts"],
+      "@pa/engine-world": ["../engine-world/src/index.ts"],
+      "@pa/runtime": ["../runtime/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*", "test/**/*"]
+}
