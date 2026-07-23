@@ -4,7 +4,7 @@
 // against the injected ChapterDefinition.
 
 /**
- * Branded macro-concept id (e.g. "BOS.MD01.CONCEPT.STAMP_SCOPE.v1").
+ * Branded macro-concept id (a chapter-minted stable id string).
  * Chapter packages mint these; the runtime treats them as opaque keys into
  * the learner state.
  */

@@ -58,9 +58,10 @@ export interface StandingState {
 }
 
 /**
- * Branded thread id (e.g. "BOS.THREAD.NED.v1"). The concrete vocabulary is
- * chapter content (FieldVocabulary.threadIds), validated at session creation
- * and on every committed thread event.
+ * Branded thread id (a chapter-minted stable id string, e.g. Boston's Ned
+ * thread). The concrete vocabulary is chapter content
+ * (FieldVocabulary.threadIds), validated at session creation and on every
+ * committed thread event.
  */
 export type ThreadId = string & { readonly __brand: "PA.ThreadId" };
 

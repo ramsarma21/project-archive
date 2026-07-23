@@ -137,7 +137,7 @@ export interface CheckpointSpec {
   requiredMacroConceptIds: readonly string[];
   /** Valid MICRO-tier concept ids for this checkpoint. */
   microConceptIds: readonly string[];
-  /** Stable form-id prefix, e.g. "BOS.ACT01.CP1.FORM." */
+  /** Stable chapter-minted form-id prefix (checkpoint id + ".FORM."). */
   formIdPrefix: string;
 }
 

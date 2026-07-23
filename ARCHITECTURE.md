@@ -11,33 +11,52 @@ specs see [`docs/engine/`](docs/engine/); for the worked chapter see
 
 ## 1. System overview
 
-### Dependency direction (strict, one-way)
+### Dependency direction (strict, one-way; wave3 chapter split)
 
 ```
-@pa/contracts  →  @pa/runtime  →  apps/web  (presenter)
-                             \→  apps/api  (persistence / grading)
+@pa/contracts  →  @pa/runtime  →  @pa/chapter-boston  →  apps/web  (presenter)
+   (protocol)       (engine)        (chapter content)  \→  apps/api  (persistence / grading)
 ```
 
-- **`packages/contracts`** — pure types, IDs, constants, Zod schemas, and the
-  wire protocol. Depends on nothing internal. The vocabulary every other package
-  speaks (`state.ts`, `field.ts`, `save.ts`, `assessment.ts`, `protocol.ts`,
-  `teks.ts`, `ids.ts`, `constants.ts`, `openResponse.ts`, `choreography.ts`,
-  `api.ts`).
-- **`packages/runtime`** — the headless, deterministic game brain: authored flow
-  (`engine/`), content (`content/`), the learner model (`learner.ts`), the field
-  simulation (`fieldState.ts`), assessment selection (`assessment/`), seeding
-  (`seed.ts`), and mastery reporting (`report.ts`). No DOM, no Three.js, no
-  network. Runs identically in Node tests and in the browser.
+- **`packages/contracts`** — PROTOCOL ONLY: events, plans, saves, field/
+  assessment state machinery, RuntimeView shapes, Zod schemas, and generic
+  branded id types (`ConceptId`, `ThreadId`, `MicroConceptId`,
+  `OptionalActivityId`). Zero `BOS.` literals, zero chapter vocabularies —
+  enforced by `scripts/check-boundaries.mjs`.
+- **`packages/runtime`** — the chapter-agnostic learning engine: run context +
+  session driver + flow DSL (`engine/`), the `ChapterDefinition` injection
+  seam + chapter registry (`engine/chapter.ts`), the learner model
+  (`learner.ts`), the field reducer/assertions parameterized by a chapter
+  `FieldVocabulary` (`fieldState.ts`), the assessment engine (gate ladder,
+  debrief selection, bank validation, rubric resolution in `assessment/`),
+  seeding (`seed.ts`), the world clock (`world.ts`), and mastery reporting
+  (`report.ts`). It imports NOTHING from any content package — a synthetic-
+  chapter test (`test/engine-chapter.test.ts`) and the boundary lint keep it
+  that way. No DOM, no Three.js, no network.
+- **`packages/chapter-boston`** — the Boston 1765 content package: the Day-1
+  flow/text/tables/mechanics/reactive content, CP1 checkpoint flow + question
+  banks, the open-response content registry + provenance, all Boston id
+  constants and tuning, and the assembled `BOSTON_1765_CHAPTER`
+  `ChapterDefinition` (plus the `createDay1Session` one-liner). "Make
+  Philadelphia" = write a sibling package like this one; the engine does not
+  change. Layout note: it lives under `packages/*` (rather than
+  `content/chapters/*`) so the existing pnpm workspace glob, raw-TS exports,
+  and package-graph direction (chapter → engine → contracts) all apply with
+  zero build config.
 - **`apps/web`** — the React + React-Three-Fiber presenter. Renders runtime state
   into the 3D world (`src/world/`), owns input, cameras, directors, and HUD. It
   never invents game truth; it projects it and feeds player actions back as
-  events. A typed text presenter is the WebGL-unavailable fallback.
+  events. Its worker entry (`src/runtime.worker.ts`) is the single place the
+  chapter package is registered with the engine.
 - **`apps/api`** — Fastify service for Google login, save persistence
   (event-sourced records in Postgres), and open-response grading
-  (`src/grading/`). It stores and replays events; it does not simulate the game.
+  (`src/grading/`). Server-side replay validation goes through the chapter
+  registry (`src/chapters.ts`) keyed by `save.chapterId`; an unregistered
+  chapter is a clean 400. It stores and replays events; it does not simulate
+  the game.
 
-Nothing downstream leaks upward: the runtime cannot import from the web app, and
-contracts cannot import from the runtime.
+Nothing downstream leaks upward: the engine cannot import chapter content,
+the runtime cannot import from the web app, and contracts import nothing.
 
 ### Deterministic, event-sourced runtime
 
@@ -108,9 +127,9 @@ Start at the symptom; open the listed owner(s) first.
 | **Camera stuck / input locked / mouse-look wrong** | [`apps/web/src/world/cameraOwnership.ts`](apps/web/src/world/cameraOwnership.ts), [`apps/web/src/world/CameraDirector.tsx`](apps/web/src/world/CameraDirector.tsx), [`apps/web/src/world/FirstPersonCamera.tsx`](apps/web/src/world/FirstPersonCamera.tsx), [`apps/web/src/world/Player.tsx`](apps/web/src/world/Player.tsx) |
 | **Quest markers wrong / missing / misplaced** | [`apps/web/src/world/QuestMarkerDirector.tsx`](apps/web/src/world/QuestMarkerDirector.tsx), [`apps/web/src/world/QuestMarkerHud.tsx`](apps/web/src/world/QuestMarkerHud.tsx), [`apps/web/src/world/questMarkerResolver.ts`](apps/web/src/world/questMarkerResolver.ts) |
 | **Concept credit not given / learning gate won't open** | [`packages/runtime/src/learner.ts`](packages/runtime/src/learner.ts), [`packages/runtime/src/engine/ctx.ts`](packages/runtime/src/engine/ctx.ts) |
-| **Micro / Standing / heat / threads state wrong** | [`packages/contracts/src/field.ts`](packages/contracts/src/field.ts), [`packages/runtime/src/fieldState.ts`](packages/runtime/src/fieldState.ts), [`packages/runtime/src/content/day1/reactive.ts`](packages/runtime/src/content/day1/reactive.ts) — **not** `learner.ts` (that owns the macro lifecycle only) |
-| **CP1 / debrief assessment selection** | [`packages/runtime/src/assessment/gate.ts`](packages/runtime/src/assessment/gate.ts), [`packages/runtime/src/assessment/selectDebrief.ts`](packages/runtime/src/assessment/selectDebrief.ts), [`packages/runtime/src/assessment/questionBank.ts`](packages/runtime/src/assessment/questionBank.ts); the `VITE_CP1_ALLOW_DRAFT_BANK` flag in [`apps/web/src/pages/Play.tsx`](apps/web/src/pages/Play.tsx) selects the draft vs. production bank |
-| **Open-response grading / rubric resolution** | [`apps/api/src/grading/`](apps/api/src/grading/), [`packages/runtime/src/assessment/openResponseRegistry.ts`](packages/runtime/src/assessment/openResponseRegistry.ts), [`packages/runtime/src/assessment/rubricResolver.ts`](packages/runtime/src/assessment/rubricResolver.ts) |
+| **Micro / Standing / heat / threads state wrong** | [`packages/contracts/src/field.ts`](packages/contracts/src/field.ts), [`packages/runtime/src/fieldState.ts`](packages/runtime/src/fieldState.ts), [`packages/chapter-boston/src/day1/reactive.ts`](packages/chapter-boston/src/day1/reactive.ts) — **not** `learner.ts` (that owns the macro lifecycle only) |
+| **CP1 / debrief assessment selection** | [`packages/runtime/src/assessment/gate.ts`](packages/runtime/src/assessment/gate.ts), [`packages/runtime/src/assessment/selectDebrief.ts`](packages/runtime/src/assessment/selectDebrief.ts), [`packages/chapter-boston/src/checkpoints/cp1Bank.ts`](packages/chapter-boston/src/checkpoints/cp1Bank.ts); the `VITE_CP1_ALLOW_DRAFT_BANK` flag in [`apps/web/src/pages/Play.tsx`](apps/web/src/pages/Play.tsx) selects the draft vs. production bank |
+| **Open-response grading / rubric resolution** | [`apps/api/src/grading/`](apps/api/src/grading/), [`packages/chapter-boston/src/openResponse.ts`](packages/chapter-boston/src/openResponse.ts), [`packages/runtime/src/assessment/rubricResolver.ts`](packages/runtime/src/assessment/rubricResolver.ts) |
 | **Stealth / watchers / chase** | [`apps/web/src/world/WatcherDirector.tsx`](apps/web/src/world/WatcherDirector.tsx), [`apps/web/src/world/ChaseDirector.tsx`](apps/web/src/world/ChaseDirector.tsx), [`apps/web/src/world/chaseModel.ts`](apps/web/src/world/chaseModel.ts), [`apps/web/src/world/chaseFieldGating.ts`](apps/web/src/world/chaseFieldGating.ts) |
 | **Missing / black / wrong assets** | asset pipeline verify + sync in [`assets/pipeline/`](assets/pipeline/) and the **Imported Visible World** rule ([`.cursor/rules/imported-visible-world-assets.mdc`](.cursor/rules/imported-visible-world-assets.mdc)) — production never renders a primitive fallback |
 | **Save / replay determinism / drift** | [`packages/contracts/src/save.ts`](packages/contracts/src/save.ts), [`packages/runtime/src/seed.ts`](packages/runtime/src/seed.ts) |
@@ -132,9 +151,9 @@ Start at the symptom; open the listed owner(s) first.
   authored patrols + player state + attempt seed (tested in the `collisionLos`,
   `chaseModel`, `chaseFieldGating` suites under
   [`apps/web/src/world/__tests__/`](apps/web/src/world/__tests__/)).
-- The content artifact ([`packages/runtime/src/content/generated/act1OpenResponseContent.generated.ts`](packages/runtime/src/content/generated/act1OpenResponseContent.generated.ts))
+- The content artifact ([`packages/chapter-boston/src/generated/act1OpenResponseContent.generated.ts`](packages/chapter-boston/src/generated/act1OpenResponseContent.generated.ts))
   is **generated, hash-validated, and never hand-edited** — regenerate from
-  `content/boston/act1/` via `pnpm --filter @pa/runtime content:compile`.
+  `content/boston/act1/` via `pnpm --filter @pa/chapter-boston content:compile`.
 
 ---
 
