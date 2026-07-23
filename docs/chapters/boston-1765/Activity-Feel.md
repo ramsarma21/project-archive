@@ -2,7 +2,7 @@
 
 **Status: the presentation authority for how every activity *looks, feels, and stays distinct* while it teaches.** The other docs say *what* each activity does and *what concept* it carries; this one says *how it plays on screen* — camera, tempo, input feel, the one unmistakable sight-and-sound, the period flavor, and how the teaching is **visible in the doing**. Its job is to guarantee that ~80 things to do read as ~80 *different* moments, not one verb reskinned.
 
-**Companions:** activities = `Act-1-Activity-Expansion.md`; mechanics = `Boston-Mechanics-Spec.md`; camera/feedback grammar = `Interaction-Spec.md` §5/§9 + `Production.md` §2A; rigs = `apps/web/src/world/MechanicRigs.tsx`; audio = `apps/web/public/audio/` (`press-shop`, `church-bell`, `market-clatter`, `gull-cry`, `harbor-lap`, `cart-passby`, `street-murmur`, `door-creak`, `dog-bark`, `wind-gusts`, `rain-bed`, `room-tone`, `church-hush`).
+**Companions:** activities = `Activity-Expansion.md`; mechanics = `Mechanics-Spec.md`; camera/feedback grammar = `Interaction-Spec.md` §5/§9 + `Production.md` §2A; rigs = `apps/web/src/world/MechanicRigs.tsx`; audio = `apps/web/public/audio/` (`press-shop`, `church-bell`, `market-clatter`, `gull-cry`, `harbor-lap`, `cart-passby`, `street-murmur`, `door-creak`, `dog-bark`, `wind-gusts`, `rain-bed`, `room-tone`, `church-hush`).
 
 **Anti-sameness law:** no two adjacent activities may share the same *camera + tempo + primary-input* triple. If they do, one must change a lever. Distinctiveness is a **design requirement**, tracked in the variety matrix (§2).
 

@@ -4,7 +4,7 @@
 **Product horizon:** Full Texas Grade 8 U.S. History course through 1877  
 **Validation MVP:** Boston Mission Day 1  
 **First content milestone:** Boston on the Brink, four Mission Days and Mission Debrief  
-**Primary source documents:** `Project-Archive-v3.md`, `Day-1.md`, `Day-Template.md`, `Interaction-Spec.md`, `Backend-AI-System.md`, and `Localhost-Text-Slice-Spec.md`
+**Primary source documents:** `Project-Archive-v3.md`, `Day-1.md`, `Chapter-Day-Template.md`, `Interaction-Spec.md`, `Backend-AI-System.md`, and `Localhost-Text-Slice-Spec.md`
 
 ## 1. Purpose
 

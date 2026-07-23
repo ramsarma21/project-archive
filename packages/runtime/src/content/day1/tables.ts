@@ -2,7 +2,7 @@ import { CONCEPTS, type ConceptId, type ExposureType, type ExposureProvenance } 
 
 // ---- Tracked exposure registry (spec §23). Only these IDs increment gates. ----
 // Every def carries provenance: the authored recall cue naming the concrete
-// world moment that delivered it (Boston-Learning-Ledger-Spec §2). The Archive
+// world moment that delivered it (Learning-Ledger-Spec §2). The Archive
 // hint engine (R7) may only cue moments this student actually engaged.
 export interface ExposureDef {
   exposureId: string;
@@ -42,7 +42,7 @@ export const RETRY_EXPOSURES: Record<ConceptId, ExposureDef> = {
   [CONCEPTS.REPRESENTATION]: { exposureId: "REP.RETRY.MASSACHUSETTS_INSTRUCTION", concept: CONCEPTS.REPRESENTATION, type: "ARTICLE", provenance: { sourceId: "RETRY-rep", sourceKind: "EVENT", label: "the Massachusetts instruction you reread" } },
 };
 
-// ---- Found-History macro support (Act-1-Environmental-Lore Tier A). ----
+// ---- Found-History macro support (Environmental-Lore Tier A). ----
 // Free-roam knowledge inspects arrive as FIELD_REACTIVE_COMPLETED with the
 // placement id as sourceId. Tier-A placements additionally reinforce a
 // required macro: the Ctx bridges them to these tracked exposures (idempotent

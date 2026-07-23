@@ -13,7 +13,7 @@
 
 **Confirmed: zero stealth/detection/heat/stamina/chase/patrol infrastructure exists today.** This plan is a from-scratch systems build on top of solid movement/collision/traversal foundations.
 
-Design authority: `Gameplay-Design.md` (§7 stealth, §8 reactive world, §11A flow). Build script: `Day-1-v2.md`. Micro content: `Act-1-Micro-Concepts.md`.
+Design authority: `Gameplay-Design.md` (§7 stealth, §8 reactive world, §11A flow). Build script: `Day-1-Build-Script.md`. Micro content: `Micro-Concepts.md`.
 
 ---
 
@@ -62,7 +62,7 @@ Every activity, its type, its **build status** (🟢 exists / 🟡 extend existi
 | Escape sequence + stamina; shake or get caught → chewed-out → released later | 🔴 |
 | Misdirection (bell/gulls/dropped object) | 🔴 (reuses flavor interactables) |
 
-> **The exact placed content** for everything below (and above) — coordinates, assets, triggers, dialogue, states — is enumerated in **`Act-1-World-Content.md`**, organized by zone.
+> **The exact placed content** for everything below (and above) — coordinates, assets, triggers, dialogue, states — is enumerated in **`World-Content.md`**, organized by zone.
 
 ## A.5 Reactive world (optional, non-carrier — Gameplay-Design §8)
 | Activity | Status |

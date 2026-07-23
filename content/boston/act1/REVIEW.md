@@ -3,7 +3,7 @@
 **Status:** `AUTHOR_DRAFT` / `HISTORICAL_REVIEW_PENDING`. Authored with Claude Opus 4.8.
 **Scope:** Content and validation only. No runtime, API, or web-integration files were touched. This package is safe to review independently of the presentation, rubric-runtime, grading-service, and open-response-UI work owned by other workers.
 
-> This is a draft for historical and curriculum review. Nothing here is SME-approved, nothing scores mastery, and nothing gates the story. TEKS tags are placeholders. Player-facing text obeys the project no-em-dash fiction rule (`Day-1.md` §5, `Day-Template` L12).
+> This is a draft for historical and curriculum review. Nothing here is SME-approved, nothing scores mastery, and nothing gates the story. TEKS tags are placeholders. Player-facing text obeys the project no-em-dash fiction rule (`Day-1.md` §5, `Chapter-Day-Template` L12).
 
 ---
 
@@ -133,7 +133,7 @@ These do not block the systems build; they block flipping any status to approved
 
 1. **Non-importation dating (highest priority).** `NONIMPORTATION_AGREEMENT` claim 2 carries a dating flag: a signed, widely subscribed Boston non-importation agreement is best documented in 1767 to 1770. The 1765-dated signed sheet compresses this for the Act 1 setting. SME to confirm whether to soften the artifact to "emerging in 1765" wording. The transfer item (`OR.NONIMPORT_TRANSFER`) does not depend on the exact date.
 2. **Citation confirmation.** All `DOCUMENTED` claims carry `citationHint`s (for example Stamp Act 1765, 5 Geo. III c. 12; Otis 1761 writs challenge; Oliver effigy Aug 14 to 15, 1765). SME to verify exact references and grade-level framing. No external URLs were fabricated.
-3. **TEKS tags.** All are placeholders (draft, unconfirmed) pending the Grade 8 adoption confirmation already flagged in `Act-1-Micro-Concepts.md`.
+3. **TEKS tags.** All are placeholders (draft, unconfirmed) pending the Grade 8 adoption confirmation already flagged in `Micro-Concepts.md`.
 4. **Representative artifacts.** Every poster/broadside is a plausible period reconstruction, not a transcription of a specific surviving document; flagged `REPRESENTATIVE` so educator-facing citations can say so.
 5. **Perspective vs. endorsement.** `OR.CLARKE_LOYALIST` requires the student to state that they are voicing Clarke's view, not endorsing it. SME to confirm the framing reads as intended for the target grade.
 

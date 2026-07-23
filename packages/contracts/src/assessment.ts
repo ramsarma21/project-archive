@@ -34,7 +34,7 @@ export interface AssessmentItem {
   correctOptionId: string;
   approvalStatus: AssessmentApprovalStatus;
   difficulty: AssessmentDifficulty;
-  // Authored second-tier hint (Boston-Archive-Spec R6 step 2): restates the
+  // Authored second-tier hint (Archive-Spec R6 step 2): restates the
   // principle in different words without giving the answer away.
   explicitHint?: string;
 }
@@ -84,7 +84,7 @@ export interface EnrichmentOutcomeRecord {
 }
 
 // ============================================================================
-// The mastery-gate ladder (Boston-Archive-Spec R6/R7, locked 2026-07-21).
+// The mastery-gate ladder (Archive-Spec R6/R7, locked 2026-07-21).
 // The runtime computes this after each wrong answer; the presenter enforces
 // the read-dwell + pause friction and the disabled options. Passage is always
 // guaranteed — brute-forcing is merely slow.

@@ -1,4 +1,4 @@
-// Verbatim player-facing strings from Localhost-Text-Slice-Spec.md §34 and Day-1.md.
+// Verbatim player-facing strings from docs/archive/2026-07/Localhost-Text-Slice-Spec.md §34 and docs/chapters/boston-1765/Day-1.md.
 // No em dashes anywhere in in-fiction text (hard rule). Design prose is never shown.
 
 export const TEXT = {

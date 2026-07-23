@@ -6,7 +6,7 @@ import { STAGE_ANCHORS } from "./choreography.js";
 import { getDocumentTexture } from "./documentTextures.js";
 import { FittedGlb, ImportedTexturedProp } from "./Character.js";
 
-// World-side execution rigs for the Day 1 gamified mechanics (Production.md §1/§3:
+// World-side execution rigs for the Day 1 gamified mechanics (docs/engine/Production.md §1/§3:
 // confirm the action by animating the OBJECT; the character holds a generic pose).
 // Every rig is driven by the presentational "pa:mechanic-visual" browser event that
 // the mechanic controls already dispatch, so runtime/event semantics stay untouched.

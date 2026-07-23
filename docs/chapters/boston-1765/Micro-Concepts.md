@@ -7,7 +7,7 @@ This is the "curated dozen-ish per Act" locked in `Gameplay-Design.md` §3 — q
 **Reading this doc:**
 - **Tier 1 (macro)** = the three required, path-invariant carriers, unchanged: **①** `RCC.DEBT_POLICY_INTRO` (war debt → revenue) · **②** `RCC.STAMP_INTERNAL_INTRO` (Stamp = internal tax on paper) · **③** `RCC.REPRESENTATION_CAUSE` (no taxation without representation) · plus the required *experience* `RCC.ORGANIZED_RESISTANCE_EVENT`. Micro concepts **enrich** one of these; they never replace or carry them.
 - **Logs when** = the **tracked interaction** that credits the micro (focus-read, finished optional encounter, handled tagged object). Proximity / earshot / walking past **never** logs (FR-6, §3). Ambient chatter and posters only *seed* it in the air until a tracked interaction fires.
-- **Delivered by** references the surfaces in `Day-1-v2.md` (beats + the Appendix reactive layer) and the archetype rigs already in `animationManifest.ts` (`dockhand`, `agitator`, `taxclerk`, `towncrier`, `goodwife`).
+- **Delivered by** references the surfaces in `Day-1-Build-Script.md` (beats + the Appendix reactive layer) and the archetype rigs already in `animationManifest.ts` (`dockhand`, `agitator`, `taxclerk`, `towncrier`, `goodwife`).
 - **TEKS tags are DRAFT** — proposed for the curriculum SME to confirm/approve before the bank is versioned (FR-8: content is authored/approved, never model-generated). Codes below use the Grade 8 U.S. History strand; verify exact codes/wording against the current adoption.
 
 **Design invariants honored:** ≥1 *reliable* tracked surface per concept (so it can log at all), most with 2-3 so different play styles reach different ones; every concept ties to a macro it deepens; all deterministic; none block the spine.

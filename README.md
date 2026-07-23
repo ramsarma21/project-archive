@@ -1,84 +1,86 @@
 # Project Archive
 
-Project Archive is a cinematic, story-driven history game that teaches the required Grade 8 United States history curriculum (Texas TEKS, U.S. history through 1877) by letting students *live* history instead of studying it. Players work an ordinary job in a real historical city while fixed historical events unfold around them, and a diegetic futuristic "Archive" System provides concise exposition and assessment in-world.
+Project Archive is a cinematic, story-driven history game that teaches the required
+Grade 8 United States history curriculum (Texas TEKS, U.S. history through 1877) by
+letting students *live* history instead of studying it. Players work an ordinary job
+in a real historical city while fixed historical events unfold around them, and a
+diegetic futuristic "Archive" System provides concise exposition and assessment
+in-world.
 
-This repository contains the canonical **Game Design Document** ([`Project-Archive-v3.md`](Project-Archive-v3.md)) — the production source of truth for gameplay, learning systems, runtime architecture, content pipeline, and the fully specified Boston reference chapter.
+The core promise: **no two players play the same game, but every player learns the
+same required history.**
 
-## The Pitch
+## Status: built
 
-You are inserted into a historical city under a believable cover identity — a printer's apprentice in 1765 Boston, for example. You take deliveries, talk to neighbors, run errands, and witness the events that shaped a nation. History is fixed: you cannot stop the Stamp Act, the Boston Massacre, or the Tea Party. But *how* you move through each day — the encounters you stumble into, the routes you take, the people you talk to — is different almost every time.
+The game is implemented and playable, not a paper design. The Boston 1765 reference
+chapter is built end to end:
 
-The core promise: **no two players play the same game, but every player learns the same required history.**
+- **Milestones M0–M5 complete** — foundations, stamina + chase, watchers/suspicion/
+  heat, Standing + reactive world, content + assets, and micro tracking + the CP1
+  debrief.
+- **Cognitive learning core** — event-sourced deterministic runtime with the full
+  exposure → gate → understanding → demonstration → reassessment lifecycle, the
+  two-tier concept ledger, and seeded, reproducible assessment selection.
+- **World v3** — the "big street" district with **36 explorable interiors**, all
+  visible production geometry imported through the asset pipeline.
+- **All suites green** — workspace typechecks, runtime tests, web (world/collision/
+  stealth/chase) tests, content validators, API tests, and the browser QA harnesses
+  (zero game/page/HTTP/WebGL errors, non-black rendering).
 
-## Two Design Pillars
+## Quickstart
 
-### 1. Practically impossible to play the exact same game twice
+```sh
+pnpm install
+pnpm dev            # runs @pa/api + @pa/web concurrently
 
-As you travel between objectives, the world interrupts you with short, fully authored **Living Historical Encounters** — a customs inspection, an overturned cart, a rumor in the market, a changed meeting place, a crowd forming around a newspaper. These are selected at runtime from a large authored bank, combined with route order, dialogue variants, and deliberate silence.
-
-The design does not claim literal infinity (the content bank is finite and honest about it). Instead it defines a **verifiable uniqueness contract**:
-
-- A per-player **no-repeat guarantee** across the first several chapter replays whenever a legal alternative exists.
-- A cohort target keeping the probability of *any* two players sharing an identical system-selected playthrough below 1% across 10,000 representative runs.
-- A single deterministic, seeded selection function so runs stay reproducible for QA while feeling spontaneous to players.
-
-### 2. Everyone learns the same thing anyway
-
-Replay variation only changes optional texture. It can never alter:
-
-- Fixed historical facts, dates, participants, and outcomes.
-- The required curriculum (every player is guaranteed the same instruction via versioned **Required Carrier Contracts**).
-- The assessment standard and cognitive demand.
-
-Optional encounters may *reinforce* learning but can never be the sole carrier of a required concept, and they are never scored.
-
-## How a Session Plays
-
+# verify
+pnpm typecheck
+pnpm test
+pnpm --filter @pa/web build
 ```
-Anchor briefing  ->  Job objective  ->  Travel (encounter or silence)
-      ->  Required conversation / evidence  ->  Historical event
-      ->  Archive Sync (in-world check)  ->  Return to anchor  ->  End day
-```
 
-- **Mission Day** — the core repeatable unit: one job, a fixed historical event, a required Archive Sync, and a return.
-- **Chapter** — one place, one driving question, one anchor character, several Mission Days, ending in a Mission Debrief.
-- **Season** — four chapters and a transfer arc, ending in a STAAR-style Season Review.
+Google login and save persistence need the API configured (see `.env.example` and
+`infra/README.md`). The full verification matrix is in
+[`docs/process/QA-PLAYBOOK.md`](docs/process/QA-PLAYBOOK.md).
 
-## Key Systems
+## Documentation
 
-- **AI Director** — chooses the single best *approved* next experience at each decision point. It selects from human-authored options only; it never generates or rewrites dialogue, facts, questions, or history.
-- **Event Manager** — the sole authority on what is currently legal, and the coordinator of all state transactions.
-- **World State, Learner Model, and Replay Profile** — separate owners for historical truth, lightweight learning evidence, and non-learning replay history, respectively.
-- **The Archive** — an in-fiction holographic System that delivers exposition, formative Syncs, Debriefs, and Reviews without breaking immersion.
-- **Assessment Runtime** — owns forms, reviewed item order, and immutable official records, kept independent of replay state, route, and support history for fairness.
+Start with [`ARCHITECTURE.md`](ARCHITECTURE.md) — system overview, source-of-truth
+pointers, the symptom → owning-module bug-finding table, and the determinism
+contract. Then:
 
-## Design Guarantees
+### `docs/design/` — product & design intent
+- [`Project-Archive-v3.md`](docs/design/Project-Archive-v3.md) — canonical Game Design Document.
+- [`PRODUCT-REQUIREMENTS.md`](docs/design/PRODUCT-REQUIREMENTS.md) — product requirements.
+- [`Gameplay-Design.md`](docs/design/Gameplay-Design.md) — the game built around the learning core.
+- [`World-Design-Bible.md`](docs/design/World-Design-Bible.md) — world look/layout/atmosphere law.
+- [`Interaction-Spec.md`](docs/design/Interaction-Spec.md) — interaction, HUD, timing, micro rules.
+- [`Curriculum-World-Map.md`](docs/design/Curriculum-World-Map.md) — TEKS ownership across eras.
+- [`BrainLift.md`](docs/design/BrainLift.md) — design thinking / provenance.
 
-- **Authored, not generated.** No player-facing content is generated at runtime. Everything is written, reviewed, voiced, and packaged before release.
-- **Deterministic and reproducible.** Fixed inputs (package, seed, state, selector version) always produce the same run.
-- **Playable offline.** The complete required path works with no network and no runtime AI.
-- **Privacy-first.** Replay and telemetry data exclude raw responses, learner-state labels, and direct identifiers by default.
-- **Evidence-gated release.** Requirements are tracked with explicit status; the document does not claim validation that has not yet been produced.
+### `docs/engine/` — built-state & backend specs
+- [`Backend-AI-System.md`](docs/engine/Backend-AI-System.md) — backend/AI architecture.
+- [`Production.md`](docs/engine/Production.md) — asset pipeline + no-mocap laws.
+- [`World-Built-State.md`](docs/engine/World-Built-State.md) — the 3D world as actually built.
+- [`Learning-Ledger-Spec.md`](docs/engine/Learning-Ledger-Spec.md) — learner state & contract extension.
+- [`Assessment-Content-Gap.md`](docs/engine/Assessment-Content-Gap.md) — assessment content status.
+- [`Grading-Benchmark.md`](docs/engine/Grading-Benchmark.md) — formative-grading model selection.
 
-## Reference Chapter: Boston, 1765–1774
+### `docs/chapters/boston-1765/` — the worked chapter
+- [`Day-1.md`](docs/chapters/boston-1765/Day-1.md) — the canonical behavior fixture.
+- [`Day-1-Build-Script.md`](docs/chapters/boston-1765/Day-1-Build-Script.md) — per-beat build script.
+- Plus world content, micro concepts, environmental lore, activity/mechanics/archive/quest/STAAR specs.
 
-The document fully specifies **"Boston on the Brink"** as the gold-standard reference design: four Mission Days spanning the Stamp Act crisis, the Boston Massacre, the Boston Tea Party, and the Intolerable Acts / Port Act, anchored by Abigail Mercer's print shop and a 32-family Living Historical Encounter bank.
+### `docs/process/` — how to build more
+- [`CHAPTER-AUTHORING.md`](docs/process/CHAPTER-AUTHORING.md) — build a new chapter with only content + assets.
+- [`QA-PLAYBOOK.md`](docs/process/QA-PLAYBOOK.md) — every suite/harness and its exact command.
+- [`Chapter-Day-Template.md`](docs/process/Chapter-Day-Template.md) — reusable Mission Day laws and beat patterns.
+- [`Open-Response-Authoring.md`](docs/process/Open-Response-Authoring.md) — open-response content authoring.
 
-## Repository Contents
+### `docs/archive/2026-07/` — historical build briefs and integration handoffs
+Point-in-time planning and milestone-integration notes, kept for provenance.
 
-| File | Description |
-| --- | --- |
-| [`Project-Archive-v3.md`](Project-Archive-v3.md) | Canonical game design document (vision, systems, architecture, production, and the Boston reference chapter). |
-| [`Backend-AI-System.md`](Backend-AI-System.md) | Implementation-ready backend and AI architecture: stack, services, schemas, deterministic Director, learning lifecycle, carrier rerouting, persistence, APIs, validation, and build order. |
-| [`Localhost-Text-Slice-Spec.md`](Localhost-Text-Slice-Spec.md) | Prescriptive, zero-autonomy coding directive for the Google-login localhost text vertical slice, built on a headless runtime that can later use the Three.js presenter unchanged. |
-| [`Day-Template.md`](Day-Template.md) | Reusable laws and beat patterns for authoring every Mission Day. |
-| [`Interaction-Spec.md`](Interaction-Spec.md) | Codeable interaction, HUD, timing, feedback, and curriculum micro-specification. |
-| [`Day-1.md`](Day-1.md) | Worked Boston Day 1 scene plan and vertical-slice reference flow. |
+## Curriculum target
 
-## Status
-
-This repository currently holds the design specification. Boston is a complete core-spine reference design; encounter ActionSpecs, final assets, and validation/pilot evidence are tracked as pending package deliverables in the document's requirements matrix.
-
-## Curriculum Target
-
-Texas Grade 8 Social Studies — United States history through 1877, aligned to current STAAR-eligible content TEKS.
+Texas Grade 8 Social Studies — United States history through 1877, aligned to
+current STAAR-eligible content TEKS.

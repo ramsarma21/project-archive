@@ -1,6 +1,6 @@
 # Interaction & UX Micro-Spec (implementation-ready)
 
-**Purpose.** The design docs say *what* and *why*; this doc says *exactly how each interaction behaves* so it can be coded without re-deriving intent from prose. Every rule the playtests pinned down lives here as a **codeable statement + parameters**. `Backend-AI-System.md` owns the concrete runtime/state implementation; `Day-1.md` (scene), `Day-Template.md` (laws), and `Production.md` (build/art) are the rationale; when a rule here changes, update the matching spot there too.
+**Purpose.** The design docs say *what* and *why*; this doc says *exactly how each interaction behaves* so it can be coded without re-deriving intent from prose. Every rule the playtests pinned down lives here as a **codeable statement + parameters**. `Backend-AI-System.md` owns the concrete runtime/state implementation; `Day-1.md` (scene), `Chapter-Day-Template.md` (laws), and `Production.md` (build/art) are the rationale; when a rule here changes, update the matching spot there too.
 
 **Conventions in this doc:**
 - **`[TUNABLE]`** = a starting value to feel-test in the slice, not sacred.
@@ -137,7 +137,7 @@ on become ADJACENT:         NPC issues challenge line → OPENS the choice     /
 
 ## 6. Gamified execution of action-bearing choices (L17)
 
-**Rationale:** `Day-1.md` §5 (L17); Day-Template L17. **Any choice that involves real movement/animation** (not pure dialogue) gets a short gamified execution. Camera by fit; **effort-tier (unfailable) by default**, graded only where the outcome must mean something.
+**Rationale:** `Day-1.md` §5 (L17); Chapter-Day-Template L17. **Any choice that involves real movement/animation** (not pure dialogue) gets a short gamified execution. Camera by fit; **effort-tier (unfailable) by default**, graded only where the outcome must mean something.
 
 | Action | Camera | Input pattern | Tier | Notes |
 |---|---|---|---|---|
@@ -225,7 +225,7 @@ on become ADJACENT:         NPC issues challenge line → OPENS the choice     /
 
 ## 12. Curriculum guarantees the UX must respect
 
-**Rationale:** `Day-1.md` §2C/§2D, Day-Template L2/L3/L20.
+**Rationale:** `Day-1.md` §2C/§2D, Chapter-Day-Template L2/L3/L20.
 - **Payload is fixed & path-invariant:** per concept **3 tracked exposures → 1 understanding Sync → 1 day-of demonstration (a game action, not a Sync)**. Day 1: **12 tracked + 3 Syncs**.
 - **Reroute (HARD):** a missed *exposure* or an **unfired** demonstration **reroutes** to another beat (demonstrations → next applied opportunity, **B12 catch-all**). Skipping a tracked read (broadside fly-by) or avoiding an encounter (curt Clarke, no conceal) just **shifts the delivery**, never drops the curriculum. Stakes still land (relationships/world). **Note the split:** reroute is for a demonstration that *never fires*; a demonstration that *does* fire but is answered wrong is **not** rerouted — it self-corrects in-place (forced correction, §6).
 - **Reroute is TYPE-AWARE (state to track):** per concept, store `{ occasions:int, types:set<scene|convo|article|hands_on> }`. The L2 gate is `occasions ≥ 3 AND |types| ≥ 2`. On shortfall, the Director fires a fallback that **fills the missing *type*** (not just count). Maintain a **typed fallback pool** anchored on unavoidable beats (guaranteed delivery/handling = hands-on, fixed event = scene, day-close = convo, Director-placeable posted read = article). Design & test the **fully-avoidant path**: a player who only reads, only talks, or skips reads must still reach 3 occasions / ≥2 types. Spread is best-effort (degrades to a denser back-half); the guarantee is absolute. (`Day-1.md` §7A.)
@@ -234,5 +234,5 @@ on become ADJACENT:         NPC issues challenge line → OPENS the choice     /
 ---
 
 ## 13. Changelog
-- v0.2 — **playtest-3 additions.** §1: **gold-marker redirect** (§1.2a). §2: **all-day ambient chatter** with speech glyph, never tracked (§2.1). §6: **forced in-place correction** for already-Understood misses with a **directional nudge, not the answer** (demonstration or reassessment), plus the first-understanding exception. §8: **persistent diegetic day-clock** (non-numeric daylight meter), **clock advances during a beat by its `timeCost`**, **escalating time-warnings**, and the **must-acknowledge "shops closing" interrupt.** §9: **Notes flicker fires once at first Understanding only** (no re-notify on demonstration/reassessment). §10/§11: effect-tag vocab expanded (`loses respect`, `earns a favor`, `cools Abigail`) and tied to the **dimension that fits each character** (Respect/Obligation/Political read/Trust), never blanket trust. (Diegetic-voice + no-em-dash + frame-the-ask + discriminate-on-concept live in `Day-1.md` §5 / Day-Template.)
+- v0.2 — **playtest-3 additions.** §1: **gold-marker redirect** (§1.2a). §2: **all-day ambient chatter** with speech glyph, never tracked (§2.1). §6: **forced in-place correction** for already-Understood misses with a **directional nudge, not the answer** (demonstration or reassessment), plus the first-understanding exception. §8: **persistent diegetic day-clock** (non-numeric daylight meter), **clock advances during a beat by its `timeCost`**, **escalating time-warnings**, and the **must-acknowledge "shops closing" interrupt.** §9: **Notes flicker fires once at first Understanding only** (no re-notify on demonstration/reassessment). §10/§11: effect-tag vocab expanded (`loses respect`, `earns a favor`, `cools Abigail`) and tied to the **dimension that fits each character** (Respect/Obligation/Political read/Trust), never blanket trust. (Diegetic-voice + no-em-dash + frame-the-ask + discriminate-on-concept live in `Day-1.md` §5 / Chapter-Day-Template.)
 - v0.1 — created from the Day-1 playtest to consolidate every micro-decision into codeable rules + tunable params: marker/strip state machines, glyph grammar, **tracked-read gate (interact→1st person→read)**, **Clarke adjacency-challenge trigger (either side)**, camera grammar, **gamified-execution input table**, **beat-pacing breather (~7s) + ≥2-interaction Sync spacing**, **time model (traversal free, activities cost)**, feedback cards/flickers (positive-only), effect tags, stat model, and the curriculum guarantees the UX must respect.

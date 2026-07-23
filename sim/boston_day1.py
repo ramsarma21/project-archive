@@ -3,8 +3,8 @@
 
 This is a no-render prototype for testing game flow, not final dialogue or history
 media. It predates the current four-errand, three-Sync, three-stage Day 1 in
-``Day-1.md`` and must not be used as the implementation fixture for
-``Backend-AI-System.md`` until it is rewritten against those current contracts.
+``docs/chapters/boston-1765/Day-1.md`` and must not be used as the implementation fixture for
+``docs/engine/Backend-AI-System.md`` until it is rewritten against those current contracts.
 It models:
   * real job actions and route pressure,
   * bounded unpredictable outcomes that are deterministic for a fixed seed,

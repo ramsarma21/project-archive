@@ -1,5 +1,5 @@
 // Stable identifiers for the Boston Day 1 text slice.
-// These are semantically immutable per Localhost-Text-Slice-Spec.md §22.
+// These are semantically immutable per docs/archive/2026-07/Localhost-Text-Slice-Spec.md §22.
 
 export const PACKAGE_ID = "PA.BOSTON.DAY1.TEXT.v1";
 export const SEASON_ID = "PA.SEA01.COLONIES.v1";

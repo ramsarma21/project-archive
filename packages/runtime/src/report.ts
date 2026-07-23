@@ -50,7 +50,7 @@ function stageOf(row: { understanding: string; demonstration: string; distinctOc
 }
 
 // A concept is "engaged" iff it has >=1 tracked exposure. The CP debrief samples
-// MICRO concepts only from this set (Boston-Learning-Ledger-Spec §4 fairness
+// MICRO concepts only from this set (Learning-Ledger-Spec §4 fairness
 // rule: never test what the world didn't show this student). READY/demonstration
 // gating stays for MACRO_GATED understanding only.
 export function engagedConcepts(learner: LearnerState): ConceptId[] {

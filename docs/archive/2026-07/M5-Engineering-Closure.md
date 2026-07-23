@@ -45,5 +45,5 @@ and stable Act transition are implemented and verified.
   `test-results/m5-browser-qa/`; machine report:
   `test-results/m5-browser-qa/report.json`.
 
-See `M5-Assessment-Content-Gap.md` for the exact SME/content deliverables still
+See `Assessment-Content-Gap.md` for the exact SME/content deliverables still
 required before production assessment acceptance can be marked complete.

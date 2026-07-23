@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { InputRequest } from "@pa/contracts";
 import { DAY1_CUES } from "@pa/contracts";
-// Verbatim script strings (Localhost-Text-Slice-Spec.md §34) come straight from
+// Verbatim script strings (docs/archive/2026-07/Localhost-Text-Slice-Spec.md §34) come straight from
 // the runtime content module so the 3D papers can never drift from the script.
 import { TEXT } from "@pa/runtime";
 import { getProofSheetTexture } from "./proofSheetTexture.js";
@@ -656,7 +656,7 @@ const PAINTERS: Record<Exclude<DocumentId, "PIKE_PROOF_PLAIN" | "PIKE_PROOF_STAM
       ruleAcross(context, 44, width - 44, height - 108, 3, "#241d12");
       context.fillStyle = "#1f180e";
       context.textAlign = "center";
-      // Slogan per Day-1.md B4/B7: bold block type.
+      // Slogan per docs/chapters/boston-1765/Day-1.md B4/B7: bold block type.
       context.font = `700 92px ${SERIF}`;
       context.fillText("NO", width / 2, 235);
       context.font = `700 76px ${SERIF}`;

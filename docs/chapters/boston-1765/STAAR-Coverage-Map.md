@@ -151,7 +151,7 @@ Boston history *already contains* almost all of this; the shift is mostly **labe
 
 ## Impact on our existing docs
 
-- **Macro/micro ledger:** Act 1's three macro concepts already serve (4)(A). The content shift adds **per-Act macro carriers** for the Massacre/quartering/John-Adams (A2), Tea Party/town-meeting/Sam-Adams (A3), and Coercive Acts/Port Act/Lexington-Concord (A4) — plus **micro** for the individuals, women, POV, and grievances. `Act-1-Micro-Concepts.md` already covers several (writs, vice-admiralty, non-importation, Loyalist view, Andrew Oliver, port town); its **draft TEKS tags should be re-pointed** at the specific SEs above (esp. 4A/4B, 15(C), 21(A/B), 23(E), 3(A), 10(C)).
+- **Macro/micro ledger:** Act 1's three macro concepts already serve (4)(A). The content shift adds **per-Act macro carriers** for the Massacre/quartering/John-Adams (A2), Tea Party/town-meeting/Sam-Adams (A3), and Coercive Acts/Port Act/Lexington-Concord (A4) — plus **micro** for the individuals, women, POV, and grievances. `Micro-Concepts.md` already covers several (writs, vice-admiralty, non-importation, Loyalist view, Andrew Oliver, port town); its **draft TEKS tags should be re-pointed** at the specific SEs above (esp. 4A/4B, 15(C), 21(A/B), 23(E), 3(A), 10(C)).
 - **STAAR bank (open item):** author items **tagged to the SEs in the coverage tables**, weighted to the ● Full standards (4A, 4B, 20B, 21A/B, 3A, 10C, 11A, 23E, 15C). Checkpoint debriefs (CP1–CP4) sample the Act's engaged concepts; **CP4 (finale) should span the whole revolution-causes cluster** as the chapter-level assessment.
 - **Product structure:** record that Boston = the **Revolution chapter (~32% of assessed SEs)**; full-exam coverage implies **sibling chapters** for the other eras. Worth a note in `PRODUCT-REQUIREMENTS.md`.
 
@@ -193,6 +193,6 @@ Boston history *already contains* almost all of this; the shift is mostly **labe
 ## Open items
 
 1. Confirm the per-Act **macro-carrier additions** above (esp. A2 quartering + John Adams; A3 town meeting + Tea Party; A4 Port Act + Lexington/Concord + Washington) — these are new required-learning beats for Acts 2–4.
-2. Re-tag `Act-1-Micro-Concepts.md` to the specific assessed SEs (pending SME sign-off).
+2. Re-tag `Micro-Concepts.md` to the specific assessed SEs (pending SME sign-off).
 3. Author the SE-tagged STAAR bank weighted to the ● Full standards.
 4. Decide how hard to pursue the **⤴ Reach** standards (documents tradition, religious freedom, free enterprise) vs. leaving them clean for sibling chapters.

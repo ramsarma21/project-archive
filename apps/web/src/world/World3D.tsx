@@ -1308,7 +1308,7 @@ export function World3D(props: {
     !props.readPanelActive;
   const firstPersonMechanicId =
     props.request?.kind === "MECHANIC" ? props.request.promptId : "";
-  // Head-camera first person (Production.md §2A): the staged player body
+  // Head-camera first person (docs/engine/Production.md §2A): the staged player body
   // stays visible playing its authored clip and the camera rides its head
   // bone; the synthetic camera-space arms mount only for beats that opted
   // back into them (SYNTH_ARM_BEATS in FirstPersonCamera.tsx).

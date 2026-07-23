@@ -2,12 +2,12 @@
 
 **Status: the exact, placeable list of everything there is to DO in the Act 1 world (Boston, 14 Aug 1765).** Every entry has a real location (grounded in `apps/web/src/world/manifest.ts`), the asset/rig it uses (from the deployed inventory), its trigger, the interaction flow with **authored draft dialogue**, the micro it logs, the state it moves, its animation (no-mocap law), and its build hooks. This is what the world team builds against.
 
-**Companions:** design = `Gameplay-Design.md`; quests/NPC system = `Boston-Quests-and-NPCs.md`; **alive-world occupants + activity families (TEMPLATES; build the curated Act-1 subset) = `Act-1-Activity-Expansion.md`**; **look/feel/distinctiveness = `Act-1-Activity-Feel.md`**; mechanics = `Boston-Mechanics-Spec.md`; found-history inspectables = `Act-1-Environmental-Lore.md`; systems/assets/anim = `Act-1-Production-Plan.md`; spine beats = `Day-1-v2.md`; micro concepts = `Act-1-Micro-Concepts.md`.
+**Companions:** design = `Gameplay-Design.md`; quests/NPC system = `Quests-and-NPCs.md`; **alive-world occupants + activity families (TEMPLATES; build the curated Act-1 subset) = `Activity-Expansion.md`**; **look/feel/distinctiveness = `Activity-Feel.md`**; mechanics = `Mechanics-Spec.md`; found-history inspectables = `Environmental-Lore.md`; systems/assets/anim = `Act-1-Production-Plan.md`; spine beats = `Day-1-Build-Script.md`; micro concepts = `Micro-Concepts.md`.
 
 **Conventions:**
 - **Coords** are world `[x, y, z]` from the manifest. Town axis: **west = −x (wharf), east = +x (Liberty elm)**; **north row z ≈ −15, south row z ≈ +15, street center z ≈ 0**; north alley z ≈ −26.5; south alley/boardwalk z ≈ +26.5.
 - **Dialogue is authored draft** (final text = the localhost text-slice pass) but concrete — it shows *exactly* what each beat says.
-- **Tiers:** 🟩 spine (required, `Day-1-v2.md`) · 🟦 thread · 🟨 side-job/challenge · ⬜ knowledge/flavor/eavesdrop · 🟥 watcher/stealth.
+- **Tiers:** 🟩 spine (required, `Day-1-Build-Script.md`) · 🟦 thread · 🟨 side-job/challenge · ⬜ knowledge/flavor/eavesdrop · 🟥 watcher/stealth.
 - **Anim** obeys the no-mocap law (object animates; body holds a library clip). New clips flagged.
 
 ---
@@ -267,7 +267,7 @@ Cone *length* grows with the escalation clock (dusk). Concealment + crowd + Stan
 
 ## 10A. Living-route annotations (per quest)
 
-Every Thread/side-job/challenge is a **living route** (`Boston-Quests-and-NPCs.md` §2A), not a point-to-point errand: an **item to get/carry**, a **gauntlet** of traversal + stealth on the way, **optional density passed** en route, and (sometimes) an **owned route** it unlocks. Lore ids reference `Act-1-Environmental-Lore.md`; corridors reference the `MARKER_ANCHORS`.
+Every Thread/side-job/challenge is a **living route** (`Quests-and-NPCs.md` §2A), not a point-to-point errand: an **item to get/carry**, a **gauntlet** of traversal + stealth on the way, **optional density passed** en route, and (sometimes) an **owned route** it unlocks. Lore ids reference `Environmental-Lore.md`; corridors reference the `MARKER_ANCHORS`.
 
 | Quest | Item / target | Gauntlet (verbs on the route) | Passed on the way | Owned route unlocked |
 |---|---|---|---|---|
@@ -281,7 +281,7 @@ Every Thread/side-job/challenge is a **living route** (`Boston-Quests-and-NPCs.m
 | **CH-rooftop-run** | reach the elm by roof only | **climb/vault/hop/balance** chain (scaffold→elm), roof-board bridges | rooflines over the whole street | **owns the roof network** |
 | **CH-lose-the-watch** | shake a provoked patrol | **escape sequence** — break LOS, hold the gap, or reach a refuge (stamina) | refuge doorways, FLV misdirection (bell/gulls) | learns refuge points |
 
-**Rules kept:** items/gauntlets carry **micro only**; route density costs the **escalation clock**; micro logs only on the **tracked** fetch/read/complete; deterministic + bounded (a blown pass = heat/marked/lower Standing, never a dead-end). Owned routes persist in the runtime contract → surfaced by the Archive **Routes** reminder (`Boston-Archive-Spec.md` R3) → and are taken away by later **World Turns** (the port closes in Act 4).
+**Rules kept:** items/gauntlets carry **micro only**; route density costs the **escalation clock**; micro logs only on the **tracked** fetch/read/complete; deterministic + bounded (a blown pass = heat/marked/lower Standing, never a dead-end). Owned routes persist in the runtime contract → surfaced by the Archive **Routes** reminder (`Archive-Spec.md` R3) → and are taken away by later **World Turns** (the port closes in Act 4).
 
 ---
 

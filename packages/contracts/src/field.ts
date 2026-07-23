@@ -199,7 +199,7 @@ export interface ReactiveCompletionEffects {
   }[];
   clockUnits?: number;
   rumors?: string[];
-  // Owned-route unlocks (Boston-Quests-and-NPCs §2A): completing a living
+  // Owned-route unlocks (Quests-and-NPCs §2A): completing a living
   // route grants a persistent, reusable capability. The routeId lands in
   // world.routes as UNLOCKED; the label appears in the Archive ROUTES pane
   // and powers R3 reminders.

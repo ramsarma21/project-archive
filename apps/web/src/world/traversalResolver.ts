@@ -1,4 +1,4 @@
-// Contextual-F traversal resolver (Day-1-3D-World-Spec §traversal input). Pure
+// Contextual-F traversal resolver (World-Built-State §traversal input). Pure
 // and deterministic. F is object-bound only:
 //
 //   1. a valid nearest authored affordance (vault / climb / duck / hop) wins;

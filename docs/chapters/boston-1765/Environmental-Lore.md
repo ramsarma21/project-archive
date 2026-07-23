@@ -1,8 +1,8 @@
 # Boston Act 1 — Environmental Lore ("Found History") catalog
 
-**Status: the complete inspectable-object layer for Act 1 (Boston, 14 Aug 1765).** This is the spatial half of the creed — *"everything you **see** teaches you"* (`Boston-Concept-Delivery-Map.md`). Where `Act-1-World-Content.md` §6 lists the poster/sign knowledge interactables, this doc is the **superset**: every object in the world a player can look at and learn from, grounded in the deployed prop/building inventory (`apps/web/src/world/manifest.ts`) with real coordinates.
+**Status: the complete inspectable-object layer for Act 1 (Boston, 14 Aug 1765).** This is the spatial half of the creed — *"everything you **see** teaches you"* (`Concept-Delivery-Map.md`). Where `World-Content.md` §6 lists the poster/sign knowledge interactables, this doc is the **superset**: every object in the world a player can look at and learn from, grounded in the deployed prop/building inventory (`apps/web/src/world/manifest.ts`) with real coordinates.
 
-**Companions:** systems = `Boston-Quests-and-NPCs.md` (§2A living routes); concepts = `Act-1-Micro-Concepts.md`; delivery model = `Boston-Concept-Delivery-Map.md`; grammar = `Interaction-Spec.md` §3 (tracked-read); build manifest = `Act-1-World-Content.md`.
+**Companions:** systems = `Quests-and-NPCs.md` (§2A living routes); concepts = `Micro-Concepts.md`; delivery model = `Concept-Delivery-Map.md`; grammar = `Interaction-Spec.md` §3 (tracked-read); build manifest = `World-Content.md`.
 
 ---
 
@@ -15,18 +15,18 @@ An inspectable is any world object that, when focused, surfaces **one short in-f
 | Tier | Role | Tracked? | Logs | Annoyance budget |
 |---|---|---|---|---|
 | **A — Spine-support** | reinforces a required macro (①②③) or a gated fact; sits on a path the spine already walks | **yes** (focus-read) | reinforcement exposure toward a macro/gated concept | glyph only when relevant to current beat |
-| **B — Concept micro** | carries one micro concept (`Act-1-Micro-Concepts.md`) | **yes** (focus-read/handle) | flips that micro to *engaged* | subtle glyph on approach |
+| **B — Concept micro** | carries one micro concept (`Micro-Concepts.md`) | **yes** (focus-read/handle) | flips that micro to *engaged* | subtle glyph on approach |
 | **C — Ambient flavor** | pure texture + context; the saturation-law payload of "empty" space | **never** | nothing (in-air context only) | no glyph; discovered by looking |
 
 **Hard rules (inherited):** proximity/earshot **never** logs (only a focus-read or handle does, `Interaction-Spec` §3); no inspectable is a macro *carrier* (they *reinforce*, they don't gate); all deterministic; Tier-C is never tracked so it can be dense without polluting assessment. Tier assignment obeys the triple bind — a Tier-A/B inspectable must move the ledger (state), teach (learning), and reward the *curious look* (the fun of noticing).
 
-**No new physical assets** — every inspectable below reuses a deployed GLB/texture. New work is limited to (a) 2 small textures already flagged in `Act-1-World-Content.md` §11 (`KN-coinpaper` object, effigy placard) and (b) the inspect-text strings (localhost text slice).
+**No new physical assets** — every inspectable below reuses a deployed GLB/texture. New work is limited to (a) 2 small textures already flagged in `World-Content.md` §11 (`KN-coinpaper` object, effigy placard) and (b) the inspect-text strings (localhost text slice).
 
 ---
 
 ## 1. The catalog (by zone)
 
-Coords are world `[x,y,z]` from the manifest. Assets in `code` are the exact deployed GLB/prop ids. "Says" is authored **draft** inspect text (final = text-slice pass). `KN-*` ids reconcile with `Act-1-World-Content.md` §6.
+Coords are world `[x,y,z]` from the manifest. Assets in `code` are the exact deployed GLB/prop ids. "Says" is authored **draft** inspect text (final = text-slice pass). `KN-*` ids reconcile with `World-Content.md` §6.
 
 ### Z1 — Wharf apron (−160…−118)
 
@@ -90,7 +90,7 @@ Coords are world `[x,y,z]` from the manifest. Assets in `code` are the exact dep
 ## 2. Coverage read
 
 - **Tier A (spine-support, 8):** every required macro (①②③) and the two gated facts (Stamp schedule, writs/Custom House) has ≥1 reinforcing inspectable **on a path the spine already walks** — so even a pure-spine run passes several without detouring. These deepen the required concepts; they never gate them.
-- **Tier B (concept micro, 10):** each maps 1:1 to a micro in `Act-1-Micro-Concepts.md` and is a *reliable tracked surface* for it — so a curious player engages micros through looking, not just talking.
+- **Tier B (concept micro, 10):** each maps 1:1 to a micro in `Micro-Concepts.md` and is a *reliable tracked surface* for it — so a curious player engages micros through looking, not just talking.
 - **Tier C (ambient flavor, 9+):** never tracked, deliberately dense — this is the saturation-law payload that makes "empty" streets teach. Reuses props already placed for collision/dressing, so it's ~free.
 
 **Everything-you-see check:** there is no zone without a Tier-A or -B inspectable on its natural path, and no long stretch without Tier-C texture. A player who *only looks* still absorbs port economics, the stamp's reach, the town's division, and the coming protest.
@@ -99,7 +99,7 @@ Coords are world `[x,y,z]` from the manifest. Assets in `code` are the exact dep
 
 ## 3. How it plugs into the systems
 
-- **Living routes (`Boston-Quests-and-NPCs.md` §2A):** fetch/ferry routes are deliberately drawn *past* Tier-A/B inspectables (e.g., the tavern-note north-alley route passes `LORE-nonimport`, `LORE-drydinglaundry`). Seeing history on the way is the route's learning payload.
+- **Living routes (`Quests-and-NPCs.md` §2A):** fetch/ferry routes are deliberately drawn *past* Tier-A/B inspectables (e.g., the tavern-note north-alley route passes `LORE-nonimport`, `LORE-drydinglaundry`). Seeing history on the way is the route's learning payload.
 - **Fetch targets:** several inspectables double as **quest items** — `LORE-typecase` (Ned's tray fetch), `LORE-coinpaper` (a Mercer's errand), the effigy placard (B11). Retrieving/handling one = quest progress **and** the micro log.
 - **Ledger + provenance (`ledger` spec, forthcoming):** each tracked focus-read writes an **exposure with provenance** ("saw the stamp schedule at the notice board") so the Archive's memory-cued hints can later say *"remember the schedule nailed by the pump?"* — the hint engine draws only from what this student actually inspected.
 - **Archive decision-frame:** inspectables seed the context the Archive references at choices (having read `LORE-vicecourt`, the frame *"no jury for smugglers"* lands).
@@ -107,6 +107,6 @@ Coords are world `[x,y,z]` from the manifest. Assets in `code` are the exact dep
 ## 4. Build hooks
 
 - Reuse the **tracked-read grammar** (`Interaction-Spec` §3) for Tier A/B; Tier C uses a look-prompt with **no logging**.
-- A `FoundHistoryRegistry` (data table: id, asset ref, anchor, tier, conceptId|null, text-slice key) parallels the poster wiring already in `Act-1-World-Content.md` §6 — most entries are pure data + a decal/anchor.
+- A `FoundHistoryRegistry` (data table: id, asset ref, anchor, tier, conceptId|null, text-slice key) parallels the poster wiring already in `World-Content.md` §6 — most entries are pure data + a decal/anchor.
 - Tier-B/A focus-reads call the ledger's exposure API with `{ type: ARTICLE, conceptId, provenanceTag }`.
 - **New assets: none physical.** Two small textures (`KN-coinpaper`, effigy placard) already on the §11 worklist; everything else is placement + strings.

@@ -1,5 +1,5 @@
 // Semantic collision + support model for player locomotion physics
-// (Day-1-3D-World-Spec §locomotion). Pure, deterministic, and THREE-free so
+// (World-Built-State §locomotion). Pure, deterministic, and THREE-free so
 // it runs under `node --test` and inside the render loop without allocation
 // churn. All positions are plain {x,y,z}; the caller bridges to THREE.
 //

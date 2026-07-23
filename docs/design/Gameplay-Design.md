@@ -106,9 +106,9 @@ Learning is tracked in two tiers. Tier 1 is the sacred, invariant core; Tier 2 i
 
 **Micro is credited only via a tracked interaction — never proximity or earshot.** Ambient chatter and wall posters *seed* micro-concepts in the air (untracked gravy, Interaction-Spec §2.1 / §3), but a micro-concept only **logs** when the player performs a real tracked interaction: opens a focus-read, finishes an optional encounter, handles a tagged object. This preserves FR-6 (movement / free-roam / earshot never count as learning evidence) while making the reactive world (§8) the delivery engine for Tier 2.
 
-**Curated, not sprawling (locked decision).** The Boston micro set is a **curated dozen-ish per Act**, well-covered and well-tested, with authored STAAR items ready — not 20-30 loosely-seeded facts. Quality of coverage over breadth. The **Act 1 micro list** (14 curated concepts, each mapped to its macro, its tracked delivery surface, and a draft TEKS tag) is authored in **`Act-1-Micro-Concepts.md`**.
+**Curated, not sprawling (locked decision).** The Boston micro set is a **curated dozen-ish per Act**, well-covered and well-tested, with authored STAAR items ready — not 20-30 loosely-seeded facts. Quality of coverage over breadth. The **Act 1 micro list** (14 curated concepts, each mapped to its macro, its tracked delivery surface, and a draft TEKS tag) is authored in **`Micro-Concepts.md`**.
 
-**The same curation law governs *activities*.** The mechanics, activity families, occupant model, and feel-levers (`Act-1-Activity-Expansion.md`, `Act-1-Activity-Feel.md`) are a **reusable template library** for the whole game — each Act/Chapter/Season builds a **curated subset** that fits its era and concepts, introducing 1-2 new applications and evolving returning ones via World Turns. Don't cram the whole library into any one Act; spread it wisely (see `Act-1-Activity-Expansion.md` §0 for the Act-1 curated set and the cross-Act/Chapter/Season distribution rules).
+**The same curation law governs *activities*.** The mechanics, activity families, occupant model, and feel-levers (`Activity-Expansion.md`, `Activity-Feel.md`) are a **reusable template library** for the whole game — each Act/Chapter/Season builds a **curated subset** that fits its era and concepts, introducing 1-2 new applications and evolving returning ones via World Turns. Don't cram the whole library into any one Act; spread it wisely (see `Activity-Expansion.md` §0 for the Act-1 curated set and the cross-Act/Chapter/Season distribution rules).
 
 ---
 
@@ -307,6 +307,7 @@ Two things drive the reactive layer: a **lean named cast that's alive and mobile
 
 **Your own card — Standing (social camouflage).** The player has a reputation stat: how the town-at-large reads you, built by your unnamed-crowd interactions (help a goodwife, chat a dockhand, take up the crier's call → you read as a familiar, unremarkable local). Shown as a band on a player-facing card, never a number. It is a **reputation / camouflage** stat, **not** a morality meter (PRD §17). **Standing feeds the stealth system directly:** high Standing ⇒ you pass as an ordinary face, so suspicion accrues slower and spot-checks are rarer; low / marked Standing ⇒ watchers are twitchy, suspicion faster, more checks. Being a known, liked, ordinary runner *is itself a stealth tool* — the social counterpart to concealment and routes.
 - **Standing vs. heat (§7.4):** Standing is your persistent, town-wide social baseline (built slowly); **heat** is acute authority attention (spikes from stealth failures, decays fast). Standing shifts the suspicion / heat curve; heat is the moment-to-moment state. Both bounded per L-D — they move suspicion, tips, and access, never learning, never a dead-end.
+- **Standing is built only by tracked unnamed-crowd interactions and side-jobs.** Archive Syncs and checkpoint debriefs apply **no Standing bonus or ding (not implemented — by design)**: assessment never raises or lowers Standing, and getting an answer right or wrong has no reputation consequence (state landed in `FieldDurableState`, separate from the learner/assessment path).
 
 **Interactable tiers** (a *lot* interactable, never *all*; no-prompt-stack / self-driven rules hold — Interaction-Spec §5, §7):
 - **Flavor** (bell, pump, gulls, dog, bench): pure play; may seed micro in the air; no card.
@@ -317,7 +318,7 @@ Two things drive the reactive layer: a **lean named cast that's alive and mobile
 
 Everything authored, approved, deterministic, and versioned (L-F).
 
-**The full "stuff to do" layer — NPC interactions, side-jobs, Challenges, and the cross-Act Threads — is designed in `Boston-Quests-and-NPCs.md`** (the interaction-verb palette, the ER-translated quest taxonomy, the persistent NPC arcs that change across the years, and the concrete Act 1 content). It is the optional world wrapped around the forced learning spine.
+**The full "stuff to do" layer — NPC interactions, side-jobs, Challenges, and the cross-Act Threads — is designed in `Quests-and-NPCs.md`** (the interaction-verb palette, the ER-translated quest taxonomy, the persistent NPC arcs that change across the years, and the concrete Act 1 content). It is the optional world wrapped around the forced learning spine.
 
 ---
 
@@ -358,7 +359,7 @@ More DOING actively *helps* pass the gameplay and passive-watch gates (PRD §12)
 
 ## 11A. Act 1 flow — the build blueprint (segment map)
 
-The validated learning spine (B0–B13 in the behavioral fixture) is **unchanged**; the gameplay layer wraps it. Every new minute is gameplay + passive learning; the required carriers, Syncs, and demonstrations land exactly where they do today. The **per-beat build script** (with explicit animation, input, skill, and code hooks) lives in `Day-1-v2.md`; this is the mid-level map of where everything sits.
+The validated learning spine (B0–B13 in the behavioral fixture) is **unchanged**; the gameplay layer wraps it. Every new minute is gameplay + passive learning; the required carriers, Syncs, and demonstrations land exactly where they do today. The **per-beat build script** (with explicit animation, input, skill, and code hooks) lives in `Day-1-Build-Script.md`; this is the mid-level map of where everything sits.
 
 | Seg | Name | ~min | Primary systems | Learning that lands (spine) |
 |---|---|---|---|---|
@@ -433,15 +434,15 @@ The learning always lands via reroute (§7A of the behavioral fixture); the *sta
 This reframe and expansion touch other authority docs. To keep the spec honest:
 
 - **PRODUCT-REQUIREMENTS §7 (product structure):** the "Mission Day / End Day" unit is reframed to **Act / checkpoint** for Boston. The atomic-commit, resume, and assessment *mechanics* are unchanged; only the container name and boundary placement change. A PRD revision should record: Chapter → 4 Acts → 5 checkpoints (Archive year-transitions), with invisible autosave continuing within each Act.
-- **`Day-1.md` → Act 1:** the behavioral fixture is reframed as **Boston Act 1 (Stamp Act, 1765)**. Beats, carriers, tracked payload, and reroutes are unchanged; B0 becomes **CP0 (intake)** and B13/day-close feeds **CP1 (the 1770 re-insertion + first debrief)**. The **build-ready per-beat implementation script** (explicit animation, input, skill, and code hooks for every beat) is **`Day-1-v2.md`**; it supersedes `Day-1.md` §6 for coding while `Day-1.md` stays the curriculum fixture of record.
+- **`Day-1.md` → Act 1:** the behavioral fixture is reframed as **Boston Act 1 (Stamp Act, 1765)**. Beats, carriers, tracked payload, and reroutes are unchanged; B0 becomes **CP0 (intake)** and B13/day-close feeds **CP1 (the 1770 re-insertion + first debrief)**. The **build-ready per-beat implementation script** (explicit animation, input, skill, and code hooks for every beat) is **`Day-1-Build-Script.md`**; it supersedes `Day-1.md` §6 for coding while `Day-1.md` stays the curriculum fixture of record.
 - **Naming migration (player-facing):** retire "Day 1/2/3/4"; use "Boston, Act I–IV" and the historical episode names. Internal IDs may stay for continuity.
 - **New authoring workstreams:** the curated micro-concept set per Act (§3), the TEKS-tagged STAAR question bank (§4), the side-job content (§9), and the stealth system engineering pass (§7) each need their own detailed pass.
 
 ### Open items (to spec next)
-1. ~~The stealth system~~ — **designed (§7); Act 1 wiring mapped (`Day-1-v2.md` §0.6, B8/B9); full systems + engineering spec in `Act-1-Production-Plan.md` Part D** (LOS/suspicion formulas, heat state machine, chase/stamina model, foundational refactors, build milestones, initial tuning constants). Remaining: implement + tune in the M0-M2 vertical slice.
-2. ~~The compound-verb skill spec~~ — **mapped in `Day-1-v2.md`** (B2 print job, B5 haul, B7.5 tack, B12 final pull, with `pa:mechanic-visual` hooks). Remaining: exact per-stage scoring curves + tolerances.
-3. ~~Act 1 flow~~ — **written (§11A segment map + `Day-1-v2.md` per-beat script).**
-4. ~~The curated Act 1 micro-concept list~~ — **authored (`Act-1-Micro-Concepts.md`, 14 concepts + coverage matrix + draft TEKS).** Remaining: the authored STAAR items per concept + the CP1 debrief form + SME TEKS sign-off (with spaced retrieval design once Act 2 exists).
+1. ~~The stealth system~~ — **designed (§7); Act 1 wiring mapped (`Day-1-Build-Script.md` §0.6, B8/B9); full systems + engineering spec in `Act-1-Production-Plan.md` Part D** (LOS/suspicion formulas, heat state machine, chase/stamina model, foundational refactors, build milestones, initial tuning constants). Remaining: implement + tune in the M0-M2 vertical slice.
+2. ~~The compound-verb skill spec~~ — **mapped in `Day-1-Build-Script.md`** (B2 print job, B5 haul, B7.5 tack, B12 final pull, with `pa:mechanic-visual` hooks). Remaining: exact per-stage scoring curves + tolerances.
+3. ~~Act 1 flow~~ — **written (§11A segment map + `Day-1-Build-Script.md` per-beat script).**
+4. ~~The curated Act 1 micro-concept list~~ — **authored (`Micro-Concepts.md`, 14 concepts + coverage matrix + draft TEKS).** Remaining: the authored STAAR items per concept + the CP1 debrief form + SME TEKS sign-off (with spaced retrieval design once Act 2 exists).
 5. The reactive-world interactable tagging pass over the Act 1 district (`ReactiveNpcDirector`, `StandingCard`) — scoped in `Act-1-Production-Plan.md` Part A.5 / D.5, milestone M3.
 6. Act-1 side-job bank (optional, non-carrier) + their route/relationship payoffs.
 

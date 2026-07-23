@@ -1,4 +1,4 @@
-// Day 1 global constants, verbatim from Localhost-Text-Slice-Spec.md §16.
+// Day 1 global constants, verbatim from docs/archive/2026-07/Localhost-Text-Slice-Spec.md §16.
 
 export const DAY1_CLOCK = {
   start: 0,

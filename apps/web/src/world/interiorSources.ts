@@ -83,7 +83,7 @@ export const INTERIOR_SOURCES: Record<string, HistoricalSource> = {
     id: "CUSTOMS_CONTEXT",
     label: "Day 1 Custom House source and setting ledger",
     organization: "Project Archive historical content",
-    url: "Day-1.md",
+    url: "docs/chapters/boston-1765/Day-1.md",
     note: "Public posting, Crown revenue policy, clerks, counters, ledgers, and official notices.",
   },
 };

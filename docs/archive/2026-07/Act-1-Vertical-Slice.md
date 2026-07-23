@@ -2,7 +2,7 @@
 
 **Status: the bounded, playable target that proves the whole game before we scale it.** One continuous Act-1 run — **intake → roam → do → learn → prove (CP1)** — that demonstrates every pillar of "an alive 1765 Boston where everything teaches" with **one strong instance of each system**, at shippable quality, deterministic, on the Chromebook budget. It is deliberately *not* the full curated Act (let alone the template library); it is the smallest slice that makes the pitch undeniable.
 
-**Authority chain:** this doc = *what's in the slice + build order*. Systems/formulas = `Act-1-Production-Plan.md` (M0-M5). Content = `Act-1-World-Content.md`, `Act-1-Activity-Expansion.md`, `Act-1-Environmental-Lore.md`, `Boston-Mechanics-Spec.md`, `Boston-Archive-Spec.md`, `Boston-Learning-Ledger-Spec.md`. Handoff = `Act-1-BUILD-BRIEF.md`.
+**Authority chain:** this doc = *what's in the slice + build order*. Systems/formulas = `Act-1-Production-Plan.md` (M0-M5). Content = `World-Content.md`, `Activity-Expansion.md`, `Environmental-Lore.md`, `Mechanics-Spec.md`, `Archive-Spec.md`, `Learning-Ledger-Spec.md`. Handoff = `Act-1-BUILD-BRIEF.md`.
 
 ---
 
@@ -83,7 +83,7 @@ Reordered from the M-milestones so we always have something end-to-end to feel.
 
 - **Playable start → CP1** with no dev tools, on the Chromebook perf budget (≤4 watchers + crowd, within rig/cull caps).
 - **All 3 macros** are delivered on the spine **and** assessed at CP1; the gate always passes but brute-forcing is throttled.
-- **≥1 live instance of every pillar** in §3, each hitting the triple bind (teaches + moves state + fun) and reading as a **distinct moment** (`Act-1-Activity-Feel.md`).
+- **≥1 live instance of every pillar** in §3, each hitting the triple bind (teaches + moves state + fun) and reading as a **distinct moment** (`Activity-Feel.md`).
 - **Fairness:** CP1 samples only engaged micros; hints only cue moments the player actually saw (provenance).
 - **Deterministic:** identical seed → identical run; `npm run typecheck` + `npm run test` green; no regression in the existing Day-1 flow.
 - **Kid-safe:** never stranded (Archive R2 rescue), never a hard dead-end, no reflex wall (accessibility equivalents present).

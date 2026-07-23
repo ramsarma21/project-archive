@@ -7,8 +7,8 @@
 **Curriculum target:** Texas Grade 8 Social Studies, United States history through 1877  
 **Reference chapter:** Boston, 1765–1774  
 **Version rule:** A shipped content package may be more specific than this document, but it may not contradict it.
-**Backend implementation companion:** [`Backend-AI-System.md`](Backend-AI-System.md) converts these contracts into the concrete vertical-slice stack, schemas, state machines, APIs, validation suite, and build order.
-**Boston Day 1 precedence:** [`Day-1.md`](Day-1.md) is the canonical behavioral acceptance fixture for Boston Day 1. If this GDD's older Day 1 example wording conflicts with the current fixture, the fixture governs and this GDD must be corrected.
+**Backend implementation companion:** [`Backend-AI-System.md`](../engine/Backend-AI-System.md) converts these contracts into the concrete vertical-slice stack, schemas, state machines, APIs, validation suite, and build order.
+**Boston Day 1 precedence:** [`Day-1.md`](../chapters/boston-1765/Day-1.md) is the canonical behavioral acceptance fixture for Boston Day 1. If this GDD's older Day 1 example wording conflicts with the current fixture, the fixture governs and this GDD must be corrected.
 
 ## Contents
 
@@ -5009,7 +5009,7 @@ Only STAAR-assessed content — the 8.4(A) content items and the 8.4(B) roles ab
 
 **Coverage check.** 8.4(A): Stamp Act (D1), representation (D1), post-war economic policy (D1), mercantilism (D3), Intolerable Acts/Port Act (D4). 8.4(B): Attucks (D2), John Adams (D2), Samuel Adams (D3). All eight assessed items appear exactly once as a new gated concept, then recur only as spaced reassessment.
 
-**Turning this ledger into a playable day is a repeatable procedure, not a redesign.** `Day-Template.md` generalizes Day 1 into reusable **beat archetypes plus the design laws (the reasoning) behind each decision**, with an automation-facing authoring recipe. `Day-1.md` is the worked instance. Days 2–4 are authored by feeding each day's concept set (above) through that template — composition and review, not fresh design.
+**Turning this ledger into a playable day is a repeatable procedure, not a redesign.** `Chapter-Day-Template.md` generalizes Day 1 into reusable **beat archetypes plus the design laws (the reasoning) behind each decision**, with an automation-facing authoring recipe. `Day-1.md` is the worked instance. Days 2–4 are authored by feeding each day's concept set (above) through that template — composition and review, not fresh design.
 
 #### Prerequisite System Brief
 

@@ -1,19 +1,19 @@
 # Backend & AI System
 
-**Purpose.** This document turns the game rules in `Project-Archive-v3.md`, `Day-Template.md`, `Day-1.md`, and `Interaction-Spec.md` into one implementation plan for the backend, local runtime, content pipeline, deterministic Director, learning guarantees, persistence, telemetry, and optional model services.
+**Purpose.** This document turns the game rules in `Project-Archive-v3.md`, `Chapter-Day-Template.md`, `Day-1.md`, and `Interaction-Spec.md` into one implementation plan for the backend, local runtime, content pipeline, deterministic Director, learning guarantees, persistence, telemetry, and optional model services.
 
 **Audience.** Backend, gameplay, AI, data, curriculum tooling, QA, security, and technical production.
 
 **Implementation status.** Architecture specification for the Boston vertical slice. It defines the contracts to build; it is not evidence that the systems have already been implemented or certified.
 
-**Prescriptive localhost implementation:** [`Localhost-Text-Slice-Spec.md`](Localhost-Text-Slice-Spec.md) locks the exact stack, Google login, schemas, APIs, text presenter, Day 1 constants/actions, tests, and file-by-file build order. Implementers follow that directive without selecting alternatives.
+**Prescriptive localhost implementation:** [`Localhost-Text-Slice-Spec.md`](../archive/2026-07/Localhost-Text-Slice-Spec.md) locks the exact stack, Google login, schemas, APIs, text presenter, Day 1 constants/actions, tests, and file-by-file build order. Implementers follow that directive without selecting alternatives.
 
 **Source-of-truth rule.**
 
 1. **`Day-1.md` is the canonical behavioral acceptance fixture for Boston Day 1.** It is the most thoroughly playtested source. If any other document disagrees with its current behavior, that other document is stale and must be corrected.
 2. This document owns the concrete backend/runtime implementation of that behavior.
 3. `Project-Archive-v3.md` owns product-wide invariants and historical/curriculum boundaries only where they do not contradict current Day 1 behavior.
-4. `Day-Template.md` generalizes the laws proven by Day 1; it may not weaken or rewrite them.
+4. `Chapter-Day-Template.md` generalizes the laws proven by Day 1; it may not weaken or rewrite them.
 5. `Interaction-Spec.md` parameterizes Day 1's player-facing state machines and tunable UX rules.
 6. `Production.md` chooses how to present Day 1 behavior within production constraints; presentation constraints do not change the behavior.
 

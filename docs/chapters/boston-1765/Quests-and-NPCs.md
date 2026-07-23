@@ -5,7 +5,7 @@
 **The pitch, honestly stated.** The required history runs on a short **forced spine** (the errands that carry the three macro concepts — the "some forced learning parts"). Wrapped around that spine is a dense, optional world you *want* to poke at: people with problems, favors, rumors, dares, and arcs that remember you and evolve as Boston slides toward revolution. You learn history the way ER teaches its world — by *living in it and being curious* — not by being quizzed. The world is **smaller than ER**, but **deeper in time**: the same streets across 1765 → 1775, the same faces aging and radicalizing.
 
 **Hard rules inherited (do not break):**
-- **Learning integrity (Gameplay-Design §8):** everything here delivers **micro concepts only** (`Act-1-Micro-Concepts.md`), **never** a required macro carrier. Skipping all of it still passes every Act.
+- **Learning integrity (Gameplay-Design §8):** everything here delivers **micro concepts only** (`Micro-Concepts.md`), **never** a required macro carrier. Skipping all of it still passes every Act.
 - **Two-budget model (Gameplay-Design §2):** optional content costs the **escalation clock** (opportunity cost — time + heat), not the required *learning budget*. This *is* the ER risk/reward: wander and you deepen history/relationships/Standing but the town heats up and the bell creeps closer.
 - **Micro logs only on a tracked interaction (§3):** talking near someone / overhearing never logs; finishing an encounter, handling a tagged object, or completing a task does.
 - **Deterministic + bounded (§L-D):** consequences move relationships, Standing, heat, world flags, and access — never learning, never a hard dead-end.
@@ -51,7 +51,7 @@ Built on the existing interaction grammar (`Interaction-Spec.md`) and the choreo
 | **"No quest markers" discovery** | **Threads log + soft hints** (§1) | UI | reward curiosity without stranding kids |
 
 **Four tiers of "stuff to do," by commitment:**
-1. **Errands (spine)** — required, carry macro. *(covered in `Day-1-v2.md`)*
+1. **Errands (spine)** — required, carry macro. *(covered in `Day-1-Build-Script.md`)*
 2. **Threads** — optional, multi-step, **cross-Act**, real narrative payoff. *The centerpiece.*
 3. **Side-jobs & Challenges** — optional, short, single-Act, local.
 4. **Ambient/reactive** — flavor verbs, eavesdrop, knowledge interactables. Zero-commitment texture.
@@ -62,13 +62,13 @@ Built on the existing interaction grammar (`Interaction-Spec.md`) and the choreo
 
 **The core shape of a quest is fetch-and-ferry:** an NPC sends you to *get* an item or *carry* one somewhere (a type-tray, a proof-sheet, a ledger, coins, a folded meeting-note, a barrel). **Getting the thing is never a teleport to a menu** — it's a journey through the town, and the journey is where the game lives.
 
-**Three things are always true of a fetch route (the triple bind applies — `Boston-Concept-Delivery-Map.md`):**
+**Three things are always true of a fetch route (the triple bind applies — `Concept-Delivery-Map.md`):**
 
 **1. The route is a gamified gauntlet (fun).** Between you and the item stands the world: a patrol you must *avoid* (stealth — `WatcherDirector`, concealment, Standing), a cart or fence to *vault*, a low awning or cellar hatch to *duck* under, a scaffold or crates to *climb*, a plank to *balance*. Fetch quests reuse the traversal markers (`CLIMB`/`VAULT`/`DUCK_ZONE`, `traversalMarkers.ts`) and the full stealth stack already specced — **the errand is the skill expression.** A safe main-street stroll and a risky alley shortcut are both viable; the alley is faster but tighter (more parkour), the street is open but watched.
 
-**2. The route is populated (learning, on the way).** You don't pass through dead space. A fetch path is deliberately routed *past* optional density — an interactable NPC to bump, a knowledge object to focus-read, an eavesdrop to catch (`Act-1-World-Content.md` §5-7). None of it is required; all of it is there. This is the **saturation law** made spatial: even a straight-line delivery drags you through paper-price chatter, a non-importation notice, a Loyalist's doorway. You learn by *traveling*, not just by arriving.
+**2. The route is populated (learning, on the way).** You don't pass through dead space. A fetch path is deliberately routed *past* optional density — an interactable NPC to bump, a knowledge object to focus-read, an eavesdrop to catch (`World-Content.md` §5-7). None of it is required; all of it is there. This is the **saturation law** made spatial: even a straight-line delivery drags you through paper-price chatter, a non-importation notice, a Loyalist's doorway. You learn by *traveling*, not just by arriving.
 
-**3. Perspective is live on the route (learning + state).** *Who* you pass — and how they read you — matters, because the town is politically split. Clarke the Loyalist (doorway −32) will *report* a suspicious pass; the movement's people (agitator, tavern crowd) will *blend* you if your Standing is high; the widow's sympathy is neutral cover. So the same street is a threat or a shelter **depending on the item you carry and the standing you've built** — the map is filtered through point of view (a live, playable version of TEKS "identify points of view," `MICRO.LOYALIST_VIEW`). The Archive's **decision-frame** (`Boston-Concept-Delivery-Map.md`) fires here: *"(Clarke reports what he sees.)"* — one clause that makes the POV legible before you choose your path.
+**3. Perspective is live on the route (learning + state).** *Who* you pass — and how they read you — matters, because the town is politically split. Clarke the Loyalist (doorway −32) will *report* a suspicious pass; the movement's people (agitator, tavern crowd) will *blend* you if your Standing is high; the widow's sympathy is neutral cover. So the same street is a threat or a shelter **depending on the item you carry and the standing you've built** — the map is filtered through point of view (a live, playable version of TEKS "identify points of view," `MICRO.LOYALIST_VIEW`). The Archive's **decision-frame** (`Concept-Delivery-Map.md`) fires here: *"(Clarke reports what he sees.)"* — one clause that makes the POV legible before you choose your path.
 
 **Everything ties together (the alive world).** One fetch ripples outward: delivering Thomas's meeting-note unlocks the tavern keeper's rumors → which point to the agitator's dare → which needs the roof shortcut you opened by fetching the goodwife's boy. Threads feed challenges feed knowledge feed Standing; the world remembers each. That interconnection *is* the "there's always something to do" feeling — density by linkage, not by content volume.
 
@@ -142,7 +142,7 @@ The named five (Abigail, Thomas, Pike, Clarke, the rider) each carry a **relatio
 ## 4. Act 1 concrete content (what's live in 1765)
 
 ### 4.1 Named-cast ad-hoc interactions
-The 5 are **mobile** and interactable between scripted beats (Day-1-v2 appendix): each touch = a `talk` exchange + micro + a relationship nudge; their standing can tip a patrol, lend cover, vouch (heat bleed), or inform/refuse (feeds stealth). Multi-input status.
+The 5 are **mobile** and interactable between scripted beats (Day-1-Build-Script appendix): each touch = a `talk` exchange + micro + a relationship nudge; their standing can tip a patrol, lend cover, vouch (heat bleed), or inform/refuse (feeds stealth). Multi-input status.
 
 ### 4.2 Thread openers (Act 1 steps)
 - **Ned intro** at Mercer's (B1-B4 window): he asks you to fetch a type-tray or cover a small errand → logs `printers' role` micro, opens Thread A.
@@ -207,7 +207,7 @@ Map the **existing 11 posters/signs** + world objects to micro (all focus-read/h
 | Bookkeeping load on the kid | tentpole, tracked in People | **light — a name + a story you bump into** | invisible |
 | Cost | high (already paid) | **low** (tint + text) | ~free |
 
-**Plus a fourth, lighter tier — interactive occupants (many):** the explorable interiors and street corners are populated with archetype-rig NPCs that give tasks with **deterministic preset dialogue + ≤3 state-gated options** (no AI, no 4-axis — quest flags only). They are the delivery vehicle for the activity families and make the town feel *populated*. Full spec: **`Act-1-Activity-Expansion.md`**.
+**Plus a fourth, lighter tier — interactive occupants (many):** the explorable interiors and street corners are populated with archetype-rig NPCs that give tasks with **deterministic preset dialogue + ≤3 state-gated options** (no AI, no 4-axis — quest flags only). They are the delivery vehicle for the activity families and make the town feel *populated*. Full spec: **`Activity-Expansion.md`**.
 
 So the chapter has **5 deep relationships + ~3 memorable recurring faces + many interactive occupants + a living crowd** — ER-like density of "someone to find" without ER's cast size or a bookkeeping burden. **Decision to confirm:** approve this ≤3 Thread-figure category as an explicit, bounded expansion of §8 (recommended — it's what makes cross-Act arcs possible and it's cheap).
 
@@ -231,7 +231,7 @@ So the chapter has **5 deep relationships + ~3 memorable recurring faces + many 
 
 ---
 
-**The exact, placeable Act 1 content** — every NPC, thread opener, side-job, challenge, knowledge object, eavesdrop, flavor verb, and watcher with real coordinates, assets, triggers, authored dialogue, states, and build hooks — is in **`Act-1-World-Content.md`**. That is the build manifest; this doc is the system behind it.
+**The exact, placeable Act 1 content** — every NPC, thread opener, side-job, challenge, knowledge object, eavesdrop, flavor verb, and watcher with real coordinates, assets, triggers, authored dialogue, states, and build hooks — is in **`World-Content.md`**. That is the build manifest; this doc is the system behind it.
 
 ## 9. Open items
 

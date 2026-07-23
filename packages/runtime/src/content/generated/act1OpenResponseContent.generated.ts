@@ -3,8 +3,8 @@
 // Do not hand-edit. Source: content/boston/act1/.
 
 export const ACT1_OPEN_RESPONSE_CONTENT_HASHES = {
-  "manifest": "sha256:d57787a2d29e75cb37dfc25849725ca4d402da66428eb8d221b070957500336d",
-  "allowlists": "sha256:0bb6e31a8994be8e1e3a8ef11af9d9c9d39a1f30a8f886981d347fe0dbd6bf1c",
+  "manifest": "sha256:83240ad85749e9b8ca26104b3339572a9803d798ed0e1bc2ef513b6a385c6803",
+  "allowlists": "sha256:d44b8d47678984e0517c4f3608a10bfaa031d484d8394d97068240f57bf36188",
   "sources": "sha256:ae63bd30aa4d78d773f8b5731eb10db20e88734bd64169916cb20c1980681b1f",
   "items": "sha256:895b32504e2f70ce5ddaced2520225fdfc96638c91e872fe6a00e336b9598600",
   "rubrics": "sha256:3bbdf2dfb8acf8a4184ece1c8cd6acd3695a2f801e04e4c9cc821fe8fa7043e5",
@@ -12,7 +12,7 @@ export const ACT1_OPEN_RESPONSE_CONTENT_HASHES = {
   "classifier": "sha256:e5b13a7083c37eaeb6ef1c053935832c5e03bcc9d8c4fc48fb02a6db999e29a6",
   "archiveConnections": "sha256:4d02f5e5a1478130497dfcdf4216484eac13f24e83679ab8b88de7a96c6dfbbb",
   "npcFollowups": "sha256:127f33a2a48ee4753ef99d586112eabda15717e726fa087f54d599fdb3cf9f04",
-  "package": "sha256:cc177af7c4dee6b8568c67e06253059412461eed7f6c7f976ec62c286db68e43"
+  "package": "sha256:8d9f2168e43c74df98807464f2ee4d5725cd3d25c2d176e6210a93ccc92ac69c"
 } as const;
 
 export const ACT1_OPEN_RESPONSE_RECORD_HASHES = {
@@ -107,7 +107,7 @@ export const ACT1_OPEN_RESPONSE_CONTENT = {
       "NOT SME_APPROVED. No content here may be treated as curriculum-approved or historically confirmed until the review fields on each item flip.",
       "Every item is AUTHOR_DRAFT and HISTORICAL_REVIEW_PENDING. TEKS tags are placeholders only.",
       "Open responses are formative competence evidence only. Nothing here scores mastery, alters learner state, gates the story, or writes dialogue at runtime.",
-      "All player-facing text obeys the project fiction rule: no em dashes (Day-1.md §5 / Day-Template L12)."
+      "All player-facing text obeys the project fiction rule: no em dashes (docs/chapters/boston-1765/Day-1.md §5 / docs/process/Chapter-Day-Template.md L12)."
     ],
     "act1ExposureCap": 4,
     "act1ExposureCapNote": "A single player may be offered at most 4 of these open responses across Act 1. Eligibility is further bounded by per-item source prerequisites and minimum spacing, so most playstyles surface only 3 to 4.",
@@ -281,7 +281,7 @@ export const ACT1_OPEN_RESPONSE_CONTENT = {
         "—",
         "―"
       ],
-      "note": "Em dash (U+2014) and horizontal bar (U+2015) are forbidden in player-facing fiction text per Day-1.md §5 and Day-Template L12. Use a period, comma, or colon."
+      "note": "Em dash (U+2014) and horizontal bar (U+2015) are forbidden in player-facing fiction text per docs/chapters/boston-1765/Day-1.md §5 and docs/process/Chapter-Day-Template.md L12. Use a period, comma, or colon."
     },
     "expectedResponseWordBounds": {
       "min": 35,

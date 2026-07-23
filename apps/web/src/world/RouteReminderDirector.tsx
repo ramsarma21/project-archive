@@ -5,7 +5,7 @@ import type { PlayerApi } from "./Player.js";
 import { useWorldServices } from "./WorldServicesContext.js";
 import { dispatchPresentationNotice } from "../presenter/noticeArbiter.js";
 
-// Archive R3 — the routes reminder (Boston-Archive-Spec §4): one optional
+// Archive R3 — the routes reminder (Archive-Spec §4): one optional
 // clause surfacing an EARNED capability at the moment of approach. Fires once
 // per approach (re-arms after leaving), never names a route not yet owned,
 // and stays silent during interrupts/skill execution. Pure presentation over

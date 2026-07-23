@@ -2,7 +2,7 @@
 
 **Status: build authority for the overnight world expansion.** Every asset, layout, system, and prompt decision for the 3D world references this document. It is subordinate to `Day-1.md` (behavior) and `Interaction-Spec.md` (interaction rules); it owns look, layout, atmosphere, and traversal. When the Day 1 script changes, beats rebind to this world; the world does not rebind to beats.
 
-Related: `Day-1-3D-World-Spec.md` (current built state), `Production.md` (pipeline + no-mocap laws), `apps/web/src/world/manifest.ts` (machine-readable layout).
+Related: `World-Built-State.md` (current built state), `Production.md` (pipeline + no-mocap laws), `apps/web/src/world/manifest.ts` (machine-readable layout).
 
 ---
 

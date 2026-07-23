@@ -10,7 +10,7 @@ import {
 } from "@pa/contracts";
 
 // ============================================================================
-// The CP mastery-gate ladder (Boston-Archive-Spec R6/R7, locked 2026-07-21).
+// The CP mastery-gate ladder (Archive-Spec R6/R7, locked 2026-07-21).
 //
 //   attempt 1 wrong -> MEMORY_CUE hint (from THIS student's provenance),
 //                      3s dwell + 2s pause

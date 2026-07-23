@@ -87,7 +87,7 @@
 
   "playerFacingEmDashRule": {
     "forbiddenCharacters": ["\u2014", "\u2015"],
-    "note": "Em dash (U+2014) and horizontal bar (U+2015) are forbidden in player-facing fiction text per Day-1.md §5 and Day-Template L12. Use a period, comma, or colon."
+    "note": "Em dash (U+2014) and horizontal bar (U+2015) are forbidden in player-facing fiction text per docs/chapters/boston-1765/Day-1.md §5 and docs/process/Chapter-Day-Template.md L12. Use a period, comma, or colon."
   },
 
   "expectedResponseWordBounds": { "min": 35, "max": 90 },

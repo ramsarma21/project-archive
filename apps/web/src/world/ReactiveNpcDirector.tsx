@@ -240,7 +240,7 @@ function namedExchange(
 // Ned's Thread-A arc is staged: the opener (meet/craft/fetch), then the
 // covered-errand ask once he trusts you, then a settled Act-2 breadcrumb.
 // Each step reads the durable thread flags, so the arc survives saves and
-// never repeats a consumed beat (Boston-Quests-and-NPCs Thread A).
+// never repeats a consumed beat (Quests-and-NPCs Thread A).
 function nedExchange(
   view: RuntimeView,
   position: readonly [number, number, number],
@@ -567,7 +567,7 @@ function dockExchange(
 }
 
 // The ropewalk trades job — the slice's occupational-work template
-// (Act-1-Activity-Expansion family A). One occupant, three staged verbs the
+// (Activity-Expansion family A). One occupant, three staged verbs the
 // length of the longest room in Boston: take the strand, hook it at the far
 // end, walk the lay back and close it. Teaching payload: port-town economics
 // (PORT_TOWN_BOSTON) delivered by doing the harbor's work, not reading it.

@@ -396,7 +396,7 @@ export function checkpointChallenges(input: {
 }): boolean {
   // Carrying EXPOSED goods through a customs checkpoint always draws the
   // stop, even at CALM — the writs search is the authored teaching encounter
-  // (Boston-Mechanics-Spec: the historical constraint IS the game constraint).
+  // (Mechanics-Spec: the historical constraint IS the game constraint).
   // Concealment is the earned pass: wrapped goods at CALM cross unchallenged,
   // and a known face (high Standing) with concealed goods passes at any heat.
   const concealed = input.concealment !== "EXPOSED";

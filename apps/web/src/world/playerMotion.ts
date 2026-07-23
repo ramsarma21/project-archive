@@ -1,4 +1,4 @@
-// Player locomotion state + physics (Day-1-3D-World-Spec §locomotion). Pure,
+// Player locomotion state + physics (World-Built-State §locomotion). Pure,
 // deterministic and THREE-free: the Player component is the sole owner of the
 // visible transform, and it drives every frame through `stepMotion`. The old
 // 2D circle-vs-AABB mover, the `position.y > 0.45` collider bypass, and the

@@ -1,6 +1,6 @@
 # Boston — Concept Delivery Map (gated facts vs. load-bearing patterns)
 
-**Status: the scope + pacing bridge between the curriculum (`Boston-STAAR-Coverage-Map.md`) and the built learning machinery (`@pa/contracts`, `Day-1.md` §2C).** It tags each of Boston's 23 SEs with *how* it's delivered and *when* (which Act), so per-Act density stays near today's proven budget (~3 gated concepts / ~25–30 min).
+**Status: the scope + pacing bridge between the curriculum (`STAAR-Coverage-Map.md`) and the built learning machinery (`@pa/contracts`, `Day-1.md` §2C).** It tags each of Boston's 23 SEs with *how* it's delivered and *when* (which Act), so per-Act density stays near today's proven budget (~3 gated concepts / ~25–30 min).
 
 ## The delivery model (three classes)
 

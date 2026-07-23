@@ -19,7 +19,7 @@ const GATE_HEADING: Record<CheckpointGateState["hintKind"], string> = {
   ELIMINATION: "ARCHIVE // NARROWING IT DOWN",
 };
 
-// The mastery gate's enforced friction (Boston-Archive-Spec R6, locked):
+// The mastery gate's enforced friction (Archive-Spec R6, locked):
 // a required hint dwell, then a pause, before the answers re-enable. The
 // runtime computes dwellMs/pauseMs; this component merely enforces them.
 // Reduced-motion profiles keep the timing (it is pedagogy, not decoration)

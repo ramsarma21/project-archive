@@ -1,18 +1,20 @@
-# Day 1 3D World Spec (built state)
+# World Built State (Boston 1765)
 
-**Status: implemented and playable.** This documents the world as actually built in `apps/web/src/world/` plus the asset pipeline in `assets/pipeline/`. The machine-readable source of truth is [`apps/web/src/world/manifest.ts`](apps/web/src/world/manifest.ts); this file explains it. Grounded historical realism target per Production.md; the district is a compressed gameplay construct, topological not literal (no false geography is taught).
+**Status: implemented and playable.** This documents the world as actually built in `apps/web/src/world/` plus the asset pipeline in `assets/pipeline/`. The machine-readable source of truth is [`apps/web/src/world/manifest.ts`](../../apps/web/src/world/manifest.ts); this file explains it. Grounded historical realism target per `Production.md`; the district is a compressed gameplay construct, topological not literal (no false geography is taught).
 
 ## 1. District topology (meters, y-up)
 
-One east-west packed-earth street spine (x −52..52, z −6..6) with two building rows, plus two side lanes:
+The built world is **world layout v3 — "the big street"**: one long east-west packed-earth street spine flanked by two enterable building rows and two alley route corridors, running west (the wharf) to east (the town gate / Liberty Tree). The authoritative coordinates are [`apps/web/src/world/manifest.ts`](../../apps/web/src/world/manifest.ts); the full layout law is in [`World-Design-Bible.md`](../design/World-Design-Bible.md) §3. This is the orientation summary; the manifest governs.
 
-- **South row (fronts at z≈7):** rowB · Clarke's shop (−38) · rowA (−13) · **Mercer's Press (0)** · **Pike's office (14)** · rowC (26) · **Custom House (40)**.
-- **North row (fronts at z≈−7.5):** **Thomas's counting-house (−30)** behind the market stalls · brick/clapboard fill rows (−16..32).
-- **Northwest lane** (from x≈−38) → dock gate blocker → **rider post** at (−45, −29) with cargo, cart, crates.
-- **Northeast lane** (from x≈32) → **Liberty Tree pocket**: the great elm at (44, −27) with the A.O. effigy hung from a low branch, crowd marks, and the approach anchor at (38, −21).
-- Town notice-board at (6, 4.6) by Mercer's; well pump (−6, −3); carts, barrels, crates, market stalls per `PROPS`.
+- **Bounds:** x ∈ [−165, +108], z ∈ [−30, +30] (alleys included; the wharf pocket extends z accordingly; harbor water is collider-fenced).
+- **The wharf (x −160 .. −118):** Town Wharf apron west of x ≈ −118, hero brig + sloop + rowboats, warehouses on the north side; the wharf gate joins the street.
+- **West street (x −118 .. −40):** warehouses / chandlery / ropewalk south row; **Thomas's counting-house** (north row); the **rider post** in the north-alley mouth (~x −95); market stalls.
+- **Mid street (x −40 .. +25):** **Mercer's Press** anchor at [0, south row]; tavern; **Clarke's shop**; well / pump; the **town notice board at [6, 0, 8.8]**.
+- **East / civic end (x +25 .. +80):** **Pike's office**, the **Town House square (x +45 .. +62)** (King Street / Massacre stage, Day 2 reuse), the **Custom House** facing it across the square, and the church with white steeple.
+- **East gate + Liberty Tree (x +80 .. +105):** the **east gate at x = +80**; the lane bends NE to the **Liberty Tree pocket at [+95, −25]** (elm, effigy rig, crowd ground) where EventDirector stages the effigy hanging.
+- Alleys run both rows the full length (duck laundry, vault crates, squeeze) as the unseen route options; a route is *state*, not geometry.
 
-World bounds clamp: x ∈ [−56, 54], z ∈ [−40, 18]. Traversal legs stay in the 5–20 s window at walk speed 2.3 m/s (run 4.4).
+Two readable surfaces are distinct and must not be conflated: the **town notice board** at [6, 0, 8.8] by Mercer's is a **focus-read knowledge surface** (read the posted Stamp Act bill), whereas the **Custom House notice** is the **posting errand** (`CUSTOMHOUSE_NOTICE` → Custom House steps) — a placed/posted beat at the civic chokepoint, not the town-board read.
 
 ## 2. Locations and runtime binding
 
@@ -39,7 +41,7 @@ Errand target anchors: `THOMAS_CIRCULAR` → Thomas's door, `PIKE_PROOF` → Pik
 
 The runtime clock (`view.clock.spentUnits / fixedEventBoundary`) drives the sun: elevation 58°→7°, azimuth 115°→245°, warm shift `#fff4e0`→`#ff8a3d`, plus fog `#cfd8de`→dusk `#3c2f28`. `phase === "DUSK"` or the Liberty Tree approach forces dusk with a bonfire point light at the elm. Ambient street population: two walkers pacing the spine (walk loops, position-lerped), two talkers at the market, idlers by the board, and two arguers near the elm — all suppressed while indoors.
 
-## 4. Cast registry (all auto-rigged via Meshy, animated via shared Mixamo library)
+## 4. Cast registry (auto-rigged via Meshy, per-character baked Mixamo clips)
 
 | Character | GLB | Height | Source | Default clip |
 |---|---|---|---|---|
@@ -55,11 +57,11 @@ The runtime clock (`view.clock.spentUnits / fixedEventBoundary`) drives the sun:
 
 Characters normalize at load: uniform scale to spec height, feet grounded at y=0. A missing GLB degrades to a period-toned placeholder person (never a crash).
 
-## 5. Animation library
+## 5. Animation (per-character baked Mixamo clips)
 
-30 user-supplied Mixamo clips (motion-only FBX, 30 FPS, `mixamorig` skeleton) baked by Blender into one `anim-library.glb` with named NLA clips: idle, walk, run, leftTurn, rightTurn, reach, search, carry, carryWalk, handoff, crouchIdle/Walk/Left/Right/ToStand, climbUp, climbDown, vault, work1, work2, cheer1, cheer2, talk–talk4, argu1, argue2, circleWalk1/2.
+Animation is **baked per character**: each character GLB ships self-contained named clips. The player carries the full set (idle, walk, run, leftTurn, rightTurn, reach, search, carry, carryWalk, handoff, crouchIdle/Walk/Left/Right/ToStand, climbUp, climbDown, vault, work1, work2, cheer1, cheer2, talk–talk4, argu1, argue2, circleWalk1/2, and the queued jump/runJump); other cast carry the 10-clip NPC subset (idle/walk/run/talk/talk2/argu1/…). Source motion is 30 FPS Mixamo FBX baked by Blender during the character pipeline (`bake_character_anims.py` / `bake_native_mixamo_character.py`).
 
-Runtime retarget (`apps/web/src/world/anims.ts`): bone-name map `mixamorig*` → Meshy rig (Hips, Spine/01/02, neck, Head, limbs), rotation keys rebased by rest-pose delta `qT = qTrest · qSrest⁻¹ · qS(t)`, hips translation rescaled by rest-height ratio. Clips are retargeted lazily per character and cached.
+There is **no runtime retargeting and no shared animation library** — the former `anims.ts` runtime retarget path (and the single `anim-library.glb`) has been removed. Adding a clip means adding the motion to the bake step and re-baking each character that needs it (see `Production.md` §C.4), not remapping bones at runtime.
 
 ## 6. World asset kit (Meshy text-to-3D, grounded-realism prompts in `assets/pipeline/batch_world.mjs`)
 
@@ -85,7 +87,7 @@ tests instead of producing fallback shells.
 
 ## 7. Pipeline commands (`assets/pipeline/`)
 
-- `build_anims.py` — Blender: 30 FBX → `anim-library.glb` (NLA-named clips).
+- `bake_character_anims.py` / `bake_native_mixamo_character.py` — Blender: bake the 30 FPS Mixamo FBX motions into each character GLB as named clips (per-character; no shared library).
 - `prep_abigail.py` — Blender: decimate + texture-shrink the supplied Abigail GLB.
 - `rig_character.mjs` — Meshy rigging API for one prepped GLB (reads `MESHY_API_KEY` from `.env`).
 - `gen_character.mjs` / `batch_characters.mjs` — Meshy text-to-3D preview→refine→rig for the cast.

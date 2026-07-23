@@ -199,7 +199,7 @@ export const M4_KNOWLEDGE: readonly KnowledgePlacement[] = [
     size: [1, 1, 1],
     micros: [MICRO_CONCEPT_IDS.ANDREW_OLIVER],
   },
-  // ---- Found-History density pass (Act-1-Environmental-Lore catalog). ----
+  // ---- Found-History density pass (Environmental-Lore catalog). ----
   // EXISTING carriers attach a read to props already placed and verified; no
   // new visuals. Tier-B entries log their micro; Tier-C entries log nothing
   // (micros: []) — pure saturation-law texture. Tier-A entries additionally

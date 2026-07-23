@@ -667,7 +667,7 @@ function* clarkeEncounter(ctx: Ctx): Sub<void> {
   ctx.dialogue("CLARKE", TEXT.clarke.liberty);
   ctx.dialogue("CLARKE", TEXT.clarke.challenge, true);
   // Archive R4 decision-frame: pose the historical consideration, never the
-  // answer (Boston-Archive-Spec §5 — this choice moves attention/heat state).
+  // answer (Archive-Spec §5 — this choice moves attention/heat state).
   ctx.archive("(Clarke is a Loyalist. He reports what he sees.)");
   const c = yield* choose(ctx, "BOS.MD01.ACT.CLARKE_CHALLENGE.v1", "Clarke eyes what you're carrying.", [
     { choiceId: "CALM_CONCEAL", label: "\"Overruns for the rider.\" Tuck the bundle under the plain wrap.", tags: ["reads as harmless"] },

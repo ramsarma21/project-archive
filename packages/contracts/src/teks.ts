@@ -40,7 +40,7 @@ export const CONCEPT_TEKS: Record<ConceptId, TeksClause> = {
 };
 
 // ============================================================================
-// Concept classification registry (Boston-Learning-Ledger-Spec §3). Static
+// Concept classification registry (Learning-Ledger-Spec §3). Static
 // content metadata — NOT per-student state. Lets the runtime route a concept:
 //   MACRO_GATED -> full lifecycle + demonstration (the 3 macros + event anchors)
 //   PATTERN     -> taught by a mechanic; Archive bridge only if archiveSafetyNet
@@ -70,7 +70,7 @@ export const CONCEPT_META: ConceptRegistry = {
   [CONCEPTS.POSTWAR_REVENUE]: { conceptId: CONCEPTS.POSTWAR_REVENUE, class: "MACRO_GATED", recurrence: "ONCE", seIds: ["8.4A"], chapterOwner: "BOSTON" },
 };
 
-// ---- Static coverage map for Day 1 (mirrors Day-1.md s.2C matrix). ----
+// ---- Static coverage map for Day 1 (mirrors docs/chapters/boston-1765/Day-1.md s.2C matrix). ----
 export interface CoverageExposure {
   beat: string;
   type: "SCENE" | "CONVERSATION" | "ARTICLE" | "HANDS_ON";

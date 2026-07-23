@@ -1,8 +1,8 @@
 # Boston — Mechanics-as-Lessons catalog
 
-**Status: the canonical spec for every load-bearing gameplay mechanic in the Boston chapter, Act 1 first.** This is the operational half of the creed — *"everything you **do** teaches you"* — built on the delivery hierarchy's top rung: **the historical constraint IS the game constraint** (`Boston-Concept-Delivery-Map.md`). Each mechanic encodes its concept into its *rules, costs, and consequences*, so a player can't succeed without internalizing the history.
+**Status: the canonical spec for every load-bearing gameplay mechanic in the Boston chapter, Act 1 first.** This is the operational half of the creed — *"everything you **do** teaches you"* — built on the delivery hierarchy's top rung: **the historical constraint IS the game constraint** (`Concept-Delivery-Map.md`). Each mechanic encodes its concept into its *rules, costs, and consequences*, so a player can't succeed without internalizing the history.
 
-**Companions:** systems/stealth = `Act-1-Production-Plan.md` (Part D); quests/routes = `Boston-Quests-and-NPCs.md`; concepts = `Act-1-Micro-Concepts.md`; spine = `Day-1-v2.md`; existing rigs = `apps/web/src/world/MechanicRigs.tsx`; anim law = `Production.md` §3.
+**Companions:** systems/stealth = `Act-1-Production-Plan.md` (Part D); quests/routes = `Quests-and-NPCs.md`; concepts = `Micro-Concepts.md`; spine = `Day-1-Build-Script.md`; existing rigs = `apps/web/src/world/MechanicRigs.tsx`; anim law = `Production.md` §3.
 
 **Every mechanic entry follows one template:**
 - **Verb / do** — the input + compound stages (no 1-second beats — `Gameplay-Design` §6).
@@ -104,7 +104,7 @@
 - **M5 (polish):** rally crowd choreography + the one sanctioned cutscene.
 
 ## 9. Locked decisions (2026-07-21)
-1. **Search→chase conversion** — refuse/run is **always allowed** (GTA-style agency); it converts to a chase **deterministically** (no random draw for *whether*). Current **heat sets the difficulty**: low heat → 1 pursuer, short cones; high heat → up to the ≤4 cap join, longer cones. Comply always clears you (seeded outcome for wrapped goods per `Day-1-v2` B9). No dead-ends.
+1. **Search→chase conversion** — refuse/run is **always allowed** (GTA-style agency); it converts to a chase **deterministically** (no random draw for *whether*). Current **heat sets the difficulty**: low heat → 1 pursuer, short cones; high heat → up to the ≤4 cap join, longer cones. Comply always clears you (seeded outcome for wrapped goods per `Day-1-Build-Script` B9). No dead-ends.
 2. **Boycott flag granularity** — a single global `boycottStanding` scalar (0..N) **plus** two named per-merchant flags where threads need them (`thomas`, `sarah`). Not per-merchant across the board — the scalar drives crowd/Standing reactions; the two flags drive Thread B / Thomas payoffs in Act 2.
 - **Deferred to content/text-slice (not a systems blocker):**
   3. Author the **draft dialogue/prompts** for each mechanic's choice moments (localhost text slice).

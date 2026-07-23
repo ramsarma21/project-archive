@@ -4,7 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import type { PlayerApi } from "./Player.js";
 
 // ---------------------------------------------------------------------------
-// True head-camera first person (Production.md §2A): during staged first-
+// True head-camera first person (docs/engine/Production.md §2A): during staged first-
 // person beats the real player character stays visible playing its authored
 // clip, the camera rides its head bone (head hidden so we never see inside
 // it, near plane pulled in), and the character's own animated arms are the
@@ -67,7 +67,7 @@ const HEAD_NEAR = 0.05;
 // on the synthetic path. The eye sits far enough ahead of the head that the
 // clip's raised hands stay BEHIND the camera: with a shorter offset the
 // work1 pull raise crossed the near plane and read as giant frame-edge
-// claws. Per Production.md §2A the work object carries the visible motion.
+// claws. Per docs/engine/Production.md §2A the work object carries the visible motion.
 const EYE_FORWARD = 0.3;
 const EYE_UP = 0.08;
 

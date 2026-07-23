@@ -1,6 +1,6 @@
 # Boston — The Archive as Orchestrator (consolidated spec)
 
-**Status: the single authority for everything the Archive does across the Boston chapter.** The Archive is the game's cheapest, most flexible teaching instrument — deterministic text + UI, no expensive assets or runtime generation — so it's the **orchestrator** that binds the world's learning together *without* becoming dialogue spam. This doc consolidates its roles (previously scattered across `Gameplay-Design`, `Boston-Concept-Delivery-Map`, `Interaction-Spec`, and `Project-Archive-v3` §16-22) into one governed system.
+**Status: the single authority for everything the Archive does across the Boston chapter.** The Archive is the game's cheapest, most flexible teaching instrument — deterministic text + UI, no expensive assets or runtime generation — so it's the **orchestrator** that binds the world's learning together *without* becoming dialogue spam. This doc consolidates its roles (previously scattered across `Gameplay-Design`, `Concept-Delivery-Map`, `Interaction-Spec`, and `Project-Archive-v3` §16-22) into one governed system.
 
 **Governing principle:** the Archive is **powerful but rationed.** It does the cheap, high-leverage jobs (framing, bridging, assessing, remembering) and *defers to the world* for delivery. Every role below is capped by the **annoyance budget** (§8). If a lesson can land in the world (mechanic, lore, event), the Archive stays silent; it speaks only to *frame, bridge, assess, or remember*.
 
@@ -38,7 +38,7 @@
 
 ## 4. R3 — Routes reminder (earned-capability surfacing)
 
-- **Fires:** when the player approaches a watched/blocked stretch for which they hold an **owned route** (`Boston-Quests-and-NPCs.md` §2A — back-lanes, roofs, dock gate, scaffold shortcut).
+- **Fires:** when the player approaches a watched/blocked stretch for which they hold an **owned route** (`Quests-and-NPCs.md` §2A — back-lanes, roofs, dock gate, scaffold shortcut).
 - **Behavior:** one optional clause naming the capability they earned; it never hands over a route not yet discovered, and it defers if heat/assessment isn't relevant.
 - **Why it's Archive-appropriate:** it rewards prior exploration by making earned knowledge *legible at the moment of use* — the cheap connective tissue of the alive world.
 
@@ -53,12 +53,12 @@
 
 - **Fires:** after a mechanic that delivered a *feeling* the world won't label on its own (search → "writs of assistance"; boycott choice → "non-importation"; ferry secrecy → "why the Sons of Liberty worked covertly").
 - **Behavior:** one line, tied to the concrete action just taken, inside the annoyance budget. **Never a lecture, never a substitute for the mechanic.**
-- **Dual-delivered patterns:** the highest-STAAR-value patterns get *both* gameplay and this light Archive safety net (`Boston-Concept-Delivery-Map`).
+- **Dual-delivered patterns:** the highest-STAAR-value patterns get *both* gameplay and this light Archive safety net (`Concept-Delivery-Map`).
 
 ## 7. R6 — Assessor / the mastery gate (Archive Sync)
 
 - **Where:** checkpoints CP0-CP4 (year-jumps). CP1 is the Act-1 debrief.
-- **Content:** **always** the 3 macro concepts + **a sample of engaged micros only** (fairness rule — never test what the world didn't show this student, `Act-1-Micro-Concepts` §4); CP2-CP4 add **spaced retrieval** from prior Acts' engaged sets.
+- **Content:** **always** the 3 macro concepts + **a sample of engaged micros only** (fairness rule — never test what the world didn't show this student, `Micro-Concepts` §4); CP2-CP4 add **spaced retrieval** from prior Acts' engaged sets.
 - **Format:** authored, SME-approved, TEKS-tagged STAAR-format items, selected deterministically from the versioned bank (never model-generated — FR-8).
 - **The gate (locked behavior):** on an incorrect answer, the student is **never** hard-failed and never bounced back to a world beat. Instead:
   1. **Memory-cued hint** (R7) — drawn from their provenance.

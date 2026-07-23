@@ -1,6 +1,6 @@
 # Curriculum World Map — covering all 85 STAAR 8 SEs across a handful of settings
 
-**Status: design authority for the multi-chapter curriculum plan.** Companion to `Boston-STAAR-Coverage-Map.md` (which details Boston's slice). This doc answers: *how do we cover the **entire** STAAR 8 U.S. History curriculum (all 85 assessed SEs, colonization → 1877) without stretching any one world past what it can authentically carry?*
+**Status: design authority for the multi-chapter curriculum plan.** Companion to `STAAR-Coverage-Map.md` (which details Boston's slice). This doc answers: *how do we cover the **entire** STAAR 8 U.S. History curriculum (all 85 assessed SEs, colonization → 1877) without stretching any one world past what it can authentically carry?*
 
 ## Spiral vs. event-anchored SEs (how chapters share the load)
 
@@ -14,7 +14,7 @@ Not every SE is "taught once and done." Two kinds:
 2. **Later checkpoints ask cross-era/compare questions** on spiral SEs (e.g., "compare representative government in Jamestown, Boston, and Philadelphia"), not just single-era recall.
 3. **The STAAR bank tags each item ONCE or SPIRAL** so spiral coverage accumulates across chapters instead of duplicating.
 
-Boston's own split: **5 ONCE** ((4)(A), (4)(B), (4)(C) Lexington/Concord, (20)(B), (23)(B)) + **18 SPIRAL**. Full per-SE recurrence tags live in `Boston-STAAR-Coverage-Map.md` → *"The exact target set."*
+Boston's own split: **5 ONCE** ((4)(A), (4)(B), (4)(C) Lexington/Concord, (20)(B), (23)(B)) + **18 SPIRAL**. Full per-SE recurrence tags live in `STAAR-Coverage-Map.md` → *"The exact target set."*
 
 ## Guiding principle — no square pegs
 
@@ -42,7 +42,7 @@ Boston's own split: **5 ONCE** ((4)(A), (4)(B), (4)(C) Lexington/Concord, (20)(B
 ### 0 — Boston *(built)* — the Revolution
 - **Timeline:** A1 1765 Stamp Act · A2 1770 Massacre · A3 1773 Tea Party · A4 1774–75 Coercive Acts → Lexington & Concord → Siege of Boston.
 - **Owns (Tier A, 11):** (4)(A) causes of the Revolution · (1)(A) eras · (3)(A) representative gov't (town meeting) · (10)(C) waterways/communication · (11)(A) geography→economy · (15)(C) grievances→Bill of Rights · (4)(B) individuals · (20)(B) Tea Party civil disobedience · (21)(A) points of view · (21)(B) free press · (23)(E) women.
-- **Touches (Tier B, 12):** see `Boston-STAAR-Coverage-Map.md` target set. *(1776/Declaration moved to Philadelphia.)*
+- **Touches (Tier B, 12):** see `STAAR-Coverage-Map.md` target set. *(1776/Declaration moved to Philadelphia.)*
 - **Expansion:** the **gated Lexington/Concord country-road corridor** — see §"Boston expansion" below and the geometry spec in `World-Design-Bible.md`.
 
 ### 1 — Philadelphia — the founding *(highest ROI new chapter)*

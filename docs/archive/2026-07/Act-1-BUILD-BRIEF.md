@@ -7,7 +7,7 @@
 ## 0. TL;DR
 
 1. Read the guardrails (§1) — breaking any of them fails review.
-2. Skim the design docs (§2) — `Act-1-Production-Plan.md` (esp. Part D + Part E milestones) and `Act-1-World-Content.md` are your primary specs.
+2. Skim the design docs (§2) — `Act-1-Production-Plan.md` (esp. Part D + Part E milestones) and `World-Content.md` are your primary specs.
 3. Learn the codebase map (§4).
 4. Execute milestones in order (§5). **Start with M0** — a foundational refactor that unblocks everything. Do **not** start stealth features before M0 lands.
 5. Follow conventions (§6), respect locked decisions + tuning defaults (§7), verify against §8.
@@ -32,17 +32,17 @@
 | `Gameplay-Design.md` | The design authority. §2 two-budget model, §6 compound-verb skill, §7 stealth, §8 reactive world, §11A Act 1 flow. |
 | **`Act-1-Vertical-Slice.md`** | **THE CURRENT BUILD TARGET.** The bounded playable slice (intake→CP1) with one strong instance of each pillar, what already exists vs. the delta, and the 3 slice-first build increments. Start here. |
 | **`Act-1-Production-Plan.md`** | **Primary systems spec.** Part A (activity catalog + build status), Part B (assets), Part C (animation), **Part D (stealth/chase math + foundational refactors)**, **Part E (milestones M0–M5)**. |
-| **`Act-1-World-Content.md`** | **Primary content spec.** Exact placed content — every NPC/quest/challenge/knowledge/watcher with coords, assets, triggers, draft dialogue, states, hooks. Organized by zone. |
-| `Day-1-v2.md` | The per-beat build script for the spine (animations, inputs, skills, cue IDs, mechanic promptIds). |
-| `Boston-Quests-and-NPCs.md` | The NPC-interaction + quest system + cross-Act threads. **§2A living routes / fetch-and-ferry / owned routes** is load-bearing for how quests play. |
-| `Act-1-Micro-Concepts.md` | The 14 micro concepts + which interaction logs each (feeds the debrief). |
-| **`Boston-Mechanics-Spec.md`** | **The mechanics catalog** — Press, Search/writs, Contraband ferry, Boycott/homespun, Town-meeting, News-relay. Each with rules→cost→consequence→concept→anim→accessibility→build. "The historical constraint IS the game constraint." |
-| **`Act-1-Environmental-Lore.md`** | **The "Found History" inspectable layer** — every look-at object by zone, tier (A spine-support / B micro / C ambient), concept, coords, draft inspect text. |
-| **`Boston-Archive-Spec.md`** | **The Archive orchestrator** — its 7 roles (narrator, director, routes-reminder, decision-frame, reinforcer, mastery gate, hint engine) + the annoyance budget that rations them. |
-| **`Boston-Learning-Ledger-Spec.md`** | **Contract extension** — additive `provenance` on exposures + `ConceptRegistry` (class/recurrence/SE) + engaged-set debrief sampling. Backward-compatible with `@pa/contracts`. |
-| `Boston-Concept-Delivery-Map.md` | The creed + triple bind + delivery hierarchy + saturation law — *why* content is delivered the way it is. |
-| **`Act-1-Activity-Expansion.md`** | **The "alive world" layer** — the interactive-occupant NPC tier (deterministic preset dialogue + state-gated options, no AI) + 5 learning-bearing activity families. **§0: these are TEMPLATES; build only the curated Act-1 subset**, not the whole library. |
-| **`Act-1-Activity-Feel.md`** | **The look/feel/distinctiveness bible** — per-activity camera, tempo, input, signature sight+sound, flavor, and teaching-in-view; the distinctiveness levers + variety matrix (anti-sameness law) + shared presentation rules. |
+| **`World-Content.md`** | **Primary content spec.** Exact placed content — every NPC/quest/challenge/knowledge/watcher with coords, assets, triggers, draft dialogue, states, hooks. Organized by zone. |
+| `Day-1-Build-Script.md` | The per-beat build script for the spine (animations, inputs, skills, cue IDs, mechanic promptIds). |
+| `Quests-and-NPCs.md` | The NPC-interaction + quest system + cross-Act threads. **§2A living routes / fetch-and-ferry / owned routes** is load-bearing for how quests play. |
+| `Micro-Concepts.md` | The 14 micro concepts + which interaction logs each (feeds the debrief). |
+| **`Mechanics-Spec.md`** | **The mechanics catalog** — Press, Search/writs, Contraband ferry, Boycott/homespun, Town-meeting, News-relay. Each with rules→cost→consequence→concept→anim→accessibility→build. "The historical constraint IS the game constraint." |
+| **`Environmental-Lore.md`** | **The "Found History" inspectable layer** — every look-at object by zone, tier (A spine-support / B micro / C ambient), concept, coords, draft inspect text. |
+| **`Archive-Spec.md`** | **The Archive orchestrator** — its 7 roles (narrator, director, routes-reminder, decision-frame, reinforcer, mastery gate, hint engine) + the annoyance budget that rations them. |
+| **`Learning-Ledger-Spec.md`** | **Contract extension** — additive `provenance` on exposures + `ConceptRegistry` (class/recurrence/SE) + engaged-set debrief sampling. Backward-compatible with `@pa/contracts`. |
+| `Concept-Delivery-Map.md` | The creed + triple bind + delivery hierarchy + saturation law — *why* content is delivered the way it is. |
+| **`Activity-Expansion.md`** | **The "alive world" layer** — the interactive-occupant NPC tier (deterministic preset dialogue + state-gated options, no AI) + 5 learning-bearing activity families. **§0: these are TEMPLATES; build only the curated Act-1 subset**, not the whole library. |
+| **`Activity-Feel.md`** | **The look/feel/distinctiveness bible** — per-activity camera, tempo, input, signature sight+sound, flavor, and teaching-in-view; the distinctiveness levers + variety matrix (anti-sameness law) + shared presentation rules. |
 
 When a task says "per Production Plan D.3", open that section — the formulas/constants are there.
 
@@ -93,7 +93,7 @@ All paths under `apps/web/src/`.
 - `presenter/ArchiveOverlay.tsx` — full modal (Tab): relationship bars, notes, routes. → add Standing card + Threads-log tab here.
 
 ### Manifest & layout (`world/manifest.ts`)
-- `BUILDINGS`, `PROPS`, `LOCATIONS` (interiors: `MERCER_PRESS`, `THOMAS_COUNTINGHOUSE`, `PIKE_OFFICE`, `CUSTOM_HOUSE`, + `CUSTOMS_POST`, `RIDER_POST`, `CLARKE_DOORWAY`, `LIBERTY_TREE_APPROACH`), `MARKER_ANCHORS` (incl. the rider-run corridors), `NPCS`, `AMBIENT`, `WORLD_BOUNDS {minX:-165,maxX:108,minZ:-30,maxZ:30}`. Coordinates for all Act-1 content are in `Act-1-World-Content.md`.
+- `BUILDINGS`, `PROPS`, `LOCATIONS` (interiors: `MERCER_PRESS`, `THOMAS_COUNTINGHOUSE`, `PIKE_OFFICE`, `CUSTOM_HOUSE`, + `CUSTOMS_POST`, `RIDER_POST`, `CLARKE_DOORWAY`, `LIBERTY_TREE_APPROACH`), `MARKER_ANCHORS` (incl. the rider-run corridors), `NPCS`, `AMBIENT`, `WORLD_BOUNDS {minX:-165,maxX:108,minZ:-30,maxZ:30}`. Coordinates for all Act-1 content are in `World-Content.md`.
 
 ### Tests (`world/__tests__/`)
 - `collisionMotion.test.ts`, `traversalResolver.test.ts`, `playerInput.test.ts` — copy this pure-unit style for new systems.
@@ -118,13 +118,13 @@ Goal: expose the shared services the stealth/chase/reactive systems need, withou
 Stamina (gate Shift in `freeMoveSpeed()`, drain/regen per D.1) + `ChaseDirector` (pursuer motor, shake/caught, caught→chewed-out→released-outside-watch-house-later per D.7) + stamina HUD bar + one scripted pursuer using a **tinted `officer-rigged`**. **Bake `jump`/`runJump`** (asset pipeline; needed for chase hops). Tune constants by feel. See D.1, D.7.
 
 ### M2 — Watchers + suspicion + heat
-`WatcherDirector` (posted + patrol, vision cones), the suspicion integrator + tells, heat state machine. Place the 4 watchers per `Act-1-World-Content.md` §9 (reuse the existing `officer` NPC at the −56 checkpoint). Wire the B8 watched street + B9 confrontation branch (comply/talk/run). See D.2–D.4, D.6.
+`WatcherDirector` (posted + patrol, vision cones), the suspicion integrator + tells, heat state machine. Place the 4 watchers per `World-Content.md` §9 (reuse the existing `officer` NPC at the −56 checkpoint). Wire the B8 watched street + B9 confrontation branch (comply/talk/run). See D.2–D.4, D.6.
 
 ### M3 — Standing + reactive world + threads
-`StandingCard` (D.5) + `ReactiveNpcDirector` (mobile named cast ad-hoc, unnamed interactables, thread figures) + knowledge-interactable tagging + the engaged-micro tracker + Threads-log tab in `ArchiveOverlay`. Content = `Act-1-World-Content.md` §2–§8. Threads system = `Boston-Quests-and-NPCs.md`.
+`StandingCard` (D.5) + `ReactiveNpcDirector` (mobile named cast ad-hoc, unnamed interactables, thread figures) + knowledge-interactable tagging + the engaged-micro tracker + Threads-log tab in `ArchiveOverlay`. Content = `World-Content.md` §2–§8. Threads system = `Quests-and-NPCs.md`.
 
 ### M4 — Content & assets
-Compound-verb extensions (press ink/register per `Day-1-v2.md` B2; haul; final pull B12). Assets per Production Plan B: watch-house landmark (reuse `bldg-townhouse-civic` + new `sign-watchhouse.png`), effigy placard + coin/paper textures, 1–2 roof boards; enable extra traversal verbs where CH-rooftop-run needs them. Commission the dedicated constable rig here (deferred from M1).
+Compound-verb extensions (press ink/register per `Day-1-Build-Script.md` B2; haul; final pull B12). Assets per Production Plan B: watch-house landmark (reuse `bldg-townhouse-civic` + new `sign-watchhouse.png`), effigy placard + coin/paper textures, 1–2 roof boards; enable extra traversal verbs where CH-rooftop-run needs them. Commission the dedicated constable rig here (deferred from M1).
 
 ### M5 — Assessment
 Engaged-micro → CP1 debrief overlay + STAAR-style item selection (deterministic). *Note: the authored STAAR question bank + final dialogue text are a separate content pass — see §8 gaps.*
@@ -137,7 +137,7 @@ Engaged-micro → CP1 debrief overlay + STAAR-style item selection (deterministi
 - **Live HUD gauges** use the `QuestMarkerHud` external-store + `useSyncExternalStore` pattern (write from an R3F director, read in DOM, meaningful-change-gated). Don't push per-frame state through React props.
 - **New systems get pure unit tests** in `world/__tests__/` in the existing style (scripted inputs → expected outputs; no wall-clock, no RNG). Cover: `segmentClear`, the suspicion integrator, chase shake/caught, stamina drain/regen.
 - **Animation:** reuse existing clips (`animationManifest.ts`); the only new baked clips for Act 1 are `jump`/`runJump`. Watchers reuse the NPC 10-clip subset — no new clips.
-- **Coordinates & content** come from `Act-1-World-Content.md` (grounded in `manifest.ts`); don't hardcode ad-hoc positions.
+- **Coordinates & content** come from `World-Content.md` (grounded in `manifest.ts`); don't hardcode ad-hoc positions.
 
 ---
 
@@ -162,7 +162,7 @@ Engaged-micro → CP1 debrief overlay + STAAR-style item selection (deterministi
 
 ## 8. Definition of done & known content gaps
 
-**Per-milestone done =** feature works in `npm run dev`, `npm run typecheck` clean, existing + new tests pass (`npm run test`), no guardrail violated, behavior matches the referenced Production-Plan-D spec, content matches `Act-1-World-Content.md`.
+**Per-milestone done =** feature works in `npm run dev`, `npm run typecheck` clean, existing + new tests pass (`npm run test`), no guardrail violated, behavior matches the referenced Production-Plan-D spec, content matches `World-Content.md`.
 
 **Not your job (separate content/authoring passes — flag if you need them):**
 - Final **dialogue text** (the doc has concrete drafts; real text-slice authoring is separate).

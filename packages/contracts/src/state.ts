@@ -6,7 +6,7 @@ export type ExposureType = "SCENE" | "CONVERSATION" | "ARTICLE" | "HANDS_ON";
 
 // Provenance: which concrete world moment delivered an exposure to THIS student.
 // Optional + additive (older records simply omit it). Powers the Archive's
-// memory-cued hints (Boston-Archive-Spec R7) — a hint may only cue a moment the
+// memory-cued hints (Archive-Spec R7) — a hint may only cue a moment the
 // student actually engaged, so the recall prompt is fair and personal.
 export type ExposureSourceKind =
   | "LORE"

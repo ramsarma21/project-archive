@@ -13,7 +13,7 @@
     "NOT SME_APPROVED. No content here may be treated as curriculum-approved or historically confirmed until the review fields on each item flip.",
     "Every item is AUTHOR_DRAFT and HISTORICAL_REVIEW_PENDING. TEKS tags are placeholders only.",
     "Open responses are formative competence evidence only. Nothing here scores mastery, alters learner state, gates the story, or writes dialogue at runtime.",
-    "All player-facing text obeys the project fiction rule: no em dashes (Day-1.md §5 / Day-Template L12)."
+    "All player-facing text obeys the project fiction rule: no em dashes (docs/chapters/boston-1765/Day-1.md §5 / docs/process/Chapter-Day-Template.md L12)."
   ],
   "act1ExposureCap": 4,
   "act1ExposureCapNote": "A single player may be offered at most 4 of these open responses across Act 1. Eligibility is further bounded by per-item source prerequisites and minimum spacing, so most playstyles surface only 3 to 4.",

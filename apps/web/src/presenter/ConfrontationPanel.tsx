@@ -226,7 +226,7 @@ export function ConfrontationPanel(props: {
               : "The officer demands to know what you are carrying."}
         </p>
         {/* Archive R4 decision-frame: one historical consideration, never the
-            answer (Boston-Archive-Spec §5). Shown only while choosing. */}
+            answer (Archive-Spec §5). Shown only while choosing. */}
         {confrontation.phase === "CHOOSING" && !talkFailed && (
           <p className="archive-frame">
             (The officer's writ names no one — and the watch remembers faces

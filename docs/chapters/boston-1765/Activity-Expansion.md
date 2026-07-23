@@ -2,7 +2,7 @@
 
 **Status: the spec that fills the town with active, learning-bearing things to do** — both a new **interactive-NPC tier** that populates the explorable interiors and streets, and **five activity families** those NPCs hand out. Goal: GTA×Elden-Ring density — *wherever you go, someone has something for you to do, and doing it teaches you* — using **only deterministic preset content and reused assets** (no AI NPCs, no new character commissions; FR-8).
 
-**Companions:** cast taxonomy = `Boston-Quests-and-NPCs.md` §6 (extended here); mechanics = `Boston-Mechanics-Spec.md`; lore = `Act-1-Environmental-Lore.md`; content manifest = `Act-1-World-Content.md`; interiors = `World-Design-Bible.md` §4 (all buildings enterable); grammar = `Interaction-Spec.md`.
+**Companions:** cast taxonomy = `Quests-and-NPCs.md` §6 (extended here); mechanics = `Mechanics-Spec.md`; lore = `Environmental-Lore.md`; content manifest = `World-Content.md`; interiors = `World-Design-Bible.md` §4 (all buildings enterable); grammar = `Interaction-Spec.md`.
 
 **Design creed applied:** every activity below is Learning + Game-state + Fun (the triple bind). None is a macro carrier (skippable); each logs a **micro** on a tracked completion and moves Standing/flags.
 
@@ -10,12 +10,12 @@
 
 ## 0. These are TEMPLATES — curate and spread (do not cram into Act 1)
 
-**The activity families, the occupant model, the mechanics, the lore tiers, and the feel-levers (`Act-1-Activity-Feel.md`) are a reusable *template library* — the palette for the whole game, not an Act-1 checklist.** Each Act/Chapter/Season draws a **curated subset** that fits its era and its concepts. This is the same discipline as the "curated dozen micros per Act" law (`Gameplay-Design.md` §3): **quality and fit over volume.**
+**The activity families, the occupant model, the mechanics, the lore tiers, and the feel-levers (`Activity-Feel.md`) are a reusable *template library* — the palette for the whole game, not an Act-1 checklist.** Each Act/Chapter/Season draws a **curated subset** that fits its era and its concepts. This is the same discipline as the "curated dozen micros per Act" law (`Gameplay-Design.md` §3): **quality and fit over volume.**
 
 **Curation rules:**
 - **Concept-fit first:** deploy a template *where its concept is being taught* — e.g., a *quartering* search-variant in Act 2 (soldiers), a *tea-dumping* mechanic in Act 3, a *port-closure route-loss* in Act 4, a *plantation-labor* work-job in the Virginia chapter. Don't place a template just because it exists.
 - **Freshness budget:** each Act should introduce **1-2 new template applications** and **evolve** returning ones via World Turns (the ropewalk in an occupied 1770 feels different), so no Act is a rerun.
-- **Novelty spacing:** across a single play-session, rotate the feel-levers (camera/tempo/input) so signature moments don't bunch up — the anti-sameness law (`Act-1-Activity-Feel.md` §0) applies *within* an Act's curated set.
+- **Novelty spacing:** across a single play-session, rotate the feel-levers (camera/tempo/input) so signature moments don't bunch up — the anti-sameness law (`Activity-Feel.md` §0) applies *within* an Act's curated set.
 - **Franchise reuse:** the library is a Season-level asset. Philadelphia, Virginia, Frontier, and Civil-War chapters reskin the same templates with new concepts and props — huge production ROI (`Curriculum-World-Map.md`).
 
 ### Act 1 curated set (the tight, high-quality slice we actually build)
@@ -50,7 +50,7 @@ Not all ~80 instances — a deliberate subset sized to a ~25-40 min Act:
 
 **What state gates options (examples):** `standingTier`, `heat`, `boycottStanding`, thread flags (`ned.met`), whether the task is available/done, `dayPhase`. Gating is table-driven data, resolved at runtime — identical to the existing interaction grammar.
 
-**Cast tier (extends `Boston-Quests-and-NPCs.md` §6):**
+**Cast tier (extends `Quests-and-NPCs.md` §6):**
 
 | | Named (5) | Thread figures (≤3) | **Occupants (many) — NEW** | Unnamed crowd |
 |---|---|---|---|---|
