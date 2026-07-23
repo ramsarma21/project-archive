@@ -36,7 +36,7 @@ import {
 } from "./FirstPersonCamera.js";
 import { EventDirector } from "./EventDirector.js";
 import { MechanicRigs } from "./MechanicRigs.js";
-import { DoorDirector, DOOR_TARGETS } from "./DoorDirector.js";
+import { DoorDirector } from "./DoorDirector.js";
 import { EntryDirector, useEntryDoorTarget } from "./EntryDirector.js";
 import { TraversalDirector } from "./TraversalDirector.js";
 import { InteractionDirector } from "./InteractionDirector.js";
@@ -53,24 +53,17 @@ import {
   WORLD_BOUNDS,
   exteriorColliders,
 } from "./manifest.js";
+import { doorAwareBuildingColliders } from "./doorwayContract.js";
 import {
-  doorAwareBuildingColliders,
-  doorwayForBuilding,
-  thresholdAnchorForLocation,
-} from "./doorwayContract.js";
-import {
-  INTERIORS,
   interiorDef,
   interiorDoorFacade,
   interiorExitSensor,
-  interiorLanding,
   type InteriorInspectHotspotDef,
 } from "./interiorManifest.js";
 import { buildInteriorCollisionWorld } from "./interiorCollision.js";
 import { InteriorInspectDirector } from "./InteriorInspectDirector.js";
 import { ContextInspectCard } from "../presenter/ContextInspectCard.js";
 import { ImportedTexturedProp } from "./Character.js";
-import { preloadInteriorAssets } from "./InteriorDirector.js";
 import { QuestMarkerDirector, type ResolvedQuestMarker } from "./QuestMarkerDirector.js";
 import {
   QuestMarkerHud,
@@ -87,7 +80,6 @@ import {
   planarDistance,
 } from "./questMarkerResolver.js";
 import { createActorRegistry, type ActorRegistry } from "./actorRegistry.js";
-import { resolveSpatialRestore } from "./spatialRestore.js";
 import {
   beginArrivalAttempt,
   createArrivalLatch,
@@ -132,6 +124,16 @@ import type { StaminaAssist } from "./stamina.js";
 import { useSmoothedNumber } from "./hooks/useSmoothedNumber.js";
 import { PlayerPosProbe } from "./qa/QaProbes.js";
 import { useQaDoorHooks } from "./qa/QaDoorHooks.js";
+import { ExplorePortals } from "./portals/ExplorePortals.js";
+import {
+  stepThresholdPlacement,
+  type PendingThresholdPlacement,
+} from "./portals/thresholdPlacement.js";
+import {
+  arriveWithDoorBeat,
+  crossExploreThresholdBeat,
+  type DoorBeatContext,
+} from "./portals/doorBeat.js";
 
 const ACTOR_STALE_AGE_TICKS = 30;
 
@@ -459,66 +461,6 @@ function FocusReadStaging(props: {
       )}
     </group>
   );
-}
-
-// ---- Explore interiors (Bible §4: every building enterable) -----------------
-// Presentation-only portals: the runtime never leaves its exterior location;
-// walking into any non-errand door crosses the same kind of threshold the
-// hero interiors use (door swing, short beat, teleport across the leaf).
-const EXPLORE_PORTALS = Object.values(EXPLORE_LOCATIONS).map((loc) => ({
-  loc,
-  outside: thresholdAnchorForLocation(loc, "OUTSIDE"),
-  inside: interiorExitSensor(loc.id),
-}));
-
-function ExplorePortals(props: {
-  apiRef: { current: PlayerApi | null };
-  interiorId: string | null;
-  enabled: boolean;
-  onEnter: (locId: string) => void;
-  onExit: (locId: string) => void;
-}) {
-  // Disarm after every threshold crossing until the player steps away, so a
-  // teleport landing beside the sensor never ping-pongs back through it.
-  const armed = useRef(false);
-  useEffect(() => {
-    armed.current = false;
-  }, [props.interiorId]);
-  useFrame(() => {
-    if (!props.enabled) return;
-    const api = props.apiRef.current;
-    if (!api) return;
-    if (props.interiorId) {
-      const portal = EXPLORE_PORTALS.find((p) => p.loc.id === props.interiorId);
-      if (!portal) return; // hero interiors exit through their runtime flow
-      const dx = api.position.x - portal.inside[0];
-      const dz = api.position.z - portal.inside[2];
-      const d2 = dx * dx + dz * dz;
-      if (!armed.current) {
-        if (d2 > 1.6 * 1.6) armed.current = true;
-        return;
-      }
-      if (d2 < 0.95 * 0.95) props.onExit(portal.loc.id);
-      return;
-    }
-    let nearest: (typeof EXPLORE_PORTALS)[number] | null = null;
-    let nearestD2 = Infinity;
-    for (const portal of EXPLORE_PORTALS) {
-      const dx = api.position.x - portal.outside[0];
-      const dz = api.position.z - portal.outside[2];
-      const d2 = dx * dx + dz * dz;
-      if (d2 < nearestD2) {
-        nearestD2 = d2;
-        nearest = portal;
-      }
-    }
-    if (!armed.current) {
-      if (nearestD2 > 1.6 * 1.6) armed.current = true;
-      return;
-    }
-    if (nearest && nearestD2 < 0.95 * 0.95) props.onEnter(nearest.loc.id);
-  });
-  return null;
 }
 
 // Proximity arrival + walk-in selection with kind-specific radii, arrival
@@ -855,19 +797,12 @@ export function World3D(props: {
   // until it exists; otherwise a resume inside a shop would leave the camera
   // floating in the raw building shell.
   //
-  // Threshold placements are carried in a ref and executed on the effect run
-  // AFTER the interior-id swap commits. Scheduling them on a timer inside the
-  // run that calls setVisualInteriorId was a race this effect lost against
-  // itself: the state change re-runs the effect, whose cleanup cleared the
-  // pending timer, leaving the player stranded in the wall void between the
-  // exterior facade and the interior room (the reported "stuck in the wall"
-  // after the Mercer press scene). Deferring across the re-run also means the
-  // teleport lands under the NEW movement regime, never the old one.
-  const pendingThresholdPlacement = useRef<
-    | { kind: "ENTER"; locationId: string }
-    | { kind: "EXIT"; anchor: [number, number, number]; faceY: number }
-    | null
-  >(null);
+  // The pending-threshold state machine itself is pure and unit-tested
+  // (portals/thresholdPlacement.ts); this effect owns the refs and retry
+  // timer and interprets one step per run.
+  const pendingThresholdPlacement = useRef<PendingThresholdPlacement | null>(
+    null,
+  );
   useEffect(() => {
     if (archiveTransit) return;
     let cancelled = false;
@@ -879,63 +814,20 @@ export function World3D(props: {
         timer = window.setTimeout(attempt, 60);
         return;
       }
-      const pending = pendingThresholdPlacement.current;
-      if (pending) {
-        if (pending.kind === "ENTER" && visualInteriorId === pending.locationId) {
-          pendingThresholdPlacement.current = null;
-          api.teleport(interiorLanding(pending.locationId), 0);
-          return;
-        }
-        if (pending.kind === "EXIT" && visualInteriorId === null) {
-          pendingThresholdPlacement.current = null;
-          api.teleport(pending.anchor, pending.faceY);
-          return;
-        }
-        // Stale placement (the world moved on before the swap committed).
-        pendingThresholdPlacement.current = null;
-      }
-      if (!spawned.current) {
-        spawned.current = true;
-        if (runtimeLoc.interior) {
-          pendingThresholdPlacement.current = {
-            kind: "ENTER",
-            locationId: runtimeLoc.id,
-          };
-          setVisualInteriorId(runtimeLoc.id);
-        } else {
-          // Resume restore (feel-audit-1 P0-11): re-seat the body at the
-          // persisted presenter position when it matches the resumed
-          // context; the authored scene anchor is the fallback.
-          const restored = resolveSpatialRestore(props.restoreSpatial, runtimeLoc);
-          if (restored) {
-            api.teleport(restored.pos, restored.faceY);
-          } else {
-            api.teleport(runtimeLoc.anchor, runtimeLoc.faceY);
-          }
-        }
-        return;
-      }
-      if (runtimeLoc.interior && visualInteriorId !== runtimeLoc.id) {
-        pendingThresholdPlacement.current = {
-          kind: "ENTER",
-          locationId: runtimeLoc.id,
-        };
-        setVisualInteriorId(runtimeLoc.id);
-        return;
-      }
-      if (!runtimeLoc.interior && visualInteriorId) {
-        // Only runtime interiors are evicted by a runtime location change;
-        // presentation-only explore rooms are entered and left through their
-        // own door portals while the runtime stays on the street.
-        const previousInterior = LOCATIONS[visualInteriorId];
-        if (!previousInterior) return;
-        if (qaInteriorOverride.current) return;
-        pendingThresholdPlacement.current = {
-          kind: "EXIT",
-          anchor: thresholdAnchorForLocation(previousInterior, "OUTSIDE"),
-          faceY: Math.PI + previousInterior.faceY,
-        };
-        setVisualInteriorId(null);
+      const step = stepThresholdPlacement({
+        pending: pendingThresholdPlacement.current,
+        spawned: spawned.current,
+        visualInteriorId,
+        runtimeLoc,
+        qaInteriorOverride: qaInteriorOverride.current,
+        restoreSpatial: props.restoreSpatial,
+      });
+      pendingThresholdPlacement.current = step.pending;
+      spawned.current = step.spawned;
+      if (step.action === "TELEPORT") {
+        api.teleport(step.position, step.faceY);
+      } else if (step.action === "SWAP_INTERIOR") {
+        setVisualInteriorId(step.interiorId);
       }
     };
     attempt();
@@ -1246,55 +1138,24 @@ export function World3D(props: {
         motion: props.choiceAnimation?.motion ?? basePlayerActorCue.motion,
       }
     : null;
-  // Both handlers resolve with whether the runtime ACCEPTED the commit; the
-  // arrival tracker retries dropped commits instead of latching (P0-6).
-  const onArrive = async (targetId: string): Promise<boolean> => {
-    if (activeChase) return false;
-    const crossesDoor =
-      DOOR_TARGETS.has(targetId) ||
-      (targetId === "STREET" && Boolean(interiorId));
-    if (!crossesDoor) {
-      const accepted = await props.onEvent({ type: "FREE_ROAM_GOTO", targetId });
-      return accepted !== false;
-    }
-    if (doorTimer.current !== null) return false;
-    if (targetId !== "STREET") {
-      const destination = Object.values(INTERIORS).find((def) =>
-        doorwayForBuilding(def.buildingId)?.targetIds.includes(targetId),
-      );
-      if (destination) preloadInteriorAssets(destination);
-    }
-    apiRef.current?.setInputLocked(true);
-    apiRef.current?.setInteractionClip(
-      targetId === "STREET" ? "doorOpenOutward" : "doorOpenInward",
-    );
-    setDoorTarget(targetId);
-    const delay = props.reducedMotion ? 220 : 1500;
-    return new Promise<boolean>((resolveArrival) => {
-      doorTimer.current = window.setTimeout(() => {
-        void (async () => {
-          const accepted = await props.onEvent({ type: "FREE_ROAM_GOTO", targetId });
-          if (accepted === false) {
-            // The commit was dropped: unwind the door beat so the tracker can
-            // retry a full arrival instead of stranding a half-open door.
-            doorTimer.current = null;
-            setDoorTarget(null);
-            apiRef.current?.setInteractionClip(null);
-            apiRef.current?.setInputLocked(false);
-            resolveArrival(false);
-            return;
-          }
-          doorTimer.current = window.setTimeout(() => {
-            doorTimer.current = null;
-            setDoorTarget(null);
-            apiRef.current?.setInteractionClip(null);
-            apiRef.current?.setInputLocked(false);
-          }, props.reducedMotion ? 0 : 450);
-          resolveArrival(true);
-        })();
-      }, delay);
-    });
+  // Both arrival handlers resolve with whether the runtime ACCEPTED the
+  // commit; the arrival tracker retries dropped commits instead of latching
+  // (P0-6). The door-swing/threshold timer choreography lives in
+  // portals/doorBeat.ts; the context is rebuilt per render so each call sees
+  // exactly the values the old inline closures captured.
+  const doorBeatCtx: DoorBeatContext = {
+    apiRef,
+    doorTimer,
+    exploreTimer,
+    setDoorTarget,
+    setVisualInteriorId,
+    reducedMotion: props.reducedMotion,
+    interiorId,
+    activeChase: Boolean(activeChase),
+    onEvent: props.onEvent,
   };
+  const onArrive = (targetId: string): Promise<boolean> =>
+    arriveWithDoorBeat(doorBeatCtx, targetId);
   const onSelect = async (targetId: string): Promise<boolean> => {
     if (activeChase) return false;
     if (props.request?.kind !== "FREE_ROAM" || props.request.selectedTargetId) {
@@ -1303,47 +1164,8 @@ export function World3D(props: {
     const accepted = await props.onEvent({ type: "FREE_ROAM_SELECT", targetId });
     return accepted !== false;
   };
-  // Explore-room threshold crossings: same door-swing beat as the errand
-  // interiors, but purely presentational (no runtime event). The teleport is
-  // deferred one beat past the interior-id swap: the Player's room clamp and
-  // the exterior colliders trade places on the React commit, and teleporting
-  // before the swap lands the body under the OLD movement regime (the room
-  // clamp would drag an exit landing back inside the building's collider and
-  // wedge it there).
-  const crossExploreThreshold = (locId: string, direction: "IN" | "OUT") => {
-    if (exploreTimer.current !== null || doorTimer.current !== null) return;
-    const loc = EXPLORE_LOCATIONS[locId];
-    if (!loc) return;
-    if (direction === "IN") {
-      const destination = interiorDef(locId);
-      if (destination) preloadInteriorAssets(destination);
-    }
-    apiRef.current?.setInputLocked(true);
-    apiRef.current?.setInteractionClip(
-      direction === "IN" ? "doorOpenInward" : "doorOpenOutward",
-    );
-    setDoorTarget(direction === "IN" ? locId : "STREET");
-    const delay = props.reducedMotion ? 200 : 1450;
-    exploreTimer.current = window.setTimeout(() => {
-      setVisualInteriorId(direction === "IN" ? locId : null);
-      exploreTimer.current = window.setTimeout(() => {
-        if (direction === "IN") {
-          apiRef.current?.teleport(interiorLanding(loc.id), 0);
-        } else {
-          apiRef.current?.teleport(
-            thresholdAnchorForLocation(loc, "OUTSIDE"),
-            Math.PI + loc.faceY,
-          );
-        }
-        exploreTimer.current = window.setTimeout(() => {
-          exploreTimer.current = null;
-          setDoorTarget(null);
-          apiRef.current?.setInteractionClip(null);
-          apiRef.current?.setInputLocked(false);
-        }, props.reducedMotion ? 0 : 420);
-      }, 90);
-    }, delay);
-  };
+  const crossExploreThreshold = (locId: string, direction: "IN" | "OUT") =>
+    crossExploreThresholdBeat(doorBeatCtx, locId, direction);
   const roamSelectedTargetId =
     props.request?.kind === "FREE_ROAM" ? props.request.selectedTargetId ?? null : null;
   useEffect(() => {
