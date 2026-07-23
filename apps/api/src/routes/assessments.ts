@@ -10,6 +10,7 @@ import {
   type DeterministicResolution,
   type OpenResponseReference,
 } from "@pa/contracts";
+import { resolveClassifierResult } from "@pa/runtime";
 import {
   ACT1_CLASSIFIER_SCHEMA_ID,
   ACT1_CLASSIFIER_SCHEMA_VERSION,
@@ -17,8 +18,7 @@ import {
   ACT1_OPEN_RESPONSE_PACKAGE_ID,
   ACT1_OPEN_RESPONSE_PACKAGE_VERSION,
   openResponsePackage,
-  resolveClassifierResult,
-} from "@pa/runtime";
+} from "@pa/chapter-boston";
 import { getSessionUser, type SessionUser } from "../auth.js";
 import { query, transaction } from "../db.js";
 import {

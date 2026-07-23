@@ -41,7 +41,7 @@ export function commitExposure(
   interactionOrdinal: number,
   provenance?: ExposureProvenance,
 ): boolean {
-  const c = learner[concept];
+  const c = learner[concept]!;
   if (c.exposures.some((e) => e.exposureId === exposureId)) return false;
   c.exposures.push({ exposureId, type, interactionOrdinal, provenance });
   c.distinctOccasionCount = c.exposures.length;
@@ -66,7 +66,7 @@ export function canPresentInitialSync(
   anyLockActive: boolean,
   minimumInteractionsBetweenSyncs: number,
 ): boolean {
-  const c = learner[concept];
+  const c = learner[concept]!;
   if (anyLockActive) return false;
   if (c.understanding === "UNDERSTOOD") return false;
   if (c.understanding !== "NOT_ASSESSED") return false;
@@ -79,7 +79,7 @@ export function canPresentRetrySync(
   concept: ConceptId,
   minimumInteractionsBetweenSyncs: number,
 ): boolean {
-  const c = learner[concept];
+  const c = learner[concept]!;
   if (c.understanding !== "REEXPOSURE_REQUIRED") return false;
   const re = c.pendingReexposure;
   if (!re || !re.reexposureCommitted) return false;
@@ -94,7 +94,7 @@ export function applyInitialSync(
   txId: string,
   retryExposureId: string,
 ): { understood: boolean; notesAdded: boolean } {
-  const c = learner[concept];
+  const c = learner[concept]!;
   c.firstUnderstandingAttemptCount += 1;
   if (correct) {
     c.understanding = "UNDERSTOOD";
@@ -119,7 +119,7 @@ export function applyRetrySync(
   concept: ConceptId,
   txId: string,
 ): { notesAdded: boolean } {
-  const c = learner[concept];
+  const c = learner[concept]!;
   c.understanding = "UNDERSTOOD";
   c.pendingReexposure = null;
   const notesAdded = c.notesAddedTransactionId === null;
@@ -128,14 +128,14 @@ export function applyRetrySync(
 }
 
 export function unlockDemonstration(learner: LearnerState, concept: ConceptId): void {
-  const c = learner[concept];
+  const c = learner[concept]!;
   if (c.understanding === "UNDERSTOOD" && c.demonstration === "LOCKED") {
     c.demonstration = "PENDING";
   }
 }
 
 export function markDemonstrated(learner: LearnerState, concept: ConceptId): void {
-  learner[concept].demonstration = "DEMONSTRATED";
+  learner[concept]!.demonstration = "DEMONSTRATED";
 }
 
 // Day-end gate: all concepts understood + demonstrated, none with an open
@@ -152,7 +152,7 @@ export function dayCompletionSatisfied(learner: LearnerState): boolean {
 // Concepts still needing exposure work (for B11.5 deficit closure).
 export function conceptsNeedingExposure(learner: LearnerState): ConceptId[] {
   return (Object.keys(learner) as ConceptId[]).filter((id) => {
-    const c = learner[id];
+    const c = learner[id]!;
     return !(c.distinctOccasionCount >= 3 && c.exposureTypes.length >= 2);
   });
 }

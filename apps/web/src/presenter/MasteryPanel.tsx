@@ -1,5 +1,5 @@
 import type { MasteryReport, MasteryStage } from "@pa/contracts";
-import { DAY1_COVERAGE, DAY1_CLAUSE_STATUS, TEKS_8_4_A, TEKS_8_4_B_INDIVIDUALS } from "@pa/contracts";
+import { DAY1_COVERAGE, DAY1_CLAUSE_STATUS, TEKS_8_4_A, TEKS_8_4_B_INDIVIDUALS } from "@pa/chapter-boston";
 
 const STAGE_LABEL: Record<MasteryStage, string> = {
   NOT_STARTED: "Not started",

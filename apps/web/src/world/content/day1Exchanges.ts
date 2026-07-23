@@ -12,14 +12,8 @@
 //   SIDE_JOB           SJ-dock-haul-* / SJ-ropewalk-* / SJ-tavern-note-handoff
 // ---------------------------------------------------------------------------
 
-import {
-  HEAT_BANDS,
-  MICRO_CONCEPT_IDS,
-  OPTIONAL_ACTIVITY_IDS,
-  standingDeltaForCause,
-  THREAD_IDS,
-  type RuntimeView,
-} from "@pa/contracts";
+import { HEAT_BANDS, type RuntimeView } from "@pa/contracts";
+import { MICRO_CONCEPT_IDS, OPTIONAL_ACTIVITY_IDS, standingDeltaForCause, THREAD_IDS } from "@pa/chapter-boston";
 import {
   actorRoutePose,
   NAMED_ACTOR_ROUTES,
@@ -33,7 +27,9 @@ import type {
 import { interiorPoint } from "../interiorManifest.js";
 import {
   REACTIVE_NAMED_CAST,
-  SIDE_JOB_ANCHORS,
+  DOCK_HAUL_ANCHORS,
+  ROPEWALK_JOB_ANCHORS,
+  TAVERN_NOTE_ANCHORS,
   THREAD_FIGURES,
   type ReactiveActorDefinition,
 } from "../reactiveManifest.js";
@@ -132,7 +128,7 @@ function nedAnchor(spaceId: string): readonly [number, number, number] {
 
 const keeperAnchor = () =>
   interiorPoint("EXPLORE_tavern", [
-    ...SIDE_JOB_ANCHORS[OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE].keeperInteractLocal,
+    ...TAVERN_NOTE_ANCHORS.keeperInteractLocal,
   ]);
 
 // ---------------------------------------------------------------------------
@@ -207,7 +203,7 @@ function namedExchange(
       });
     }
     case "thomas": {
-      const note = view.field.activities[OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE];
+      const note = view.field.activities[OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE]!;
       const noteEligible =
         note.stage === "AVAILABLE" &&
         view.objectives.THOMAS_CIRCULAR === "COMPLETED";
@@ -357,7 +353,7 @@ function nedExchange(
   view: RuntimeView,
   position: readonly [number, number, number],
 ): Exchange {
-  const thread = view.field.threads[THREAD_IDS.NED];
+  const thread = view.field.threads[THREAD_IDS.NED]!;
   const fetched = Boolean(thread.flags.NED_FETCHED_TYPE);
   const encouraged = Boolean(thread.flags.NED_ENCOURAGED_CRAFT);
   const covered = Boolean(thread.flags.NED_COVERED_ERRAND);
@@ -550,7 +546,7 @@ function sarahExchange(
   });
 }
 
-const DOCK_ANCHORS = SIDE_JOB_ANCHORS[OPTIONAL_ACTIVITY_IDS.DOCK_HAUL];
+const DOCK_ANCHORS = DOCK_HAUL_ANCHORS;
 
 function dockOfferExchange(): Exchange {
   return m3Exchange(M3_AUTHORED_EFFECTS, {
@@ -687,7 +683,7 @@ function dockStageExchange(
 // length of the longest room in Boston: take the strand, hook it at the far
 // end, walk the lay back and close it. Teaching payload: port-town economics
 // (PORT_TOWN_BOSTON) delivered by doing the harbor's work, not reading it.
-const ROPEWALK_ANCHORS = SIDE_JOB_ANCHORS[OPTIONAL_ACTIVITY_IDS.ROPEWALK];
+const ROPEWALK_ANCHORS = ROPEWALK_JOB_ANCHORS;
 
 const ROPEWALK_EXCHANGES: Record<
   "SJ-ropewalk-offer" | "SJ-ropewalk-hook" | "SJ-ropewalk-close",
@@ -1027,7 +1023,7 @@ export function day1ExchangeFrame(
   const figures: Day1FigureFrame[] = [];
   const candidates: Day1CandidateFrame[] = [];
 
-  const nedThread = view.field.threads[THREAD_IDS.NED];
+  const nedThread = view.field.threads[THREAD_IDS.NED]!;
   const nedIntroduced = nedThread.status !== "UNMET";
   const nedWindowOpen = view.objectives.REPORT_TO_MERCER === "COMPLETED";
   const nedPosition =
@@ -1073,7 +1069,7 @@ export function day1ExchangeFrame(
     });
   }
 
-  const dockActivity = view.field.activities[OPTIONAL_ACTIVITY_IDS.DOCK_HAUL];
+  const dockActivity = view.field.activities[OPTIONAL_ACTIVITY_IDS.DOCK_HAUL]!;
   const dockActive =
     spaceId === "EXTERIOR" && dockActivity.stage !== "COMPLETED";
   figures.push({
@@ -1104,7 +1100,7 @@ export function day1ExchangeFrame(
     });
   }
 
-  const tavern = view.field.activities[OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE];
+  const tavern = view.field.activities[OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE]!;
   if (
     spaceId === "EXPLORE_tavern" &&
     tavern.stage === "ACCEPTED" &&
@@ -1126,7 +1122,7 @@ export function day1ExchangeFrame(
 
   // Ropewalk trades job: the occupant works the rig; the staged verb moves
   // down the hall (rig -> far hook -> back to the rig).
-  const ropewalk = view.field.activities[OPTIONAL_ACTIVITY_IDS.ROPEWALK];
+  const ropewalk = view.field.activities[OPTIONAL_ACTIVITY_IDS.ROPEWALK]!;
   const inRopewalk = spaceId === "EXPLORE_ropewalk";
   figures.push({
     id: "ropemaker",

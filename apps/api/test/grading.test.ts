@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { test } from "node:test";
 import { PresenterEventSchema } from "@pa/contracts";
-import { openResponsePackage } from "@pa/runtime";
+import { openResponsePackage } from "@pa/chapter-boston";
 import {
   decryptResponseText,
   encryptResponseText,

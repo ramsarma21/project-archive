@@ -6,18 +6,18 @@ import Fastify, {
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import {
-  CHAPTER_ID,
   OnboardingPreferencesSchema,
-  PACKAGE_ID,
   PutSaveRequestSchema,
   type MasteryReport,
   type PresenterEvent,
 } from "@pa/contracts";
+import { buildMasteryReport } from "@pa/runtime";
 import {
   BOSTON_1765_CHAPTER,
-  buildMasteryReport,
+  CHAPTER_ID,
+  PACKAGE_ID,
   createDay1Session,
-} from "@pa/runtime";
+} from "@pa/chapter-boston";
 import { migrate, query, transaction } from "./db.js";
 import {
   buildGoogleAuthUrl,

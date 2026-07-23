@@ -599,7 +599,7 @@ export function ExchangeInterruptDirector(props: {
       ))}
       <CarriedStagePropRig
         stage={
-          props.view.field.activities[DOCK_BARREL_STAGING.activityId].stage
+          props.view.field.activities[DOCK_BARREL_STAGING.activityId]!.stage
         }
         apiRef={props.apiRef}
       />

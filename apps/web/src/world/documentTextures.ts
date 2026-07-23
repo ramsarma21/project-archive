@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import type { InputRequest } from "@pa/contracts";
-import { DAY1_CUES } from "@pa/contracts";
+import { DAY1_CUES } from "@pa/chapter-boston";
 // Verbatim script strings (docs/archive/2026-07/Localhost-Text-Slice-Spec.md §34) come straight from
 // the runtime content module so the 3D papers can never drift from the script.
-import { TEXT } from "@pa/runtime";
+import { TEXT } from "@pa/chapter-boston";
 import { getProofSheetTexture } from "./proofSheetTexture.js";
 
 // ============================================================================

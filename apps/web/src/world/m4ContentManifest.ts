@@ -1,9 +1,5 @@
-import {
-  MICRO_CONCEPT_IDS,
-  OPTIONAL_ACTIVITY_IDS,
-  type MicroConceptId,
-  type OptionalActivityId,
-} from "@pa/contracts";
+import type { MicroConceptId, OptionalActivityId } from "@pa/contracts";
+import { MICRO_CONCEPT_IDS, OPTIONAL_ACTIVITY_IDS } from "@pa/chapter-boston";
 
 export interface KnowledgePlacement {
   id: string;

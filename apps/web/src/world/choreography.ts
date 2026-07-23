@@ -1,12 +1,12 @@
-import {
-  DAY1_CUES,
-  type AuthoredMotion,
-  type ChoreographyActorId,
-  type ChoreographyCue,
-  type InputRequest,
-  type PresentationDirective,
-  type Speaker,
+import type {
+  AuthoredMotion,
+  ChoreographyActorId,
+  ChoreographyCue,
+  InputRequest,
+  PresentationDirective,
+  Speaker,
 } from "@pa/contracts";
+import { DAY1_CUES } from "@pa/chapter-boston";
 import {
   INTERIOR_STORY_LOCAL,
   interiorPoint,

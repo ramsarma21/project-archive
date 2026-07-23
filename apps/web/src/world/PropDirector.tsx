@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { DAY1_CUES, type ChoreographyCue, type PropChoreography } from "@pa/contracts";
+import type { ChoreographyCue, PropChoreography } from "@pa/contracts";
+import { DAY1_CUES } from "@pa/chapter-boston";
 import { STAGE_ANCHORS } from "./choreography.js";
 import { documentForProp, getDocumentTexture } from "./documentTextures.js";
 import { FittedGlb, ImportedTexturedProp } from "./Character.js";

@@ -17,7 +17,6 @@ import type {
   ReactiveCompletionEffects,
   TeksClause,
   ThreadId,
-  ThreadStableFlag,
   ThreadState,
   WorldState,
 } from "@pa/contracts";
@@ -106,7 +105,7 @@ export interface ChapterOpenResponseContent {
 export interface FieldVocabulary {
   microConceptIds: readonly MicroConceptId[];
   threadIds: readonly ThreadId[];
-  threadFlags: readonly ThreadStableFlag[];
+  threadFlags: readonly string[];
   activityIds: readonly OptionalActivityId[];
   /** Chapter-seeded initial thread records (insertion order is durable). */
   initialThreads(): Record<ThreadId, ThreadState>;

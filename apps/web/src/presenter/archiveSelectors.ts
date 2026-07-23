@@ -1,4 +1,5 @@
-import { THREAD_IDS, type RuntimeView } from "@pa/contracts";
+import type { RuntimeView } from "@pa/contracts";
+import { THREAD_IDS } from "@pa/chapter-boston";
 import {
   DAY1_MICRO_DEFINITIONS,
   THREAD_FIGURES,

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { DAY1_CUES, type InputRequest } from "@pa/contracts";
+import type { InputRequest } from "@pa/contracts";
+import { DAY1_CUES } from "@pa/chapter-boston";
 import { STAGE_ANCHORS } from "./choreography.js";
 import { getDocumentTexture } from "./documentTextures.js";
 import { FittedGlb, ImportedTexturedProp } from "./Character.js";

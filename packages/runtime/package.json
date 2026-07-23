@@ -12,10 +12,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts",
-    "assessment:validate": "node --import tsx src/content/checkpoints/validateCp1BankCli.ts",
-    "content:compile": "node scripts/generate-act1-open-response.mjs",
-    "content:validate": "node ../../content/boston/act1/validate/validate-content.mjs && node --import tsx test/act1-content-artifact.test.ts"
+    "test": "node --import tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@pa/contracts": "workspace:*",

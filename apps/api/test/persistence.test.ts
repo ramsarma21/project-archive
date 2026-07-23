@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { after, before, test } from "node:test";
-import { CHAPTER_ID, PACKAGE_ID, type PresenterEvent } from "@pa/contracts";
+import type { PresenterEvent } from "@pa/contracts";
+import { CHAPTER_ID, PACKAGE_ID } from "@pa/chapter-boston";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "../src/app.js";
 import { csrfTokenForSession } from "../src/auth.js";

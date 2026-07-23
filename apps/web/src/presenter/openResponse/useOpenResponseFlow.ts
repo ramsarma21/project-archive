@@ -10,7 +10,7 @@ import { submitOpenResponse } from "../../gradingClient.js";
 import {
   authoredFallbackForPrompt,
   authoredFeedback,
-} from "@pa/runtime";
+} from "@pa/chapter-boston";
 import type { RetentionConsent } from "../OpenResponsePanel.js";
 
 // ---------------------------------------------------------------------------

@@ -12,14 +12,8 @@
 //   FLAVOR       FLV-dog / FLV-gulls (ambient verbs; never field interrupts)
 // ---------------------------------------------------------------------------
 
-import {
-  MICRO_CONCEPT_IDS,
-  OPTIONAL_ACTIVITY_IDS,
-  standingDeltaForCause,
-  type MicroConceptId,
-  type OptionalActivityId,
-  type RuntimeView,
-} from "@pa/contracts";
+import type { MicroConceptId, OptionalActivityId, RuntimeView } from "@pa/contracts";
+import { MICRO_CONCEPT_IDS, OPTIONAL_ACTIVITY_IDS, standingDeltaForCause } from "@pa/chapter-boston";
 import { INTERACTION_PRIORITIES } from "../interactionRegistry.js";
 import type {
   InteractionKind,
@@ -110,7 +104,7 @@ function activityAnchor(
   activityId: OptionalActivityId,
   index: number,
 ): readonly [number, number, number] {
-  return M4_ACTIVITY_ANCHORS[activityId][index] ?? [0, -20, 0];
+  return M4_ACTIVITY_ANCHORS[activityId]?.[index] ?? [0, -20, 0];
 }
 
 // ---------------------------------------------------------------------------
@@ -376,9 +370,9 @@ interface InfoFigureDefinition {
 }
 
 const tavernDone = (view: RuntimeView) =>
-  view.field.activities[OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE].stage === "COMPLETED";
+  view.field.activities[OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE]!.stage === "COMPLETED";
 const dockDone = (view: RuntimeView) =>
-  view.field.activities[OPTIONAL_ACTIVITY_IDS.DOCK_HAUL].stage === "COMPLETED";
+  view.field.activities[OPTIONAL_ACTIVITY_IDS.DOCK_HAUL]!.stage === "COMPLETED";
 
 export const M4_INFO_FIGURES: readonly InfoFigureDefinition[] = [
   {
@@ -687,7 +681,7 @@ export const M4_STATIC_CAST: readonly M4CastPlacement[] = [
     position: [13.5, 3.05, -10.8],
     rotY: Math.PI,
     visible: (view) =>
-      view.field.activities[OPTIONAL_ACTIVITY_IDS.ROOF_KID].stage !==
+      view.field.activities[OPTIONAL_ACTIVITY_IDS.ROOF_KID]!.stage !==
       "COMPLETED",
   },
   { key: "towncrier", glb: "towncrier-rigged", height: 1.72, clip: "idle", spaceId: "EXTERIOR", position: [6, 0, 8.8], rotY: Math.PI },

@@ -1,16 +1,17 @@
-import type { PresenterEvent } from "@pa/contracts";
-import {
-  createChapterSession,
-  type CreateChapterSessionOptions,
-} from "./engine/chapter.js";
-import type { Session } from "./engine/driver.js";
-import type { AssessmentRuntimeConfig } from "./engine/ctx.js";
-import { BOSTON_1765_CHAPTER } from "./content/bostonChapter.js";
+// ============================================================================
+// @pa/runtime: the chapter-agnostic learning engine. This barrel exports
+// ENGINE surface only — no chapter content. Chapters (e.g. @pa/chapter-boston)
+// depend on this package and inject their content via ChapterDefinition;
+// this package never imports from a chapter.
+// ============================================================================
 
-// ---- Generic engine surface ----
+// Run context + session driver
 export { Ctx } from "./engine/ctx.js";
 export type { Flow, Sub, Yielded, AssessmentRuntimeConfig } from "./engine/ctx.js";
 export { Session } from "./engine/driver.js";
+export type { AdvanceResult } from "./engine/driver.js";
+
+// Chapter injection seam + registry + session factory
 export {
   createChapterRegistry,
   createChapterSession,
@@ -28,98 +29,95 @@ export type {
   GateContentMaps,
   TrackedExposureDef,
 } from "./engine/chapter.js";
+
+// Flow DSL (chapter flows are written against these)
+export {
+  breathe,
+  choose,
+  focusRead,
+  freeRoam,
+  mechanic,
+  waitAck,
+  waitContinue,
+  waitDayEnd,
+} from "./engine/dsl.js";
+
+// Deterministic seed/outcome machinery
 export { deriveAttemptSeed, deriveFieldSeedHex, draw, bytesToHex } from "./seed.js";
+export { resolveOutcome } from "./outcome.js";
+export type { WeightedOutcome } from "./outcome.js";
+
+// World clock machinery
+export {
+  advanceClock,
+  bumpInteractionOrdinal,
+  phaseForUnits,
+  warningStageForUnits,
+} from "./world.js";
+export type { ClockAdvanceResult } from "./world.js";
+
+// Learner state machinery
+export {
+  applyInitialSync,
+  applyRetrySync,
+  canPresentInitialSync,
+  canPresentRetrySync,
+  commitExposure,
+  conceptsNeedingExposure,
+  dayCompletionSatisfied,
+  initialLearnerState,
+  markDemonstrated,
+  unlockDemonstration,
+} from "./learner.js";
+
+// Relationship scales
+export { adjustRelationship, setRelationship } from "./relationships.js";
+
+// Field state reducer/assertions (vocabulary-parameterized)
 export {
   applyFieldEvent,
   assertFieldEventPayload,
+  citedConfrontationOptionFor,
   compileFieldVocabulary,
   initialFieldState,
+  microId,
   projectFieldRuntimeView,
   syncLegacyFieldCompatibility,
+  threadId,
 } from "./fieldState.js";
 export type { CompiledFieldVocabulary } from "./fieldState.js";
-export { resolveOutcome } from "./outcome.js";
-export { buildMasteryReport } from "./report.js";
+
+// Mastery report projection
+export { buildMasteryReport, engagedConcepts } from "./report.js";
 export type { ReportMeta } from "./report.js";
+
+// Assessment engine (checkpoint selection, bank validation, gate ladder,
+// open-response rubric resolution)
 export {
-  selectDebrief,
   resolveSelectedItems,
+  selectDebrief,
 } from "./assessment/selectDebrief.js";
+export type { SelectDebriefOptions } from "./assessment/selectDebrief.js";
 export {
-  validateQuestionBank,
   assertSelectableBank,
+  validateQuestionBank,
+} from "./assessment/validateQuestionBank.js";
+export type {
+  BankValidationOptions,
+  BankValidationResult,
 } from "./assessment/validateQuestionBank.js";
 export {
-  resolveRubricObservation,
-  resolveClassifierResult,
-  unclassifiedResolution,
+  computeGateState,
+  explicitHintFor,
+  gateDwellMs,
+  gatePauseMs,
+  hintKindForAttempt,
+  memoryCueFor,
+} from "./assessment/gate.js";
+export {
   resolutionMatchesPackage,
+  resolveClassifierResult,
+  resolveRubricObservation,
+  unclassifiedResolution,
 } from "./assessment/rubricResolver.js";
-
-// ---- Boston chapter content (tracked debt: leaves this barrel when the
-// chapter package lands; consumers move to @pa/chapter-boston) ----
-export { BOSTON_1765_CHAPTER, BOSTON_DAY1_FLOW_VERSION } from "./content/bostonChapter.js";
-export { day1Flow } from "./content/day1/flow.js";
-export * from "./content/day1/tables.js";
-export { TEXT } from "./content/day1/text.js";
-export {
-  eligibleNpcFollowupsForField,
-  resolveRegisteredReactiveOutcome,
-} from "./content/day1/reactive.js";
-export { DAY1_CUES } from "./content/day1/choreography.js";
-export {
-  CP1_BANK_REGISTRY,
-  CP1_DEVELOPMENT_FIXTURE_BANK,
-  CP1_PRODUCTION_BANK,
-} from "./content/checkpoints/cp1Bank.js";
-export {
-  CP1_ASSESSMENT_TO_LEARNER,
-  CP1_CHECKPOINT_ID,
-  CP1_FORM_ID_PREFIX,
-  CP1_MICRO_SOURCE_LABELS,
-  CP1_REQUIRED_MACROS,
-} from "./content/checkpoints/cp1Ids.js";
-export {
-  openResponsePackages,
-  openResponsePackage,
-  authoredFeedback,
-  authoredFallbackForPrompt,
-  eligibleOpenResponses,
-  eligibleArchiveConnections,
-  archiveConnections,
-  npcFollowups,
-  sourcePacket,
-  sourcePacketIdsForFieldSource,
-  validateAct1OpenResponseArtifact,
-  OPEN_RESPONSE_FEEDBACK,
-  ACT1_OPEN_RESPONSE_PACKAGE_ID,
-  ACT1_OPEN_RESPONSE_PACKAGE_VERSION,
-  ACT1_OPEN_RESPONSE_PACKAGE_HASH,
-  ACT1_OPEN_RESPONSE_EXPOSURE_CAP,
-  ACT1_CLASSIFIER_SCHEMA_ID,
-  ACT1_CLASSIFIER_SCHEMA_VERSION,
-  ACT1_CLASSIFIER_SCHEMA_HASH,
-} from "./assessment/openResponseRegistry.js";
-export {
-  HISTORICAL_SOURCE_REGISTRY,
-  FIELD_SOURCE_ALIASES,
-  canonicalSourceId,
-  canonicalSourceIds,
-} from "./content/provenance.js";
-
-// Create a Boston Day 1 session for a profile. attemptStartSequence defaults
-// to 0 for the first attempt. Determinism comes from the variation root seed.
-// One-liner over the generic chapter session factory.
-export function createDay1Session(opts: {
-  variationRootSeedHex: string;
-  attemptStartSequence?: number;
-  priorEvents?: PresenterEvent[];
-  assessmentMode?: "PRODUCTION" | "QA_DRAFT";
-  openResponseContentMode?: "PRODUCTION" | "AUTHOR_DRAFT_QA";
-  assessmentConfig?: AssessmentRuntimeConfig;
-}): Session {
-  return createChapterSession(
-    BOSTON_1765_CHAPTER,
-    opts as CreateChapterSessionOptions,
-  );
-}
+export type { RubricResolutionContext } from "./assessment/rubricResolver.js";

@@ -6,15 +6,14 @@ import {
   type MutableRefObject,
 } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import {
-  DAY1_CUES,
-  FIELD_REPOSITION_ANCHORS,
-  type FieldCommittedEvent,
-  type InputRequest,
-  type PresentationDirective,
-  type PresenterEvent,
-  type RuntimeView,
+import type {
+  FieldCommittedEvent,
+  InputRequest,
+  PresentationDirective,
+  PresenterEvent,
+  RuntimeView,
 } from "@pa/contracts";
+import { DAY1_CUES, FIELD_REPOSITION_ANCHORS } from "@pa/chapter-boston";
 import { District } from "./District.js";
 import { AudioDirector } from "./AudioDirector.js";
 import { Player, type PlayerApi } from "./Player.js";

@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { MICRO_CONCEPT_IDS, THREAD_IDS, type RuntimeView } from "@pa/contracts";
+import type { RuntimeView } from "@pa/contracts";
+import { MICRO_CONCEPT_IDS, THREAD_IDS } from "@pa/chapter-boston";
 import {
   engagedConnections,
   metThreadPeople,

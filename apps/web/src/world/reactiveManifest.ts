@@ -1,9 +1,5 @@
-import {
-  MICRO_CONCEPT_IDS,
-  OPTIONAL_ACTIVITY_IDS,
-  THREAD_IDS,
-  type MicroConceptId,
-} from "@pa/contracts";
+import type { MicroConceptId } from "@pa/contracts";
+import { MICRO_CONCEPT_IDS, OPTIONAL_ACTIVITY_IDS, THREAD_IDS } from "@pa/chapter-boston";
 import type { NamedActorId } from "./actorRoutes.js";
 
 export interface ReactiveActorDefinition {
@@ -89,38 +85,47 @@ export const THREAD_FIGURES = {
   },
 } as const;
 
+// Named per-job anchor tables keep full literal-tuple precision now that
+// activity ids are branded strings (a computed-key record folds values into
+// one union). SIDE_JOB_ANCHORS remains the id-keyed view for generic lookups.
+export const TAVERN_NOTE_ANCHORS = {
+  thomas: [-70, 0, -9.4] as const,
+  keeperLocal: [-7, 0, 1] as const,
+  keeperInteractLocal: [-5.2, 0, 1] as const,
+} as const;
+
+export const DOCK_HAUL_ANCHORS = {
+  dockhand: [-134, 0, 0.5] as const,
+  dockhandInteract: [-134, 0, 3.0] as const,
+  barrel: [-135.2, 0, 1.1] as const,
+  barrelInteract: [-135.2, 0, 3.0] as const,
+  gangplank: [-140, 0, 14.2] as const,
+  // At the pier end of the gangplank so the prompt is offered while
+  // standing ON the plank, not only back on the deck (feel-audit-1 P1-3).
+  deckInteract: [-140, 0, 14.6] as const,
+  // On the brig's actual deck (hull re-moored at z≈19.6 and seated in the
+  // water — feel-audit-1 P0-10: the delivery point used to hover on bare
+  // planks nowhere near a ship).
+  deck: [-139, 1.35, 18.6] as const,
+} as const;
+
+// The ropewalk trades job (Act-1-Vertical-Slice §3 activity-family pillar).
+// Local coords inside EXPLORE_ropewalk (34 x 12 hall): the ropemaker works
+// at the laying rig near the west end; the strand walk runs the hall's
+// length to the east hook, then returns to close the lay.
+export const ROPEWALK_JOB_ANCHORS = {
+  ropemakerLocal: [-12, 0, 0.6] as const,
+  ropemakerInteractLocal: [-10.4, 0, 0.6] as const,
+  farHookLocal: [12.5, 0, -0.8] as const,
+  farHookInteractLocal: [10.9, 0, -0.8] as const,
+  rigCloseLocal: [-11.2, 0, -1.4] as const,
+  rigCloseInteractLocal: [-9.6, 0, -1.4] as const,
+} as const;
+
 export const SIDE_JOB_ANCHORS = {
-  [OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE]: {
-    thomas: [-70, 0, -9.4] as const,
-    keeperLocal: [-7, 0, 1] as const,
-    keeperInteractLocal: [-5.2, 0, 1] as const,
-  },
-  [OPTIONAL_ACTIVITY_IDS.DOCK_HAUL]: {
-    dockhand: [-134, 0, 0.5] as const,
-    dockhandInteract: [-134, 0, 3.0] as const,
-    barrel: [-135.2, 0, 1.1] as const,
-    barrelInteract: [-135.2, 0, 3.0] as const,
-    gangplank: [-140, 0, 14.2] as const,
-    // At the pier end of the gangplank so the prompt is offered while
-    // standing ON the plank, not only back on the deck (feel-audit-1 P1-3).
-    deckInteract: [-140, 0, 14.6] as const,
-    // On the brig's actual deck (hull re-moored at z≈19.6 and seated in the
-    // water — feel-audit-1 P0-10: the delivery point used to hover on bare
-    // planks nowhere near a ship).
-    deck: [-139, 1.35, 18.6] as const,
-  },
-  // The ropewalk trades job (Act-1-Vertical-Slice §3 activity-family pillar).
-  // Local coords inside EXPLORE_ropewalk (34 x 12 hall): the ropemaker works
-  // at the laying rig near the west end; the strand walk runs the hall's
-  // length to the east hook, then returns to close the lay.
-  [OPTIONAL_ACTIVITY_IDS.ROPEWALK]: {
-    ropemakerLocal: [-12, 0, 0.6] as const,
-    ropemakerInteractLocal: [-10.4, 0, 0.6] as const,
-    farHookLocal: [12.5, 0, -0.8] as const,
-    farHookInteractLocal: [10.9, 0, -0.8] as const,
-    rigCloseLocal: [-11.2, 0, -1.4] as const,
-    rigCloseInteractLocal: [-9.6, 0, -1.4] as const,
-  },
+  [OPTIONAL_ACTIVITY_IDS.TAVERN_NOTE]: TAVERN_NOTE_ANCHORS,
+  [OPTIONAL_ACTIVITY_IDS.DOCK_HAUL]: DOCK_HAUL_ANCHORS,
+  [OPTIONAL_ACTIVITY_IDS.ROPEWALK]: ROPEWALK_JOB_ANCHORS,
 } as const;
 
 export interface MicroDefinition {

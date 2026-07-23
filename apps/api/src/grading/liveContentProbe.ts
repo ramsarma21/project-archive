@@ -2,10 +2,8 @@ import "../config.js";
 import {
   CanonicalClassifierObservationSchema,
 } from "@pa/contracts";
-import {
-  openResponsePackages,
-  resolveRubricObservation,
-} from "@pa/runtime";
+import { resolveRubricObservation } from "@pa/runtime";
+import { openResponsePackages } from "@pa/chapter-boston";
 import { TrueFoundryGradingProvider } from "./openAiCompatible.js";
 
 if (process.env.RUN_LIVE_GRADING_PROBE !== "true") {

@@ -4,10 +4,8 @@ import type {
   DeterministicResolution,
   OpenResponseReference,
 } from "@pa/contracts";
-import {
-  resolveClassifierResult,
-  type openResponsePackage,
-} from "@pa/runtime";
+import { resolveClassifierResult } from "@pa/runtime";
+import type { openResponsePackage } from "@pa/chapter-boston";
 import {
   decryptResponseText,
   encryptResponseText,

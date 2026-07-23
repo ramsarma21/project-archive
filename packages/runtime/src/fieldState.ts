@@ -269,7 +269,7 @@ export function applyFieldEvent(
       });
       return;
     case "FIELD_THREAD_PATCH": {
-      const thread = field.threads[event.threadId];
+      const thread = field.threads[event.threadId]!;
       Object.assign(thread.flags, event.flags);
       return;
     }
@@ -324,7 +324,7 @@ export function applyFieldEvent(
         });
       }
       for (const patch of completion.threads ?? []) {
-        const thread = field.threads[patch.threadId];
+        const thread = field.threads[patch.threadId]!;
         if (patch.flags) Object.assign(thread.flags, patch.flags);
         if (patch.status) thread.status = patch.status;
         if (patch.trustDelta) {
@@ -348,7 +348,7 @@ export function applyFieldEvent(
         }
       }
       for (const patch of completion.activities ?? []) {
-        const activity = field.activities[patch.activityId];
+        const activity = field.activities[patch.activityId]!;
         activity.stage = patch.stage;
         if (patch.breadcrumb !== undefined) {
           activity.breadcrumb = patch.breadcrumb;

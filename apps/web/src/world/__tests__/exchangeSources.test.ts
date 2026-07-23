@@ -16,18 +16,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import type { PresenterEvent, RuntimeView } from "@pa/contracts";
+import type { Session } from "@pa/runtime";
 import {
   MICRO_CONCEPT_IDS,
   THREAD_IDS,
-  standingDeltaForCause,
-  type PresenterEvent,
-  type RuntimeView,
-} from "@pa/contracts";
-import {
   createDay1Session,
   npcFollowups,
-  type Session,
-} from "@pa/runtime";
+  standingDeltaForCause,
+} from "@pa/chapter-boston";
 import "../content/day1Exchanges.js";
 import "../content/day1M4Content.js";
 import {

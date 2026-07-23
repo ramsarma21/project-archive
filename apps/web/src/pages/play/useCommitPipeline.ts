@@ -3,7 +3,7 @@ import type {
   FieldCommittedEvent,
   PresenterEvent,
 } from "@pa/contracts";
-import { PACKAGE_ID } from "@pa/contracts";
+import { PACKAGE_ID } from "@pa/chapter-boston";
 import {
   getSave,
   putSave,

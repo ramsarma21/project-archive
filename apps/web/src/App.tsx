@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CHAPTER_ID } from "@pa/contracts";
+import { CHAPTER_ID } from "@pa/chapter-boston";
 import { Home } from "./pages/Home.js";
 import {
   effectiveReducedMotion,

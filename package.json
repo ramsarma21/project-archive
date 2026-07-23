@@ -10,7 +10,7 @@
     "build": "pnpm -r --filter ./packages/* build",
     "typecheck": "pnpm -r typecheck",
     "lint": "node scripts/check-boundaries.mjs",
-    "content:compile": "pnpm --filter @pa/runtime content:compile",
+    "content:compile": "pnpm --filter @pa/chapter-boston content:compile",
     "keys:dev": "node scripts/gen-dev-keys.mjs",
     "db:up": "docker compose up -d",
     "db:migrate": "pnpm --filter @pa/api migrate",

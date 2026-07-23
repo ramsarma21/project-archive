@@ -13,7 +13,7 @@ import {
   type AssessmentResponseRecord,
   type AssessmentResponseRepository,
 } from "../src/assessment/responseService.js";
-import { openResponsePackage } from "@pa/runtime";
+import { openResponsePackage } from "@pa/chapter-boston";
 import { SubmitOpenResponseRequestSchema } from "@pa/contracts";
 
 process.env.GRADING_ENCRYPTION_KEY_BASE64 = crypto

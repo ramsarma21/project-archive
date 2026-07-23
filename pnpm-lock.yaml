@@ -26,6 +26,9 @@ importers:
       '@fastify/cors':
         specifier: ^10.0.2
         version: 10.1.0
+      '@pa/chapter-boston':
+        specifier: workspace:*
+        version: link:../../packages/chapter-boston
       '@pa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -63,6 +66,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@pa/chapter-boston':
+        specifier: workspace:*
+        version: link:../../packages/chapter-boston
       '@pa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -134,6 +140,28 @@ importers:
       aws-cdk:
         specifier: 2.1132.0
         version: 2.1132.0
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/chapter-boston:
+    dependencies:
+      '@pa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@pa/runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
       tsx:
         specifier: 4.19.2
         version: 4.19.2

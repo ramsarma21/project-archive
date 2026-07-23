@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { MICRO_CONCEPT_IDS } from "@pa/contracts";
+import { MICRO_CONCEPT_IDS } from "@pa/chapter-boston";
 import {
   DAY1_MICRO_DEFINITIONS,
   INTERIOR_HOTSPOT_MICROS,

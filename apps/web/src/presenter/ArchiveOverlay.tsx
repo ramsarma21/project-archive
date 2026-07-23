@@ -4,7 +4,7 @@ import type { RuntimeView } from "@pa/contracts";
 import { SystemWindow } from "./Controls.js";
 import { OBJ_LABELS } from "./Side.js";
 import { RiggedCharacter } from "../world/Character.js";
-import { authoredFeedback } from "@pa/runtime";
+import { authoredFeedback } from "@pa/chapter-boston";
 import {
   engagedConnections,
   metThreadPeople,
@@ -465,7 +465,7 @@ function ThreadsPane(props: { view: RuntimeView }) {
           <span className="archive-thread-mark" aria-hidden="true" />
           <div>
             <strong>
-              {{
+              {({
                 "SJ-tavern-note": "A quiet note",
                 "SJ-dock-haul": "A barrel before the tide",
                 "SJ-roof-kid": "The boy on the scaffold",
@@ -474,7 +474,7 @@ function ThreadsPane(props: { view: RuntimeView }) {
                 "CH-agitator-dare": "The watched crossing",
                 "CH-rooftop-run": "The short roof-board run",
                 "CH-lose-the-watch": "Lose the watch",
-              }[activity.activityId] ?? activity.activityId}
+              } as Record<string, string>)[activity.activityId] ?? activity.activityId}
             </strong>
             <small>{activity.stage.toLowerCase().replaceAll("_", " ")}</small>
             <p>{activity.breadcrumb}</p>

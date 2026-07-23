@@ -1,7 +1,7 @@
 import "../config.js";
 import { writeFile } from "node:fs/promises";
 import { ClassifierObservationSchema } from "@pa/contracts";
-import { openResponsePackage } from "@pa/runtime";
+import { openResponsePackage } from "@pa/chapter-boston";
 import { GRADING_BENCHMARK_FIXTURES } from "./benchmarkFixtures.js";
 
 interface CaseResult {
