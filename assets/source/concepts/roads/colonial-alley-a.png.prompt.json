@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated modular narrow service alley paving segment from 1765 Boston for image-to-3D. Whole long 3:1 rectangular module visible in elevated three-quarter orthographic view on plain light gray neutral background, no buildings, no people, no objects, no writing. Rough uneven small fieldstones and broken granite setts, dirtier and more irregular than a main street, sunken muddy center drainage channel running lengthwise, pooled grime in joints, scattered worn dirt patches, chipped stones, dark damp desaturated gray-brown. No grass, no modern pavers, no curb. Thin low-profile solid slab, straight seamless tileable edges.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:06:54.832Z",
+  "files": [
+    "colonial-alley-a.png"
+  ]
+}

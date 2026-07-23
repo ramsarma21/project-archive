@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on scan of a crude 1765 colonial protest placard, a rough rectangular pine board completely filling the frame edge to edge, hand-lettered in dripping black paint. A crude folk-art painted figure of a hanged man effigy in a gentleman's coat, above it bold uneven capitals read \"A. OLIVER\" and below \"STAMP-MAN\", a small crude green devil and a large jack-boot painted in the lower corner, rough brush strokes, weathered nailed plank board, tack holes. No background visible, no hands, no modern elements, no watermark, no em dash characters.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T21:49:26.837Z",
+  "files": [
+    "placard-andrew-oliver.png"
+  ]
+}

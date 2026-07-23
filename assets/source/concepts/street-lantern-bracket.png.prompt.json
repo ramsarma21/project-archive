@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial street lantern on a wall bracket only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: whale-oil lantern with a square glass-paned case, peaked metal cap and small chimney vent, hanging from a scrolled wrought iron wall bracket with mounting plate, blackened iron, slightly smoked glass. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:08:54.373Z",
+  "files": [
+    "street-lantern-bracket.png"
+  ]
+}

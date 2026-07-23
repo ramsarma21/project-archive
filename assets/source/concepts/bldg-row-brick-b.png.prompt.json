@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial brick row house building only, centered, full building exterior in frame, three-quarter view from the front-right corner clearly showing both the front facade and the right side wall receding in perspective, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: two and a half story Georgian brown brick row house with weathered darker brick, plain gable roof, single chimney, small-pane sash windows with dark green shutters, arched brick doorway with board door, subtle brick belt course between floors. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:07:53.402Z",
+  "files": [
+    "bldg-row-brick-b.png"
+  ]
+}

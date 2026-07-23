@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single stylized game asset only, centered and fully visible in frame: an elegant openwork vertical objective marker inspired by an eighteenth-century letterpress registration ornament and a surveyor's plumb point. A narrow symmetrical diamond-lozenge silhouette made from four substantial tapered brass bars, hollow center, small pointed lower finial, subtle recessed amber enamel inlay, beveled edges, watertight chunky construction suitable for a low-poly 3D game mesh. Aged warm brass with restrained dark patina, refined civic instrument rather than jewelry. No text, no letters, no icon, no arrow, no map pin, no fantasy rune, no crystal, no hologram beam, no modern electronics. Three-quarter front view, plain light gray studio background, soft even lighting, no cast ground shadow, no pedestal, no other objects, no people, no watermark. Cohesive stylized-realistic Project Archive game asset reference.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:39:05.294Z",
+  "files": [
+    "quest-marker-hero.png"
+  ]
+}

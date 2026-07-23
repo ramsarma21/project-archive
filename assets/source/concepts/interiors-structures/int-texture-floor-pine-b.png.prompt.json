@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Seamless square PBR base-color texture swatch only, perfectly flat orthographic top view with diffuse shadowless even illumination, aged wide pine floor boards in 1765 Boston with a few lighter replacement boards, scrubbed worn zones and restrained dark stains, straight parallel boards and iron nails, no object edges, no tile border, no perspective, no highlights, no directional shadows, no text",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T02:32:39.502Z",
+  "files": [
+    "int-texture-floor-pine-b.png"
+  ]
+}

@@ -1,0 +1,269 @@
+{
+  "baseUrl": "http://127.0.0.1:5273/",
+  "scenarios": [
+    {
+      "name": "STANDARD_FULL",
+      "play": {
+        "plan": "FREE_ROAM",
+        "location": "BOSTON_STREET",
+        "interrupt": "",
+        "chaseId": "",
+        "clock": 4,
+        "carried": [],
+        "confiscated": [
+          "CARRIER_HANDBILLS"
+        ],
+        "pendingReposition": "",
+        "outcome": "CAUGHT",
+        "qaStatus": "STARTED",
+        "qaReason": "QA chase started.",
+        "assist": "STANDARD",
+        "inputMethod": "KEYBOARD_MOUSE",
+        "highContrast": "false",
+        "reducedMotion": "false"
+      },
+      "world": {
+        "space": "EXTERIOR",
+        "cameraOwner": "PLAYER",
+        "cameraInputLocked": "false",
+        "movementActive": "true",
+        "traversalActive": "true",
+        "player": [
+          49.8,
+          0,
+          -8.2
+        ],
+        "playerMotion": "GROUNDED",
+        "playerSpeed": 0,
+        "playerSprinting": "false",
+        "playerCrouched": "false",
+        "playerStamina": 1,
+        "playerActionSerial": 1,
+        "playerInputLocked": "false",
+        "playerFacing": [
+          0.962,
+          -0.275
+        ],
+        "playerMovementIntent": "false",
+        "playerBlocked": "false",
+        "chaseActive": "false",
+        "chaseState": "IDLE",
+        "stamina": 1,
+        "confirmResolve": "false",
+        "assist": "STANDARD",
+        "pursuerRegistered": "false",
+        "pursuer": [
+          0
+        ],
+        "pursuerVelocity": [
+          0
+        ],
+        "pursuerSpace": "",
+        "outcome": "CAUGHT",
+        "gap": 19.437,
+        "shakeSeconds": 0,
+        "corneredSeconds": 2.6,
+        "targetWaypoint": ""
+      }
+    },
+    {
+      "name": "SLOW_PURSUER",
+      "play": {
+        "plan": "FREE_ROAM",
+        "location": "BOSTON_STREET",
+        "interrupt": "CHASE",
+        "chaseId": "M1_QA_CHASE_8a7dd1dd_1",
+        "clock": 0,
+        "carried": [],
+        "confiscated": [],
+        "pendingReposition": "",
+        "outcome": "",
+        "qaStatus": "STARTED",
+        "qaReason": "QA chase started.",
+        "assist": "SLOW_PURSUER",
+        "inputMethod": "KEYBOARD_MOUSE",
+        "highContrast": "false",
+        "reducedMotion": "false"
+      },
+      "world": {
+        "space": "EXTERIOR",
+        "cameraOwner": "CHASE",
+        "cameraInputLocked": "false",
+        "movementActive": "true",
+        "traversalActive": "true",
+        "player": [
+          -6,
+          0,
+          1.5
+        ],
+        "playerMotion": "GROUNDED",
+        "playerSpeed": 0,
+        "playerSprinting": "false",
+        "playerCrouched": "false",
+        "playerStamina": 1,
+        "playerActionSerial": 0,
+        "playerInputLocked": "false",
+        "playerFacing": [
+          1,
+          0
+        ],
+        "playerMovementIntent": "false",
+        "playerBlocked": "false",
+        "chaseActive": "true",
+        "chaseState": "ACTIVE",
+        "stamina": 1,
+        "confirmResolve": "false",
+        "assist": "SLOW_PURSUER",
+        "pursuerRegistered": "true",
+        "pursuer": [
+          -9.8,
+          0,
+          1.5
+        ],
+        "pursuerVelocity": [
+          3.4,
+          0,
+          0
+        ],
+        "pursuerSpace": "EXTERIOR",
+        "outcome": "",
+        "gap": 3.8,
+        "shakeSeconds": 0,
+        "corneredSeconds": 0,
+        "targetWaypoint": ""
+      }
+    },
+    {
+      "name": "ACCESSIBILITY_AUTO_STAMINA",
+      "play": {
+        "plan": "FREE_ROAM",
+        "location": "BOSTON_STREET",
+        "interrupt": "CHASE",
+        "chaseId": "M1_QA_CHASE_cc737405_1",
+        "clock": 0,
+        "carried": [],
+        "confiscated": [],
+        "pendingReposition": "",
+        "outcome": "",
+        "qaStatus": "STARTED",
+        "qaReason": "QA chase started.",
+        "assist": "AUTO_STAMINA",
+        "inputMethod": "KEYBOARD_ONLY",
+        "highContrast": "true",
+        "reducedMotion": "true"
+      },
+      "world": {
+        "space": "EXTERIOR",
+        "cameraOwner": "CHASE",
+        "cameraInputLocked": "false",
+        "movementActive": "true",
+        "traversalActive": "true",
+        "player": [
+          -0.788,
+          0,
+          1.5
+        ],
+        "playerMotion": "GROUNDED",
+        "playerSpeed": 0.393,
+        "playerSprinting": "false",
+        "playerCrouched": "false",
+        "playerStamina": 1,
+        "playerActionSerial": 0,
+        "playerInputLocked": "false",
+        "playerFacing": [
+          1,
+          0
+        ],
+        "playerMovementIntent": "false",
+        "playerBlocked": "false",
+        "chaseActive": "true",
+        "chaseState": "ACTIVE",
+        "stamina": 1,
+        "confirmResolve": "false",
+        "assist": "AUTO_STAMINA",
+        "pursuerRegistered": "true",
+        "pursuer": [
+          -10.033,
+          0,
+          1.5
+        ],
+        "pursuerVelocity": [
+          4,
+          0,
+          0
+        ],
+        "pursuerSpace": "EXTERIOR",
+        "outcome": "",
+        "gap": 8.998,
+        "shakeSeconds": 0,
+        "corneredSeconds": 0,
+        "targetWaypoint": ""
+      }
+    },
+    {
+      "name": "CONFIRM_RESOLVE",
+      "play": {
+        "plan": "FREE_ROAM",
+        "location": "BOSTON_STREET",
+        "interrupt": "",
+        "chaseId": "",
+        "clock": 0,
+        "carried": [],
+        "confiscated": [],
+        "pendingReposition": "",
+        "outcome": "REFUGE",
+        "qaStatus": "STARTED",
+        "qaReason": "QA chase started.",
+        "assist": "CONFIRM_RESOLVE",
+        "inputMethod": "KEYBOARD_MOUSE",
+        "highContrast": "false",
+        "reducedMotion": "false"
+      },
+      "world": {
+        "space": "EXTERIOR",
+        "cameraOwner": "PLAYER",
+        "cameraInputLocked": "false",
+        "movementActive": "true",
+        "traversalActive": "true",
+        "player": [
+          -18,
+          0,
+          -9.7
+        ],
+        "playerMotion": "GROUNDED",
+        "playerSpeed": 0,
+        "playerSprinting": "false",
+        "playerCrouched": "false",
+        "playerStamina": 1,
+        "playerActionSerial": 0,
+        "playerInputLocked": "true",
+        "playerFacing": [
+          0,
+          1
+        ],
+        "playerMovementIntent": "false",
+        "playerBlocked": "false",
+        "chaseActive": "false",
+        "chaseState": "IDLE",
+        "stamina": 1,
+        "confirmResolve": "false",
+        "assist": "CONFIRM_RESOLVE",
+        "pursuerRegistered": "false",
+        "pursuer": [
+          0
+        ],
+        "pursuerVelocity": [
+          0
+        ],
+        "pursuerSpace": "",
+        "outcome": "REFUGE",
+        "gap": 12.95,
+        "shakeSeconds": 0,
+        "corneredSeconds": 0,
+        "targetWaypoint": ""
+      }
+    }
+  ],
+  "diagnostics": [],
+  "errors": []
+}

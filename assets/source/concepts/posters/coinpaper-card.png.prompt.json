@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on scan of an aged 1765 rag-paper study plate completely filling the frame edge to edge. On the cream foxed paper are drawn and laid: three worn Spanish silver milled dollar coins and two small silver shilling coins on the left, and on the right a folded piece of colonial Massachusetts paper currency scrip with engraved border and serif numerals, ink and engraving illustration style, slight foxing and creases. No background beyond the paper, no hands, no modern elements, no em dash characters.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T23:06:13.660Z",
+  "files": [
+    "coinpaper-card.png"
+  ]
+}

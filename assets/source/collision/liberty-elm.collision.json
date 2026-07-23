@@ -1,0 +1,53 @@
+{
+  "assetKey": "liberty-elm",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": [
+      14,
+      16,
+      14
+    ],
+    "scale": 1.6
+  },
+  "note": "Trunk + root flare ONLY; the canopy is deliberately non-colliding (players stand under the elm).",
+  "colliders": [
+    {
+      "id": "trunk",
+      "shape": "capsule",
+      "a": [
+        0,
+        0.6,
+        0
+      ],
+      "b": [
+        0,
+        3.9,
+        0
+      ],
+      "radius": 0.6,
+      "tags": [
+        "obstacle",
+        "tree-trunk"
+      ]
+    },
+    {
+      "id": "root",
+      "shape": "box",
+      "center": [
+        0,
+        0.25,
+        0
+      ],
+      "half": [
+        1.1,
+        0.25,
+        1.1
+      ],
+      "tags": [
+        "obstacle",
+        "root"
+      ]
+    }
+  ]
+}

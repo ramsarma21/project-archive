@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single large coiled ship rope only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: large flat spiral coil of thick weathered hemp hawser rope, neatly coiled about knee height, frayed tail end tucked over the top, natural tan-gray fiber with darker tar stains. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:07:40.416Z",
+  "files": [
+    "rope-coil-large.png"
+  ]
+}

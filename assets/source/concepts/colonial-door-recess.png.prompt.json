@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Historically accurate 1765 Boston colonial New England working-class door vestibule. Hand-planed wood, weathered but intact. Neutral studio lighting, plain flat background, orthographic front elevation, single subject, centered, no people, no text. SUBJECT: only a shallow dark wooden vestibule backing for a door opening, a rectangular inset back panel with short side and top returns, approximately 1.18m wide x 2.03m tall x 0.18m deep. Matte near-black brown wood, designed to sit behind a door frame and fully occlude a sealed facade door when the functional leaf opens. NO door leaf, NO decorative casing, NO wall, NO floor slab beyond the shallow vestibule shell.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T19:31:53.415Z",
+  "files": [
+    "colonial-door-recess.png"
+  ]
+}

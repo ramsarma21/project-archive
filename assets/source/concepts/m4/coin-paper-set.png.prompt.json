@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single complete small grouped pile of colonial money only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no table, no ground scenery, no people, no readable text, no watermark. A small heap of a few worn Spanish silver dollar coins and shilling coins beside one folded piece of colonial paper currency scrip, resting together, aged tarnished silver and cream foxed paper. Historically plausible 1765 colonial hard coin and paper money, single small grouped object, no modern or fantasy elements. Game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T21:50:18.792Z",
+  "files": [
+    "coin-paper-set.png"
+  ]
+}

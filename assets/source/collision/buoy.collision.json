@@ -1,0 +1,11 @@
+{
+  "assetKey": "buoy",
+  "category": "clutter",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Floating buoy in water; non-blocking to on-foot locomotion.",
+  "colliders": []
+}

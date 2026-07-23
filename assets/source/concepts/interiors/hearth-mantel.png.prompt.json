@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial brick fireplace hearth with wooden mantel only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: wide open brick firebox with soot-darkened interior, heavy hand-hewn oak mantel beam, stone hearth slab base, small iron crane arm with hanging cast-iron kettle inside the firebox, aged red-brown brick with lime mortar. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:06:45.573Z",
+  "files": [
+    "hearth-mantel.png"
+  ]
+}

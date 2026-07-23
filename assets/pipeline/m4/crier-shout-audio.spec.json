@@ -1,0 +1,18 @@
+{
+  "item": "M4 #8 - SJ-crier shout SFX (Act-1-World-Content.md §4 SJ-crier)",
+  "status": "BLOCKED - not generated",
+  "blocker": "The repo ELEVENLABS_API_KEY lacks the `sound_generation` permission (returns 401); every sound in apps/web/public/audio/manifest.json is source=\"synth\" (offline DSP fallback). A town crier's shout is a HUMAN VOICE cue, which is (a) out of scope for Meshy and (b) explicitly excluded from the offline DSP kit in gen_ambient_audio.mjs (\"no voices anywhere\"). Faking it with the noise-based synth would violate the quality bar, so it is intentionally left unbuilt.",
+  "unblock": [
+    "Grant the ElevenLabs key `sound_generation` (or use a voice/TTS product), then add the spec below to the SOUNDS array in assets/pipeline/gen_ambient_audio.mjs and run: node assets/pipeline/gen_ambient_audio.mjs --force  (writes apps/web/public/audio/crier-shout.mp3 + manifest.json)",
+    "Alternatively author it in the localhost text-slice / voiced-line pass as a short recorded/TTS VO line rather than an ambient SFX."
+  ],
+  "dropInSpec": {
+    "name": "crier-shout",
+    "seconds": 4,
+    "loop": false,
+    "kind": "oneshot",
+    "prompt": "a single male 18th century town crier shouting an announcement outdoors on a colonial street, strong projected 'Hear ye!' style call, no music, no crowd, natural outdoor reverb, close mic",
+    "note": "3 call-spots along the central street (x -8, 6, 24); one shout pulse per spot. Subtitle carried by the runtime, not the audio."
+  },
+  "existingReusable": "dog-bark.wav already exists for FLV-dog audio (separate from the street-dog GLB); no new dog audio needed."
+}

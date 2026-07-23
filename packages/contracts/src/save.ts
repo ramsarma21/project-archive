@@ -9,6 +9,7 @@ export interface SaveRecord {
   chapterId: string;
   packageId: string;
   variationRootSeedHex: string;
+  flowVersion?: number;
   committedEvents: PresenterEvent[];
   revision: number; // increments per committed transaction (optimistic concurrency)
   status: "IN_PROGRESS" | "COMPLETE";

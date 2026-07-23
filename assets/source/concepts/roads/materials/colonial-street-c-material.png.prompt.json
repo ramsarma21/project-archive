@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Convert this colonial road slab reference into a perfectly overhead orthographic seamless square albedo texture. Fill frame edge-to-edge with only irregular worn 1765 Boston granite and fieldstone setts, dark mud-packed joints, subtle wagon wear and damp grime. Remove all perspective, slab sides, background, shadows, borders and lighting gradients. Opposite edges tile invisibly. Keep stones small and human-scale, muted gray-brown, hand-laid and nonuniform, never modern pavers.",
+  "size": "1024x1024",
+  "edit": "assets/source/concepts/roads/colonial-street-c.png",
+  "generatedAt": "2026-07-21T16:45:32.032Z",
+  "files": [
+    "colonial-street-c-material.png"
+  ]
+}

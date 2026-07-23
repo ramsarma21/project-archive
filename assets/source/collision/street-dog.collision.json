@@ -1,0 +1,11 @@
+{
+  "assetKey": "street-dog",
+  "category": "prop",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "M4 FLV-dog street dog actor. Non-blocking, consistent with the no-collision rule for NPCs/animal actors (README: 'No collisions for NPCs / crowds'). Static mesh in this batch; see M4 report for the animation blocker (quadruped incompatible with the humanoid Meshy-rig + Mixamo clip pipeline).",
+  "colliders": []
+}

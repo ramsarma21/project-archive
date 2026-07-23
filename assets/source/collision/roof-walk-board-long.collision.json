@@ -1,0 +1,40 @@
+{
+  "assetKey": "roof-walk-board-long",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "M4 roof-route bridge board: long plank gangway on a mid A-frame trestle plus grounded end legs and rope hand-lines. Long axis is local X. Walkable top and trestle are fitted to the deployed GLB's measured 1.899 x 0.478 x 0.335 metre bounds.",
+  "colliders": [
+    {
+      "id": "plank-top",
+      "shape": "support",
+      "polygon": [
+        [-0.9, -0.13],
+        [0.9, -0.13],
+        [0.9, 0.13],
+        [-0.9, 0.13]
+      ],
+      "y": 0.22,
+      "link": "traversal",
+      "tags": ["support", "walkable", "density"]
+    },
+    {
+      "id": "mid-trestle",
+      "shape": "capsule",
+      "a": [0.0, 0.13, 0.0],
+      "b": [0.0, 0.22, 0.0],
+      "radius": 0.13,
+      "tags": ["support-leg"]
+    }
+  ],
+  "compose": [
+    {
+      "type": "traversal",
+      "ref": "densityManifest:roof-walk-board-long",
+      "note": "BALANCE endpoints for longer roof gaps; enable in DENSITY_TRAVERSAL_TYPE_STATUS where placed (Production Plan B#5)"
+    }
+  ]
+}

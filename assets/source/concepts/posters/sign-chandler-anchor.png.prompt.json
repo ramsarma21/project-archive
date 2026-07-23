@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on view of a weathered rectangular painted wooden trade sign board, the wood board completely fills the frame edge to edge. Painted on the old cracked boards: a large black ship anchor with a coil of tan rope around its shank inside a painted white shield outline on a slate blue ground, faded oil paint, flaking edges, iron nail heads in the corners, no lettering at all. Historically plausible 1765 colonial Boston ship chandler hanging trade sign face, no background visible, no hands, no modern elements.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T23:06:12.920Z",
+  "files": [
+    "sign-chandler-anchor.png"
+  ]
+}

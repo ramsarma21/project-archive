@@ -1,0 +1,146 @@
+{
+  "factory": "interior-structures-v4",
+  "contract": "CANONICAL (Sol interior visual-correction). Shell = four interior walls + ceiling ONLY, NO floor, no dollhouse roof / exterior facade, no open cutaway side, exactly one real doorway; entrance faces local -Z, +Y up, pivot at floor center. Floor = flat tile, top surface pivot y=0, thickness downward. If Meshy cannot reliably close a room from one image, generate the modularComponents via the same pipeline and assemble the closed shell in Blender (NO visible primitive geometry).",
+  "conceptTemplate": "Interior architectural room shell only, photoreal reference render from a camera standing INSIDE a small fully ENCLOSED room looking into a corner so two or three solid interior walls meet a beamed ceiling above; a single plain plank doorway is the only opening; NO open/cutaway wall, NO dollhouse roof, NO exterior facade, NO visible floor boards emphasised, and no furniture, people, text, or watermark; plain soft even studio lighting. Historically accurate 1765 Boston construction: {DETAIL}. Aged working building, not a museum reconstruction; surfaces suitable for Meshy image-to-3D and Blender assembly.",
+  "modularComponents": [
+    { "key": "int-wall-plaster-panel", "triBudget": 6000, "texBudget": 512, "detail": "one flat rectangular aged whitewashed lime-plaster interior wall panel, patched and smoke-stained, standing upright, no openings", "role": "solid wall" },
+    { "key": "int-wall-board-panel", "triBudget": 6000, "texBudget": 512, "detail": "one flat rectangular rough vertical-board timber interior wall panel, aged dark pine boards with restrained nail heads and tool marks, standing upright, no openings", "role": "warehouse/workroom wall" },
+    { "key": "int-wall-civic-panel", "triBudget": 6000, "texBudget": 512, "detail": "one flat rectangular formal Georgian interior wall panel, aged warm off-white lime plaster above muted painted wood wainscot with restrained rectangular panel moulding, standing upright, no openings", "role": "civic/domestic-wide wall" },
+    { "key": "int-wall-window-panel", "triBudget": 8000, "texBudget": 512, "detail": "one flat interior wall panel with a single multi-pane sash window recess, plaster over board, standing upright", "role": "window wall" },
+    { "key": "int-wall-door-panel", "triBudget": 8000, "texBudget": 512, "detail": "one flat interior wall panel with a single plain plank doorway opening, standing upright", "role": "door wall (entrance, -Z)" },
+    { "key": "int-ceiling-beamed-panel", "triBudget": 6000, "texBudget": 512, "detail": "one flat rectangular smoke-darkened beamed timber ceiling panel with exposed joists, seen from below", "role": "ceiling" }
+  ],
+  "conceptDir": "assets/source/concepts/interiors-structures",
+  "rawDir": "assets/build/world-v3-structures",
+  "optDir": "assets/build/world-v3-structures-opt",
+  "assets": [
+    {
+      "key": "int-shell-domestic-narrow-a",
+      "triBudget": 40000,
+      "texBudget": 1024,
+      "detail": "a single narrow low-ceiling fully enclosed domestic room shell: four solid whitewashed lime-plaster interior walls (patched and smoke-stained) meeting an exposed beamed timber ceiling, a central brick chimney breast with an open hearth recess, two small multi-pane sash windows on one wall, and one plain plank entrance doorway; no floor, no open cutaway side, no exterior facade",
+      "entranceAxis": "entrance doorway centered on -Z wall; hearth recess on +Z wall; windows on +X wall; floor plane at y=0, ceiling above",
+      "targetProportion": [14, 11],
+      "archetypes": ["small home common room", "artisan dwelling", "tenement room"],
+      "notes": "Low-ceiling narrow domestic shell; central-chimney plan."
+    },
+    {
+      "key": "int-shell-domestic-wide-b",
+      "triBudget": 40000,
+      "texBudget": 1024,
+      "detail": "a single wider middling-class fully enclosed domestic room shell: four solid interior walls with painted wooden wainscot below aged lime plaster meeting exposed ceiling beams, a brick hearth recess in the +Z wall, two multi-pane sash windows, one plank doorway, and visible old plaster repairs; no floor, no open cutaway side, no exterior facade",
+      "entranceAxis": "entrance doorway centered on -Z wall; hearth recess on +Z wall; windows on +X wall; floor plane at y=0, ceiling above",
+      "targetProportion": [18, 14],
+      "archetypes": ["middling home parlor", "merchant residence room", "hero dwelling common room"],
+      "notes": "Wider middling domestic shell with wainscot."
+    },
+    {
+      "key": "int-shell-shopfront-a",
+      "triBudget": 40000,
+      "texBudget": 1024,
+      "detail": "a single long fully enclosed shop interior room shell: the front (-Z) interior wall has a multi-pane shop-front window bay and a plank entrance door, the side walls are lime plaster over board, the rear (+Z) wall is a plain plank stock wall, and an exposed-joist beamed ceiling spans above; four solid walls, no floor, no open cutaway side, no exterior facade detailing and no lettering or signage",
+      "entranceAxis": "entrance + shop-front window bay on -Z front wall; rear stock wall on +Z; floor plane at y=0, ceiling above",
+      "targetProportion": [20, 15],
+      "archetypes": ["retail shop front room", "chandlery", "printer/press shop front"],
+      "notes": "Long shopfront shell with glazed front bay + rear stock wall."
+    },
+    {
+      "key": "int-shell-workroom-a",
+      "triBudget": 40000,
+      "texBudget": 1024,
+      "detail": "a single robust fully enclosed timber workroom shell: four solid vertical plank interior walls, large multi-pane workshop windows, smoke-darkened ceiling beams above, and a small brick hearth recess in the +Z wall; no floor, no open cutaway side, no exterior facade",
+      "entranceAxis": "entrance doorway centered on -Z wall; hearth recess on +Z rear wall; window wall on +X; floor plane at y=0, ceiling above",
+      "targetProportion": [20, 15],
+      "archetypes": ["artisan workshop", "cooperage/joiner workroom", "smithy anteroom"],
+      "notes": "Robust plank-walled workroom shell."
+    },
+    {
+      "key": "int-shell-warehouse-a",
+      "triBudget": 40000,
+      "texBudget": 1024,
+      "detail": "a single tall fully enclosed timber warehouse interior room shell: heavy square timber posts with diagonal knee-braces stand against four solid rough plank interior walls under exposed rafters; the -Z wall has a wide timber loading-door recess with a smaller square hoist opening above it; fully planked interior walls, no floor, no open cutaway side, not a bare open framework",
+      "entranceAxis": "loading-door recess + hoist opening on -Z wall; floor plane at y=0, rafter ceiling above",
+      "targetProportion": [28, 20],
+      "archetypes": ["dockside/street warehouse interior", "storage bay", "bulk goods store"],
+      "notes": "Tall post-and-brace warehouse shell with loading + hoist openings."
+    },
+    {
+      "key": "int-shell-civic-a",
+      "triBudget": 40000,
+      "texBudget": 1024,
+      "detail": "a single tall fully enclosed civic hall room shell: four solid plaster interior walls with flat pilaster paneling, large multi-pane sash windows, a formal panelled entrance on the -Z wall, and a restrained Georgian cornice at the ceiling line above; no floor, no open cutaway side, no exterior facade",
+      "entranceAxis": "formal panelled entrance on -Z wall; window walls on +X and +Z; floor plane at y=0, ceiling above",
+      "targetProportion": [25, 18],
+      "archetypes": ["town hall chamber", "customs house room", "civic assembly room"],
+      "notes": "Georgian civic hall shell with restrained cornice."
+    },
+    {
+      "key": "int-shell-meetinghouse-hero",
+      "triBudget": 40000,
+      "texBudget": 1024,
+      "detail": "a single vast rectangular fully enclosed New England meetinghouse hall shell: four tall whitewashed plaster interior walls, rows of large clear multi-pane sash windows, heavy square wooden gallery-support columns along both long sides, a plain coved plaster ceiling above, and a simple entrance vestibule on the -Z short end; strictly no altar, no cross, no religious ornament, no organ; no floor, no open cutaway side",
+      "entranceAxis": "entrance vestibule on -Z short end; long axis runs along Z; gallery columns line both long (X) walls; floor plane at y=0, coved ceiling above",
+      "targetProportion": [28, 38],
+      "archetypes": ["hero meetinghouse assembly hall", "mass town meeting interior"],
+      "notes": "Hero vast meetinghouse hall; strictly no altar/cross/organ per brief."
+    },
+    {
+      "key": "int-shell-ropewalk-a",
+      "triBudget": 40000,
+      "texBudget": 1024,
+      "detail": "a single very long narrow fully enclosed timber rope-making shed interior room shell, photorealistic textured render with soft studio lighting: four solid interior walls with a repeated row of square posts and small windows running down the length, one long wall lined with rows of iron yarn hooks, and smoke-darkened rafters spanning the ceiling above; no floor, no open cutaway side",
+      "entranceAxis": "long axis runs along X; entrance doorway on the -Z long wall near the -X end; yarn-hook wall on +Z long side; floor plane at y=0, rafter ceiling above",
+      "targetProportion": [34, 12],
+      "archetypes": ["ropewalk production shed", "long industrial workshop"],
+      "notes": "Very long narrow ropewalk shed shell; repeats along X."
+    },
+    {
+      "key": "int-partition-plaster-a",
+      "triBudget": 8000,
+      "texBudget": 512,
+      "detail": "a single freestanding timber-framed lime-plaster interior partition wall panel with one open doorway, showing scuffs, hairline cracks, and plaster patches; a single flat modular wall segment standing upright",
+      "entranceAxis": "flat panel in the X-Y plane, thin along Z; doorway opening offset toward -X; usable on both faces",
+      "archetypes": ["room divider (any interior)", "back-room separation wall"],
+      "notes": "Plaster partition with doorway; 8k/512."
+    },
+    {
+      "key": "int-partition-board-a",
+      "triBudget": 8000,
+      "texBudget": 512,
+      "detail": "a single freestanding vertical-board work partition wall panel with one open gate opening, a peg rail, and a couple of plain shelves; a single flat modular wall segment standing upright",
+      "entranceAxis": "flat panel in the X-Y plane, thin along Z; gate opening offset toward +X; shelves/peg rail on -Z face",
+      "archetypes": ["workshop divider", "shop counter back partition", "warehouse bay divider"],
+      "notes": "Board work partition with gate; 8k/512."
+    },
+    {
+      "key": "int-floor-wide-pine-a",
+      "triBudget": 8000,
+      "texBudget": 1024,
+      "detail": "a single flat modular wide-board pine floor section, hand-planed boards with visible iron nails, a dark worn traffic path across it, and hearth scorch marks with board repairs; a flat rectangular floor tile lying horizontally seen from above at a slight angle",
+      "entranceAxis": "flat tile in the X-Z plane, thin along Y (up); boards run along X; tileable on all four edges",
+      "targetProportion": [1, 1],
+      "archetypes": ["domestic floors", "shop/workroom floors", "civic floors"],
+      "notes": "Wide-board pine floor tile, variant A; 8k/1024."
+    },
+    {
+      "key": "int-floor-wide-pine-b",
+      "triBudget": 8000,
+      "texBudget": 1024,
+      "detail": "a single flat modular wide-board pine floor section as one connected rectangular tile, an alternate layout with lighter replacement boards, iron nails, dark stains, and scrubbed lighter zones; one single floor tile only with no loose or separate boards, lying horizontally seen from above at a slight angle",
+      "entranceAxis": "flat tile in the X-Z plane, thin along Y (up); boards run along X; tileable on all four edges",
+      "targetProportion": [1, 1],
+      "archetypes": ["domestic floors", "shop/workroom floors", "civic floors"],
+      "notes": "Wide-board pine floor tile, variant B; 8k/1024."
+    },
+    {
+      "key": "int-floor-brick-work-a",
+      "triBudget": 8000,
+      "texBudget": 1024,
+      "detail": "a single flat modular worn brick and stone work floor section with pale lime mortar joints, ink and oil stains, and repaired patches of replacement brick; a flat rectangular floor tile lying horizontally seen from above at a slight angle",
+      "entranceAxis": "flat tile in the X-Z plane, thin along Y (up); brick courses run along X; tileable on all four edges",
+      "targetProportion": [1, 1],
+      "archetypes": ["workroom floors", "warehouse floors", "printer/press-shop floors"],
+      "notes": "Worn brick/stone work floor tile; 8k/1024."
+    }
+  ]
+}

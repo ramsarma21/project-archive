@@ -1,0 +1,20 @@
+{
+  "assetKey": "protest-banner",
+  "category": "clutter",
+  "profile": "capsule",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "M4 B11 event: carried/planted blank linen banner on a cross-pole (slogan applied at runtime as a banner-consent / banner-never-asked texture decal on the cloth face; no procedural Text). Thin vertical carry-pole capsule is fitted to measured bounds; cloth is non-blocking.",
+  "colliders": [
+    {
+      "id": "carry-pole",
+      "shape": "capsule",
+      "a": [0.0, 0.04, 0.0],
+      "b": [0.0, 1.85, 0.0],
+      "radius": 0.04,
+      "tags": ["solid"]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single eighteenth-century printer's ink ball only, complete object centered and fully visible, three-quarter view, plain light gray studio background, no table, no scenery, no people, no text, no watermark. Historically accurate 1765 English common-press printer tool: round stuffed wool pad covered in dark ink-stained leather with visible hand stitching and small tacks, mounted on a stout turned hardwood handle, heavily used but structurally sound. Not a roller, brayer, rubber stamp, boxing glove, mallet, plunger, modern tool, fantasy item, or decorative museum display. Realistic game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T04:04:15.045Z",
+  "files": [
+    "printer-ink-ball-a.png"
+  ]
+}

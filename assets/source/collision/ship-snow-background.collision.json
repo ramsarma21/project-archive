@@ -1,0 +1,30 @@
+{
+  "assetKey": "ship-snow-background",
+  "category": "ship",
+  "profile": "solid",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Background vessel (not boarded). Local-normalized hull solid; world scale/pos owned by WaterDirector.",
+  "colliders": [
+    {
+      "id": "hull",
+      "shape": "box",
+      "center": [
+        0,
+        0.429,
+        0
+      ],
+      "half": [
+        0.9,
+        0.429,
+        0.262
+      ],
+      "tags": [
+        "obstacle",
+        "hull"
+      ]
+    }
+  ]
+}

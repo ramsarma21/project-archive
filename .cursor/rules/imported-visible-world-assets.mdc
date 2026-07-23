@@ -1,0 +1,22 @@
+---
+description: Require imported assets for visible physical world content
+alwaysApply: true
+---
+
+# Imported Visible World
+
+- Every visible physical production object or surface must be an imported GLB
+  and/or imported/generated texture from the project asset pipeline.
+- Do not build visible buildings, ground, roads, barriers, traversal props,
+  furniture, signs, clutter, interiors, or backdrop fabric from Three/React
+  primitive or procedural geometry.
+- Missing/loading physical assets render nothing and fail QA; never substitute
+  a visible primitive fallback or debug shell in production.
+- Runtime code may transform, animate, instance, or shade imported assets.
+- Procedural code is allowed for invisible collision, portals, triggers,
+  navigation, dev diagnostics, UI/Archive highlights, sky, fog, animated water,
+  weather, lighting, particles, shaders, and contact shadows.
+- New physical assets follow Gemini concept → visual/historical QA → Meshy →
+  scoped Blender optimization → verification manifest → targeted web sync.
+- Keep west/southwest harbor water open; never extend backdrop city or land
+  surfaces into the harbor exclusion bands documented in World-Design-Bible.

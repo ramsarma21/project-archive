@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single full-body 1765 Boston market goodwife, standing in a relaxed A-pose, arms slightly away from body, facing camera, plain light gray background, no other objects, no text, head to toe fully in frame, muted period clothing colors: practical russet-brown wool market gown with fitted bodice, white linen apron, white linen cap, cream kerchief tucked at the neckline, ankle-length petticoat, black leather shoes, empty hands, no basket, no props",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:13:16.605Z",
+  "files": [
+    "npc-goodwife.png"
+  ]
+}

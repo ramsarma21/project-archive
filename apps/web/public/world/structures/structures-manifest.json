@@ -1,0 +1,1058 @@
+{
+  "factory": "interior-structures-v4",
+  "generatedAt": "2026-07-22T02:55:52.553Z",
+  "scope": "Canonical imported structural kit for all 36 interiors. Eight four-wall-plus-ceiling shells and three separate floor tiles are runtime-integrated through the interior-only canonical loader.",
+  "pipeline": "gen_concept_image.mjs (Nano Banana, canonical ENCLOSED-room template) -> visual QA/regenerate -> gen_interior_structures_meshy.mjs (Meshy image-to-3D; fall back to modularComponents + Blender assembly if Meshy cannot close a room) -> optimize_interiors_v4_structures.py (Blender: join, merge doubles, drop duplicate/degenerate faces, consistent normals, decimate to 40k/8k, front-side thick materials / double-sided only partitions, safe PBR values, pivot shells floor-center min-Y=0 / floors top max-Y=0, textures AUTO/never-JPEG + tangents, writes validation.json) -> verify_interior_structures.mjs (three GLTFLoader parse + bbox/tris/textures/pivot/side/anisotropy checks)",
+  "budgets": {
+    "shells": "40000 tris / 1024 tex",
+    "partitions": "8000 tris / 512 tex",
+    "floors": "8000 tris / 1024 tex"
+  },
+  "bboxNote": "CANONICAL contract: shells are four walls + ceiling ONLY (no floor, no open cutaway side, entrance on -Z), pivot at floor center (min-Y≈0); floors mount their top surface at y=0 (max-Y≈0); X/Z centered. Real-world room sizes are applied at placement time with <=1.15x horizontal anisotropy.",
+  "doubleSidedNote": "Front-side (thick) materials for shells and floors so inner backfaces do not stripe/z-fight from inside; ONLY thin partitions are double-sided. Normal maps stay lossless PNG (Non-Color) with exported tangents. Invisible colliders/triggers are added procedurally at placement.",
+  "integration": {
+    "status": "INTEGRATED",
+    "runtime": "apps/web/src/world/InteriorStructure.tsx + InteriorDirector.tsx",
+    "manifest": "apps/web/src/world/interiorManifest.ts (all eight shell keys canonical, yaw 0)",
+    "deployedDir": "apps/web/public/world/structures"
+  },
+  "assets": {
+    "int-shell-domestic-narrow-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "shell",
+      "geometryAnisotropy": 1.269,
+      "targetAnisotropy": 1.273,
+      "horizontalFitAnisotropy": 1.003,
+      "rawGlbPath": "assets/build/world-v3-structures/int-shell-domestic-narrow-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-shell-domestic-narrow-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-shell-domestic-narrow-a.png",
+      "meshyTaskId": "019f8755-9d55-7455-a843-cbbe3f31c877",
+      "assembly": {
+        "key": "int-shell-domestic-narrow-a",
+        "method": "imported-generated-modular-components",
+        "sourceConceptMeshTaskId": "019f8755-9d55-7455-a843-cbbe3f31c877",
+        "moduleTaskIds": {
+          "int-wall-board-panel": "019f8753-42a9-7677-85a3-64f22ea37c00",
+          "int-wall-plaster-panel": "019f8753-42a4-7336-9859-b03aa36d319f"
+        },
+        "contract": "four walls + ceiling; no floor; one doorway; entrance -Z",
+        "dimensions": [
+          14,
+          3.2,
+          11
+        ]
+      },
+      "triBudget": 40000,
+      "tris": 420,
+      "texBudget": 1024,
+      "meshes": 2,
+      "materials": 2,
+      "images": 3,
+      "textures": 4,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 2,
+      "normalImageMimes": [
+        "image/png",
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 2,
+      "normalPrimitiveCount": 2,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-shell-domestic-narrow-a",
+        "kind": "shell",
+        "srcTris": 420,
+        "outTris": 420,
+        "triBudget": 40000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 3357120,
+        "footprint": [
+          11.16,
+          14.16
+        ],
+        "heightAxis": 3.303,
+        "geometryAnisotropy": 1.269,
+        "targetAnisotropy": 1.273,
+        "horizontalFitAnisotropy": 1.003,
+        "normalPngs": 3,
+        "normalMapNodes": 4,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        14.16,
+        3.303,
+        11.16
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 3.3029,
+      "bytes": 3357120,
+      "entranceAxis": "entrance doorway centered on -Z wall; hearth recess on +Z wall; windows on +X wall; floor plane at y=0, ceiling above",
+      "roomArchetypes": [
+        "small home common room",
+        "artisan dwelling",
+        "tenement room"
+      ],
+      "notes": "Low-ceiling narrow domestic shell; central-chimney plan."
+    },
+    "int-shell-domestic-wide-b": {
+      "status": "ok",
+      "flags": [],
+      "kind": "shell",
+      "geometryAnisotropy": 1.282,
+      "targetAnisotropy": 1.286,
+      "horizontalFitAnisotropy": 1.003,
+      "rawGlbPath": "assets/build/world-v3-structures/int-shell-domestic-wide-b.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-shell-domestic-wide-b.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-shell-domestic-wide-b.png",
+      "meshyTaskId": "019f8755-9d51-7455-b131-98c6025fcd03",
+      "assembly": {
+        "key": "int-shell-domestic-wide-b",
+        "method": "imported-generated-modular-components",
+        "sourceConceptMeshTaskId": "019f8755-9d51-7455-b131-98c6025fcd03",
+        "moduleTaskIds": {
+          "int-wall-board-panel": "019f8753-42a9-7677-85a3-64f22ea37c00",
+          "int-wall-civic-panel": "019f8753-428e-7336-bd89-09e9bd442cc6"
+        },
+        "contract": "four walls + ceiling; no floor; one doorway; entrance -Z",
+        "dimensions": [
+          18,
+          3.8,
+          14
+        ]
+      },
+      "triBudget": 40000,
+      "tris": 480,
+      "texBudget": 1024,
+      "meshes": 2,
+      "materials": 2,
+      "images": 3,
+      "textures": 4,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 2,
+      "normalImageMimes": [
+        "image/png",
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 2,
+      "normalPrimitiveCount": 2,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-shell-domestic-wide-b",
+        "kind": "shell",
+        "srcTris": 480,
+        "outTris": 480,
+        "triBudget": 40000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 2991064,
+        "footprint": [
+          14.16,
+          18.16
+        ],
+        "heightAxis": 3.911,
+        "geometryAnisotropy": 1.282,
+        "targetAnisotropy": 1.286,
+        "horizontalFitAnisotropy": 1.003,
+        "normalPngs": 3,
+        "normalMapNodes": 4,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        18.16,
+        3.911,
+        14.16
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 3.9112,
+      "bytes": 2991064,
+      "entranceAxis": "entrance doorway centered on -Z wall; hearth recess on +Z wall; windows on +X wall; floor plane at y=0, ceiling above",
+      "roomArchetypes": [
+        "middling home parlor",
+        "merchant residence room",
+        "hero dwelling common room"
+      ],
+      "notes": "Wider middling domestic shell with wainscot."
+    },
+    "int-shell-shopfront-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "shell",
+      "geometryAnisotropy": 1.33,
+      "targetAnisotropy": 1.333,
+      "horizontalFitAnisotropy": 1.003,
+      "rawGlbPath": "assets/build/world-v3-structures/int-shell-shopfront-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-shell-shopfront-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-shell-shopfront-a.png",
+      "meshyTaskId": "019f8755-9d57-7455-be99-f01d5b66fbf9",
+      "assembly": {
+        "key": "int-shell-shopfront-a",
+        "method": "imported-generated-modular-components",
+        "sourceConceptMeshTaskId": "019f8755-9d57-7455-be99-f01d5b66fbf9",
+        "moduleTaskIds": {
+          "int-wall-board-panel": "019f8753-42a9-7677-85a3-64f22ea37c00",
+          "int-wall-plaster-panel": "019f8753-42a4-7336-9859-b03aa36d319f"
+        },
+        "contract": "four walls + ceiling; no floor; one doorway; entrance -Z",
+        "dimensions": [
+          20,
+          4.2,
+          15
+        ]
+      },
+      "triBudget": 40000,
+      "tris": 528,
+      "texBudget": 1024,
+      "meshes": 2,
+      "materials": 2,
+      "images": 3,
+      "textures": 4,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 2,
+      "normalImageMimes": [
+        "image/png",
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 2,
+      "normalPrimitiveCount": 2,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-shell-shopfront-a",
+        "kind": "shell",
+        "srcTris": 528,
+        "outTris": 528,
+        "triBudget": 40000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 3368128,
+        "footprint": [
+          15.16,
+          20.16
+        ],
+        "heightAxis": 4.3,
+        "geometryAnisotropy": 1.33,
+        "targetAnisotropy": 1.333,
+        "horizontalFitAnisotropy": 1.003,
+        "normalPngs": 3,
+        "normalMapNodes": 4,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        20.16,
+        4.3,
+        15.16
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 4.3004,
+      "bytes": 3368128,
+      "entranceAxis": "entrance + shop-front window bay on -Z front wall; rear stock wall on +Z; floor plane at y=0, ceiling above",
+      "roomArchetypes": [
+        "retail shop front room",
+        "chandlery",
+        "printer/press shop front"
+      ],
+      "notes": "Long shopfront shell with glazed front bay + rear stock wall."
+    },
+    "int-shell-workroom-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "shell",
+      "geometryAnisotropy": 1.33,
+      "targetAnisotropy": 1.333,
+      "horizontalFitAnisotropy": 1.003,
+      "rawGlbPath": "assets/build/world-v3-structures/int-shell-workroom-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-shell-workroom-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-shell-workroom-a.png",
+      "meshyTaskId": "019f8755-9d59-7ad1-a3e8-b59f2b76e68f",
+      "assembly": {
+        "key": "int-shell-workroom-a",
+        "method": "imported-generated-modular-components",
+        "sourceConceptMeshTaskId": "019f8755-9d59-7ad1-a3e8-b59f2b76e68f",
+        "moduleTaskIds": {
+          "int-wall-board-panel": "019f8753-42a9-7677-85a3-64f22ea37c00"
+        },
+        "contract": "four walls + ceiling; no floor; one doorway; entrance -Z",
+        "dimensions": [
+          20,
+          3.8,
+          15
+        ]
+      },
+      "triBudget": 40000,
+      "tris": 528,
+      "texBudget": 1024,
+      "meshes": 2,
+      "materials": 2,
+      "images": 2,
+      "textures": 4,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 2,
+      "normalImageMimes": [
+        "image/png",
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 2,
+      "normalPrimitiveCount": 2,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-shell-workroom-a",
+        "kind": "shell",
+        "srcTris": 528,
+        "outTris": 528,
+        "triBudget": 40000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 1642916,
+        "footprint": [
+          15.16,
+          20.159
+        ],
+        "heightAxis": 3.907,
+        "geometryAnisotropy": 1.33,
+        "targetAnisotropy": 1.333,
+        "horizontalFitAnisotropy": 1.003,
+        "normalPngs": 2,
+        "normalMapNodes": 4,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        20.159,
+        3.907,
+        15.16
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 3.9071,
+      "bytes": 1642916,
+      "entranceAxis": "entrance doorway centered on -Z wall; hearth recess on +Z rear wall; window wall on +X; floor plane at y=0, ceiling above",
+      "roomArchetypes": [
+        "artisan workshop",
+        "cooperage/joiner workroom",
+        "smithy anteroom"
+      ],
+      "notes": "Robust plank-walled workroom shell."
+    },
+    "int-shell-warehouse-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "shell",
+      "geometryAnisotropy": 1.395,
+      "targetAnisotropy": 1.4,
+      "horizontalFitAnisotropy": 1.003,
+      "rawGlbPath": "assets/build/world-v3-structures/int-shell-warehouse-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-shell-warehouse-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-shell-warehouse-a.png",
+      "meshyTaskId": "019f8758-19ad-7740-baf7-1735dc06d2dd",
+      "assembly": {
+        "key": "int-shell-warehouse-a",
+        "method": "imported-generated-modular-components",
+        "sourceConceptMeshTaskId": "019f8758-19ad-7740-baf7-1735dc06d2dd",
+        "moduleTaskIds": {
+          "int-wall-board-panel": "019f8753-42a9-7677-85a3-64f22ea37c00"
+        },
+        "contract": "four walls + ceiling; no floor; one doorway; entrance -Z",
+        "dimensions": [
+          28,
+          5.2,
+          20
+        ]
+      },
+      "triBudget": 40000,
+      "tris": 804,
+      "texBudget": 1024,
+      "meshes": 2,
+      "materials": 2,
+      "images": 2,
+      "textures": 4,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 2,
+      "normalImageMimes": [
+        "image/png",
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 2,
+      "normalPrimitiveCount": 2,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-shell-warehouse-a",
+        "kind": "shell",
+        "srcTris": 804,
+        "outTris": 804,
+        "triBudget": 40000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 1677224,
+        "footprint": [
+          20.24,
+          28.239
+        ],
+        "heightAxis": 5.361,
+        "geometryAnisotropy": 1.395,
+        "targetAnisotropy": 1.4,
+        "horizontalFitAnisotropy": 1.003,
+        "normalPngs": 2,
+        "normalMapNodes": 4,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        28.239,
+        5.361,
+        20.24
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 5.3612,
+      "bytes": 1677224,
+      "entranceAxis": "loading-door recess + hoist opening on -Z wall; floor plane at y=0, rafter ceiling above",
+      "roomArchetypes": [
+        "dockside/street warehouse interior",
+        "storage bay",
+        "bulk goods store"
+      ],
+      "notes": "Tall post-and-brace warehouse shell with loading + hoist openings."
+    },
+    "int-shell-civic-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "shell",
+      "geometryAnisotropy": 1.385,
+      "targetAnisotropy": 1.389,
+      "horizontalFitAnisotropy": 1.002,
+      "rawGlbPath": "assets/build/world-v3-structures/int-shell-civic-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-shell-civic-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-shell-civic-a.png",
+      "meshyTaskId": "019f8758-9028-74d6-88d1-441829ff3349",
+      "assembly": {
+        "key": "int-shell-civic-a",
+        "method": "imported-generated-modular-components",
+        "sourceConceptMeshTaskId": "019f8758-9028-74d6-88d1-441829ff3349",
+        "moduleTaskIds": {
+          "int-wall-board-panel": "019f8753-42a9-7677-85a3-64f22ea37c00",
+          "int-wall-civic-panel": "019f8753-428e-7336-bd89-09e9bd442cc6"
+        },
+        "contract": "four walls + ceiling; no floor; one doorway; entrance -Z",
+        "dimensions": [
+          25,
+          4.8,
+          18
+        ]
+      },
+      "triBudget": 40000,
+      "tris": 636,
+      "texBudget": 1024,
+      "meshes": 2,
+      "materials": 2,
+      "images": 3,
+      "textures": 4,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 2,
+      "normalImageMimes": [
+        "image/png",
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 2,
+      "normalPrimitiveCount": 2,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-shell-civic-a",
+        "kind": "shell",
+        "srcTris": 636,
+        "outTris": 636,
+        "triBudget": 40000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 3008696,
+        "footprint": [
+          18.16,
+          25.16
+        ],
+        "heightAxis": 4.911,
+        "geometryAnisotropy": 1.385,
+        "targetAnisotropy": 1.389,
+        "horizontalFitAnisotropy": 1.002,
+        "normalPngs": 3,
+        "normalMapNodes": 4,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        25.16,
+        4.911,
+        18.16
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 4.9112,
+      "bytes": 3008696,
+      "entranceAxis": "formal panelled entrance on -Z wall; window walls on +X and +Z; floor plane at y=0, ceiling above",
+      "roomArchetypes": [
+        "town hall chamber",
+        "customs house room",
+        "civic assembly room"
+      ],
+      "notes": "Georgian civic hall shell with restrained cornice."
+    },
+    "int-shell-meetinghouse-hero": {
+      "status": "ok",
+      "flags": [],
+      "kind": "shell",
+      "geometryAnisotropy": 1.354,
+      "targetAnisotropy": 1.357,
+      "horizontalFitAnisotropy": 1.002,
+      "rawGlbPath": "assets/build/world-v3-structures/int-shell-meetinghouse-hero.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-shell-meetinghouse-hero.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-shell-meetinghouse-hero.png",
+      "meshyTaskId": "019f8758-a485-7f31-8e5f-a158a4e3ded2",
+      "assembly": {
+        "key": "int-shell-meetinghouse-hero",
+        "method": "imported-generated-modular-components",
+        "sourceConceptMeshTaskId": "019f8758-a485-7f31-8e5f-a158a4e3ded2",
+        "moduleTaskIds": {
+          "int-wall-board-panel": "019f8753-42a9-7677-85a3-64f22ea37c00",
+          "int-wall-plaster-panel": "019f8753-42a4-7336-9859-b03aa36d319f"
+        },
+        "contract": "four walls + ceiling; no floor; one doorway; entrance -Z",
+        "dimensions": [
+          28,
+          8.5,
+          38
+        ]
+      },
+      "triBudget": 40000,
+      "tris": 1368,
+      "texBudget": 1024,
+      "meshes": 2,
+      "materials": 2,
+      "images": 3,
+      "textures": 4,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 2,
+      "normalImageMimes": [
+        "image/png",
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 2,
+      "normalPrimitiveCount": 2,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-shell-meetinghouse-hero",
+        "kind": "shell",
+        "srcTris": 1368,
+        "outTris": 1368,
+        "triBudget": 40000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 3466512,
+        "footprint": [
+          28.24,
+          38.24
+        ],
+        "heightAxis": 8.645,
+        "geometryAnisotropy": 1.354,
+        "targetAnisotropy": 1.357,
+        "horizontalFitAnisotropy": 1.002,
+        "normalPngs": 3,
+        "normalMapNodes": 4,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        28.24,
+        8.645,
+        38.24
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 8.6449,
+      "bytes": 3466512,
+      "entranceAxis": "entrance vestibule on -Z short end; long axis runs along Z; gallery columns line both long (X) walls; floor plane at y=0, coved ceiling above",
+      "roomArchetypes": [
+        "hero meetinghouse assembly hall",
+        "mass town meeting interior"
+      ],
+      "notes": "Hero vast meetinghouse hall; strictly no altar/cross/organ per brief."
+    },
+    "int-shell-ropewalk-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "shell",
+      "geometryAnisotropy": 2.809,
+      "targetAnisotropy": 2.833,
+      "horizontalFitAnisotropy": 1.009,
+      "rawGlbPath": "assets/build/world-v3-structures/int-shell-ropewalk-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-shell-ropewalk-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-shell-ropewalk-a.png",
+      "meshyTaskId": "019f8759-5650-7519-80a3-0b3bb9761fee",
+      "assembly": {
+        "key": "int-shell-ropewalk-a",
+        "method": "imported-generated-modular-components",
+        "sourceConceptMeshTaskId": "019f8759-5650-7519-80a3-0b3bb9761fee",
+        "moduleTaskIds": {
+          "int-wall-board-panel": "019f8753-42a9-7677-85a3-64f22ea37c00"
+        },
+        "contract": "four walls + ceiling; no floor; one doorway; entrance -Z",
+        "dimensions": [
+          34,
+          4.2,
+          12
+        ]
+      },
+      "triBudget": 40000,
+      "tris": 648,
+      "texBudget": 1024,
+      "meshes": 2,
+      "materials": 2,
+      "images": 2,
+      "textures": 4,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 2,
+      "normalImageMimes": [
+        "image/png",
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 2,
+      "normalPrimitiveCount": 2,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-shell-ropewalk-a",
+        "kind": "shell",
+        "srcTris": 648,
+        "outTris": 648,
+        "triBudget": 40000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 1657460,
+        "footprint": [
+          12.16,
+          34.159
+        ],
+        "heightAxis": 4.307,
+        "geometryAnisotropy": 2.809,
+        "targetAnisotropy": 2.833,
+        "horizontalFitAnisotropy": 1.009,
+        "normalPngs": 2,
+        "normalMapNodes": 4,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        34.159,
+        4.307,
+        12.16
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 4.3067,
+      "bytes": 1657460,
+      "entranceAxis": "long axis runs along X; entrance doorway on the -Z long wall near the -X end; yarn-hook wall on +Z long side; floor plane at y=0, rafter ceiling above",
+      "roomArchetypes": [
+        "ropewalk production shed",
+        "long industrial workshop"
+      ],
+      "notes": "Very long narrow ropewalk shed shell; repeats along X."
+    },
+    "int-partition-plaster-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "partition",
+      "geometryAnisotropy": 10.206,
+      "targetAnisotropy": 10.206,
+      "horizontalFitAnisotropy": 1,
+      "rawGlbPath": "assets/build/world-v3-structures/int-partition-plaster-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-partition-plaster-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-partition-plaster-a.png",
+      "meshyTaskId": "019f8589-c307-7e3c-8b4a-66798ff847ca",
+      "assembly": null,
+      "triBudget": 8000,
+      "tris": 7998,
+      "texBudget": 512,
+      "meshes": 1,
+      "materials": 1,
+      "images": 2,
+      "textures": 2,
+      "texturesEmbedded": true,
+      "doubleSided": true,
+      "allFrontSide": false,
+      "normalMaterialCount": 1,
+      "normalImageMimes": [
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 1,
+      "normalPrimitiveCount": 1,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-partition-plaster-a",
+        "kind": "partition",
+        "srcTris": 87080,
+        "outTris": 7998,
+        "triBudget": 8000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 685088,
+        "footprint": [
+          0.186,
+          1.898
+        ],
+        "heightAxis": 1.4,
+        "geometryAnisotropy": 10.206,
+        "targetAnisotropy": 10.206,
+        "horizontalFitAnisotropy": 1,
+        "normalPngs": 2,
+        "normalMapNodes": 2,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        1.898,
+        1.4,
+        0.186
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 1.4002,
+      "bytes": 685088,
+      "entranceAxis": "flat panel in the X-Y plane, thin along Z; doorway opening offset toward -X; usable on both faces",
+      "roomArchetypes": [
+        "room divider (any interior)",
+        "back-room separation wall"
+      ],
+      "notes": "Plaster partition with doorway; 8k/512."
+    },
+    "int-partition-board-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "partition",
+      "geometryAnisotropy": 8.334,
+      "targetAnisotropy": 8.334,
+      "horizontalFitAnisotropy": 1,
+      "rawGlbPath": "assets/build/world-v3-structures/int-partition-board-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-partition-board-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-partition-board-a.png",
+      "meshyTaskId": "019f858a-129f-7384-87fb-bfddd78a272f",
+      "assembly": null,
+      "triBudget": 8000,
+      "tris": 7999,
+      "texBudget": 512,
+      "meshes": 1,
+      "materials": 1,
+      "images": 2,
+      "textures": 2,
+      "texturesEmbedded": true,
+      "doubleSided": true,
+      "allFrontSide": false,
+      "normalMaterialCount": 1,
+      "normalImageMimes": [
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 1,
+      "normalPrimitiveCount": 1,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-partition-board-a",
+        "kind": "partition",
+        "srcTris": 108684,
+        "outTris": 7999,
+        "triBudget": 8000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 521616,
+        "footprint": [
+          0.228,
+          1.899
+        ],
+        "heightAxis": 1.899,
+        "geometryAnisotropy": 8.334,
+        "targetAnisotropy": 8.334,
+        "horizontalFitAnisotropy": 1,
+        "normalPngs": 2,
+        "normalMapNodes": 2,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        1.899,
+        1.899,
+        0.228
+      ],
+      "bboxMinY": 0,
+      "bboxMaxY": 1.8985,
+      "bytes": 521616,
+      "entranceAxis": "flat panel in the X-Y plane, thin along Z; gate opening offset toward +X; shelves/peg rail on -Z face",
+      "roomArchetypes": [
+        "workshop divider",
+        "shop counter back partition",
+        "warehouse bay divider"
+      ],
+      "notes": "Board work partition with gate; 8k/512."
+    },
+    "int-floor-wide-pine-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "floor",
+      "geometryAnisotropy": 1.105,
+      "targetAnisotropy": 1,
+      "horizontalFitAnisotropy": 1.105,
+      "rawGlbPath": "assets/build/world-v3-structures/int-floor-wide-pine-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-floor-wide-pine-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-floor-wide-pine-a.png",
+      "meshyTaskId": "019f875b-429c-7fc7-a51b-1ad82e69c3e9",
+      "assembly": null,
+      "triBudget": 8000,
+      "tris": 12,
+      "texBudget": 1024,
+      "meshes": 1,
+      "materials": 1,
+      "images": 2,
+      "textures": 2,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 1,
+      "normalImageMimes": [
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 1,
+      "normalPrimitiveCount": 1,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-floor-wide-pine-a",
+        "kind": "floor",
+        "srcTris": 12,
+        "outTris": 12,
+        "triBudget": 8000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 1516292,
+        "footprint": [
+          1.719,
+          1.899
+        ],
+        "heightAxis": 0.065,
+        "geometryAnisotropy": 1.105,
+        "targetAnisotropy": 1,
+        "horizontalFitAnisotropy": 1.105,
+        "normalPngs": 2,
+        "normalMapNodes": 2,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        1.899,
+        0.065,
+        1.719
+      ],
+      "bboxMinY": -0.0654,
+      "bboxMaxY": 0,
+      "bytes": 1516292,
+      "entranceAxis": "flat tile in the X-Z plane, thin along Y (up); boards run along X; tileable on all four edges",
+      "roomArchetypes": [
+        "domestic floors",
+        "shop/workroom floors",
+        "civic floors"
+      ],
+      "notes": "Wide-board pine floor tile, variant A; 8k/1024."
+    },
+    "int-floor-wide-pine-b": {
+      "status": "ok",
+      "flags": [],
+      "kind": "floor",
+      "geometryAnisotropy": 1,
+      "targetAnisotropy": 1,
+      "horizontalFitAnisotropy": 1,
+      "rawGlbPath": "assets/build/world-v3-structures/int-floor-wide-pine-b.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-floor-wide-pine-b.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-floor-wide-pine-b.png",
+      "meshyTaskId": "019f875b-ce27-7bdd-9ff8-055f2f84ee61",
+      "assembly": null,
+      "triBudget": 8000,
+      "tris": 12,
+      "texBudget": 1024,
+      "meshes": 1,
+      "materials": 1,
+      "images": 2,
+      "textures": 2,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 1,
+      "normalImageMimes": [
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 1,
+      "normalPrimitiveCount": 1,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-floor-wide-pine-b",
+        "kind": "floor",
+        "srcTris": 12,
+        "outTris": 12,
+        "triBudget": 8000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 1628864,
+        "footprint": [
+          1.9,
+          1.9
+        ],
+        "heightAxis": 0.081,
+        "geometryAnisotropy": 1,
+        "targetAnisotropy": 1,
+        "horizontalFitAnisotropy": 1,
+        "normalPngs": 2,
+        "normalMapNodes": 2,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        1.9,
+        0.081,
+        1.9
+      ],
+      "bboxMinY": -0.0809,
+      "bboxMaxY": 0,
+      "bytes": 1628864,
+      "entranceAxis": "flat tile in the X-Z plane, thin along Y (up); boards run along X; tileable on all four edges",
+      "roomArchetypes": [
+        "domestic floors",
+        "shop/workroom floors",
+        "civic floors"
+      ],
+      "notes": "Wide-board pine floor tile, variant B; 8k/1024."
+    },
+    "int-floor-brick-work-a": {
+      "status": "ok",
+      "flags": [],
+      "kind": "floor",
+      "geometryAnisotropy": 1,
+      "targetAnisotropy": 1,
+      "horizontalFitAnisotropy": 1,
+      "rawGlbPath": "assets/build/world-v3-structures/int-floor-brick-work-a.glb",
+      "optimizedPath": "assets/build/world-v3-structures-opt/int-floor-brick-work-a.glb",
+      "conceptSource": "assets/source/concepts/interiors-structures/int-floor-brick-work-a.png",
+      "meshyTaskId": "019f875c-7faa-700e-be56-bef474ca2464",
+      "assembly": null,
+      "triBudget": 8000,
+      "tris": 12,
+      "texBudget": 1024,
+      "meshes": 1,
+      "materials": 1,
+      "images": 2,
+      "textures": 2,
+      "texturesEmbedded": true,
+      "doubleSided": false,
+      "allFrontSide": true,
+      "normalMaterialCount": 1,
+      "normalImageMimes": [
+        "image/png"
+      ],
+      "normalMapsLossless": true,
+      "tangentPrimitiveCount": 1,
+      "normalPrimitiveCount": 1,
+      "tangentsComplete": true,
+      "pbrSafe": true,
+      "optimizerValidation": {
+        "key": "int-floor-brick-work-a",
+        "kind": "floor",
+        "srcTris": 12,
+        "outTris": 12,
+        "triBudget": 8000,
+        "duplicateFaces": 0,
+        "boundaryEdges": 0,
+        "nonManifoldEdges": 0,
+        "bytes": 2036556,
+        "footprint": [
+          1.899,
+          1.899
+        ],
+        "heightAxis": 0.191,
+        "geometryAnisotropy": 1,
+        "targetAnisotropy": 1,
+        "horizontalFitAnisotropy": 1,
+        "normalPngs": 2,
+        "normalMapNodes": 2,
+        "flags": []
+      },
+      "hasSkin": false,
+      "animations": 0,
+      "bboxSize": [
+        1.899,
+        0.191,
+        1.899
+      ],
+      "bboxMinY": -0.1907,
+      "bboxMaxY": 0,
+      "bytes": 2036556,
+      "entranceAxis": "flat tile in the X-Z plane, thin along Y (up); brick courses run along X; tileable on all four edges",
+      "roomArchetypes": [
+        "workroom floors",
+        "warehouse floors",
+        "printer/press-shop floors"
+      ],
+      "notes": "Worn brick/stone work floor tile; 8k/1024."
+    }
+  }
+}

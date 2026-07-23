@@ -9,8 +9,9 @@ export default defineConfig({
     proxy: {
       // Same-origin proxy so session cookies are first-party on localhost:5173.
       "/v1": {
-        target: "http://localhost:3001",
-        changeOrigin: false,
+        target: process.env.VITE_API_PROXY_TARGET ?? "http://localhost:3001",
+        changeOrigin: true,
+        secure: true,
       },
     },
   },

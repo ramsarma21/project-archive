@@ -1,0 +1,201 @@
+{
+  "baseUrl": "http://127.0.0.1:5190/",
+  "screenshots": [
+    {
+      "name": "m4-watch-house",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-street/m4-watch-house.png",
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "208",
+        "triangles": "4269228",
+        "canvas": true
+      }
+    },
+    {
+      "name": "m4-roof-board-scaffold",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-street/m4-roof-board-scaffold.png",
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "203",
+        "triangles": "3206896",
+        "canvas": true
+      }
+    },
+    {
+      "name": "m4-static-dog",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-street/m4-static-dog.png",
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "210",
+        "triangles": "3116748",
+        "canvas": true
+      }
+    },
+    {
+      "name": "m4-dog-reaction",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-street/m4-dog-reaction.png",
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "210",
+        "triangles": "3116748",
+        "canvas": true
+      }
+    },
+    {
+      "name": "m4-knowledge-complete",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-street/m4-knowledge-complete.png",
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "202",
+        "triangles": "2902012",
+        "canvas": true
+      }
+    },
+    {
+      "name": "m4-eavesdrop-market",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-street/m4-eavesdrop-market.png",
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "221",
+        "triangles": "3713252",
+        "canvas": true
+      }
+    },
+    {
+      "name": "m4-roof-kid-accepted",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-street/m4-roof-kid-accepted.png",
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "201",
+        "triangles": "2712787",
+        "canvas": true
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "street",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "PLAYER",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "201",
+          "triangles": "2712787",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "51",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "sceneObjectCount": "3014",
+          "sceneVisibleMeshCount": "371",
+          "playerPos": "-24.00,7.45",
+          "playerPos3d": "-24.000,0.000,7.450",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "0.000,1.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "abigail,thomas,pike,clarke,rider",
+          "namedActorPositions": "abigail:3.46,9.57;thomas:-54.32,-6.23;pike:38.75,8.53;clarke:-25.91,8.19;rider:-96.80,-18.20"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "6",
+          "carriedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,PLAIN_WRAP,THOMAS_CIRCULAR",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_ONLY",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "assetFailures": [],
+  "networkFailures": []
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Convert this colonial junction reference into a perfectly overhead orthographic square albedo map for one complete four-way stone-paving junction. Fill frame edge-to-edge, no perspective, slab sides, background, border, shadows or lighting gradient. Irregular worn granite setts approach from all four edges and cross around a patched muddy center with crossing wagon wear. Keep many small human-scale stones, dark joints, desaturated gray-brown, historic not modern. All four road exits meet image edges cleanly.",
+  "size": "1024x1024",
+  "edit": "assets/source/concepts/roads/colonial-street-junction.png",
+  "generatedAt": "2026-07-21T16:47:46.873Z",
+  "files": [
+    "colonial-street-junction-material.png"
+  ]
+}

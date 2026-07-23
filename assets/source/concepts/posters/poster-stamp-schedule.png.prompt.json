@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on scan of a printed 1765 colonial broadside notice, aged rag paper, letterpress blackletter and serif type. At the top a small crowned GR royal cipher woodcut. Large header reads \"A SCHEDULE of the STAMP DUTIES\". Below it an italic subheading reads \"To be in Force within the British Colonies in AMERICA from the First of November 1765\". The body is two neat columns of serif type listing exactly these lines and no others: \"Every Pamphlet, One Shilling\", \"Every Almanack, Two Pence\", \"Every News Paper, One Penny\", \"Every Deed or Lease, One Shilling Six Pence\", \"Every Bond, One Shilling\", \"Every Bill of Lading, Four Pence\", \"Every Policy of Assurance, Five Shillings\", \"Every Probate of a Will, Ten Shillings\", \"Every Writ, Six Pence\", \"Every Licence, Twenty Shillings\". Every listed line pairs an item with a plausible sum in shillings or pence, correctly spelled. A thin printed rule border frames the sheet. Slight foxing and uneven period ink. The paper texture extends past all four edges of the frame so no background is visible at all, no hands, no modern elements, no em dash characters anywhere.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T22:49:03.106Z",
+  "files": [
+    "poster-stamp-schedule.png"
+  ]
+}

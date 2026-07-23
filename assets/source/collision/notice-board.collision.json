@@ -1,0 +1,33 @@
+{
+  "assetKey": "notice-board",
+  "category": "prop",
+  "profile": "solid",
+  "fit": {
+    "targetSize": [
+      2.6,
+      2.6,
+      2.6
+    ],
+    "scale": 1
+  },
+  "note": "Post + board; thin footprint.",
+  "colliders": [
+    {
+      "id": "board",
+      "shape": "box",
+      "center": [
+        0,
+        1.3,
+        0
+      ],
+      "half": [
+        0.731,
+        1.3,
+        0.267
+      ],
+      "tags": [
+        "obstacle"
+      ]
+    }
+  ]
+}

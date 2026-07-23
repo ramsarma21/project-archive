@@ -1,0 +1,31 @@
+{
+  "assetKey": "bollard",
+  "category": "prop",
+  "profile": "capsule",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Mooring bollard → short capsule.",
+  "colliders": [
+    {
+      "id": "post",
+      "shape": "capsule",
+      "a": [
+        0,
+        0.5,
+        0
+      ],
+      "b": [
+        0,
+        0.5,
+        0
+      ],
+      "radius": 0.5,
+      "tags": [
+        "obstacle",
+        "post"
+      ]
+    }
+  ]
+}

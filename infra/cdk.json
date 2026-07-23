@@ -1,0 +1,7 @@
+{
+  "app": "node --import tsx bin/project-archive.ts",
+  "context": {
+    "@aws-cdk/aws-ecs:enableImdsBlockingDeprecatedFeature": true,
+    "@aws-cdk/aws-ecs:disableExplicitDeploymentControllerForCircuitBreaker": true
+  }
+}

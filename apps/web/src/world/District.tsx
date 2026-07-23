@@ -1,89 +1,601 @@
-import { useMemo, useRef } from "react";
+import {
+  Component,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { Sky, Text } from "@react-three/drei";
-import { BUILDINGS, PROPS, LOCATIONS, NPCS, AMBIENT, type LocationDef } from "./manifest.js";
-import { FittedGlb, RiggedCharacter, PlaceholderPerson } from "./Character.js";
+import { Sky, useGLTF } from "@react-three/drei";
+import type { ChoreographyCue } from "@pa/contracts";
+import {
+  BUILDINGS,
+  PROPS,
+  NPCS,
+  AMBIENT,
+} from "./manifest.js";
+import { RiggedCharacter } from "./Character.js";
+import { actorCueFor, DirectedNpc } from "./ActorDirector.js";
+import { atmosphereAt } from "./atmosphere.js";
+import { SkyDirector } from "./SkyDirector.js";
+import { WeatherDirector } from "./WeatherDirector.js";
+import { WaterDirector } from "./WaterDirector.js";
+import { PopulationDirector } from "./PopulationDirector.js";
+import { DensityDirector } from "./DensityDirector.js";
+import { InteriorDirector } from "./InteriorDirector.js";
+import { interiorDef } from "./interiorManifest.js";
 
-// ---- Ground: packed-earth street through dirt and worn grass ----
-function useGroundTexture(): THREE.CanvasTexture {
-  return useMemo(() => {
-    const c = document.createElement("canvas");
-    c.width = 512;
-    c.height = 512;
-    const g = c.getContext("2d")!;
-    g.fillStyle = "#6f6049";
-    g.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 4200; i++) {
-      const shade = 90 + Math.random() * 50;
-      g.fillStyle = `rgba(${shade + 12},${shade - 4},${shade - 28},${0.16 + Math.random() * 0.2})`;
-      g.fillRect(Math.random() * 512, Math.random() * 512, 1 + Math.random() * 3, 1 + Math.random() * 3);
+// ---- Imported modular ground kit -------------------------------------------
+// Every visible road, alley, gutter, yard and deck surface below is a GLB
+// produced by Gemini concept -> Meshy image-to-3D -> Blender optimization ->
+// sync_web. The player's existing y=0 movement plane remains the only
+// procedural surface, and it is invisible.
+interface SurfacePlacement {
+  id: string;
+  glb: string;
+  pos: [number, number, number];
+  size: [number, number];
+  relief: number;
+  rotY?: number;
+}
+
+const STREET_VARIANTS = [
+  "colonial-street-a",
+  "colonial-street-b",
+  "colonial-street-c",
+] as const;
+const ALLEY_VARIANTS = ["colonial-alley-a", "colonial-alley-b"] as const;
+
+const MAIN_STREET_MODULES: SurfacePlacement[] = [
+  {
+    id: "street-west-endcap",
+    glb: "colonial-street-endcap",
+    pos: [-113, -0.14, 0],
+    size: [10, 20],
+    relief: 0.22,
+  },
+  ...[-98, -78, -58, -38, -18, 2, 22].map((x, index) => ({
+    id: `street-${index}`,
+    glb: STREET_VARIANTS[index % STREET_VARIANTS.length]!,
+    pos: [x, -0.14, 0] as [number, number, number],
+    size: [20, 20] as [number, number],
+    relief: 0.22,
+    rotY: index % 2 ? Math.PI : 0,
+  })),
+  {
+    id: "street-east-run",
+    glb: "colonial-street-c",
+    pos: [38.5, -0.14, 0],
+    size: [13, 20],
+    relief: 0.22,
+  },
+  {
+    id: "town-house-square",
+    glb: "colonial-civic-square",
+    pos: [53.5, -0.13, 0],
+    size: [17, 20],
+    relief: 0.2,
+  },
+  {
+    id: "church-junction",
+    glb: "colonial-street-junction",
+    pos: [67, -0.13, 0],
+    size: [10, 20],
+    relief: 0.2,
+  },
+  {
+    id: "street-east-endcap",
+    glb: "colonial-street-endcap",
+    pos: [76, -0.14, 0],
+    size: [8, 20],
+    relief: 0.22,
+    rotY: Math.PI,
+  },
+];
+
+const GUTTER_MODULES: SurfacePlacement[] = [-9.35, 9.35].flatMap((z, side) =>
+  Array.from({ length: 10 }, (_, index) => ({
+    id: `gutter-${side}-${index}`,
+    glb: "colonial-gutter-straight",
+    pos: [-108 + index * 20, -0.13, z] as [number, number, number],
+    size: [20, 1.3] as [number, number],
+    relief: 0.18,
+    rotY: side ? Math.PI : 0,
+  })),
+);
+
+const GUTTER_CORNERS: SurfacePlacement[] = [
+  [-117.2, -9.25, 0],
+  [-117.2, 9.25, Math.PI / 2],
+  [79.2, -9.25, -Math.PI / 2],
+  [79.2, 9.25, Math.PI],
+].map(([x, z, rotY], index) => ({
+  id: `gutter-corner-${index}`,
+  glb: "colonial-gutter-corner",
+  pos: [x!, -0.14, z!] as [number, number, number],
+  size: [1.5, 1.5] as [number, number],
+  relief: 0.2,
+  rotY,
+}));
+
+const NORTH_ALLEY_MODULES: SurfacePlacement[] = [
+  ...Array.from({ length: 16 }, (_, index) => ({
+    id: `north-alley-${index}`,
+    glb: ALLEY_VARIANTS[index % ALLEY_VARIANTS.length]!,
+    pos: [-112 + index * 12, -0.1, -23.25] as [number, number, number],
+    size: [12, 6.5] as [number, number],
+    relief: 0.15,
+    rotY: index % 3 === 1 ? Math.PI : 0,
+  })),
+  {
+    id: "north-alley-end",
+    glb: "colonial-alley-a",
+    pos: [77, -0.1, -23.25],
+    size: [6, 6.5],
+    relief: 0.15,
+  },
+];
+
+const SOUTH_ALLEY_MODULES: SurfacePlacement[] = Array.from(
+  { length: 10 },
+  (_, index) => ({
+    id: `south-alley-${index}`,
+    glb: ALLEY_VARIANTS[(index + 1) % ALLEY_VARIANTS.length]!,
+    pos: [-34 + index * 12, -0.1, 23.25] as [number, number, number],
+    size: [12, 6.5] as [number, number],
+    relief: 0.15,
+    rotY: index % 3 === 2 ? Math.PI : 0,
+  }),
+);
+
+const ROW_AND_PERIMETER_YARDS: SurfacePlacement[] = [-15, 15, -28.25, 28.25]
+  .flatMap((z, row) =>
+    Array.from({ length: 9 }, (_, index) => ({
+      id: `yard-row-${row}-${index}`,
+      glb: "colonial-yard-ground",
+      pos: [-107 + index * 22, -0.12, z] as [number, number, number],
+      size: [22, Math.abs(z) > 20 ? 3.5 : 10] as [number, number],
+      relief: 0.12,
+      rotY: (index + row) % 2 ? Math.PI : 0,
+    })),
+  );
+
+const PASSAGE_MODULES: SurfacePlacement[] = [
+  [-10.5, -15, 3, 10, "colonial-alley-a"],
+  [17.5, -15, 3, 10, "colonial-alley-b"],
+  [63.25, -15, 3.5, 10, "colonial-civic-square"],
+  [79, -15, 2, 10, "colonial-alley-a"],
+  [-90.75, 15, 2.5, 10, "colonial-alley-b"],
+  [-12.5, 15, 3, 10, "colonial-alley-a"],
+  [17.5, 15, 3, 10, "colonial-alley-b"],
+  [72, 15, 2, 10, "colonial-alley-a"],
+].map(([x, z, width, depth, glb], index) => ({
+  id: `row-passage-${index}`,
+  glb: glb as string,
+  pos: [x as number, -0.09, z as number],
+  // The imported alley texture runs along local X; rotate it into the
+  // north/south passage and swap the fitted footprint to preserve exact
+  // world-space bounds.
+  size: [depth as number, width as number],
+  relief: 0.14,
+  rotY: Math.PI / 2,
+}));
+
+const EAST_POCKET_MODULES: SurfacePlacement[] = [
+  ...[-20, 0, 20].map((z, index) => ({
+    id: `east-pocket-yard-${index}`,
+    glb: "colonial-yard-ground",
+    pos: [94, -0.12, z] as [number, number, number],
+    size: [28, 20] as [number, number],
+    relief: 0.12,
+    rotY: index % 2 ? Math.PI : 0,
+  })),
+  {
+    id: "liberty-lane",
+    glb: "colonial-street-endcap",
+    pos: [89, -0.1, -11] as [number, number, number],
+    size: [28, 8] as [number, number],
+    relief: 0.16,
+    rotY: -0.6,
+  },
+  {
+    // The only retained greenery: imported, muddy and visibly trodden, wholly
+    // inside the fenced Liberty Tree pocket.
+    id: "liberty-courtyard",
+    glb: "colonial-liberty-courtyard",
+    pos: [95, -0.07, -21] as [number, number, number],
+    size: [26, 19] as [number, number],
+    relief: 0.1,
+  },
+];
+
+const WHARF_MODULES: SurfacePlacement[] = [
+  {
+    id: "wharf-apron",
+    glb: "colonial-wharf-apron",
+    pos: [-139, -0.52, -3],
+    size: [42, 34],
+    relief: 0.58,
+  },
+  {
+    id: "wharf-pier-finger",
+    glb: "colonial-wharf-pier-finger",
+    pos: [-146, -0.52, 24.5],
+    size: [10, 9],
+    relief: 0.58,
+  },
+  {
+    id: "wharf-boardwalk",
+    glb: "colonial-wharf-boardwalk",
+    pos: [-77, -0.38, 23.25],
+    size: [74, 6.5],
+    relief: 0.44,
+  },
+  {
+    id: "wharf-warehouse-backlot",
+    glb: "colonial-yard-ground",
+    pos: [-139, -0.12, -30],
+    size: [42, 20],
+    relief: 0.12,
+  },
+];
+
+const MISC_YARDS: SurfacePlacement[] = [
+  {
+    id: "rider-pocket-yard",
+    glb: "colonial-yard-ground",
+    pos: [-104, -0.11, -17],
+    size: [28, 17],
+    relief: 0.13,
+  },
+];
+
+const SKYLINE_SEAM_YARDS: SurfacePlacement[] = [
+  {
+    id: "north-skyline-yard",
+    glb: "colonial-yard-perimeter",
+    pos: [-5, -0.12, -40],
+    size: [226, 20],
+    relief: 0.1,
+  },
+  {
+    id: "south-skyline-yard",
+    glb: "colonial-yard-perimeter",
+    // Land only: x=-40..+108. The released road kit originally extended this
+    // apron over the southwest harbor; density keeps z>26.5/x<=-40 open water.
+    pos: [34, -0.12, 40],
+    size: [148, 20],
+    relief: 0.1,
+    rotY: Math.PI,
+  },
+  {
+    id: "east-skyline-yard",
+    glb: "colonial-yard-east-cap",
+    // Continue imported land beneath the road-to-the-Neck/march canyon.
+    // Flanking city blocks stop at its edges; the center remains traversable.
+    pos: [132, -0.12, 0],
+    size: [48, 60],
+    relief: 0.1,
+  },
+  {
+    id: "north-east-city-yard",
+    glb: "colonial-yard-ground",
+    pos: [132, -0.12, -40],
+    size: [48, 20],
+    relief: 0.12,
+  },
+];
+
+const ALL_SURFACE_MODULES: SurfacePlacement[] = [
+  ...SKYLINE_SEAM_YARDS,
+  ...ROW_AND_PERIMETER_YARDS,
+  ...MISC_YARDS,
+  ...MAIN_STREET_MODULES,
+  ...GUTTER_MODULES,
+  ...GUTTER_CORNERS,
+  ...NORTH_ALLEY_MODULES,
+  ...SOUTH_ALLEY_MODULES,
+  ...PASSAGE_MODULES,
+  ...EAST_POCKET_MODULES,
+  ...WHARF_MODULES,
+];
+
+class SurfaceAssetBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch() {}
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+interface SurfaceBatch {
+  glb: string;
+  placements: SurfacePlacement[];
+}
+
+const SURFACE_BATCHES: SurfaceBatch[] = [
+  ...ALL_SURFACE_MODULES.reduce((batches, placement) => {
+    const batch = batches.get(placement.glb);
+    if (batch) batch.placements.push(placement);
+    else batches.set(placement.glb, { glb: placement.glb, placements: [placement] });
+    return batches;
+  }, new Map<string, SurfaceBatch>()).values(),
+];
+
+function SurfaceBatchMesh({ batch }: { batch: SurfaceBatch }) {
+  const gltf = useGLTF(`/world/props/${batch.glb}.glb`);
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const lastCullAt = useRef(-Infinity);
+  const prepared = useMemo(() => {
+    gltf.scene.updateMatrixWorld(true);
+    let source: THREE.Mesh | null = null;
+    gltf.scene.traverse((node) => {
+      if (!source && (node as THREE.Mesh).isMesh) source = node as THREE.Mesh;
+    });
+    if (!source) throw new Error(`surface asset ${batch.glb} contains no mesh`);
+    const mesh = source as THREE.Mesh;
+    const geometry = mesh.geometry.clone();
+    geometry.applyMatrix4(mesh.matrixWorld);
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox;
+    if (!box) throw new Error(`surface asset ${batch.glb} has no bounds`);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    geometry.translate(-center.x, -box.min.y, -center.z);
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    return { geometry, material: mesh.material, size };
+  }, [batch.glb, gltf.scene]);
+
+  useEffect(() => () => prepared.geometry.dispose(), [prepared.geometry]);
+
+  const scratch = useMemo(
+    () => ({
+      projection: new THREE.Matrix4(),
+      frustum: new THREE.Frustum(),
+      sphere: new THREE.Sphere(),
+      matrix: new THREE.Matrix4(),
+      quaternion: new THREE.Quaternion(),
+      position: new THREE.Vector3(),
+      scale: new THREE.Vector3(),
+      up: new THREE.Vector3(0, 1, 0),
+    }),
+    [],
+  );
+
+  const writeInstances = (camera?: THREE.Camera) => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    if (camera) {
+      scratch.projection.multiplyMatrices(
+        camera.projectionMatrix,
+        camera.matrixWorldInverse,
+      );
+      scratch.frustum.setFromProjectionMatrix(scratch.projection);
     }
-    // wheel ruts along x
-    g.strokeStyle = "rgba(52,42,30,0.5)";
-    g.lineWidth = 5;
-    for (const y of [216, 232, 286, 300]) {
-      g.beginPath();
-      g.moveTo(0, y + Math.random() * 6);
-      for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x * 0.03) * 5 + Math.random() * 3);
-      g.stroke();
+    let visible = 0;
+    for (const placement of batch.placements) {
+      scratch.position.set(...placement.pos);
+      if (camera) {
+        const dx = camera.position.x - placement.pos[0];
+        const dz = camera.position.z - placement.pos[2];
+        if (dx * dx + dz * dz > 115 * 115) continue;
+        if (dx * dx + dz * dz > 22 * 22) {
+          scratch.sphere.center.copy(scratch.position);
+          scratch.sphere.radius = Math.hypot(placement.size[0], placement.size[1]) * 0.55;
+          if (!scratch.frustum.intersectsSphere(scratch.sphere)) continue;
+        }
+      }
+      scratch.quaternion.setFromAxisAngle(scratch.up, placement.rotY ?? 0);
+      scratch.scale.set(
+        placement.size[0] / Math.max(prepared.size.x, 0.001),
+        placement.relief / Math.max(prepared.size.y, 0.001),
+        placement.size[1] / Math.max(prepared.size.z, 0.001),
+      );
+      scratch.matrix.compose(scratch.position, scratch.quaternion, scratch.scale);
+      mesh.setMatrixAt(visible++, scratch.matrix);
     }
-    const tex = new THREE.CanvasTexture(c);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(10, 6);
-    tex.anisotropy = 4;
-    return tex;
-  }, []);
+    mesh.count = visible;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingBox();
+    mesh.computeBoundingSphere();
+  };
+
+  useLayoutEffect(() => writeInstances(), [batch.placements, prepared]);
+  useFrame(({ camera, clock }) => {
+    if (clock.elapsedTime - lastCullAt.current < 0.3) return;
+    lastCullAt.current = clock.elapsedTime;
+    writeInstances(camera);
+  });
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[prepared.geometry, prepared.material, batch.placements.length]}
+      castShadow={false}
+      receiveShadow
+      frustumCulled={false}
+      name={`surface-batch:${batch.glb}`}
+      dispose={null}
+    />
+  );
 }
 
 function Ground() {
-  const tex = useGroundTexture();
   return (
-    <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[220, 160]} />
-        <meshStandardMaterial color="#5d6b46" roughness={1} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
-        <planeGeometry args={[130, 15]} />
-        <meshStandardMaterial map={tex} roughness={1} />
-      </mesh>
-      {/* side lane to the rider post and the elm pocket */}
-      <mesh rotation={[-Math.PI / 2, 0, 0.45]} position={[-42, 0.015, -18]} receiveShadow>
-        <planeGeometry args={[7, 34]} />
-        <meshStandardMaterial map={tex} roughness={1} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, -0.5]} position={[40, 0.015, -14]} receiveShadow>
-        <planeGeometry args={[8, 30]} />
-        <meshStandardMaterial map={tex} roughness={1} />
-      </mesh>
+    <group name="imported-surface-batches">
+      {SURFACE_BATCHES.map((batch) => (
+        <SurfaceAssetBoundary key={batch.glb}>
+          <Suspense fallback={null}>
+            <SurfaceBatchMesh batch={batch} />
+          </Suspense>
+        </SurfaceAssetBoundary>
+      ))}
     </group>
   );
 }
 
-// ---- Fallback building shell when a GLB is missing ----
-function BuildingShell(props: { size: [number, number, number]; color: string }) {
-  const [w, h, d] = props.size;
+interface StaticPlacement {
+  id: string;
+  glb: string;
+  pos: [number, number, number];
+  rotY: number;
+  size?: [number, number, number];
+  scale?: number;
+}
+
+const BUILDING_VISUALS: StaticPlacement[] = BUILDINGS.map((building) => ({
+  id: building.id,
+  glb: building.glb ?? "",
+  pos: building.pos,
+  rotY: building.rotY,
+  size: building.size,
+}));
+
+function StaticFittedBatchMesh(props: {
+  glb: string;
+  placements: StaticPlacement[];
+  maxDistance: number;
+}) {
+  const gltf = useGLTF(`/world/props/${props.glb}.glb`);
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const lastCullAt = useRef(-Infinity);
+  const prepared = useMemo(() => {
+    gltf.scene.updateMatrixWorld(true);
+    let source: THREE.Mesh | null = null;
+    gltf.scene.traverse((node) => {
+      if (!source && (node as THREE.Mesh).isMesh) source = node as THREE.Mesh;
+    });
+    if (!source) throw new Error(`static asset ${props.glb} contains no mesh`);
+    const mesh = source as THREE.Mesh;
+    const geometry = mesh.geometry.clone();
+    geometry.applyMatrix4(mesh.matrixWorld);
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox;
+    if (!box) throw new Error(`static asset ${props.glb} has no bounds`);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    geometry.translate(-center.x, -box.min.y, -center.z);
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    return { geometry, material: mesh.material, size };
+  }, [gltf.scene, props.glb]);
+  useEffect(() => () => prepared.geometry.dispose(), [prepared.geometry]);
+
+  const scratch = useMemo(
+    () => ({
+      projection: new THREE.Matrix4(),
+      frustum: new THREE.Frustum(),
+      sphere: new THREE.Sphere(),
+      matrix: new THREE.Matrix4(),
+      quaternion: new THREE.Quaternion(),
+      position: new THREE.Vector3(),
+      scale: new THREE.Vector3(),
+      up: new THREE.Vector3(0, 1, 0),
+    }),
+    [],
+  );
+
+  const writeInstances = (camera?: THREE.Camera) => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    if (camera) {
+      scratch.projection.multiplyMatrices(
+        camera.projectionMatrix,
+        camera.matrixWorldInverse,
+      );
+      scratch.frustum.setFromProjectionMatrix(scratch.projection);
+    }
+    let visible = 0;
+    for (const placement of props.placements) {
+      scratch.position.set(...placement.pos);
+      if (camera) {
+        const dx = camera.position.x - placement.pos[0];
+        const dz = camera.position.z - placement.pos[2];
+        const distanceSq = dx * dx + dz * dz;
+        if (distanceSq > props.maxDistance * props.maxDistance) continue;
+        if (distanceSq > 20 * 20) {
+          scratch.sphere.center.copy(scratch.position);
+          const radius = placement.size
+            ? Math.hypot(...placement.size) * 0.6
+            : prepared.geometry.boundingSphere?.radius ?? 3;
+          scratch.sphere.radius = radius;
+          if (!scratch.frustum.intersectsSphere(scratch.sphere)) continue;
+        }
+      }
+      let scale = placement.scale ?? 1;
+      if (placement.size) {
+        scale = Math.min(
+          placement.size[0] / Math.max(prepared.size.x, 0.001),
+          placement.size[1] / Math.max(prepared.size.y, 0.001),
+          placement.size[2] / Math.max(prepared.size.z, 0.001),
+        );
+      }
+      scratch.quaternion.setFromAxisAngle(scratch.up, placement.rotY);
+      scratch.scale.setScalar(scale);
+      scratch.matrix.compose(scratch.position, scratch.quaternion, scratch.scale);
+      mesh.setMatrixAt(visible++, scratch.matrix);
+    }
+    mesh.count = visible;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingBox();
+    mesh.computeBoundingSphere();
+  };
+
+  useLayoutEffect(() => writeInstances(), [prepared, props.placements]);
+  useFrame(({ camera, clock }) => {
+    if (clock.elapsedTime - lastCullAt.current < 0.3) return;
+    lastCullAt.current = clock.elapsedTime;
+    writeInstances(camera);
+  });
   return (
-    <group>
-      <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[w, h, d]} />
-        <meshStandardMaterial color={props.color} roughness={0.95} />
-      </mesh>
-      <mesh position={[0, h + h * 0.22, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
-        <coneGeometry args={[Math.max(w, d) * 0.72, h * 0.5, 4]} />
-        <meshStandardMaterial color="#4a3b2c" roughness={1} />
-      </mesh>
-      {/* door + windows to break up the mass */}
-      <mesh position={[0, 1.05, d / 2 + 0.02]}>
-        <planeGeometry args={[1.0, 2.1]} />
-        <meshStandardMaterial color="#2e2419" roughness={1} />
-      </mesh>
-      {[-w / 4, w / 4].map((x) => (
-        <mesh key={x} position={[x, h * 0.62, d / 2 + 0.02]}>
-          <planeGeometry args={[0.9, 1.2]} />
-          <meshStandardMaterial color="#1d2733" roughness={0.4} metalness={0.1} />
-        </mesh>
+    <instancedMesh
+      ref={meshRef}
+      args={[prepared.geometry, prepared.material, props.placements.length]}
+      castShadow={false}
+      receiveShadow
+      frustumCulled={false}
+      name={`static-batch:${props.glb}`}
+      dispose={null}
+    />
+  );
+}
+
+function StaticFittedBatches(props: {
+  name: string;
+  placements: StaticPlacement[];
+  maxDistance: number;
+}) {
+  const batches = useMemo(() => {
+    const grouped = new Map<string, StaticPlacement[]>();
+    for (const placement of props.placements) {
+      const entries = grouped.get(placement.glb);
+      if (entries) entries.push(placement);
+      else grouped.set(placement.glb, [placement]);
+    }
+    return [...grouped.entries()];
+  }, [props.placements]);
+  return (
+    <group name={props.name}>
+      {batches.map(([glb, placements]) => (
+        <SurfaceAssetBoundary key={glb}>
+          <Suspense fallback={null}>
+            <StaticFittedBatchMesh
+              glb={glb}
+              placements={placements}
+              maxDistance={props.maxDistance}
+            />
+          </Suspense>
+        </SurfaceAssetBoundary>
       ))}
     </group>
   );
@@ -91,181 +603,77 @@ function BuildingShell(props: { size: [number, number, number]; color: string })
 
 function Buildings() {
   return (
-    <group>
-      {BUILDINGS.map((b) => (
-        <group key={b.id} position={b.pos} rotation={[0, b.rotY, 0]}>
-          <FittedGlb glbKey={b.glb ?? ""} size={b.size} fallback={<BuildingShell size={b.size} color={b.color} />} />
-        </group>
-      ))}
-      {/* Mercer's hanging sign */}
-      <group position={[0, 3.1, 6.9]}>
-        <mesh position={[0, 0.55, 0]}>
-          <boxGeometry args={[0.08, 1.1, 0.08]} />
-          <meshStandardMaterial color="#3a2f22" />
-        </mesh>
-        <mesh castShadow>
-          <boxGeometry args={[1.7, 0.8, 0.07]} />
-          <meshStandardMaterial color="#2f2419" roughness={0.9} />
-        </mesh>
-        <Text position={[0, 0.08, 0.045]} fontSize={0.21} color="#d8c58c" anchorX="center" anchorY="middle" maxWidth={1.6}>
-          MERCER'S PRESS
-        </Text>
-        <Text position={[0, -0.2, 0.045]} fontSize={0.1} color="#a5946a" anchorX="center" anchorY="middle">
-          PRINTING · NOTICES
-        </Text>
-      </group>
-    </group>
+    <StaticFittedBatches
+      name="instanced-buildings"
+      placements={BUILDING_VISUALS}
+      maxDistance={90}
+    />
   );
 }
 
-function Props3D() {
+function Props3D(props: { dockRouteUnlocked: boolean }) {
+  const placements = useMemo(
+    () =>
+      PROPS.filter(
+        (prop) =>
+          !(props.dockRouteUnlocked && prop.gate === "THOMAS_DOCK_ROUTE"),
+      ).map((prop, index) => ({
+        id: `prop-${index}`,
+        glb: prop.glb,
+        pos: prop.pos,
+        rotY: prop.rotY,
+        scale: prop.scale,
+        size:
+          prop.size ??
+          (prop.glb === "liberty-elm"
+            ? ([14, 16, 14] as [number, number, number])
+            : prop.glb.startsWith("bldg")
+              ? undefined
+              : ([2.6, 2.6, 2.6] as [number, number, number])),
+      })),
+    [props.dockRouteUnlocked],
+  );
   return (
-    <group>
-      {PROPS.map((p, i) => (
-        <group key={i} position={p.pos} rotation={[0, p.rotY, 0]}>
-          <FittedGlb
-            glbKey={p.glb}
-            scale={p.scale}
-            size={p.glb === "liberty-elm" ? [14, 16, 14] : p.glb.startsWith("bldg") ? undefined : [2.6, 2.6, 2.6]}
-            fallback={
-              <mesh position={[0, 0.6, 0]} castShadow>
-                <boxGeometry args={[1.4, 1.2, 1.1]} />
-                <meshStandardMaterial color="#6a5138" roughness={1} />
-              </mesh>
-            }
-          />
-        </group>
-      ))}
-    </group>
+    <StaticFittedBatches
+      name="instanced-static-props"
+      placements={placements}
+      maxDistance={55}
+    />
   );
 }
 
-// ---- Interior room, rendered only for the active interior location ----
-const INTERIOR_PROPS: Record<string, { glb: string; pos: [number, number, number]; rotY: number; size?: [number, number, number] }[]> = {
-  MERCER_PRESS: [
-    { glb: "press-common", pos: [-2.4, 0, 10.6], rotY: 0.5, size: [2.6, 2.4, 2.6] },
-    { glb: "type-cases", pos: [3.1, 0, 11.6], rotY: -Math.PI / 2, size: [2.2, 1.6, 2.2] },
-    { glb: "clerk-desk", pos: [0.6, 0, 12.2], rotY: Math.PI, size: [1.8, 1.8, 1.4] },
-  ],
-  THOMAS_COUNTINGHOUSE: [
-    { glb: "shop-counter", pos: [-30, 0, -12.6], rotY: 0, size: [3, 1.4, 1.4] },
-    { glb: "crate-stack", pos: [-33.4, 0, -11.6], rotY: 0.4, size: [2, 1.5, 2] },
-    { glb: "crate-stack", pos: [-26.8, 0, -12.4], rotY: -0.3, size: [2.2, 1.8, 1.8] },
-    { glb: "barrel-group", pos: [-33.8, 0, -8.6], rotY: 1.2, size: [1.8, 1.3, 1.5] },
-  ],
-  PIKE_OFFICE: [
-    { glb: "clerk-desk", pos: [14.8, 0, 11.6], rotY: Math.PI, size: [1.8, 1.8, 1.4] },
-    { glb: "crate-stack", pos: [11.4, 0, 11.8], rotY: 0.3, size: [1.8, 1.5, 1.5] },
-  ],
-  CUSTOM_HOUSE: [
-    { glb: "shop-counter", pos: [40, 0, 11.6], rotY: 0, size: [4, 1.4, 1.4] },
-    { glb: "clerk-desk", pos: [44.2, 0, 12.6], rotY: Math.PI - 0.4, size: [1.8, 1.8, 1.4] },
-    { glb: "notice-board", pos: [35.6, 0, 12.8], rotY: 0.35, size: [2, 2.4, 0.8] },
-  ],
-};
+// The effigy (and the whole Aug 14 set-piece) is staged by the EventDirector,
+// mounted from World3D so it can react to the active cue and runtime view.
 
-function InteriorRoom(props: { loc: LocationDef }) {
-  const room = props.loc.room!;
-  const [cx, cz] = room.center;
-  const [w, d] = room.size;
-  const H = 2.75;
-  const doorZ = room.doorSide === "S" ? cz - d / 2 : cz + d / 2;
-  const wallMat = <meshStandardMaterial color="#b7a98c" roughness={1} side={THREE.DoubleSide} />;
-  return (
-    <group>
-      {/* floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0.03, cz]} receiveShadow>
-        <planeGeometry args={[w, d]} />
-        <meshStandardMaterial color="#7c6244" roughness={1} />
-      </mesh>
-      {/* ceiling */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[cx, H, cz]}>
-        <planeGeometry args={[w, d]} />
-        <meshStandardMaterial color="#5f4c36" roughness={1} side={THREE.DoubleSide} />
-      </mesh>
-      {/* east/west walls */}
-      <mesh position={[cx - w / 2, H / 2, cz]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[d, H]} />
-        {wallMat}
-      </mesh>
-      <mesh position={[cx + w / 2, H / 2, cz]} rotation={[0, -Math.PI / 2, 0]}>
-        <planeGeometry args={[d, H]} />
-        {wallMat}
-      </mesh>
-      {/* solid back wall */}
-      <mesh position={[cx, H / 2, room.doorSide === "S" ? cz + d / 2 : cz - d / 2]}>
-        <planeGeometry args={[w, H]} />
-        {wallMat}
-      </mesh>
-      {/* door wall: two segments leaving a 1.2m gap */}
-      <mesh position={[cx - w / 4 - 0.3, H / 2, doorZ]}>
-        <planeGeometry args={[w / 2 - 0.6, H]} />
-        {wallMat}
-      </mesh>
-      <mesh position={[cx + w / 4 + 0.3, H / 2, doorZ]}>
-        <planeGeometry args={[w / 2 - 0.6, H]} />
-        {wallMat}
-      </mesh>
-      <mesh position={[cx, H - 0.35, doorZ]}>
-        <planeGeometry args={[1.4, 0.7]} />
-        {wallMat}
-      </mesh>
-      {/* warm interior light + window glow */}
-      <pointLight position={[cx, H - 0.4, cz]} intensity={14} distance={12} color="#ffd9a0" castShadow={false} />
-      <pointLight position={[cx + w / 3, 1.4, cz]} intensity={5} distance={7} color="#ffe7c4" />
-      {(INTERIOR_PROPS[props.loc.id] ?? []).map((p, i) => (
-        <group key={i} position={p.pos} rotation={[0, p.rotY, 0]}>
-          <FittedGlb
-            glbKey={p.glb}
-            size={p.size}
-            fallback={
-              <mesh position={[0, 0.5, 0]} castShadow>
-                <boxGeometry args={[1.2, 1, 0.8]} />
-                <meshStandardMaterial color="#5d4a34" roughness={1} />
-              </mesh>
-            }
-          />
-        </group>
-      ))}
-    </group>
-  );
-}
-
-// ---- Effigy hanging from the elm (documented Aug 14 staging) ----
-function Effigy() {
-  return (
-    <group position={[44, 0, -27]}>
-      <mesh position={[1.6, 4.6, 1.2]}>
-        <cylinderGeometry args={[0.015, 0.015, 1.6]} />
-        <meshStandardMaterial color="#3c3327" />
-      </mesh>
-      <group position={[1.6, 3.4, 1.2]} rotation={[0.06, 0.4, 0.1]}>
-        <mesh castShadow>
-          <capsuleGeometry args={[0.16, 0.6, 4, 8]} />
-          <meshStandardMaterial color="#8a7a5c" roughness={1} />
-        </mesh>
-        <mesh position={[0, 0.55, 0]} castShadow>
-          <sphereGeometry args={[0.14, 10, 8]} />
-          <meshStandardMaterial color="#9c8b6b" roughness={1} />
-        </mesh>
-        <Text position={[0, 0.05, 0.2]} fontSize={0.12} color="#2e2517" anchorX="center">
-          A. O.
-        </Text>
-      </group>
-    </group>
-  );
-}
-
-function Npcs(props: { interiorId: string | null }) {
+function Npcs(props: {
+  interiorId: string | null;
+  t: number;
+  choreography: ChoreographyCue | null;
+  reducedMotion: boolean;
+  reactiveActorsActive: boolean;
+}) {
   return (
     <group>
       {NPCS.map((n) => {
+        const directed = actorCueFor(n, props.choreography);
+        // M2 promotes the customs officer into WatcherDirector ownership. The
+        // legacy static NPC must never coexist with WATCH-customs.
+        if (n.id === "officer") return null;
+        if (
+          props.reactiveActorsActive &&
+          ["abigail", "thomas", "pike", "clarke", "rider"].includes(n.id)
+        ) {
+          return null;
+        }
         const visible = n.interiorOf ? props.interiorId === n.interiorOf : props.interiorId === null;
         if (!visible) return null;
         return (
-          <group key={n.id} position={n.pos} rotation={[0, n.rotY, 0]}>
-            <RiggedCharacter glbKey={n.glb} height={n.height} clip={n.clip} />
-          </group>
+          <DirectedNpc
+            key={n.id}
+            npc={n}
+            cue={directed}
+            reducedMotion={props.reducedMotion}
+          />
         );
       })}
     </group>
@@ -278,12 +686,18 @@ function AmbientWalker(props: {
   to: [number, number, number];
   speed: number;
   offset: number;
+  reducedMotion: boolean;
 }) {
   const ref = useRef<THREE.Group>(null);
   const a = useMemo(() => new THREE.Vector3(...props.from), [props.from]);
   const b = useMemo(() => new THREE.Vector3(...props.to), [props.to]);
   useFrame(({ clock }) => {
     if (!ref.current) return;
+    if (props.reducedMotion) {
+      ref.current.position.copy(a);
+      ref.current.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
+      return;
+    }
     const dist = a.distanceTo(b);
     const period = (dist / props.speed) * 2;
     const t = ((clock.elapsedTime * 1 + props.offset) % period) / period;
@@ -295,18 +709,27 @@ function AmbientWalker(props: {
   });
   return (
     <group ref={ref}>
-      <RiggedCharacter glbKey={props.glb} height={1.68} clip="walk" timeOffset={props.offset} />
+      <RiggedCharacter glbKey={props.glb} height={1.68} clip={props.reducedMotion ? "idle" : "walk"} timeOffset={props.offset} />
     </group>
   );
 }
 
-function AmbientFolk(props: { interiorId: string | null }) {
+function AmbientFolk(props: { interiorId: string | null; t: number; reducedMotion: boolean }) {
   if (props.interiorId) return null;
+  const visibleCount = props.t < 0.45 ? 6 : props.t < 0.75 ? 8 : AMBIENT.length;
   return (
     <group>
-      {AMBIENT.map((a, i) =>
+      {AMBIENT.slice(0, visibleCount).map((a, i) =>
         a.path ? (
-          <AmbientWalker key={i} glb={a.glb} from={a.pos} to={a.path.to} speed={a.path.speed} offset={i * 3.1} />
+          <AmbientWalker
+            key={i}
+            glb={a.glb}
+            from={a.pos}
+            to={a.path.to}
+            speed={a.path.speed}
+            offset={i * 3.1}
+            reducedMotion={props.reducedMotion}
+          />
         ) : (
           <group key={i} position={a.pos} rotation={[0, a.rotY, 0]}>
             <RiggedCharacter glbKey={a.glb} height={1.68} clip={a.clip} timeOffset={i * 0.7} coat={i % 2 ? "#54432f" : "#3f4653"} />
@@ -337,29 +760,80 @@ export function DayLight(props: { t: number; dusk: boolean }) {
         color={sunColor}
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-55}
-        shadow-camera-right={55}
-        shadow-camera-top={45}
-        shadow-camera-bottom={-45}
+        shadow-camera-left={-80}
+        shadow-camera-right={80}
+        shadow-camera-top={60}
+        shadow-camera-bottom={-60}
         shadow-bias={-0.0003}
       />
-      {props.dusk && <pointLight position={[44, 3.5, -27]} intensity={30} distance={26} color="#ff9040" />}
+      {props.dusk && <pointLight position={[95, 3.5, -25]} intensity={30} distance={26} color="#ff9040" />}
     </group>
   );
 }
 
-export function District(props: { interiorId: string | null; t: number; dusk: boolean }) {
-  const interiorLoc = props.interiorId ? LOCATIONS[props.interiorId] : null;
+export function District(props: {
+  interiorId: string | null;
+  t: number;
+  dusk: boolean;
+  dockRouteUnlocked: boolean;
+  reducedMotion: boolean;
+  choreography: ChoreographyCue | null;
+  clock: { spentUnits: number; fixedEventBoundary: number } | null;
+  reactiveActorsActive?: boolean;
+}) {
+  const activeInterior = interiorDef(props.interiorId);
+  // One shared atmosphere sample per frame-tree: sky, weather, water, and the
+  // window/lantern dressing all agree about the hour (Bible §6).
+  const evening = Boolean(
+    props.clock && props.clock.spentUnits >= props.clock.fixedEventBoundary,
+  );
+  const atmo = useMemo(
+    () => atmosphereAt({ t: props.t, dusk: props.dusk, evening }),
+    [props.t, props.dusk, evening],
+  );
+  if (activeInterior) {
+    return (
+      <group>
+        <InteriorDirector
+          def={activeInterior}
+          t={props.t}
+          dusk={props.dusk}
+          reducedMotion={props.reducedMotion}
+        />
+        <Npcs
+          interiorId={props.interiorId}
+          t={props.t}
+          choreography={props.choreography}
+          reducedMotion={props.reducedMotion}
+          reactiveActorsActive={Boolean(props.reactiveActorsActive)}
+        />
+      </group>
+    );
+  }
   return (
     <group>
-      <DayLight t={props.t} dusk={props.dusk} />
+      <SkyDirector atmo={atmo} reducedMotion={props.reducedMotion} />
+      <WeatherDirector atmo={atmo} reducedMotion={props.reducedMotion} interiorId={props.interiorId} />
+      <WaterDirector atmo={atmo} reducedMotion={props.reducedMotion} />
+      {props.dusk && <pointLight position={[95, 3.5, -25]} intensity={30} distance={26} color="#ff9040" />}
       <Ground />
+      <DensityDirector />
       <Buildings />
-      <Props3D />
-      <Effigy />
-      <Npcs interiorId={props.interiorId} />
-      <AmbientFolk interiorId={props.interiorId} />
-      {interiorLoc?.room && <InteriorRoom loc={interiorLoc} />}
+      <Props3D dockRouteUnlocked={props.dockRouteUnlocked} />
+      <Npcs
+        interiorId={props.interiorId}
+        t={props.t}
+        choreography={props.choreography}
+        reducedMotion={props.reducedMotion}
+        reactiveActorsActive={Boolean(props.reactiveActorsActive)}
+      />
+      <PopulationDirector
+        interiorId={props.interiorId}
+        t={props.t}
+        dusk={props.dusk}
+        dockRouteUnlocked={props.dockRouteUnlocked}
+        reducedMotion={props.reducedMotion}
+      />
     </group>
   );
 }

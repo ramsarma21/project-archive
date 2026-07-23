@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single complete standing figure of a 1765 colonial Boston town watchman constable only, front view, full body head to boots in frame, standing straight in a symmetric relaxed T-pose with both arms out to the sides and legs slightly apart, plain light gray studio background, soft even lighting, no props held, no ground scenery, no other people, no readable text, no watermark. A middle-aged colonial night watchman in a plain dark slate-blue-gray civilian wool coat with pewter buttons, a buff waistcoat, dark breeches, gray wool stockings, black buckled shoes, a black tricorne hat, plain white neck stock, weathered practical civilian clothing, NOT a red British army soldier, NO red coat, NO military uniform, NO musket. Muted aged pewter, umber and slate colors. Historically accurate ordinary 1765 Boston constable of the watch, plain and civilian, no modern or fantasy elements. Game character reference, clean full-body T-pose.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T21:50:20.583Z",
+  "files": [
+    "constable.png"
+  ]
+}

@@ -1,131 +1,434 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { InputRequest, PresenterEvent, MechanicParams } from "@pa/contracts";
+import {
+  HaulJobControl,
+  PostJobControl,
+  PrintJobControl,
+} from "./CompoundMechanicControls.js";
 
-export function Controls(props: { request: InputRequest; onEvent: (e: PresenterEvent) => void; busy: boolean }) {
+type MechanicPhase = "READY" | "ACTIVE" | "COMMIT" | "COMPLETE";
+
+function emitMechanicVisual(
+  kind: MechanicParams["kind"],
+  progress: number,
+  active: boolean,
+  phase: MechanicPhase = active ? "ACTIVE" : "READY",
+) {
+  window.dispatchEvent(new CustomEvent("pa:mechanic-visual", {
+    detail: { kind, progress: Math.max(0, Math.min(1, progress)), active, phase },
+  }));
+}
+
+export function Controls(props: {
+  request: InputRequest;
+  onEvent: (e: PresenterEvent) => void;
+  busy: boolean;
+  spatialNavigation?: boolean;
+  accessibleMechanics?: boolean;
+}) {
   const { request, onEvent, busy } = props;
   switch (request.kind) {
     case "CONTINUE":
-      return <button className="btn-primary" disabled={busy} onClick={() => onEvent({ type: "CONTINUE" })}>{request.label ?? "Continue"}</button>;
+      return (
+        <div className="choice-panel">
+          <div className="choices choices-single">
+            <button className="choice choice-gold" disabled={busy} onClick={() => onEvent({ type: "CONTINUE" })}>
+              <span className="clabel">{request.label ?? "Continue"}</span>
+            </button>
+          </div>
+        </div>
+      );
     case "ACK":
       return (
-        <div>
-          <div className="frame archive">▲ Archive · {request.text}</div>
-          <button className="btn-primary" disabled={busy} onClick={() => onEvent({ type: "ACK" })}>Understood</button>
-        </div>
+        <SystemWindow heading="MANDATORY NOTIFICATION">
+          <p className="system-text">{request.text}</p>
+          <button className="system-confirm" disabled={busy} onClick={() => onEvent({ type: "ACK" })}>
+            ACKNOWLEDGE
+          </button>
+        </SystemWindow>
       );
     case "FOCUS_READ":
       return (
-        <div>
-          <div className="frame">{request.title} — {request.teaser}</div>
-          <div className="row">
-            <button className="btn-primary" disabled={busy} onClick={() => onEvent({ type: "FOCUS_READ_OPENED", objectId: request.objectId })}>Read it (1st person)</button>
-            <button className="btn-ghost" disabled={busy} onClick={() => onEvent({ type: "FOCUS_READ_SKIPPED", objectId: request.objectId })}>Skip</button>
+        <div className="choice-panel">
+          <div className="frame choice-frame">{request.teaser}</div>
+          <div className="choices choices-two">
+            <button className="choice choice-gold" disabled={busy} onClick={() => onEvent({ type: "FOCUS_READ_OPENED", objectId: request.objectId })}>
+              <span className="clabel">{request.title}</span>
+              <span className="choice-subtext">Step in and read it</span>
+            </button>
+            <button className="choice choice-gold" disabled={busy} onClick={() => onEvent({ type: "FOCUS_READ_SKIPPED", objectId: request.objectId })}>
+              <span className="clabel">Keep moving</span>
+              <span className="choice-subtext">Leave it unread</span>
+            </button>
           </div>
         </div>
       );
-    case "FREE_ROAM":
+    case "BREATHER":
+      return <Breather durationMs={request.durationMs} onEvent={onEvent} />;
+    case "FREE_ROAM": {
+      // Once a stop is committed, control returns to the world: the gold
+      // marker and the holo task strip carry the objective. The center of the
+      // screen stays clear while walking.
+      if (request.selectedTargetId) {
+        const selected = request.targets.find((t) => t.targetId === request.selectedTargetId);
+        // The gold-marker redirect nudge (FREE_ROAM_IDLE) is fired by the
+        // movement-aware IdleRedirectTracker inside World3D, which only
+        // triggers on genuine non-progress. No blind timer here.
+        return (
+          <>
+            {!props.spatialNavigation && selected && (
+              <div className="choice-panel">
+                <div className="choices choices-single">
+                  <button className="choice choice-gold" disabled={busy} onClick={() => onEvent({ type: "FREE_ROAM_GOTO", targetId: selected.targetId })}>
+                    <span className="clabel">{selected.label}</span>
+                    <span className="choice-subtext">Arrive at this destination</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        );
+      }
       return (
-        <div>
-          <div className="frame muted small">Free roam — choose where to go.</div>
-          <div className="choices">
-            {request.targets.map((t) => (
-              <button key={t.targetId} className="choice" disabled={busy} onClick={() => onEvent({ type: "FREE_ROAM_GOTO", targetId: t.targetId })}>
-                <span className="row"><span className={`dot ${t.marker.toLowerCase()}`} /> <span className="clabel">{t.label}</span></span>
+        <div className="choice-panel">
+          <div className="frame choice-frame">
+            {request.targets.length > 1 ? "Pick your next stop." : "One place to be."}
+          </div>
+          <div className={`choices${request.targets.length === 1 ? " choices-single" : request.targets.length === 2 ? " choices-two" : ""}`}>
+            {request.targets.filter((t) => t.marker !== "HIDDEN").map((t) => (
+              <button key={t.targetId} className="choice choice-gold" disabled={busy} onClick={() => onEvent({ type: "FREE_ROAM_SELECT", targetId: t.targetId })}>
+                <span className="clabel">{t.targetId === "RIDER_HANDBILLS" && <b className="timed-glyph">☼</b>}{t.label}</span>
+                <span className="choice-subtext">
+                  {t.targetId === "RIDER_HANDBILLS" ? "Timed · gone at the bell" : "Select this stop"}
+                </span>
               </button>
             ))}
-            {request.canProceed && <button className="btn-ghost" disabled={busy} onClick={() => onEvent({ type: "FREE_ROAM_IDLE" })}>Wait a moment</button>}
-          </div>
-        </div>
-      );
-    case "CHOICE":
-      return (
-        <div>
-          <div className="frame">{request.frame}</div>
-          <div className="choices">
-            {request.options.map((o) => (
-              <button key={o.choiceId} className="choice" disabled={busy || o.disabled} onClick={() => onEvent({ type: "CHOICE_SELECTED", promptId: request.promptId, choiceId: o.choiceId })}>
-                <span className="clabel">{o.label}</span>
-                {o.tags.length > 0 && <span className="ctags">{o.tags.map((t) => <span key={t} className="tag">{t}</span>)}</span>}
+            {request.canProceed && (
+              <button className="choice choice-gold" disabled={busy} onClick={() => onEvent({ type: "FREE_ROAM_IDLE" })}>
+                <span className="clabel">Wait a moment</span>
+                <span className="choice-subtext">Let the street move</span>
               </button>
-            ))}
+            )}
           </div>
         </div>
       );
+    }
+    case "CHOICE": {
+      const isArchiveSync = request.promptId.includes(".SYNC.");
+      const options = (
+        <div className={`choices${request.options.length === 1 ? " choices-single" : request.options.length === 2 ? " choices-two" : ""}`}>
+          {request.options.map((o) => (
+            <button key={o.choiceId} className="choice choice-gold" disabled={busy || o.disabled} onClick={() => onEvent({ type: "CHOICE_SELECTED", promptId: request.promptId, choiceId: o.choiceId })}>
+              <span className="clabel">{o.label}</span>
+              <span className="choice-subtext">
+                {o.tags.length > 0 ? o.tags.join(" · ") : "Choose this approach"}
+              </span>
+            </button>
+          ))}
+        </div>
+      );
+      if (isArchiveSync) {
+        return (
+          <SystemWindow heading="ARCHIVE SYNC // CONFIRM YOUR READ">
+            <p className="system-text">{request.frame}</p>
+            {options}
+          </SystemWindow>
+        );
+      }
+      return (
+        <div className="choice-panel">
+          <div className="frame choice-frame">{request.frame}</div>
+          {options}
+        </div>
+      );
+    }
     case "MECHANIC":
-      return <Mechanic promptId={request.promptId} params={request.params} onEvent={onEvent} busy={busy} />;
+      return (
+        <Mechanic
+          promptId={request.promptId}
+          params={request.params}
+          onEvent={onEvent}
+          busy={busy}
+          accessible={Boolean(props.accessibleMechanics)}
+        />
+      );
     case "DAY_END":
-      return <button className="btn-primary" disabled={busy} onClick={() => onEvent({ type: "CONTINUE" })}>Finish the day</button>;
+      return (
+        <div className="choice-panel">
+          <div className="choices choices-single">
+            <button className="choice choice-gold" disabled={busy} onClick={() => onEvent({ type: "CONTINUE" })}>
+              <span className="clabel">Finish the day</span>
+            </button>
+          </div>
+        </div>
+      );
+    case "CHECKPOINT_DEBRIEF":
+      return null;
   }
 }
 
-function Mechanic(props: { promptId: string; params: MechanicParams; onEvent: (e: PresenterEvent) => void; busy: boolean }) {
+// Archive prompts render as a System window: a floating, glowing blue
+// holographic notice only the field agent can see.
+export function SystemWindow(props: { heading: string; children: ReactNode }) {
+  return (
+    <section className="system-window" role="dialog" aria-label="Archive notification">
+      <span className="system-glow" aria-hidden="true" />
+      <header className="system-header">
+        <span className="system-sigil" aria-hidden="true">!</span>
+        <span className="system-heading">{props.heading}</span>
+      </header>
+      <div className="system-body">{props.children}</div>
+      <i className="system-corner tl" aria-hidden="true" />
+      <i className="system-corner tr" aria-hidden="true" />
+      <i className="system-corner bl" aria-hidden="true" />
+      <i className="system-corner br" aria-hidden="true" />
+    </section>
+  );
+}
+
+function Breather(props: { durationMs: number; onEvent: (event: PresenterEvent) => void }) {
+  const onEventRef = useRef(props.onEvent);
+  onEventRef.current = props.onEvent;
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => onEventRef.current({ type: "BREATHER_COMPLETE" }),
+      props.durationMs,
+    );
+    return () => window.clearTimeout(timer);
+  }, [props.durationMs]);
+  return null;
+}
+
+function Mechanic(props: {
+  promptId: string;
+  params: MechanicParams;
+  onEvent: (e: PresenterEvent) => void;
+  busy: boolean;
+  accessible: boolean;
+}) {
   const { params, promptId, onEvent, busy } = props;
   if (params.kind === "PRESS") return <PressControl prompt={params.prompt} onDone={(stopOffset) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "PRESS", stopOffset } })} busy={busy} />;
   if (params.kind === "EFFORT") return <EffortControl prompt={params.prompt} onDone={(holdMs) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "EFFORT", holdMs } })} busy={busy} />;
   if (params.kind === "PLACE") return <PlaceControl prompt={params.prompt} onDone={(alignment) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "PLACE", alignment } })} busy={busy} />;
+  if (params.kind === "PRINT_JOB") {
+    return (
+      <PrintJobControl
+        prompt={params.prompt}
+        variant={params.printVariant ?? "PIKE_PROOF"}
+        accessible={props.accessible}
+        busy={busy}
+        onDone={({ phases, quality, accessible }) =>
+          onEvent({
+            type: "MECHANIC_RESULT",
+            promptId,
+            result: { kind: "PRINT_JOB", phases, quality, accessible },
+          })
+        }
+      />
+    );
+  }
+  if (params.kind === "HAUL_JOB") {
+    return (
+      <HaulJobControl
+        prompt={params.prompt}
+        accessible={props.accessible}
+        busy={busy}
+        onDone={({ phases, accessible }) =>
+          onEvent({
+            type: "MECHANIC_RESULT",
+            promptId,
+            result: { kind: "HAUL_JOB", phases, accessible },
+          })
+        }
+      />
+    );
+  }
+  if (params.kind === "POST_JOB") {
+    return (
+      <PostJobControl
+        prompt={params.prompt}
+        accessible={props.accessible}
+        busy={busy}
+        onDone={({ phases, accessible }) =>
+          onEvent({
+            type: "MECHANIC_RESULT",
+            promptId,
+            result: { kind: "POST_JOB", phases, accessible },
+          })
+        }
+      />
+    );
+  }
   return <SortControl params={params} onDone={(assignments) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "SORT", assignments } })} busy={busy} />;
 }
 
 // Oscillating + accelerating needle. Stop near center for a clean pull.
 function PressControl(props: { prompt: string; onDone: (o: number) => void; busy: boolean }) {
-  const [pos, setPos] = useState(0.5);
-  const posRef = useRef(0.5);
+  const [pos, setPos] = useState(0.08);
+  const [passes, setPasses] = useState(0);
+  const [locked, setLocked] = useState(false);
+  const posRef = useRef(0.08);
   const dirRef = useRef(1);
-  const speedRef = useRef(0.004);
+  const speedRef = useRef(0.42);
+  const lastTimeRef = useRef(0);
   const raf = useRef(0);
+  const doneTimer = useRef(0);
   useEffect(() => {
-    const tick = () => {
-      let p = posRef.current + dirRef.current * speedRef.current;
-      if (p >= 1) { p = 1; dirRef.current = -1; }
-      if (p <= 0) { p = 0; dirRef.current = 1; }
-      speedRef.current = Math.min(0.03, speedRef.current + 0.00008);
+    const tick = (time: number) => {
+      if (!lastTimeRef.current) lastTimeRef.current = time;
+      const dt = Math.min(0.04, (time - lastTimeRef.current) / 1000);
+      lastTimeRef.current = time;
+      let p = posRef.current + dirRef.current * speedRef.current * dt;
+      if (p >= 1) {
+        p = 1;
+        dirRef.current = -1;
+        setPasses((value) => value + 1);
+      }
+      if (p <= 0) {
+        p = 0;
+        dirRef.current = 1;
+        setPasses((value) => value + 1);
+      }
+      speedRef.current = Math.min(1.28, speedRef.current + dt * 0.055);
       posRef.current = p;
       setPos(p);
+      emitMechanicVisual("PRESS", p, true);
       raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf.current);
+    return () => {
+      cancelAnimationFrame(raf.current);
+      window.clearTimeout(doneTimer.current);
+      emitMechanicVisual("PRESS", posRef.current, false);
+    };
   }, []);
+  const distance = Math.abs(pos - 0.5);
+  const accuracy = Math.max(0, 1 - distance * 2);
+  const result = distance <= 0.08 ? "CRISP PULL" : distance <= 0.22 ? "USABLE" : "SMUDGE RISK";
+  function commit() {
+    if (locked || props.busy) return;
+    cancelAnimationFrame(raf.current);
+    setLocked(true);
+    emitMechanicVisual("PRESS", posRef.current, false, "COMMIT");
+    // Completion beat: the world press slams, presses, and slides the fresh
+    // sheet out of the bed before the next plan replaces this request.
+    doneTimer.current = window.setTimeout(() => props.onDone(posRef.current), 950);
+  }
   return (
-    <div>
-      <div className="frame">{props.prompt}</div>
-      <div className="press-track">
-        <div className="press-center" />
-        <div className="press-needle" style={{ left: `calc(${pos * 100}% - 2px)` }} />
+    <div className="mechanic-shell mechanic-press">
+      <header className="mechanic-header">
+        <span className="mechanic-kicker">PRESSWORK // TIMING</span>
+        <span className={`mechanic-grade ${distance <= 0.08 ? "perfect" : distance <= 0.22 ? "good" : ""}`}>
+          {locked ? result : `${Math.round(accuracy * 100)}% ALIGNMENT`}
+        </span>
+      </header>
+      <h2>{props.prompt}</h2>
+      <p className="mechanic-note">
+        Stop the needle inside the green band — the tighter, the cleaner the pull.
+      </p>
+      <div className="press-stage">
+        <div className="press-track" aria-label={`Press alignment ${Math.round(pos * 100)} percent`}>
+          <div className="press-zone usable" />
+          <div className="press-zone crisp" />
+          <div className="press-center" />
+          <div className="press-needle" style={{ left: `${pos * 100}%` }}><i /></div>
+          <div className="press-ticks" aria-hidden="true" />
+        </div>
+        <div className="press-scale" aria-hidden="true"><span>EARLY</span><strong>CLEAN PULL</strong><span>LATE</span></div>
       </div>
-      <button className="btn-primary" style={{ marginTop: 10 }} disabled={props.busy} onClick={() => { cancelAnimationFrame(raf.current); props.onDone(posRef.current); }}>Stop the press</button>
+      <div className="mechanic-footer">
+        <span>PASS {String(passes + 1).padStart(2, "0")} · speed increasing</span>
+        <button className="mechanic-action" disabled={props.busy || locked} onClick={commit}>
+          {locked ? result : "STOP THE PRESS"}
+          <kbd>SPACE / CLICK</kbd>
+        </button>
+      </div>
     </div>
   );
 }
 
 function EffortControl(props: { prompt: string; onDone: (ms: number) => void; busy: boolean }) {
-  const [fill, setFill] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [message, setMessage] = useState("Press and hold. Do not release early.");
   const startRef = useRef<number | null>(null);
   const raf = useRef(0);
+  const doneTimer = useRef(0);
+  const completedRef = useRef(false);
   const TARGET = 1200;
   function begin() {
+    if (props.busy || startRef.current !== null || completedRef.current) return;
     startRef.current = performance.now();
-    const tick = () => {
+    setMessage("Keep steady…");
+    const tick = (now: number) => {
       const held = performance.now() - (startRef.current ?? 0);
-      setFill(Math.min(100, (held / TARGET) * 100));
+      const nextProgress = Math.min(1, held / TARGET);
+      setProgress(nextProgress);
+      emitMechanicVisual("EFFORT", nextProgress, true);
+      if (nextProgress >= 1) {
+        startRef.current = null;
+        completedRef.current = true;
+        setMessage("Grip secured");
+        emitMechanicVisual("EFFORT", 1, false, "COMPLETE");
+        // Completion beat: the staged action (press pull, bolt drop, bundle
+        // handoff) plays out in the world before the request advances.
+        doneTimer.current = window.setTimeout(() => props.onDone(TARGET), 700);
+        return;
+      }
       raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
   }
   function end() {
+    if (startRef.current === null || completedRef.current) return;
     cancelAnimationFrame(raf.current);
-    const held = startRef.current ? performance.now() - startRef.current : 0;
     startRef.current = null;
-    props.onDone(Math.round(held));
+    setProgress(0);
+    setMessage("Grip lost—hold continuously to finish.");
+    emitMechanicVisual("EFFORT", 0, false);
   }
+  useEffect(() => () => {
+    cancelAnimationFrame(raf.current);
+    window.clearTimeout(doneTimer.current);
+    emitMechanicVisual("EFFORT", 0, false);
+  }, []);
+  const ringStyle = { "--mechanic-progress": `${progress * 360}deg` } as CSSProperties;
+  const holding = progress > 0 && progress < 1;
   return (
-    <div>
-      <div className="frame">{props.prompt}</div>
-      <div className="effort-bar"><div style={{ width: `${fill}%` }} /></div>
-      <button className="btn-primary" style={{ marginTop: 10 }} disabled={props.busy}
-        onMouseDown={begin} onMouseUp={end} onMouseLeave={() => startRef.current && end()}
-        onTouchStart={begin} onTouchEnd={end}>
-        Hold to work
+    <div className="mechanic-shell mechanic-effort">
+      <header className="mechanic-header">
+        <span className="mechanic-kicker">PHYSICAL ACTION // GRIP</span>
+        <span className={progress === 1 ? "mechanic-grade perfect" : "mechanic-grade"}>{Math.round(progress * 100)}%</span>
+      </header>
+      <h2>{props.prompt}</h2>
+      <div className="effort-stage">
+        <div className="effort-ring" style={ringStyle}><strong>{Math.round(progress * 100)}</strong><small>HOLD</small></div>
+        <div className="effort-readout">
+          <div className="effort-bar"><div style={{ width: `${progress * 100}%` }} /></div>
+          <p>{message}</p>
+        </div>
+      </div>
+      <button
+        className={`mechanic-action mechanic-hold${holding ? " holding" : ""}${completedRef.current ? " held" : ""}`}
+        style={{ "--hold": progress } as CSSProperties}
+        disabled={props.busy || completedRef.current}
+        onPointerDown={(event) => {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          begin();
+        }}
+        onPointerUp={end}
+        onPointerCancel={end}
+        onKeyDown={(event) => {
+          if ((event.code === "Space" || event.code === "Enter") && !event.repeat) begin();
+        }}
+        onKeyUp={(event) => {
+          if (event.code === "Space" || event.code === "Enter") end();
+        }}
+      >
+        <i className="hold-fill" aria-hidden="true" />
+        <span className="hold-label">
+          {completedRef.current ? "SECURED" : holding ? "KEEP HOLDING…" : "HOLD TO STEADY"}
+        </span>
+        <kbd>{completedRef.current ? "" : "HOLD SPACE · OR HOLD CLICK"}</kbd>
       </button>
     </div>
   );
@@ -133,11 +436,36 @@ function EffortControl(props: { prompt: string; onDone: (ms: number) => void; bu
 
 function PlaceControl(props: { prompt: string; onDone: (a: number) => void; busy: boolean }) {
   const [val, setVal] = useState(0.5);
+  const [locked, setLocked] = useState(false);
+  const doneTimer = useRef(0);
+  const score = Math.max(0, 1 - Math.abs(val - 0.5) * 2);
+  useEffect(() => {
+    emitMechanicVisual("PLACE", val, true);
+  }, [val]);
+  useEffect(() => () => {
+    window.clearTimeout(doneTimer.current);
+    emitMechanicVisual("PLACE", val, false);
+  }, []);
   return (
-    <div>
-      <div className="frame">{props.prompt}</div>
-      <input type="range" min={0} max={100} value={val * 100} onChange={(e) => setVal(Number(e.target.value) / 100)} style={{ width: 480 }} />
-      <div><button className="btn-primary" style={{ marginTop: 10 }} disabled={props.busy} onClick={() => props.onDone(val)}>Tack it up</button></div>
+    <div className="mechanic-shell mechanic-place">
+      <header className="mechanic-header">
+        <span className="mechanic-kicker">PLACEMENT // ALIGNMENT</span>
+        <span className={`mechanic-grade ${score >= 0.92 ? "perfect" : score >= 0.7 ? "good" : ""}`}>{Math.round(score * 100)}% TRUE</span>
+      </header>
+      <h2>{props.prompt}</h2>
+      <p className="mechanic-note">
+        Slide the sheet into the marked frame, then tack it down.
+      </p>
+      <div className="place-stage">
+        <div className="place-target"><i /><span className="place-sheet" style={{ transform: `translateX(${(val - 0.5) * 280}px) rotate(${(val - 0.5) * 7}deg)` }} /></div>
+        <input aria-label="Sheet alignment" type="range" min={0} max={100} value={val * 100} onChange={(e) => setVal(Number(e.target.value) / 100)} />
+      </div>
+      <button className="mechanic-action" disabled={props.busy || locked} onClick={() => {
+        setLocked(true);
+        emitMechanicVisual("PLACE", val, false, "COMMIT");
+        // Completion beat: two nail taps land while the sheet snaps flat.
+        doneTimer.current = window.setTimeout(() => props.onDone(val), 700);
+      }}>{locked ? "TACKED" : "TACK IT HERE"} <kbd>ALIGN CENTER</kbd></button>
     </div>
   );
 }
@@ -146,23 +474,54 @@ function SortControl(props: { params: MechanicParams; onDone: (a: { itemId: stri
   const items = props.params.sortItems ?? [];
   const buckets = props.params.sortBuckets ?? [];
   const [assign, setAssign] = useState<Record<string, string>>({});
+  const [locked, setLocked] = useState(false);
+  const doneTimer = useRef(0);
   const allAssigned = items.every((i) => assign[i.itemId]);
+  useEffect(() => {
+    emitMechanicVisual("SORT", items.length ? Object.keys(assign).length / items.length : 0, true);
+  }, [assign, items.length]);
+  useEffect(() => () => {
+    window.clearTimeout(doneTimer.current);
+    emitMechanicVisual("SORT", 0, false);
+  }, []);
+  // Presentation-only: lets the world layer slide the matching sheet onto
+  // its pile the moment an item is assigned.
+  function assignItem(itemId: string, bucketId: string) {
+    setAssign((a) => ({ ...a, [itemId]: bucketId }));
+    window.dispatchEvent(new CustomEvent("pa:sort-assign", { detail: { itemId, bucketId } }));
+  }
   return (
-    <div>
-      <div className="frame">{props.params.prompt}</div>
-      {items.map((it) => (
-        <div className="obj" key={it.itemId} style={{ justifyContent: "space-between" }}>
-          <span>{it.label}</span>
-          <span className="row">
+    <div className="mechanic-shell mechanic-sort">
+      <header className="mechanic-header">
+        <span className="mechanic-kicker">COMPOSITOR // SORT</span>
+        <span className="mechanic-grade">{Object.keys(assign).length}/{items.length} SET</span>
+      </header>
+      <h2>{props.params.prompt}</h2>
+      <p className="mechanic-note">
+        Set every paper in its pile, then lock the composition.
+      </p>
+      <div className="sort-stage">
+        {items.map((it, index) => (
+          <div className="sort-item" key={it.itemId}>
+            <span><small>{String(index + 1).padStart(2, "0")}</small>{it.label}</span>
+            <span className="sort-buckets">
             {buckets.map((b) => (
-              <button key={b.bucketId} className={assign[it.itemId] === b.bucketId ? "" : "btn-ghost"} onClick={() => setAssign((a) => ({ ...a, [it.itemId]: b.bucketId }))}>{b.label}</button>
+              <button key={b.bucketId} className={assign[it.itemId] === b.bucketId ? "selected" : ""} onClick={() => assignItem(it.itemId, b.bucketId)}>{b.label}</button>
             ))}
           </span>
-        </div>
-      ))}
-      <button className="btn-primary" style={{ marginTop: 10 }} disabled={props.busy || !allAssigned}
-        onClick={() => props.onDone(items.map((i) => ({ itemId: i.itemId, bucketId: assign[i.itemId]! })))}>
-        Submit
+          </div>
+        ))}
+      </div>
+      <button className="mechanic-action" disabled={props.busy || !allAssigned || locked}
+        onClick={() => {
+          setLocked(true);
+          emitMechanicVisual("SORT", 1, false, "COMMIT");
+          doneTimer.current = window.setTimeout(
+            () => props.onDone(items.map((i) => ({ itemId: i.itemId, bucketId: assign[i.itemId]! }))),
+            500,
+          );
+        }}>
+        {locked ? "COMPOSED" : "LOCK COMPOSITION"} <kbd>{allAssigned ? "READY" : "ASSIGN ALL"}</kbd>
       </button>
     </div>
   );

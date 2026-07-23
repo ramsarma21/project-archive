@@ -1,0 +1,14 @@
+{
+  "baseUrl": "http://127.0.0.1:5192/",
+  "placements": {
+    "count": "4",
+    "ids": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2"
+  },
+  "comply": null,
+  "talk": null,
+  "run": null,
+  "bell": "The nearest watcher turns toward the church bell.",
+  "accessibility": null,
+  "diagnostics": [],
+  "errors": []
+}

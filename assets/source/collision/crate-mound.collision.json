@@ -1,0 +1,34 @@
+{
+  "assetKey": "crate-mound",
+  "category": "prop",
+  "profile": "solid",
+  "fit": {
+    "targetSize": [
+      3.4,
+      2.2,
+      2.6
+    ],
+    "scale": 1
+  },
+  "note": "Crate mound; conservative box, landable top. Used at two fits — authored against the larger.",
+  "colliders": [
+    {
+      "id": "body",
+      "shape": "box",
+      "center": [
+        0,
+        1.083,
+        0
+      ],
+      "half": [
+        1.62,
+        1.083,
+        1.148
+      ],
+      "tags": [
+        "obstacle",
+        "landable"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "feedbackSetId": "PA.BOS.ACT01.FEEDBACK",
+  "feedbackSetVersion": "0.1.0-draft",
+  "status": "AUTHOR_DRAFT",
+  "note": "Every line a student can see after an open response is authored here and reviewed. The runtime never displays model prose, reasoning, numbers, or labels. All text is supportive, specific, and nonnumeric, and obeys the no-em-dash fiction rule. authored=true marks these as human-written, which the validator requires so no raw model output can reach a player.",
+  "entries": [
+    { "feedbackId": "BOS.ACT01.FB.COMPARE.STRONG", "category": "STRONG_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "You set the two sources side by side and used details from each. That is exactly how a historian tests one claim against another." },
+    { "feedbackId": "BOS.ACT01.FB.COMPARE.PARTIAL", "category": "PARTIAL_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "Good start. You leaned on one source clearly. Bring in a detail from the other source so the comparison stands on both." },
+    { "feedbackId": "BOS.ACT01.FB.COMPARE.MISSING", "category": "MISSING_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "Revisit both sources and name a specific detail from each. The comparison lands when you can point to what each one actually says." },
+
+    { "feedbackId": "BOS.ACT01.FB.TRANSFER.STRONG", "category": "STRONG_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "You carried the idea into a new situation and explained why it fits. That is the real test of understanding a concept." },
+    { "feedbackId": "BOS.ACT01.FB.TRANSFER.PARTIAL", "category": "PARTIAL_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "You applied the idea. Now say why it fits this new case, tying it back to what the source showed." },
+    { "feedbackId": "BOS.ACT01.FB.TRANSFER.MISSING", "category": "MISSING_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "Start from what the concept meant in the source, then walk it into the new situation step by step." },
+
+    { "feedbackId": "BOS.ACT01.FB.PERSPECTIVE.STRONG", "category": "STRONG_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "You spoke from inside the viewpoint and backed it with what that person saw. You also kept it as their view, not your verdict." },
+    { "feedbackId": "BOS.ACT01.FB.PERSPECTIVE.PARTIAL", "category": "PARTIAL_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "You caught the viewpoint. Add a detail this person would actually point to, and keep it clear that you are describing their view." },
+    { "feedbackId": "BOS.ACT01.FB.PERSPECTIVE.MISSING", "category": "MISSING_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "Try stepping into how this person would see it, and use a source they would trust to explain why." },
+
+    { "feedbackId": "BOS.ACT01.FB.STRATEGY.STRONG", "category": "STRONG_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "You made a clear choice and weighed what you gave up for it. Naming the trade-off is what makes a plan convincing." },
+    { "feedbackId": "BOS.ACT01.FB.STRATEGY.PARTIAL", "category": "PARTIAL_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "You picked a plan. Now weigh it against one thing it costs, so the choice shows its reasoning." },
+    { "feedbackId": "BOS.ACT01.FB.STRATEGY.MISSING", "category": "MISSING_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "Choose one option and say what makes it worth the risk, using what you saw about the situation." },
+
+    { "feedbackId": "BOS.ACT01.FB.CAUSAL.STRONG", "category": "STRONG_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "You connected cause to consequence and used more than one source to hold the chain together. That is strong synthesis." },
+    { "feedbackId": "BOS.ACT01.FB.CAUSAL.PARTIAL", "category": "PARTIAL_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "You found part of the chain. Add a second source so the cause and the result are both grounded." },
+    { "feedbackId": "BOS.ACT01.FB.CAUSAL.MISSING", "category": "MISSING_EVIDENCE", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "Trace it one link at a time: what happened first, what followed, and which source shows each part." },
+
+    { "feedbackId": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "category": "OFF_TOPIC", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "This drifted from the question. Take another look at what is being asked and answer that directly." },
+    { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "category": "UNCLASSIFIED", "authored": true, "reviewStatus": "AUTHOR_DRAFT", "text": "Thanks for your response. When you are ready, add a specific detail from a source and we can look at it together." }
+  ]
+}

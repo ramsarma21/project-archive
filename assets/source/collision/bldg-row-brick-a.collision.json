@@ -1,0 +1,44 @@
+{
+  "assetKey": "bldg-row-brick-a",
+  "category": "building",
+  "profile": "solid",
+  "fit": {
+    "targetSize": [
+      7,
+      9,
+      8
+    ],
+    "scale": 1
+  },
+  "frontAxis": "+z",
+  "pendingDoorContract": true,
+  "note": "Provisional solid-body broad phase at the measured fitted footprint (NOT the nominal slot). Door/threshold openings are deferred to the door contract.",
+  "colliders": [
+    {
+      "id": "body",
+      "shape": "box",
+      "center": [
+        0,
+        4.5,
+        0
+      ],
+      "half": [
+        3.171,
+        4.5,
+        2.806
+      ],
+      "tags": [
+        "obstacle",
+        "building",
+        "broadphase"
+      ]
+    }
+  ],
+  "compose": [
+    {
+      "type": "door",
+      "ref": "pendingDoorContract",
+      "note": "front-wall opening to be cut when the door contract lands"
+    }
+  ]
+}

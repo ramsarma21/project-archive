@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createLocalProfile, getSave, type LocalProfile } from "../db.js";
+import { createLocalProfile, deleteAllLocalProfiles, getSave, type LocalProfile } from "../db.js";
 import { googleLoginUrl, logout } from "../api.js";
 
 export function Home(props: {
@@ -17,6 +17,14 @@ export function Home(props: {
     const label = name.trim() || `Runner ${profiles.length + 1}`;
     await createLocalProfile(label);
     setName("");
+    await props.onChanged();
+  }
+
+  async function clearLocalProfiles() {
+    const count = profiles.filter((profile) => profile.source === "LOCAL").length;
+    if (count === 0) return;
+    if (!window.confirm(`Delete ${count} local test profile${count === 1 ? "" : "s"} and their saves?`)) return;
+    await deleteAllLocalProfiles();
     await props.onChanged();
   }
 
@@ -56,7 +64,14 @@ export function Home(props: {
           <ProfileRow key={p.profileId} profile={p} onPlay={() => props.onPlay(p)} />
         ))}
 
-        <div className="panel-title">New local profile (for testing)</div>
+        <div className="panel-title row">
+          <span className="grow">New local profile (for testing)</span>
+          {profiles.some((profile) => profile.source === "LOCAL") && (
+            <button className="btn-danger-small" onClick={() => void clearLocalProfiles()}>
+              Delete local profiles
+            </button>
+          )}
+        </div>
         <div className="row">
           <input className="grow" type="text" placeholder="Display name" value={name} onChange={(e) => setName(e.target.value)} />
           <button onClick={addLocal}>Create</button>

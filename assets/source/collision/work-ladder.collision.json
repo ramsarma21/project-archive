@@ -1,0 +1,57 @@
+{
+  "assetKey": "work-ladder",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Imported climb affordance; two conservative rail capsules keep the central climb path open. Exact support binds to densityManifest traversal anchors later.",
+  "colliders": [
+    {
+      "id": "rail-l",
+      "shape": "capsule",
+      "a": [
+        -0.219,
+        0.04,
+        0
+      ],
+      "b": [
+        -0.219,
+        1.86,
+        0
+      ],
+      "radius": 0.04,
+      "tags": [
+        "obstacle",
+        "ladder"
+      ]
+    },
+    {
+      "id": "rail-r",
+      "shape": "capsule",
+      "a": [
+        0.219,
+        0.04,
+        0
+      ],
+      "b": [
+        0.219,
+        1.86,
+        0
+      ],
+      "radius": 0.04,
+      "tags": [
+        "obstacle",
+        "ladder"
+      ]
+    }
+  ],
+  "compose": [
+    {
+      "type": "traversal",
+      "ref": "densityManifest:work-ladder",
+      "note": "CLIMB_UP/DOWN start, end, landing and support"
+    }
+  ]
+}

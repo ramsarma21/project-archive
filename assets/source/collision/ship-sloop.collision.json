@@ -1,0 +1,58 @@
+{
+  "assetKey": "ship-sloop",
+  "category": "ship",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Sloop. Local-normalized; world scale owned by WaterDirector. Hull solid + deck support.",
+  "colliders": [
+    {
+      "id": "hull",
+      "shape": "box",
+      "center": [
+        0,
+        0.467,
+        0
+      ],
+      "half": [
+        0.899,
+        0.467,
+        0.156
+      ],
+      "tags": [
+        "obstacle",
+        "hull"
+      ]
+    },
+    {
+      "id": "deck",
+      "shape": "support",
+      "polygon": [
+        [
+          -0.848,
+          -0.136
+        ],
+        [
+          0.849,
+          -0.136
+        ],
+        [
+          0.849,
+          0.136
+        ],
+        [
+          -0.848,
+          0.136
+        ]
+      ],
+      "y": 0.934,
+      "link": "hull",
+      "tags": [
+        "support",
+        "deck"
+      ]
+    }
+  ]
+}

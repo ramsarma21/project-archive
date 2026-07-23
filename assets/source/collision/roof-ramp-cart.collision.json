@@ -1,0 +1,33 @@
+{
+  "assetKey": "roof-ramp-cart",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": [
+      3.2,
+      2,
+      2.2
+    ],
+    "scale": 1
+  },
+  "note": "Ramp cart body; conservative box.",
+  "colliders": [
+    {
+      "id": "body",
+      "shape": "box",
+      "center": [
+        0,
+        0.586,
+        0
+      ],
+      "half": [
+        1.45,
+        0.527,
+        0.702
+      ],
+      "tags": [
+        "obstacle"
+      ]
+    }
+  ]
+}

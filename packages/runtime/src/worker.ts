@@ -29,11 +29,13 @@ ctx.onmessage = (e: MessageEvent<WorkerRequest>) => {
         session = createDay1Session({
           variationRootSeedHex: req.payload.variationRootSeedHex,
           priorEvents: req.payload.priorEvents,
+          assessmentMode: req.payload.assessmentMode,
+          openResponseContentMode: req.payload.openResponseContentMode,
         });
         post({
           id: req.id,
           type: "READY",
-          plan: session.plan ?? { present: [], request: { kind: "DAY_END" } },
+          plan: session.plan ?? { present: [], request: { kind: "DAY_END" }, cueId: "BOS.MD01.CUE.DAY_END.v1" },
           transcript: session.transcript,
           committedEventCount: session.committedEvents.length,
         });
@@ -42,6 +44,19 @@ ctx.onmessage = (e: MessageEvent<WorkerRequest>) => {
       case "EVENT": {
         if (!session) throw new Error("RUNTIME_DEADLOCK: no session");
         const r = session.advance(req.payload);
+        post({
+          id: req.id,
+          type: "STEP",
+          plan: r.plan,
+          newDirectives: r.newDirectives,
+          committedEventCount: session.committedEvents.length,
+          done: r.done,
+        });
+        return;
+      }
+      case "FIELD_EVENT": {
+        if (!session) throw new Error("RUNTIME_DEADLOCK: no session");
+        const r = session.emitFieldEvent(req.payload);
         post({
           id: req.id,
           type: "STEP",
@@ -71,7 +86,7 @@ ctx.onmessage = (e: MessageEvent<WorkerRequest>) => {
               variationRootSeedHex: seedHex,
               committedEventCount: session.committedEvents.length,
               generatedAt: new Date().toISOString(),
-            }),
+            }, session.ctx.checkpoint, session.ctx.field.engagedMicroIds),
           },
         });
         return;

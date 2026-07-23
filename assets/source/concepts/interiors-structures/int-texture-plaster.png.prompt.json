@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Seamless square PBR base-color texture swatch only, perfectly flat orthographic front view with diffuse shadowless even illumination, aged 1765 Boston whitewashed lime plaster, warm off-white, subtle smoke staining, restrained hairline cracks and hand-trowel variation, no object edges, no frame, no panel, no perspective, no highlights, no directional shadows, no text",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T01:36:42.700Z",
+  "files": [
+    "int-texture-plaster.png"
+  ]
+}

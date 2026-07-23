@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single long colonial shop counter only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: long straight sales counter about three times longer than deep, paneled front in dark stained pine, worn oak top with a slight sheen from years of trade, stout plinth base. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:06:53.136Z",
+  "files": [
+    "shop-counter-long.png"
+  ]
+}

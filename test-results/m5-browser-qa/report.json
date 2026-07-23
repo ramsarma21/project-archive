@@ -1,0 +1,18 @@
+{
+  "baseUrl": "http://127.0.0.1:5183/",
+  "scenarios": [
+    "normal/keyboard/touch/resume",
+    "high-contrast/reduced-motion/commit/transition"
+  ],
+  "screenshots": [
+    "/Users/ramsarma/Projects/project-archive/test-results/m5-browser-qa/cp1-question-normal.png",
+    "/Users/ramsarma/Projects/project-archive/test-results/m5-browser-qa/cp1-review-high-contrast-reduced-motion.png",
+    "/Users/ramsarma/Projects/project-archive/test-results/m5-browser-qa/cp1-transition.png"
+  ],
+  "errors": [],
+  "nonBlack": {
+    "cp1-question-normal": 19.48529629241934,
+    "cp1-review-high-contrast-reduced-motion": 19.779888255217543,
+    "cp1-transition": 14.382640589103591
+  }
+}

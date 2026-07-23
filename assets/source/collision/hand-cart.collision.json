@@ -1,0 +1,33 @@
+{
+  "assetKey": "hand-cart",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": [
+      2.6,
+      2.6,
+      2.6
+    ],
+    "scale": 1
+  },
+  "note": "Cart body only; wheels/handle empty space excluded (conservative, not a full AABB).",
+  "colliders": [
+    {
+      "id": "bed",
+      "shape": "box",
+      "center": [
+        0,
+        0.724,
+        0
+      ],
+      "half": [
+        1.1,
+        0.586,
+        0.844
+      ],
+      "tags": [
+        "obstacle"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "assetKey": "colonial-door",
+  "category": "prop",
+  "profile": "pending",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "pendingDoorContract": true,
+  "note": "Door leaf. Final leaf/opening geometry is deferred to the door contract; no collider authored yet.",
+  "colliders": [],
+  "compose": [
+    {
+      "type": "door",
+      "ref": "pendingDoorContract",
+      "note": "leaf hinge/opening to be authored with the door contract"
+    }
+  ]
+}

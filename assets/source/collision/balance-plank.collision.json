@@ -1,0 +1,48 @@
+{
+  "assetKey": "balance-plank",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Imported trestle plank; walkable top recorded for later traversal integration.",
+  "colliders": [
+    {
+      "id": "plank-top",
+      "shape": "support",
+      "polygon": [
+        [
+          -0.95,
+          -0.262
+        ],
+        [
+          0.95,
+          -0.262
+        ],
+        [
+          0.95,
+          0.262
+        ],
+        [
+          -0.95,
+          0.262
+        ]
+      ],
+      "y": 0.367,
+      "link": "traversal",
+      "tags": [
+        "support",
+        "walkable",
+        "density"
+      ]
+    }
+  ],
+  "compose": [
+    {
+      "type": "traversal",
+      "ref": "densityManifest:balance-plank",
+      "note": "BALANCE endpoints and cooldown"
+    }
+  ]
+}

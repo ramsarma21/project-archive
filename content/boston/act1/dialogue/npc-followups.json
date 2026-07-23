@@ -1,0 +1,92 @@
+{
+  "dialogueSetId": "PA.BOS.ACT01.NPC_FOLLOWUPS",
+  "dialogueSetVersion": "0.1.0-draft",
+  "status": "AUTHOR_DRAFT",
+  "note": "Expanded follow-up dialogue for the five named NPCs plus Sarah. Each follow-up is gated by source interactions the player has already completed (never proximity), keeps to at most three options, and never quizzes right after a read. The open response it leads to is a separate, spaced interaction (see leadsToPromptId and the item's minSpacingInteractions). Lines follow the fiction voice rules: short, human, oblique, no em dashes, and NPCs never reference the Archive, overlay, or any assessment. The concept is never named by the character.",
+  "followups": [
+    {
+      "nodeId": "BOS.ACT01.DLG.ABIGAIL.PRINT.v1",
+      "npcId": "abigail",
+      "name": "Abigail Mercer",
+      "gate": { "completedSources": ["BOS.ACT01.SRC.PRINTER_PRESS.v1"], "note": "After the press job or the type-case read." },
+      "openingLines": ["Wet sheets dry slow, and the street won't wait for them.", "Every copy off this press is one more voice out the door."],
+      "options": [
+        { "optionId": "ASK_WHY_PRINT", "text": "Why so many copies?", "reply": "One shout the wind takes. A hundred sheets, folk pass hand to hand.", "leadsToPromptId": "BOS.ACT01.PROMPT.ABIGAIL_PRINT_COORDINATION" },
+        { "optionId": "ASK_TROUBLE", "text": "Is that what gets printers in trouble?", "reply": "The Crown taxes our paper first. We noticed first too." },
+        { "optionId": "LEAVE", "text": "Back to it.", "reply": "Mind the ink. Off with you." }
+      ],
+      "spacingNote": "The open response linked here fires at least two committed interactions later, not in this exchange.",
+      "reviewStatus": "AUTHOR_DRAFT"
+    },
+    {
+      "nodeId": "BOS.ACT01.DLG.THOMAS.BOYCOTT.v1",
+      "npcId": "thomas",
+      "name": "Thomas Bell",
+      "gate": { "completedSources": ["BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1"], "note": "After the non-importation notice or the tavern-note errand." },
+      "openingLines": ["Half the shelves in this town could go bare and I'd sign it twice.", "It's not the shilling. It's the not being asked."],
+      "options": [
+        { "optionId": "ASK_BOYCOTT_WORK", "text": "Does not buying really do anything?", "reply": "London's merchants feel an empty ledger fast. They'll shout at Parliament for us.", "leadsToPromptId": "BOS.ACT01.PROMPT.NONIMPORT_TRANSFER" },
+        { "optionId": "ASK_COST", "text": "What if folk won't hold the line?", "reply": "Then it's just my shop losing custom. It only bites if we all bite." },
+        { "optionId": "LEAVE", "text": "I should move on.", "reply": "Go on then. Tell no one where you heard it." }
+      ],
+      "spacingNote": "Linked open response is deferred; Thomas does not test the runner on the spot.",
+      "reviewStatus": "AUTHOR_DRAFT"
+    },
+    {
+      "nodeId": "BOS.ACT01.DLG.PIKE.PAPER.v1",
+      "npcId": "pike",
+      "name": "Mr. Pike",
+      "gate": { "completedSources": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1", "BOS.ACT01.SRC.STAMP_SCHEDULE.v1"], "note": "After delivering the proof and reading the schedule." },
+      "openingLines": ["A deed with the stamp, a deed without. Come fall, only one will stand.", "Paper is the whole of my trade, and they've taxed the paper."],
+      "options": [
+        { "optionId": "ASK_WHICH_COUNTS", "text": "Which papers matter most to you?", "reply": "A writ binds. A deed proves. A newsprint sheet is just talk with ink.", "leadsToPromptId": "BOS.ACT01.PROMPT.PIKE_SOURCE_CREDIBILITY" },
+        { "optionId": "ASK_SEARCH", "text": "And if they search a man's shop?", "reply": "On one open warrant, any door. That's the part folk can't stomach.", "leadsToPromptId": "BOS.ACT01.PROMPT.WRITS_TRANSFER" },
+        { "optionId": "LEAVE", "text": "I'll leave you to it.", "reply": "Mind the stamp date. First of November." }
+      ],
+      "spacingNote": "Both linked open responses are spaced later; Pike keeps this to shop talk.",
+      "reviewStatus": "AUTHOR_DRAFT"
+    },
+    {
+      "nodeId": "BOS.ACT01.DLG.CLARKE.ORDER.v1",
+      "npcId": "clarke",
+      "name": "Edward Clarke",
+      "gate": { "completedSources": ["BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1"], "anyOf": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1"], "note": "After hearing Clarke out and seeing resistance evidence." },
+      "openingLines": ["You young ones cheer the mob. You won't cheer where it ends.", "A hanged straw man today. A hanged neighbor tomorrow, mark me."],
+      "options": [
+        { "optionId": "ASK_HIS_VIEW", "text": "So how do you see the effigy?", "reply": "Lawful men settle a grievance in the courts, not at the end of a rope on a tree.", "leadsToPromptId": "BOS.ACT01.PROMPT.CLARKE_LOYALIST" },
+        { "optionId": "ASK_CONSENT", "text": "They say it's about consent.", "reply": "Consent. And who consents to a broken window? Order first, then your fine words." },
+        { "optionId": "LEAVE", "text": "I hear you.", "reply": "See that you do. Keep clear of that crowd." }
+      ],
+      "spacingNote": "The linked open response explicitly separates voicing Clarke's view from agreeing with it, and fires later.",
+      "reviewStatus": "AUTHOR_DRAFT"
+    },
+    {
+      "nodeId": "BOS.ACT01.DLG.RIDER.ROUTE.v1",
+      "npcId": "rider",
+      "name": "The rider",
+      "gate": { "completedSources": ["BOS.ACT01.SRC.RIDER_NETWORK.v1"], "note": "After meeting the rider or the crier stretch." },
+      "openingLines": ["Bell rings, I ride. Late bundles stay in Boston.", "Word's only worth something if it gets there before the trouble does."],
+      "options": [
+        { "optionId": "ASK_ROUTE", "text": "Which way would you carry it?", "reply": "Depends who's watching the road. Fast and seen, or slow and safe. Never both.", "leadsToPromptId": "BOS.ACT01.PROMPT.RIDER_ROUTE_STRATEGY" },
+        { "optionId": "ASK_NETWORK", "text": "How does the next town even hear?", "reply": "Tavern to printer to me, and me to the next rider. Chain's only strong as the slow link." },
+        { "optionId": "LEAVE", "text": "Ride safe.", "reply": "Always do. Mostly." }
+      ],
+      "spacingNote": "The route open response is a later, spaced interaction, not asked in this exchange.",
+      "reviewStatus": "AUTHOR_DRAFT"
+    },
+    {
+      "nodeId": "BOS.ACT01.DLG.SARAH.MARKET.v1",
+      "npcId": "sarah",
+      "name": "Goodwife Sarah",
+      "gate": { "completedSources": ["BOS.ACT01.SRC.SARAH_MARKET.v1"], "note": "After buying or hauling at Sarah's stall." },
+      "openingLines": ["Fish and thread, love. What's left of it.", "Half my trade's gone since the new duties, and the notices say it's for the King's debt."],
+      "options": [
+        { "optionId": "ASK_WHY_GONE", "text": "Why has so much gone?", "reply": "Ships sit. Fees bite. What doesn't come in, I can't sell out.", "leadsToPromptId": "BOS.ACT01.PROMPT.REVENUE_VS_MARKET" },
+        { "optionId": "BUY", "text": "I'll buy something.", "reply": "Bless you. It's honest thread, at least." },
+        { "optionId": "LEAVE", "text": "Take care.", "reply": "And you, love. Mind the crowd up the way." }
+      ],
+      "spacingNote": "Links to the compare item, which is offered later once the revenue proclamation is also engaged.",
+      "reviewStatus": "AUTHOR_DRAFT"
+    }
+  ]
+}

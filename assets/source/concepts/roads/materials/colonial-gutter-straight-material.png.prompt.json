@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Create a perfectly overhead orthographic long colonial stone gutter material strip based on this reference. Fill the image with a continuous shallow concave drainage channel bordered by irregular worn granite edging stones, dark muddy joints and damp grime. No perspective, slab sides, background, border, horizon or cast shadow. Both long ends tile seamlessly. Historic rough 1765 drainage edge, muted gray-brown, not modern curb.",
+  "size": "1024x1024",
+  "edit": "assets/source/concepts/roads/colonial-gutter-straight.png",
+  "generatedAt": "2026-07-21T16:47:45.118Z",
+  "files": [
+    "colonial-gutter-straight-material.png"
+  ]
+}

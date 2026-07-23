@@ -1,0 +1,11 @@
+{
+  "assetKey": "first-person-left-arm",
+  "category": "firstperson",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "First-person arm rig; camera-attached, never a world collider.",
+  "colliders": []
+}

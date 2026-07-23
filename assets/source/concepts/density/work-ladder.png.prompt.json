@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A single standalone weathered wooden work ladder standing at a lean on its own plausible braced timber support frame with angled back legs so it stands freely, rough colonial carpentry, grey-brown oak rungs and rails, grounded feet, utilitarian worksite object. Single game asset/module only, centered, complete object in frame, three-quarter orthographic-like view, plain light gray studio background, no landscape, no people, no text, no watermark. Historically accurate working-class Boston, August 1765, weathered materials, muted pewter/umber palette, no Victorian, modern, fantasy, or military elements. Tileable square module ends where applicable.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:22:30.711Z",
+  "files": [
+    "work-ladder.png"
+  ]
+}

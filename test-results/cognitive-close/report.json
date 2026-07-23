@@ -1,0 +1,31 @@
+{
+  "baseUrl": "http://127.0.0.1:5273/",
+  "scenarios": [
+    "offline-normal",
+    "mock-timeout",
+    "accessible-resume",
+    "mock-online",
+    "no-immediate-prompt"
+  ],
+  "screenshots": [
+    "/Users/ramsarma/Projects/project-archive/test-results/cognitive-close/offline-fallback-normal.png",
+    "/Users/ramsarma/Projects/project-archive/test-results/cognitive-close/archive-connections-imported-artifacts.png",
+    "/Users/ramsarma/Projects/project-archive/test-results/cognitive-close/resume-high-contrast-reduced-touch.png",
+    "/Users/ramsarma/Projects/project-archive/test-results/cognitive-close/mock-online-classified-retained.png"
+  ],
+  "errors": [],
+  "nonBlack": {
+    "offline-fallback-normal": 19.416377742494554,
+    "archive-connections-imported-artifacts": 32.674392822209484,
+    "resume-high-contrast-reduced-touch": 17.4367640536009,
+    "mock-online-classified-retained": 19.276342705560452
+  },
+  "assertions": {
+    "sourcePromptCount": 12,
+    "npcFollowups": 6,
+    "archiveConnections": 5,
+    "rawTextInSave": false,
+    "progressionAuthority": false,
+    "browserErrors": 0
+  }
+}

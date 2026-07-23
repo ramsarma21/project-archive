@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single complete large satirical protest prop of a giant jack-boot only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no rope, no ground scenery, no people, no readable text, no watermark. An oversized crude papier-mache and cloth green-soled black riding jack-boot about one meter tall with a small crude grinning green devil figure climbing out of the boot top, folk-made protest craft, muted black, dark green and umber. Historically plausible 1765 Boston Stamp Act protest boot effigy referencing Lord Bute, crude folk-made, single object, no modern or fantasy game elements. Game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T21:50:02.066Z",
+  "files": [
+    "effigy-boot.png"
+  ]
+}

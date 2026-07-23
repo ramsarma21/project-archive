@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated colonial work-yard and backlot ground module, 1765 Boston, for image-to-3D. Whole square low slab visible in elevated three-quarter orthographic view on plain neutral light gray background, no buildings, people, loose props, text, or grass. Historically plausible hard-used yard surface made from compacted gravel, cinders, small broken stone, mud and worn dirt, irregular embedded stones, shallow puddle depressions, wheel scuffs, desaturated charcoal brown gray, no green and no modern lawn. Thin solid underside with straight seamless tileable edges, subtle physical relief only.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:07:52.197Z",
+  "files": [
+    "colonial-yard-ground.png"
+  ]
+}

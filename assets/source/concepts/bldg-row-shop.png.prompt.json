@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial shop row building only, centered, full building exterior in frame, front three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: two and a half story timber clapboard shop building, ground floor shopfront with a large multi-pane bow display window and a paneled shop door, wrought iron bracket holding a small blank pictorial trade sign shaped like a wheat sheaf with no lettering, gable roof, brick chimney, sash windows above. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:05:44.307Z",
+  "files": [
+    "bldg-row-shop.png"
+  ]
+}

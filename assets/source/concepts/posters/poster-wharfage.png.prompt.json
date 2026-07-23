@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on scan of a printed 1765 wharf rates notice, aged rag paper heavily weathered and water stained, letterpress serif type. Header reads \"RATES of WHARFAGE\". Subheading reads \"Established for the Town Wharf\". Body is a single neat column of serif lines, each pairing an item with a plausible sum in pence, such as \"Every Hogshead of Molasses, Four Pence\", \"Every Barrel of Flour, Two Pence\", \"Every Cord of Fire Wood, Six Pence\", \"Every Ton of Iron, Eight Pence\", \"Every Chaldron of Coals, Nine Pence\". At the bottom a line reads \"By Order of the Wharfinger\". Thin rule border, salt stains, curled corner. The paper texture extends past all four edges of the frame so no background is visible, no hands, no modern elements, no em dash characters anywhere.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T22:49:02.490Z",
+  "files": [
+    "poster-wharfage.png"
+  ]
+}

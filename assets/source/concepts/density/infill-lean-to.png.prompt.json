@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A narrow colonial lean-to service structure: a small single-slope shed-roof shelter of weathered clapboard boards on a simple timber frame, one open side, wooden shingle slope roof, grounded stone sill, working-class Boston, complete standalone object sized to fill a gap between buildings. Single game asset/module only, centered, complete object in frame, three-quarter orthographic-like view, plain light gray studio background, no landscape, no people, no text, no watermark. Historically accurate working-class Boston, August 1765, weathered materials, muted pewter/umber palette, no Victorian, modern, fantasy, or military elements. Tileable square module ends where applicable.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:20:35.982Z",
+  "files": [
+    "infill-lean-to.png"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated enclosed colonial courtyard ground module, 1765 Boston, for image-to-3D. Entire square low slab visible in elevated three-quarter orthographic product view on plain neutral light gray background, no buildings, tree, people, props, text, fence, or road. Patchy worn muted grass with extensive trodden bare earth, compacted footpaths, muddy patches, scattered tiny stones and leaves, uneven natural yard surface, dark olive and brown, never bright lawn. Intended only beneath an enclosed Liberty Tree courtyard. Thin solid underside, straight tileable edges, subtle relief.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:07:53.737Z",
+  "files": [
+    "colonial-liberty-courtyard.png"
+  ]
+}

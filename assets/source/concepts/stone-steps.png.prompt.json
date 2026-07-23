@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single set of colonial stone entry steps only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: three worn granite slab steps with a small landing, hand-cut stone with chipped edges and subtle moss in the joints, suitable for a meetinghouse or town house entrance. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:09:28.329Z",
+  "files": [
+    "stone-steps.png"
+  ]
+}

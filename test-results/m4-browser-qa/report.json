@@ -1,0 +1,538 @@
+{
+  "baseUrl": "http://127.0.0.1:5183/",
+  "screenshots": [
+    {
+      "name": "m4-watch-house",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-qa/m4-watch-house.png",
+      "luminance": {
+        "meanLuma": 59.64,
+        "nonBlackRatio": 0.7983
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "188",
+        "triangles": "3161847",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 188,
+            "triangles": 3161847,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 213,
+            "programs": 25
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              53.5,
+              2.5,
+              -1.2999999999999996
+            ],
+            "rotation": [
+              -0.21765061628704285,
+              0,
+              0
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 304,
+            "visibleSkinnedMeshes": 27
+          },
+          "frameMs": {
+            "samples": 13,
+            "mean": 2379.215384615442,
+            "p50": 1465.300000000745,
+            "p95": 12487.099999997765,
+            "p99": 12487.099999997765,
+            "max": 12487.099999997765
+          },
+          "fps": 0.4203066298521066
+        }
+      }
+    },
+    {
+      "name": "m4-constables-custom-house",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-qa/m4-constables-custom-house.png",
+      "luminance": {
+        "meanLuma": 80.521,
+        "nonBlackRatio": 0.8585
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "PA.FIELD.INTERRUPT.M2_INT_0_CHECKPOINT-custom-house-stretch_1_1",
+        "watcherCount": "4",
+        "drawCalls": "178",
+        "triangles": "2697068",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 178,
+            "triangles": 2697068,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 215,
+            "programs": 25
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              55,
+              2.5,
+              -0.6000000000000011
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 293,
+            "visibleSkinnedMeshes": 21
+          },
+          "frameMs": {
+            "samples": 18,
+            "mean": 2051.6166666667496,
+            "p50": 1406.699999999255,
+            "p95": 12487.099999997765,
+            "p99": 12487.099999997765,
+            "max": 12487.099999997765
+          },
+          "fps": 0.4874204895326253
+        }
+      }
+    },
+    {
+      "name": "m4-roof-board-scaffold",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-qa/m4-roof-board-scaffold.png",
+      "luminance": {
+        "meanLuma": 141.92,
+        "nonBlackRatio": 0.8379
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "PA.FIELD.INTERRUPT.M2_INT_0_CHECKPOINT-custom-house-stretch_1_1",
+        "watcherCount": "4",
+        "drawCalls": "194",
+        "triangles": "2831325",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 194,
+            "triangles": 2831325,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 215,
+            "programs": 25
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              15.2,
+              2.5,
+              -2.599999999999999
+            ],
+            "rotation": [
+              -0.21765061628704283,
+              0,
+              0
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 290,
+            "visibleSkinnedMeshes": 18
+          },
+          "frameMs": {
+            "samples": 23,
+            "mean": 1857.2304347826412,
+            "p50": 1242.300000000745,
+            "p95": 5203.099999997765,
+            "p99": 12487.099999997765,
+            "max": 12487.099999997765
+          },
+          "fps": 0.5384361473254846
+        }
+      }
+    },
+    {
+      "name": "m4-static-dog",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-qa/m4-static-dog.png",
+      "luminance": {
+        "meanLuma": 141.002,
+        "nonBlackRatio": 0.8457
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "PA.FIELD.INTERRUPT.M2_INT_0_CHECKPOINT-custom-house-stretch_1_1",
+        "watcherCount": "4",
+        "drawCalls": "196",
+        "triangles": "2652214",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 196,
+            "triangles": 2652214,
+            "points": 0,
+            "lines": 0,
+            "geometries": 154,
+            "textures": 217,
+            "programs": 25
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -30.2,
+              2.5,
+              1.9999999999999996
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 288,
+            "visibleSkinnedMeshes": 18
+          },
+          "frameMs": {
+            "samples": 28,
+            "mean": 1725.125,
+            "p50": 1242.300000000745,
+            "p95": 5203.099999997765,
+            "p99": 12487.099999997765,
+            "max": 12487.099999997765
+          },
+          "fps": 0.5796681399898558
+        }
+      }
+    },
+    {
+      "name": "m4-knowledge-complete",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-qa/m4-knowledge-complete.png",
+      "luminance": {
+        "meanLuma": 52.44,
+        "nonBlackRatio": 0.8165
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "213",
+        "triangles": "3201661",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 213,
+            "triangles": 3201661,
+            "points": 0,
+            "lines": 0,
+            "geometries": 154,
+            "textures": 216,
+            "programs": 26
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              6.35,
+              2.5,
+              1.349999999999999
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 297,
+            "visibleSkinnedMeshes": 21
+          },
+          "frameMs": {
+            "samples": 62,
+            "mean": 1414.3645161290563,
+            "p50": 1189,
+            "p95": 3300.60000000149,
+            "p99": 12487.099999997765,
+            "max": 12487.099999997765
+          },
+          "fps": 0.7070313123641411
+        }
+      }
+    },
+    {
+      "name": "m4-eavesdrop-market",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-qa/m4-eavesdrop-market.png",
+      "luminance": {
+        "meanLuma": 55.113,
+        "nonBlackRatio": 0.8128
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "223",
+        "triangles": "3775696",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 223,
+            "triangles": 3775696,
+            "points": 0,
+            "lines": 0,
+            "geometries": 157,
+            "textures": 230,
+            "programs": 26
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -50,
+              2.5,
+              1.7000000000000008
+            ],
+            "rotation": [
+              -0.21765061628704283,
+              0,
+              0
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 309,
+            "visibleSkinnedMeshes": 33
+          },
+          "frameMs": {
+            "samples": 69,
+            "mean": 1393.7594202898335,
+            "p50": 1189,
+            "p95": 3300.60000000149,
+            "p99": 12487.099999997765,
+            "max": 12487.099999997765
+          },
+          "fps": 0.7174839397979094
+        }
+      }
+    },
+    {
+      "name": "m4-roof-kid-accepted",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-browser-qa/m4-roof-kid-accepted.png",
+      "luminance": {
+        "meanLuma": 68.072,
+        "nonBlackRatio": 0.8772
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "268",
+        "triangles": "4164866",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 268,
+            "triangles": 4164866,
+            "points": 0,
+            "lines": 0,
+            "geometries": 171,
+            "textures": 243,
+            "programs": 26
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -17.91381940419827,
+              2.5,
+              6.549092506296552
+            ],
+            "rotation": [
+              -2.7028757848076386,
+              1.0375279323372733,
+              2.7575880172588354
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 308,
+            "visibleSkinnedMeshes": 31
+          },
+          "frameMs": {
+            "samples": 90,
+            "mean": 1458.4799999999918,
+            "p50": 1228.4000000022352,
+            "p95": 3300.60000000149,
+            "p99": 12487.099999997765,
+            "max": 12487.099999997765
+          },
+          "fps": 0.6856453293840201
+        }
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "street",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "PLAYER",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "268",
+          "triangles": "4164866",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "53",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "sceneObjectCount": "3073",
+          "sceneVisibleMeshCount": "375",
+          "playerPos": "-22.50,9.00",
+          "playerPos3d": "-22.500,0.000,9.000",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "-0.882,0.471",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "abigail,thomas,pike,clarke,rider",
+          "namedActorPositions": "abigail:1.73,10.10;thomas:-52.43,-6.35;pike:37.03,8.90;clarke:-27.40,8.73;rider:-96.80,-18.20"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "7",
+          "carriedObjectIds": "PLAIN_WRAP",
+          "confiscatedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,THOMAS_CIRCULAR",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_ONLY",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "1",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    }
+  ],
+  "errors": [
+    "street:interaction:Pet the dog prompt missing"
+  ],
+  "assetFailures": [],
+  "networkFailures": [
+    "street:500:http://127.0.0.1:5183/v1/health",
+    "street:500:http://127.0.0.1:5183/v1/health",
+    "street:500:http://127.0.0.1:5183/v1/health",
+    "street:500:http://127.0.0.1:5183/v1/health"
+  ],
+  "harnessDiagnostics": []
+}

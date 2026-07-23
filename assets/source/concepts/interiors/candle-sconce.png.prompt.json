@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial tin wall candle sconce only, the entire object fully inside the frame with generous empty margin on all sides, nothing cropped, centered, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: compact tin sconce with a round hammered reflector plate, small drip pan holding one tallow candle stub, dull gray hammered tin, no mounting board, the sconce is the whole object. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:10:30.832Z",
+  "files": [
+    "candle-sconce.png"
+  ]
+}

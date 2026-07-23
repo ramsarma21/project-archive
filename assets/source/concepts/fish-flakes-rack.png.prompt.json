@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single 18th century fish drying rack only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial New England fish flakes style: low rectangular drying platform of thin wooden lattice slats raised on rough timber post legs, split salted codfish laid flat in rows across the lattice, weathered gray driftwood-toned frame. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:08:18.440Z",
+  "files": [
+    "fish-flakes-rack.png"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "assetKey": "colonial-wharf-boardwalk",
+  "category": "surface",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Walkable ground surface; support is the implicit ground plane. Road/yard kit is still changing — no vertical collider on the module itself.",
+  "colliders": []
+}

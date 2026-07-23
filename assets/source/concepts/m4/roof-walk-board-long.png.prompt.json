@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single complete long rough colonial plank gangway walk-board only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no building, no ground scenery, no people, no readable text, no watermark. Three long weathered pine planks lashed and nailed together forming a narrow flat walkway about five meters long, supported by a sturdy A-frame timber trestle at the middle and short leg supports at each end all standing on the ground, thin rope hand-lines on both sides, hand-hewn nailed and lashed joinery, muted aged umber and gray weathered wood. Historically plausible 1765 colonial construction, structurally grounded and self-supporting, no modern or fantasy elements. Game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T21:49:45.508Z",
+  "files": [
+    "roof-walk-board-long.png"
+  ]
+}

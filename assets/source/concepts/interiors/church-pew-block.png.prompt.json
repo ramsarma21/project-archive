@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single furniture block of three colonial meeting house pews arranged one behind another in three parallel rows like church seating, joined by wooden side rails into one unit, centered, full object in frame, elevated three-quarter view so the spacing between the three rows is clearly visible, plain light gray studio background, soft even lighting, no shadows on ground, no objects outside the unit, no people, no text or watermark. Historically accurate 1765 colonial Boston style: each row is a straight wooden bench with a tall paneled back, dark stained pine, plain joinery. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:10:12.808Z",
+  "files": [
+    "church-pew-block.png"
+  ]
+}

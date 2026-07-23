@@ -1,0 +1,53 @@
+{
+  "connectionsSetId": "PA.BOS.ACT01.ARCHIVE_CONNECTIONS",
+  "connectionsSetVersion": "0.1.0-draft",
+  "status": "AUTHOR_DRAFT",
+  "note": "Authored Archive Connections cards. Each unlocks only when the player has engaged a required combination of sources, cites those sources, and leads into a spaced synthesis prompt. Card bodies are player-facing: no em dashes, no score or mastery language. Cards frame and connect; they never quiz immediately after a read.",
+  "cards": [
+    {
+      "cardId": "BOS.ACT01.AC.CROWN_CLAIM_VS_LOCAL.v1",
+      "title": "The Crown's reason and the town's bill",
+      "unlock": { "mode": "ALL", "sourcePacketIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1"], "anyOf": ["BOS.ACT01.SRC.WHARFAGE_RATES.v1", "BOS.ACT01.SRC.SARAH_MARKET.v1"], "note": "Unlocks after the revenue proclamation plus at least one port-economy source." },
+      "citations": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1", "BOS.ACT01.SRC.WHARFAGE_RATES.v1", "BOS.ACT01.SRC.SARAH_MARKET.v1"],
+      "body": "London wrote its reason plainly: raise a revenue to pay for the war. Down on the wharf and at the market stall, that reason arrives as fewer goods, thinner trade, and slower work. Two sources, one policy, seen from two ends of the ocean.",
+      "linkedPromptId": "BOS.ACT01.PROMPT.CROWN_CLAIM_VS_LOCAL_SYNTHESIS",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING"
+    },
+    {
+      "cardId": "BOS.ACT01.AC.STAMPED_FORM_VS_PROOF.v1",
+      "title": "Same words, one stamp",
+      "unlock": { "mode": "ALL", "sourcePacketIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1", "BOS.ACT01.SRC.STAMP_SCHEDULE.v1"], "note": "Unlocks after comparing the proofs and reading the schedule." },
+      "citations": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1", "BOS.ACT01.SRC.STAMP_SCHEDULE.v1"],
+      "body": "The plain form and the stamped proof carry the same words. The schedule explains the difference: certain printed and legal papers now need the stamp to count. The tax rides on the paper, not on what it says.",
+      "linkedPromptId": "BOS.ACT01.PROMPT.STAMPED_VS_PLAIN",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING"
+    },
+    {
+      "cardId": "BOS.ACT01.AC.MEETING_TAVERN_RIDER.v1",
+      "title": "From one notice to a network",
+      "unlock": { "mode": "ALL", "sourcePacketIds": ["BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1"], "anyOf": ["BOS.ACT01.SRC.RIDER_NETWORK.v1"], "note": "Unlocks after the town-meeting notice plus the rider or tavern network." },
+      "citations": ["BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1", "BOS.ACT01.SRC.RIDER_NETWORK.v1"],
+      "body": "A single printed notice calls the town together. The same words travel on through taverns and out with the rider at the bell. One sheet becomes a network, and a network is how towns act as one.",
+      "linkedPromptId": "BOS.ACT01.PROMPT.NETWORK_SYNTHESIS",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING"
+    },
+    {
+      "cardId": "BOS.ACT01.AC.EFFIGY_DISTANT_OFFICE.v1",
+      "title": "A distant office made a public target",
+      "unlock": { "mode": "ALL", "sourcePacketIds": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1", "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1"], "note": "Unlocks after the effigy event and the no-consent broadside." },
+      "citations": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1", "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1"],
+      "body": "The broadside names the belief: no tax without consent. The effigy names a man to answer for it. Together they show how an argument in print becomes an action in the street, and how a distant appointment became the face of the whole quarrel.",
+      "linkedPromptId": "BOS.ACT01.PROMPT.POST_EFFIGY_SYNTHESIS",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING"
+    },
+    {
+      "cardId": "BOS.ACT01.AC.NONIMPORT_HOLD_TOGETHER.v1",
+      "title": "A boycott only bites if the town holds together",
+      "unlock": { "mode": "ALL", "sourcePacketIds": ["BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1"], "anyOf": ["BOS.ACT01.SRC.SARAH_MARKET.v1", "BOS.ACT01.SRC.THOMAS_LEDGER.v1"], "note": "Unlocks after the non-importation agreement plus a merchant/market source." },
+      "citations": ["BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1", "BOS.ACT01.SRC.SARAH_MARKET.v1", "BOS.ACT01.SRC.THOMAS_LEDGER.v1"],
+      "body": "The merchants' agreement promises to stop buying British goods until the acts are repealed. The market stall shows the cost of that promise. The plan works only if enough people are willing to pay it together.",
+      "linkedPromptId": "BOS.ACT01.PROMPT.NONIMPORT_TRANSFER",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Interior architectural room shell only, photoreal reference render from a camera standing INSIDE a small fully ENCLOSED room looking into a corner so two or three solid interior walls meet a beamed ceiling above; a single plain plank doorway is the only opening; NO open/cutaway wall, NO dollhouse roof, NO exterior facade, NO visible floor boards emphasised, and no furniture, people, text, or watermark; plain soft even studio lighting. Historically accurate 1765 Boston construction: a single narrow low-ceiling fully enclosed domestic room shell: four solid whitewashed lime-plaster interior walls (patched and smoke-stained) meeting an exposed beamed timber ceiling, a central brick chimney breast with an open hearth recess, two small multi-pane sash windows on one wall, and one plain plank entrance doorway; no floor, no open cutaway side, no exterior facade. Aged working building, not a museum reconstruction; surfaces suitable for Meshy image-to-3D and Blender assembly.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T00:53:37.393Z",
+  "files": [
+    "int-shell-domestic-narrow-a.png"
+  ]
+}

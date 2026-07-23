@@ -1,0 +1,33 @@
+{
+  "assetKey": "cargo-net-bundle",
+  "category": "prop",
+  "profile": "solid",
+  "fit": {
+    "targetSize": [
+      1.8,
+      1.2,
+      1.8
+    ],
+    "scale": 1
+  },
+  "note": "Bundled cargo net.",
+  "colliders": [
+    {
+      "id": "body",
+      "shape": "box",
+      "center": [
+        0,
+        0.6,
+        0
+      ],
+      "half": [
+        0.365,
+        0.6,
+        0.297
+      ],
+      "tags": [
+        "obstacle"
+      ]
+    }
+  ]
+}

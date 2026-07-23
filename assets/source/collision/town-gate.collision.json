@@ -1,0 +1,25 @@
+{
+  "assetKey": "town-gate",
+  "category": "prop",
+  "profile": "pending",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "frontAxis": "+x",
+  "pendingDoorContract": true,
+  "note": "Town gate arch. Its wings + clear opening are modelled in manifest.GATES/exteriorColliders; the arch opening itself is deferred to the door contract, so no box colliders are authored here yet.",
+  "colliders": [],
+  "compose": [
+    {
+      "type": "door",
+      "ref": "GATES:halfOpening",
+      "note": "clear arch opening owned by manifest.GATES"
+    },
+    {
+      "type": "traversal",
+      "ref": "GATES:wings",
+      "note": "wing palisades owned by manifest.GATES/BARRIERS"
+    }
+  ]
+}

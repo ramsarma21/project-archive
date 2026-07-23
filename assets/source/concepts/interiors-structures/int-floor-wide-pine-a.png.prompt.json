@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single flat modular floor TILE only, isolated and centered in frame on a plain light-gray studio background, top-down view at a very slight angle so its thin downward thickness is visible. No room, no walls, no ceiling, no door, no furniture, no people, no loose pieces, no text, no watermark. The tile must be one complete square, straight and unwarped, with clean parallel tileable edges and no raised border. Historically accurate 1765 Boston surface: a single flat modular wide-board pine floor section, hand-planed boards with visible iron nails, a dark worn traffic path across it, and hearth scorch marks with board repairs; a flat rectangular floor tile lying horizontally seen from above at a slight angle",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T00:58:14.219Z",
+  "files": [
+    "int-floor-wide-pine-a.png"
+  ]
+}

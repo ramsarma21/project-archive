@@ -91,6 +91,14 @@ tgt_rest_world_rot = {n: (TW_rot @ m.to_quaternion()) for n, m in tgt_rest_arm.i
 tgt_parent = {b.name: (b.parent.name if b.parent else None) for b in target.data.bones}
 hips_rest_world = TW @ tgt_rest_arm["Hips"].translation
 baked = []
+IN_PLACE_CLIPS = {
+    "idle", "walk", "run", "leftTurn", "rightTurn",
+    "reach", "search", "carry", "carryWalk", "handoff",
+    "crouchIdle", "crouchWalk", "crouchLeft", "crouchRight", "crouchToStand",
+    "work1", "work2", "cheer1", "cheer2",
+    "talk", "talk2", "talk3", "talk4", "argu1", "argue2",
+}
+HANDS = {"LeftHand", "RightHand"}
 
 for clip in CLIPS:
     path = os.path.join(MIXAMO_DIR, clip + ".fbx")
@@ -112,8 +120,10 @@ for clip in CLIPS:
     # Scale source so hips rest heights match in world space.
     bpy.context.view_layer.update()
     src_hips_rest_w = (source.matrix_world @ source.data.bones["mixamorig:Hips"].matrix_local).translation
-    if src_hips_rest_w.y > 1e-4:
-        source.scale = source.scale * (hips_rest_world.y / src_hips_rest_w.y)
+    # Blender is Z-up. Previous builds accidentally used Y, leaving source
+    # rigs at unrelated scales and corrupting root/hip motion.
+    if src_hips_rest_w.z > 1e-4:
+        source.scale = source.scale * (hips_rest_world.z / src_hips_rest_w.z)
     bpy.context.view_layer.update()
 
     # Source rest world rotations (after scaling; scale does not change rot).
@@ -136,11 +146,21 @@ for clip in CLIPS:
             spb = source.pose.bones.get(s_name)
             if spb is None or d_name not in tgt_rest_arm:
                 continue
+            # Meshy rigs have no finger chains. Holding the wrist at target
+            # rest for locomotion avoids exaggerated Mixamo wrist/finger
+            # gestures collapsing into the single hand bone.
+            if d_name in HANDS and clip in {"idle", "walk", "run", "leftTurn", "rightTurn"}:
+                continue
             world_rot = SW_rot_f @ spb.matrix.to_quaternion()
             delta = world_rot @ src_rest_world_rot[s_name].inverted()
             rec["rot"][d_name] = delta @ tgt_rest_world_rot[d_name]
         hips_w = SWm @ source.pose.bones["mixamorig:Hips"].matrix.translation
-        rec["hips"] = hips_rest_world + (hips_w - src_hips_rest_w)
+        hips_delta = hips_w - src_hips_rest_w
+        if clip in IN_PLACE_CLIPS:
+            # X/Y are Blender's ground plane; the world controller owns them.
+            hips_delta.x = 0
+            hips_delta.y = 0
+        rec["hips"] = hips_rest_world + hips_delta
         samples.append(rec)
 
     # Solve pose-local bases top-down in armature space and write keyframes.
@@ -162,20 +182,8 @@ for clip in CLIPS:
     TW_inv = TW.inverted()
     TW_inv_rot = TW_inv.to_quaternion()
 
-    curves = {}
-    def curve(path_key, count):
-        if path_key not in curves:
-            curves[path_key] = [new_act.fcurves.new(path_key, index=i) if hasattr(new_act, "fcurves") else None for i in range(count)]
-        return curves[path_key]
-
-    # Blender 5 layered actions: ensure legacy fcurves API exists via slot.
-    use_legacy = hasattr(new_act, "fcurves")
-    if not use_legacy:
-        # Create through keyframe_insert instead (slower but version-proof).
-        pass
-
     for fi, f in enumerate(frames):
-        arm_world = {}  # boneName -> (Matrix armature-space)
+        arm_pose = {}  # boneName -> final matrix in target armature space
         for name in order:
             if name not in tgt_rest_arm:
                 continue
@@ -186,7 +194,7 @@ for clip in CLIPS:
                 parent_m = Matrix.Identity(4)
                 parent_rest = Matrix.Identity(4)
             else:
-                parent_m = arm_world[parent]
+                parent_m = arm_pose[parent]
                 parent_rest = tgt_rest_arm[parent]
             local_rest = parent_rest.inverted() @ rest
             if desired_world_rot is None:
@@ -199,14 +207,15 @@ for clip in CLIPS:
                 else:
                     trans = (parent_m @ local_rest).translation
                 m = Matrix.Translation(trans) @ rot_arm
-            arm_world[name] = m
             pb = target.pose.bones[name]
-            basis = local_rest.inverted() @ (parent_m.inverted() @ m) if parent else rest.inverted() @ m
-            q = basis.to_quaternion()
-            loc = basis.translation
+            # Assign the final armature-space pose matrix and let Blender
+            # compute matrix_basis using its own rest/parent conversion. The
+            # previous handwritten basis formula was the source of the bent
+            # shoulders and wrists visible in-game.
             pb.rotation_mode = "QUATERNION"
-            pb.rotation_quaternion = q
-            pb.location = loc
+            pb.matrix = m
+            bpy.context.view_layer.update()
+            arm_pose[name] = pb.matrix.copy()
             pb.keyframe_insert("rotation_quaternion", frame=f)
             if name == "Hips":
                 pb.keyframe_insert("location", frame=f)

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A right-angle corner module of a timber wharf-edge rope rail: a stout corner mooring bollard post with thick hemp ropes sagging naturally in two perpendicular directions to adjacent bollard posts, on a plank edge beam, tarred weathered dock timber. Single game asset/module only, centered, complete object in frame, three-quarter orthographic-like view, plain light gray studio background, no landscape, no people, no text, no watermark. Historically accurate working-class Boston, August 1765, weathered materials, muted pewter/umber palette, no Victorian, modern, fantasy, or military elements. Tileable square module ends where applicable.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:19:57.304Z",
+  "files": [
+    "wharf-rope-rail-corner.png"
+  ]
+}

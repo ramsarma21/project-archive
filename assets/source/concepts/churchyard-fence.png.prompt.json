@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single section of colonial churchyard fence only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: one straight section of low wrought iron churchyard fence with simple spear-top pickets, two square granite stone posts at the ends, slight rust and age on the black iron, about chest height. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:09:25.833Z",
+  "files": [
+    "churchyard-fence.png"
+  ]
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "clip": "read",
+    "query": "Reading",
+    "path": "/Users/ramsarma/Projects/project-archive/assets/source/mixamo/read.fbx"
+  },
+  {
+    "clip": "sitIdle",
+    "query": "Sitting Idle",
+    "path": "/Users/ramsarma/Projects/project-archive/assets/source/mixamo/sitIdle.fbx"
+  },
+  {
+    "clip": "sitTalk",
+    "query": "Sitting Talking",
+    "path": "/Users/ramsarma/Projects/project-archive/assets/source/mixamo/sitTalk.fbx"
+  }
+]

@@ -1,0 +1,30 @@
+{
+  "assetKey": "rowboat",
+  "category": "ship",
+  "profile": "solid",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Small rowboat. Local-normalized hull; world placement owned by WaterDirector.",
+  "colliders": [
+    {
+      "id": "hull",
+      "shape": "box",
+      "center": [
+        0,
+        0.24,
+        0
+      ],
+      "half": [
+        0.911,
+        0.24,
+        0.332
+      ],
+      "tags": [
+        "obstacle",
+        "hull"
+      ]
+    }
+  ]
+}

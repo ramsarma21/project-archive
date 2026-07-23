@@ -37,8 +37,15 @@ export function initialWorldState(): WorldState {
       PIKE_PROOF: { custody: "ABIGAIL", condition: "UNPRINTED" },
       CARRIER_HANDBILLS: { custody: "ABIGAIL", condition: "INTACT", concealment: "EXPOSED" },
       CUSTOMHOUSE_NOTICE: { custody: "ABIGAIL", condition: "INTACT" },
-      PLAIN_WRAP: { custody: "ABIGAIL", condition: "INTACT" },
+      // The plain wrap is the concealment tool, not contraband: it rides
+      // folded away (HIDDEN) so a customs inspection never reads it as an
+      // exposed carried good. Without this, COMPLIED_CLEAR is unreachable.
+      PLAIN_WRAP: { custody: "ABIGAIL", condition: "INTACT", concealment: "HIDDEN" },
+      TAVERN_NOTE: { custody: "THOMAS", condition: "INTACT", concealment: "HIDDEN" },
+      DOCK_BARREL: { custody: "DOCKHAND", condition: "INTACT", concealment: "EXPOSED" },
+      FINAL_PAGE: { custody: "ABIGAIL", condition: "UNPRINTED" },
     },
+    printJobs: {},
     relationships: {
       ABIGAIL_TRUST: BASELINES.abigailTrust,
       ABIGAIL_RESPECT: BASELINES.abigailRespect,
@@ -63,14 +70,18 @@ export function initialWorldState(): WorldState {
 }
 
 export interface ClockAdvanceResult {
-  crossedWarning: WarningStage | null;
+  crossedWarnings: WarningStage[];
   reachedBoundary: boolean;
 }
 
-// Advance the clock by `units`. Returns any newly-crossed warning and whether
-// the fixed-event boundary was reached. Traversal (0) never advances.
+const WARNING_ORDER: WarningStage[] = ["FIRST", "SECOND", "FINAL"];
+
+// Advance the clock by `units`. Returns every newly-crossed warning, in order,
+// and whether the fixed-event boundary was reached. Traversal (0) never
+// advances. A large single cost can cross several thresholds at once; each
+// warning must still be voiced so time pressure never silently skips a stage.
 export function advanceClock(world: WorldState, units: number): ClockAdvanceResult {
-  if (units <= 0) return { crossedWarning: null, reachedBoundary: false };
+  if (units <= 0) return { crossedWarnings: [], reachedBoundary: false };
   const before = world.clock.spentUnits;
   const after = before + units;
   world.clock.spentUnits = after;
@@ -79,16 +90,20 @@ export function advanceClock(world: WorldState, units: number): ClockAdvanceResu
   const newStage = warningStageForUnits(after);
   world.clock.phase = phaseForUnits(after);
 
-  let crossedWarning: WarningStage | null = null;
+  const crossedWarnings: WarningStage[] = [];
   if (newStage !== prevStage && newStage !== "NONE") {
+    const prevIndex = WARNING_ORDER.indexOf(prevStage);
+    const newIndex = WARNING_ORDER.indexOf(newStage);
+    for (let i = prevIndex + 1; i <= newIndex; i += 1) {
+      crossedWarnings.push(WARNING_ORDER[i]!);
+    }
     world.clock.warningStage = newStage;
-    crossedWarning = newStage;
   }
 
   const reachedBoundary =
     before < DAY1_CLOCK.fixedEventBoundary && after >= DAY1_CLOCK.fixedEventBoundary;
 
-  return { crossedWarning, reachedBoundary };
+  return { crossedWarnings, reachedBoundary };
 }
 
 export function bumpInteractionOrdinal(world: WorldState): number {

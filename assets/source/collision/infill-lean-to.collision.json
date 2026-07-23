@@ -1,0 +1,39 @@
+{
+  "assetKey": "infill-lean-to",
+  "category": "building",
+  "profile": "solid",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "pendingDoorContract": true,
+  "note": "Imported density infill building; measured solid broad phase. Any usable doorway remains deferred to the door contract.",
+  "colliders": [
+    {
+      "id": "body",
+      "shape": "box",
+      "center": [
+        0,
+        0.724,
+        0
+      ],
+      "half": [
+        0.89,
+        0.724,
+        0.517
+      ],
+      "tags": [
+        "obstacle",
+        "building",
+        "density"
+      ]
+    }
+  ],
+  "compose": [
+    {
+      "type": "door",
+      "ref": "pendingDoorContract",
+      "note": "decorative density placement today; future threshold requires authored opening"
+    }
+  ]
+}

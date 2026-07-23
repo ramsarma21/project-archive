@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://project-archive/content/boston/act1/open-response-item.schema.json",
+  "title": "Boston Act 1 Open-Response Item",
+  "description": "Machine-readable contract for a single authored open-response item. Deliberately standalone (no dependency on packages/contracts) so content validates in isolation.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "itemId", "promptId", "itemVersion", "reasoningOperation", "concepts",
+    "prerequisites", "minSpacingInteractions", "placement", "repeatPolicy",
+    "expectedResponseWords", "sourcePacketIds", "claimEvidenceIds",
+    "studentPrompt", "accessiblePrompt", "rubricId", "classifierSchemaId",
+    "feedbackIds", "educatorEvidenceLabels", "offlineFallback", "review"
+  ],
+  "properties": {
+    "itemId": { "type": "string", "pattern": "^BOS\\.ACT01\\.OR\\." },
+    "promptId": { "type": "string", "pattern": "^BOS\\.ACT01\\.PROMPT\\." },
+    "itemVersion": { "type": "string" },
+    "reasoningOperation": { "enum": ["COMPARE", "TRANSFER", "PERSPECTIVE", "STRATEGY", "CAUSAL_SYNTHESIS"] },
+    "concepts": {
+      "type": "object",
+      "required": ["macro", "micro"],
+      "properties": {
+        "macro": { "type": "array", "items": { "type": "string" } },
+        "micro": { "type": "array", "items": { "type": "string", "pattern": "^MICRO\\." } }
+      }
+    },
+    "prerequisites": {
+      "type": "object",
+      "properties": {
+        "sourcePacketIds": { "type": "array", "items": { "type": "string" } },
+        "microConceptIds": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "minSpacingInteractions": { "type": "integer", "minimum": 2 },
+    "placement": {
+      "type": "object",
+      "required": ["kinds"],
+      "properties": {
+        "kinds": { "type": "array", "items": { "enum": ["NPC", "ARCHIVE_CONNECTION", "SOURCE_REFLECTION"] } },
+        "npcIds": { "type": "array", "items": { "enum": ["abigail", "thomas", "pike", "clarke", "rider", "sarah"] } },
+        "archiveCardId": { "type": "string" }
+      }
+    },
+    "repeatPolicy": { "enum": ["ONCE_PER_ACT", "SPACED_RETRIEVAL_LATER_CP", "NEVER_REPEAT"] },
+    "expectedResponseWords": {
+      "type": "object",
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "type": "integer", "minimum": 35 },
+        "max": { "type": "integer", "maximum": 90 }
+      }
+    },
+    "sourcePacketIds": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "claimEvidenceIds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claimId"],
+        "properties": {
+          "claimId": { "type": "string" },
+          "evidenceIds": { "type": "array", "items": { "type": "string" } },
+          "flag": { "enum": ["DOCUMENTED", "REPRESENTATIVE", "INFERENCE"] }
+        }
+      }
+    },
+    "inferenceNote": { "type": "string" },
+    "studentPrompt": { "type": "string", "minLength": 1 },
+    "accessiblePrompt": { "type": "string", "minLength": 1 },
+    "rubricId": { "type": "string" },
+    "classifierSchemaId": { "type": "string" },
+    "feedbackIds": {
+      "type": "object",
+      "required": ["STRONG_EVIDENCE", "PARTIAL_EVIDENCE", "MISSING_EVIDENCE", "OFF_TOPIC", "UNCLASSIFIED"],
+      "additionalProperties": { "type": "string" }
+    },
+    "educatorEvidenceLabels": { "type": "array", "items": { "type": "string" } },
+    "offlineFallback": {
+      "type": "object",
+      "required": ["feedbackId", "activity"],
+      "properties": {
+        "feedbackId": { "type": "string" },
+        "activity": { "type": "string" }
+      }
+    },
+    "review": {
+      "type": "object",
+      "required": ["authorStatus", "historicalReview", "teksPlaceholders"],
+      "properties": {
+        "authorStatus": { "const": "AUTHOR_DRAFT" },
+        "historicalReview": { "const": "HISTORICAL_REVIEW_PENDING" },
+        "curriculumReview": { "type": "string" },
+        "reviewer": { "type": ["string", "null"] },
+        "approvedBy": { "type": "null", "description": "Must remain null: this package never claims approval." },
+        "teksPlaceholders": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

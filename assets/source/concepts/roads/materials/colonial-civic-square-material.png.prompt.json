@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Create a perfectly overhead orthographic seamless square albedo texture based on this 1765 Boston civic paving. Use a continuous random field of finer irregular hand-laid granite setts and occasional broad flagstones with no framing border, no central motif, no repeated square panel, no perspective, slab sides, background, cast shadow or lighting gradient. Fill every pixel. Dark muddy joints, chipped wear, muted gray taupe. Every edge tiles invisibly, historically nonuniform and not modern paving.",
+  "size": "1024x1024",
+  "edit": "assets/source/concepts/roads/colonial-civic-square.png",
+  "generatedAt": "2026-07-21T16:48:24.821Z",
+  "files": [
+    "colonial-civic-square-material.png"
+  ]
+}

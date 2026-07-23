@@ -1,0 +1,37 @@
+{
+  "packageId": "PA.BOS.ACT01.OPENRESPONSE",
+  "packageVersion": "0.1.0-draft",
+  "title": "Boston Act 1 — Cognitive Learning Open-Response Content Package (author draft)",
+  "chapterId": "PA.SEA01.CH02.BOSTON.v1",
+  "missionDayId": "PA.SEA01.CH02.BOSTON.MD01.v1",
+  "checkpointId": "BOS.ACT01.CP1.v1",
+  "authoredWith": "Claude Opus 4.8",
+  "authoredAt": "2026-07-22",
+  "status": "AUTHOR_DRAFT",
+  "scope": "Content and validation only. This package authors optional NPC/Archive/source open-response reflections, Archive Connections cards, and expanded named-NPC follow-up dialogue. It contains NO runtime, API, or web-integration code and is safe to review independently of the presentation/rubric-runtime/grading-service work owned by other workers.",
+  "disclaimers": [
+    "NOT SME_APPROVED. No content here may be treated as curriculum-approved or historically confirmed until the review fields on each item flip.",
+    "Every item is AUTHOR_DRAFT and HISTORICAL_REVIEW_PENDING. TEKS tags are placeholders only.",
+    "Open responses are formative competence evidence only. Nothing here scores mastery, alters learner state, gates the story, or writes dialogue at runtime.",
+    "All player-facing text obeys the project fiction rule: no em dashes (Day-1.md §5 / Day-Template L12)."
+  ],
+  "act1ExposureCap": 4,
+  "act1ExposureCapNote": "A single player may be offered at most 4 of these open responses across Act 1. Eligibility is further bounded by per-item source prerequisites and minimum spacing, so most playstyles surface only 3 to 4.",
+  "files": {
+    "sources": "sources/sources.json",
+    "items": "prompts/open-response-items.json",
+    "rubrics": "rubrics/rubrics.json",
+    "feedback": "feedback/feedback.json",
+    "classifier": "classifier/classifier-schema.json",
+    "archiveConnections": "archive/connections.json",
+    "npcFollowups": "dialogue/npc-followups.json",
+    "allowlists": "allowlists.json"
+  },
+  "reasoningOperations": ["COMPARE", "TRANSFER", "PERSPECTIVE", "STRATEGY", "CAUSAL_SYNTHESIS"],
+  "reviewWorkflow": {
+    "historicalReview": "HISTORICAL_REVIEW_PENDING",
+    "curriculumReview": "PENDING",
+    "smeApproval": "NOT_REQUESTED",
+    "note": "Author draft only. Do not advance any approvalStatus to SME_APPROVED in this package; that is a separate reviewer action recorded elsewhere."
+  }
+}

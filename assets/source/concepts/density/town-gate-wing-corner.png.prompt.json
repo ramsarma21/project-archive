@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A right-angle corner wing module for a 1765 Boston timber town gate and palisade turning a corner: squared vertical oak timber palings with horizontal rails on grounded sill beams and a stout bracing corner post, blunt squared paling tops, weathered civic timber, squared tileable ends. Single game asset/module only, centered, complete object in frame, three-quarter orthographic-like view, plain light gray studio background, no landscape, no people, no text, no watermark. Historically accurate working-class Boston, August 1765, weathered materials, muted pewter/umber palette, no Victorian, modern, fantasy, or military elements. Tileable square module ends where applicable.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:19:02.419Z",
+  "files": [
+    "town-gate-wing-corner.png"
+  ]
+}

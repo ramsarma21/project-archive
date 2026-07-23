@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated civic-square stone paving module for 1765 Boston, suitable for image-to-3D. Entire square slab visible in slightly elevated three-quarter orthographic product view on plain neutral light gray background; no buildings, statues, people, props, lettering, or grass. Finer but still irregular hand-laid granite setts and broad flagstones, subdued gray and warm taupe, chipped weathered edges, muddy dark joints, subtle foot and cart polish, shallow drainage wear, historically Georgian civic forecourt, not modern uniform pavers. Low thin solid slab with exact straight seamless tileable edges.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:07:51.810Z",
+  "files": [
+    "colonial-civic-square.png"
+  ]
+}

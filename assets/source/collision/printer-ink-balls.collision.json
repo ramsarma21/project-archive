@@ -1,0 +1,11 @@
+{
+  "assetKey": "printer-ink-balls",
+  "category": "clutter",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Hand-held common-press ink-ball pair; a first-person press tool carried and animated (dab/rock) by the runtime, never a world collider. No ground blocker.",
+  "colliders": []
+}

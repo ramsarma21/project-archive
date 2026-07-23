@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single complete colonial pitch torch on a wooden pole only, centered, vertical, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no flame, no fire, no ground scenery, no people, no readable text, no watermark. A tall straight wooden pole about two meters with an iron cage cresset basket at the top holding tarred rope and pitch-soaked rags ready to burn, hand-forged iron bands, muted aged umber wood and dark iron. Historically plausible 1765 colonial night-march torch, unlit, single object, no modern or fantasy elements. Game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T21:50:01.901Z",
+  "files": [
+    "protest-torch.png"
+  ]
+}

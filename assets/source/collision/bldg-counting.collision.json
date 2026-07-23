@@ -1,0 +1,44 @@
+{
+  "assetKey": "bldg-counting",
+  "category": "building",
+  "profile": "solid",
+  "fit": {
+    "targetSize": [
+      12,
+      9,
+      9
+    ],
+    "scale": 1
+  },
+  "frontAxis": "+z",
+  "pendingDoorContract": true,
+  "note": "Provisional solid-body broad phase at the measured fitted footprint (NOT the nominal slot). Door/threshold openings are deferred to the door contract.",
+  "colliders": [
+    {
+      "id": "body",
+      "shape": "box",
+      "center": [
+        0,
+        3.785,
+        0
+      ],
+      "half": [
+        4.373,
+        3.785,
+        4.44
+      ],
+      "tags": [
+        "obstacle",
+        "building",
+        "broadphase"
+      ]
+    }
+  ],
+  "compose": [
+    {
+      "type": "door",
+      "ref": "pendingDoorContract",
+      "note": "front-wall opening to be cut when the door contract lands"
+    }
+  ]
+}

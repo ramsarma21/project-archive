@@ -47,6 +47,44 @@ export function MasteryPanel(props: { report: MasteryReport | null; onClose?: ()
               ))}
             </tbody>
           </table>
+          {r.engagedMicros && r.engagedMicros.length > 0 && (
+            <div className="engaged-micros">
+              <h3>From what this student explored</h3>
+              <p className="small muted">
+                Optional enrichment concepts the world delivered through this
+                student's own interactions (never required, never gating).
+              </p>
+              <div className="engaged-micro-chips">
+                {r.engagedMicros.map((m) => (
+                  <span className="badge badge-understood" key={m.microId}>{m.label}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {r.checkpoint && (
+            <div className="checkpoint-evidence">
+              <h3>Checkpoint One evidence</h3>
+              <ul className="clause-list">
+                {r.checkpoint.macroEvidence.map((row) => (
+                  <li key={row.conceptId} className="small">
+                    <span className={row.outcome === "SUPPORTED" ? "badge badge-mastered" : "badge badge-learning"}>
+                      {row.outcome === "SUPPORTED" ? "supported" : "revisit"}
+                    </span>{" "}
+                    <span className="mono">{row.conceptId}</span>
+                    {typeof row.hintsUsed === "number" && row.hintsUsed > 0
+                      ? ` · ${row.hintsUsed} hint${row.hintsUsed === 1 ? "" : "s"}`
+                      : " · clean"}
+                  </li>
+                ))}
+                {r.checkpoint.enrichment.included && (
+                  <li className="small muted">
+                    Enrichment answered: {r.checkpoint.enrichment.correctCount ?? 0}/
+                    {r.checkpoint.enrichment.responseCount} (bonus only)
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
           <div className="integrity">
             <strong>Integrity</strong>
             <div className="small muted">Run seed: <span className="mono">{r.integrity.variationRootSeedHex.slice(0, 16)}…</span></div>

@@ -1,0 +1,31 @@
+{
+  "assetKey": "table-chairs-set",
+  "category": "interior",
+  "profile": "solid",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "pendingInteriorPlacement": true,
+  "note": "Provisional bounds box in the raw-normalized local frame. Final footprint depends on per-room interior placement (owned by the interior worker); re-fit when that lands.",
+  "colliders": [
+    {
+      "id": "body",
+      "shape": "box",
+      "center": [
+        0,
+        0.461,
+        0
+      ],
+      "half": [
+        0.899,
+        0.461,
+        0.689
+      ],
+      "tags": [
+        "obstacle",
+        "provisional"
+      ]
+    }
+  ]
+}

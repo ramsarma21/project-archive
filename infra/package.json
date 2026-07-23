@@ -1,0 +1,25 @@
+{
+  "name": "@pa/infra",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "synth": "cdk synth",
+    "bootstrap": "cdk bootstrap",
+    "deploy": "node scripts/deploy.mjs",
+    "sync-google-secret": "node scripts/sync-google-secret.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "3.1092.0",
+    "@aws-sdk/client-sts": "3.1092.0",
+    "aws-cdk-lib": "2.261.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "aws-cdk": "2.1132.0",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3"
+  }
+}

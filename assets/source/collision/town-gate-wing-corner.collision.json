@@ -1,0 +1,48 @@
+{
+  "assetKey": "town-gate-wing-corner",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Imported right-angle density barrier; two finite perpendicular wings, never an oversized corner AABB.",
+  "colliders": [
+    {
+      "id": "wing-x",
+      "shape": "box",
+      "center": [
+        0,
+        0.629,
+        -0.419
+      ],
+      "half": [
+        0.951,
+        0.629,
+        0.152
+      ],
+      "tags": [
+        "obstacle",
+        "density-barrier"
+      ]
+    },
+    {
+      "id": "wing-z",
+      "shape": "box",
+      "center": [
+        -0.418,
+        0.629,
+        0
+      ],
+      "half": [
+        0.152,
+        0.629,
+        0.952
+      ],
+      "tags": [
+        "obstacle",
+        "density-barrier"
+      ]
+    }
+  ]
+}

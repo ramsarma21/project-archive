@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Convert this colonial gutter corner into a perfectly overhead orthographic square albedo map of one complete right-angle L-shaped stone drainage corner. Fill frame edge-to-edge; no perspective, slab sides, background, border, cast shadow or lighting gradient. Two shallow muddy stone-lined channels meet at 90 degrees, bordered by irregular chipped granite edging, muted gray-brown damp grime. Historic 1765 drainage, not a modern curb.",
+  "size": "1024x1024",
+  "edit": "assets/source/concepts/roads/colonial-gutter-corner.png",
+  "generatedAt": "2026-07-21T16:48:22.554Z",
+  "files": [
+    "colonial-gutter-corner-material.png"
+  ]
+}

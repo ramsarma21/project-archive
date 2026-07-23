@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A straight side-wing module for a 1765 Boston timber town gate and palisade: a run of squared vertical oak timber palings braced by two horizontal rails, standing on a grounded sill beam, weathered civic timber matching a colonial timber town gate, blunt squared tops (not sharpened fort stakes), squared tileable ends. Single game asset/module only, centered, complete object in frame, three-quarter orthographic-like view, plain light gray studio background, no landscape, no people, no text, no watermark. Historically accurate working-class Boston, August 1765, weathered materials, muted pewter/umber palette, no Victorian, modern, fantasy, or military elements. Tileable square module ends where applicable.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:18:40.926Z",
+  "files": [
+    "town-gate-wing-straight.png"
+  ]
+}

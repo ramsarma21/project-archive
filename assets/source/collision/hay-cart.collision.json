@@ -1,0 +1,33 @@
+{
+  "assetKey": "hay-cart",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": [
+      3.4,
+      2.2,
+      2.2
+    ],
+    "scale": 1
+  },
+  "note": "Loaded cart body; conservative box excluding wheel overhang.",
+  "colliders": [
+    {
+      "id": "bed",
+      "shape": "box",
+      "center": [
+        0,
+        0.799,
+        0
+      ],
+      "half": [
+        1.5,
+        0.671,
+        0.799
+      ],
+      "tags": [
+        "obstacle"
+      ]
+    }
+  ]
+}

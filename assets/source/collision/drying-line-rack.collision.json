@@ -1,0 +1,52 @@
+{
+  "assetKey": "drying-line-rack",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": [
+      2.6,
+      2.4,
+      1.6
+    ],
+    "scale": 1
+  },
+  "note": "Two end A-frames; the wash-lines between are pass-through dressing.",
+  "colliders": [
+    {
+      "id": "frame-l",
+      "shape": "capsule",
+      "a": [
+        -1.18,
+        0.08,
+        0
+      ],
+      "b": [
+        -1.18,
+        1.762,
+        0
+      ],
+      "radius": 0.08,
+      "tags": [
+        "obstacle"
+      ]
+    },
+    {
+      "id": "frame-r",
+      "shape": "capsule",
+      "a": [
+        1.18,
+        0.08,
+        0
+      ],
+      "b": [
+        1.18,
+        1.762,
+        0
+      ],
+      "radius": 0.08,
+      "tags": [
+        "obstacle"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single modular interior architectural asset only, centered, complete structure in frame, elevated three-quarter cutaway reference view, plain light gray studio background, soft even lighting, no exterior scenery, furniture, people, text, or watermark. Historically accurate 1765 Boston construction: a single freestanding timber-framed lime-plaster interior partition wall panel with one open doorway, showing scuffs, hairline cracks, and plaster patches; a single flat modular wall segment standing upright. Clearly separated structural parts suitable for Meshy image-to-3D and Blender assembly; aged working building, not a museum reconstruction.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:22:42.300Z",
+  "files": [
+    "int-partition-plaster-a.png"
+  ]
+}

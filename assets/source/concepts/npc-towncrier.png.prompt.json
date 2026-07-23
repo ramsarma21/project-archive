@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single full-body 1765 Boston town crier, standing in a relaxed A-pose, arms slightly away from body, facing camera, plain light gray background, no other objects, no text, head to toe fully in frame, muted period clothing colors: heavy caped dark brown wool greatcoat reaching below the knees, black tricorn hat, white neckcloth, dark knee breeches, gray stockings, sturdy black buckled shoes, weathered middle-aged face, empty hands, no handbell, no props",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:13:15.503Z",
+  "files": [
+    "npc-towncrier.png"
+  ]
+}

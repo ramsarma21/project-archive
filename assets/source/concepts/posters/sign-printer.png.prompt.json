@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on view of a weathered rectangular painted wooden trade sign board, the wood board completely fills the frame edge to edge. Painted on the old cracked boards: a black colonial hand printing press shown in profile inside a painted cream oval, on a deep madder red ground, small serif letters beneath the press read \"PRINTER\", faded oil paint, flaking edges, iron nail heads in the corners. Historically plausible 1765 colonial Boston hanging trade sign face, no background visible, no hands, no modern elements, no em dash characters.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T23:09:48.920Z",
+  "files": [
+    "sign-printer.png"
+  ]
+}

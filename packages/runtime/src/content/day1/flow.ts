@@ -1,6 +1,12 @@
-import { CONCEPTS, CONCEPT_PRIORITY, TIME_COST, type ConceptId } from "@pa/contracts";
+import {
+  CONCEPTS,
+  CONCEPT_PRIORITY,
+  TIME_COST,
+  normalizeConcealment,
+  type ConceptId,
+} from "@pa/contracts";
 import type { Ctx, Flow, Sub } from "../../engine/ctx.js";
-import { choose, freeRoam, focusRead, waitContinue, waitAck } from "../../engine/dsl.js";
+import { breathe, choose, freeRoam, focusRead, waitContinue, waitAck, waitDayEnd } from "../../engine/dsl.js";
 import { setRelationship } from "../../relationships.js";
 import {
   unlockDemonstration,
@@ -11,7 +17,16 @@ import { resolveOutcome } from "../../outcome.js";
 import { TEXT } from "./text.js";
 import { EXPOSURES, DEFICIT_FALLBACKS, OUTCOME_WEIGHTS, AMBIENT_SLOTS, HEADLINE_CHOICES, CAUSE_CHOICES, EVIDENCE_CHOICES, type ExposureDef } from "./tables.js";
 import { exposure, maybeRunSyncs, runInitialSync, runReexposureAndRetry } from "./learning.js";
-import { pressPull, effortHold, placeTack, stampSort, correctedChoice } from "./mechanics.js";
+import {
+  correctedChoice,
+  effortHold,
+  haulJob,
+  postJob,
+  printJob,
+  stampSort,
+} from "./mechanics.js";
+import { DAY1_CUES } from "./choreography.js";
+import { cp1CheckpointFlow } from "../checkpoints/cp1.js";
 
 const ERRANDS = ["THOMAS_CIRCULAR", "PIKE_PROOF", "CUSTOMHOUSE_NOTICE", "RIDER_HANDBILLS"] as const;
 type Errand = (typeof ERRANDS)[number];
@@ -53,7 +68,7 @@ export function* day1Flow(ctx: Ctx): Flow {
   let pressQuality: "CRISP" | "USABLE" | "SMUDGED" = ctx.pressQuality ?? "USABLE";
   pressQuality = ctx.pressQuality ?? "USABLE";
 
-  while (pending.size > 0 && ctx.world.clock.spentUnits < ctx.world.clock.fixedEventBoundary) {
+  while (pending.size > 0 && !ctx.dayBoundaryReached()) {
     ctx.world.controlState = "FREE_ROAM";
     const targets = [...pending].map((id) => ({
       targetId: id,
@@ -62,24 +77,36 @@ export function* day1Flow(ctx: Ctx): Flow {
     }));
     const ev = yield* freeRoam(ctx, targets, false);
     if (ev.type === "FREE_ROAM_IDLE") {
-      ctx.archive("Still four stops on the board. Pick one and move.");
+      ctx.archive(
+        pending.size === 1
+          ? "One stop left on the board. Keep moving."
+          : `Still ${pending.size} stops on the board. Pick one and move.`,
+      );
       continue;
     }
     if (ev.type !== "FREE_ROAM_GOTO" || !pending.has(ev.targetId as Errand)) continue;
     const sel = ev.targetId as Errand;
 
+    ctx.world.controlState = "INTERACTION";
+    // B4.5: the official town notice is encountered on the early street, at
+    // the door of the first stop the player chose. Selection comes first.
     if (firstSelection) {
       firstSelection = false;
       yield* townStampNoticeOffer(ctx);
     }
-
-    ctx.world.controlState = "INTERACTION";
     const outcome = yield* dispatchStop(ctx, sel);
+    if (
+      sel === "THOMAS_CIRCULAR" ||
+      sel === "PIKE_PROOF" ||
+      sel === "CUSTOMHOUSE_NOTICE"
+    ) {
+      yield* leaveInterior(ctx, `BOS.MD01.CUE.LEAVE_${sel}.v1`);
+    }
     outcomes[sel] = outcome;
     pending.delete(sel);
     ctx.world.objectives[sel] = outcome === "COMPLETED" ? "COMPLETED" : outcome;
 
-    if (!firstCompleted && outcome === "COMPLETED") {
+    if (!firstCompleted && outcome === "COMPLETED" && !ctx.dayBoundaryReached()) {
       firstCompleted = true;
       ctx.world.firstErrandCompletionRecorded = true;
       yield* freshBroadsideOffer(ctx);
@@ -87,7 +114,12 @@ export function* day1Flow(ctx: Ctx): Flow {
     const resolved = ERRANDS.length - pending.size;
     if (resolved === 2) playAmbient(ctx, AMBIENT_SLOTS.MID);
 
-    yield* maybeRunSyncs(ctx, false);
+    if (pending.size > 0 && !ctx.dayBoundaryReached()) {
+      yield* breathe(ctx, `BOS.MD01.CUE.BREATHER_AFTER_${sel}.v1`);
+    }
+    // Once the boundary has passed, no further optional work (including a
+    // street Sync) may be offered before the closure interrupt.
+    if (!ctx.dayBoundaryReached()) yield* maybeRunSyncs(ctx, false);
   }
 
   // ---- Dusk / shops-closed if errands remain ----
@@ -96,6 +128,7 @@ export function* day1Flow(ctx: Ctx): Flow {
     for (const id of pending) {
       outcomes[id] = "MISSED";
       ctx.world.objectives[id] = "MISSED";
+      applyMissedErrandConsequences(ctx, id);
     }
     pending.clear();
   }
@@ -110,6 +143,7 @@ export function* day1Flow(ctx: Ctx): Flow {
   yield* deficitClosure(ctx);
   yield* headlineDemonstrations(ctx);
   yield* dayClose(ctx);
+  yield* cp1CheckpointFlow(ctx);
 }
 
 // ---------------------------------------------------------------------------
@@ -121,54 +155,98 @@ function* opening(ctx: Ctx): Sub<void> {
   exposure(ctx, EXPOSURES.POLICY_B0);
   ctx.world.objectives.REPORT_TO_MERCER = "SELECTED";
   ctx.countSpacing();
-  yield* waitContinue(ctx, "Synchronize");
+  yield* waitContinue(ctx, "Synchronize", DAY1_CUES.ARCHIVE_INTAKE);
   ctx.emitClock();
 
   // traverse (free, 0 units)
   ctx.world.controlState = "FREE_ROAM";
   ctx.scene("BOSTON_STREET", TEXT.arrival);
-  const ev = yield* freeRoam(ctx, [{ targetId: "MERCER_PRESS", label: "Mercer's Press", marker: "GOLD" }], false);
+  const ev = yield* freeRoam(
+    ctx,
+    [{ targetId: "MERCER_PRESS", label: "Mercer's Press", marker: "GOLD" }],
+    false,
+    DAY1_CUES.ARRIVE_BOSTON,
+  );
   void ev;
   playAmbient(ctx, AMBIENT_SLOTS.EARLY);
 
-  // enter
+  // Choose how to enter while still standing outside the door. The selected
+  // approach animates the threshold; only then does the interior scene begin.
   ctx.world.controlState = "INTERACTION";
-  ctx.scene("MERCER_PRESS", TEXT.shopInside);
   const enter = yield* choose(ctx, "BOS.MD01.ACT.ENTER_MERCER.v1", "You reach the shop door.", [
     { choiceId: "KNOCK", label: "Knock first.", tags: [] },
     { choiceId: "WALK_IN", label: "Walk straight in.", tags: [] },
     { choiceId: "LOOK_FIRST", label: "Look through the window first.", tags: [] },
   ]);
+  ctx.scene("MERCER_PRESS", TEXT.shopInside);
   ctx.meet("Abigail Mercer");
   ctx.dialogue("ABIGAIL", TEXT.enterLines[enter as keyof typeof TEXT.enterLines], true);
+  // B2: she needs hands, not conversation. Walking straight in already got
+  // "Good, catch." as the greeting; the other approaches still get the toss.
+  if (enter !== "WALK_IN") ctx.dialogue("ABIGAIL", "Good, catch.", true);
   ctx.spendTime(TIME_COST.shortDialogue);
   ctx.countSpacing();
 
-  // catch sheet (effort)
-  yield* effortHold(ctx, "BOS.MD01.ACT.CATCH_SHEET.v1", "Catch the sheet Abigail tosses. Hold to steady it.");
+  // Compound print job (catch -> ink -> register -> pull -> peel). Abigail
+  // witnesses the work, so her Respect
+  // and her spoken read of the pull land immediately (B2). She never
+  // pre-instructs a reprint: a smudged proof goes in the bag as-is.
+  const print = yield* printJob(
+    ctx,
+    "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
+    "PIKE_PROOF",
+  );
+  const quality = print.quality;
+  // The atomic presenter result still represents the full catch beat plus the
+  // press work; preserve the authored Day-1 clock and Sync spacing exactly.
   ctx.spendTime(TIME_COST.shortDialogue);
   ctx.countSpacing();
-
-  // press pike proof (graded)
-  const quality = yield* pressPull(ctx, "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1");
   ctx.pressQuality = quality;
   ctx.world.jobObjects.PIKE_PROOF = { custody: "PLAYER", condition: quality };
+  ctx.dialogue(
+    "ABIGAIL",
+    quality === "CRISP"
+      ? "Clean pull. Careful hands. Good."
+      : quality === "USABLE"
+        ? "It'll serve. Watch the sweep next time."
+        : "Smudged. It goes in the bag as it is. Pike can take that up with you.",
+    true,
+  );
   const abRespect = quality === "CRISP" ? 45 : quality === "USABLE" ? 35 : 25;
   const dir = setRelationship(ctx.world, "ABIGAIL_RESPECT", abRespect);
-  ctx.emit({ kind: "RELATIONSHIP_CARD", character: "Abigail", dimension: "Respect", direction: dir.direction, label: `proof came out ${quality.toLowerCase()}` });
+  if (dir.changed) {
+    ctx.emit({
+      kind: "RELATIONSHIP_CARD",
+      character: "Abigail",
+      dimension: "Respect",
+      direction: dir.direction,
+      label: quality === "CRISP" ? "clean proof, steady hands" : "thin pull, smudged proof",
+    });
+  }
   ctx.world.pendingContingentEffects.push({ id: "PIKE_PROOF_QUALITY", relationshipId: "PIKE_RESPECT", cause: `proof ${quality}`, resolveOn: "MEET_PIKE" });
   ctx.spendTime(TIME_COST.gradedPressPull);
   ctx.countSpacing();
 
-  // compare stamp proofs (focus read, tracked HANDS_ON)
-  ctx.narrate("Two proofs sit side by side on the stone.");
-  const opened = yield* focusRead(ctx, "STAMP_PROOF_COMPARE", "Compare the two proofs", "The new proof carries a blank space the old one lacks.");
-  if (opened) {
-    ctx.emit({ kind: "READ_PANEL", objectId: "STAMP_PROOF_COMPARE", title: "The two proofs", body: TEXT.stampCompareBody });
-    ctx.narrate(`FIELD TAG\n${TEXT.stampFieldTag}`);
-    exposure(ctx, EXPOSURES.STAMP_B3);
-    ctx.spendTime(TIME_COST.focusRead);
+  // compare stamp proofs (focus read, tracked HANDS_ON). This is the day's
+  // mandatory Stamp carrier: it banks in the shop so no later failure can lose
+  // it. The read is still a deliberate action; declining just gets Abigail's
+  // insistence and re-presents until the player actually looks. The teaser
+  // invites; the difference itself is only revealed by actually reading.
+  while (true) {
+    const opened = yield* focusRead(
+      ctx,
+      "STAMP_PROOF_COMPARE",
+      "Compare the two proofs",
+      "Two proofs sit side by side on the stone.",
+      DAY1_CUES.STAMP_PROOF_COMPARE,
+    );
+    if (opened) break;
+    ctx.dialogue("ABIGAIL", "Look at them before you run anything anywhere. Side by side. Go on.");
   }
+  ctx.emit({ kind: "READ_PANEL", objectId: "STAMP_PROOF_COMPARE", title: "The two proofs", body: TEXT.stampCompareBody });
+  ctx.narrate(`FIELD TAG\n${TEXT.stampFieldTag}`);
+  exposure(ctx, EXPOSURES.STAMP_B3);
+  ctx.spendTime(TIME_COST.focusRead);
   ctx.countSpacing();
 
   // assign errands
@@ -181,19 +259,61 @@ function* opening(ctx: Ctx): Sub<void> {
   ctx.spendTime(TIME_COST.shortDialogue);
   ctx.countSpacing();
 
-  // exit shop (free roam)
+  yield* leaveInterior(ctx, DAY1_CUES.LEAVE_MERCER);
+}
+
+// ---------------------------------------------------------------------------
+function* leaveInterior(ctx: Ctx, cueId: string): Sub<void> {
   ctx.world.controlState = "FREE_ROAM";
-  const exit = yield* freeRoam(ctx, [{ targetId: "STREET", label: "Step out into the street", marker: "GOLD" }], false);
-  void exit;
+  yield* freeRoam(
+    ctx,
+    [{ targetId: "STREET", label: "Step outside", marker: "GOLD" }],
+    false,
+    cueId,
+  );
+  ctx.world.locationId = "BOSTON_STREET";
+}
+
+function* travelLeg(
+  ctx: Ctx,
+  targetId: string,
+  label: string,
+  cueId: string,
+): Sub<void> {
+  ctx.world.controlState = "FREE_ROAM";
+  yield* freeRoam(ctx, [{ targetId, label, marker: "GOLD" }], false, cueId);
+}
+
+// ---------------------------------------------------------------------------
+// Dusk closure applies each errand's authored terminal consequences. Learning
+// reroutes elsewhere; these world results are never restored.
+function applyMissedErrandConsequences(ctx: Ctx, errand: Errand): void {
+  if (errand === "PIKE_PROOF") {
+    // Pike was never met, so the morning proof-quality cascade is lost, not
+    // deferred. He stays a locked silhouette at baseline.
+    ctx.world.pendingContingentEffects = ctx.world.pendingContingentEffects.filter(
+      (effect) => effect.id !== "PIKE_PROOF_QUALITY",
+    );
+  }
+  if (errand === "RIDER_HANDBILLS") {
+    const cur = ctx.world.jobObjects.CARRIER_HANDBILLS;
+    if (cur && cur.custody === "PLAYER") {
+      setRelationship(ctx.world, "RIDER_TRUST", 20);
+      ctx.narrate("The rider is gone with the bell. The handbills stay in your bag.");
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
 function* townStampNoticeOffer(ctx: Ctx): Sub<void> {
-  const c = yield* choose(ctx, "BOS.MD01.ACT.TOWN_STAMP_NOTICE_OFFER.v1", "An official notice is nailed by the door.", [
-    { choiceId: "READ", label: "Stop and read the notice.", tags: [] },
-    { choiceId: "SKIP", label: "Leave it and get moving.", tags: [] },
-  ]);
-  if (c === "READ") {
+  const opened = yield* focusRead(
+    ctx,
+    "TOWN_STAMP_NOTICE",
+    "Official Stamp notice",
+    "An official notice is nailed by the door. The schedule takes effect on the first of November.",
+    "BOS.MD01.ACT.TOWN_STAMP_NOTICE_OFFER.v1",
+  );
+  if (opened) {
     ctx.emit({ kind: "READ_PANEL", objectId: "TOWN_STAMP_NOTICE", title: "Official notice", body: TEXT.streetSources.officialNotice });
     exposure(ctx, EXPOSURES.STAMP_B4_5);
     ctx.spendTime(TIME_COST.focusRead);
@@ -202,11 +322,14 @@ function* townStampNoticeOffer(ctx: Ctx): Sub<void> {
 }
 
 function* freshBroadsideOffer(ctx: Ctx): Sub<void> {
-  const c = yield* choose(ctx, "BOS.MD01.ACT.FRESH_BROADSIDE_OFFER.v1", "A broadside has just been pasted up. It wasn't there when you went in.", [
-    { choiceId: "READ", label: "Read the fresh broadside.", tags: [] },
-    { choiceId: "SKIP", label: "Move on.", tags: [] },
-  ]);
-  if (c === "READ") {
+  const opened = yield* focusRead(
+    ctx,
+    "FRESH_BROADSIDE",
+    "Fresh broadside",
+    "The paste is still wet. This was not here when you went inside.",
+    "BOS.MD01.ACT.FRESH_BROADSIDE_OFFER.v1",
+  );
+  if (opened) {
     ctx.emit({ kind: "READ_PANEL", objectId: "FRESH_BROADSIDE", title: "Fresh broadside", body: TEXT.streetSources.freshBroadside });
     exposure(ctx, EXPOSURES.REP_B5_5);
     ctx.spendTime(TIME_COST.focusRead);
@@ -232,13 +355,22 @@ function* thomasStop(ctx: Ctx): Sub<ErrandOutcome> {
   ctx.meet("Thomas");
   ctx.scene("THOMAS_COUNTINGHOUSE", TEXT.thomas.scene);
   ctx.dialogue("THOMAS", TEXT.thomas.putThere, true);
+  yield* effortHold(
+    ctx,
+    "BOS.MD01.ACT.THOMAS_CIRCULAR_HANDOFF.v1",
+    "Set the circular on Thomas's counter and hold until it lies flat.",
+  );
   const c = yield* choose(ctx, "BOS.MD01.ACT.THOMAS_DELIVERY.v1", "Thomas is hauling cloth from the front of his shop.", [
     { choiceId: "HELP", label: "Help him haul the cloth in.", tags: ["costs time", "earns a favor"] },
     { choiceId: "BEG_OFF", label: "Leave the circular and go.", tags: ["saves time", "no favor earned"] },
     { choiceId: "ASK", label: "Ask why he's so rattled.", tags: [] },
   ]);
   if (c === "HELP") {
-    yield* effortHold(ctx, "BOS.MD01.ACT.THOMAS_HAUL.v1", "Haul the heavy cloth bolts. Hold to carry.");
+    yield* haulJob(
+      ctx,
+      "BOS.MD01.ACT.THOMAS_HAUL.v1",
+      "Load the bolt, balance its weight, then thread it through the doorway.",
+    );
     ctx.dialogue("THOMAS", TEXT.thomas.learningLine);
     exposure(ctx, EXPOSURES.REP_B5);
     setRelationship(ctx.world, "THOMAS_OBLIGATION", 40);
@@ -266,6 +398,11 @@ function* pikeStop(ctx: Ctx): Sub<ErrandOutcome> {
   const q = ctx.pressQuality ?? "USABLE";
   let pikeRespect = q === "CRISP" ? 45 : q === "USABLE" ? 35 : 20;
   ctx.dialogue("PIKE", TEXT.pike.paperLine, true);
+  yield* effortHold(
+    ctx,
+    "BOS.MD01.ACT.PIKE_PROOF_HANDOFF.v1",
+    "Place the proof in Pike's hands without creasing the fresh impression.",
+  );
   ctx.dialogue("PIKE", TEXT.pike.warLine);
   exposure(ctx, EXPOSURES.POLICY_B6);
   exposure(ctx, EXPOSURES.STAMP_B6);
@@ -278,25 +415,51 @@ function* pikeStop(ctx: Ctx): Sub<ErrandOutcome> {
       { choiceId: "BRUSH_OFF", label: "Brush it off.", tags: ["loses respect"] },
     ]);
     if (c === "REPRINT") {
-      ctx.dialogue("NARRATOR", TEXT.pike.reprint);
-      ctx.narrate("You loop back to the press and run it again.");
-      const nq = yield* pressPull(ctx, "BOS.MD01.ACT.PIKE_REPRINT.v1");
+      ctx.dialogue("PLAYER", TEXT.pike.reprint);
+      yield* leaveInterior(ctx, "BOS.MD01.CUE.REPRINT_LEAVE_PIKE.v1");
+      yield* travelLeg(
+        ctx,
+        "MERCER_REPRINT",
+        "Return to Mercer's press",
+        "BOS.MD01.CUE.REPRINT_TO_MERCER.v1",
+      );
+      ctx.scene("MERCER_PRESS", "You bring the spoiled proof back to the press.");
+      const nq = (
+        yield* printJob(ctx, "BOS.MD01.ACT.PIKE_REPRINT.v1", "PIKE_REPRINT")
+      ).quality;
       ctx.pressQuality = nq;
       ctx.world.jobObjects.PIKE_PROOF = { custody: "PLAYER", condition: nq };
       pikeRespect = nq === "CRISP" ? 50 : nq === "USABLE" ? 45 : 25;
       ctx.spendTime(TIME_COST.fullReprintLoop);
+      yield* leaveInterior(ctx, "BOS.MD01.CUE.REPRINT_LEAVE_MERCER.v1");
+      yield* travelLeg(
+        ctx,
+        "PIKE_RETURN",
+        "Bring the fresh proof back to Pike",
+        "BOS.MD01.CUE.REPRINT_TO_PIKE.v1",
+      );
+      ctx.scene("PIKE_OFFICE", "You return with the fresh proof.");
     } else if (c === "OWN_IT") {
-      ctx.dialogue("NARRATOR", TEXT.pike.ownIt);
+      ctx.dialogue("PLAYER", TEXT.pike.ownIt);
       pikeRespect = 35;
+      ctx.spendTime(TIME_COST.shortDialogue);
     } else {
-      ctx.dialogue("NARRATOR", TEXT.pike.brushOff);
+      ctx.dialogue("PLAYER", TEXT.pike.brushOff);
       pikeRespect = 15;
+      ctx.spendTime(TIME_COST.shortDialogue);
     }
   }
   const dir = setRelationship(ctx.world, "PIKE_RESPECT", pikeRespect);
-  ctx.emit({ kind: "RELATIONSHIP_CARD", character: "Pike", dimension: "Respect", direction: dir.direction, label: "how the proof landed" });
+  if (dir.changed) {
+    ctx.emit({ kind: "RELATIONSHIP_CARD", character: "Pike", dimension: "Respect", direction: dir.direction, label: "how the proof landed" });
+  }
   ctx.world.pendingContingentEffects = ctx.world.pendingContingentEffects.filter((e) => e.id !== "PIKE_PROOF_QUALITY");
   ctx.world.jobObjects.PIKE_PROOF = { custody: "PIKE", condition: ctx.pressQuality ?? "USABLE" };
+  ctx.countSpacing();
+
+  // Pike is the Stamp hub: if his lines completed the exposure threshold, the
+  // Sync fires here, in his office, immediately arming the B6.5 sort below.
+  if (!ctx.dayBoundaryReached()) yield* maybeRunSyncs(ctx, false);
 
   // Stamp demonstration here if already understood
   if (ctx.learner[CONCEPTS.STAMP_SCOPE].understanding === "UNDERSTOOD" && ctx.learner[CONCEPTS.STAMP_SCOPE].demonstration !== "DEMONSTRATED") {
@@ -322,9 +485,17 @@ function* customHouseStop(ctx: Ctx): Sub<ErrandOutcome> {
     ctx.countSpacing();
   }
 
+  // The proclamation typically completes Policy: its Sync fires here in the
+  // hall, so a passed Sync folds the correct-column choice into the tack below.
+  if (!ctx.dayBoundaryReached()) yield* maybeRunSyncs(ctx, false);
+
   // post the notice (place/tack mechanic, gamified)
   const policyUnderstood = ctx.learner[CONCEPTS.POSTWAR_REVENUE].understanding === "UNDERSTOOD";
-  yield* placeTack(ctx, "BOS.MD01.ACT.POST_NOTICE.v1", "Line the notice up on the board and press to tack it.");
+  yield* postJob(
+    ctx,
+    "BOS.MD01.ACT.POST_NOTICE.v1",
+    "Line up the notice, then set both tacks.",
+  );
   if (policyUnderstood && ctx.learner[CONCEPTS.POSTWAR_REVENUE].demonstration !== "DEMONSTRATED") {
     yield* correctedChoice(ctx, "BOS.MD01.ACT.CUSTOMHOUSE_POLICY_DEMO.v1", "Post it under the right column. Why are these duties laid?", "ARCHIVE", [
       { choiceId: "REVENUE", label: "By order of Parliament, to raise revenue from the colonies.", correct: true },
@@ -351,50 +522,70 @@ function* riderStop(ctx: Ctx): Sub<ErrandOutcome> {
   if (ctx.world.routes.THOMAS_DOCK_ROUTE === "UNLOCKED") {
     routeOpts.push({ choiceId: "DOCK_ROUTE", label: "Thomas's dock shortcut.", tags: ["saves time", "safe"] });
   }
+  // Archive R4 decision-frame (route choice moves time/heat/identity state).
+  ctx.archive("(The main street is fast — and it is the watched one.)");
   const route = yield* choose(ctx, "BOS.MD01.ACT.RIDER_ROUTE_SELECT.v1", "The bell is close. Which way to the rider?", routeOpts);
-  ctx.spendTime(route === "BACK_LANES" ? TIME_COST.effortInteraction : TIME_COST.simpleHandoff);
+  // Authored route costs: main street 1, back lanes 2, Thomas's dock 0.
+  if (route === "MAIN_FAST") ctx.spendTime(TIME_COST.simpleHandoff);
+  else if (route === "BACK_LANES") ctx.spendTime(TIME_COST.effortInteraction);
+  if (ctx.world.clock.spentUnits >= ctx.world.clock.fixedEventBoundary) {
+    setRelationship(ctx.world, "RIDER_TRUST", 20);
+    ctx.narrate("The bell carries over the roofs before you clear the first lane. The rider will not wait.");
+    ctx.countSpacing();
+    return "MISSED";
+  }
 
-  // Clarke encounter (adjacent -> challenge)
-  yield* clarkeEncounter(ctx);
-
-  // Customs stop possible on main fast
-  let recognized = false;
-  let confiscated = false;
-  const concealed = ctx.world.jobObjects.CARRIER_HANDBILLS?.concealment === "CONCEALED";
+  // A route choice changes the playable path; it never resolves travel.
   if (route === "MAIN_FAST") {
-    const clear = resolveOutcome(ctx.attemptSeed, "B8_MAIN_FAST", [...OUTCOME_WEIGHTS.B8_MAIN_FAST]);
-    if (clear === "STOP_TRIGGERED") {
-      ctx.scene("CUSTOMS_POST", "");
-      ctx.dialogue("OFFICER", TEXT.customs.officer1, true);
-      ctx.dialogue("OFFICER", TEXT.customs.officer2);
-      exposure(ctx, EXPOSURES.STAMP_B9);
-      const c = yield* choose(ctx, "BOS.MD01.ACT.CUSTOMS_STOP.v1", "The officer blocks your way.", [
-        { choiceId: "COMPLY", label: "Comply and open the bag.", tags: ["risky"] },
-        { choiceId: "TALK", label: "Talk your way through.", tags: ["risky"] },
-        { choiceId: "SLIP", label: "Slip away into the crowd.", tags: ["risky", "draws attention"] },
-      ]);
-      const informed = ctx.world.attention.clarkeInformed;
-      if (c === "COMPLY") {
-        if (!concealed) confiscated = true;
-        else recognized = resolveOutcome(ctx.attemptSeed, "B9_COMPLY_CONCEALED", [...OUTCOME_WEIGHTS.B9_COMPLY_CONCEALED]) === "RECOGNIZED";
-      } else if (c === "TALK") {
-        const w = informed ? OUTCOME_WEIGHTS.B9_TALK_INFORMED : OUTCOME_WEIGHTS.B9_TALK_NORMAL;
-        const r = resolveOutcome(ctx.attemptSeed, informed ? "B9_TALK_INFORMED" : "B9_TALK_NORMAL", [...w]);
-        if (r === "SEARCH") {
-          if (!concealed) confiscated = true;
-          else recognized = true;
-        }
-      } else {
-        const r = resolveOutcome(ctx.attemptSeed, "B9_SLIP", [...OUTCOME_WEIGHTS.B9_SLIP]);
-        ctx.world.attention.watcherHeat += 1;
-        if (r === "CAUGHT") {
-          if (!concealed) confiscated = true;
-          else recognized = true;
-        }
-      }
-      ctx.spendTime(TIME_COST.shortDialogue);
-      ctx.countSpacing();
-    }
+    yield* travelLeg(
+      ctx,
+      "CLARKE_ROUTE",
+      "Take the main street past Clarke's shop",
+      "BOS.MD01.CUE.RIDER_MAIN_TO_CLARKE.v1",
+    );
+    // Clarke is unavoidable only on his street. Alternate routes never
+    // manufacture his encounter somewhere else.
+    yield* clarkeEncounter(ctx);
+  } else if (route === "BACK_LANES") {
+    yield* travelLeg(
+      ctx,
+      "RIDER_BACK_LANES",
+      "Follow the back lanes toward the rider",
+      "BOS.MD01.CUE.RIDER_BACK_LANES.v1",
+    );
+  } else {
+    yield* travelLeg(
+      ctx,
+      "RIDER_DOCK_GATE",
+      "Use Thomas's dock shortcut",
+      "BOS.MD01.CUE.RIDER_DOCK_ROUTE.v1",
+    );
+  }
+
+  // M2 owns B8/B9 physically. Main-fast always traverses the authored customs
+  // corridor; live cones/checkpoints may suspend this exact selected plan.
+  // No weighted table or generator-side stop is allowed to resolve the route.
+  let recognized = ctx.field.identity.recognized;
+  let confiscated =
+    ctx.world.jobObjects.CARRIER_HANDBILLS?.custody === "CONFISCATED";
+  const concealed =
+    ctx.world.jobObjects.CARRIER_HANDBILLS?.concealment !== undefined &&
+    normalizeConcealment(
+      ctx.world.jobObjects.CARRIER_HANDBILLS.concealment,
+    ) !== "EXPOSED";
+  if (route === "MAIN_FAST") {
+    yield* travelLeg(
+      ctx,
+      "CUSTOMS_ROUTE",
+      "Cross the watched customs checkpoint",
+      "BOS.MD01.CUE.RIDER_TO_CUSTOMS.v1",
+    );
+    // Preserve the authored Stamp/writs learning opportunity regardless of
+    // whether a field interrupt occurred or which bounded branch resolved it.
+    exposure(ctx, EXPOSURES.STAMP_B9);
+    recognized = ctx.field.identity.recognized;
+    confiscated =
+      ctx.world.jobObjects.CARRIER_HANDBILLS?.custody === "CONFISCATED";
   }
 
   if (confiscated) {
@@ -405,7 +596,20 @@ function* riderStop(ctx: Ctx): Sub<ErrandOutcome> {
     return "FAILED";
   }
 
+  if (ctx.world.clock.spentUnits >= ctx.world.clock.fixedEventBoundary) {
+    setRelationship(ctx.world, "RIDER_TRUST", 20);
+    ctx.narrate("The evening bell sounds before you reach the rider's post.");
+    ctx.countSpacing();
+    return "MISSED";
+  }
+
   // rider handoff
+  yield* travelLeg(
+    ctx,
+    "RIDER_POST_ROUTE",
+    "Reach the rider before the bell",
+    "BOS.MD01.CUE.RIDER_FINAL_LEG.v1",
+  );
   ctx.scene("RIDER_POST", TEXT.rider.scene);
   const hand = yield* choose(ctx, "BOS.MD01.ACT.RIDER_HANDOFF.v1", "The rider waits, reins in hand.", [
     { choiceId: "QUICK", label: "Hand it over quick.", tags: ["saves time", "risky"] },
@@ -413,22 +617,45 @@ function* riderStop(ctx: Ctx): Sub<ErrandOutcome> {
   ]);
   let deliveredUnseen = true;
   if (hand === "QUICK") {
-    const heatKey = ctx.world.attention.watcherHeat > 0 ? "B10_QUICK_HIGH_HEAT" : "B10_QUICK_LOW_HEAT";
+    yield* effortHold(
+      ctx,
+      "BOS.MD01.ACT.RIDER_QUICK_HANDOFF.v1",
+      "Step in and press the bundle into the rider's hand.",
+    );
+    const heatKey =
+      ctx.field.heat.band === "CALM"
+        ? "B10_QUICK_LOW_HEAT"
+        : "B10_QUICK_HIGH_HEAT";
     const r = resolveOutcome(ctx.attemptSeed, heatKey, [...OUTCOME_WEIGHTS[heatKey]]);
     deliveredUnseen = r === "DELIVERED_UNSEEN";
     ctx.narrate(TEXT.rider.quickComplete);
     ctx.spendTime(TIME_COST.quickHandoff);
   } else {
+    yield* effortHold(
+      ctx,
+      "BOS.MD01.ACT.RIDER_GAP_HANDOFF.v1",
+      "Watch the crossing traffic. Hold until the handoff gap opens.",
+    );
     deliveredUnseen = true;
+    const missedBell = ctx.spendTime(TIME_COST.waitForGap);
+    if (missedBell) {
+      setRelationship(ctx.world, "RIDER_TRUST", 20);
+      ctx.narrate("The gap opens as the bell rings. The rider is already moving.");
+      ctx.countSpacing();
+      return "MISSED";
+    }
     ctx.narrate(TEXT.rider.waitComplete);
-    ctx.spendTime(TIME_COST.waitForGap);
   }
   const damaged = recognized;
   const riderTrust = damaged ? 30 : deliveredUnseen ? 50 : 40;
-  setRelationship(ctx.world, "RIDER_TRUST", riderTrust);
-  ctx.emit({ kind: "RELATIONSHIP_CARD", character: "Rider", dimension: "Trust", direction: "UP", label: damaged ? "delivered, but marked" : deliveredUnseen ? "delivered clean" : "delivered, seen" });
-  if (recognized) ctx.world.attention.recognized = true;
-  ctx.world.jobObjects.CARRIER_HANDBILLS = { custody: "RIDER", condition: damaged ? "CREASED" : "INTACT", concealment: concealed ? "CONCEALED" : "EXPOSED" };
+  const riderDir = setRelationship(ctx.world, "RIDER_TRUST", riderTrust);
+  ctx.emit({ kind: "RELATIONSHIP_CARD", character: "Rider", dimension: "Trust", direction: riderDir.direction, label: damaged ? "delivered, but marked" : deliveredUnseen ? "delivered clean" : "delivered, seen" });
+  if (recognized || (!deliveredUnseen && !damaged)) ctx.world.attention.recognized = recognized;
+  ctx.world.jobObjects.CARRIER_HANDBILLS = {
+    custody: "RIDER",
+    condition: damaged ? "CREASED" : "INTACT",
+    concealment: concealed ? "WRAPPED" : "EXPOSED",
+  };
   ctx.meet("The rider");
   ctx.countSpacing();
   return "COMPLETED";
@@ -439,29 +666,42 @@ function* clarkeEncounter(ctx: Ctx): Sub<void> {
   ctx.scene("CLARKE_DOORWAY", TEXT.clarke.scene);
   ctx.dialogue("CLARKE", TEXT.clarke.liberty);
   ctx.dialogue("CLARKE", TEXT.clarke.challenge, true);
+  // Archive R4 decision-frame: pose the historical consideration, never the
+  // answer (Boston-Archive-Spec §5 — this choice moves attention/heat state).
+  ctx.archive("(Clarke is a Loyalist. He reports what he sees.)");
   const c = yield* choose(ctx, "BOS.MD01.ACT.CLARKE_CHALLENGE.v1", "Clarke eyes what you're carrying.", [
     { choiceId: "CALM_CONCEAL", label: "\"Overruns for the rider.\" Tuck the bundle under the plain wrap.", tags: ["reads as harmless"] },
     { choiceId: "CURT", label: "\"None of your business.\"", tags: ["risky", "reads as a threat"] },
     { choiceId: "HEAR_OUT", label: "\"What do you make of the crowd?\"", tags: [] },
   ]);
   if (c === "CALM_CONCEAL") {
-    ctx.dialogue("NARRATOR", `Player: "${TEXT.clarke.calmCover}"`);
+    ctx.dialogue("PLAYER", TEXT.clarke.calmCover);
+    yield* effortHold(
+      ctx,
+      "BOS.MD01.ACT.CONCEAL_HANDBILLS.v1",
+      "Fold the plain wrap over the handbills and hold to tuck the edges.",
+    );
     const cur = ctx.world.jobObjects.CARRIER_HANDBILLS ?? { custody: "PLAYER" as const, condition: "INTACT" as const };
     ctx.world.jobObjects.CARRIER_HANDBILLS = { ...cur, concealment: "CONCEALED" };
     exposure(ctx, EXPOSURES.REP_B7);
-    setRelationship(ctx.world, "CLARKE_POLITICAL_READ", -20, true);
+    const clarkeDir = setRelationship(ctx.world, "CLARKE_POLITICAL_READ", -20, true);
+    ctx.emit({ kind: "RELATIONSHIP_CARD", character: "Clarke", dimension: "Political read", direction: clarkeDir.direction, label: "read you as harmless" });
     ctx.world.attention.clarkeInformed = false;
+    // The fold is a real hands-on action, not a reply.
+    ctx.spendTime(TIME_COST.effortInteraction);
   } else if (c === "CURT") {
-    ctx.dialogue("NARRATOR", `Player: "${TEXT.clarke.curt}"`);
+    ctx.dialogue("PLAYER", TEXT.clarke.curt);
     ctx.dialogue("CLARKE", TEXT.clarke.view);
-    setRelationship(ctx.world, "CLARKE_POLITICAL_READ", 35, true);
+    const clarkeDir = setRelationship(ctx.world, "CLARKE_POLITICAL_READ", 35, true);
+    ctx.emit({ kind: "RELATIONSHIP_CARD", character: "Clarke", dimension: "Political read", direction: clarkeDir.direction, label: "read you as a threat" });
     ctx.world.attention.clarkeInformed = true;
+    ctx.spendTime(TIME_COST.shortDialogue);
   } else {
-    ctx.dialogue("NARRATOR", `Player: "${TEXT.clarke.hearOut}"`);
+    ctx.dialogue("PLAYER", TEXT.clarke.hearOut);
     ctx.dialogue("CLARKE", TEXT.clarke.view);
     setRelationship(ctx.world, "CLARKE_POLITICAL_READ", 10, true);
+    ctx.spendTime(TIME_COST.shortDialogue);
   }
-  ctx.spendTime(TIME_COST.shortDialogue);
   ctx.countSpacing();
 }
 
@@ -469,31 +709,44 @@ function* clarkeEncounter(ctx: Ctx): Sub<void> {
 function* crowdApproach(ctx: Ctx): Sub<void> {
   ctx.world.controlState = "FREE_ROAM";
   playAmbient(ctx, AMBIENT_SLOTS.LATE);
+  yield* freeRoam(
+    ctx,
+    [{ targetId: "CROWD", label: "Reach the gathering at the great elm", marker: "GOLD" }],
+    false,
+    "BOS.MD01.CUE.WALK_TO_LIBERTY_TREE.v1",
+  );
   ctx.scene("LIBERTY_TREE_APPROACH", TEXT.crowd.scene);
   ctx.archive(TEXT.crowd.archiveRedirect);
 
-  // high-visibility crowd board (optional read; reroute for Representation)
-  const opened = yield* focusRead(ctx, "CROWD_BOARD", "Broadside on the board", "Right in your path. A single line.");
-  if (opened) {
-    ctx.emit({ kind: "READ_PANEL", objectId: "CROWD_BOARD", title: "Broadside", body: TEXT.streetSources.lateCrowdBroadside });
-    exposure(ctx, EXPOSURES.REP_B10_4);
-    ctx.spendTime(TIME_COST.focusRead);
-    ctx.countSpacing();
+  // High-visibility crowd board. Optional pre-boundary work only: once the
+  // day's units are gone, nothing may delay the fixed event any further and
+  // the Representation reroute falls to B11.5.
+  if (!ctx.dayBoundaryReached()) {
+    const opened = yield* focusRead(ctx, "CROWD_BOARD", "Broadside on the board", "Right in your path. A single line.");
+    if (opened) {
+      ctx.emit({ kind: "READ_PANEL", objectId: "CROWD_BOARD", title: "Broadside", body: TEXT.streetSources.lateCrowdBroadside });
+      exposure(ctx, EXPOSURES.REP_B10_4);
+      ctx.spendTime(TIME_COST.focusRead);
+      ctx.countSpacing();
+    }
   }
 
   // synthesis / catch-up syncs if time remains
-  if (ctx.world.clock.spentUnits < ctx.world.clock.fixedEventBoundary) {
+  if (!ctx.dayBoundaryReached()) {
     yield* maybeRunSyncs(ctx, false);
     ctx.archive(TEXT.archiveSynthesis);
+    ctx.spendTime(TIME_COST.shortDialogue);
     // observe crowd forming: advance to boundary (authored waiting activity)
     const remaining = ctx.world.clock.fixedEventBoundary - ctx.world.clock.spentUnits;
     if (remaining > 0) ctx.spendTime(remaining);
-    ctx.world.objectives.OBSERVE_CROWD = "COMPLETED";
     yield* effortHold(ctx, "BOS.MD01.ACT.OBSERVE_CROWD_FORMING.v1", "Hold to watch the crowd gather at the elm.");
+    ctx.world.objectives.OBSERVE_CROWD = "COMPLETED";
   }
 }
 
 function* eventOnramp(ctx: Ctx): Sub<void> {
+  // Archive R4 decision-frame (attention/sympathy state moves on this choice).
+  ctx.archive("(The watch remembers faces at the front of a crowd.)");
   const c = yield* choose(ctx, "BOS.MD01.ACT.EVENT_ONRAMP.v1", "The crowd thickens around the great elm.", [
     { choiceId: "CLIMB", label: "Climb for a clear vantage.", tags: ["costs a little time", "safe"] },
     { choiceId: "PUSH", label: "Push toward the front.", tags: ["risky", "draws attention"] },
@@ -514,16 +767,22 @@ function* fixedEvent(ctx: Ctx): Sub<void> {
   ctx.narrate(`FIELD TAG\n${TEXT.crowd.libertyTreeTag}`);
   ctx.narrate(TEXT.crowd.eventNarration);
   exposure(ctx, EXPOSURES.REP_B11);
+  yield* waitContinue(ctx, undefined, "BOS.MD01.CUE.FIXED_EVENT_MARCH.v1");
+  // The documented August 14 record continues: the Kilby Street building, the
+  // Fort Hill bonfire, and Oliver's house. The runner witnesses; nothing here
+  // is playable or alterable.
+  ctx.narrate(TEXT.crowd.eventNarration2);
+  ctx.archive(TEXT.crowd.eventAftermath);
   ctx.world.fixedEvent = "COMPLETE";
   ctx.world.objectives.RETURN_TO_PRESS = "SELECTED";
   ctx.countSpacing();
-  yield* waitContinue(ctx);
+  yield* waitContinue(ctx, undefined, "BOS.MD01.CUE.FIXED_EVENT_AFTERMATH.v1");
 }
 
 // ---------------------------------------------------------------------------
 function* returnToMercer(ctx: Ctx, outcomes: Record<string, ErrandOutcome>): Sub<void> {
   ctx.world.controlState = "FREE_ROAM";
-  yield* freeRoam(ctx, [{ targetId: "MERCER_PRESS", label: "Back to Mercer's Press", marker: "GOLD" }], false);
+  yield* freeRoam(ctx, [{ targetId: "MERCER_RETURN", label: "Back to Mercer's Press", marker: "GOLD" }], false);
   ctx.world.controlState = "INTERACTION";
   ctx.scene("MERCER_PRESS", "");
 
@@ -624,7 +883,23 @@ function* headlineDemonstrations(ctx: Ctx): Sub<void> {
 }
 
 function* dayClose(ctx: Ctx): Sub<void> {
-  yield* effortHold(ctx, "BOS.MD01.ACT.FINAL_PRESS_PULL.v1", "Lock the type, ink it, and pull the final sheet.");
+  const finalPrint = yield* printJob(
+    ctx,
+    "BOS.MD01.ACT.FINAL_PRESS_PULL.v1",
+    "FINAL_PAGE",
+  );
+  ctx.world.jobObjects.FINAL_PAGE = {
+    custody: "ABIGAIL",
+    condition: finalPrint.quality,
+  };
+  ctx.dialogue(
+    "ABIGAIL",
+    finalPrint.quality === "CRISP"
+      ? "That impression will hold the street. Hang it clean."
+      : finalPrint.quality === "USABLE"
+        ? "Readable and true. It goes on the line."
+        : "The edge is smudged, but the evidence still reads. File the craft result and hang it.",
+  );
   ctx.narrate(TEXT.headline.finalPull);
   ctx.emit({ kind: "READ_PANEL", objectId: "FINAL_PAGE", title: "Tomorrow's front page", body: TEXT.headline.finalPage });
   ctx.world.objectives.SET_HEADLINE = "COMPLETED";
@@ -645,5 +920,7 @@ function* dayClose(ctx: Ctx): Sub<void> {
       routesUnlocked: ctx.routesUnlocked,
     },
   });
-  yield* waitContinue(ctx, "Finish the day");
+  // Confirming the Day Record enters CP1. The save remains IN_PROGRESS until
+  // the checkpoint is committed and the Act transition is recorded.
+  yield* waitDayEnd(ctx);
 }

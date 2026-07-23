@@ -1,0 +1,30 @@
+{
+  "assetKey": "wharf-rope-rail-straight",
+  "category": "prop",
+  "profile": "solid",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Finite imported density barrier in asset-local X; placement scale/yaw is applied later.",
+  "colliders": [
+    {
+      "id": "panel",
+      "shape": "box",
+      "center": [
+        0,
+        0.273,
+        0
+      ],
+      "half": [
+        0.933,
+        0.273,
+        0.112
+      ],
+      "tags": [
+        "obstacle",
+        "density-barrier"
+      ]
+    }
+  ]
+}

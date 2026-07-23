@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated colonial paved-road end-cap and gate transition module, 1765 Boston, for image-to-3D. Full rectangular 2:1 slab visible in elevated three-quarter orthographic product view on plain light gray neutral background, no scene, buildings, gate, people, text, props, or grass. At one short end: irregular worn granite setts and wagon tracks; toward the other short end: stones become sparser and naturally merge into compacted gravel and muddy earth, with broken edging stones and grime. Muted gray-brown, historically rough, no modern pavers. Thin solid underside, exact straight tileable side and paved-end edges.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:07:54.966Z",
+  "files": [
+    "colonial-street-endcap.png"
+  ]
+}

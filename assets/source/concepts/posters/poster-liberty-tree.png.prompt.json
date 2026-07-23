@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on scan of a crude 1765 colonial woodcut bill, aged cheap rag paper, rough letterpress. A large crude woodcut print of a great spreading elm tree fills the middle of the sheet, heavy black ink lines, simple and folk-art crude. Above the tree bold capitals read \"THE TREE OF LIBERTY\". Below the tree one line of serif type reads \"Planted in the Year 1646, it flourisheth still\". Rough uneven inking, slight foxing, tack holes, a torn bottom corner. The paper texture extends past all four edges of the frame so no background is visible, no hands, no modern elements, no em dash characters anywhere.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T22:49:44.624Z",
+  "files": [
+    "poster-liberty-tree.png"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated L-shaped colonial stone gutter corner module, 1765 Boston, for image-to-3D. Entire right-angle piece visible in elevated three-quarter orthographic product view on plain neutral light gray background; no street scene, buildings, people, props, text, or grass. Two shallow concave stone-lined drainage channels meet at a rough 90-degree corner, bordered by hand-cut irregular granite edging stones, chipped edges, muddy dark joints, damp grime, muted gray-brown. Not a modern curb. Low thin solid underside, exact straight tileable ends.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:07:52.726Z",
+  "files": [
+    "colonial-gutter-corner.png"
+  ]
+}

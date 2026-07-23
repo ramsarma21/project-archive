@@ -1,0 +1,48 @@
+{
+  "assetKey": "yard-fence-corner",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Imported right-angle density barrier; two finite perpendicular wings, never an oversized corner AABB.",
+  "colliders": [
+    {
+      "id": "wing-x",
+      "shape": "box",
+      "center": [
+        0,
+        0.567,
+        -0.403
+      ],
+      "half": [
+        0.949,
+        0.567,
+        0.147
+      ],
+      "tags": [
+        "obstacle",
+        "density-barrier"
+      ]
+    },
+    {
+      "id": "wing-z",
+      "shape": "box",
+      "center": [
+        -0.418,
+        0.567,
+        0
+      ],
+      "half": [
+        0.152,
+        0.567,
+        0.917
+      ],
+      "tags": [
+        "obstacle",
+        "density-barrier"
+      ]
+    }
+  ]
+}

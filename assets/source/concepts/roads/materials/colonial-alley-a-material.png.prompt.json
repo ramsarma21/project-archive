@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Convert this rough colonial alley reference into a perfectly overhead orthographic seamless square albedo texture. Surface only, filling every pixel; remove perspective, slab edges, background, border and directional lighting. Preserve small uneven fieldstones, broken setts, dirty muddy center drainage wear, dark wet joints and service-lane grime at believable scale. Tile seamlessly on every edge. Desaturated charcoal gray-brown, no greenery and no modern paving.",
+  "size": "1024x1024",
+  "edit": "assets/source/concepts/roads/colonial-alley-a.png",
+  "generatedAt": "2026-07-21T16:45:34.209Z",
+  "files": [
+    "colonial-alley-a-material.png"
+  ]
+}

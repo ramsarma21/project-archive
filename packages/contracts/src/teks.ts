@@ -39,6 +39,37 @@ export const CONCEPT_TEKS: Record<ConceptId, TeksClause> = {
   [CONCEPTS.POSTWAR_REVENUE]: { id: "POSTWAR_POLICY", code: "8.4(A)", text: "British economic policies following the French and Indian War" },
 };
 
+// ============================================================================
+// Concept classification registry (Boston-Learning-Ledger-Spec §3). Static
+// content metadata — NOT per-student state. Lets the runtime route a concept:
+//   MACRO_GATED -> full lifecycle + demonstration (the 3 macros + event anchors)
+//   PATTERN     -> taught by a mechanic; Archive bridge only if archiveSafetyNet
+//   MICRO       -> enrichment; engaged-only; debrief-sampled, never gates
+// ============================================================================
+
+export type ConceptClass = "MACRO_GATED" | "PATTERN" | "MICRO";
+export type ConceptRecurrence = "ONCE" | "SPIRAL"; // ONCE = event-anchored; SPIRAL = reinforced across chapters
+
+export interface ConceptMeta {
+  conceptId: string;
+  class: ConceptClass;
+  recurrence: ConceptRecurrence;
+  seIds: string[]; // STAAR SE codes, e.g. ["8.4A"]
+  chapterOwner: string; // "BOSTON" | "PHILADELPHIA" | ...
+  archiveSafetyNet?: boolean; // dual-delivered high-STAAR pattern → R5 bridge allowed
+}
+
+export type ConceptRegistry = Record<string, ConceptMeta>;
+
+// The 3 Day-1 macros are the seed of the registry; micros/patterns are added
+// as the vertical slice wires them (additive; unknown concepts default to the
+// existing MACRO_GATED lifecycle so nothing regresses).
+export const CONCEPT_META: ConceptRegistry = {
+  [CONCEPTS.STAMP_SCOPE]: { conceptId: CONCEPTS.STAMP_SCOPE, class: "MACRO_GATED", recurrence: "ONCE", seIds: ["8.4A"], chapterOwner: "BOSTON" },
+  [CONCEPTS.REPRESENTATION]: { conceptId: CONCEPTS.REPRESENTATION, class: "MACRO_GATED", recurrence: "SPIRAL", seIds: ["8.4A"], chapterOwner: "BOSTON", archiveSafetyNet: true },
+  [CONCEPTS.POSTWAR_REVENUE]: { conceptId: CONCEPTS.POSTWAR_REVENUE, class: "MACRO_GATED", recurrence: "ONCE", seIds: ["8.4A"], chapterOwner: "BOSTON" },
+};
+
 // ---- Static coverage map for Day 1 (mirrors Day-1.md s.2C matrix). ----
 export interface CoverageExposure {
   beat: string;
@@ -134,6 +165,18 @@ export interface MasteryReport {
   masteredCount: number;
   requiredCount: number;
   concepts: MasteryConceptRow[];
+  // Engaged optional enrichment (micros the world actually delivered to this
+  // student) — surfaced so the mastery panel can show the alive-world learning
+  // alongside the required spine.
+  engagedMicros?: { microId: string; label: string }[];
+  checkpoint?: {
+    checkpointId: string;
+    status: string;
+    bankVersion: string | null;
+    formId: string | null;
+    macroEvidence: { conceptId: string; outcome: "SUPPORTED" | "REVISIT"; hintsUsed?: number }[];
+    enrichment: { included: boolean; responseCount: number; correctCount?: number };
+  };
   integrity: {
     variationRootSeedHex: string;
     committedEventCount: number;

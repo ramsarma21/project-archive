@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single full-body 1765 Boston civil customs tax clerk, standing in a relaxed A-pose, arms slightly away from body, facing camera, plain light gray background, no other objects, no text, head to toe fully in frame, muted period clothing colors: sober dark charcoal wool suit coat with matching waistcoat, white linen shirt and neat white stock, black tricorn hat, dark knee breeches, gray stockings, polished black buckled shoes, civil servant not soldier, no uniform, empty hands, no ledger, no props",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:13:09.516Z",
+  "files": [
+    "npc-taxclerk.png"
+  ]
+}

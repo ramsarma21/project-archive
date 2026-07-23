@@ -1,0 +1,122 @@
+{
+  "rubricSetId": "PA.BOS.ACT01.RUBRICS",
+  "rubricSetVersion": "0.1.0-draft",
+  "status": "AUTHOR_DRAFT",
+  "note": "One rubric per reasoning operation. Criteria labels are drawn only from allowlists.json rubricCriterionLabels. No grammar, spelling, mechanics, or length criterion exists anywhere: response quality is judged on reasoning and evidence, never on writing conventions. Every rubric ends in a deterministic authored resolution. Unknown labels, malformed output, low confidence, timeout, or policy denial resolve to UNCLASSIFIED; OFF_TOPIC and ABSTAINED use their dedicated authored paths.",
+
+  "sharedRules": {
+    "abstention": {
+      "note": "A blank, near-blank, or 'I don't know' response abstains. Abstention is never penalized as wrong; it resolves to MISSING_EVIDENCE feedback and an educator ENGAGEMENT_LOGGED label only if the student actually submitted.",
+      "minWords": 8,
+      "belowMinResolvesTo": "UNCLASSIFIED"
+    },
+    "invalid": {
+      "note": "Output is invalid (resolves to UNCLASSIFIED with neutral fallback) if it contains any label outside the allowlist, references an evidence/claim ID not present in the item's source packets, omits a required criterion, or fails schema validation.",
+      "resolvesTo": "UNCLASSIFIED"
+    },
+    "determinism": "The runtime rubric resolver (owned by another worker) selects the authored feedback ID from the classifier's allowlisted labels. This content package only defines which labels are legal and which authored feedback each maps to. No free text ever comes from the model."
+  },
+
+  "rubrics": [
+    {
+      "rubricId": "BOS.ACT01.RUBRIC.COMPARE.v1",
+      "reasoningOperation": "COMPARE",
+      "criteria": [
+        { "criterionId": "CONCEPT_ACCURACY", "label": "Concept accuracy", "descriptor": "The response states the relevant concept correctly (for example, the tax was about revenue and consent, not simply a high price)." },
+        { "criterionId": "SOURCE_COMPARISON", "label": "Source comparison", "descriptor": "The response sets two or more sources against each other rather than describing only one." },
+        { "criterionId": "RELEVANT_EVIDENCE", "label": "Relevant evidence", "descriptor": "The response points to specific evidence from the sources it compares." }
+      ],
+      "evidenceRequirement": { "minDistinctSourcePackets": 2, "mustCiteEvidenceFrom": "both compared sources" },
+      "levelFeedback": {
+        "STRONG": "BOS.ACT01.FB.COMPARE.STRONG",
+        "PARTIAL": "BOS.ACT01.FB.COMPARE.PARTIAL",
+        "MISSING": "BOS.ACT01.FB.COMPARE.MISSING"
+      },
+      "observationFeedback": {
+        "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC",
+        "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED"
+      },
+      "educatorLabels": ["MULTIPLE_SOURCES_COMPARED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"]
+    },
+    {
+      "rubricId": "BOS.ACT01.RUBRIC.TRANSFER.v1",
+      "reasoningOperation": "TRANSFER",
+      "criteria": [
+        { "criterionId": "CONCEPT_ACCURACY", "label": "Concept accuracy", "descriptor": "The response uses the concept correctly in its original meaning before applying it." },
+        { "criterionId": "TRANSFER_REASONING", "label": "Transfer reasoning", "descriptor": "The response applies the concept to the new situation and explains why it fits." },
+        { "criterionId": "RELEVANT_EVIDENCE", "label": "Relevant evidence", "descriptor": "The response grounds the application in at least one specific source detail." }
+      ],
+      "evidenceRequirement": { "minDistinctSourcePackets": 1, "mustCiteEvidenceFrom": "the source that defines the concept" },
+      "levelFeedback": {
+        "STRONG": "BOS.ACT01.FB.TRANSFER.STRONG",
+        "PARTIAL": "BOS.ACT01.FB.TRANSFER.PARTIAL",
+        "MISSING": "BOS.ACT01.FB.TRANSFER.MISSING"
+      },
+      "observationFeedback": {
+        "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC",
+        "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED"
+      },
+      "educatorLabels": ["CONCEPT_APPLIED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"]
+    },
+    {
+      "rubricId": "BOS.ACT01.RUBRIC.PERSPECTIVE.v1",
+      "reasoningOperation": "PERSPECTIVE",
+      "criteria": [
+        { "criterionId": "PERSPECTIVE_FIDELITY", "label": "Perspective fidelity", "descriptor": "The response represents the actor's viewpoint as that actor would hold it, without caricature." },
+        { "criterionId": "CONCEPT_ACCURACY", "label": "Concept accuracy", "descriptor": "The viewpoint rests on an accurate understanding of the underlying facts, and perspective is not confused with the student's own endorsement." },
+        { "criterionId": "RELEVANT_EVIDENCE", "label": "Relevant evidence", "descriptor": "The response supports the viewpoint with specific source detail." }
+      ],
+      "evidenceRequirement": { "minDistinctSourcePackets": 1, "mustCiteEvidenceFrom": "a source the actor would use" },
+      "levelFeedback": {
+        "STRONG": "BOS.ACT01.FB.PERSPECTIVE.STRONG",
+        "PARTIAL": "BOS.ACT01.FB.PERSPECTIVE.PARTIAL",
+        "MISSING": "BOS.ACT01.FB.PERSPECTIVE.MISSING"
+      },
+      "observationFeedback": {
+        "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC",
+        "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED"
+      },
+      "educatorLabels": ["PERSPECTIVE_TAKEN", "PERSPECTIVE_VS_FACT_DISTINGUISHED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"]
+    },
+    {
+      "rubricId": "BOS.ACT01.RUBRIC.STRATEGY.v1",
+      "reasoningOperation": "STRATEGY",
+      "criteria": [
+        { "criterionId": "STRATEGY_REASONING", "label": "Strategy reasoning", "descriptor": "The response makes a clear choice and justifies it by weighing competing considerations." },
+        { "criterionId": "CONCEPT_ACCURACY", "label": "Concept accuracy", "descriptor": "The considerations reflect the historical situation accurately (for example, how news actually moved)." },
+        { "criterionId": "RELEVANT_EVIDENCE", "label": "Relevant evidence", "descriptor": "The justification draws on at least one specific source detail." }
+      ],
+      "evidenceRequirement": { "minDistinctSourcePackets": 1, "mustCiteEvidenceFrom": "a source about the situation" },
+      "levelFeedback": {
+        "STRONG": "BOS.ACT01.FB.STRATEGY.STRONG",
+        "PARTIAL": "BOS.ACT01.FB.STRATEGY.PARTIAL",
+        "MISSING": "BOS.ACT01.FB.STRATEGY.MISSING"
+      },
+      "observationFeedback": {
+        "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC",
+        "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED"
+      },
+      "educatorLabels": ["STRATEGY_TRADEOFFS_WEIGHED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"]
+    },
+    {
+      "rubricId": "BOS.ACT01.RUBRIC.CAUSAL_SYNTHESIS.v1",
+      "reasoningOperation": "CAUSAL_SYNTHESIS",
+      "criteria": [
+        { "criterionId": "CAUSAL_REASONING", "label": "Causal reasoning", "descriptor": "The response links a cause to a consequence in a chain the sources support." },
+        { "criterionId": "SOURCE_COMPARISON", "label": "Source comparison", "descriptor": "The response draws on two or more sources rather than one." },
+        { "criterionId": "RELEVANT_EVIDENCE", "label": "Relevant evidence", "descriptor": "Each link in the chain rests on specific source detail." }
+      ],
+      "evidenceRequirement": { "minDistinctSourcePackets": 2, "mustCiteEvidenceFrom": "at least two engaged sources" },
+      "levelFeedback": {
+        "STRONG": "BOS.ACT01.FB.CAUSAL.STRONG",
+        "PARTIAL": "BOS.ACT01.FB.CAUSAL.PARTIAL",
+        "MISSING": "BOS.ACT01.FB.CAUSAL.MISSING"
+      },
+      "observationFeedback": {
+        "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC",
+        "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED"
+      },
+      "educatorLabels": ["CAUSE_EFFECT_LINKED", "MULTIPLE_SOURCES_COMPARED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"]
+    }
+  ]
+}

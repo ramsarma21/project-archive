@@ -1,0 +1,76 @@
+{
+  "assetKey": "duck-beam-frame",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Imported duck-under frame; side posts and overhead beam only, center opening remains clear.",
+  "colliders": [
+    {
+      "id": "post-l",
+      "shape": "capsule",
+      "a": [
+        -0.869,
+        0.08,
+        0
+      ],
+      "b": [
+        -0.869,
+        1.086,
+        0
+      ],
+      "radius": 0.08,
+      "tags": [
+        "obstacle",
+        "density"
+      ]
+    },
+    {
+      "id": "post-r",
+      "shape": "capsule",
+      "a": [
+        0.87,
+        0.08,
+        0
+      ],
+      "b": [
+        0.87,
+        1.086,
+        0
+      ],
+      "radius": 0.08,
+      "tags": [
+        "obstacle",
+        "density"
+      ]
+    },
+    {
+      "id": "beam",
+      "shape": "box",
+      "center": [
+        0,
+        1.026,
+        0
+      ],
+      "half": [
+        0.95,
+        0.14,
+        0.332
+      ],
+      "tags": [
+        "obstacle",
+        "overhead",
+        "duck"
+      ]
+    }
+  ],
+  "compose": [
+    {
+      "type": "traversal",
+      "ref": "densityManifest:duck-beam-frame",
+      "note": "DUCK_UNDER center path and clearance"
+    }
+  ]
+}

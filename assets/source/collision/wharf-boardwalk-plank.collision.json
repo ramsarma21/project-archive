@@ -1,0 +1,11 @@
+{
+  "assetKey": "wharf-boardwalk-plank",
+  "category": "surface",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Walkable boardwalk plank; support is the implicit deck plane.",
+  "colliders": []
+}

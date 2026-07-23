@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on view of a weathered rectangular painted wooden trade sign board, the wood board completely fills the frame edge to edge. Painted on the old cracked boards: a golden bound wheat sheaf inside a painted dark brown shield outline on a warm ochre ground, faded oil paint, flaking edges, iron nail heads in the corners, no lettering at all. Historically plausible 1765 colonial Boston baker hanging trade sign face, no background visible, no hands, no modern elements.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T23:06:12.880Z",
+  "files": [
+    "sign-baker-sheaf.png"
+  ]
+}

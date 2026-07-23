@@ -1,0 +1,65 @@
+{
+  "screenshots": [
+    {
+      "name": "10-cp1-question",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/10-cp1-question.png"
+    },
+    {
+      "name": "11-gate-memory-cue",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/11-gate-memory-cue.png"
+    },
+    {
+      "name": "12-gate-explicit",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/12-gate-explicit.png"
+    },
+    {
+      "name": "13-gate-elimination",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/13-gate-elimination.png"
+    },
+    {
+      "name": "14-gate-resolved-next-item",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/14-gate-resolved-next-item.png"
+    },
+    {
+      "name": "20-wharf-poster-approach",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/20-wharf-poster-approach.png"
+    },
+    {
+      "name": "21-lore-read",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/21-lore-read.png"
+    },
+    {
+      "name": "22-route-reminder",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/22-route-reminder.png"
+    },
+    {
+      "name": "23-ned-arc-stage2",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/23-ned-arc-stage2.png"
+    },
+    {
+      "name": "24-archive-engaged-micros",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/24-archive-engaged-micros.png"
+    },
+    {
+      "name": "30-chewed-out",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/30-chewed-out.png"
+    },
+    {
+      "name": "31-chewed-out-writ-line",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/31-chewed-out-writ-line.png"
+    },
+    {
+      "name": "32-released-outside-watchhouse",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/slice-visual-qa/32-released-outside-watchhouse.png"
+    }
+  ],
+  "notes": [
+    {
+      "memoryHint": "Remember the Archive's intake brief on the war account? Think back to what it told you."
+    },
+    {
+      "nedStage2": "Ned // The ApprenticeRunner — a quiet favor? I slipped out to hear the elm crowd and Abigail noticed the empty stool. Say you sent me on an errand.1 Cover for h"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,299 @@
+{
+  "_meta": {
+    "pipeline": "Gemini concept -> Meshy image-to-3D -> Blender optimize_road_kit.py -> sync_web.mjs",
+    "generatedAt": "2026-07-21T17:25:50.042Z",
+    "textures": "embedded JPEG, max 1024px, quality 80",
+    "placement": "Exact world footprints fitted non-uniformly by ImportedSurface; y=0 gameplay collision is unchanged and invisible."
+  },
+  "assets": {
+    "colonial-street-a": {
+      "conceptPath": "assets/source/concepts/roads/colonial-street-a.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-street-a.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-street-a-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-street-a-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-street-a.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-street-a.glb",
+      "publicPath": "apps/web/public/world/props/colonial-street-a.glb",
+      "optimizedBytes": 1309412,
+      "bboxSize": [
+        20,
+        0.176,
+        20
+      ],
+      "triangles": 5950,
+      "triangleBudget": 6000
+    },
+    "colonial-street-b": {
+      "conceptPath": "assets/source/concepts/roads/colonial-street-b.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-street-b.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-street-b-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-street-b-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-street-b.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-street-b.glb",
+      "publicPath": "apps/web/public/world/props/colonial-street-b.glb",
+      "optimizedBytes": 1353700,
+      "bboxSize": [
+        20,
+        0.176,
+        20
+      ],
+      "triangles": 5950,
+      "triangleBudget": 6000
+    },
+    "colonial-street-c": {
+      "conceptPath": "assets/source/concepts/roads/colonial-street-c.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-street-c.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-street-c-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-street-c-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-street-c.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-street-c.glb",
+      "publicPath": "apps/web/public/world/props/colonial-street-c.glb",
+      "optimizedBytes": 1314416,
+      "bboxSize": [
+        20,
+        0.176,
+        20
+      ],
+      "triangles": 5950,
+      "triangleBudget": 6000
+    },
+    "colonial-alley-a": {
+      "conceptPath": "assets/source/concepts/roads/colonial-alley-a.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-alley-a.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-alley-a-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-alley-a-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-alley-a.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-alley-a.glb",
+      "publicPath": "apps/web/public/world/props/colonial-alley-a.glb",
+      "optimizedBytes": 1174468,
+      "bboxSize": [
+        12,
+        0.07,
+        6.5
+      ],
+      "triangles": 3970,
+      "triangleBudget": 4000
+    },
+    "colonial-alley-b": {
+      "conceptPath": "assets/source/concepts/roads/colonial-alley-b.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-alley-b.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-alley-b-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-alley-b-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-alley-b.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-alley-b.glb",
+      "publicPath": "apps/web/public/world/props/colonial-alley-b.glb",
+      "optimizedBytes": 1174208,
+      "bboxSize": [
+        12,
+        0.07,
+        6.5
+      ],
+      "triangles": 3970,
+      "triangleBudget": 4000
+    },
+    "colonial-gutter-straight": {
+      "conceptPath": "assets/source/concepts/roads/colonial-gutter-straight.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-gutter-straight.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-gutter-straight-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-gutter-straight-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-gutter-straight.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-gutter-straight.glb",
+      "publicPath": "apps/web/public/world/props/colonial-gutter-straight.glb",
+      "optimizedBytes": 234320,
+      "bboxSize": [
+        20,
+        0.076,
+        1.3
+      ],
+      "triangles": 2494,
+      "triangleBudget": 2500
+    },
+    "colonial-gutter-corner": {
+      "conceptPath": "assets/source/concepts/roads/colonial-gutter-corner.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-gutter-corner.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-gutter-corner-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-gutter-corner-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-gutter-corner.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-gutter-corner.glb",
+      "publicPath": "apps/web/public/world/props/colonial-gutter-corner.glb",
+      "optimizedBytes": 865580,
+      "bboxSize": [
+        1.5,
+        0.074,
+        1.5
+      ],
+      "triangles": 2974,
+      "triangleBudget": 3000
+    },
+    "colonial-street-junction": {
+      "conceptPath": "assets/source/concepts/roads/colonial-street-junction.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-street-junction.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-street-junction-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-street-junction-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-street-junction.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-street-junction.glb",
+      "publicPath": "apps/web/public/world/props/colonial-street-junction.glb",
+      "optimizedBytes": 1294392,
+      "bboxSize": [
+        10,
+        0.147,
+        20
+      ],
+      "triangles": 4980,
+      "triangleBudget": 5000
+    },
+    "colonial-street-endcap": {
+      "conceptPath": "assets/source/concepts/roads/colonial-street-endcap.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-street-endcap.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-street-endcap-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-street-endcap-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-street-endcap.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-street-endcap.glb",
+      "publicPath": "apps/web/public/world/props/colonial-street-endcap.glb",
+      "optimizedBytes": 1316788,
+      "bboxSize": [
+        10,
+        0.137,
+        20
+      ],
+      "triangles": 4980,
+      "triangleBudget": 5000
+    },
+    "colonial-civic-square": {
+      "conceptPath": "assets/source/concepts/roads/colonial-civic-square.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-civic-square.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-civic-square-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-civic-square-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-civic-square.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-civic-square.glb",
+      "publicPath": "apps/web/public/world/props/colonial-civic-square.glb",
+      "optimizedBytes": 1259624,
+      "bboxSize": [
+        17,
+        0.126,
+        20
+      ],
+      "triangles": 4978,
+      "triangleBudget": 5000
+    },
+    "colonial-yard-ground": {
+      "conceptPath": "assets/source/concepts/roads/colonial-yard-ground.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-yard-ground.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-yard-ground-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-yard-ground-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-yard-ground.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-yard-ground.glb",
+      "publicPath": "apps/web/public/world/props/colonial-yard-ground.glb",
+      "optimizedBytes": 1176960,
+      "bboxSize": [
+        22,
+        0.076,
+        10
+      ],
+      "triangles": 2974,
+      "triangleBudget": 3000
+    },
+    "colonial-yard-perimeter": {
+      "conceptPath": "assets/source/concepts/roads/colonial-yard-ground.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-yard-ground.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-yard-ground-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-yard-ground-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-yard-ground.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-yard-perimeter.glb",
+      "publicPath": "apps/web/public/world/props/colonial-yard-perimeter.glb",
+      "optimizedBytes": 1160288,
+      "bboxSize": [
+        226,
+        0.076,
+        20
+      ],
+      "triangles": 2848,
+      "triangleBudget": 3000
+    },
+    "colonial-yard-east-cap": {
+      "conceptPath": "assets/source/concepts/roads/colonial-yard-ground.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-yard-ground.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-yard-ground-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-yard-ground-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-yard-ground.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-yard-east-cap.glb",
+      "publicPath": "apps/web/public/world/props/colonial-yard-east-cap.glb",
+      "optimizedBytes": 1169520,
+      "bboxSize": [
+        20,
+        0.076,
+        60
+      ],
+      "triangles": 2958,
+      "triangleBudget": 3000
+    },
+    "colonial-liberty-courtyard": {
+      "conceptPath": "assets/source/concepts/roads/colonial-liberty-courtyard.png",
+      "promptSidecar": "assets/source/concepts/roads/colonial-liberty-courtyard.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-liberty-courtyard-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-liberty-courtyard-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/colonial-liberty-courtyard.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-liberty-courtyard.glb",
+      "publicPath": "apps/web/public/world/props/colonial-liberty-courtyard.glb",
+      "optimizedBytes": 1106412,
+      "bboxSize": [
+        26,
+        0.076,
+        19
+      ],
+      "triangles": 2980,
+      "triangleBudget": 3000
+    },
+    "colonial-wharf-apron": {
+      "conceptPath": "assets/source/concepts/wharf-pier-module.png",
+      "promptSidecar": "assets/source/concepts/wharf-pier-module.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-wharf-timber-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-wharf-timber-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/wharf-pier-module.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-wharf-apron.glb",
+      "publicPath": "apps/web/public/world/props/colonial-wharf-apron.glb",
+      "optimizedBytes": 1556732,
+      "bboxSize": [
+        42,
+        0.077,
+        34
+      ],
+      "triangles": 11878,
+      "triangleBudget": 12000
+    },
+    "colonial-wharf-boardwalk": {
+      "conceptPath": "assets/source/concepts/wharf-boardwalk-plank.png",
+      "promptSidecar": "assets/source/concepts/wharf-boardwalk-plank.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-wharf-timber-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-wharf-timber-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/wharf-boardwalk-plank.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-wharf-boardwalk.glb",
+      "publicPath": "apps/web/public/world/props/colonial-wharf-boardwalk.glb",
+      "optimizedBytes": 1197220,
+      "bboxSize": [
+        74,
+        0.077,
+        6.5
+      ],
+      "triangles": 5898,
+      "triangleBudget": 6000
+    },
+    "colonial-wharf-pier-finger": {
+      "conceptPath": "assets/source/concepts/wharf-pier-module.png",
+      "promptSidecar": "assets/source/concepts/wharf-pier-module.png.prompt.json",
+      "materialPath": "assets/source/concepts/roads/materials/colonial-wharf-timber-material.png",
+      "materialPromptSidecar": "assets/source/concepts/roads/materials/colonial-wharf-timber-material.png.prompt.json",
+      "meshySourcePath": "assets/build/world-v3/wharf-pier-module.glb",
+      "optimizedPath": "assets/build/world-v3-opt/colonial-wharf-pier-finger.glb",
+      "publicPath": "apps/web/public/world/props/colonial-wharf-pier-finger.glb",
+      "optimizedBytes": 1068840,
+      "bboxSize": [
+        10,
+        0.077,
+        9
+      ],
+      "triangles": 3958,
+      "triangleBudget": 4000
+    }
+  }
+}

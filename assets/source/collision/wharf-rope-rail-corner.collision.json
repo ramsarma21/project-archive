@@ -1,0 +1,48 @@
+{
+  "assetKey": "wharf-rope-rail-corner",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Imported right-angle density barrier; two finite perpendicular wings, never an oversized corner AABB.",
+  "colliders": [
+    {
+      "id": "wing-x",
+      "shape": "box",
+      "center": [
+        0,
+        0.593,
+        -0.418
+      ],
+      "half": [
+        0.947,
+        0.593,
+        0.152
+      ],
+      "tags": [
+        "obstacle",
+        "density-barrier"
+      ]
+    },
+    {
+      "id": "wing-z",
+      "shape": "box",
+      "center": [
+        -0.417,
+        0.593,
+        0
+      ],
+      "half": [
+        0.152,
+        0.593,
+        0.951
+      ],
+      "tags": [
+        "obstacle",
+        "density-barrier"
+      ]
+    }
+  ]
+}

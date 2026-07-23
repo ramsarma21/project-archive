@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single complete plain colonial cloth banner hanging from a wooden cross-pole only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no ground scenery, no people, no readable text, no lettering, no watermark. A rough off-white undyed linen rectangular banner cloth with gentle wrinkles and frayed edges hung from a horizontal wooden dowel lashed to a vertical carrying pole, muted natural linen and umber wood. Historically plausible 1765 colonial protest banner blank, single object, no modern or fantasy elements. Game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T21:50:02.806Z",
+  "files": [
+    "protest-banner-cloth.png"
+  ]
+}

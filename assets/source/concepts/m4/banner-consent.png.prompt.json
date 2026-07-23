@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on view of a rough off-white colonial linen protest banner cloth completely filling the frame edge to edge, gentle fabric wrinkles. Hand-painted on the cloth in dark madder-red and black serif capitals across two lines: \"NO STAMP\" and \"BUT BY OUR OWN CONSENT\", uneven hand lettering, paint bleed into weave, frayed edges. 1765 colonial Boston. No background visible, no pole, no hands, no modern elements, no em dash characters.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T21:49:26.444Z",
+  "files": [
+    "banner-consent.png"
+  ]
+}

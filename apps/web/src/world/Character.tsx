@@ -3,11 +3,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
-
-// Clips are pre-baked onto the shared Meshy auto-rig skeleton in Blender
-// (assets/pipeline/retarget_to_meshy.py). They bind to every Meshy-rigged
-// character by bone name; no runtime retargeting.
-const ANIM_URL = "/world/anims/meshy-anim-library.glb";
+import { chooseAvailableClip, PLAYER_ACTION_CLIPS } from "./animationManifest.js";
 
 // ---- Error boundary so a missing/failed GLB degrades to a placeholder ----
 class GlbBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
@@ -66,19 +62,95 @@ export function PlaceholderPerson(props: { height: number; coat?: string }) {
   );
 }
 
-function RiggedInner(props: { glbKey: string; height: number; clip: string; timeOffset?: number; timeScale?: number }) {
-  const url = `/world/characters/${props.glbKey}.glb`;
+// Ambient rigs opt into skipping animation-mixer updates when far from the
+// camera (World-Design-Bible §9 perf cap). Far rigs advance in coarse steps
+// so distant crowds still drift instead of freezing solid.
+const ANIM_THROTTLE_DISTANCE_M = 35;
+const ANIM_THROTTLE_STEP_S = 0.5;
+const throttleScratch = new THREE.Vector3();
+const viewCullScratch = new THREE.Vector3();
+
+// Ambient far-cull probe: rigs that opt into distance culling report whether
+// they are currently drawn so a dev harness can read the live rendered count
+// (see ambientVisibleCount). The set is keyed by a stable per-rig probeId and
+// only mutated on visibility transitions, so the per-frame cost is a no-op
+// once a crowd settles. Non-ambient (hero) rigs never register.
+const _ambientVisible = new Set<string>();
+function reportAmbientVisible(id: string | undefined, visible: boolean): void {
+  if (!id) return;
+  if (visible) _ambientVisible.add(id);
+  else _ambientVisible.delete(id);
+}
+export function ambientVisibleCount(): number {
+  return _ambientVisible.size;
+}
+
+function RiggedInner(props: {
+  glbKey: string;
+  height: number;
+  clip: string;
+  timeOffset?: number;
+  timeScale?: number;
+  timeScaleRef?: { current: number };
+  loopOnce?: boolean;
+  castShadow?: boolean;
+  tint?: string;
+  distanceAnimThrottle?: boolean;
+  cullBeyondM?: number;
+  probeId?: string;
+  // Fired when a loopOnce action clip reaches its final frame. Physics owns
+  // the displacement/landing; this lets a caller drive the visible recovery.
+  onActionComplete?: () => void;
+}) {
+  const url = `/world/characters/${props.glbKey}.glb?v=production-cast-6`;
   const gltf = useGLTF(url);
-  const lib = useGLTF(ANIM_URL);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionRef = useRef<THREE.AnimationAction | null>(null);
+  const throttleAccum = useRef(0);
+  const castShadow = props.castShadow ?? true;
+  const onActionCompleteRef = useRef(props.onActionComplete);
+  const pendingResourceDispose = useRef<{
+    rig: THREE.Object3D;
+    timer: number;
+  } | null>(null);
+  onActionCompleteRef.current = props.onActionComplete;
 
   const rig = useMemo(() => {
     const root = skeletonClone(gltf.scene);
+    const tintColor = props.tint ? new THREE.Color(props.tint) : null;
+    const skeletons = new Set<THREE.Skeleton>();
+    const ownedMaterials = new Set<THREE.Material>();
     root.traverse((o) => {
-      o.castShadow = true;
+      o.castShadow = castShadow;
       o.receiveShadow = false;
-      if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).frustumCulled = false;
+      if ((o as THREE.Mesh).isMesh) {
+        const mesh = o as THREE.Mesh;
+        const skinned = mesh as THREE.SkinnedMesh;
+        if (skinned.isSkinnedMesh) skeletons.add(skinned.skeleton);
+        mesh.frustumCulled = false;
+        if (tintColor) {
+          // skeletonClone shares materials across instances; clone before
+          // tinting so re-used ambient GLBs can wear different hues.
+          const source = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          const cloned = source.map((material) => {
+            const copy = material.clone();
+            ownedMaterials.add(copy);
+            const color = (copy as THREE.MeshStandardMaterial).color;
+            if (color instanceof THREE.Color) color.multiply(tintColor);
+            return copy;
+          });
+          mesh.material = Array.isArray(mesh.material) ? cloned : cloned[0]!;
+        }
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const material of materials) {
+          // Generated clothing can contain thin or inconsistently wound
+          // surfaces. Render both faces and solid depth so shoulders/vests do
+          // not appear hollow or transparent from side and rear cameras.
+          material.side = THREE.DoubleSide;
+          material.depthWrite = true;
+          material.needsUpdate = true;
+        }
+      }
     });
     // Skinned-aware bounds: feet on y=0, height matched to spec.
     const measure = () => {
@@ -110,50 +182,134 @@ function RiggedInner(props: { glbKey: string; height: number; clip: string; time
     root.scale.setScalar(s);
     const box2 = measure();
     root.position.y -= box2.min.y;
-    return { root };
-  }, [gltf.scene, props.height]);
+    return { root, skeletons, ownedMaterials };
+  }, [gltf.scene, props.height, castShadow, props.tint]);
 
   useEffect(() => {
+    const pending = pendingResourceDispose.current;
+    if (pending?.rig === rig.root) {
+      window.clearTimeout(pending.timer);
+      pendingResourceDispose.current = null;
+    }
     const mixer = new THREE.AnimationMixer(rig.root);
     mixerRef.current = mixer;
     actionRef.current = null;
+    // Mixer completion fires the recovery callback for loopOnce action clips.
+    const onFinished = () => onActionCompleteRef.current?.();
+    mixer.addEventListener("finished", onFinished);
     return () => {
+      mixer.removeEventListener("finished", onFinished);
       mixer.stopAllAction();
+      mixer.uncacheRoot(rig.root);
       mixerRef.current = null;
       actionRef.current = null;
+      // StrictMode immediately re-runs effects against the same memoized rig.
+      // Delay owned-resource disposal one task so that rehearsal can cancel it,
+      // while a real unmount releases per-clone bone textures and tint materials.
+      const timer = window.setTimeout(() => {
+        for (const skeleton of rig.skeletons) skeleton.dispose();
+        for (const material of rig.ownedMaterials) material.dispose();
+        if (pendingResourceDispose.current?.rig === rig.root) {
+          pendingResourceDispose.current = null;
+        }
+      }, 0);
+      pendingResourceDispose.current = { rig: rig.root, timer };
     };
   }, [rig]);
 
   useEffect(() => {
     const mixer = mixerRef.current;
     if (!mixer) return;
-    // Prefer clips baked into the character itself (per-character retarget);
-    // fall back to the shared library for rigs without embedded animations.
-    const own = gltf.animations ?? [];
-    const clip =
-      own.find((c) => c.name === props.clip) ??
-      (own.length === 0 ? lib.animations.find((c) => c.name === props.clip) : undefined) ??
-      own[0] ??
-      lib.animations[0];
+    // Every production character is a self-contained GLB with clips baked
+    // against its own rig. Never bind a shared clip from another skeleton.
+    const clipName = chooseAvailableClip(props.glbKey, props.clip, gltf.animations.map((clip) => clip.name));
+    const clip = clipName ? gltf.animations.find((candidate) => candidate.name === clipName) : undefined;
     if (!clip) return;
     const next = mixer.clipAction(clip);
+    const prev = actionRef.current;
+    let locomotionPhase: number | null = null;
+    if (prev && prev !== next) {
+      const prevClip = prev.getClip();
+      if (["walk", "run"].includes(prevClip.name) && ["walk", "run"].includes(clip.name) && prevClip.duration > 0) {
+        locomotionPhase = (prev.time % prevClip.duration) / prevClip.duration;
+      }
+    }
     next.reset();
     next.enabled = true;
+    next.setLoop(props.loopOnce ? THREE.LoopOnce : THREE.LoopRepeat, props.loopOnce ? 1 : Infinity);
+    next.clampWhenFinished = Boolean(props.loopOnce);
     if (props.timeOffset) next.time = props.timeOffset % clip.duration;
+    else if (locomotionPhase !== null) next.time = locomotionPhase * clip.duration;
     next.play();
-    const prev = actionRef.current;
     if (prev && prev !== next) {
-      next.crossFadeFrom(prev, 0.3, true);
+      // Snap into short one-shot action clips (jump/vault/climb/knock) so the
+      // authored verb reads immediately; blend locomotion normally.
+      const fade = PLAYER_ACTION_CLIPS.has(clip.name) ? 0.12 : 0.3;
+      next.crossFadeFrom(prev, fade, true);
     }
     actionRef.current = next;
-  }, [props.clip, props.timeOffset, lib.animations, rig]);
+  }, [props.clip, props.timeOffset, props.loopOnce, gltf.animations, rig]);
 
-  useFrame((_, dt) => {
-    if (actionRef.current && props.timeScale !== undefined) {
-      actionRef.current.timeScale = props.timeScale;
+  useFrame(({ camera }, dt) => {
+    if (actionRef.current) {
+      actionRef.current.timeScale = props.timeScaleRef?.current ?? props.timeScale ?? 1;
     }
-    mixerRef.current?.update(dt);
+    const mixer = mixerRef.current;
+    if (!mixer) return;
+    if (props.distanceAnimThrottle) {
+      rig.root.getWorldPosition(throttleScratch);
+      const dist = camera.position.distanceTo(throttleScratch);
+      // Far imposture cull: a tripled ambient pool must not pay draw + skinning
+      // cost across the whole map, so rigs beyond the cull radius are hidden
+      // (three.js skips invisible subtrees) and their mixer freezes. They snap
+      // back deterministically on approach because positions are pure functions
+      // of clock time, not per-frame integration.
+      const cull = props.cullBeyondM ?? Infinity;
+      if (dist > cull) {
+        if (rig.root.visible) rig.root.visible = false;
+        reportAmbientVisible(props.probeId, false);
+        return;
+      }
+      const perspective = camera as THREE.PerspectiveCamera;
+      if (dist > 10 && perspective.isPerspectiveCamera) {
+        viewCullScratch.copy(throttleScratch).applyMatrix4(camera.matrixWorldInverse);
+        const forward = -viewCullScratch.z;
+        const halfHeight =
+          Math.tan(THREE.MathUtils.degToRad(perspective.fov * 0.5)) * forward;
+        const halfWidth = halfHeight * perspective.aspect;
+        // A generous world-space gutter provides turn hysteresis while still
+        // removing costly skinned rigs several blocks behind the camera.
+        if (
+          forward <= 0 ||
+          Math.abs(viewCullScratch.x) > halfWidth + 6 ||
+          Math.abs(viewCullScratch.y) > halfHeight + 4
+        ) {
+          if (rig.root.visible) rig.root.visible = false;
+          reportAmbientVisible(props.probeId, false);
+          return;
+        }
+      }
+      if (!rig.root.visible) rig.root.visible = true;
+      reportAmbientVisible(props.probeId, true);
+      if (dist > ANIM_THROTTLE_DISTANCE_M) {
+        // Mid rig: bank time and step the mixer coarsely (~2 Hz).
+        throttleAccum.current += dt;
+        if (throttleAccum.current >= ANIM_THROTTLE_STEP_S) {
+          mixer.update(throttleAccum.current);
+          throttleAccum.current = 0;
+        }
+        return;
+      }
+      if (throttleAccum.current > 0) {
+        mixer.update(throttleAccum.current);
+        throttleAccum.current = 0;
+        return;
+      }
+    }
+    mixer.update(dt);
   });
+
+  useEffect(() => () => reportAmbientVisible(props.probeId, false), [props.probeId]);
 
   return <primitive object={rig.root} />;
 }
@@ -164,14 +320,50 @@ export function RiggedCharacter(props: {
   clip: string;
   timeOffset?: number;
   timeScale?: number;
+  timeScaleRef?: { current: number };
+  loopOnce?: boolean;
   coat?: string;
+  castShadow?: boolean;
+  // Multiplicative material hue applied on load: lets 2-4 shared ambient GLBs
+  // read as different townsfolk (Bible §9). Story NPCs never pass this.
+  tint?: string;
+  // Opt-in for ambient rigs only: skip mixer updates beyond ~35m.
+  distanceAnimThrottle?: boolean;
+  // Opt-in for ambient rigs only: hide + freeze the rig beyond this radius so a
+  // dense population never draws across the whole map (§9 perf). Hero rigs omit.
+  cullBeyondM?: number;
+  // Stable id so a dev harness can count currently-drawn ambient rigs.
+  probeId?: string;
+  onActionComplete?: () => void;
+  contactShadow?: boolean;
+  // Dedicated gameplay actors may require imported-only failure behavior:
+  // when false, loading/missing assets render nothing instead of a debug body.
+  showFallback?: boolean;
 }) {
+  const fallback =
+    props.showFallback === false
+      ? null
+      : <PlaceholderPerson height={props.height} coat={props.coat} />;
   return (
     <group>
-      <ContactShadow radius={0.55} />
-      <GlbBoundary fallback={<PlaceholderPerson height={props.height} coat={props.coat} />}>
-        <Suspense fallback={<PlaceholderPerson height={props.height} coat={props.coat} />}>
-          <RiggedInner glbKey={props.glbKey} height={props.height} clip={props.clip} timeOffset={props.timeOffset} timeScale={props.timeScale} />
+      {props.contactShadow !== false && <ContactShadow radius={0.55} />}
+      <GlbBoundary fallback={fallback}>
+        <Suspense fallback={fallback}>
+          <RiggedInner
+            glbKey={props.glbKey}
+            height={props.height}
+            clip={props.clip}
+            timeOffset={props.timeOffset}
+            timeScale={props.timeScale}
+            timeScaleRef={props.timeScaleRef}
+            loopOnce={props.loopOnce}
+            castShadow={props.castShadow}
+            tint={props.tint}
+            distanceAnimThrottle={props.distanceAnimThrottle}
+            cullBeyondM={props.cullBeyondM}
+            probeId={props.probeId}
+            onActionComplete={props.onActionComplete}
+          />
         </Suspense>
       </GlbBoundary>
     </group>
@@ -219,6 +411,183 @@ export function FittedGlb(props: {
     <GlbBoundary fallback={props.fallback}>
       <Suspense fallback={props.fallback}>
         <FittedGlbInner glbKey={props.glbKey} size={props.size} scale={props.scale} />
+      </Suspense>
+    </GlbBoundary>
+  );
+}
+
+function ImportedStructureInner(props: {
+  glbKey: string;
+  size: [number, number, number];
+  rotateShell?: boolean;
+}) {
+  const gltf = useGLTF(`/world/structures/${props.glbKey}.glb`);
+  const object = useMemo(() => {
+    const root = skeletonClone(gltf.scene);
+    root.traverse((node) => {
+      if ((node as THREE.Mesh).isMesh) {
+        node.castShadow = false;
+        node.receiveShadow = true;
+        node.frustumCulled = true;
+      }
+    });
+    const source = new THREE.Box3().setFromObject(root);
+    const sourceSize = source.getSize(new THREE.Vector3());
+    // Structural concepts put their authored entrance on local -X. Rotate the
+    // shell into the runtime convention (entrance on -Z), so source X maps to
+    // room depth and source Z maps to room width.
+    const targetX = props.rotateShell === false ? props.size[0] : props.size[2];
+    const targetZ = props.rotateShell === false ? props.size[2] : props.size[0];
+    root.scale.set(
+      targetX / Math.max(sourceSize.x, 0.001),
+      props.size[1] / Math.max(sourceSize.y, 0.001),
+      targetZ / Math.max(sourceSize.z, 0.001),
+    );
+    const fitted = new THREE.Box3().setFromObject(root);
+    const center = fitted.getCenter(new THREE.Vector3());
+    root.position.set(-center.x, -fitted.min.y, -center.z);
+    root.rotation.y = props.rotateShell === false ? 0 : -Math.PI / 2;
+    return root;
+  }, [gltf.scene, props.glbKey, props.rotateShell, props.size]);
+  return <primitive object={object} />;
+}
+
+/**
+ * Imported structural shell/floor module. Loading or parse failure renders
+ * nothing; production never substitutes primitive room geometry.
+ */
+export function ImportedStructure(props: {
+  glbKey: string;
+  size: [number, number, number];
+  rotateShell?: boolean;
+}) {
+  return (
+    <GlbBoundary fallback={null}>
+      <Suspense fallback={null}>
+        <ImportedStructureInner {...props} />
+      </Suspense>
+    </GlbBoundary>
+  );
+}
+
+function ImportedTexturedPropInner(props: {
+  glbKey: string;
+  size: [number, number, number];
+  texture: THREE.Texture;
+}) {
+  const gltf = useGLTF(`/world/props/${props.glbKey}.glb`);
+  const object = useMemo(() => {
+    const root = skeletonClone(gltf.scene);
+    root.traverse((node) => {
+      const mesh = node as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      const materials = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).map(
+        (source) => {
+          const material = source.clone() as THREE.MeshStandardMaterial;
+          material.map = props.texture;
+          material.color.set("#ffffff");
+          material.roughness = 0.92;
+          material.metalness = 0;
+          material.side = THREE.DoubleSide;
+          material.needsUpdate = true;
+          return material;
+        },
+      );
+      mesh.material = Array.isArray(mesh.material) ? materials : materials[0]!;
+    });
+    const box = new THREE.Box3().setFromObject(root);
+    const sourceSize = box.getSize(new THREE.Vector3());
+    const scale = Math.min(
+      props.size[0] / Math.max(sourceSize.x, 0.001),
+      props.size[1] / Math.max(sourceSize.y, 0.001),
+      props.size[2] / Math.max(sourceSize.z, 0.001),
+    );
+    root.scale.setScalar(scale);
+    const fitted = new THREE.Box3().setFromObject(root);
+    const center = fitted.getCenter(new THREE.Vector3());
+    root.position.set(-center.x, -fitted.min.y, -center.z);
+    return root;
+  }, [gltf.scene, props.glbKey, props.size, props.texture]);
+  return <primitive object={object} />;
+}
+
+/**
+ * Imported physical surface with a runtime-authored document texture. Only the
+ * material changes; the visible paper geometry remains the generated GLB.
+ */
+export function ImportedTexturedProp(props: {
+  glbKey?: string;
+  size: [number, number, number];
+  texture: THREE.Texture;
+}) {
+  return (
+    <GlbBoundary fallback={null}>
+      <Suspense fallback={null}>
+        <ImportedTexturedPropInner
+          glbKey={props.glbKey ?? "int-paper-surface-flat"}
+          size={props.size}
+          texture={props.texture}
+        />
+      </Suspense>
+    </GlbBoundary>
+  );
+}
+
+function ImportedSurfaceInner(props: {
+  glbKey: string;
+  size: [number, number];
+  relief: number;
+}) {
+  const gltf = useGLTF(`/world/props/${props.glbKey}.glb`);
+  const object = useMemo(() => {
+    const root = skeletonClone(gltf.scene);
+    root.traverse((node) => {
+      if ((node as THREE.Mesh).isMesh) {
+        node.castShadow = false;
+        node.receiveShadow = true;
+      }
+    });
+
+    // Meshy preserves the concept's useful proportions, but street modules
+    // need exact fitted seams in world space. Scale the imported geometry
+    // (never a generated Three mesh) to the requested footprint and relief.
+    const sourceBox = new THREE.Box3().setFromObject(root);
+    const sourceSize = sourceBox.getSize(new THREE.Vector3());
+    root.scale.set(
+      props.size[0] / Math.max(sourceSize.x, 0.001),
+      props.relief / Math.max(sourceSize.y, 0.001),
+      props.size[1] / Math.max(sourceSize.z, 0.001),
+    );
+
+    const fittedBox = new THREE.Box3().setFromObject(root);
+    const center = fittedBox.getCenter(new THREE.Vector3());
+    root.position.set(-center.x, -fittedBox.min.y, -center.z);
+    return root;
+  }, [gltf.scene, props.size, props.relief]);
+
+  return <primitive object={object} />;
+}
+
+/**
+ * Exact-footprint visual surface backed exclusively by an imported GLB.
+ * Missing/loading assets render nothing rather than a visible primitive
+ * fallback; gameplay collision remains owned by the existing player system.
+ */
+export function ImportedSurface(props: {
+  glbKey: string;
+  size: [number, number];
+  relief?: number;
+}) {
+  return (
+    <GlbBoundary fallback={null}>
+      <Suspense fallback={null}>
+        <ImportedSurfaceInner
+          glbKey={props.glbKey}
+          size={props.size}
+          relief={props.relief ?? 0.25}
+        />
       </Suspense>
     </GlbBoundary>
   );

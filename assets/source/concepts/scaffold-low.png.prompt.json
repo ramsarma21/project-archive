@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single low wooden work scaffold section only, two lashed timber poles with one plank walkway level about waist height, small ladder at one end, centered, full object in frame, three-quarter view, plain light gray studio background, no wall behind it, no other objects, no people, no text. Historically accurate 1765 colonial construction style, weathered wood.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T15:15:06.918Z",
+  "files": [
+    "scaffold-low.png"
+  ]
+}

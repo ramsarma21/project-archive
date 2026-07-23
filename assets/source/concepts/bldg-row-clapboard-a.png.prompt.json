@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial row house building only, centered, full building exterior in frame, front three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: narrow two and a half story weathered gray-brown timber clapboard row house, steep gable roof facing the street with a single brick chimney, small-pane sash windows, simple board door, slightly sagging weathered boards. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:05:19.186Z",
+  "files": [
+    "bldg-row-clapboard-a.png"
+  ]
+}

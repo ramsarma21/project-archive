@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Flat straight-on scan of a printed 1765 colonial protest broadside, aged rag paper, bold heavy letterpress block type. Giant stacked block-capital headline fills most of the sheet and reads exactly \"NO TAX BUT BY OUR OWN CONSENT\". Below it one short serif line reads \"The Voice of the People of this Province\". A heavy printed rule border, slight foxing, ink squash on the big letters. The paper texture extends past all four edges of the frame so no background is visible, no hands, no modern elements, no em dash characters anywhere.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T22:49:03.929Z",
+  "files": [
+    "poster-no-consent.png"
+  ]
+}

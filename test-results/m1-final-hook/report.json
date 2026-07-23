@@ -1,0 +1,187 @@
+{
+  "baseUrl": "http://127.0.0.1:5192/",
+  "screenshots": [
+    {
+      "name": "m4-m1-chase-active",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m1-final-hook/m4-m1-chase-active.png",
+      "luminance": {
+        "meanLuma": 68.764,
+        "nonBlackRatio": 0.8392
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "PA.FIELD.INTERRUPT.M1_QA_INTERRUPT_e2f352ae_7",
+        "watcherCount": "4",
+        "drawCalls": "276",
+        "triangles": "4365064",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 276,
+            "triangles": 4365064,
+            "points": 0,
+            "lines": 0,
+            "geometries": 150,
+            "textures": 215,
+            "programs": 41
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -12.99656731777999,
+              3.0489511248772185,
+              1.4999999999999998
+            ],
+            "rotation": [
+              -1.5706877257129057,
+              -1.3191337440626782,
+              -1.570684193486033
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 299,
+            "visibleSkinnedMeshes": 27
+          },
+          "frameMs": {
+            "samples": 137,
+            "mean": 41.56788321154831,
+            "p50": 8.5,
+            "p95": 64.09999999403954,
+            "p99": 842.3000000119209,
+            "max": 2139.0999999940395
+          },
+          "fps": 24.057034487678262
+        }
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "m1-chase",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "PA.FIELD.INTERRUPT.M1_QA_INTERRUPT_e2f352ae_7",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "CHASE",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "276",
+          "triangles": "4365064",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "66",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "COVER-crowd-central",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "sceneObjectCount": "3503",
+          "sceneVisibleMeshCount": "389",
+          "playerPos": "-6.00,1.50",
+          "playerPos3d": "-6.000,0.000,1.500",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "1.000,0.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "true",
+          "chaseState": "ACTIVE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "true",
+          "pursuerPosition": "-8.633,0.000,1.500",
+          "pursuerForward": "1.000,0.000,0.000",
+          "pursuerVelocity": "4.300,0.000,0.000",
+          "pursuerSpace": "EXTERIOR",
+          "chaseOutcome": "",
+          "namedActorIds": "",
+          "namedActorPositions": "",
+          "chaseGap": "2.633",
+          "chaseShakeSeconds": "0.000",
+          "chaseCorneredSeconds": "0.000",
+          "chaseTargetWaypoint": ""
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "CHASE",
+          "activeChaseId": "M1_QA_CHASE_e2f352ae_7",
+          "profileSource": "LOCAL",
+          "clockSpent": "6",
+          "carriedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,PLAIN_WRAP,THOMAS_CIRCULAR",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_MOUSE",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "STARTED",
+          "qaChaseReason": "QA chase started.",
+          "qaChaseStep": "COMMITTED_FIELD_HEAT_TRANSITION"
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "assetFailures": [],
+  "networkFailures": []
+}

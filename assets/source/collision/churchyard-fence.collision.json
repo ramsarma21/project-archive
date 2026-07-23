@@ -1,0 +1,34 @@
+{
+  "assetKey": "churchyard-fence",
+  "category": "prop",
+  "profile": "solid",
+  "fit": {
+    "targetSize": [
+      3.2,
+      1.1,
+      0.3
+    ],
+    "scale": 1
+  },
+  "note": "Finite thin fence panel (NOT an infinite wall).",
+  "colliders": [
+    {
+      "id": "panel",
+      "shape": "box",
+      "center": [
+        0,
+        0.55,
+        0
+      ],
+      "half": [
+        1.465,
+        0.55,
+        0.079
+      ],
+      "tags": [
+        "obstacle",
+        "fence"
+      ]
+    }
+  ]
+}

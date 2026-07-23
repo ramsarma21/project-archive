@@ -1,0 +1,11 @@
+{
+  "assetKey": "effigy-oliver",
+  "category": "prop",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "M4 B11 event effigy body (Andrew Oliver straw dummy). Non-blocking: it hangs above head height, is caught, then carried by the crowd (state-driven by EventDirector). No player collision, like a held/hung prop. Animation-ready named nodes are added in Blender post (effigy_root, effigy_body, effigy_hang_pivot, placard_mount).",
+  "colliders": []
+}

@@ -1,0 +1,11 @@
+{
+  "assetKey": "first-person-left-grip",
+  "category": "firstperson",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "First-person grip rig; camera-attached, never a world collider.",
+  "colliders": []
+}

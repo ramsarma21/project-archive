@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated modular 1765 Boston colonial street paving segment for image-to-3D reconstruction. Full rectangular module visible edge-to-edge, 2:1 length-to-width, slightly elevated three-quarter orthographic view on a plain neutral light gray studio background, no environment, no buildings, no people, no labels, no shadows obscuring edges. Irregular worn granite and fieldstone setts, varied sizes and imperfect rows, subtle convex road crown across the width, two shallow wheel-worn tracks along the length, dark mud and grime in joints, a few damp shallow depressions, chipped rounded stones, historically hand-laid and uneven, desaturated gray-brown, no modern uniform pavers, no curb, no grass. Low-profile solid underside, clean straight tileable boundary edges, game-ready modular road slab.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:06:53.170Z",
+  "files": [
+    "colonial-street-a.png"
+  ]
+}

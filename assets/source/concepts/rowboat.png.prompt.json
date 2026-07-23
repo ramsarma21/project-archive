@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single 18th century wooden rowboat only, centered, full object in frame, three-quarter view, no water, no sea, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: small clinker-built wooden dinghy with overlapping weathered planks, two bench thwarts, a pair of plain wooden oars resting inside, iron oarlocks, worn gray-brown wood with faded paint traces, entire hull visible down to the keel as if set on a stand. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:06:19.095Z",
+  "files": [
+    "rowboat.png"
+  ]
+}

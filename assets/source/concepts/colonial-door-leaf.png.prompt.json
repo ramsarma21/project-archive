@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Historically accurate 1765 Boston (colonial New England) working-class paneled exterior door. Hand-planed painted wood, wrought-iron hardware, weathered but intact. Neutral studio lighting, plain flat background, orthographic-style front elevation, single subject, centered, no people, no ground, no text. SUBJECT: only a single DETACHED door leaf — a six-panel (two over two over two) stile-and-rail wooden door, ~1.12m wide x 2.0m tall x ~0.1m thick, wrought-iron thumb-latch and hinges on the LEFT hinge stile. No frame, no jamb, no wall, no opening around it — just the isolated leaf, face-on.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T19:25:28.763Z",
+  "files": [
+    "colonial-door-leaf.png"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single static timber frame and body of an English common wooden printing press: two massive upright cheeks on broad feet, top cap and cross-rails, waist-height bed rails/table and rear support framing. Deliberately EMPTY mechanism mounting spaces. Absolutely no lever/bar, no screw/spindle, no platen, no sliding carriage/coffin, no tympan, and no frisket only, centered, full object in frame, three-quarter orthographic product view, plain light gray studio background, soft even lighting, no ground shadow, no people, no text, no watermark. Historically accurate English common printing press construction used in 1765 colonial Boston. Realistic aged oak, elm, iron, wool baize, and parchment as appropriate; muted used colors; game asset reference photo. No modern machinery, Victorian styling, fantasy, museum display, room, or scenery.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T17:12:34.783Z",
+  "files": [
+    "press-frame-body.png"
+  ]
+}

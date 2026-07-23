@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial waterfront warehouse building only, centered, full building exterior in frame, front three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: long two and a half story timber ship chandlery warehouse, weathered vertical board siding, wide double loading doors on the ground floor, upper loft door with a small timber hoist beam and pulley under the gable peak, few small windows, gable roof with wood shingles, hanging pictorial anchor trade sign on an iron bracket with no lettering. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:07:55.214Z",
+  "files": [
+    "bldg-warehouse-street.png"
+  ]
+}

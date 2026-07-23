@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial town gate with palisade section only, centered, full structure in frame, front three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: heavy timber town gate with two square hewn posts and a simple crossbeam, swinging double gate of vertical planks with iron strap hinges, flanked on both sides by a short section of pointed log palisade fence, weathered wood. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:08:11.079Z",
+  "files": [
+    "town-gate.png"
+  ]
+}

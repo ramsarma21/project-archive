@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single 18th century harbor mooring buoy only, centered, full object in frame, three-quarter view, no water, no sea, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: barrel-shaped wooden mooring buoy of tarred oak staves bound with rusted iron hoops, iron mooring ring on top, short length of heavy weathered hemp rope attached, worn dark wood with faded dull red paint band. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:07:33.391Z",
+  "files": [
+    "buoy.png"
+  ]
+}

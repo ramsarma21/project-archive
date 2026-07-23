@@ -1,0 +1,36 @@
+{
+  "assetKey": "hitching-post",
+  "category": "prop",
+  "profile": "capsule",
+  "fit": {
+    "targetSize": [
+      1.6,
+      1.1,
+      0.4
+    ],
+    "scale": 1
+  },
+  "note": "Post → capsule. NOTE: the manifest fit target [1.6,1.1,0.4] over-constrains this asset (z=0.4), so its fitted footprint collapses to ~0.4m; integration should widen the fit or the capsule radius.",
+  "colliders": [
+    {
+      "id": "post",
+      "shape": "capsule",
+      "a": [
+        0,
+        0.18,
+        0
+      ],
+      "b": [
+        0,
+        0.425,
+        0
+      ],
+      "radius": 0.18,
+      "tags": [
+        "obstacle",
+        "post"
+      ],
+      "marginReason": "fit target z=0.4 collapses the footprint; post radius intentionally near the fitted half-extent until the fit is widened"
+    }
+  ]
+}

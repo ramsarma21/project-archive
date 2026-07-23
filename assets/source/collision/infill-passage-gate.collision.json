@@ -1,0 +1,19 @@
+{
+  "assetKey": "infill-passage-gate",
+  "category": "prop",
+  "profile": "pending",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "pendingDoorContract": true,
+  "note": "Imported covered passage with a real opening; no invented solid AABB. Opening/frame collision is deferred.",
+  "colliders": [],
+  "compose": [
+    {
+      "type": "door",
+      "ref": "density-passage-opening",
+      "note": "author frame legs + lintel around measured opening"
+    }
+  ]
+}

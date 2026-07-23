@@ -91,6 +91,10 @@ export const TEXT = {
       "Liberty Tree: the elm where the crowd hung the effigy of Andrew Oliver, the stamp distributor.",
     eventNarration:
       "The men at the tree lower the effigy.\nThe crowd turns together and carries it toward Fort Hill.\nThe event is organized, aimed at the stamp distributor, and already beyond anything the runner can start or stop.",
+    eventNarration2:
+      "On Kilby Street they pull down a small building the crowd says is Oliver's stamp office.\nIts timbers feed the bonfire on Fort Hill. The effigy is beheaded and burned.\nLater, stones sound against the windows of Oliver's own house.",
+    eventAftermath:
+      "By morning the word is already moving: Andrew Oliver will resign the stamp post.\nNobody in this crowd waited for permission. Somebody planned every step of it.",
   },
   shopsClosed:
     "That's it. Light's gone, shops are shuttering. Whatever's not done is done.",

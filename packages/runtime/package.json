@@ -12,13 +12,17 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --import tsx --test test/*.test.ts",
+    "assessment:validate": "node --import tsx src/assessment/validateQuestionBankCli.ts",
+    "content:compile": "node scripts/generate-act1-open-response.mjs",
+    "content:validate": "node ../../content/boston/act1/validate/validate-content.mjs && node --import tsx test/act1-content-artifact.test.ts"
   },
   "dependencies": {
     "@pa/contracts": "workspace:*",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/node": "^22.10.5",
     "tsx": "4.19.2",
     "typescript": "5.7.3"
   }

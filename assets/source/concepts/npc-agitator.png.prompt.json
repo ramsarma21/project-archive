@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single full-body 1765 Boston Sons of Liberty agitator, standing in a relaxed A-pose, arms slightly away from body, facing camera, plain light gray background, no other objects, no text, head to toe fully in frame, muted period clothing colors: sturdy artisan, brown leather work apron over white linen shirt with rolled sleeves, dark madder-red knitted liberty cap, charcoal wool knee breeches, gray stockings, worn black buckled shoes, determined face, empty hands, no weapons, no props",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:13:10.483Z",
+  "files": [
+    "npc-agitator.png"
+  ]
+}

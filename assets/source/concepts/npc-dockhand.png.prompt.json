@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single full-body 1765 Boston dock laborer, standing in a relaxed A-pose, arms slightly away from body, facing camera, plain light gray background, no other objects, no text, head to toe fully in frame, muted period clothing colors: weathered dockhand, rough off-white linen shirt with rolled sleeves, faded red neck kerchief, plain brown wool waistcoat, tar-stained canvas breeches, gray wool stockings, scuffed black leather shoes, no hat, empty hands, no props",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:13:05.118Z",
+  "files": [
+    "npc-dockhand.png"
+  ]
+}

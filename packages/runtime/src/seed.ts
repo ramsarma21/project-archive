@@ -23,4 +23,8 @@ export function draw(attemptSeed: Uint8Array, label: string): number {
   return v / max;
 }
 
+export function deriveFieldSeedHex(attemptSeed: Uint8Array): string {
+  return bytesToHex(hmacSha256(attemptSeed, utf8("PA.FIELD.SEED.v1")).slice(0, 16));
+}
+
 export { bytesToHex };

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated eighteenth-century wooden printing-press screw spindle: stout vertical dark hardwood shaft with clearly carved coarse helical threads, a compact square/round bar-hole head near its lower end, and a short smooth neck for attaching the platen. No lever bar, platen, frame, or table only, centered, full object in frame, three-quarter orthographic product view, plain light gray studio background, soft even lighting, no ground shadow, no people, no text, no watermark. Historically accurate English common printing press construction used in 1765 colonial Boston. Realistic aged oak, elm, iron, wool baize, and parchment as appropriate; muted used colors; game asset reference photo. No modern machinery, Victorian styling, fantasy, museum display, room, or scenery.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T17:13:10.870Z",
+  "files": [
+    "press-screw-spindle.png"
+  ]
+}

@@ -1,0 +1,608 @@
+{
+  "baseUrl": "http://127.0.0.1:5193/",
+  "out": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close",
+  "servedSource": {
+    "immutable-preview-bundle": {
+      "path": "/assets/index-BBbIDMWY.js",
+      "bytes": 1839041,
+      "sha256": "7d4c28252e8f456d5afb1912844522ee3b818f188f81cec1dfcb768cc3282af3",
+      "relatedAssets": [
+        "/assets/runtime.worker-DyT5G9FV.js"
+      ],
+      "markers": [
+        "Talk to Goodwife Sarah",
+        "FIELD_REACTIVE_COMPLETED",
+        "Town standing"
+      ]
+    }
+  },
+  "selectedLaunch": "headless-shell-angle",
+  "launchAttempts": [
+    {
+      "id": "headless-shell-angle",
+      "executablePath": "/tmp/pw-browsers/chromium_headless_shell-1228/chrome-headless-shell-mac-arm64/chrome-headless-shell",
+      "headless": true,
+      "args": [
+        "--use-gl=angle",
+        "--enable-webgl",
+        "--ignore-gpu-blocklist",
+        "--disable-dev-shm-usage"
+      ],
+      "gpu": {
+        "available": true,
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguage": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "vendor": "Google Inc. (Apple)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+        "framebuffer": {
+          "width": 1440,
+          "height": 838,
+          "contextLost": false,
+          "glError": 0,
+          "sampledMeanLuma": 0,
+          "sampledNonBlackRatio": 0,
+          "worldDataset": {
+            "drawCalls": "379",
+            "triangles": "2753596",
+            "locationId": "BOSTON_STREET",
+            "interiorId": "",
+            "movementActive": "true",
+            "sceneObjectCount": "1236",
+            "sceneVisibleMeshCount": "405"
+          }
+        }
+      },
+      "metrics": {
+        "width": 1440,
+        "height": 838,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 838
+        },
+        "samples": 301680,
+        "meanLuma": 71.433,
+        "lumaStdDev": 46.433,
+        "nonBlackRatio": 0.8748,
+        "colorfulRatio": 0.7551,
+        "minimumLuma": 0,
+        "maximumLuma": 195.93,
+        "colorBins": 224
+      },
+      "renderWaitMs": 0,
+      "interiorProbe": null,
+      "passed": true,
+      "errors": [],
+      "diagnostics": []
+    }
+  ],
+  "gpu": {
+    "available": true,
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "shadingLanguage": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+    "vendor": "Google Inc. (Apple)",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+    "framebuffer": {
+      "width": 1440,
+      "height": 838,
+      "contextLost": false,
+      "glError": 0,
+      "sampledMeanLuma": 0,
+      "sampledNonBlackRatio": 0,
+      "worldDataset": {
+        "drawCalls": "346",
+        "triangles": "2773592",
+        "locationId": "BOSTON_STREET",
+        "interiorId": "",
+        "movementActive": "true",
+        "sceneObjectCount": "1620",
+        "sceneVisibleMeshCount": "389"
+      }
+    }
+  },
+  "screenshots": [
+    {
+      "name": "01-day-reactive-cast",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/01-day-reactive-cast.png",
+      "canvasPath": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/01-day-reactive-cast-canvas.png",
+      "metrics": {
+        "width": 1440,
+        "height": 838,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 838
+        },
+        "samples": 301680,
+        "meanLuma": 52.682,
+        "lumaStdDev": 44.163,
+        "nonBlackRatio": 0.8132,
+        "colorfulRatio": 0.6788,
+        "minimumLuma": 0,
+        "maximumLuma": 240.73,
+        "colorBins": 281
+      }
+    },
+    {
+      "name": "unified-f-priority",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/unified-f-priority.png",
+      "canvasPath": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/unified-f-priority-canvas.png",
+      "metrics": {
+        "width": 1440,
+        "height": 838,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 838
+        },
+        "samples": 301680,
+        "meanLuma": 61.406,
+        "lumaStdDev": 45.784,
+        "nonBlackRatio": 0.8609,
+        "colorfulRatio": 0.5251,
+        "minimumLuma": 0,
+        "maximumLuma": 240.73,
+        "colorBins": 430
+      }
+    },
+    {
+      "name": "thread-sarah",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/thread-sarah.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 54.37,
+        "lumaStdDev": 44.427,
+        "nonBlackRatio": 0.7806,
+        "colorfulRatio": 0.5664,
+        "minimumLuma": 0,
+        "maximumLuma": 255,
+        "colorBins": 470
+      }
+    },
+    {
+      "name": "thread-ned",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/thread-ned.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 48.48,
+        "lumaStdDev": 32.579,
+        "nonBlackRatio": 0.7941,
+        "colorfulRatio": 0.6387,
+        "minimumLuma": 0,
+        "maximumLuma": 250.54,
+        "colorBins": 291
+      }
+    },
+    {
+      "name": "named-abigail",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/named-abigail.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 50.541,
+        "lumaStdDev": 33.845,
+        "nonBlackRatio": 0.7988,
+        "colorfulRatio": 0.5126,
+        "minimumLuma": 0,
+        "maximumLuma": 240.73,
+        "colorBins": 235
+      }
+    },
+    {
+      "name": "named-thomas",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/named-thomas.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 52.902,
+        "lumaStdDev": 43.374,
+        "nonBlackRatio": 0.7755,
+        "colorfulRatio": 0.5499,
+        "minimumLuma": 0,
+        "maximumLuma": 255,
+        "colorBins": 510
+      }
+    },
+    {
+      "name": "named-pike",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/named-pike.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 61.142,
+        "lumaStdDev": 36.291,
+        "nonBlackRatio": 0.8417,
+        "colorfulRatio": 0.4786,
+        "minimumLuma": 0,
+        "maximumLuma": 255,
+        "colorBins": 244
+      }
+    },
+    {
+      "name": "named-clarke",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/named-clarke.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 55.102,
+        "lumaStdDev": 44.826,
+        "nonBlackRatio": 0.762,
+        "colorfulRatio": 0.5525,
+        "minimumLuma": 0,
+        "maximumLuma": 255,
+        "colorBins": 314
+      }
+    },
+    {
+      "name": "named-rider",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/named-rider.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 48.125,
+        "lumaStdDev": 35.882,
+        "nonBlackRatio": 0.7791,
+        "colorfulRatio": 0.466,
+        "minimumLuma": 0,
+        "maximumLuma": 250.54,
+        "colorBins": 264
+      }
+    },
+    {
+      "name": "dock-offer",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/dock-offer.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 52.168,
+        "lumaStdDev": 40.406,
+        "nonBlackRatio": 0.8088,
+        "colorfulRatio": 0.6186,
+        "minimumLuma": 0,
+        "maximumLuma": 255,
+        "colorBins": 271
+      }
+    },
+    {
+      "name": "dock-load",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/dock-load.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 51.793,
+        "lumaStdDev": 40.5,
+        "nonBlackRatio": 0.8006,
+        "colorfulRatio": 0.5875,
+        "minimumLuma": 0,
+        "maximumLuma": 250.54,
+        "colorBins": 320
+      }
+    },
+    {
+      "name": "dock-balance",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/dock-balance.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 60.533,
+        "lumaStdDev": 52.662,
+        "nonBlackRatio": 0.7906,
+        "colorfulRatio": 0.52,
+        "minimumLuma": 0,
+        "maximumLuma": 250.54,
+        "colorBins": 251
+      }
+    },
+    {
+      "name": "dock-setdown",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/dock-setdown.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 69.366,
+        "lumaStdDev": 55.742,
+        "nonBlackRatio": 0.8319,
+        "colorfulRatio": 0.6437,
+        "minimumLuma": 0,
+        "maximumLuma": 250.54,
+        "colorBins": 229
+      }
+    },
+    {
+      "name": "tavern-note-handoff",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/tavern-note-handoff.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 22.738,
+        "lumaStdDev": 24.676,
+        "nonBlackRatio": 0.3555,
+        "colorfulRatio": 0.7166,
+        "minimumLuma": 0,
+        "maximumLuma": 250.54,
+        "colorBins": 193
+      }
+    },
+    {
+      "name": "archive-standing",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/archive-standing.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 18.943,
+        "lumaStdDev": 22.394,
+        "nonBlackRatio": 0.319,
+        "colorfulRatio": 0.3914,
+        "minimumLuma": 4.37,
+        "maximumLuma": 255,
+        "colorBins": 236
+      }
+    },
+    {
+      "name": "archive-threads",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/archive-threads.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 20.064,
+        "lumaStdDev": 23.919,
+        "nonBlackRatio": 0.3492,
+        "colorfulRatio": 0.4424,
+        "minimumLuma": 4.37,
+        "maximumLuma": 255,
+        "colorBins": 160
+      }
+    },
+    {
+      "name": "archive-micros",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/archive-micros.png",
+      "canvasPath": null,
+      "metrics": {
+        "width": 1440,
+        "height": 900,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "samples": 324000,
+        "meanLuma": 23.037,
+        "lumaStdDev": 25.885,
+        "nonBlackRatio": 0.4358,
+        "colorfulRatio": 0.5442,
+        "minimumLuma": 3.58,
+        "maximumLuma": 255,
+        "colorBins": 161
+      }
+    },
+    {
+      "name": "02-drizzle-reactive-cast",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/02-drizzle-reactive-cast.png",
+      "canvasPath": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/02-drizzle-reactive-cast-canvas.png",
+      "metrics": {
+        "width": 1440,
+        "height": 838,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 838
+        },
+        "samples": 301680,
+        "meanLuma": 55.227,
+        "lumaStdDev": 35.925,
+        "nonBlackRatio": 0.8355,
+        "colorfulRatio": 0.5947,
+        "minimumLuma": 0,
+        "maximumLuma": 255,
+        "colorBins": 306
+      }
+    },
+    {
+      "name": "03-dusk-reactive-cast",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/03-dusk-reactive-cast.png",
+      "canvasPath": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/03-dusk-reactive-cast-canvas.png",
+      "metrics": {
+        "width": 1440,
+        "height": 838,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 838
+        },
+        "samples": 301680,
+        "meanLuma": 56.289,
+        "lumaStdDev": 33.159,
+        "nonBlackRatio": 0.8486,
+        "colorfulRatio": 0.6019,
+        "minimumLuma": 0,
+        "maximumLuma": 240.73,
+        "colorBins": 203
+      }
+    },
+    {
+      "name": "accessibility-high-contrast-reduced-keyboard",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/accessibility-high-contrast-reduced-keyboard.png",
+      "canvasPath": "/Users/ramsarma/Projects/project-archive/test-results/m3-final-m4-close/accessibility-high-contrast-reduced-keyboard-canvas.png",
+      "metrics": {
+        "width": 1440,
+        "height": 838,
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 838
+        },
+        "samples": 301680,
+        "meanLuma": 76.737,
+        "lumaStdDev": 47.944,
+        "nonBlackRatio": 0.9078,
+        "colorfulRatio": 0.7446,
+        "minimumLuma": 0,
+        "maximumLuma": 255,
+        "colorBins": 306
+      }
+    }
+  ],
+  "interactions": [
+    {
+      "accessibleName": "/Goodwife Sarah/i",
+      "choiceName": "/Help with the stall/i",
+      "status": "COMPLETED"
+    },
+    {
+      "accessibleName": "/Talk to Ned/i",
+      "choiceName": "/Fetch the tray of type/i",
+      "status": "COMPLETED"
+    },
+    {
+      "accessibleName": "/Talk to Abigail/i",
+      "choiceName": "/Ask about the press/i",
+      "status": "COMPLETED"
+    },
+    {
+      "accessibleName": "/Talk to Thomas/i",
+      "choiceName": "/Ask what the duties change/i",
+      "status": "COMPLETED"
+    },
+    {
+      "accessibleName": "/Talk to Pike/i",
+      "choiceName": "/Ask about the courts/i",
+      "status": "COMPLETED"
+    },
+    {
+      "accessibleName": "/Talk to Clarke/i",
+      "choiceName": "/Hear him out/i",
+      "status": "COMPLETED"
+    },
+    {
+      "accessibleName": "/Talk to the rider/i",
+      "choiceName": "/Ask where the news goes/i",
+      "status": "COMPLETED"
+    }
+  ],
+  "errors": [],
+  "health": {
+    "diagnostics": [],
+    "isolatedProbe": true
+  }
+}

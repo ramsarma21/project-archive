@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Convert this colonial road end transition into a perfectly overhead orthographic rectangular albedo map. Fill frame edge-to-edge with one continuous module: dense irregular granite setts and wagon tracks at the left edge gradually become sparse broken stones, compacted gravel and muddy earth toward the right edge. No perspective, slab sides, background, border, cast shadows or lighting gradient. Many small believable stones, muted gray-brown, historically rough. The top and bottom edges continue cleanly.",
+  "size": "1024x1024",
+  "edit": "assets/source/concepts/roads/colonial-street-endcap.png",
+  "generatedAt": "2026-07-21T16:47:44.908Z",
+  "files": [
+    "colonial-street-endcap-material.png"
+  ]
+}

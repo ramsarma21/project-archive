@@ -1,0 +1,34 @@
+{
+  "assetKey": "crate-stack",
+  "category": "prop",
+  "profile": "solid",
+  "fit": {
+    "targetSize": [
+      2.6,
+      2.6,
+      2.6
+    ],
+    "scale": 1
+  },
+  "note": "Stacked crates; box top is landable.",
+  "colliders": [
+    {
+      "id": "body",
+      "shape": "box",
+      "center": [
+        0,
+        0.936,
+        0
+      ],
+      "half": [
+        1.24,
+        0.936,
+        0.924
+      ],
+      "tags": [
+        "obstacle",
+        "landable"
+      ]
+    }
+  ]
+}

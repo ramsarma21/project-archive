@@ -1,0 +1,44 @@
+{
+  "assetKey": "gangplank",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": [
+      3.6,
+      1.2,
+      1.2
+    ],
+    "scale": 1
+  },
+  "note": "Walkable plank bridging deck to ship; support surface, not a wall. Long axis is local X.",
+  "colliders": [
+    {
+      "id": "deck",
+      "shape": "support",
+      "polygon": [
+        [
+          -1.75,
+          -0.326
+        ],
+        [
+          1.75,
+          -0.326
+        ],
+        [
+          1.75,
+          0.326
+        ],
+        [
+          -1.75,
+          0.326
+        ]
+      ],
+      "y": 0.2,
+      "link": "world:wharf-deck",
+      "tags": [
+        "support",
+        "walkable"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,252 @@
+{
+  "registryId": "PA.BOS.ACT01.SOURCES",
+  "registryVersion": "0.1.0-draft",
+  "status": "HISTORICAL_REVIEW_PENDING",
+  "note": "Historically reviewed source packets for Act 1 open responses. Each packet binds in-world artifacts/NPCs to reviewed transcriptions/paraphrases, then to typed claims (DOCUMENTED, REPRESENTATIVE, INFERENCE) and citable evidence units. DOCUMENTED = confirmable against standard scholarship (citation must be verified by SME). REPRESENTATIVE = the in-world artifact is a plausible period reconstruction, not a transcription of one specific surviving document. INFERENCE = reasonable in-fiction inference the student may draw, not an asserted fact.",
+
+  "assetRefRegistry": {
+    "note": "Allowlist of existing in-world asset/NPC/interaction IDs a packet may cite as backing. Mirrors ids already present in m4ContentManifest.ts, reactiveManifest.ts, interiorSources.ts, contracts ids.ts, and the poster prompt assets. The validator checks every backingRef against this list.",
+    "posterTextures": [
+      "poster-revenue-proclamation",
+      "poster-stamp-schedule",
+      "poster-nonimportation",
+      "poster-no-consent",
+      "poster-town-meeting",
+      "poster-wharfage",
+      "poster-liberty-tree"
+    ],
+    "knowledgePlacements": [
+      "KN-noticeboard-revenue", "KN-noticeboard-stamp", "KN-liberty-bill",
+      "KN-nonimport", "KN-townmeeting", "KN-noconsent", "KN-wharfage",
+      "KN-sign-printer", "KN-sign-tavern", "KN-watchhouse", "KN-coinpaper",
+      "KN-typecase", "KN-effigy", "KN-marketstall", "KN-elm", "KN-assembly",
+      "KN-cargomark", "KN-fishflakes", "KN-ropewalk-front"
+    ],
+    "interiorSourceIds": [
+      "CW_PRINTER", "CW_TRADES", "NPS_COUNTINGHOUSE", "CSM_MERCHANT_DESK",
+      "HARVARD_BOMBE", "BUNCH_OF_GRAPES", "CUSTOMS_CONTEXT"
+    ],
+    "jobObjectIds": [
+      "BOS.MD01.OBJ.PIKE_PROOF.v1",
+      "BOS.MD01.OBJ.CUSTOMHOUSE_NOTICE.v1",
+      "BOS.MD01.OBJ.THOMAS_CIRCULAR.v1",
+      "BOS.MD01.OBJ.CARRIER_HANDBILLS.v1",
+      "BOS.MD01.OBJ.PLAIN_WRAP.v1",
+      "BOS.MD01.OBJ.RETAINED_STAMP_FORM.v1"
+    ],
+    "npcAndThreadIds": [
+      "NPC-abigail", "NPC-thomas", "NPC-pike", "NPC-clarke", "NPC-rider",
+      "THR-sarah", "EAV-market", "EAV-customs", "custom-counter", "thomas-ledger",
+      "pike-records", "placard-andrew-oliver"
+    ]
+  },
+
+  "packets": [
+    {
+      "packetId": "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1",
+      "title": "Crown revenue proclamation (Custom House posting)",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["poster-revenue-proclamation", "KN-noticeboard-revenue", "CUSTOMS_CONTEXT", "BOS.MD01.OBJ.CUSTOMHOUSE_NOTICE.v1"],
+      "reviewedParaphrase": "A royal proclamation announcing measures for raising and securing a revenue in His Majesty's dominions in America, opening on the theme that the late war left a great and heavy debt.",
+      "reviewedTranscription": "By the KING, A PROCLAMATION. For the better raising and securing of a Revenue in His Majesty's Dominions in America. WHEREAS the late War hath left a great and heavy Debt. GOD Save the KING.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "After the French and Indian War ended in 1763, Britain carried heavy war debt and looked to raise revenue from the colonies.", "citationHint": "Standard Grade 8 US History coverage of postwar British finance; SME to confirm exact reference.", "evidenceIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.EV.1", "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.EV.2"] },
+        { "claimId": "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.CLAIM.2", "claimType": "DOCUMENTED", "text": "Britain moved from loosely enforcing colonial trade rules toward directly raising revenue (Sugar Act 1764, Stamp Act 1765).", "citationHint": "Sugar Act 1764; Stamp Act 1765 (5 Geo. III c. 12). SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.CLAIM.3", "claimType": "REPRESENTATIVE", "text": "The in-world proclamation sheet is a plausible period reconstruction of a Crown revenue notice, not a transcription of one specific surviving broadside.", "citationHint": "Artifact is authored for the game from period conventions; flag as representative in any citation shown to educators.", "evidenceIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.EV.1", "text": "The stated purpose: 'raising and securing of a Revenue in His Majesty's Dominions in America.'" },
+        { "evidenceId": "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.EV.2", "text": "The stated cause: 'the late War hath left a great and heavy Debt.'" }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.STAMP_SCHEDULE.v1",
+      "title": "Schedule of stamp duties (town notice board)",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["poster-stamp-schedule", "KN-noticeboard-stamp", "pike-records"],
+      "reviewedParaphrase": "A posted schedule of stamp duties to take force in the British colonies in America from the first of November 1765, listing printed and legal papers (pamphlets, almanacks, newspapers, deeds, leases, bonds, bills of lading, policies, probates, writs, licences) each with a duty.",
+      "reviewedTranscription": "A SCHEDULE of the STAMP DUTIES. To be in Force within the British Colonies in AMERICA from the First of November 1765. Every Pamphlet, One Shilling. Every News Paper, One Penny. Every Deed or Lease, One Shilling Six Pence. Every Writ, Six Pence. Every Licence, Twenty Shillings.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.STAMP_SCHEDULE.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "The Stamp Act placed duties on many printed and legal papers and took effect November 1, 1765.", "citationHint": "Stamp Act 1765 (5 Geo. III c. 12); effective 1 Nov 1765. SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.STAMP_SCHEDULE.v1.EV.1", "BOS.ACT01.SRC.STAMP_SCHEDULE.v1.EV.2"] },
+        { "claimId": "BOS.ACT01.SRC.STAMP_SCHEDULE.v1.CLAIM.2", "claimType": "DOCUMENTED", "text": "The stamp fell on official and printed paper (newspapers, deeds, writs, licences), not on private letters or ordinary goods.", "citationHint": "Enumerated categories of the Stamp Act. SME to verify boundary framing for grade level.", "evidenceIds": ["BOS.ACT01.SRC.STAMP_SCHEDULE.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.STAMP_SCHEDULE.v1.CLAIM.3", "claimType": "REPRESENTATIVE", "text": "The exact list, wording, and money amounts on the in-world schedule are a plausible reconstruction, not a transcript of a specific surviving schedule.", "citationHint": "Amounts authored for legibility; representative.", "evidenceIds": ["BOS.ACT01.SRC.STAMP_SCHEDULE.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.STAMP_SCHEDULE.v1.EV.1", "text": "The listed items are printed and legal papers: pamphlets, newspapers, deeds, leases, writs, licences." },
+        { "evidenceId": "BOS.ACT01.SRC.STAMP_SCHEDULE.v1.EV.2", "text": "The effective date line: 'To be in Force ... from the First of November 1765.'" }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1",
+      "title": "Stamped legal proof beside the plain shop form (B3 compare)",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["BOS.MD01.OBJ.PIKE_PROOF.v1", "BOS.MD01.OBJ.RETAINED_STAMP_FORM.v1", "pike-records", "CW_PRINTER"],
+      "reviewedParaphrase": "On the print-shop bench, a legal proof carrying the new paid-stamp line sits beside the shop's unchanged plain form. The words of the document are the same; the stamped copy adds the required duty mark.",
+      "reviewedTranscription": "Legal proof (stamped): same body text as the plain form, plus a line showing the paid stamp duty. Shop copy (plain): identical wording, no stamp.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "Under the Stamp Act, legal documents such as deeds and writs required stamped paper to be valid for official use.", "citationHint": "Stamp Act 1765 categories. SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.CLAIM.2", "claimType": "REPRESENTATIVE", "text": "The specific proof and plain form are authored game artifacts illustrating the stamped/plain contrast.", "citationHint": "Representative teaching artifacts.", "evidenceIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.CLAIM.3", "claimType": "INFERENCE", "text": "A clerk would treat the stamped official copy, not the plain proof, as the one that carries legal authority once the Act is in force.", "citationHint": "Reasonable in-fiction inference from period filing practice; not an asserted fact.", "evidenceIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.EV.2"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.EV.1", "text": "The two sheets share identical wording; only the stamp mark differs." },
+        { "evidenceId": "BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.EV.2", "text": "Pike needs the finished stamped proof for filing; the plain form alone will not serve after November 1." }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1",
+      "title": "Merchants' non-importation agreement (Thomas's wall)",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["poster-nonimportation", "KN-nonimport", "NPC-thomas"],
+      "reviewedParaphrase": "A merchants' agreement in which Boston subscribers promise not to import goods from Great Britain, except articles of absolute necessity, until the acts laying duties on colonial trade are repealed.",
+      "reviewedTranscription": "AGREEMENT of the MERCHANTS. We the Subscribers, Merchants and Traders of the Town of Boston, do promise and agree, that we will not import from Great Britain any Goods, Wares or Merchandize, other than such Articles as are of absolute Necessity, until the Acts laying Duties upon the Trade of these Colonies be repealed.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "Colonial merchants used non-importation agreements to pressure Parliament by hurting British merchants' trade.", "citationHint": "Non-importation as a resistance tactic; SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.CLAIM.2", "claimType": "REPRESENTATIVE", "text": "The specific 1765-dated signed Boston agreement shown in-world is a plausible reconstruction. Formal, widely subscribed Boston non-importation agreements matured mainly in 1767 to 1770; a signed 1765 sheet compresses this for the Act 1 setting.", "citationHint": "DATING FLAG for SME: confirm whether a 1765 date should be softened to 'emerging in 1765' to avoid overstating the formal agreement's timing.", "evidenceIds": ["BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.EV.1", "BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.EV.2"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.EV.1", "text": "The promise 'we will not import from Great Britain any Goods ... until the Acts ... be repealed.'" },
+        { "evidenceId": "BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.EV.2", "text": "The exception 'other than such Articles as are of absolute Necessity' shows a bounded, strategic boycott." }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1",
+      "title": "No-consent protest broadside",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["poster-no-consent", "KN-noconsent"],
+      "reviewedParaphrase": "A large protest broadside declaring that there should be no tax except by the people's own consent, presented as the voice of the people of the province.",
+      "reviewedTranscription": "NO TAX BUT BY OUR OWN CONSENT. The Voice of the People of this Province.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "Many colonists objected that Parliament taxed them without an elected colonial voice in it, the 'no taxation without representation' argument.", "citationHint": "TEKS 8.4(A) lack of representation; SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1.CLAIM.2", "claimType": "REPRESENTATIVE", "text": "The broadside wording is an authored slogan in the period style, not a transcript of a specific surviving sheet.", "citationHint": "Representative artifact.", "evidenceIds": ["BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1.EV.1", "text": "The headline claim: a tax is legitimate only 'by our own consent.'" }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1",
+      "title": "Town meeting summons (Faneuil Hall)",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["poster-town-meeting", "KN-townmeeting"],
+      "reviewedParaphrase": "A printed notice calling a Boston town meeting of freeholders and inhabitants at Faneuil Hall to consider measures proper to the present distress of trade, issued by order of the selectmen and the town clerk.",
+      "reviewedTranscription": "TOWN MEETING. Notice is hereby given, that a Meeting of the Freeholders and other Inhabitants of the Town of Boston will be held at Faneuil Hall ... to consider what Measures are proper in the present Distress of Trade. Per Order of the Selectmen, William Cooper, Town Clerk.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "Boston town meetings and selectmen were a formal channel for organizing the colonial response to imperial policy.", "citationHint": "Boston town meeting governance; William Cooper served as Boston town clerk. SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1.CLAIM.2", "claimType": "REPRESENTATIVE", "text": "This specific summons text is an authored reconstruction, though it uses the real office of town clerk and Faneuil Hall.", "citationHint": "Representative artifact using documented institutions.", "evidenceIds": ["BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1.EV.1", "text": "The notice gathers townspeople to 'consider what Measures are proper in the present Distress of Trade.'" }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.WHARFAGE_RATES.v1",
+      "title": "Wharfage rates notice (port economy)",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["poster-wharfage", "KN-wharfage", "KN-cargomark", "NPS_COUNTINGHOUSE"],
+      "reviewedParaphrase": "A weathered notice of wharfage rates for the town wharf, pairing goods (molasses, flour, firewood, iron, coal) with fees, by order of the wharfinger.",
+      "reviewedTranscription": "RATES of WHARFAGE. Established for the Town Wharf. Every Hogshead of Molasses, Four Pence. Every Barrel of Flour, Two Pence. Every Ton of Iron, Eight Pence. By Order of the Wharfinger.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.WHARFAGE_RATES.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "Boston's economy depended heavily on its harbor and shipping, so trade duties and customs enforcement pressed hard on the town.", "citationHint": "Boston as a leading colonial port; SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.WHARFAGE_RATES.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.WHARFAGE_RATES.v1.CLAIM.2", "claimType": "REPRESENTATIVE", "text": "The specific rates sheet and its amounts are an authored reconstruction of a port fee notice.", "citationHint": "Representative artifact.", "evidenceIds": ["BOS.ACT01.SRC.WHARFAGE_RATES.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.WHARFAGE_RATES.v1.EV.1", "text": "Fees are charged per unit of traded goods moving across the wharf, tying town income to shipping volume." }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.SARAH_MARKET.v1",
+      "title": "Goodwife Sarah's market stall (merchant-market testimony)",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["THR-sarah", "KN-marketstall", "EAV-market"],
+      "reviewedParaphrase": "At a thinly stocked market stall, Sarah, a wharf widow, says only fish and thread are left and that much of her trade has gone since the new duties.",
+      "reviewedTranscription": "Sarah: Fish and thread, love, what's left of it. Half my trade's gone since the new duties.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.SARAH_MARKET.v1.CLAIM.1", "claimType": "REPRESENTATIVE", "text": "Sarah's stall stands for the small traders whose livelihoods thinned as duties, customs friction, and slowed shipping reduced what came to market.", "citationHint": "In-fiction character testimony representing a documented pattern of trade disruption; not a specific historical person.", "evidenceIds": ["BOS.ACT01.SRC.SARAH_MARKET.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.SARAH_MARKET.v1.CLAIM.2", "claimType": "INFERENCE", "text": "The decline of this particular stall is directly caused by the new duties.", "citationHint": "A reasonable inference the character offers, but a single stall's decline cannot be attributed to one cause with certainty; treat as the merchant's viewpoint.", "evidenceIds": ["BOS.ACT01.SRC.SARAH_MARKET.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.SARAH_MARKET.v1.EV.1", "text": "Sarah reports 'half my trade's gone since the new duties,' with only fish and thread left on the boards." }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.THOMAS_LEDGER.v1",
+      "title": "Thomas Bell's counting-house ledger (merchant viewpoint)",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["NPC-thomas", "thomas-ledger", "CSM_MERCHANT_DESK", "HARVARD_BOMBE"],
+      "reviewedParaphrase": "Thomas Bell, a Boston merchant, frames his objection not around the money but around not being consulted: it is not the shilling, it is the not being asked.",
+      "reviewedTranscription": "Thomas: It's not the shilling. It's the not being asked.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.THOMAS_LEDGER.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "Many merchants framed their objection around consent and representation, not merely the cost of the tax.", "citationHint": "Representation argument; SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.THOMAS_LEDGER.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.THOMAS_LEDGER.v1.CLAIM.2", "claimType": "REPRESENTATIVE", "text": "Thomas is an authored merchant character voicing a documented merchant viewpoint.", "citationHint": "Representative character.", "evidenceIds": ["BOS.ACT01.SRC.THOMAS_LEDGER.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.THOMAS_LEDGER.v1.EV.1", "text": "Thomas's own words locate the grievance in consent: 'not the shilling ... the not being asked.'" }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.EFFIGY_OLIVER.v1",
+      "title": "Andrew Oliver effigy at the elm",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["KN-effigy", "placard-andrew-oliver", "KN-elm", "KN-liberty-bill", "poster-liberty-tree"],
+      "reviewedParaphrase": "A placard on a hanging effigy names Andrew Oliver, the man appointed to distribute stamps in Massachusetts; the crowd gathered at the great elm to shame him publicly.",
+      "reviewedTranscription": "Placard: Andrew Oliver, appointed to distribute the stamps.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.EFFIGY_OLIVER.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "Andrew Oliver was designated stamp distributor for Massachusetts; on August 14, 1765 the crowd hung and burned his effigy, and he resigned the next day.", "citationHint": "Stamp Act crisis, Boston, Aug 14 to 15, 1765. SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1.EV.1", "BOS.ACT01.SRC.EFFIGY_OLIVER.v1.EV.2"] },
+        { "claimId": "BOS.ACT01.SRC.EFFIGY_OLIVER.v1.CLAIM.2", "claimType": "DOCUMENTED", "text": "The elm where the crowd gathered became known as the Liberty Tree, a lasting protest symbol.", "citationHint": "Liberty Tree, Boston. SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1.EV.2"] },
+        { "claimId": "BOS.ACT01.SRC.EFFIGY_OLIVER.v1.CLAIM.3", "claimType": "REPRESENTATIVE", "text": "The in-world placard and effigy prop are authored reconstructions of the documented event.", "citationHint": "Representative artifacts of a documented event.", "evidenceIds": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.EFFIGY_OLIVER.v1.EV.1", "text": "The placard identifies Oliver by his office (stamp distributor), turning a distant appointment into a public target." },
+        { "evidenceId": "BOS.ACT01.SRC.EFFIGY_OLIVER.v1.EV.2", "text": "The gathering place is the great elm at the crossroads, soon called the Liberty Tree." }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1",
+      "title": "Search authority at the Custom House",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["custom-counter", "KN-watchhouse", "EAV-customs", "CUSTOMS_CONTEXT"],
+      "reviewedParaphrase": "At the customs counter, an officer asserts authority to open a bag on the King's warrant; a tradesman questions on whose warrant, echoing the dispute over open-ended search powers.",
+      "reviewedTranscription": "Constable: Open the bag. The King's warrant is enough. Tradesman: On whose warrant? That is the question.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "Writs of assistance were open-ended general search warrants that let customs officers search homes and shops; colonists saw them as a threat to their rights.", "citationHint": "Writs of assistance; James Otis's 1761 challenge. SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.CLAIM.2", "claimType": "DOCUMENTED", "text": "Stamp Act violations could be tried in vice-admiralty courts, which decided cases without a local jury.", "citationHint": "Vice-admiralty jurisdiction under the Stamp Act. SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.CLAIM.3", "claimType": "REPRESENTATIVE", "text": "The in-world inspection stages the general-warrant dispute; in-fiction the carried papers are not yet contraband, so the point is the power to search, not this search.", "citationHint": "Representative staging per Act-1 micro notes.", "evidenceIds": ["BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.EV.1", "text": "The exchange 'The King's warrant is enough' versus 'On whose warrant?' dramatizes an open-ended power to search." }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.PRINTER_PRESS.v1",
+      "title": "The Mercer print shop (printers and public argument)",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["NPC-abigail", "KN-typecase", "KN-sign-printer", "CW_PRINTER"],
+      "reviewedParaphrase": "In the print shop, Abigail Mercer works the wet sheets and warns to mind your mouth on the street; printers compose arguments from individual pieces of type so the press can reproduce them for many readers.",
+      "reviewedTranscription": "Abigail: Mind the wet sheets, and mind your mouth on the street today. Type-case read: printers compose lines from individual pieces of type before the press can reproduce the argument.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.PRINTER_PRESS.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "The Stamp Act taxed newspapers and pamphlets directly, so printers had a personal stake and became leading opponents; the press let one argument reach many people at once.", "citationHint": "Printers' role in Stamp Act protest; SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.PRINTER_PRESS.v1.EV.1"] },
+        { "claimId": "BOS.ACT01.SRC.PRINTER_PRESS.v1.CLAIM.2", "claimType": "REPRESENTATIVE", "text": "The Mercer shop and Abigail are authored, standing for Boston's printing trade and its opposition role.", "citationHint": "Representative shop/character.", "evidenceIds": ["BOS.ACT01.SRC.PRINTER_PRESS.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.PRINTER_PRESS.v1.EV.1", "text": "The press reproduces one composed argument many times, so a printed notice can coordinate more people than word of mouth." }
+      ]
+    },
+    {
+      "packetId": "BOS.ACT01.SRC.RIDER_NETWORK.v1",
+      "title": "The rider and the informal news network",
+      "reviewStatus": "HISTORICAL_REVIEW_PENDING",
+      "backingRefs": ["NPC-rider", "KN-sign-tavern", "KN-townmeeting", "BUNCH_OF_GRAPES"],
+      "reviewedParaphrase": "A post rider carries bundled news out of Boston at the evening bell; taverns and printed notices feed the same informal network that moved news between towns.",
+      "reviewedTranscription": "Rider: Bell rings, I ride. Late bundles stay in Boston.",
+      "claims": [
+        { "claimId": "BOS.ACT01.SRC.RIDER_NETWORK.v1.CLAIM.1", "claimType": "DOCUMENTED", "text": "News and organizing moved through informal networks of riders, printers, letters, and taverns before formal committees of correspondence existed.", "citationHint": "News networks / committees of correspondence background; SME to verify.", "evidenceIds": ["BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.1", "BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.2"] },
+        { "claimId": "BOS.ACT01.SRC.RIDER_NETWORK.v1.CLAIM.2", "claimType": "REPRESENTATIVE", "text": "The rider is an authored character representing the post riders and couriers of the period.", "citationHint": "Representative character.", "evidenceIds": ["BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.1"] }
+      ],
+      "evidence": [
+        { "evidenceId": "BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.1", "text": "The rider leaves on a fixed schedule ('bell rings, I ride'), so timing decides whether news travels today." },
+        { "evidenceId": "BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.2", "text": "Taverns and printed notices feed the rider, showing a network rather than a single messenger." }
+      ]
+    }
+  ]
+}

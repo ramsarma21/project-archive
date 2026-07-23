@@ -1,0 +1,56 @@
+{
+  "assetKey": "colonial-door-kit",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "frontAxis": "+z",
+  "note": "Imported production door kit. Door_Frame and Door_Recess are stationary; Door_Leaf is a finite dynamic OBB rotating around the named hinge origin. Per-door world placement, aperture clearance and triggers are keyed by stable door ID in doorwayContract.ts.",
+  "colliders": [
+    {
+      "id": "jamb-l",
+      "shape": "box",
+      "center": [-0.64, 1.025, 0],
+      "half": [0.04, 1.025, 0.1],
+      "tags": ["obstacle", "door-frame", "static"]
+    },
+    {
+      "id": "jamb-r",
+      "shape": "box",
+      "center": [0.64, 1.025, 0],
+      "half": [0.04, 1.025, 0.1],
+      "tags": ["obstacle", "door-frame", "static"]
+    },
+    {
+      "id": "lintel",
+      "shape": "box",
+      "center": [0, 2.105, 0],
+      "half": [0.68, 0.04, 0.1],
+      "tags": ["obstacle", "door-frame", "static"]
+    },
+    {
+      "id": "recess",
+      "shape": "box",
+      "center": [0, 1.015, -0.14],
+      "half": [0.59, 1.015, 0.09],
+      "tags": ["obstacle", "door-recess", "static", "occluder"]
+    },
+    {
+      "id": "leaf",
+      "shape": "box",
+      "center": [0, 1, 0],
+      "half": [0.56, 1, 0.05],
+      "tags": ["obstacle", "door-leaf", "dynamic"],
+      "marginReason": "Closed-state finite OBB; runtime rotates it about the Door_Leaf hinge origin and only opens passage after capsule clearance."
+    }
+  ],
+  "compose": [
+    {
+      "type": "door",
+      "ref": "doorwayContract",
+      "note": "World hinge, opening, approach sensors and passage corridor are resolved per stable semantic door ID."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single wooden hay cart tilted with its rear resting on the ground and shafts raised against a support, forming a natural ramp surface up its bed, centered, full object in frame, three-quarter view, plain light gray studio background, no other objects, no people, no text. Historically accurate 1765 colonial farm cart, weathered wood, iron-rimmed wheels.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T15:15:06.516Z",
+  "files": [
+    "roof-ramp-cart.png"
+  ]
+}

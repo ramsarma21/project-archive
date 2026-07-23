@@ -1,0 +1,40 @@
+{
+  "assetKey": "organizer-crate-perch",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "M4 B11 event: rope-lashed crate stack + barrel forming the organizer's speaking platform. Solid broad-phase box, walkable support, and barrel capsule are fitted to the deployed GLB's measured bounds.",
+  "colliders": [
+    {
+      "id": "crate-body",
+      "shape": "box",
+      "center": [-0.15, 0.45, 0.0],
+      "half": [0.62, 0.45, 0.52],
+      "tags": ["solid"]
+    },
+    {
+      "id": "crate-top",
+      "shape": "support",
+      "polygon": [
+        [-0.72, -0.5],
+        [0.42, -0.5],
+        [0.42, 0.5],
+        [-0.72, 0.5]
+      ],
+      "y": 0.9,
+      "link": "crate-body",
+      "tags": ["support", "walkable"]
+    },
+    {
+      "id": "barrel",
+      "shape": "capsule",
+      "a": [0.72, 0.23, 0.24],
+      "b": [0.72, 0.66, 0.24],
+      "radius": 0.23,
+      "tags": ["solid"]
+    }
+  ]
+}

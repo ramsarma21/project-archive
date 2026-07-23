@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single 1765 two-masted merchant brig sailing ship only, centered and small in frame so the ENTIRE vessel including the very tops of both masts and the bowsprit tip is fully visible with generous empty gray margin on all four sides, nothing cropped or touching the frame edge, side three-quarter view, furled sails, no water, no sea, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: two square-rigged masts with canvas sails tightly furled on the yards, bowsprit with rigging, standing shrouds and ratlines forming a readable rigging silhouette, weathered dark tarred hull planking with a muted ochre sheer stripe, raised quarterdeck, wooden rudder, entire hull visible down to the keel as if dry-docked. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:07:11.926Z",
+  "files": [
+    "ship-brig-hero.png"
+  ]
+}

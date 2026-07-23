@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Seamless square PBR base-color texture swatch only, perfectly flat orthographic front view with diffuse shadowless even illumination, aged dark pine vertical boards from a 1765 Boston workroom, restrained grain, nail heads and tool wear, straight parallel boards, no object edges, no frame, no panel perspective, no highlights, no directional shadows, no text",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T01:37:01.909Z",
+  "files": [
+    "int-texture-board.png"
+  ]
+}

@@ -5,6 +5,7 @@ import {
   type LearnerState,
   type ConceptLearningState,
   type ExposureType,
+  type ExposureProvenance,
 } from "@pa/contracts";
 
 export function initialLearnerState(): LearnerState {
@@ -36,10 +37,11 @@ export function commitExposure(
   exposureId: string,
   type: ExposureType,
   interactionOrdinal: number,
+  provenance?: ExposureProvenance,
 ): boolean {
   const c = learner[concept];
   if (c.exposures.some((e) => e.exposureId === exposureId)) return false;
-  c.exposures.push({ exposureId, type, interactionOrdinal });
+  c.exposures.push({ exposureId, type, interactionOrdinal, provenance });
   c.distinctOccasionCount = c.exposures.length;
   if (!c.exposureTypes.includes(type)) c.exposureTypes.push(type);
   if (c.distinctOccasionCount >= 3 && c.exposureTypes.length >= 2) {

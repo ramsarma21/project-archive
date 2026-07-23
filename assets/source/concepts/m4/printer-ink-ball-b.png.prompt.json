@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "One single antique printer's ink ball tool, one object only, complete and fully in frame, centered, three-quarter angle, plain light gray seamless studio backdrop, no table, no scenery, no hands, no people, no text, no watermark. Historically accurate 1765 English common-press ink dabber: a hemispherical wool-stuffed pad tightly wrapped in dark ink-blackened leather with visible hand-stitched seam and iron tack heads around the rim, fixed to a short stout turned wooden handle gripped from above, well-worn ink staining on the leather dome. It is NOT a paint roller, NOT a brayer, NOT a rubber stamp, NOT a boxing glove, NOT a mallet, NOT a plunger, NOT a modern tool, NOT a fantasy item, NOT a museum display stand. Realistic game asset reference photo, even soft lighting.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T04:04:14.832Z",
+  "files": [
+    "printer-ink-ball-b.png"
+  ]
+}

@@ -1,0 +1,2523 @@
+{
+  "baseUrl": "http://127.0.0.1:5273/",
+  "screenshots": [
+    {
+      "name": "m4-b2-catch",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b2-catch.png",
+      "luminance": {
+        "meanLuma": 34.141,
+        "nonBlackRatio": 0.4224
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
+        "watcherCount": "0",
+        "drawCalls": "45",
+        "triangles": "646279",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-b2-ink-ready",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b2-ink-ready.png",
+      "luminance": {
+        "meanLuma": 28.182,
+        "nonBlackRatio": 0.4009
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
+        "watcherCount": "0",
+        "drawCalls": "46",
+        "triangles": "651875",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-b2-ink-left-dab",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b2-ink-left-dab.png",
+      "luminance": {
+        "meanLuma": 28.128,
+        "nonBlackRatio": 0.3917
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
+        "watcherCount": "0",
+        "drawCalls": "46",
+        "triangles": "651875",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-b2-complete",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b2-complete.png",
+      "luminance": {
+        "meanLuma": 33.716,
+        "nonBlackRatio": 0.3957
+      },
+      "metrics": {
+        "request": "FOCUS_READ",
+        "cue": "BOS.MD01.CUE.STAMP_PROOF_COMPARE.v1",
+        "watcherCount": "0",
+        "drawCalls": "56",
+        "triangles": "794268",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-b2-accessible-catch",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b2-accessible-catch.png",
+      "luminance": {
+        "meanLuma": 34.727,
+        "nonBlackRatio": 0.4266
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
+        "watcherCount": "0",
+        "drawCalls": "45",
+        "triangles": "646279",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-b2-accessible-complete",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b2-accessible-complete.png",
+      "luminance": {
+        "meanLuma": 34.177,
+        "nonBlackRatio": 0.3738
+      },
+      "metrics": {
+        "request": "FOCUS_READ",
+        "cue": "BOS.MD01.CUE.STAMP_PROOF_COMPARE.v1",
+        "watcherCount": "0",
+        "drawCalls": "56",
+        "triangles": "794268",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-reprint-catch",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-reprint-catch.png",
+      "luminance": {
+        "meanLuma": 29.488,
+        "nonBlackRatio": 0.3542
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.PIKE_REPRINT.v1",
+        "watcherCount": "0",
+        "drawCalls": "50",
+        "triangles": "670166",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-reprint-ink-ready",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-reprint-ink-ready.png",
+      "luminance": {
+        "meanLuma": 23.968,
+        "nonBlackRatio": 0.3386
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.PIKE_REPRINT.v1",
+        "watcherCount": "0",
+        "drawCalls": "51",
+        "triangles": "675762",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-reprint-ink-left-dab",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-reprint-ink-left-dab.png",
+      "luminance": {
+        "meanLuma": 23.945,
+        "nonBlackRatio": 0.3294
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.PIKE_REPRINT.v1",
+        "watcherCount": "0",
+        "drawCalls": "51",
+        "triangles": "675762",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-reprint-complete",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-reprint-complete.png",
+      "luminance": {
+        "meanLuma": 25.808,
+        "nonBlackRatio": 0.3168
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.REPRINT_LEAVE_MERCER.v1",
+        "watcherCount": "0",
+        "drawCalls": "66",
+        "triangles": "648982",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-b12-catch",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b12-catch.png",
+      "luminance": {
+        "meanLuma": 26.361,
+        "nonBlackRatio": 0.3474
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.FINAL_PRESS_PULL.v1",
+        "watcherCount": "0",
+        "drawCalls": "50",
+        "triangles": "670166",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-b12-ink-ready",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b12-ink-ready.png",
+      "luminance": {
+        "meanLuma": 20.617,
+        "nonBlackRatio": 0.3301
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.FINAL_PRESS_PULL.v1",
+        "watcherCount": "0",
+        "drawCalls": "51",
+        "triangles": "675762",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-b12-ink-left-dab",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b12-ink-left-dab.png",
+      "luminance": {
+        "meanLuma": 20.596,
+        "nonBlackRatio": 0.3212
+      },
+      "metrics": {
+        "request": "MECHANIC",
+        "cue": "BOS.MD01.ACT.FINAL_PRESS_PULL.v1",
+        "watcherCount": "0",
+        "drawCalls": "51",
+        "triangles": "675762",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-b12-complete",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b12-complete.png",
+      "luminance": {
+        "meanLuma": 21.8,
+        "nonBlackRatio": 0.3476
+      },
+      "metrics": {
+        "request": "DAY_END",
+        "cue": "BOS.MD01.CUE.DAY_END.v1",
+        "watcherCount": "0",
+        "drawCalls": "61",
+        "triangles": "810280",
+        "canvas": true,
+        "perf": null
+      }
+    },
+    {
+      "name": "m4-m1-chase-active",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-m1-chase-active.png",
+      "luminance": {
+        "meanLuma": 69.054,
+        "nonBlackRatio": 0.8367
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "PA.FIELD.INTERRUPT.M1_QA_INTERRUPT_e2f352ae_7",
+        "watcherCount": "4",
+        "drawCalls": "276",
+        "triangles": "4394234",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 276,
+            "triangles": 4394234,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 212,
+            "programs": 23
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -12.687206901789198,
+              2.9544243311022553,
+              1.4999999999999998
+            ],
+            "rotation": [
+              -1.5027634574754618,
+              -1.3236832045860825,
+              -1.500638931221177
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 302,
+            "visibleSkinnedMeshes": 28
+          },
+          "frameMs": {
+            "samples": 15,
+            "mean": 2334.613333333532,
+            "p50": 2063,
+            "p95": 11415,
+            "p99": 11415,
+            "max": 11415
+          },
+          "fps": 0.4283364554301276
+        }
+      }
+    },
+    {
+      "name": "m4-m2-three-options",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-m2-three-options.png",
+      "luminance": {
+        "meanLuma": 69.07,
+        "nonBlackRatio": 0.7299
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "PA.FIELD.INTERRUPT.M4_FINAL_M2_INTERRUPT_COMPLY",
+        "watcherCount": "4",
+        "drawCalls": "273",
+        "triangles": "4293118",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 273,
+            "triangles": 4293118,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 211,
+            "programs": 23
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -11.2,
+              2.5,
+              1.4999999999999998
+            ],
+            "rotation": [
+              -1.5707963267948966,
+              -1.3531457105078537,
+              -1.5707963267948966
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 299,
+            "visibleSkinnedMeshes": 27
+          },
+          "frameMs": {
+            "samples": 14,
+            "mean": 2402.0428571429634,
+            "p50": 2075,
+            "p95": 11716.79999999702,
+            "p99": 11716.79999999702,
+            "max": 11716.79999999702
+          },
+          "fps": 0.41631230559700316
+        }
+      }
+    },
+    {
+      "name": "m4-m2-comply-resolved",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-m2-comply-resolved.png",
+      "luminance": {
+        "meanLuma": 70.979,
+        "nonBlackRatio": 0.8658
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "284",
+        "triangles": "4632658",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 284,
+            "triangles": 4632658,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 209,
+            "programs": 23
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -11.2,
+              2.5,
+              1.4999999999999998
+            ],
+            "rotation": [
+              -1.5707963267948966,
+              -1.3531457105078537,
+              -1.5707963267948966
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 304,
+            "visibleSkinnedMeshes": 28
+          },
+          "frameMs": {
+            "samples": 22,
+            "mean": 2310.300000000068,
+            "p50": 2084.60000000149,
+            "p95": 5158,
+            "p99": 11716.79999999702,
+            "max": 11716.79999999702
+          },
+          "fps": 0.43284421936543765
+        }
+      }
+    },
+    {
+      "name": "m4-m2-talk-released",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-m2-talk-released.png",
+      "luminance": {
+        "meanLuma": 70.763,
+        "nonBlackRatio": 0.867
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "284",
+        "triangles": "4632658",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 284,
+            "triangles": 4632658,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 209,
+            "programs": 23
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -11.2,
+              2.5,
+              1.4999999999999998
+            ],
+            "rotation": [
+              -1.5707963267948966,
+              -1.3531457105078537,
+              -1.5707963267948966
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 306,
+            "visibleSkinnedMeshes": 28
+          },
+          "frameMs": {
+            "samples": 18,
+            "mean": 2327.25,
+            "p50": 2025.79999999702,
+            "p95": 11508.10000000149,
+            "p99": 11508.10000000149,
+            "max": 11508.10000000149
+          },
+          "fps": 0.42969169620797076
+        }
+      }
+    },
+    {
+      "name": "m4-m2-run-chase-active",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-m2-run-chase-active.png",
+      "luminance": {
+        "meanLuma": 69.93,
+        "nonBlackRatio": 0.8386
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "PA.FIELD.INTERRUPT.M4_FINAL_M2_INTERRUPT_RUN",
+        "watcherCount": "4",
+        "drawCalls": "273",
+        "triangles": "4331680",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 273,
+            "triangles": 4331680,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 218,
+            "programs": 41
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -12.556125464905108,
+              2.9143716698321165,
+              1.4999999999999998
+            ],
+            "rotation": [
+              -1.4605290787184482,
+              -1.3254715132028243,
+              -1.4571544008940487
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 299,
+            "visibleSkinnedMeshes": 26
+          },
+          "frameMs": {
+            "samples": 15,
+            "mean": 2977.113333333532,
+            "p50": 2208.1999999955297,
+            "p95": 13275.20000000298,
+            "p99": 13275.20000000298,
+            "max": 13275.20000000298
+          },
+          "fps": 0.3358958454162309
+        }
+      }
+    },
+    {
+      "name": "m4-watch-house",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-watch-house.png",
+      "luminance": {
+        "meanLuma": 59.637,
+        "nonBlackRatio": 0.7983
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "188",
+        "triangles": "3161847",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 188,
+            "triangles": 3161847,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 213,
+            "programs": 25
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              53.5,
+              2.5,
+              -1.2999999999999994
+            ],
+            "rotation": [
+              -0.21765061628704283,
+              0,
+              0
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 304,
+            "visibleSkinnedMeshes": 27
+          },
+          "frameMs": {
+            "samples": 12,
+            "mean": 2553.9166666666665,
+            "p50": 1939,
+            "p95": 11497.79999999702,
+            "p99": 11497.79999999702,
+            "max": 11497.79999999702
+          },
+          "fps": 0.3915554540411786
+        }
+      }
+    },
+    {
+      "name": "m4-constables-custom-house",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-constables-custom-house.png",
+      "luminance": {
+        "meanLuma": 80.653,
+        "nonBlackRatio": 0.8611
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "PA.FIELD.INTERRUPT.M2_INT_0_CHECKPOINT-custom-house-stretch_1_1",
+        "watcherCount": "4",
+        "drawCalls": "178",
+        "triangles": "2697068",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 178,
+            "triangles": 2697068,
+            "points": 0,
+            "lines": 0,
+            "geometries": 151,
+            "textures": 215,
+            "programs": 25
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              55,
+              2.5,
+              -0.600000000000001
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 293,
+            "visibleSkinnedMeshes": 21
+          },
+          "frameMs": {
+            "samples": 16,
+            "mean": 2324.5437499997206,
+            "p50": 1685.7000000029802,
+            "p95": 11497.79999999702,
+            "p99": 11497.79999999702,
+            "max": 11497.79999999702
+          },
+          "fps": 0.43019194626907764
+        }
+      }
+    },
+    {
+      "name": "m4-roof-board-scaffold",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-roof-board-scaffold.png",
+      "luminance": {
+        "meanLuma": 160.504,
+        "nonBlackRatio": 0.9164
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "205",
+        "triangles": "3202255",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 205,
+            "triangles": 3202255,
+            "points": 0,
+            "lines": 0,
+            "geometries": 152,
+            "textures": 214,
+            "programs": 26
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              15.2,
+              2.5,
+              -2.599999999999999
+            ],
+            "rotation": [
+              -0.21765061628704283,
+              0,
+              0
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 296,
+            "visibleSkinnedMeshes": 20
+          },
+          "frameMs": {
+            "samples": 28,
+            "mean": 1853.5142857142325,
+            "p50": 1413.8000000044703,
+            "p95": 5359.80000000447,
+            "p99": 11497.79999999702,
+            "max": 11497.79999999702
+          },
+          "fps": 0.5395156690765188
+        }
+      }
+    },
+    {
+      "name": "m4-static-dog",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-static-dog.png",
+      "luminance": {
+        "meanLuma": 161.222,
+        "nonBlackRatio": 0.929
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "210",
+        "triangles": "3085600",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 210,
+            "triangles": 3085600,
+            "points": 0,
+            "lines": 0,
+            "geometries": 156,
+            "textures": 217,
+            "programs": 26
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -30.2,
+              2.5,
+              1.9999999999999996
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 298,
+            "visibleSkinnedMeshes": 22
+          },
+          "frameMs": {
+            "samples": 33,
+            "mean": 1772.7363636362734,
+            "p50": 1411.6000000014901,
+            "p95": 5359.80000000447,
+            "p99": 11497.79999999702,
+            "max": 11497.79999999702
+          },
+          "fps": 0.5640996712837657
+        }
+      }
+    },
+    {
+      "name": "m4-dog-reaction",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-dog-reaction.png",
+      "luminance": {
+        "meanLuma": 52.133,
+        "nonBlackRatio": 0.8083
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "209",
+        "triangles": "3085588",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 209,
+            "triangles": 3085588,
+            "points": 0,
+            "lines": 0,
+            "geometries": 156,
+            "textures": 217,
+            "programs": 26
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -30.2,
+              2.5,
+              1.9999999999999993
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 298,
+            "visibleSkinnedMeshes": 22
+          },
+          "frameMs": {
+            "samples": 40,
+            "mean": 1724.939999999851,
+            "p50": 1413.8000000044703,
+            "p95": 5359.80000000447,
+            "p99": 11497.79999999702,
+            "max": 11497.79999999702
+          },
+          "fps": 0.5797303094600893
+        }
+      }
+    },
+    {
+      "name": "m4-knowledge-complete",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-knowledge-complete.png",
+      "luminance": {
+        "meanLuma": 52.551,
+        "nonBlackRatio": 0.8167
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "213",
+        "triangles": "3201661",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 213,
+            "triangles": 3201661,
+            "points": 0,
+            "lines": 0,
+            "geometries": 156,
+            "textures": 217,
+            "programs": 26
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              6.35,
+              2.5,
+              1.349999999999999
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 297,
+            "visibleSkinnedMeshes": 21
+          },
+          "frameMs": {
+            "samples": 62,
+            "mean": 1588.1096774193068,
+            "p50": 1361.1000000014901,
+            "p95": 2841.3000000044703,
+            "p99": 11497.79999999702,
+            "max": 11497.79999999702
+          },
+          "fps": 0.6296794322322936
+        }
+      }
+    },
+    {
+      "name": "m4-eavesdrop-market",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-eavesdrop-market.png",
+      "luminance": {
+        "meanLuma": 55.355,
+        "nonBlackRatio": 0.8151
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "224",
+        "triangles": "3806856",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 224,
+            "triangles": 3806856,
+            "points": 0,
+            "lines": 0,
+            "geometries": 159,
+            "textures": 230,
+            "programs": 26
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -50,
+              2.5,
+              1.7000000000000008
+            ],
+            "rotation": [
+              -0.21765061628704283,
+              0,
+              0
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 310,
+            "visibleSkinnedMeshes": 34
+          },
+          "frameMs": {
+            "samples": 69,
+            "mean": 1563.2927536231236,
+            "p50": 1361.1000000014901,
+            "p95": 2841.3000000044703,
+            "p99": 11497.79999999702,
+            "max": 11497.79999999702
+          },
+          "fps": 0.6396754527789992
+        }
+      }
+    },
+    {
+      "name": "m4-roof-kid-accepted",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-roof-kid-accepted.png",
+      "luminance": {
+        "meanLuma": 68.174,
+        "nonBlackRatio": 0.8769
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "268",
+        "triangles": "4196138",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 268,
+            "triangles": 4196138,
+            "points": 0,
+            "lines": 0,
+            "geometries": 171,
+            "textures": 244,
+            "programs": 26
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -17.91381940419827,
+              2.5,
+              6.549092506296552
+            ],
+            "rotation": [
+              -2.7028757848076386,
+              1.0375279323372733,
+              2.7575880172588354
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 308,
+            "visibleSkinnedMeshes": 32
+          },
+          "frameMs": {
+            "samples": 86,
+            "mean": 1661.118604651111,
+            "p50": 1413.8000000044703,
+            "p95": 2841.3000000044703,
+            "p99": 11497.79999999702,
+            "max": 11497.79999999702
+          },
+          "fps": 0.6020039732262421
+        }
+      }
+    },
+    {
+      "name": "m4-b11-dusk",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b11-dusk.png",
+      "luminance": {
+        "meanLuma": 30.815,
+        "nonBlackRatio": 0.5431
+      },
+      "metrics": {
+        "request": "CONTINUE",
+        "cue": "BOS.MD01.CUE.FIXED_EVENT_MARCH.v1",
+        "watcherCount": "4",
+        "drawCalls": "185",
+        "triangles": "4390108",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 185,
+            "triangles": 4390108,
+            "points": 420,
+            "lines": 0,
+            "geometries": 139,
+            "textures": 208,
+            "programs": 25
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              90.00506632691634,
+              2.615371355767786,
+              -17.711936346150633
+            ],
+            "rotation": [
+              -0.10884859843812177,
+              1.1409065561820673,
+              0.09901244699770446
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 336,
+            "visibleSkinnedMeshes": 37
+          },
+          "frameMs": {
+            "samples": 16,
+            "mean": 2197.649999999907,
+            "p50": 1914.8999999985099,
+            "p95": 13596.80000000447,
+            "p99": 13596.80000000447,
+            "max": 13596.80000000447
+          },
+          "fps": 0.45503151093215133
+        }
+      }
+    },
+    {
+      "name": "m4-b11-reduced-motion",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-close/m4-b11-reduced-motion.png",
+      "luminance": {
+        "meanLuma": 28.111,
+        "nonBlackRatio": 0.5398
+      },
+      "metrics": {
+        "request": "CONTINUE",
+        "cue": "BOS.MD01.CUE.FIXED_EVENT_MARCH.v1",
+        "watcherCount": "4",
+        "drawCalls": "190",
+        "triangles": "4171694",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 190,
+            "triangles": 4171694,
+            "points": 420,
+            "lines": 0,
+            "geometries": 144,
+            "textures": 204,
+            "programs": 23
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              88.3,
+              2.25,
+              -16.9
+            ],
+            "rotation": [
+              0.10257985241829463,
+              -0.8113304533783604,
+              0.07451511830733977
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 328,
+            "visibleSkinnedMeshes": 34
+          },
+          "frameMs": {
+            "samples": 11,
+            "mean": 2387.818181818182,
+            "p50": 2115.5,
+            "p95": 11827.80000000447,
+            "p99": 11827.80000000447,
+            "max": 11827.80000000447
+          },
+          "fps": 0.4187923551359171
+        }
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "m4-b2-ink-signal",
+      "diagnostics": {
+        "leftVisible": "true",
+        "rightVisible": "true",
+        "leftStage": "INK",
+        "rightStage": "INK",
+        "press": {
+          "clips": [
+            "carriageIn",
+            "carriageOut",
+            "tympanClose",
+            "tympanOpen",
+            "pressRelease",
+            "pressPull"
+          ],
+          "lever": [
+            0,
+            -0.422618262,
+            0,
+            0.906307787
+          ],
+          "platenY": 1.23,
+          "carriageZ": -0.02,
+          "inkCoverage": 0.25
+        }
+      }
+    },
+    {
+      "id": "print",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "MERCER_PRESS",
+          "interiorId": "MERCER_PRESS",
+          "cueId": "BOS.MD01.CUE.STAMP_PROOF_COMPARE.v1",
+          "doorTarget": "",
+          "cameraShot": "PROOF_INSERT",
+          "cameraActive": "true",
+          "cameraOwner": "FIRST_PERSON",
+          "cameraInputLocked": "true",
+          "choreographyReady": "true",
+          "fieldSpace": "MERCER_PRESS",
+          "movementActive": "false",
+          "traversalActive": "false",
+          "drawCalls": "56",
+          "triangles": "794268",
+          "watcherCount": "0",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "PEEL",
+          "inkBallLeftProgress": "1.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "PEEL",
+          "inkBallRightProgress": "1.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "sceneObjectCount": "920",
+          "sceneVisibleMeshCount": "124",
+          "playerPos": "640.00,638.00",
+          "playerPos3d": "640.000,0.000,638.000",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "0.000,1.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "true",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "",
+          "namedActorPositions": "",
+          "geometries": "53",
+          "textures": "207",
+          "programs": "30",
+          "interiorPlacements": "28",
+          "interiorQaCameraEnabled": "false"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FOCUS_READ",
+          "runtimeReady": "true",
+          "runtimeLocation": "MERCER_PRESS",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "4",
+          "carriedObjectIds": "PIKE_PROOF",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_MOUSE",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "print-accessible",
+      "reducedMotion": true,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "MERCER_PRESS",
+          "interiorId": "MERCER_PRESS",
+          "cueId": "BOS.MD01.CUE.STAMP_PROOF_COMPARE.v1",
+          "doorTarget": "",
+          "cameraShot": "PROOF_INSERT",
+          "cameraActive": "true",
+          "cameraOwner": "FIRST_PERSON",
+          "cameraInputLocked": "true",
+          "choreographyReady": "true",
+          "fieldSpace": "MERCER_PRESS",
+          "movementActive": "false",
+          "traversalActive": "false",
+          "drawCalls": "56",
+          "triangles": "794268",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "PEEL",
+          "inkBallLeftProgress": "1.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "PEEL",
+          "inkBallRightProgress": "1.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "watcherCount": "0",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "sceneObjectCount": "920",
+          "sceneVisibleMeshCount": "124",
+          "playerPos": "640.00,638.00",
+          "playerPos3d": "640.000,0.000,638.000",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "0.000,1.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "true",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "",
+          "namedActorPositions": "",
+          "interiorQaCameraEnabled": "false",
+          "geometries": "53",
+          "textures": "207",
+          "programs": "30",
+          "interiorPlacements": "28"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FOCUS_READ",
+          "runtimeReady": "true",
+          "runtimeLocation": "MERCER_PRESS",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "4",
+          "carriedObjectIds": "PIKE_PROOF",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_ONLY",
+          "highContrast": "false",
+          "reducedMotion": "true",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "m4-reprint-ink-signal",
+      "diagnostics": {
+        "leftVisible": "true",
+        "rightVisible": "true",
+        "leftStage": "INK",
+        "rightStage": "INK",
+        "press": {
+          "clips": [
+            "carriageIn",
+            "carriageOut",
+            "tympanClose",
+            "tympanOpen",
+            "pressRelease",
+            "pressPull"
+          ],
+          "lever": [
+            0,
+            -0.422618262,
+            0,
+            0.906307787
+          ],
+          "platenY": 1.23,
+          "carriageZ": -0.02,
+          "inkCoverage": 0.25
+        }
+      }
+    },
+    {
+      "id": "reprint",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "MERCER_PRESS",
+          "interiorId": "MERCER_PRESS",
+          "cueId": "BOS.MD01.CUE.REPRINT_LEAVE_MERCER.v1",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "PLAYER",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "MERCER_PRESS",
+          "movementActive": "true",
+          "traversalActive": "false",
+          "drawCalls": "66",
+          "triangles": "648982",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "PEEL",
+          "inkBallLeftProgress": "1.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "PEEL",
+          "inkBallRightProgress": "1.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "watcherCount": "0",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "sceneObjectCount": "891",
+          "sceneVisibleMeshCount": "124",
+          "playerPos": "640.00,638.00",
+          "playerPos3d": "640.000,0.000,638.000",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "0.000,1.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "abigail",
+          "namedActorPositions": "abigail:646.00,635.50",
+          "interiorQaCameraEnabled": "false",
+          "geometries": "60",
+          "textures": "209",
+          "programs": "32",
+          "interiorPlacements": "28",
+          "questActiveId": "STREET",
+          "questState": "ACTIVE",
+          "questDistance": "6",
+          "questOccluded": "false",
+          "questEdgeVisible": "true"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "MERCER_PRESS",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "17",
+          "carriedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,PLAIN_WRAP",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_MOUSE",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "m4-b12-ink-signal",
+      "diagnostics": {
+        "leftVisible": "true",
+        "rightVisible": "true",
+        "leftStage": "INK",
+        "rightStage": "INK",
+        "press": {
+          "clips": [
+            "carriageIn",
+            "carriageOut",
+            "tympanClose",
+            "tympanOpen",
+            "pressRelease",
+            "pressPull"
+          ],
+          "lever": [
+            0,
+            -0.422618262,
+            0,
+            0.906307787
+          ],
+          "platenY": 1.23,
+          "carriageZ": -0.02,
+          "inkCoverage": 0.25
+        }
+      }
+    },
+    {
+      "id": "final-print",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "MERCER_PRESS",
+          "interiorId": "MERCER_PRESS",
+          "cueId": "BOS.MD01.CUE.DAY_END.v1",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "PLAYER",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "MERCER_PRESS",
+          "movementActive": "false",
+          "traversalActive": "false",
+          "drawCalls": "61",
+          "triangles": "810280",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "PEEL",
+          "inkBallLeftProgress": "1.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "PEEL",
+          "inkBallRightProgress": "1.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "watcherCount": "0",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "sceneObjectCount": "894",
+          "sceneVisibleMeshCount": "118",
+          "playerPos": "640.00,638.00",
+          "playerPos3d": "640.000,0.000,638.000",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "0.000,1.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "true",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "",
+          "namedActorPositions": "",
+          "interiorQaCameraEnabled": "false",
+          "geometries": "56",
+          "textures": "210",
+          "programs": "35",
+          "interiorPlacements": "28"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "DAY_END",
+          "runtimeReady": "true",
+          "runtimeLocation": "MERCER_PRESS",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "24",
+          "carriedObjectIds": "PLAIN_WRAP",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_MOUSE",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "m1-chase",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "PA.FIELD.INTERRUPT.M1_QA_INTERRUPT_e2f352ae_7",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "CHASE",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "276",
+          "triangles": "4394234",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "COVER-crowd-central",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "66",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "sceneObjectCount": "3542",
+          "sceneVisibleMeshCount": "391",
+          "playerPos": "-6.00,1.50",
+          "playerPos3d": "-6.000,0.000,1.500",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "1.000,0.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "true",
+          "chaseState": "STARTING",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "true",
+          "pursuerPosition": "-11.500,0.000,1.500",
+          "pursuerForward": "1.000,0.000,0.000",
+          "pursuerVelocity": "0.000,0.000,0.000",
+          "pursuerSpace": "EXTERIOR",
+          "chaseOutcome": "",
+          "namedActorIds": "",
+          "namedActorPositions": "",
+          "chaseGap": "5.500",
+          "chaseShakeSeconds": "0.000",
+          "chaseCorneredSeconds": "0.000",
+          "chaseTargetWaypoint": ""
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "CHASE",
+          "activeChaseId": "M1_QA_CHASE_e2f352ae_7",
+          "profileSource": "LOCAL",
+          "clockSpent": "6",
+          "carriedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,PLAIN_WRAP,THOMAS_CIRCULAR",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_MOUSE",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "STARTED",
+          "qaChaseReason": "QA chase started.",
+          "qaChaseStep": "COMMITTED_FIELD_HEAT_TRANSITION"
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "m2-comply",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "PLAYER",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "284",
+          "triangles": "4632658",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "COVER-crowd-central",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "66",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "sceneObjectCount": "3469",
+          "sceneVisibleMeshCount": "390",
+          "playerPos": "-6.00,1.50",
+          "playerPos3d": "-6.000,0.000,1.500",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "1.000,0.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "abigail,thomas,pike,clarke,rider",
+          "namedActorPositions": "abigail:3.81,9.47;thomas:-50.57,-6.46;pike:34.29,9.49;clarke:-29.77,9.59;rider:-96.80,-18.20"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "7",
+          "carriedObjectIds": "PLAIN_WRAP",
+          "confiscatedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,THOMAS_CIRCULAR",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_MOUSE",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "m2-talk",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "PLAYER",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "284",
+          "triangles": "4632658",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "COVER-crowd-central",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "66",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "sceneObjectCount": "3469",
+          "sceneVisibleMeshCount": "390",
+          "playerPos": "-6.00,1.50",
+          "playerPos3d": "-6.000,0.000,1.500",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "1.000,0.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "abigail,thomas,pike,clarke,rider",
+          "namedActorPositions": "abigail:3.72,9.49;thomas:-50.47,-6.47;pike:34.38,9.47;clarke:-29.69,9.56;rider:-96.80,-18.20"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "6",
+          "carriedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,PLAIN_WRAP,THOMAS_CIRCULAR",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_MOUSE",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "m2-run",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "PA.FIELD.INTERRUPT.M4_FINAL_M2_INTERRUPT_RUN",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "CHASE",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "273",
+          "triangles": "4331680",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "66",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "COVER-crowd-central",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "sceneObjectCount": "3542",
+          "sceneVisibleMeshCount": "391",
+          "playerPos": "-6.00,1.50",
+          "playerPos3d": "-6.000,0.000,1.500",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "1.000,0.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "true",
+          "chaseState": "STARTING",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "true",
+          "pursuerPosition": "-11.500,0.000,1.500",
+          "pursuerForward": "1.000,0.000,0.000",
+          "pursuerVelocity": "0.000,0.000,0.000",
+          "pursuerSpace": "EXTERIOR",
+          "chaseOutcome": "",
+          "namedActorIds": "",
+          "namedActorPositions": "",
+          "chaseGap": "5.500",
+          "chaseShakeSeconds": "0.000",
+          "chaseCorneredSeconds": "0.000",
+          "chaseTargetWaypoint": ""
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "CHASE",
+          "activeChaseId": "M2_CHASE_M4_FINAL_M2_RUN",
+          "profileSource": "LOCAL",
+          "clockSpent": "6",
+          "carriedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,PLAIN_WRAP,THOMAS_CIRCULAR",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_MOUSE",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "street",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "PLAYER",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "268",
+          "triangles": "4196138",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "53",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "sceneObjectCount": "3073",
+          "sceneVisibleMeshCount": "375",
+          "playerPos": "-22.50,9.00",
+          "playerPos3d": "-22.500,0.000,9.000",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "-0.882,0.471",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "abigail,thomas,pike,clarke,rider",
+          "namedActorPositions": "abigail:2.63,9.82;thomas:-53.42,-6.29;pike:37.93,8.71;clarke:-26.62,8.45;rider:-96.80,-18.20"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "7",
+          "carriedObjectIds": "PLAIN_WRAP",
+          "confiscatedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,THOMAS_CIRCULAR",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_ONLY",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "1",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "event",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "LIBERTY_TREE_APPROACH",
+          "interiorId": "",
+          "cueId": "BOS.MD01.CUE.FIXED_EVENT_MARCH.v1",
+          "doorTarget": "",
+          "cameraShot": "EVENT_MARCH_DIRECTED",
+          "cameraActive": "true",
+          "cameraOwner": "CHOREOGRAPHY",
+          "cameraInputLocked": "true",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "false",
+          "traversalActive": "false",
+          "drawCalls": "185",
+          "triangles": "4390108",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "sceneObjectCount": "4266",
+          "sceneVisibleMeshCount": "433",
+          "playerPos": "89.00,-19.00",
+          "playerPos3d": "89.000,0.000,-19.000",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "0.808,-0.589",
+          "playerActionSerial": "0",
+          "playerInputLocked": "true",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "clarke,rider",
+          "namedActorPositions": "clarke:-32.00,10.40;rider:-96.80,-18.20"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "CONTINUE",
+          "runtimeReady": "true",
+          "runtimeLocation": "LIBERTY_TREE_APPROACH",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "24",
+          "carriedObjectIds": "PLAIN_WRAP",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_ONLY",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "true",
+          "choreographyReady": "true",
+          "activeSubtitle": "true",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "true",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    },
+    {
+      "id": "event-reduced",
+      "reducedMotion": true,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "LIBERTY_TREE_APPROACH",
+          "interiorId": "",
+          "cueId": "BOS.MD01.CUE.FIXED_EVENT_MARCH.v1",
+          "doorTarget": "",
+          "cameraShot": "EVENT_MARCH_DIRECTED",
+          "cameraActive": "true",
+          "cameraOwner": "CHOREOGRAPHY",
+          "cameraInputLocked": "true",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "false",
+          "traversalActive": "false",
+          "drawCalls": "190",
+          "triangles": "4171694",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "sceneObjectCount": "4265",
+          "sceneVisibleMeshCount": "432",
+          "playerPos": "89.00,-19.00",
+          "playerPos3d": "89.000,0.000,-19.000",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "0.808,-0.589",
+          "playerActionSerial": "0",
+          "playerInputLocked": "true",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "clarke,rider",
+          "namedActorPositions": "clarke:-32.00,10.40;rider:-96.80,-18.20"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "CONTINUE",
+          "runtimeReady": "true",
+          "runtimeLocation": "LIBERTY_TREE_APPROACH",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "24",
+          "carriedObjectIds": "PLAIN_WRAP",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_ONLY",
+          "highContrast": "false",
+          "reducedMotion": "true",
+          "speaking": "true",
+          "choreographyReady": "true",
+          "activeSubtitle": "true",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "true",
+          "checkpointStatus": "NOT_STARTED",
+          "openResponsePhase": "",
+          "openResponseEligible": "",
+          "npcFollowups": "",
+          "archiveConnections": "",
+          "sourceEngagementCount": "0",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "assetFailures": [],
+  "networkFailures": [],
+  "harnessDiagnostics": []
+}

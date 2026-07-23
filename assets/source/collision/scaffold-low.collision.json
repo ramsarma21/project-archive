@@ -1,0 +1,61 @@
+{
+  "assetKey": "scaffold-low",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": [
+      2.8,
+      2.4,
+      1.2
+    ],
+    "scale": 1
+  },
+  "note": "Lower frame is solid; the plank platform on top is a landable support.",
+  "colliders": [
+    {
+      "id": "frame",
+      "shape": "box",
+      "center": [
+        0,
+        1.008,
+        0
+      ],
+      "half": [
+        1.297,
+        1.008,
+        0.436
+      ],
+      "tags": [
+        "obstacle"
+      ]
+    },
+    {
+      "id": "platform",
+      "shape": "support",
+      "polygon": [
+        [
+          -1.297,
+          -0.435
+        ],
+        [
+          1.297,
+          -0.435
+        ],
+        [
+          1.297,
+          0.436
+        ],
+        [
+          -1.297,
+          0.436
+        ]
+      ],
+      "y": 2.016,
+      "link": "frame",
+      "tags": [
+        "support",
+        "walkable"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "assetKey": "street-lantern-bracket",
+  "category": "prop",
+  "profile": "none",
+  "fit": {
+    "targetSize": [
+      1.2,
+      1.4,
+      1
+    ],
+    "scale": 1
+  },
+  "note": "Wall-mounted bracket at y≈2.4 (see manifest); out of player reach, so no ground collider. Light comes from SkyDirector LANTERN anchors.",
+  "colliders": []
+}

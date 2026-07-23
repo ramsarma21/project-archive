@@ -1,0 +1,11 @@
+{
+  "assetKey": "skyline-cluster-a",
+  "category": "skyline",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Distant skyline backdrop beyond the play bounds; never reachable.",
+  "colliders": []
+}

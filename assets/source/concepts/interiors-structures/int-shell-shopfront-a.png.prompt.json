@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Interior architectural room shell only, photoreal reference render from a camera standing INSIDE a small fully ENCLOSED room looking into a corner so two or three solid interior walls meet a beamed ceiling above; a single plain plank doorway is the only opening; NO open/cutaway wall, NO dollhouse roof, NO exterior facade, NO visible floor boards emphasised, and no furniture, people, text, or watermark; plain soft even studio lighting. Historically accurate 1765 Boston construction: a single long fully enclosed shop interior room shell: the front (-Z) interior wall has a multi-pane shop-front window bay and a plank entrance door, the side walls are lime plaster over board, the rear (+Z) wall is a plain plank stock wall, and an exposed-joist beamed ceiling spans above; four solid walls, no floor, no open cutaway side, no exterior facade detailing and no lettering or signage. Aged working building, not a museum reconstruction; surfaces suitable for Meshy image-to-3D and Blender assembly.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T00:54:16.143Z",
+  "files": [
+    "int-shell-shopfront-a.png"
+  ]
+}

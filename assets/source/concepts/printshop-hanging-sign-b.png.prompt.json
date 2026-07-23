@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single complete 1765 colonial Boston printer's hanging shop sign assembly only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no building wall, no ground scenery, no people, no readable text, no watermark. Forged iron wall bracket with mounting plate and bolts, short hanging links, weathered double-sided wooden signboard with a simple period printing-press and ink-ball emblem, muted aged cream, umber, black and dark red pigment, structurally plausible, historically accurate working shop, no Victorian, modern, fantasy, or ornate excess. Game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:34:34.601Z",
+  "files": [
+    "printshop-hanging-sign-b.png"
+  ]
+}

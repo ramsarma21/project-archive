@@ -1,0 +1,42 @@
+{
+  "assetKey": "fence-gate",
+  "category": "prop",
+  "profile": "solid",
+  "fit": {
+    "targetSize": [
+      6,
+      2.1,
+      1.4
+    ],
+    "scale": 1
+  },
+  "note": "Swing-gate leaf. Route-gated in the manifest (THOMAS_DOCK_ROUTE) — collider clears when the route unlocks; that gating stays runtime-owned.",
+  "colliders": [
+    {
+      "id": "leaf",
+      "shape": "box",
+      "center": [
+        0,
+        1.05,
+        0
+      ],
+      "half": [
+        1.406,
+        1.05,
+        0.275
+      ],
+      "tags": [
+        "obstacle",
+        "gate",
+        "route-gated"
+      ]
+    }
+  ],
+  "compose": [
+    {
+      "type": "traversal",
+      "ref": "THOMAS_DOCK_ROUTE",
+      "note": "route-gated blocker; unlock handling owned by runtime"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Seamless square PBR base-color texture swatch only, perfectly flat orthographic top view with diffuse shadowless even illumination, worn 1765 Boston brick and stone work floor, irregular red clay brick with pale lime mortar and restrained ink/oil stains, tileable edges, no object border, no perspective, no highlights, no directional shadows, no text",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-22T02:33:00.284Z",
+  "files": [
+    "int-texture-floor-brick.png"
+  ]
+}

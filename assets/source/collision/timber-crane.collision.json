@@ -1,0 +1,51 @@
+{
+  "assetKey": "timber-crane",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": [
+      3,
+      6.5,
+      3
+    ],
+    "scale": 1
+  },
+  "note": "Base + vertical mast; the jib arm overhead is not collided (conservative).",
+  "colliders": [
+    {
+      "id": "base",
+      "shape": "box",
+      "center": [
+        0,
+        0.39,
+        0
+      ],
+      "half": [
+        0.9,
+        0.39,
+        0.649
+      ],
+      "tags": [
+        "obstacle"
+      ]
+    },
+    {
+      "id": "mast",
+      "shape": "capsule",
+      "a": [
+        0,
+        0.28,
+        0
+      ],
+      "b": [
+        0,
+        2.973,
+        0
+      ],
+      "radius": 0.28,
+      "tags": [
+        "obstacle"
+      ]
+    }
+  ]
+}

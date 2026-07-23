@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial brick civic town house building only, centered, full building exterior in frame, front three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: Boston Old State House inspired Georgian red brick civic building, two and a half stories, with a white wooden second-story balcony above the central door, stepped gable ends, white cupola tower on the roof ridge, rows of small-pane sash windows with white trim, brick chimneys. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:04:55.198Z",
+  "files": [
+    "bldg-townhouse-civic.png"
+  ]
+}

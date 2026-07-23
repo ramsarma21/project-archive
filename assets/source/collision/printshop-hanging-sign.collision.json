@@ -1,0 +1,11 @@
+{
+  "assetKey": "printshop-hanging-sign",
+  "category": "clutter",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Wall-mounted imported trade sign above player reach; facade placement is non-blocking.",
+  "colliders": []
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated modular narrow colonial service lane paving segment, 1765 Boston, variant B, for Meshy image-to-3D. Entire 3:1 rectangle visible, slightly elevated three-quarter orthographic product render, plain neutral light gray background, no scene, people, props, text, or greenery. Very uneven rough cobbles and fieldstones mixed with compacted dirty joints, an off-center shallow drainage depression lengthwise, wagon and foot wear, damp dark mud, patched missing stones, subdued gray umber charcoal. Crude historic hand-laid lane, not modern paving. Low thin slab, clean straight tileable boundary edges.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:06:57.172Z",
+  "files": [
+    "colonial-alley-b.png"
+  ]
+}

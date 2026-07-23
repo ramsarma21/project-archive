@@ -2,6 +2,8 @@ import { createDay1Session } from "../src/index.js";
 import { CONCEPTS } from "@pa/contracts";
 import type { PresenterEvent, InputRequest, MechanicRawResult } from "@pa/contracts";
 
+declare const process: { argv: string[] };
+
 // A scripted responder that drives the runtime headlessly (no React/DOM).
 // `mode` controls whether Sync answers are correct (happy) or wrong (miss path).
 type Mode = "happy" | "missSyncs";
@@ -22,12 +24,56 @@ function respond(req: InputRequest, mode: Mode, missedFirst: Set<string>): Prese
       return { type: "ACK" };
     case "FOCUS_READ":
       return { type: "FOCUS_READ_OPENED", objectId: req.objectId };
+    case "BREATHER":
+      return { type: "BREATHER_COMPLETE" };
     case "FREE_ROAM": {
       const gold = req.targets.find((t) => t.marker === "GOLD") ?? req.targets[0];
       return { type: "FREE_ROAM_GOTO", targetId: gold!.targetId };
     }
     case "DAY_END":
       return { type: "CONTINUE" };
+    case "CHECKPOINT_DEBRIEF": {
+      const formId =
+        req.state.selection?.formId ?? req.proposedSelection?.formId ?? "";
+      if (req.phase === "FORM_SELECTION" && req.proposedSelection) {
+        return {
+          type: "DEBRIEF_FORM_SELECTED",
+          checkpointId: req.checkpointId,
+          selection: req.proposedSelection,
+        };
+      }
+      if (req.phase === "QUESTION" && req.item) {
+        return {
+          type: "DEBRIEF_ANSWERED",
+          checkpointId: req.checkpointId,
+          formId,
+          itemId: req.item.itemId,
+          optionId: req.item.correctOptionId,
+        };
+      }
+      if (req.phase === "REVIEW" && !req.readyToCommit) {
+        return { type: "DEBRIEF_CONTINUED", checkpointId: req.checkpointId, formId };
+      }
+      if (req.phase === "REVIEW") {
+        return {
+          type: "DEBRIEF_COMMITTED",
+          eventId: `${formId}.COMMIT.TEST`,
+          checkpointId: req.checkpointId,
+          formId,
+          bankVersion: req.state.bankVersion ?? "",
+        };
+      }
+      if (req.phase === "TRANSITION") {
+        return {
+          type: "ACT_TRANSITIONED",
+          eventId: `${formId}.TRANSITION.TEST`,
+          checkpointId: req.checkpointId,
+          formId,
+          targetChapterId: req.state.nextInsertion!.chapterId,
+        };
+      }
+      throw new Error("CP1 content bank unavailable");
+    }
     case "MECHANIC":
       return { type: "MECHANIC_RESULT", promptId: req.promptId, result: mechanicResult(req) };
     case "CHOICE": {
@@ -51,6 +97,28 @@ function mechanicResult(req: Extract<InputRequest, { kind: "MECHANIC" }>): Mecha
   if (p.kind === "PRESS") return { kind: "PRESS", stopOffset: 0.5 };
   if (p.kind === "EFFORT") return { kind: "EFFORT", holdMs: 1500 };
   if (p.kind === "PLACE") return { kind: "PLACE", alignment: 0.5 };
+  if (p.kind === "PRINT_JOB") {
+    return {
+      kind: "PRINT_JOB",
+      phases: { catch: 0.95, ink: 0.95, register: 0.95, pull: 0.95, peel: 0.95 },
+      quality: "CRISP",
+      accessible: false,
+    };
+  }
+  if (p.kind === "HAUL_JOB") {
+    return {
+      kind: "HAUL_JOB",
+      phases: { load: 0.9, balance: 0.9, thread: 0.9 },
+      accessible: false,
+    };
+  }
+  if (p.kind === "POST_JOB") {
+    return {
+      kind: "POST_JOB",
+      phases: { lineUp: 0.9, tackLeft: 0.9, tackRight: 0.9 },
+      accessible: false,
+    };
+  }
   // SORT: correct assignment
   const needs = ["deed", "writ", "newspaper"];
   return {
@@ -68,7 +136,10 @@ export function autoplay(seedHex: string, mode: Mode): {
   done: boolean;
   learner: ReturnType<typeof summarizeLearner>;
 } {
-  const session = createDay1Session({ variationRootSeedHex: seedHex });
+  const session = createDay1Session({
+    variationRootSeedHex: seedHex,
+    assessmentMode: "QA_DRAFT",
+  });
   const missedFirst = new Set<string>();
   let steps = 0;
   while (!session.isDone && session.plan) {
@@ -101,16 +172,18 @@ function summarizeLearner(session: ReturnType<typeof createDay1Session>) {
 }
 
 // Run directly: `node --import tsx test/autoplay.ts`
-const seedA = "11".repeat(32);
-const seedB = "22".repeat(32);
-for (const [label, seed, mode] of [
-  ["A/happy", seedA, "happy"],
-  ["B/happy", seedB, "happy"],
-  ["A/missSyncs", seedA, "missSyncs"],
-] as const) {
-  const r = autoplay(seed, mode);
-  const gate = Object.values(r.learner).every((c) => c.understanding === "UNDERSTOOD" && c.demonstration === "DEMONSTRATED");
-  console.log(`\n[${label}] steps=${r.steps} done=${r.done} events=${r.events.length} gateSatisfied=${gate}`);
-  console.log("  learner:", JSON.stringify(r.learner));
+if (process.argv[1]?.endsWith("/autoplay.ts")) {
+  const seedA = "11".repeat(32);
+  const seedB = "22".repeat(32);
+  for (const [label, seed, mode] of [
+    ["A/happy", seedA, "happy"],
+    ["B/happy", seedB, "happy"],
+    ["A/missSyncs", seedA, "missSyncs"],
+  ] as const) {
+    const r = autoplay(seed, mode);
+    const gate = Object.values(r.learner).every((c) => c.understanding === "UNDERSTOOD" && c.demonstration === "DEMONSTRATED");
+    console.log(`\n[${label}] steps=${r.steps} done=${r.done} events=${r.events.length} gateSatisfied=${gate}`);
+    console.log("  learner:", JSON.stringify(r.learner));
+  }
+  console.log("\nCONCEPTS:", Object.values(CONCEPTS).join(", "));
 }
-console.log("\nCONCEPTS:", Object.values(CONCEPTS).join(", "));

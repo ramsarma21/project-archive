@@ -1,0 +1,11 @@
+{
+  "assetKey": "effigy-boot",
+  "category": "prop",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "M4 B11 event satirical Lord-Bute boot effigy. Non-blocking: hangs beside the main effigy above reach. No player collision, like a hung prop. Named node boot_root + boot_swing_pivot added in Blender post for the runtime sway.",
+  "colliders": []
+}

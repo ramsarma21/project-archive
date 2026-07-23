@@ -1,0 +1,383 @@
+{
+  "itemSetId": "PA.BOS.ACT01.OPENRESPONSE.ITEMS",
+  "itemSetVersion": "0.1.0-draft",
+  "status": "AUTHOR_DRAFT",
+  "checkpointId": "BOS.ACT01.CP1.v1",
+  "act1ExposureCap": 4,
+  "note": "Twelve authored open-response items. Bounded so a single player is offered at most four across Act 1 (act1ExposureCap), and each item is gated by source prerequisites and minimum spacing so most playstyles see three to four. Every item is AUTHOR_DRAFT and HISTORICAL_REVIEW_PENDING. No item claims SME approval. TEKS tags are placeholders. Player-facing text (studentPrompt, accessiblePrompt) obeys the no-em-dash fiction rule.",
+
+  "items": [
+    {
+      "itemId": "BOS.ACT01.OR.REVENUE_VS_MARKET.v1",
+      "promptId": "BOS.ACT01.PROMPT.REVENUE_VS_MARKET",
+      "itemVersion": "v1",
+      "reasoningOperation": "COMPARE",
+      "concepts": { "macro": ["RCC.DEBT_POLICY_INTRO"], "micro": ["MICRO.SALUTARY_NEGLECT_END", "MICRO.PORT_TOWN_BOSTON"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1", "BOS.ACT01.SRC.SARAH_MARKET.v1"],
+        "microConceptIds": ["MICRO.SALUTARY_NEGLECT_END"],
+        "note": "Player must have engaged the revenue proclamation read and either Sarah's stall or Thomas's counting-house before this is eligible."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["SOURCE_REFLECTION", "ARCHIVE_CONNECTION"], "npcIds": ["thomas", "sarah"], "archiveCardId": "BOS.ACT01.AC.CROWN_CLAIM_VS_LOCAL.v1", "note": "Offered as a spaced reflection after both sources are engaged; may surface via Thomas or Sarah follow-up or the matching Archive Connections card." },
+      "repeatPolicy": "SPACED_RETRIEVAL_LATER_CP",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1", "BOS.ACT01.SRC.SARAH_MARKET.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.EV.1", "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.EV.2"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.SARAH_MARKET.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.SARAH_MARKET.v1.EV.1"], "flag": "REPRESENTATIVE" },
+        { "claimId": "BOS.ACT01.SRC.SARAH_MARKET.v1.CLAIM.2", "evidenceIds": ["BOS.ACT01.SRC.SARAH_MARKET.v1.EV.1"], "flag": "INFERENCE" }
+      ],
+      "inferenceNote": "The official proclamation states a documented purpose (revenue for war debt). Sarah's testimony is a representative merchant viewpoint, and blaming her specific losses solely on the duties is an inference she offers, not a proven fact. Students should weigh the official claim against lived evidence, not treat either as the whole truth.",
+      "studentPrompt": "The Custom House notice says the new duties are meant to raise money after the war. Sarah at the market says half her trade is gone since those duties. Put the two together: what does the official reason leave out about life in Boston? Use a detail from the notice and a detail from Sarah.",
+      "accessiblePrompt": "Compare two sources. One is the King's notice about raising money after the war. The other is Sarah, who says her trade dropped after the new duties. What does the official reason not mention? Give one detail from each source.",
+      "rubricId": "BOS.ACT01.RUBRIC.COMPARE.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.COMPARE.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.COMPARE.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.COMPARE.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["MULTIPLE_SOURCES_COMPARED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Show the two sources side by side in the Archive with the prompt 'What does the official reason leave out?' and log ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) POSTWAR_POLICY (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.STAMPED_VS_PLAIN.v1",
+      "promptId": "BOS.ACT01.PROMPT.STAMPED_VS_PLAIN",
+      "itemVersion": "v1",
+      "reasoningOperation": "COMPARE",
+      "concepts": { "macro": ["RCC.STAMP_INTERNAL_INTRO"], "micro": ["MICRO.STAMP_WHAT_COUNTS"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1", "BOS.ACT01.SRC.STAMP_SCHEDULE.v1"],
+        "microConceptIds": ["MICRO.STAMP_WHAT_COUNTS"],
+        "note": "Player must have compared the proofs (B3) and read the stamp schedule."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["SOURCE_REFLECTION", "ARCHIVE_CONNECTION"], "npcIds": ["pike"], "archiveCardId": "BOS.ACT01.AC.STAMPED_FORM_VS_PROOF.v1", "note": "Spaced reflection after the proof compare and schedule read; may surface via Pike follow-up or the Archive card." },
+      "repeatPolicy": "ONCE_PER_ACT",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1", "BOS.ACT01.SRC.STAMP_SCHEDULE.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.EV.1"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.CLAIM.3", "evidenceIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.EV.2"], "flag": "INFERENCE" },
+        { "claimId": "BOS.ACT01.SRC.STAMP_SCHEDULE.v1.CLAIM.2", "evidenceIds": ["BOS.ACT01.SRC.STAMP_SCHEDULE.v1.EV.1"], "flag": "DOCUMENTED" }
+      ],
+      "inferenceNote": "That the words match while only the stamp differs is documented by the artifacts. That a clerk treats the stamped copy as the authoritative one is a reasonable inference from period practice, flagged so students do not read it as a hard fact.",
+      "studentPrompt": "On the bench, the stamped legal proof and the plain form say the same words. Only one carries the stamp. Using the proof and the posted schedule, explain what the stamp actually changes about a piece of paper, and what it does not change.",
+      "accessiblePrompt": "Two papers have the same words. One has the stamp, one does not. Using the stamped proof and the schedule of duties, tell what the stamp changes about the paper and what stays the same.",
+      "rubricId": "BOS.ACT01.RUBRIC.COMPARE.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.COMPARE.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.COMPARE.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.COMPARE.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["MULTIPLE_SOURCES_COMPARED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive shows the stamped and plain sheets with a 'spot what changed' toggle and logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) STAMP_ACT (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.NONIMPORT_TRANSFER.v1",
+      "promptId": "BOS.ACT01.PROMPT.NONIMPORT_TRANSFER",
+      "itemVersion": "v1",
+      "reasoningOperation": "TRANSFER",
+      "concepts": { "macro": ["RCC.REPRESENTATION_CAUSE"], "micro": ["MICRO.NON_IMPORTATION"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1"],
+        "microConceptIds": ["MICRO.NON_IMPORTATION"],
+        "note": "Player must have read the non-importation notice or completed the tavern-note / Thomas exchange."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["SOURCE_REFLECTION"], "npcIds": ["thomas"], "note": "Offered as a Thomas follow-up once non-importation is engaged." },
+      "repeatPolicy": "ONCE_PER_ACT",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.EV.1"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.CLAIM.2", "evidenceIds": ["BOS.ACT01.SRC.NONIMPORTATION_AGREEMENT.v1.EV.2"], "flag": "REPRESENTATIVE" }
+      ],
+      "inferenceNote": "The tactic and its logic are documented. The specific 1765 signed Boston agreement is representative and carries a dating flag; the transfer task does not depend on the exact date.",
+      "studentPrompt": "A shopkeeper down the lane still sells British cloth and says a boycott will just cost her customers. Using what the merchants' agreement shows about non-importation, explain how their plan is supposed to work, and what she would be trading away by joining.",
+      "accessiblePrompt": "One shopkeeper does not want to join the boycott because she may lose sales. Using the merchants' non-importation agreement, explain how the boycott is meant to work and what she gives up by joining it.",
+      "rubricId": "BOS.ACT01.RUBRIC.TRANSFER.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.TRANSFER.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.TRANSFER.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.TRANSFER.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["CONCEPT_APPLIED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive restates the merchants' agreement and asks 'how is the boycott supposed to bite?' and logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) STAMP_ACT (draft, unconfirmed)", "8.12 economics (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.WRITS_TRANSFER.v1",
+      "promptId": "BOS.ACT01.PROMPT.WRITS_TRANSFER",
+      "itemVersion": "v1",
+      "reasoningOperation": "TRANSFER",
+      "concepts": { "macro": ["RCC.DEBT_POLICY_INTRO"], "micro": ["MICRO.WRITS_OF_ASSISTANCE"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1"],
+        "microConceptIds": ["MICRO.WRITS_OF_ASSISTANCE"],
+        "note": "Player must have engaged the customs inspection beat or the Custom House read."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["SOURCE_REFLECTION"], "npcIds": ["pike"], "note": "Offered as a Pike follow-up after the search authority is engaged. Pike frames it in-period; the concept name is the field tag's job, not his." },
+      "repeatPolicy": "ONCE_PER_ACT",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.EV.1"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.CLAIM.3", "evidenceIds": ["BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.EV.1"], "flag": "REPRESENTATIVE" }
+      ],
+      "inferenceNote": "The nature of the general warrant is documented. The in-world bag search is representative staging; the point transferred is the open-ended power to search, not the specific search.",
+      "studentPrompt": "Picture an officer who wants to search a family's home, not a shop, and says one general warrant lets him search any door he likes. Using what you saw at the customs counter, explain why colonists treated that power as a problem, even for people with nothing to hide.",
+      "accessiblePrompt": "An officer says one warrant lets him search any home he wants. Using the customs search you saw, explain why colonists thought that kind of open search was a problem, even for people who did nothing wrong.",
+      "rubricId": "BOS.ACT01.RUBRIC.TRANSFER.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.TRANSFER.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.TRANSFER.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.TRANSFER.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["CONCEPT_APPLIED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive replays the 'on whose warrant?' exchange and asks the student to apply it to a home and logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) POSTWAR_POLICY (draft, unconfirmed)", "8.19 rights (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.PIKE_SOURCE_CREDIBILITY.v1",
+      "promptId": "BOS.ACT01.PROMPT.PIKE_SOURCE_CREDIBILITY",
+      "itemVersion": "v1",
+      "reasoningOperation": "PERSPECTIVE",
+      "concepts": { "macro": ["RCC.STAMP_INTERNAL_INTRO"], "micro": ["MICRO.VICE_ADMIRALTY_COURTS", "MICRO.STAMP_WHAT_COUNTS"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1", "BOS.ACT01.SRC.STAMP_SCHEDULE.v1"],
+        "microConceptIds": ["MICRO.VICE_ADMIRALTY_COURTS"],
+        "note": "Player must have met Pike and engaged his records or the schedule."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["SOURCE_REFLECTION"], "npcIds": ["pike"], "note": "Pike follow-up. He weighs paper as a clerk would." },
+      "repeatPolicy": "ONCE_PER_ACT",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1", "BOS.ACT01.SRC.STAMP_SCHEDULE.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.CLAIM.3", "evidenceIds": ["BOS.ACT01.SRC.PIKE_STAMPED_PROOF.v1.EV.2"], "flag": "INFERENCE" },
+        { "claimId": "BOS.ACT01.SRC.STAMP_SCHEDULE.v1.CLAIM.2", "evidenceIds": ["BOS.ACT01.SRC.STAMP_SCHEDULE.v1.EV.1"], "flag": "DOCUMENTED" }
+      ],
+      "inferenceNote": "How a clerk ranks a deed, a writ, a newspaper, and a private letter for authority is an in-fiction inference grounded in period practice, not a single documented ruling. Students take Pike's viewpoint; they are not asserting a legal fact.",
+      "studentPrompt": "Pike files papers for the court. Think like him for a moment. Put a deed, a writ, a newspaper, and a private letter in order by how much authority each one carries for official business, and explain what makes the difference. Point to something from his records or the schedule.",
+      "accessiblePrompt": "Pike is a court clerk. Thinking the way he would, put these in order of official authority: a deed, a writ, a newspaper, a private letter. Explain what makes some count more than others, using his records or the schedule.",
+      "rubricId": "BOS.ACT01.RUBRIC.PERSPECTIVE.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.PERSPECTIVE.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.PERSPECTIVE.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.PERSPECTIVE.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["PERSPECTIVE_TAKEN", "PERSPECTIVE_VS_FACT_DISTINGUISHED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive shows the four paper types and asks the student to rank them as a clerk would and logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) STAMP_ACT (draft, unconfirmed)", "8.29 primary-source analysis (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.CLARKE_LOYALIST.v1",
+      "promptId": "BOS.ACT01.PROMPT.CLARKE_LOYALIST",
+      "itemVersion": "v1",
+      "reasoningOperation": "PERSPECTIVE",
+      "concepts": { "macro": ["RCC.REPRESENTATION_CAUSE"], "micro": ["MICRO.LOYALIST_VIEW"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1", "BOS.ACT01.SRC.EFFIGY_OLIVER.v1"],
+        "microConceptIds": ["MICRO.LOYALIST_VIEW"],
+        "note": "Player must have heard Clarke out and seen resistance evidence (broadside and/or effigy)."
+      },
+      "minSpacingInteractions": 3,
+      "placement": { "kinds": ["SOURCE_REFLECTION"], "npcIds": ["clarke"], "note": "Clarke follow-up. The prompt explicitly separates representing his view from agreeing with it." },
+      "repeatPolicy": "ONCE_PER_ACT",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1", "BOS.ACT01.SRC.EFFIGY_OLIVER.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.EFFIGY_OLIVER.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1.EV.1"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1.EV.1"], "flag": "DOCUMENTED" }
+      ],
+      "inferenceNote": "The events are documented. The task asks the student to voice a Loyalist reading of those same events and to state clearly that describing Clarke's view is not the same as endorsing it. This guards against confusing perspective with fact.",
+      "studentPrompt": "Clarke is a Loyalist. Using the same evidence the protesters use, the effigy at the elm and the no-consent broadside, explain how Clarke would read those events. Then add one sentence making clear this is his view, not what you are saying is right.",
+      "accessiblePrompt": "Clarke supports the King's government. Look at the effigy protest and the no-consent broadside. Explain how Clarke would see these events. Then write one sentence that says this is his opinion, not yours.",
+      "rubricId": "BOS.ACT01.RUBRIC.PERSPECTIVE.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.PERSPECTIVE.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.PERSPECTIVE.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.PERSPECTIVE.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["PERSPECTIVE_TAKEN", "PERSPECTIVE_VS_FACT_DISTINGUISHED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive presents the two sources with the prompt 'how would a Loyalist read this?' and a reminder that a viewpoint is not a verdict, then logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) multiple perspectives (draft, unconfirmed)", "8.29 point of view (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.ABIGAIL_PRINT_COORDINATION.v1",
+      "promptId": "BOS.ACT01.PROMPT.ABIGAIL_PRINT_COORDINATION",
+      "itemVersion": "v1",
+      "reasoningOperation": "PERSPECTIVE",
+      "concepts": { "macro": ["RCC.STAMP_INTERNAL_INTRO"], "micro": ["MICRO.PRINTERS_ROLE", "MICRO.NEWS_NETWORKS"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.PRINTER_PRESS.v1"],
+        "microConceptIds": ["MICRO.PRINTERS_ROLE"],
+        "note": "Player must have worked the press or read the type case with Abigail."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["SOURCE_REFLECTION"], "npcIds": ["abigail"], "note": "Abigail follow-up. She speaks as a printer, not a lecturer." },
+      "repeatPolicy": "ONCE_PER_ACT",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.PRINTER_PRESS.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.PRINTER_PRESS.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.PRINTER_PRESS.v1.EV.1"], "flag": "DOCUMENTED" }
+      ],
+      "inferenceNote": "The press's power to reproduce one argument many times is documented. The task asks the student to take a printer's perspective on why that changes public action.",
+      "studentPrompt": "You saw Abigail set type and pull sheets. From a printer's seat, explain why putting an argument in print changes what a crowd can do next, compared with just saying it aloud in the street. Use something you saw at the press.",
+      "accessiblePrompt": "Abigail prints many copies of one message. As a printer, explain why printing an argument helps people act together more than just speaking it. Use one thing you saw at the press.",
+      "rubricId": "BOS.ACT01.RUBRIC.PERSPECTIVE.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.PERSPECTIVE.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.PERSPECTIVE.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.PERSPECTIVE.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["PERSPECTIVE_TAKEN", "CONCEPT_APPLIED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive shows a single handbill turning into many copies and asks 'what does that let people do?' and logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) STAMP_ACT (draft, unconfirmed)", "8.29 communication (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.RIDER_ROUTE_STRATEGY.v1",
+      "promptId": "BOS.ACT01.PROMPT.RIDER_ROUTE_STRATEGY",
+      "itemVersion": "v1",
+      "reasoningOperation": "STRATEGY",
+      "concepts": { "macro": ["RCC.REPRESENTATION_CAUSE"], "micro": ["MICRO.NEWS_NETWORKS"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.RIDER_NETWORK.v1"],
+        "microConceptIds": ["MICRO.NEWS_NETWORKS"],
+        "note": "Player must have met the rider or completed the crier stretch / rider handoff."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["SOURCE_REFLECTION"], "npcIds": ["rider"], "note": "Rider follow-up. He wants a plan, not a lecture." },
+      "repeatPolicy": "ONCE_PER_ACT",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.RIDER_NETWORK.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.RIDER_NETWORK.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.1", "BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.2"], "flag": "DOCUMENTED" }
+      ],
+      "inferenceNote": "How the network moved news is documented. The task asks for a justified route choice, a strategy judgment, not a single right answer.",
+      "studentPrompt": "The rider leaves at the evening bell and urgent news needs to reach the next town. Pick how he should send it, a fast open road, a quieter back route, or handing copies to more than one rider, and justify your choice using what you know about how news traveled.",
+      "accessiblePrompt": "Urgent news must leave Boston tonight. Choose the best way to send it: a fast main road, a quiet back road, or several riders with copies. Explain why your choice is best, using what you learned about how news moved.",
+      "rubricId": "BOS.ACT01.RUBRIC.STRATEGY.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.STRATEGY.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.STRATEGY.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.STRATEGY.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["STRATEGY_TRADEOFFS_WEIGHED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive shows the three route options and asks the student to pick and justify one, then logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) communication (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.POST_EFFIGY_SYNTHESIS.v1",
+      "promptId": "BOS.ACT01.PROMPT.POST_EFFIGY_SYNTHESIS",
+      "itemVersion": "v1",
+      "reasoningOperation": "CAUSAL_SYNTHESIS",
+      "concepts": { "macro": ["RCC.REPRESENTATION_CAUSE"], "micro": ["MICRO.ANDREW_OLIVER", "MICRO.EFFIGY_PROTEST", "MICRO.LIBERTY_TREE"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1", "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1"],
+        "microConceptIds": ["MICRO.ANDREW_OLIVER"],
+        "note": "Player must have observed the effigy event and engaged at least one other resistance source."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["ARCHIVE_CONNECTION", "SOURCE_REFLECTION"], "archiveCardId": "BOS.ACT01.AC.EFFIGY_DISTANT_OFFICE.v1", "npcIds": [], "note": "Offered after the fixed effigy event, via the Archive Connections card." },
+      "repeatPolicy": "SPACED_RETRIEVAL_LATER_CP",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1", "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.EFFIGY_OLIVER.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1.EV.1"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.EFFIGY_OLIVER.v1.CLAIM.2", "evidenceIds": ["BOS.ACT01.SRC.EFFIGY_OLIVER.v1.EV.2"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.NO_CONSENT_BROADSIDE.v1.EV.1"], "flag": "DOCUMENTED" }
+      ],
+      "inferenceNote": "Both events and the underlying grievance are documented. Synthesis asks the student to build the cause-to-effect chain, using at least two engaged sources.",
+      "studentPrompt": "The crowd hung Andrew Oliver's effigy at the elm, and the next morning he resigned as stamp distributor. Using the placard and the no-consent broadside, trace the chain: what belief pushed people to act, what they did, and what changed because of it.",
+      "accessiblePrompt": "People hung Andrew Oliver's effigy, and he then quit as stamp distributor. Using the placard and the no-consent broadside, explain the chain of events: what people believed, what they did, and what happened next.",
+      "rubricId": "BOS.ACT01.RUBRIC.CAUSAL_SYNTHESIS.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.CAUSAL.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.CAUSAL.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.CAUSAL.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["CAUSE_EFFECT_LINKED", "MULTIPLE_SOURCES_COMPARED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive lays out the placard and broadside as a two-step timeline and asks the student to fill the middle, then logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) STAMP_ACT (draft, unconfirmed)", "8.4(B) significant individuals (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.RUNNER_BALANCE_STRATEGY.v1",
+      "promptId": "BOS.ACT01.PROMPT.RUNNER_BALANCE_STRATEGY",
+      "itemVersion": "v1",
+      "reasoningOperation": "STRATEGY",
+      "concepts": { "macro": ["RCC.REPRESENTATION_CAUSE"], "micro": ["MICRO.NEWS_NETWORKS", "MICRO.WRITS_OF_ASSISTANCE"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.RIDER_NETWORK.v1", "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1"],
+        "microConceptIds": ["MICRO.NEWS_NETWORKS"],
+        "note": "Offered near the close of the day, after the player has carried goods and faced at least one search or route decision."
+      },
+      "minSpacingInteractions": 3,
+      "placement": { "kinds": ["ARCHIVE_CONNECTION", "SOURCE_REFLECTION"], "archiveCardId": "BOS.ACT01.AC.MEETING_TAVERN_RIDER.v1", "npcIds": ["rider"], "note": "Day-close strategy reflection. Personal stance, still grounded in sources." },
+      "repeatPolicy": "SPACED_RETRIEVAL_LATER_CP",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.RIDER_NETWORK.v1", "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.RIDER_NETWORK.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.1"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.WRITS_CUSTOMHOUSE.v1.EV.1"], "flag": "DOCUMENTED" }
+      ],
+      "inferenceNote": "The situation is documented. The reflection asks the student to weigh speed, safety, evidence, and public consequence, so answers will differ and that is expected.",
+      "studentPrompt": "You have spent the day moving papers and news through a watched town. If it were your call, how would you balance getting news out fast, staying safe from searches, keeping your evidence solid, and thinking about who your choices affect? Name what you would put first and why, using something you saw today.",
+      "accessiblePrompt": "Today you moved news and papers through a town with officers watching. How would you balance being fast, staying safe, keeping good evidence, and protecting other people? Say what matters most to you and why, using one thing you saw today.",
+      "rubricId": "BOS.ACT01.RUBRIC.STRATEGY.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.STRATEGY.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.STRATEGY.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.STRATEGY.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["STRATEGY_TRADEOFFS_WEIGHED", "CAUSE_EFFECT_LINKED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive shows four sliders (speed, safety, evidence, consequence) and asks the student to rank and explain, then logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) causes (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.NETWORK_SYNTHESIS.v1",
+      "promptId": "BOS.ACT01.PROMPT.NETWORK_SYNTHESIS",
+      "itemVersion": "v1",
+      "reasoningOperation": "CAUSAL_SYNTHESIS",
+      "concepts": { "macro": ["RCC.REPRESENTATION_CAUSE"], "micro": ["MICRO.NEWS_NETWORKS", "MICRO.LOYAL_NINE"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1", "BOS.ACT01.SRC.RIDER_NETWORK.v1"],
+        "microConceptIds": ["MICRO.NEWS_NETWORKS"],
+        "note": "Archive Connections unlock: requires engaging the town-meeting notice plus the tavern sign or rider."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["ARCHIVE_CONNECTION"], "archiveCardId": "BOS.ACT01.AC.MEETING_TAVERN_RIDER.v1", "npcIds": [], "note": "Archive Connections synthesis prompt tied to the meeting-notice / rider / tavern combination." },
+      "repeatPolicy": "SPACED_RETRIEVAL_LATER_CP",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1", "BOS.ACT01.SRC.RIDER_NETWORK.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.TOWN_MEETING_NOTICE.v1.EV.1"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.RIDER_NETWORK.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.1", "BOS.ACT01.SRC.RIDER_NETWORK.v1.EV.2"], "flag": "DOCUMENTED" }
+      ],
+      "inferenceNote": "Both the town-meeting channel and the rider/tavern network are documented. Synthesis asks how a printed notice plus riders and taverns turn one meeting into coordinated action.",
+      "studentPrompt": "A printed notice calls a town meeting, and the same news moves through taverns and out with the rider. Connect them: explain how a single posted notice can turn into people acting together across more than one town. Use the meeting notice and the rider or tavern.",
+      "accessiblePrompt": "A printed notice calls a meeting, and riders and taverns spread the same news. Explain how one posted notice can lead to people working together in more than one town. Use the meeting notice and the rider or tavern.",
+      "rubricId": "BOS.ACT01.RUBRIC.CAUSAL_SYNTHESIS.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.CAUSAL.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.CAUSAL.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.CAUSAL.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["CAUSE_EFFECT_LINKED", "MULTIPLE_SOURCES_COMPARED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive draws the notice, tavern, and rider as three connected nodes and asks the student to explain the links, then logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) communication (draft, unconfirmed)", "8.4(B) groups (draft, unconfirmed)"] }
+    },
+
+    {
+      "itemId": "BOS.ACT01.OR.CROWN_CLAIM_VS_LOCAL_SYNTHESIS.v1",
+      "promptId": "BOS.ACT01.PROMPT.CROWN_CLAIM_VS_LOCAL_SYNTHESIS",
+      "itemVersion": "v1",
+      "reasoningOperation": "CAUSAL_SYNTHESIS",
+      "concepts": { "macro": ["RCC.DEBT_POLICY_INTRO"], "micro": ["MICRO.PORT_TOWN_BOSTON", "MICRO.SALUTARY_NEGLECT_END"] },
+      "prerequisites": {
+        "sourcePacketIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1", "BOS.ACT01.SRC.WHARFAGE_RATES.v1"],
+        "microConceptIds": ["MICRO.PORT_TOWN_BOSTON"],
+        "note": "Archive Connections unlock: requires the revenue proclamation plus a port-economy source (wharfage or market)."
+      },
+      "minSpacingInteractions": 2,
+      "placement": { "kinds": ["ARCHIVE_CONNECTION"], "archiveCardId": "BOS.ACT01.AC.CROWN_CLAIM_VS_LOCAL.v1", "npcIds": [], "note": "Archive Connections synthesis prompt: Crown revenue claim against local consequence." },
+      "repeatPolicy": "SPACED_RETRIEVAL_LATER_CP",
+      "expectedResponseWords": { "min": 35, "max": 90 },
+      "sourcePacketIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1", "BOS.ACT01.SRC.WHARFAGE_RATES.v1"],
+      "claimEvidenceIds": [
+        { "claimId": "BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.REVENUE_PROCLAMATION.v1.EV.1"], "flag": "DOCUMENTED" },
+        { "claimId": "BOS.ACT01.SRC.WHARFAGE_RATES.v1.CLAIM.1", "evidenceIds": ["BOS.ACT01.SRC.WHARFAGE_RATES.v1.EV.1"], "flag": "DOCUMENTED" }
+      ],
+      "inferenceNote": "The Crown's stated purpose and Boston's dependence on the port are both documented. Synthesis asks the student to connect a London revenue decision to an effect felt on a Boston wharf.",
+      "studentPrompt": "London says the duties are about paying war debt. On the wharf, fees and customs delays pile onto a town that lives by shipping. Connect the two: explain how a money decision made far away turns into a real effect on this harbor. Use the proclamation and the wharfage notice.",
+      "accessiblePrompt": "London says the duties pay off war debt. On the docks, fees and delays hurt a town that depends on shipping. Explain how a decision made far away becomes a real problem on this harbor. Use the proclamation and the wharfage notice.",
+      "rubricId": "BOS.ACT01.RUBRIC.CAUSAL_SYNTHESIS.v1",
+      "classifierSchemaId": "PA.BOS.ACT01.CLASSIFIER",
+      "feedbackIds": { "STRONG_EVIDENCE": "BOS.ACT01.FB.CAUSAL.STRONG", "PARTIAL_EVIDENCE": "BOS.ACT01.FB.CAUSAL.PARTIAL", "MISSING_EVIDENCE": "BOS.ACT01.FB.CAUSAL.MISSING", "OFF_TOPIC": "BOS.ACT01.FB.GENERIC.OFF_TOPIC", "UNCLASSIFIED": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED" },
+      "educatorEvidenceLabels": ["CAUSE_EFFECT_LINKED", "MULTIPLE_SOURCES_COMPARED", "EVIDENCE_PRESENT", "NEEDS_EVIDENCE_REVISIT", "ENGAGEMENT_LOGGED"],
+      "offlineFallback": { "feedbackId": "BOS.ACT01.FB.GENERIC.UNCLASSIFIED", "activity": "Archive shows the London claim on one side and the wharf fees on the other with an arrow to fill in, then logs ENGAGEMENT_LOGGED. No classification, no gating." },
+      "review": { "authorStatus": "AUTHOR_DRAFT", "historicalReview": "HISTORICAL_REVIEW_PENDING", "curriculumReview": "CURRICULUM_REVIEW_PENDING", "reviewer": null, "approvedBy": null, "teksPlaceholders": ["8.4(A) POSTWAR_POLICY (draft, unconfirmed)", "8.12 economics (draft, unconfirmed)"] }
+    }
+  ]
+}

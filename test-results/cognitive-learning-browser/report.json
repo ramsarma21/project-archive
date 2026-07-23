@@ -1,0 +1,31 @@
+{
+  "baseUrl": "http://127.0.0.1:5183/",
+  "scenarios": [
+    "offline-normal",
+    "mock-timeout",
+    "accessible-resume",
+    "mock-online",
+    "no-immediate-prompt"
+  ],
+  "screenshots": [
+    "/Users/ramsarma/Projects/project-archive/test-results/cognitive-learning-browser/offline-fallback-normal.png",
+    "/Users/ramsarma/Projects/project-archive/test-results/cognitive-learning-browser/archive-connections-imported-artifacts.png",
+    "/Users/ramsarma/Projects/project-archive/test-results/cognitive-learning-browser/resume-high-contrast-reduced-touch.png",
+    "/Users/ramsarma/Projects/project-archive/test-results/cognitive-learning-browser/mock-online-classified-retained.png"
+  ],
+  "errors": [],
+  "nonBlack": {
+    "offline-fallback-normal": 19.509764746281853,
+    "archive-connections-imported-artifacts": 32.72740992971268,
+    "resume-high-contrast-reduced-touch": 17.442886373903317,
+    "mock-online-classified-retained": 19.299692703339772
+  },
+  "assertions": {
+    "sourcePromptCount": 12,
+    "npcFollowups": 6,
+    "archiveConnections": 5,
+    "rawTextInSave": false,
+    "progressionAuthority": false,
+    "browserErrors": 0
+  }
+}

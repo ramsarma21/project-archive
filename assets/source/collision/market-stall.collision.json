@@ -1,0 +1,69 @@
+{
+  "assetKey": "market-stall",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": [
+      2.6,
+      2.6,
+      2.6
+    ],
+    "scale": 1
+  },
+  "note": "Counter + front posts; awning canopy up high is NOT collided.",
+  "colliders": [
+    {
+      "id": "counter",
+      "shape": "box",
+      "center": [
+        0,
+        0.623,
+        0.274
+      ],
+      "half": [
+        1.15,
+        0.557,
+        0.334
+      ],
+      "tags": [
+        "obstacle"
+      ]
+    },
+    {
+      "id": "post-l",
+      "shape": "capsule",
+      "a": [
+        -1.15,
+        0.06,
+        -0.61
+      ],
+      "b": [
+        -1.15,
+        1.579,
+        -0.61
+      ],
+      "radius": 0.06,
+      "tags": [
+        "obstacle"
+      ]
+    },
+    {
+      "id": "post-r",
+      "shape": "capsule",
+      "a": [
+        1.15,
+        0.06,
+        -0.61
+      ],
+      "b": [
+        1.15,
+        1.579,
+        -0.61
+      ],
+      "radius": 0.06,
+      "tags": [
+        "obstacle"
+      ]
+    }
+  ]
+}

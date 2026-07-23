@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single narrow 1765 brick counting house building only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: narrow three-story Georgian brick counting house, gable roof with wooden shingles and one brick chimney, evenly spaced small-pane sash windows with stone lintels, paneled wooden entry door with a simple pediment, weathered red-brown brick. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:04:43.012Z",
+  "files": [
+    "bldg-warehouse-wharf-b.png"
+  ]
+}

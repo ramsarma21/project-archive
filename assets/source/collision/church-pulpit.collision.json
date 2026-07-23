@@ -1,0 +1,31 @@
+{
+  "assetKey": "church-pulpit",
+  "category": "interior",
+  "profile": "solid",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "pendingInteriorPlacement": true,
+  "note": "Provisional bounds box in the raw-normalized local frame. Final footprint depends on per-room interior placement (owned by the interior worker); re-fit when that lands.",
+  "colliders": [
+    {
+      "id": "body",
+      "shape": "box",
+      "center": [
+        0,
+        0.95,
+        0
+      ],
+      "half": [
+        0.757,
+        0.95,
+        0.498
+      ],
+      "tags": [
+        "obstacle",
+        "provisional"
+      ]
+    }
+  ]
+}

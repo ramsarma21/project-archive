@@ -1,0 +1,30 @@
+{
+  "assetKey": "town-gate-wing-end",
+  "category": "prop",
+  "profile": "solid",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Finite imported density barrier in asset-local X; placement scale/yaw is applied later.",
+  "colliders": [
+    {
+      "id": "panel",
+      "shape": "box",
+      "center": [
+        0,
+        0.479,
+        0
+      ],
+      "half": [
+        0.929,
+        0.479,
+        0.082
+      ],
+      "tags": [
+        "obstacle",
+        "density-barrier"
+      ]
+    }
+  ]
+}

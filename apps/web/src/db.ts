@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { PresenterEvent } from "@pa/contracts";
+import type { OnboardingPreferences, PresenterEvent } from "@pa/contracts";
 
 // Local-first persistence. Each profile has its own 32-byte variation root seed
 // and its own event-sourced save, so different accounts get different,
@@ -11,12 +11,15 @@ export interface LocalProfile {
   variationRootSeedHex: string;
   source: "LOCAL" | "GOOGLE";
   createdAt: string;
+  cloudRevision?: number;
+  onboarding?: OnboardingPreferences;
 }
 
 export interface LocalSave {
   profileId: string;
   chapterId: string;
   packageId: string;
+  flowVersion?: number;
   committedEvents: PresenterEvent[];
   revision: number;
   status: "IN_PROGRESS" | "COMPLETE";
@@ -64,6 +67,16 @@ export async function createLocalProfile(displayName: string): Promise<LocalProf
 
 export async function upsertProfile(p: LocalProfile): Promise<void> {
   await db.profiles.put(p);
+}
+
+export async function deleteAllLocalProfiles(): Promise<number> {
+  return db.transaction("rw", db.profiles, db.saves, async () => {
+    const localProfiles = await db.profiles.where("source").equals("LOCAL").toArray();
+    const profileIds = localProfiles.map((profile) => profile.profileId);
+    await db.saves.bulkDelete(profileIds);
+    await db.profiles.bulkDelete(profileIds);
+    return profileIds.length;
+  });
 }
 
 export async function getSave(profileId: string): Promise<LocalSave | undefined> {

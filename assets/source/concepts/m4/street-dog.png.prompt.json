@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single complete small colonial street dog only, standing in profile, full body in frame, three-quarter view, plain light gray studio background, soft even lighting, no leash, no ground scenery, no people, no readable text, no watermark. A lean short-haired mixed-breed farm and street terrier-type dog about knee height, alert upright ears, medium tail, tan and white brindle short coat, natural realistic proportions, standing four-square on all legs. Historically plausible 1765 colonial New England town dog, ordinary mongrel, single animal, no collar tags, no modern or fantasy elements. Game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T21:50:18.592Z",
+  "files": [
+    "street-dog.png"
+  ]
+}

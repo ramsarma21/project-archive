@@ -1,0 +1,11 @@
+{
+  "assetKey": "city-block-rear-a",
+  "category": "skyline",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Grounded non-explorable land-side city envelope outside playable bounds; coarse world boundary remains runtime-owned.",
+  "colliders": []
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial spinning wheel only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: Saxony style flax wheel, large spoked drive wheel, slanted bench on three turned legs, flyer and bobbin assembly, upright distaff post, warm worn maple wood. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:07:32.067Z",
+  "files": [
+    "spinning-wheel.png"
+  ]
+}

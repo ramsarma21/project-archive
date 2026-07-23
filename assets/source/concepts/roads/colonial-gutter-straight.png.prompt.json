@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated straight colonial street gutter and drainage-edge module from 1765 Boston for image-to-3D. Entire long narrow 5:1 rectangular piece visible in three-quarter orthographic product view on plain neutral light gray background, no road scene, no buildings, no people, no text, no grass. A row of large irregular worn granite edging stones beside a shallow concave stone-lined drainage channel, muddy dark joints, chipped hand-cut faces, subtle damp grime, muted gray-brown. Historically rough and low, not a modern curb. Thin solid underside, exact straight ends and outer edges designed to tile seamlessly.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:06:53.603Z",
+  "files": [
+    "colonial-gutter-straight.png"
+  ]
+}

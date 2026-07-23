@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A single straight section of a weathered oak post-and-rail fence module: two upright square oak posts with three horizontal split rails mortise-and-tenon jointed between them, grey-brown aged wood, colonial period joinery. Clean isolated object with NO ground, NO base plate, NO plinth, NO cast shadow, floating centered on a seamless plain light gray background, squared ends for tiling. Single game asset/module only, centered, complete object in frame, three-quarter orthographic-like view, plain light gray studio background, no landscape, no people, no text, no watermark. Historically accurate working-class Boston, August 1765, weathered materials, muted pewter/umber palette, no Victorian, modern, fantasy, or military elements. Tileable square module ends where applicable.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:46:19.770Z",
+  "files": [
+    "yard-fence-straight.png"
+  ]
+}

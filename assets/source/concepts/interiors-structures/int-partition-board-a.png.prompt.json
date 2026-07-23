@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single modular interior architectural asset only, centered, complete structure in frame, elevated three-quarter cutaway reference view, plain light gray studio background, soft even lighting, no exterior scenery, furniture, people, text, or watermark. Historically accurate 1765 Boston construction: a single freestanding vertical-board work partition wall panel with one open gate opening, a peg rail, and a couple of plain shelves; a single flat modular wall segment standing upright. Clearly separated structural parts suitable for Meshy image-to-3D and Blender assembly; aged working building, not a museum reconstruction.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:23:03.222Z",
+  "files": [
+    "int-partition-board-a.png"
+  ]
+}

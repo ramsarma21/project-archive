@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated square colonial stone street junction/intersection module from 1765 Boston for Meshy image-to-3D. Whole square slab visible in a slightly elevated three-quarter orthographic product view on plain neutral light gray background, no environment, buildings, people, props, labels, or grass. Hand-laid irregular granite and fieldstone setts continue in four directions, repaired uneven center, shallow crossing wagon wear tracks, muddy grime-filled joints, a subtle drainage low point, chipped worn stones, subdued gray-brown. Historically rough, not modern uniform paving. Low profile solid slab with four exact straight tileable edges.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:07:51.865Z",
+  "files": [
+    "colonial-street-junction.png"
+  ]
+}

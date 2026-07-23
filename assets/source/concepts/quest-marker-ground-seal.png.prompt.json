@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single stylized game asset only, centered and fully visible in frame: a very low circular objective ground seal inspired by an eighteenth-century brass printer's registration plate and compass-dividing instrument. Broken outer circle formed by four broad engraved brass arc segments with a small open diamond registration motif at the center, shallow beveled relief, thick enough for robust low-poly image-to-3D generation, watertight and symmetrical. Aged warm brass, dark recessed grooves, restrained amber enamel details. No text, no letters, no numbers, no arrow, no fantasy rune, no magic circle, no GPS styling, no blue hologram, no modern electronics. Elevated three-quarter top view showing the entire circular silhouette, plain light gray studio background, soft even lighting, no cast ground shadow, no pedestal, no other objects, no people, no watermark. Cohesive stylized-realistic Project Archive game asset reference.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:39:07.316Z",
+  "files": [
+    "quest-marker-ground-seal.png"
+  ]
+}

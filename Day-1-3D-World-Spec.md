@@ -16,7 +16,22 @@ World bounds clamp: x ∈ [−56, 54], z ∈ [−40, 18]. Traversal legs stay in
 
 ## 2. Locations and runtime binding
 
-`scene(locationId)` from the headless runtime teleports the player to `LOCATIONS[id].anchor`. Interiors (`MERCER_PRESS`, `THOMAS_COUNTINGHOUSE`, `PIKE_OFFICE`, `CUSTOM_HOUSE`) render a 2.75 m-high room shell (`room` def: center/size/door side) with warm candle fill; the street stays outside. When a `FREE_ROAM` request contains an exterior target (`STREET`, the four errand ids, `CROWD`), the player is placed at the location's `exitAnchor` facing the street — that is the "step out" state. Walking within 3 m of a marker fires `FREE_ROAM_GOTO` with that `targetId`; markers render gold/blue octahedron pings with ground rings and labels per Interaction-Spec §1.
+`scene(locationId)` from the headless runtime declares authored context; it does **not** move the player. Exterior travel is continuous. With several available errands, `FREE_ROAM_SELECT` first collapses the field to one gold objective while leaving the player where they stand; only physically reaching that ping emits `FREE_ROAM_GOTO`.
+
+All 36 interiors now use independent isolated scene slots from
+`interiorManifest.ts`; their dimensions are not constrained by exterior
+footprints. The finalized exterior sensor/landing remains owned by
+`doorwayContract.ts`. After the imported door's established swing beat, the
+presenter mounts only the destination interior and places the player at its
+local landing. The interior exit sensor reverses the transition to the
+validated exterior landing. Anti-ping-pong arming, reduced-motion timings,
+quest-marker alignment, and story event semantics are unchanged.
+
+`District.tsx` renders either the exterior district or one `InteriorDirector`,
+never both. Interior movement uses semantic wall, ceiling, furniture, support,
+bounds, depenetration, and last-safe collision rather than a nominal room
+clamp. Story cameras and actor/prop anchors for Mercer, Thomas, Pike, and the
+Custom House are transformed into the isolated scene coordinates.
 
 Errand target anchors: `THOMAS_CIRCULAR` → Thomas's door, `PIKE_PROOF` → Pike's door, `CUSTOMHOUSE_NOTICE` → Custom House steps, `RIDER_HANDBILLS` → rider post, `CROWD` → elm approach, `MERCER_PRESS`/`STREET` → shop door / street center.
 
@@ -48,9 +63,25 @@ Runtime retarget (`apps/web/src/world/anims.ts`): bone-name map `mixamorig*` →
 
 ## 6. World asset kit (Meshy text-to-3D, grounded-realism prompts in `assets/pipeline/batch_world.mjs`)
 
-Buildings: printshop (clapboard, shop window), brick Georgian townhouse, gray clapboard house, counting-house (hoist beam), Custom House (brick civic, cupola). Props: English common press, type cases, clerk desk, shop counter, cloth bolts, notice board, hand cart, barrel group, crate stack, market stall, well pump, dock fence gate, liberty elm. Each GLB is box-fit normalized to its manifest footprint at load, grounded, shadow-casting; anything not yet generated renders as a proportioned fallback shell (building with roof/door/windows or crate mass) so the world is always complete.
+The interior factory adds 13 verified structural GLBs under
+`world-v3-structures-opt` and 29 furnishing/trade GLBs under
+`interior-kit-opt`. Structural keys cover domestic narrow/wide, shopfront,
+workroom, warehouse, civic, meetinghouse, and ropewalk shells; board/plaster
+partitions; and two pine plus one brick-work floor. Furnishings cover domestic
+clutter, printing, merchant measurement, court/customs records, meetinghouse
+box pews/gallery/pulpit, tavern service, warehouse tackle/scales, and specific
+chandlery/ropewalk/tailor/shoemaker/baker/provisions/bookseller stock.
 
-Interior dressing per room: Mercer = common press + type cases + desk; Thomas = counter + cloth bolts + crates; Pike = desk + document crates; Custom House = long counter + desk + posting board.
+Mercer's centerpiece is `press-common-operable-v2.glb`: 34,997 imported
+triangles, seven named imported nodes, and six clips (`pressPull`,
+`pressRelease`, `carriageIn`, `carriageOut`, `tympanOpen`, `tympanClose`).
+The press mechanic scrubs and commits those clips; the retired static press and
+procedural mechanism no longer render. Physical papers use the imported
+`int-paper-surface-flat` GLB with the existing runtime document textures.
+
+Production interiors contain no visible React/Three room, furniture, paper, or
+mechanism primitives. Missing/loading assets render null and fail manifest
+tests instead of producing fallback shells.
 
 ## 7. Pipeline commands (`assets/pipeline/`)
 
@@ -61,18 +92,38 @@ Interior dressing per room: Mercer = common press + type cases + desk; Thomas = 
 - `gen_prop.mjs` / `batch_world.mjs` — Meshy preview→refine for buildings/props.
 - `optimize_rigged.py` / `optimize_world.py` — Blender: decimate to web budgets (chars ~30k tris, buildings ~40k, props ~15k; textures ≤1024, JPEG85/80) into `assets/build/*-opt/`.
 - `sync_web.mjs` — copy optimized GLBs into `apps/web/public/world/`.
+- `verify_interior_structures.mjs` / `verify_interior_kit.mjs` /
+  `verify_press_v2.mjs` — parse, budget, grounding, texture, rig, named-node,
+  and animation validation for the complete interior asset set.
+- `optimize_interior_runtime_lods.py` /
+  `verify_interior_runtime_lods.mjs` / `measure_interior_budgets.mts` —
+  interior-only legacy-prop LODs, provenance checks, and exact per-room static
+  triangle enforcement without changing exterior asset keys.
+- `qa_interiors_browser.mjs` — dev-hook tour of all 36 interiors, collision and
+  asset failures, draw/triangle probes, Archive inspect, and imported press
+  response; supports day, drizzle, and dusk URLs.
 - `shot_world.mjs` — Playwright headless playthrough + screenshots for visual verification.
 
 Raw and optimized asset outputs are gitignored (regenerable); sources under `assets/source/` are the licensed local inputs.
 
 ## 8. Presenter integration (headless runtime unchanged)
 
-`Play.tsx` renders `World3D` as the main surface: runtime `SCENE` → teleport; `FREE_ROAM` → world markers + walk-to trigger; all other input requests keep the dock controls (choices, press mechanic, sorts, Syncs). Last three dialogue/narration/Archive lines render as subtitle cards over the world; the latest `READ_PANEL` renders as a parchment overlay during read beats; the full transcript is available via the Log toggle. The Archive side panel, HUD day meter, mastery report, saves (local + cloud push for Google profiles), and the day-end card are unchanged. WebGL-unavailable devices fall back to the text dock, which remains fully playable.
+`Play.tsx` renders `World3D` as the main surface. Runtime `SCENE` sets dialogue/choreography context without changing player coordinates. `FREE_ROAM` has separate select and arrive phases, live-distance pings, gold-objective redirect, explicit door crossings, and authored route waypoints. Action-bearing choices advance into playable mechanics or travel legs; they never use a generic animation timer as a substitute for the action. Fine work uses first-person mechanics, gross movement remains third-person, and seven-second `BREATHER` states return ordinary movement between resolved errands and the next prompted beat. Dialogue/narration/Archive lines render as timed subtitles over the world; tracked reads open only after their spatial approach and explicit focus-read input. The runtime activity clock remains deterministic while the HUD and world lighting ease toward each committed authored cost. WebGL-unavailable devices retain the typed fallback presenter.
 
-## 9. Known gaps / next passes
+## 9. Current verification and remaining art polish
 
-- Remaining world GLBs still generating (elm, stalls, pump, counter, cloth, gate, printshop/clapboard shells); fallbacks cover them until synced.
-- Clarke reuses the clerk model staging; a dedicated Custom House clerk variant is queued.
-- Interior rooms are authored shells, not full hero interiors; press/type-case props land as their GLBs finish.
-- No audio yet (ElevenLabs voices + ambience are the next pipeline stage).
-- Retarget quality pass (shoulder/skirt review), crowd instancing for the dusk event, and Chromebook perf budgets remain open per Production.md §7/§9.
+- Exactly 36 `InteriorDef` records, unique explicit slots, target dimensions,
+  imported references, hotspot anchors, and collision entry zones are tested.
+- All interior assets, structures, and press v2 pass their factory verifiers
+  and deployed-file checks.
+- Browser QA visited all 36 rooms with no missing `/world/**`, page, runtime,
+  or WebGL errors. Representative drizzle and dusk tours also passed.
+- Peak interior draw calls in the current tour are 43. Total renderer triangle
+  probes peak around 783k and include the player plus animated occupants. Exact
+  deployed-GLB static totals peak at 213,993 for common rooms, 330,996 for
+  non-church heroes, and 488,993 for the meetinghouse, all within budget.
+- Web typecheck/build, all 137 current world tests, runtime tests, and happy/missed-Sync
+  full autoplay paths pass.
+- Remaining work is optional art polish: tune a few generated shell
+  silhouettes/materials after target-Chromebook review and replace reused
+  ambient character variants when additional historically reviewed rigs land.

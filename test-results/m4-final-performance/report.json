@@ -1,0 +1,581 @@
+{
+  "baseUrl": "http://127.0.0.1:5192/",
+  "screenshots": [
+    {
+      "name": "m4-watch-house",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-final-performance/m4-watch-house.png",
+      "luminance": {
+        "meanLuma": 58.952,
+        "nonBlackRatio": 0.7885
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "187",
+        "triangles": "3130563",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 187,
+            "triangles": 3130563,
+            "points": 0,
+            "lines": 0,
+            "geometries": 150,
+            "textures": 216,
+            "programs": 43
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              53.5,
+              2.5,
+              -1.2999999999999998
+            ],
+            "rotation": [
+              -0.21765061628704285,
+              0,
+              0
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 302,
+            "visibleSkinnedMeshes": 26
+          },
+          "frameMs": {
+            "samples": 92,
+            "mean": 49.745652173848256,
+            "p50": 8.300000011920929,
+            "p95": 196.5,
+            "p99": 1817.199999988079,
+            "max": 1817.199999988079
+          },
+          "fps": 20.1022593191714
+        }
+      }
+    },
+    {
+      "name": "m4-constables-custom-house",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-final-performance/m4-constables-custom-house.png",
+      "luminance": {
+        "meanLuma": 65.532,
+        "nonBlackRatio": 0.8254
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "189",
+        "triangles": "3092658",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 189,
+            "triangles": 3092658,
+            "points": 0,
+            "lines": 0,
+            "geometries": 150,
+            "textures": 216,
+            "programs": 43
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              55,
+              2.5,
+              -0.6000000000000005
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 300,
+            "visibleSkinnedMeshes": 24
+          },
+          "frameMs": {
+            "samples": 168,
+            "mean": 32.48809523809524,
+            "p50": 8.300000011920929,
+            "p95": 55.400000005960464,
+            "p99": 710.1000000238419,
+            "max": 1817.199999988079
+          },
+          "fps": 30.780505679736166
+        }
+      }
+    },
+    {
+      "name": "m4-roof-board-scaffold",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-final-performance/m4-roof-board-scaffold.png",
+      "luminance": {
+        "meanLuma": 43.602,
+        "nonBlackRatio": 0.7571
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "206",
+        "triangles": "3233539",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 206,
+            "triangles": 3233539,
+            "points": 0,
+            "lines": 0,
+            "geometries": 150,
+            "textures": 216,
+            "programs": 43
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              15.2,
+              2.5,
+              -2.5999999999999996
+            ],
+            "rotation": [
+              -0.21765061628704285,
+              0,
+              0
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 297,
+            "visibleSkinnedMeshes": 21
+          },
+          "frameMs": {
+            "samples": 240,
+            "mean": 14.362083333358168,
+            "p50": 8.300000011920929,
+            "p95": 30.900000005960464,
+            "p99": 196.5,
+            "max": 381
+          },
+          "fps": 69.62778148469204
+        }
+      }
+    },
+    {
+      "name": "m4-static-dog",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-final-performance/m4-static-dog.png",
+      "luminance": {
+        "meanLuma": 51.607,
+        "nonBlackRatio": 0.819
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "210",
+        "triangles": "3116748",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 210,
+            "triangles": 3116748,
+            "points": 0,
+            "lines": 0,
+            "geometries": 153,
+            "textures": 220,
+            "programs": 43
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -30.2,
+              2.5,
+              1.9999999999999993
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 299,
+            "visibleSkinnedMeshes": 23
+          },
+          "frameMs": {
+            "samples": 240,
+            "mean": 13.119583333283662,
+            "p50": 8.300000011920929,
+            "p95": 48,
+            "p99": 193.2000000178814,
+            "max": 200.40000000596046
+          },
+          "fps": 76.22193286146938
+        }
+      }
+    },
+    {
+      "name": "m4-dog-reaction",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-final-performance/m4-dog-reaction.png",
+      "luminance": {
+        "meanLuma": 52.099,
+        "nonBlackRatio": 0.8186
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "210",
+        "triangles": "3116748",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 210,
+            "triangles": 3116748,
+            "points": 0,
+            "lines": 0,
+            "geometries": 153,
+            "textures": 220,
+            "programs": 43
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -30.2,
+              2.5,
+              1.9999999999999993
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 299,
+            "visibleSkinnedMeshes": 23
+          },
+          "frameMs": {
+            "samples": 240,
+            "mean": 13.659583333258828,
+            "p50": 8.300000011920929,
+            "p95": 58.30000001192093,
+            "p99": 182.90000000596046,
+            "max": 200.40000000596046
+          },
+          "fps": 73.20867522841382
+        }
+      }
+    },
+    {
+      "name": "m4-knowledge-complete",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-final-performance/m4-knowledge-complete.png",
+      "luminance": {
+        "meanLuma": 53.287,
+        "nonBlackRatio": 0.8201
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "215",
+        "triangles": "3304104",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 215,
+            "triangles": 3304104,
+            "points": 0,
+            "lines": 0,
+            "geometries": 153,
+            "textures": 220,
+            "programs": 43
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              6,
+              2.5,
+              1.25
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 298,
+            "visibleSkinnedMeshes": 23
+          },
+          "frameMs": {
+            "samples": 240,
+            "mean": 13.202916666616996,
+            "p50": 8.300000011920929,
+            "p95": 54.400000005960464,
+            "p99": 133.09999999403954,
+            "max": 191.59999999403954
+          },
+          "fps": 75.7408400924363
+        }
+      }
+    },
+    {
+      "name": "m4-eavesdrop-market",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-final-performance/m4-eavesdrop-market.png",
+      "luminance": {
+        "meanLuma": 55.387,
+        "nonBlackRatio": 0.8134
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "221",
+        "triangles": "3713252",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 221,
+            "triangles": 3713252,
+            "points": 0,
+            "lines": 0,
+            "geometries": 156,
+            "textures": 229,
+            "programs": 43
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -50,
+              2.5,
+              1.7000000000000002
+            ],
+            "rotation": [
+              -0.21765061628704285,
+              0,
+              0
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 306,
+            "visibleSkinnedMeshes": 31
+          },
+          "frameMs": {
+            "samples": 240,
+            "mean": 12.398333333308498,
+            "p50": 8.399999976158142,
+            "p95": 37.099999994039536,
+            "p99": 133.09999999403954,
+            "max": 191.80000001192093
+          },
+          "fps": 80.65600215098829
+        }
+      }
+    },
+    {
+      "name": "m4-roof-kid-accepted",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m4-final-performance/m4-roof-kid-accepted.png",
+      "luminance": {
+        "meanLuma": 60.85,
+        "nonBlackRatio": 0.8542
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "213",
+        "triangles": "3114877",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 213,
+            "triangles": 3114877,
+            "points": 0,
+            "lines": 0,
+            "geometries": 156,
+            "textures": 229,
+            "programs": 43
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -24,
+              2.5,
+              2.2500000000000004
+            ],
+            "rotation": [
+              -2.9239420373027505,
+              0,
+              -3.141592653589793
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 298,
+            "visibleSkinnedMeshes": 22
+          },
+          "frameMs": {
+            "samples": 240,
+            "mean": 12.094583333283662,
+            "p50": 8.300000011920929,
+            "p95": 57.599999994039536,
+            "p99": 69.59999999403954,
+            "max": 184.19999998807907
+          },
+          "fps": 82.68164123091799
+        }
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "street",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "PLAYER",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "213",
+          "triangles": "3114877",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "51",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "sceneObjectCount": "3034",
+          "sceneVisibleMeshCount": "373",
+          "playerPos": "-24.00,7.45",
+          "playerPos3d": "-24.000,0.000,7.450",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "0.000,1.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "abigail,thomas,pike,clarke,rider",
+          "namedActorPositions": "abigail:3.17,9.66;thomas:-60.12,-6.59;pike:44.11,7.40;clarke:-21.10,7.48;rider:-96.80,-18.20"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "6",
+          "carriedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,PLAIN_WRAP,THOMAS_CIRCULAR",
+          "confiscatedObjectIds": "",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_ONLY",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "assetFailures": [],
+  "networkFailures": []
+}

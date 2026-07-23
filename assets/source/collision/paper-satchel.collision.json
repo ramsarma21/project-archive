@@ -1,0 +1,11 @@
+{
+  "assetKey": "paper-satchel",
+  "category": "clutter",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Loose papers/satchel; non-blocking clutter.",
+  "colliders": []
+}

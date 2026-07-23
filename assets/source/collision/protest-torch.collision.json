@@ -1,0 +1,20 @@
+{
+  "assetKey": "protest-torch",
+  "category": "clutter",
+  "profile": "capsule",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "M4 B11 event: carried/planted pitch torch on a pole. Thin vertical pole capsule only; the iron cresset basket and (runtime) flame light are non-blocking. Height provisional; refine against measured bounds.",
+  "colliders": [
+    {
+      "id": "pole",
+      "shape": "capsule",
+      "a": [0.0, 0.0, 0.0],
+      "b": [0.0, 1.7, 0.0],
+      "radius": 0.05,
+      "tags": ["solid"]
+    }
+  ]
+}

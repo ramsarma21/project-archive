@@ -1,0 +1,95 @@
+{
+  "note": "Single source of truth for every allowlisted enumeration in this package. The validator enforces these. Concept and micro IDs mirror @pa/contracts (assessment.ts CP1_REQUIRED_MACROS, field.ts MICRO_CONCEPT_IDS); they are duplicated here intentionally so this content package validates in isolation without importing runtime code owned by another worker.",
+
+  "macroConceptIds": [
+    "RCC.DEBT_POLICY_INTRO",
+    "RCC.STAMP_INTERNAL_INTRO",
+    "RCC.REPRESENTATION_CAUSE"
+  ],
+
+  "microConceptIds": [
+    "MICRO.SALUTARY_NEGLECT_END",
+    "MICRO.PORT_TOWN_BOSTON",
+    "MICRO.HARD_COIN_SCARCITY",
+    "MICRO.PRINTERS_ROLE",
+    "MICRO.VICE_ADMIRALTY_COURTS",
+    "MICRO.STAMP_WHAT_COUNTS",
+    "MICRO.ANDREW_OLIVER",
+    "MICRO.LIBERTY_TREE",
+    "MICRO.LOYAL_NINE",
+    "MICRO.EFFIGY_PROTEST",
+    "MICRO.NON_IMPORTATION",
+    "MICRO.NEWS_NETWORKS",
+    "MICRO.WRITS_OF_ASSISTANCE",
+    "MICRO.LOYALIST_VIEW"
+  ],
+
+  "reasoningOperations": ["COMPARE", "TRANSFER", "PERSPECTIVE", "STRATEGY", "CAUSAL_SYNTHESIS"],
+
+  "claimTypes": ["DOCUMENTED", "REPRESENTATIVE", "INFERENCE"],
+
+  "placementKinds": ["NPC", "ARCHIVE_CONNECTION", "SOURCE_REFLECTION"],
+
+  "eligibleNpcIds": ["abigail", "thomas", "pike", "clarke", "rider", "sarah"],
+
+  "repeatPolicies": ["ONCE_PER_ACT", "SPACED_RETRIEVAL_LATER_CP", "NEVER_REPEAT"],
+
+  "rubricCriterionLabels": {
+    "CONCEPT_ACCURACY": "Concept accuracy",
+    "RELEVANT_EVIDENCE": "Relevant evidence",
+    "SOURCE_COMPARISON": "Source comparison",
+    "PERSPECTIVE_FIDELITY": "Perspective fidelity",
+    "TRANSFER_REASONING": "Transfer reasoning",
+    "CAUSAL_REASONING": "Causal reasoning",
+    "STRATEGY_REASONING": "Strategy reasoning"
+  },
+
+  "forbiddenRubricCriteria": ["GRAMMAR", "SPELLING", "MECHANICS", "PUNCTUATION", "HANDWRITING", "LENGTH"],
+
+  "classifierCriterionLevels": ["STRONG", "PARTIAL", "MISSING"],
+
+  "classifierObservationLabels": ["ON_TOPIC", "OFF_TOPIC", "ABSTAINED"],
+
+  "feedbackCategories": ["STRONG_EVIDENCE", "PARTIAL_EVIDENCE", "MISSING_EVIDENCE", "OFF_TOPIC", "UNCLASSIFIED"],
+
+  "educatorEvidenceLabels": {
+    "EVIDENCE_PRESENT": "Cited relevant source evidence",
+    "MULTIPLE_SOURCES_COMPARED": "Compared two or more sources",
+    "PERSPECTIVE_TAKEN": "Represented a historical actor's perspective",
+    "PERSPECTIVE_VS_FACT_DISTINGUISHED": "Distinguished perspective from factual endorsement",
+    "CONCEPT_APPLIED": "Applied the concept to a new situation",
+    "CAUSE_EFFECT_LINKED": "Linked a cause to a consequence",
+    "STRATEGY_TRADEOFFS_WEIGHED": "Weighed competing considerations",
+    "NEEDS_EVIDENCE_REVISIT": "Revisit which source shows this",
+    "ENGAGEMENT_LOGGED": "Completed an optional reflection"
+  },
+
+  "reviewStatuses": ["AUTHOR_DRAFT", "HISTORICAL_REVIEW_PENDING", "CURRICULUM_REVIEW_PENDING"],
+
+  "approvalStatuses": ["AUTHOR_DRAFT", "HISTORICAL_REVIEW_PENDING"],
+
+  "forbiddenApprovalStatuses": ["SME_APPROVED", "APPROVED", "PUBLISHED"],
+
+  "forbiddenPlayerFacingLanguage": {
+    "note": "Case-insensitive whole-word matches forbidden in any player-facing or educator-label text: prompts, accessible prompts, feedback text, Archive card bodies, NPC dialogue, educator label text. Backs the plan's 'no score/mastery language' and 'educator labels never mastery/grade' rules.",
+    "terms": [
+      "score", "scored", "scoring",
+      "grade", "graded", "grading",
+      "percent", "percentage",
+      "mastery", "mastered", "master",
+      "points", "point value",
+      "rank", "ranking", "ranked",
+      "gpa", "pass/fail", "passing grade",
+      "correct answer", "right answer", "wrong answer",
+      "out of 100", "/100"
+    ]
+  },
+
+  "playerFacingEmDashRule": {
+    "forbiddenCharacters": ["\u2014", "\u2015"],
+    "note": "Em dash (U+2014) and horizontal bar (U+2015) are forbidden in player-facing fiction text per Day-1.md §5 and Day-Template L12. Use a period, comma, or colon."
+  },
+
+  "expectedResponseWordBounds": { "min": 35, "max": 90 },
+  "minSpacingInteractionsFloor": 2
+}

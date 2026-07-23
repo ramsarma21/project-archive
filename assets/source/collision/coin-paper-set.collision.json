@@ -1,0 +1,11 @@
+{
+  "assetKey": "coin-paper-set",
+  "category": "clutter",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "M4 KN-coinpaper interior study prop (coins + folded scrip). Tiny tabletop object placed inside/atop the reused storage-chest at Mercer's; focus-read interactable, non-blocking. Reason: below collision-significant size.",
+  "colliders": []
+}

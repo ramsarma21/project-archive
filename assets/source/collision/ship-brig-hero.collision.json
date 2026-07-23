@@ -1,0 +1,58 @@
+{
+  "assetKey": "ship-brig-hero",
+  "category": "ship",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Hero brig. Authored in the raw-normalized local frame; the moored world scale/position is owned by WaterDirector (atmosphere worker) and applied later. Hull is a solid; the deck is a landable support.",
+  "colliders": [
+    {
+      "id": "hull",
+      "shape": "box",
+      "center": [
+        0,
+        0.355,
+        0
+      ],
+      "half": [
+        0.9,
+        0.355,
+        0.254
+      ],
+      "tags": [
+        "obstacle",
+        "hull"
+      ]
+    },
+    {
+      "id": "deck",
+      "shape": "support",
+      "polygon": [
+        [
+          -0.849,
+          -0.234
+        ],
+        [
+          0.85,
+          -0.234
+        ],
+        [
+          0.85,
+          0.235
+        ],
+        [
+          -0.849,
+          0.235
+        ]
+      ],
+      "y": 0.71,
+      "link": "hull",
+      "tags": [
+        "support",
+        "deck"
+      ]
+    }
+  ]
+}

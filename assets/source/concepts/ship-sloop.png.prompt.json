@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single small 1765 single-masted sloop sailing vessel only, centered and small in frame so the ENTIRE vessel including the very top of the mast and bowsprit tip is fully visible with generous empty gray margin on all four sides, nothing cropped or touching the frame edge, side three-quarter view, furled sail, no water, no sea, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: small coastal sloop with one mast, gaff mainsail tightly furled along the boom, short bowsprit, simple standing rigging, weathered wooden hull with muted green-gray paint above tarred lower planking, open deck with small tiller, entire hull visible down to the keel as if dry-docked. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:09:27.304Z",
+  "files": [
+    "ship-sloop.png"
+  ]
+}

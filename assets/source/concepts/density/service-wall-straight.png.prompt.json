@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A straight backlot boundary wall module of colonial red brick and grey fieldstone with a grounded stone foundation footing, weathered lime mortar, low uneven stone cap, aged, squared tileable ends. Single game asset/module only, centered, complete object in frame, three-quarter orthographic-like view, plain light gray studio background, no landscape, no people, no text, no watermark. Historically accurate working-class Boston, August 1765, weathered materials, muted pewter/umber palette, no Victorian, modern, fantasy, or military elements. Tileable square module ends where applicable.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T16:17:42.514Z",
+  "files": [
+    "service-wall-straight.png"
+  ]
+}

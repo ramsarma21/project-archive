@@ -1,0 +1,239 @@
+{
+  "baseUrl": "http://127.0.0.1:5192/",
+  "screenshots": [
+    {
+      "name": "m4-m2-three-options",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m2-final-comply/m4-m2-three-options.png",
+      "luminance": {
+        "meanLuma": 71.349,
+        "nonBlackRatio": 0.7836
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "PA.FIELD.INTERRUPT.M4_FINAL_M2_INTERRUPT_COMPLY",
+        "watcherCount": "4",
+        "drawCalls": "271",
+        "triangles": "4261946",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 271,
+            "triangles": 4261946,
+            "points": 0,
+            "lines": 0,
+            "geometries": 149,
+            "textures": 214,
+            "programs": 41
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -11.2,
+              2.5,
+              1.4999999999999998
+            ],
+            "rotation": [
+              -1.5707963267948966,
+              -1.3531457105078537,
+              -1.5707963267948966
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 297,
+            "visibleSkinnedMeshes": 26
+          },
+          "frameMs": {
+            "samples": 48,
+            "mean": 100.71666666679084,
+            "p50": 10.099999994039536,
+            "p95": 451.30000001192093,
+            "p99": 2107,
+            "max": 2107
+          },
+          "fps": 9.928843289744501
+        }
+      }
+    },
+    {
+      "name": "m4-m2-comply-resolved",
+      "path": "/Users/ramsarma/Projects/project-archive/test-results/m2-final-comply/m4-m2-comply-resolved.png",
+      "luminance": {
+        "meanLuma": 72.111,
+        "nonBlackRatio": 0.872
+      },
+      "metrics": {
+        "request": "FREE_ROAM",
+        "cue": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+        "watcherCount": "4",
+        "drawCalls": "273",
+        "triangles": "4305256",
+        "canvas": true,
+        "perf": {
+          "renderer": {
+            "calls": 273,
+            "triangles": 4305256,
+            "points": 0,
+            "lines": 0,
+            "geometries": 150,
+            "textures": 215,
+            "programs": 42
+          },
+          "dpr": 1,
+          "viewport": [
+            1440,
+            838
+          ],
+          "camera": {
+            "position": [
+              -11.2,
+              2.5,
+              1.4999999999999998
+            ],
+            "rotation": [
+              -1.5707963267948966,
+              -1.3531457105078537,
+              -1.5707963267948966
+            ]
+          },
+          "scene": {
+            "visibleMeshes": 298,
+            "visibleSkinnedMeshes": 26
+          },
+          "frameMs": {
+            "samples": 201,
+            "mean": 33.4452736318408,
+            "p50": 10.300000011920929,
+            "p95": 45.400000005960464,
+            "p99": 451.30000001192093,
+            "max": 2107
+          },
+          "fps": 29.89959092599479
+        }
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "m2-comply",
+      "reducedMotion": false,
+      "highContrast": "false",
+      "diagnostics": {
+        "worldData": {
+          "gameRoot": "world",
+          "qaObservability": "m1-v1",
+          "locationId": "BOSTON_STREET",
+          "interiorId": "",
+          "cueId": "BOS.MD01.CUE.ROAM.THOMAS_CIRCULAR_PIKE_PROOF_CUSTOMHOUSE_NOTICE_RIDER_HANDBILLS.v1",
+          "doorTarget": "",
+          "cameraShot": "",
+          "cameraActive": "false",
+          "cameraOwner": "PLAYER",
+          "cameraInputLocked": "false",
+          "choreographyReady": "true",
+          "fieldSpace": "EXTERIOR",
+          "movementActive": "true",
+          "traversalActive": "true",
+          "drawCalls": "273",
+          "triangles": "4305256",
+          "inkBallLeftVisible": "false",
+          "inkBallLeftStage": "",
+          "inkBallLeftProgress": "0.000",
+          "inkBallLeftSurfaceOffset": "0.000,-0.270,0.000",
+          "inkBallRightVisible": "false",
+          "inkBallRightStage": "",
+          "inkBallRightProgress": "0.000",
+          "inkBallRightSurfaceOffset": "0.000,-0.270,0.000",
+          "questActiveId": "THOMAS_CIRCULAR",
+          "questState": "ACTIVE",
+          "questDistance": "66",
+          "questOccluded": "false",
+          "questEdgeVisible": "true",
+          "watcherCount": "4",
+          "maxSuspicion": "0.000",
+          "inWatcherCone": "false",
+          "coverVolume": "COVER-crowd-central",
+          "watcherIds": "WATCH-customs,WATCH-patrol,WATCH-house-1,WATCH-house-2",
+          "sceneObjectCount": "3430",
+          "sceneVisibleMeshCount": "388",
+          "playerPos": "-6.00,1.50",
+          "playerPos3d": "-6.000,0.000,1.500",
+          "playerMotion": "GROUNDED",
+          "playerSpeed": "0.000",
+          "playerClip": "idle",
+          "playerSprinting": "false",
+          "playerCrouched": "false",
+          "playerStamina": "1.000",
+          "playerMovementIntent": "false",
+          "playerBlocked": "false",
+          "playerFacing": "1.000,0.000",
+          "playerActionSerial": "0",
+          "playerInputLocked": "false",
+          "chaseActive": "false",
+          "chaseState": "IDLE",
+          "chaseStamina": "1.000",
+          "chaseConfirmResolve": "false",
+          "chaseAssist": "AUTO_STAMINA",
+          "pursuerRegistered": "false",
+          "pursuerPosition": "",
+          "pursuerForward": "",
+          "pursuerVelocity": "",
+          "pursuerSpace": "",
+          "chaseOutcome": "",
+          "namedActorIds": "abigail,thomas,pike,clarke,rider",
+          "namedActorPositions": "abigail:3.91,9.44;thomas:-50.67,-6.46;pike:34.20,9.51;clarke:-29.85,9.62;rider:-96.80,-18.20"
+        },
+        "playData": {
+          "gameRoot": "play",
+          "planRequest": "FREE_ROAM",
+          "runtimeReady": "true",
+          "runtimeLocation": "BOSTON_STREET",
+          "fieldInterrupt": "",
+          "activeChaseId": "",
+          "profileSource": "LOCAL",
+          "clockSpent": "7",
+          "carriedObjectIds": "",
+          "confiscatedObjectIds": "CARRIER_HANDBILLS,CUSTOMHOUSE_NOTICE,PIKE_PROOF,PLAIN_WRAP,THOMAS_CIRCULAR",
+          "pendingReposition": "",
+          "lastChaseOutcome": "",
+          "chaseAssist": "AUTO_STAMINA",
+          "inputMethod": "KEYBOARD_MOUSE",
+          "highContrast": "false",
+          "reducedMotion": "false",
+          "speaking": "false",
+          "choreographyReady": "true",
+          "activeSubtitle": "false",
+          "activeReadPanel": "false",
+          "primer": "",
+          "interactionBusy": "false",
+          "qaChaseHook": "READY",
+          "qaChaseStatus": "IDLE",
+          "qaChaseReason": ""
+        },
+        "canvas": {
+          "width": 1440,
+          "height": 838,
+          "rect": {
+            "x": 0,
+            "y": 62,
+            "width": 1440,
+            "height": 838,
+            "top": 62,
+            "right": 1440,
+            "bottom": 900,
+            "left": 0
+          },
+          "opacity": "1",
+          "display": "block",
+          "renderer": "WebKit WebGL"
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "assetFailures": [],
+  "networkFailures": []
+}

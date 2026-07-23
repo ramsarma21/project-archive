@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single colonial kitchen dresser with open shelves only, centered, full object in frame, three-quarter view, plain light gray studio background, soft even lighting, no shadows on ground, no objects outside the piece, no people, no text or watermark. Historically accurate 1765 colonial Boston style: pine step-back hutch, open upper shelves holding rows of dull pewter plates standing upright, closed two-door cupboard base, worn honest joinery, waxed brown finish. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:07:42.402Z",
+  "files": [
+    "dresser-shelves.png"
+  ]
+}

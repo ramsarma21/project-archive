@@ -1,0 +1,20 @@
+---
+description: Three-tier Multitask subagent router (Sol orchestrates, Opus implements)
+alwaysApply: true
+---
+
+# Multitask Subagent Router
+
+Assumes the root session runs GPT-5.6 Sol (a repo rule cannot force/switch the root model). The orchestrator decides the tier silently and starts work; the user never picks a tier. Default downward to the cheapest/fastest safe tier — multi-file scope alone does not justify Sol.
+
+## Tiers
+- **Trivial** (zero/one quick-tool request): parent handles directly, no subagent.
+- **Tier 1 — Opus end-to-end**: localized, well-understood, low-risk changes (routine game/UI/asset hookups, styling, isolated fixes, mechanical edits). Launch ONE coherent background worker with model `claude-opus-4-8-thinking-high` to investigate, implement, and run focused verification.
+- **Tier 2 — Sol diagnoses, Opus implements**: ambiguous/medium work. Sol determines root cause/approach, exact constraints/files, acceptance criteria, and verification, then hands ONE background Opus worker a precise bounded brief. Sol reviews only as needed.
+- **Tier 3 — Sol end-to-end**: architecture, broad runtime/game-flow invariants, hard cross-system debugging, migrations/data integrity, concurrency/determinism, security, or tightly coupled high-risk changes where handoff is unsafe. Sol may delegate independent mechanical subtasks to Opus.
+
+## Policy
+- In Multitask mode, use background subagents for non-trivial work; do not duplicate delegated investigation/implementation in the foreground.
+- Prefer one coherent worker; use sibling agents only for genuinely independent workstreams.
+- Escalate a Tier 1 task if Opus finds ambiguity, architectural impact, repeated failure, or safety risk.
+- Preserve user-owned uncommitted changes and verify proportional to risk.

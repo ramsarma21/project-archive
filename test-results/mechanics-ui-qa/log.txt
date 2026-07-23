@@ -1,0 +1,35 @@
+[01:08:52.476] clicked "Synchronize"
+[01:09:18.587] warmup reached free roam
+[01:09:37.849] clicked "Synchronize"
+[01:10:09.122] arrival attempt 1 at [-0.31, 10]
+[01:10:30.294] clicked "Walk straight in."
+[01:10:50.637] shot 01-press-catch.png | req=MECHANIC stage=CATCH headline=Catch the sheet square
+[01:10:54.654] clicked "CATCH SHEET"
+[01:10:57.736] shot 02-press-ink.png | req=MECHANIC stage=INK headline=Ink the forme evenly
+[01:11:15.880] shot 03-press-register.png | req=MECHANIC stage=REGISTER headline=Set the register true
+[01:11:20.180] clicked "SET REGISTER"
+[01:11:24.712] clicked "PULL BAR"
+[01:11:27.762] shot 04-press-peel.png | req=MECHANIC stage=PEEL headline=Peel the proof clean
+[01:11:34.632] mid-hold hit=SPAN.hold-label {"cls":"mechanic-action mechanic-hold held","hold":"1","disabled":true,"label":"DONE"}
+[01:11:35.345] held button.mechanic-hold for 1000ms
+[01:11:35.345] press job completed with real inputs
+[01:11:44.968] clicked "Compare the two proofs"
+[01:12:26.885] clicked "Deliver the circular to Thomas"
+[01:12:29.267] arrival attempt 1 at [-72, -10.05]
+[01:12:44.974] clicked "Keep moving"
+[01:12:50.512] shot 05-thomas-effort.png | req=MECHANIC stage=null headline=Set the circular on Thomas's counter and hold until it lies flat.
+[01:13:02.093] mid-hold hit=SPAN.hold-label {"cls":"mechanic-action mechanic-hold held","hold":"1","disabled":true,"label":"SECURED"}
+[01:13:03.428] held button.mechanic-hold for 1600ms
+[01:13:09.172] shot 06-thomas-choice.png | req=CHOICE stage=null headline=null
+[01:13:13.689] clicked "Help him haul the cloth in."
+[01:13:19.665] shot 07-haul-load.png | req=MECHANIC stage=LOAD headline=Shoulder the bolt
+[01:13:25.419] mid-hold hit=SPAN.hold-label {"cls":"mechanic-action mechanic-hold","hold":"0","disabled":false,"label":"HOLD TO BALANCE"}
+[01:13:26.133] held button.mechanic-hold for 1000ms
+[01:13:29.864] shot 08-haul-balance.png | req=MECHANIC stage=BALANCE headline=Balance the weight
+[01:13:35.789] mid-hold hit=SPAN.hold-label {"cls":"mechanic-action mechanic-hold","hold":"0","disabled":false,"label":"HOLD TO THREAD"}
+[01:13:36.813] held button.mechanic-hold for 1000ms
+[01:13:40.202] shot 09-haul-thread.png | req=MECHANIC stage=THREAD headline=Thread the doorway
+[01:13:46.504] mid-hold hit=SPAN.hold-label {"cls":"mechanic-action mechanic-hold held","hold":"1","disabled":true,"label":"DONE"}
+[01:13:47.356] held button.mechanic-hold for 1000ms
+[01:13:47.992] HAUL REGRESSION PASS: all three stages completed
+[01:13:50.730] shot 10-haul-done.png | req=FREE_ROAM stage=null headline=null

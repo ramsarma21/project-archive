@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single compact cluster of colonial town rooftops only, one connected group, centered, full cluster in frame, three-quarter aerial view from slightly above, plain light gray studio background, soft even lighting, no shadows on ground, no other objects, no people, no text or watermark. Historically accurate 1765 colonial Boston style: a long low block of five or six building upper stories and rooftops merged together, gable roofs and one gambrel at varied heights, many brick chimneys, one slender meetinghouse spire at one end and a small white cupola near the other end, weathered clapboard and brick walls, simplified low-detail background scenery model with a strong skyline silhouette. Realistic painted-wood/brick/canvas materials, muted colors, game asset reference photo style.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-21T08:08:47.501Z",
+  "files": [
+    "skyline-cluster-b.png"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "assetKey": "roof-walk-board",
+  "category": "prop",
+  "profile": "compound",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "M4 roof-route bridge board: short two-plank walkway on grounded X-trestles with a single rope hand-rail. Long axis is local X. Walkable top and rail posts are fitted to the deployed GLB's measured 1.898 x 0.697 x 0.643 metre bounds.",
+  "colliders": [
+    {
+      "id": "plank-top",
+      "shape": "support",
+      "polygon": [
+        [-0.9, -0.24],
+        [0.9, -0.24],
+        [0.9, 0.24],
+        [-0.9, 0.24]
+      ],
+      "y": 0.32,
+      "link": "traversal",
+      "tags": ["support", "walkable", "density"]
+    },
+    {
+      "id": "rail-post-a",
+      "shape": "capsule",
+      "a": [-0.75, 0.32, -0.24],
+      "b": [-0.75, 0.64, -0.24],
+      "radius": 0.04,
+      "tags": ["rail"]
+    },
+    {
+      "id": "rail-post-b",
+      "shape": "capsule",
+      "a": [0.75, 0.32, -0.24],
+      "b": [0.75, 0.64, -0.24],
+      "radius": 0.04,
+      "tags": ["rail"]
+    }
+  ],
+  "compose": [
+    {
+      "type": "traversal",
+      "ref": "densityManifest:roof-walk-board",
+      "note": "BALANCE/JUMP_GAP endpoints across roof gaps; enable in DENSITY_TRAVERSAL_TYPE_STATUS where placed (Production Plan B#5)"
+    }
+  ]
+}

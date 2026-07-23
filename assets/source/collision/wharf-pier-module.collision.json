@@ -1,0 +1,11 @@
+{
+  "assetKey": "wharf-pier-module",
+  "category": "surface",
+  "profile": "none",
+  "fit": {
+    "targetSize": null,
+    "scale": 1
+  },
+  "note": "Walkable pier deck module; support is the implicit ground/deck plane per the wharf contract.",
+  "colliders": []
+}

@@ -1,0 +1,210 @@
+{
+  "_meta": {
+    "batch": "outdoor-density-kit",
+    "owner": "asset-factory (density plan, imported-visible-world policy)",
+    "sharedConstraint": "Single game asset/module only, centered, complete object in frame, three-quarter orthographic-like view, plain light gray studio background, no landscape, no people, no text, no watermark. Historically accurate working-class Boston, August 1765, weathered materials, muted pewter/umber palette, no Victorian, modern, fantasy, or military elements. Tileable square module ends where applicable.",
+    "axes": "After fitting: origin centered in X and Z, module sits on y=0 (min.y=0). X = primary tile-length / run axis, Z = depth/thickness, Y = height. Corner modules turn from +X wing into +Z wing sharing the origin corner post.",
+    "budgets": "barrier/traversal <=5k tris & <=512px tex; infill <=20k tris & <=1024px tex; city-block 4-12k tris & <=1024px tex.",
+    "meshyPoly": "barriers/traversal requested at 12000 Meshy polycount (decimated to <=5k); infill/city-block at 30000 (decimated to budget)."
+  },
+  "assets": [
+    {
+      "key": "yard-fence-straight",
+      "group": "yard-fence",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A single straight section of a weathered oak post-and-rail fence module: two upright square oak posts with three horizontal split rails mortise-and-tenon jointed between them, grey-brown aged wood, colonial period joinery. Clean isolated object with NO ground, NO base plate, NO plinth, NO cast shadow, floating centered on a seamless plain light gray background, squared ends for tiling.",
+      "notes": "Weathered oak post-and-rail straight run. X=tile length, tile end-to-end along X."
+    },
+    {
+      "key": "yard-fence-corner",
+      "group": "yard-fence",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A clean right-angle 90 degree L-shaped corner of a weathered oak post-and-rail fence: exactly one shared square corner post with two straight rail runs leaving it at ninety degrees, three horizontal split rails on each of the two sides, colonial mortise-and-tenon joinery, aged grey-brown oak. Only two perpendicular straight runs, not radial, not a star, not fanned. Isolated object with NO ground, NO base plate, NO cast shadow, floating centered on a seamless plain light gray background, squared tileable ends on both wings.",
+      "notes": "90-degree corner sharing origin corner post; +X wing and +Z wing."
+    },
+    {
+      "key": "yard-fence-end",
+      "group": "yard-fence",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "An end/terminating section of a weathered oak post-and-rail fence: a single stout capped end post with three horizontal split rails stopping into it, aged grey-brown oak, colonial joinery, one squared tileable end, other side finished/closed.",
+      "notes": "Terminating post; tileable squared end on -X side, closed on +X."
+    },
+    {
+      "key": "yard-fence-gate",
+      "group": "yard-fence",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A weathered oak post-and-rail fence gate module: two square gateposts with a simple hinged wooden farm gate of horizontal and diagonal-braced oak rails hung between them, iron strap hinges and a latch, aged grey-brown wood, colonial construction, squared tileable ends.",
+      "notes": "Gate leaf between two posts; matches yard-fence post spacing."
+    },
+    {
+      "key": "service-wall-straight",
+      "group": "service-wall",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A straight backlot boundary wall module of colonial red brick and grey fieldstone with a grounded stone foundation footing, weathered lime mortar, low uneven stone cap, aged, squared tileable ends.",
+      "notes": "Brick/fieldstone backlot wall, grounded foundation. Tile along X."
+    },
+    {
+      "key": "service-wall-corner",
+      "group": "service-wall",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A right-angle corner module of a colonial brick-and-fieldstone backlot wall, shared corner pier with a grounded stone foundation footing, weathered lime mortar, low stone cap, squared tileable ends on both wings.",
+      "notes": "90-degree corner sharing grounded foundation."
+    },
+    {
+      "key": "service-wall-end",
+      "group": "service-wall",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "An end/terminating module of a colonial brick-and-fieldstone backlot wall with a finished squared end pier and a grounded stone foundation footing, weathered lime mortar, low stone cap.",
+      "notes": "Terminating pier; tileable squared end on one side."
+    },
+    {
+      "key": "town-gate-wing-straight",
+      "group": "town-gate-wing",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A straight side-wing module for a 1765 Boston timber town gate and palisade: a run of squared vertical oak timber palings braced by two horizontal rails, standing on a grounded sill beam, weathered civic timber matching a colonial timber town gate, blunt squared tops (not sharpened fort stakes), squared tileable ends.",
+      "notes": "Companion to existing imported town-gate.glb (bbox 1.90x1.23x0.17). Civic timber, not fort stakes."
+    },
+    {
+      "key": "town-gate-wing-corner",
+      "group": "town-gate-wing",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A right-angle corner wing module for a 1765 Boston timber town gate and palisade turning a corner: squared vertical oak timber palings with horizontal rails on grounded sill beams and a stout bracing corner post, blunt squared paling tops, weathered civic timber, squared tileable ends.",
+      "notes": "90-degree turn for the palisade line."
+    },
+    {
+      "key": "town-gate-wing-end",
+      "group": "town-gate-wing",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A straight end/terminating wing module for a 1765 Boston timber town gate and palisade: one single straight run of squared vertical oak timber palings with two horizontal rails on a grounded sill beam, terminating against a single stout finished square end post at the right end, blunt squared paling tops, weathered civic timber, completely straight with no corner and no turn, one squared tileable open end on the left.",
+      "notes": "Terminates the palisade line against a finished post."
+    },
+    {
+      "key": "wharf-rope-rail-straight",
+      "group": "wharf-rope-rail",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A straight timber wharf-edge safety rail module: two short wooden mooring bollard posts standing on a plank edge beam with a single thick hemp rope naturally sagging in a catenary between the post tops as a handrail, tarred weathered dock timber, squared tileable ends.",
+      "notes": "Real bollards + naturally sagging hemp rope. Matches bollard.glb / wharf-boardwalk-plank scale."
+    },
+    {
+      "key": "wharf-rope-rail-corner",
+      "group": "wharf-rope-rail",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A right-angle corner module of a timber wharf-edge rope rail: a stout corner mooring bollard post with thick hemp ropes sagging naturally in two perpendicular directions to adjacent bollard posts, on a plank edge beam, tarred weathered dock timber.",
+      "notes": "90-degree wharf edge turn."
+    },
+    {
+      "key": "wharf-rope-rail-end",
+      "group": "wharf-rope-rail",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "An end module of a timber wharf-edge rope rail: a single stout terminal mooring bollard post where a thick hemp rope ties off and sags, standing on a plank edge beam, tarred weathered dock timber.",
+      "notes": "Rope ties off at terminal bollard."
+    },
+    {
+      "key": "infill-lean-to",
+      "group": "infill",
+      "triBudget": 20000,
+      "maxTex": 1024,
+      "meshyPoly": 30000,
+      "prompt": "A narrow colonial lean-to service structure: a small single-slope shed-roof shelter of weathered clapboard boards on a simple timber frame, one open side, wooden shingle slope roof, grounded stone sill, working-class Boston, complete standalone object sized to fill a gap between buildings.",
+      "notes": "Narrow frontage-gap filler, clapboard-compatible."
+    },
+    {
+      "key": "infill-passage-gate",
+      "group": "infill",
+      "triBudget": 20000,
+      "maxTex": 1024,
+      "meshyPoly": 30000,
+      "prompt": "A narrow covered pedestrian passage-gate structure that spans between buildings: a one-story timber-and-brick covered alley gateway with a low arched opening and a weathered wooden plank door, grounded stone footing, colonial working-class Boston frontage infill, complete standalone object.",
+      "notes": "Closes an alley gap; brick/clapboard-compatible."
+    },
+    {
+      "key": "infill-service-shed",
+      "group": "infill",
+      "triBudget": 20000,
+      "maxTex": 1024,
+      "meshyPoly": 30000,
+      "prompt": "A small narrow colonial service shed: weathered clapboard walls, a wooden plank door, a single-pitch wooden shingle roof, a small brick chimney stub, grounded stone footing, working-class Boston backlot, complete standalone building.",
+      "notes": "Backlot service shed, grounded."
+    },
+    {
+      "key": "city-block-rear-a",
+      "group": "city-block-rear",
+      "triBudget": 12000,
+      "maxTex": 1024,
+      "meshyPoly": 30000,
+      "prompt": "A grounded low-poly connected rear block of tightly attached 1765 Boston row buildings: four two-and-a-half to three story weathered clapboard and Georgian red brick townhouses joined party-wall to party-wall in a straight row, pitched roofs, brick chimneys, continuous stone foundation, plain rear elevations with small windows, no waterfront, no harbor.",
+      "notes": "Land-facing rear envelope filler, straight row. 4-12k tris."
+    },
+    {
+      "key": "city-block-rear-b",
+      "group": "city-block-rear",
+      "triBudget": 12000,
+      "maxTex": 1024,
+      "meshyPoly": 30000,
+      "prompt": "A grounded low-poly connected rear block of tightly attached 1765 Boston buildings: three or four two-and-a-half to three story red brick and clapboard row houses joined party-wall to party-wall in a straight row, with simple clean tidy gabled and gambrel roofs, a few dormers, upright brick chimneys, one continuous stone foundation, plain rear elevations with small windows. Clean simple orderly rooflines, no waterfront, no harbor.",
+      "notes": "Land-facing rear envelope filler, varied rooflines. 4-12k tris."
+    },
+    {
+      "key": "city-block-rear-c",
+      "group": "city-block-rear",
+      "triBudget": 12000,
+      "maxTex": 1024,
+      "meshyPoly": 30000,
+      "prompt": "A grounded low-poly connected rear block of tightly attached 1765 Boston buildings: a short staggered row of two-and-a-half to three story clapboard and brick townhouses with varied stepped rooflines and chimneys, continuous grounded stone foundation, plain rear walls with shuttered windows, no waterfront, no harbor.",
+      "notes": "Land-facing rear envelope filler, staggered row. 4-12k tris."
+    },
+    {
+      "key": "work-ladder",
+      "group": "traversal",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A single standalone weathered wooden work ladder standing at a lean on its own plausible braced timber support frame with angled back legs so it stands freely, rough colonial carpentry, grey-brown oak rungs and rails, grounded feet, utilitarian worksite object.",
+      "notes": "Standalone traversal module with own supports; grounded."
+    },
+    {
+      "key": "balance-plank",
+      "group": "traversal",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A single standalone weathered timber balance-plank walkway: one long thick oak plank resting across two stacked timber trestle supports (low sawhorses) at each end, colonial worksite carpentry, grounded feet, grey-brown weathered wood.",
+      "notes": "Standalone traversal module with trestle supports; grounded."
+    },
+    {
+      "key": "duck-beam-frame",
+      "group": "traversal",
+      "triBudget": 5000,
+      "maxTex": 512,
+      "meshyPoly": 12000,
+      "prompt": "A single standalone weathered timber beam frame to duck under: two upright squared oak posts on grounded timber feet carrying one horizontal crossbeam at head height, like a low worksite doorway lintel frame, rough colonial timber, grey-brown weathered wood.",
+      "notes": "Standalone duck-under frame; grounded feet."
+    }
+  ]
+}

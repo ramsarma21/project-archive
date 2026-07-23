@@ -13,7 +13,14 @@ import { SYNC_PROMPTS, RETRY_EXPOSURES, type ExposureDef } from "./tables.js";
 
 // Commit a tracked exposure (no yield). Ambient content must never call this.
 export function exposure(ctx: Ctx, def: ExposureDef): void {
-  commitExposure(ctx.learner, def.concept, def.exposureId, def.type, ctx.world.currentInteractionOrdinal);
+  commitExposure(
+    ctx.learner,
+    def.concept,
+    def.exposureId,
+    def.type,
+    ctx.world.currentInteractionOrdinal,
+    def.provenance,
+  );
 }
 
 // Present a concept's initial Sync. Correct -> Understood + Notes once.
