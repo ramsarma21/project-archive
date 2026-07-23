@@ -1,4 +1,9 @@
 import {
+  CP1_REQUIRED_MACROS,
+  isCp1ScopedItem,
+  isProductionApprovedStatus,
+} from "@pa/contracts";
+import {
   CP1_DEVELOPMENT_FIXTURE_BANK,
   CP1_PRODUCTION_BANK,
 } from "./questionBank.js";
@@ -16,6 +21,24 @@ const development = validateQuestionBank(CP1_DEVELOPMENT_FIXTURE_BANK, {
   production: false,
 });
 
+// Per-macro production eligibility: does the production bank hold a CP1-scoped,
+// production-approved item for each required macro? Surfaces which of the three
+// fixed CP1 macros are covered and which still block the production gate.
+const macroEligibility = CP1_REQUIRED_MACROS.map((conceptId) => {
+  const candidates = CP1_PRODUCTION_BANK.items.filter(
+    (item) =>
+      item.tier === "MACRO" &&
+      item.conceptId === conceptId &&
+      isCp1ScopedItem(item) &&
+      isProductionApprovedStatus(item.approvalStatus),
+  );
+  return {
+    macro: conceptId,
+    productionEligible: candidates.length > 0,
+    itemIds: candidates.map((item) => item.itemId),
+  };
+});
+
 console.log(
   JSON.stringify(
     {
@@ -29,6 +52,7 @@ console.log(
         selectable: production.valid,
         errors: production.errors,
         missingContent: production.missingContent,
+        macroEligibility,
       },
     },
     null,

@@ -13,14 +13,44 @@ export const CP1_REQUIRED_MACROS = [
 ] as const;
 
 export type Cp1MacroConceptId = (typeof CP1_REQUIRED_MACROS)[number];
-export type AssessmentConceptId = Cp1MacroConceptId | MicroConceptId;
+export type AssessmentConceptId =
+  | Cp1MacroConceptId
+  | MicroConceptId
+  // Lineage/era-scoped concept ids for items banked toward future checkpoints
+  // (e.g. the post-1765 "RCL.*" lineage concepts). Widened to string so those
+  // banked items can carry a stable, non-CP1 concept id without being mistaken
+  // for a CP1 macro/micro. `(string & {})` keeps literal-union autocomplete for
+  // the known ids while remaining additive/non-breaking.
+  | (string & {});
 export type AssessmentTier = "MACRO" | "MICRO";
-export type AssessmentApprovalStatus = "DRAFT" | "SME_APPROVED";
+// DRAFT: engineering fixture. SME_APPROVED: subject-matter reviewer sign-off.
+// OWNER_PROVIDED: real product-owner-supplied content, approved for use and
+// eligible for production selection, but NOT an SME/TEKS sign-off claim.
+// Additive union widening; existing consumers keep working.
+export type AssessmentApprovalStatus = "DRAFT" | "SME_APPROVED" | "OWNER_PROVIDED";
 export type AssessmentDifficulty = "FOUNDATIONAL" | "ON_LEVEL" | "STRETCH";
+
+/**
+ * Content that may be selected in production: SME-approved or owner-provided.
+ * Owner-provided content is approved-for-use but does not assert SME/TEKS
+ * sign-off (see AssessmentApprovalStatus).
+ */
+export function isProductionApprovedStatus(
+  status: AssessmentApprovalStatus,
+): boolean {
+  return status === "SME_APPROVED" || status === "OWNER_PROVIDED";
+}
 
 export interface AssessmentOption {
   optionId: string;
   text: string;
+  /**
+   * Author/owner rationale for this option: why it is correct, or why it is a
+   * distractor. Powers richer hint/feedback copy. The correct option's
+   * rationale doubles as the post-answer explanation. Optional/additive so
+   * historical banks replay unchanged.
+   */
+  rationale?: string;
 }
 
 export interface AssessmentItem {
@@ -37,6 +67,46 @@ export interface AssessmentItem {
   // Authored second-tier hint (Archive-Spec R6 step 2): restates the
   // principle in different words without giving the answer away.
   explicitHint?: string;
+  /** Historical era the item is set in (e.g. "1765", "1774", "1789-1791"). */
+  era?: string;
+  /**
+   * Checkpoint/act scopes in which this item may be selected. When present, a
+   * checkpoint selects the item only if its checkpoint id is listed (see
+   * isCp1ScopedItem). Absent = unrestricted (legacy fixtures stay selectable).
+   * Post-1765 items scope to future checkpoints so CP1 excludes them.
+   */
+  actScope?: readonly string[];
+  /**
+   * Related concept lineage tags — e.g. a CP1 macro concept this later item
+   * descends from — recorded for future-checkpoint reuse and reporting. This
+   * does NOT make the item CP1-selectable (era/actScope governs selection).
+   */
+  conceptLineage?: readonly string[];
+  /** Content provenance, e.g. "user-supplied 2026-07-23". */
+  provenance?: string;
+}
+
+/**
+ * True when an item is eligible for CP1 (Boston Day 1, 1765) selection: either
+ * unrestricted (no actScope — legacy fixtures) or explicitly scoped to the CP1
+ * checkpoint. Post-1765 items scoped to future checkpoints return false and are
+ * excluded from CP1 selection and CP1 validator requirements.
+ */
+export function isCp1ScopedItem(item: AssessmentItem): boolean {
+  return (
+    item.actScope === undefined || item.actScope.includes(CP1_CHECKPOINT_ID)
+  );
+}
+
+/**
+ * The correct option's rationale, which doubles as the explanation shown after
+ * a checkpoint item is answered. Returns undefined when no rationale is stored.
+ */
+export function correctOptionExplanation(
+  item: AssessmentItem,
+): string | undefined {
+  return item.options.find((o) => o.optionId === item.correctOptionId)
+    ?.rationale;
 }
 
 export interface AssessmentQuestionBank {

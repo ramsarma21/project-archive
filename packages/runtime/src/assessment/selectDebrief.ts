@@ -1,6 +1,8 @@
 import {
   CP1_CHECKPOINT_ID,
   CP1_REQUIRED_MACROS,
+  isCp1ScopedItem,
+  isProductionApprovedStatus,
   type AssessmentItem,
   type AssessmentQuestionBank,
   type DebriefFormSelection,
@@ -21,7 +23,18 @@ function eligible(
   item: AssessmentItem,
   allowDraft: boolean,
 ): boolean {
-  return allowDraft || item.approvalStatus === "SME_APPROVED";
+  return allowDraft || isProductionApprovedStatus(item.approvalStatus);
+}
+
+// CP1 (Boston Day 1, 1765) may select ONLY era-appropriate items. This holds
+// regardless of allowDraft: post-1765 items banked toward future checkpoints
+// are never selected here, even when their concept id happens to alias a CP1
+// macro (their actScope excludes CP1). See isCp1ScopedItem.
+function selectableForCp1(
+  item: AssessmentItem,
+  allowDraft: boolean,
+): boolean {
+  return eligible(item, allowDraft) && isCp1ScopedItem(item);
 }
 
 function rank(
@@ -60,7 +73,7 @@ export function selectDebrief(options: SelectDebriefOptions): {
         (item) =>
           item.tier === "MACRO" &&
           item.conceptId === conceptId &&
-          eligible(item, options.allowDraft),
+          selectableForCp1(item, options.allowDraft),
       )
       .sort(
         (a, b) =>
@@ -80,7 +93,7 @@ export function selectDebrief(options: SelectDebriefOptions): {
       (item) =>
         item.tier === "MICRO" &&
         engaged.has(item.conceptId) &&
-        eligible(item, options.allowDraft),
+        selectableForCp1(item, options.allowDraft),
     )
     .sort(
       (a, b) =>
@@ -138,7 +151,7 @@ export function resolveSelectedItems(
   const byId = new Map(bank.items.map((item) => [item.itemId, item]));
   const items = selection.itemIds.map((itemId) => {
     const item = byId.get(itemId);
-    if (!item || !eligible(item, allowDraft)) {
+    if (!item || !selectableForCp1(item, allowDraft)) {
       throw new Error(`DEBRIEF_EVENT_INVALID: unavailable item ${itemId}`);
     }
     return item;
