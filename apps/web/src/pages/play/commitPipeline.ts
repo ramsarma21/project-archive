@@ -140,6 +140,15 @@ export interface CommitDeps<Animation extends ChoiceAnimationLike> {
 // one-shot emitters (breather timers, debrief form selection, quest
 // arrivals) MUST retry on false instead of latching, or the game idles
 // forever — the soft-lock class behind feel-audit-1 P0-4/P0-5/P0-6.
+// Dev-only diagnostics for guard-dropped commits (invisible soft-lock class):
+// which guard rejected which event, so a stuck harness/manual session can be
+// read straight off the console instead of re-deriving it from screenshots.
+const DEV_BUILD: boolean =
+  (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true;
+function logDrop(kind: string, ev: { type: string }, guards: Record<string, unknown>): void {
+  if (DEV_BUILD) console.warn(`[commit-drop] ${kind} ${ev.type}`, guards);
+}
+
 export function createOnEvent<Animation extends ChoiceAnimationLike>(
   deps: CommitDeps<Animation>,
 ): (ev: PresenterEvent) => Promise<boolean> {
@@ -153,7 +162,17 @@ export function createOnEvent<Animation extends ChoiceAnimationLike>(
       (deps.plan &&
         deps.plan.request.kind !== "CHECKPOINT_DEBRIEF" &&
         deps.readyCueId !== deps.plan.cueId)
-    ) return false;
+    ) {
+      logDrop("onEvent", ev, {
+        noClient: !client,
+        inFlight: deps.inFlightRef.current,
+        busy: deps.busy,
+        error: deps.error,
+        planCue: deps.plan?.cueId,
+        readyCue: deps.readyCueId,
+      });
+      return false;
+    }
     deps.inFlightRef.current = true;
     deps.setBusy(true);
     const priorEvents = deps.eventsRef.current;

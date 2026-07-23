@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { InputRequest, PresenterEvent, MechanicParams } from "@pa/contracts";
 import {
   HaulJobControl,
@@ -234,6 +234,44 @@ function Breather(props: {
   return null;
 }
 
+// A mechanic completion is earned state delivered by a ONE-SHOT timer
+// (EffortControl/PressControl fire onDone once, then latch completedRef).
+// A guard-dropped commit — choreography-readiness flicker, in-flight save —
+// must therefore RETRY until the runtime accepts it, exactly like the
+// breather timer above, or the completed control soft-locks the day (seen
+// live: the effigy pin hold stuck on "SECURED" in the full-day E2E).
+const MECHANIC_RESULT_RETRY_MS = 350;
+function useCommittedResult(
+  onEvent: (e: PresenterEvent) => void | Promise<boolean>,
+): (event: PresenterEvent) => void {
+  const onEventRef = useRef(onEvent);
+  onEventRef.current = onEvent;
+  const cancelledRef = useRef(false);
+  useEffect(() => {
+    cancelledRef.current = false;
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, []);
+  return useCallback((event: PresenterEvent) => {
+    let attemptInFlight = false;
+    const attempt = async () => {
+      if (cancelledRef.current || attemptInFlight) return;
+      attemptInFlight = true;
+      try {
+        const accepted = await onEventRef.current(event);
+        // Only an explicit `false` (guard-dropped commit) retries; a void
+        // return keeps legacy fire-once semantics.
+        if (cancelledRef.current || accepted !== false) return;
+      } finally {
+        attemptInFlight = false;
+      }
+      window.setTimeout(() => void attempt(), MECHANIC_RESULT_RETRY_MS);
+    };
+    void attempt();
+  }, []);
+}
+
 function Mechanic(props: {
   promptId: string;
   params: MechanicParams;
@@ -241,13 +279,21 @@ function Mechanic(props: {
   busy: boolean;
   accessible: boolean;
 }) {
-  const { params, promptId, onEvent, busy } = props;
-  if (params.kind === "PRESS") return <PressControl prompt={params.prompt} onDone={(stopOffset) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "PRESS", stopOffset } })} busy={busy} />;
-  if (params.kind === "EFFORT") return <EffortControl prompt={params.prompt} onDone={(holdMs) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "EFFORT", holdMs } })} busy={busy} />;
-  if (params.kind === "PLACE") return <PlaceControl prompt={params.prompt} onDone={(alignment) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "PLACE", alignment } })} busy={busy} />;
+  const { params, promptId, busy } = props;
+  const onEvent = useCommittedResult(props.onEvent);
+  // Every control is KEYED BY PROMPT ID: consecutive requests of the same
+  // mechanic kind (e.g. the fixed event's "move with the crowd" hold straight
+  // into the effigy pin hold) must NEVER reuse the previous instance — a
+  // reused EffortControl keeps completedRef latched and mounts pre-"SECURED",
+  // its one-shot onDone already spent: an unrecoverable soft-lock (found by
+  // the full-day E2E at the effigy pin).
+  if (params.kind === "PRESS") return <PressControl key={promptId} prompt={params.prompt} onDone={(stopOffset) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "PRESS", stopOffset } })} busy={busy} />;
+  if (params.kind === "EFFORT") return <EffortControl key={promptId} prompt={params.prompt} onDone={(holdMs) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "EFFORT", holdMs } })} busy={busy} />;
+  if (params.kind === "PLACE") return <PlaceControl key={promptId} prompt={params.prompt} onDone={(alignment) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "PLACE", alignment } })} busy={busy} />;
   if (params.kind === "PRINT_JOB") {
     return (
       <PrintJobControl
+        key={promptId}
         prompt={params.prompt}
         variant={params.printVariant ?? "PIKE_PROOF"}
         accessible={props.accessible}
@@ -265,6 +311,7 @@ function Mechanic(props: {
   if (params.kind === "HAUL_JOB") {
     return (
       <HaulJobControl
+        key={promptId}
         prompt={params.prompt}
         accessible={props.accessible}
         busy={busy}
@@ -281,6 +328,7 @@ function Mechanic(props: {
   if (params.kind === "POST_JOB") {
     return (
       <PostJobControl
+        key={promptId}
         prompt={params.prompt}
         accessible={props.accessible}
         busy={busy}
@@ -294,7 +342,7 @@ function Mechanic(props: {
       />
     );
   }
-  return <SortControl params={params} onDone={(assignments) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "SORT", assignments } })} busy={busy} />;
+  return <SortControl key={promptId} params={params} onDone={(assignments) => onEvent({ type: "MECHANIC_RESULT", promptId, result: { kind: "SORT", assignments } })} busy={busy} />;
 }
 
 // Oscillating + accelerating needle. Stop near center for a clean pull.
