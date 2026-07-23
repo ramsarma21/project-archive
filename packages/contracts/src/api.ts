@@ -155,6 +155,13 @@ export const PresenterEventSchema: z.ZodType<unknown> = z
     rejectRawResponseFields(event, [], ctx);
   });
 
+export const PresenterSpatialSnapshotSchema = z.object({
+  pos: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]),
+  yaw: z.number().finite(),
+  interiorId: z.string().nullable(),
+  locationId: z.string(),
+}).strict();
+
 export const SaveRecordSchema = z.object({
   saveId: z.string(),
   profileId: z.string(),
@@ -166,6 +173,7 @@ export const SaveRecordSchema = z.object({
   revision: z.number().int().nonnegative(),
   status: z.enum(["IN_PROGRESS", "COMPLETE"]),
   updatedAt: z.string(),
+  presenterSpatial: PresenterSpatialSnapshotSchema.optional(),
 }).strict();
 
 export const PutSaveRequestSchema = z.object({

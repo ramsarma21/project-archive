@@ -54,6 +54,7 @@ export interface RemoteSave {
   revision: number;
   status: "IN_PROGRESS" | "COMPLETE";
   updatedAt: string;
+  presenterSpatial?: import("./db.js").PresenterSpatialState;
 }
 
 export async function pullSave(profileId: string): Promise<RemoteSave | null> {
@@ -79,6 +80,10 @@ export async function pullSave(profileId: string): Promise<RemoteSave | null> {
       revision: Number(raw.revision),
       status: raw.status === "COMPLETE" ? "COMPLETE" : "IN_PROGRESS",
       updatedAt: String(raw.updatedAt ?? raw.updated_at ?? new Date().toISOString()),
+      presenterSpatial:
+        raw.presenterSpatial && typeof raw.presenterSpatial === "object"
+          ? (raw.presenterSpatial as RemoteSave["presenterSpatial"])
+          : undefined,
     };
     if (
       !save.profileId ||

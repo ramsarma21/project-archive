@@ -48,7 +48,9 @@ test("migrations are idempotent and checksummed", async () => {
   await migrate();
   await migrate();
   const rows = await query<{ count: string }>("select count(*)::text as count from schema_migrations");
-  assert.equal(rows.rows[0]?.count, "3");
+  // 001 initial, 002 open responses, 003 content versions,
+  // 004 presenter spatial snapshot (feel-audit-1 P0-11).
+  assert.equal(rows.rows[0]?.count, "4");
 });
 
 test("owned saves materialize mastery atomically and reject conflicts", async () => {
@@ -65,6 +67,13 @@ test("owned saves materialize mastery atomically and reject conflicts", async ()
     revision: 1,
     status: "IN_PROGRESS" as const,
     updatedAt: new Date().toISOString(),
+    // Presenter spatial snapshot (feel-audit-1 P0-11): optional, replay-inert.
+    presenterSpatial: {
+      pos: [-140, 0, 4] as [number, number, number],
+      yaw: 1.25,
+      interiorId: null,
+      locationId: "BOSTON_STREET",
+    },
   };
 
   const saved = await app.inject({
@@ -77,6 +86,15 @@ test("owned saves materialize mastery atomically and reject conflicts", async ()
   const savedBody = saved.json();
   assert.equal(savedBody.revision, 1);
   assert.equal(savedBody.mastery.integrity.committedEventCount, 1);
+
+  // The spatial snapshot round-trips through GET for cross-device resumes.
+  const pulled = await app.inject({
+    method: "GET",
+    url: `/v1/profiles/${profileId}/save`,
+    headers: { cookie },
+  });
+  assert.equal(pulled.statusCode, 200, pulled.body);
+  assert.deepEqual(pulled.json().save.presenterSpatial, record.presenterSpatial);
 
   const mastery = await app.inject({
     method: "GET",

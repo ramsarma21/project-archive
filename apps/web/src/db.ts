@@ -15,6 +15,21 @@ export interface LocalProfile {
   onboarding?: OnboardingPreferences;
 }
 
+// Presenter-side spatial snapshot stored WITH the save (never inside the
+// event log): where the player physically stood when the save was written.
+// Restoring it never affects replay determinism — committed events are the
+// only authority for game state; this only re-seats the body/camera.
+export interface PresenterSpatialState {
+  pos: [number, number, number];
+  yaw: number;
+  // Visual interior the presenter was inside (explore rooms are presentation
+  // -only and do not change the runtime location).
+  interiorId: string | null;
+  // Runtime location at snapshot time; restore only applies when it still
+  // matches, otherwise the authored scene anchor wins.
+  locationId: string;
+}
+
 export interface LocalSave {
   profileId: string;
   chapterId: string;
@@ -24,6 +39,7 @@ export interface LocalSave {
   revision: number;
   status: "IN_PROGRESS" | "COMPLETE";
   updatedAt: string;
+  presenterSpatial?: PresenterSpatialState;
 }
 
 class ArchiveDB extends Dexie {

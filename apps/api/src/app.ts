@@ -235,6 +235,7 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
         revision: number;
         status: "IN_PROGRESS" | "COMPLETE";
         updated_at: string;
+        presenter_spatial: unknown | null;
       }>("select * from saves where profile_id=$1", [req.params.profileId]);
       const save = rows.rows[0];
       return {
@@ -249,6 +250,7 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
               revision: save.revision,
               status: save.status,
               updatedAt: save.updated_at,
+              presenterSpatial: save.presenter_spatial ?? undefined,
             }
           : null,
       };
@@ -325,8 +327,9 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
           const saved = await client.query<{ updated_at: string }>(
             `insert into saves(
                profile_id, chapter_id, package_id, variation_root_seed_hex,
-               flow_version, committed_events, revision, status, updated_at
-             ) values ($1,$2,$3,$4,$5,$6,$7,$8,now())
+               flow_version, committed_events, revision, status, updated_at,
+               presenter_spatial
+             ) values ($1,$2,$3,$4,$5,$6,$7,$8,now(),$9)
              on conflict (profile_id) do update set
                chapter_id=excluded.chapter_id,
                package_id=excluded.package_id,
@@ -335,7 +338,8 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
                committed_events=excluded.committed_events,
                revision=excluded.revision,
                status=excluded.status,
-               updated_at=now()
+               updated_at=now(),
+               presenter_spatial=excluded.presenter_spatial
              returning updated_at`,
             [
               req.params.profileId,
@@ -346,6 +350,9 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
               JSON.stringify(record.committedEvents),
               record.revision,
               record.status,
+              record.presenterSpatial
+                ? JSON.stringify(record.presenterSpatial)
+                : null,
             ],
           );
           await client.query(
