@@ -1,0 +1,1041 @@
+{
+  "name": "seedA-missSyncs",
+  "seedHex": "1111111111111111111111111111111111111111111111111111111111111111",
+  "mode": "missSyncs",
+  "assessmentMode": "QA_DRAFT",
+  "done": true,
+  "meta": {
+    "profileId": "wave3-fixture-profile",
+    "packageId": "PA.BOSTON.DAY1.TEXT.v1",
+    "chapterId": "PA.SEA01.CH02.BOSTON.v1",
+    "variationRootSeedHex": "1111111111111111111111111111111111111111111111111111111111111111",
+    "committedEventCount": 61,
+    "generatedAt": "2026-07-23T00:00:00.000Z"
+  },
+  "events": [
+    {
+      "type": "CONTINUE"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "MERCER_PRESS"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.ENTER_MERCER.v1",
+      "choiceId": "KNOCK"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
+      "result": {
+        "kind": "PRINT_JOB",
+        "phases": {
+          "catch": 0.95,
+          "ink": 0.95,
+          "register": 0.95,
+          "pull": 0.95,
+          "peel": 0.95
+        },
+        "quality": "CRISP",
+        "accessible": false
+      }
+    },
+    {
+      "type": "FOCUS_READ_OPENED",
+      "objectId": "STAMP_PROOF_COMPARE"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "STREET"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "THOMAS_CIRCULAR"
+    },
+    {
+      "type": "FOCUS_READ_OPENED",
+      "objectId": "TOWN_STAMP_NOTICE"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.THOMAS_CIRCULAR_HANDOFF.v1",
+      "result": {
+        "kind": "EFFORT",
+        "holdMs": 1500
+      }
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.THOMAS_DELIVERY.v1",
+      "choiceId": "HELP"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.THOMAS_HAUL.v1",
+      "result": {
+        "kind": "HAUL_JOB",
+        "phases": {
+          "load": 0.9,
+          "balance": 0.9,
+          "thread": 0.9
+        },
+        "accessible": false
+      }
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "STREET"
+    },
+    {
+      "type": "FOCUS_READ_OPENED",
+      "objectId": "FRESH_BROADSIDE"
+    },
+    {
+      "type": "BREATHER_COMPLETE"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "PIKE_PROOF"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.PIKE_PROOF_HANDOFF.v1",
+      "result": {
+        "kind": "EFFORT",
+        "holdMs": 1500
+      }
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.SYNC.STAMP.INITIAL.v1:tx-1",
+      "choiceId": "STAMP_SYNC.SHOP_CHARGE"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "STREET"
+    },
+    {
+      "type": "BREATHER_COMPLETE"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "CUSTOMHOUSE_NOTICE"
+    },
+    {
+      "type": "FOCUS_READ_OPENED",
+      "objectId": "REVENUE_PROCLAMATION"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.SYNC.POLICY.INITIAL.v1:tx-3",
+      "choiceId": "POLICY_SYNC.PUNISH_MOB"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.POST_NOTICE.v1",
+      "result": {
+        "kind": "POST_JOB",
+        "phases": {
+          "lineUp": 0.9,
+          "tackLeft": 0.9,
+          "tackRight": 0.9
+        },
+        "accessible": false
+      }
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "STREET"
+    },
+    {
+      "type": "BREATHER_COMPLETE"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "RIDER_HANDBILLS"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.RIDER_ROUTE_SELECT.v1",
+      "choiceId": "MAIN_FAST"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "CLARKE_ROUTE"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.CLARKE_CHALLENGE.v1",
+      "choiceId": "CALM_CONCEAL"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.CONCEAL_HANDBILLS.v1",
+      "result": {
+        "kind": "EFFORT",
+        "holdMs": 1500
+      }
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "CUSTOMS_ROUTE"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "RIDER_POST_ROUTE"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.RIDER_HANDOFF.v1",
+      "choiceId": "QUICK"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.RIDER_QUICK_HANDOFF.v1",
+      "result": {
+        "kind": "EFFORT",
+        "holdMs": 1500
+      }
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.SYNC.REPRESENTATION.INITIAL.v1:tx-5",
+      "choiceId": "REP_SYNC.ALL_TAXES"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "CROWD"
+    },
+    {
+      "type": "FOCUS_READ_OPENED",
+      "objectId": "CROWD_BOARD"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.OBSERVE_CROWD_FORMING.v1",
+      "result": {
+        "kind": "EFFORT",
+        "holdMs": 1500
+      }
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.EVENT_ONRAMP.v1",
+      "choiceId": "CLIMB"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.EVENT_CLIMB.v1",
+      "result": {
+        "kind": "EFFORT",
+        "holdMs": 1500
+      }
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.PIN_HANDBILL_EFFIGY.v1",
+      "result": {
+        "kind": "EFFORT",
+        "holdMs": 1500
+      }
+    },
+    {
+      "type": "CONTINUE"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "MERCER_RETURN"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.SYNC.STAMP.RETRY.v1:tx-7",
+      "choiceId": "STAMP_SYNC.CROWN_TAX"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.SYNC.REPRESENTATION.RETRY.v1:tx-9",
+      "choiceId": "REP_SYNC.NO_ELECTED_VOICE"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.SYNC.POLICY.RETRY.v1:tx-11",
+      "choiceId": "POLICY_SYNC.WAR_DEBT"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.HEADLINE_SELECT.v1:tx-13",
+      "choiceId": "TAXED_NO_VOICE"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.HEADLINE_CAUSE_LINE.v1:tx-14",
+      "choiceId": "CAUSE_PARLIAMENT"
+    },
+    {
+      "type": "CHOICE_SELECTED",
+      "promptId": "BOS.MD01.ACT.HEADLINE_EVIDENCE_PIN.v1:tx-15",
+      "choiceId": "EV_DEED"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.FINAL_PRESS_PULL.v1",
+      "result": {
+        "kind": "PRINT_JOB",
+        "phases": {
+          "catch": 0.95,
+          "ink": 0.95,
+          "register": 0.95,
+          "pull": 0.95,
+          "peel": 0.95
+        },
+        "quality": "CRISP",
+        "accessible": false
+      }
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "STREET"
+    },
+    {
+      "type": "FREE_ROAM_GOTO",
+      "targetId": "TOWN_NOTICE_BOARD"
+    },
+    {
+      "type": "MECHANIC_RESULT",
+      "promptId": "BOS.MD01.ACT.POST_HEADLINE_BOARD.v1",
+      "result": {
+        "kind": "EFFORT",
+        "holdMs": 1500
+      }
+    },
+    {
+      "type": "DEBRIEF_FORM_SELECTED",
+      "checkpointId": "BOS.ACT01.CP1.v1",
+      "selection": {
+        "checkpointId": "BOS.ACT01.CP1.v1",
+        "coreFormId": "BOS.ACT01.CP1.FORM.d986726d",
+        "enrichmentSupplementId": null,
+        "formId": "BOS.ACT01.CP1.FORM.d986726d",
+        "bankId": "BOS.ACT01.CP1.DEVELOPMENT_FIXTURES",
+        "bankVersion": "dev.1",
+        "itemIds": [
+          "BOS.CP1.MACRO.DEBT_POLICY.01",
+          "BOS.CP1.MACRO.STAMP_SCOPE.01",
+          "BOS.CP1.MACRO.REPRESENTATION.01"
+        ],
+        "macroItemIds": [
+          "BOS.CP1.MACRO.DEBT_POLICY.01",
+          "BOS.CP1.MACRO.STAMP_SCOPE.01",
+          "BOS.CP1.MACRO.REPRESENTATION.01"
+        ],
+        "microItemIds": []
+      }
+    },
+    {
+      "type": "DEBRIEF_ANSWERED",
+      "checkpointId": "BOS.ACT01.CP1.v1",
+      "formId": "BOS.ACT01.CP1.FORM.d986726d",
+      "itemId": "BOS.CP1.MACRO.DEBT_POLICY.01",
+      "optionId": "WAR_DEBT"
+    },
+    {
+      "type": "DEBRIEF_ANSWERED",
+      "checkpointId": "BOS.ACT01.CP1.v1",
+      "formId": "BOS.ACT01.CP1.FORM.d986726d",
+      "itemId": "BOS.CP1.MACRO.STAMP_SCOPE.01",
+      "optionId": "CROWN_INTERNAL"
+    },
+    {
+      "type": "DEBRIEF_ANSWERED",
+      "checkpointId": "BOS.ACT01.CP1.v1",
+      "formId": "BOS.ACT01.CP1.FORM.d986726d",
+      "itemId": "BOS.CP1.MACRO.REPRESENTATION.01",
+      "optionId": "NO_VOICE"
+    },
+    {
+      "type": "DEBRIEF_CONTINUED",
+      "checkpointId": "BOS.ACT01.CP1.v1",
+      "formId": "BOS.ACT01.CP1.FORM.d986726d"
+    },
+    {
+      "type": "DEBRIEF_COMMITTED",
+      "eventId": "BOS.ACT01.CP1.FORM.d986726d.COMMIT.TEST",
+      "checkpointId": "BOS.ACT01.CP1.v1",
+      "formId": "BOS.ACT01.CP1.FORM.d986726d",
+      "bankVersion": "dev.1",
+      "annotation": "Set it in type and let the street read it."
+    },
+    {
+      "type": "ACT_TRANSITIONED",
+      "eventId": "BOS.ACT01.CP1.FORM.d986726d.TRANSITION.TEST",
+      "checkpointId": "BOS.ACT01.CP1.v1",
+      "formId": "BOS.ACT01.CP1.FORM.d986726d",
+      "targetChapterId": "PA.SEA01.CH02.BOSTON.1770.PENDING.v1"
+    },
+    {
+      "type": "CONTINUE"
+    }
+  ],
+  "view": {
+    "locationId": "BOSTON_STREET",
+    "clock": {
+      "spentUnits": 24,
+      "fixedEventBoundary": 24,
+      "phase": "DUSK",
+      "warningStage": "FINAL"
+    },
+    "objectives": {
+      "REPORT_TO_MERCER": "COMPLETED",
+      "THOMAS_CIRCULAR": "COMPLETED",
+      "PIKE_PROOF": "COMPLETED",
+      "RIDER_HANDBILLS": "COMPLETED",
+      "CUSTOMHOUSE_NOTICE": "COMPLETED",
+      "OBSERVE_CROWD": "COMPLETED",
+      "RETURN_TO_PRESS": "COMPLETED",
+      "SET_HEADLINE": "COMPLETED",
+      "POST_THE_PAGE": "COMPLETED"
+    },
+    "printJobs": {
+      "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1": {
+        "promptId": "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
+        "variant": "PIKE_PROOF",
+        "phases": {
+          "catch": 0.95,
+          "ink": 0.95,
+          "register": 0.95,
+          "pull": 0.95,
+          "peel": 0.95
+        },
+        "quality": "CRISP",
+        "attempts": 1
+      },
+      "BOS.MD01.ACT.FINAL_PRESS_PULL.v1": {
+        "promptId": "BOS.MD01.ACT.FINAL_PRESS_PULL.v1",
+        "variant": "FINAL_PAGE",
+        "phases": {
+          "catch": 0.95,
+          "ink": 0.95,
+          "register": 0.95,
+          "pull": 0.95,
+          "peel": 0.95
+        },
+        "quality": "CRISP",
+        "attempts": 1
+      }
+    },
+    "relationships": {
+      "ABIGAIL_TRUST": 50,
+      "ABIGAIL_RESPECT": 45,
+      "ABIGAIL_WARMTH": 35,
+      "THOMAS_OBLIGATION": 40,
+      "PIKE_RESPECT": 45,
+      "CLARKE_POLITICAL_READ": -20,
+      "RIDER_TRUST": 50
+    },
+    "routes": {
+      "THOMAS_DOCK_ROUTE": "UNLOCKED"
+    },
+    "learner": {
+      "Postwar revenue": {
+        "understanding": "UNDERSTOOD",
+        "demonstration": "DEMONSTRATED",
+        "occasions": 4,
+        "types": 3
+      },
+      "Stamp Act": {
+        "understanding": "UNDERSTOOD",
+        "demonstration": "DEMONSTRATED",
+        "occasions": 5,
+        "types": 3
+      },
+      "Representation": {
+        "understanding": "UNDERSTOOD",
+        "demonstration": "DEMONSTRATED",
+        "occasions": 6,
+        "types": 4
+      }
+    },
+    "notes": [
+      {
+        "concept": "Your words at the elm",
+        "body": "Your handbill hangs on the effigy with the rest. Words you printed, in the middle of all of it."
+      },
+      {
+        "concept": "Stamp Act",
+        "body": "The Stamp Act required paid stamps on covered printed and legal paper beginning 1 November 1765."
+      },
+      {
+        "concept": "Representation",
+        "body": "Colonists objected that Parliament taxed them even though they elected no representatives to it."
+      },
+      {
+        "concept": "Postwar revenue policy",
+        "body": "After the French and Indian War, British debt helped drive Parliament to seek more colonial revenue."
+      }
+    ],
+    "peopleMet": [
+      "Abigail Mercer",
+      "Thomas",
+      "Pike",
+      "Clarke",
+      "The rider"
+    ],
+    "routesUnlocked": [
+      "Thomas's dock shortcut"
+    ],
+    "field": {
+      "version": 4,
+      "seedHex": "453842e039eda7cc0733e826f261c00c",
+      "heat": {
+        "band": "CALM",
+        "decay": {
+          "band": "CALM",
+          "elapsedSeconds": 0,
+          "requiredSeconds": null,
+          "paused": false
+        },
+        "history": [],
+        "authority": "LEGACY_WATCHER_HEAT"
+      },
+      "standing": {
+        "band": "NEUTRAL"
+      },
+      "threads": {
+        "BOS.THREAD.NED.v1": {
+          "threadId": "BOS.THREAD.NED.v1",
+          "flags": {},
+          "status": "UNMET",
+          "trust": 0,
+          "breadcrumb": null
+        },
+        "BOS.THREAD.SARAH.v1": {
+          "threadId": "BOS.THREAD.SARAH.v1",
+          "flags": {},
+          "status": "UNMET",
+          "trust": 0,
+          "breadcrumb": null
+        }
+      },
+      "activities": {
+        "SJ-tavern-note": {
+          "activityId": "SJ-tavern-note",
+          "stage": "AVAILABLE",
+          "breadcrumb": null
+        },
+        "SJ-dock-haul": {
+          "activityId": "SJ-dock-haul",
+          "stage": "AVAILABLE",
+          "breadcrumb": null
+        },
+        "SJ-roof-kid": {
+          "activityId": "SJ-roof-kid",
+          "stage": "AVAILABLE",
+          "breadcrumb": null
+        },
+        "SJ-crier": {
+          "activityId": "SJ-crier",
+          "stage": "AVAILABLE",
+          "breadcrumb": null
+        },
+        "SJ-ropewalk": {
+          "activityId": "SJ-ropewalk",
+          "stage": "AVAILABLE",
+          "breadcrumb": null
+        },
+        "CH-agitator-dare": {
+          "activityId": "CH-agitator-dare",
+          "stage": "AVAILABLE",
+          "breadcrumb": null
+        },
+        "CH-rooftop-run": {
+          "activityId": "CH-rooftop-run",
+          "stage": "DORMANT",
+          "breadcrumb": null
+        },
+        "CH-lose-the-watch": {
+          "activityId": "CH-lose-the-watch",
+          "stage": "AVAILABLE",
+          "breadcrumb": null
+        }
+      },
+      "rumors": [],
+      "engagedMicroIds": [],
+      "openResponseCompletions": [],
+      "reactiveCompletions": [],
+      "sourceEngagements": [],
+      "interactionOrdinal": 26,
+      "identity": {
+        "clarkeMarked": false,
+        "recognized": false
+      },
+      "concealmentByObjectId": {
+        "CARRIER_HANDBILLS": "WRAPPED",
+        "PLAIN_WRAP": "HIDDEN",
+        "TAVERN_NOTE": "HIDDEN",
+        "DOCK_BARREL": "EXPOSED"
+      },
+      "carriedObjectIds": [
+        "FINAL_PAGE",
+        "PLAIN_WRAP"
+      ],
+      "confiscatedObjectIds": [],
+      "lastChallenge": null,
+      "activeConfrontation": null,
+      "citedConfrontationOption": null,
+      "confrontationHistory": [],
+      "activeChase": null,
+      "chaseHistory": [],
+      "pendingReposition": null,
+      "activeInterrupt": null
+    },
+    "checkpoint": {
+      "checkpointId": "BOS.ACT01.CP1.v1",
+      "status": "TRANSITIONED",
+      "selection": {
+        "checkpointId": "BOS.ACT01.CP1.v1",
+        "coreFormId": "BOS.ACT01.CP1.FORM.d986726d",
+        "enrichmentSupplementId": null,
+        "formId": "BOS.ACT01.CP1.FORM.d986726d",
+        "bankId": "BOS.ACT01.CP1.DEVELOPMENT_FIXTURES",
+        "bankVersion": "dev.1",
+        "itemIds": [
+          "BOS.CP1.MACRO.DEBT_POLICY.01",
+          "BOS.CP1.MACRO.STAMP_SCOPE.01",
+          "BOS.CP1.MACRO.REPRESENTATION.01"
+        ],
+        "macroItemIds": [
+          "BOS.CP1.MACRO.DEBT_POLICY.01",
+          "BOS.CP1.MACRO.STAMP_SCOPE.01",
+          "BOS.CP1.MACRO.REPRESENTATION.01"
+        ],
+        "microItemIds": []
+      },
+      "responses": [
+        {
+          "itemId": "BOS.CP1.MACRO.DEBT_POLICY.01",
+          "optionId": "WAR_DEBT",
+          "tier": "MACRO",
+          "conceptId": "RCC.DEBT_POLICY_INTRO",
+          "hintsUsed": 0
+        },
+        {
+          "itemId": "BOS.CP1.MACRO.STAMP_SCOPE.01",
+          "optionId": "CROWN_INTERNAL",
+          "tier": "MACRO",
+          "conceptId": "RCC.STAMP_INTERNAL_INTRO",
+          "hintsUsed": 0
+        },
+        {
+          "itemId": "BOS.CP1.MACRO.REPRESENTATION.01",
+          "optionId": "NO_VOICE",
+          "tier": "MACRO",
+          "conceptId": "RCC.REPRESENTATION_CAUSE",
+          "hintsUsed": 0
+        }
+      ],
+      "currentItemIndex": 3,
+      "macroOutcomes": [
+        {
+          "itemId": "BOS.CP1.MACRO.DEBT_POLICY.01",
+          "conceptId": "RCC.DEBT_POLICY_INTRO",
+          "correct": true,
+          "hintsUsed": 0
+        },
+        {
+          "itemId": "BOS.CP1.MACRO.STAMP_SCOPE.01",
+          "conceptId": "RCC.STAMP_INTERNAL_INTRO",
+          "correct": true,
+          "hintsUsed": 0
+        },
+        {
+          "itemId": "BOS.CP1.MACRO.REPRESENTATION.01",
+          "conceptId": "RCC.REPRESENTATION_CAUSE",
+          "correct": true,
+          "hintsUsed": 0
+        }
+      ],
+      "enrichmentOutcomes": [],
+      "bankVersion": "dev.1",
+      "committedEventId": "BOS.ACT01.CP1.FORM.d986726d.COMMIT.TEST",
+      "transitionEventId": "BOS.ACT01.CP1.FORM.d986726d.TRANSITION.TEST",
+      "annotation": "Set it in type and let the street read it.",
+      "nextInsertion": {
+        "chapterId": "PA.SEA01.CH02.BOSTON.1770.PENDING.v1",
+        "status": "PENDING_CONTENT",
+        "label": "Act 1 complete · next insertion pending"
+      },
+      "carryover": {
+        "relationships": {
+          "ABIGAIL_TRUST": 50,
+          "ABIGAIL_RESPECT": 45,
+          "ABIGAIL_WARMTH": 35,
+          "THOMAS_OBLIGATION": 40,
+          "PIKE_RESPECT": 45,
+          "CLARKE_POLITICAL_READ": -20,
+          "RIDER_TRUST": 50
+        },
+        "heatBand": "CALM",
+        "recognized": false,
+        "clarkeMarked": false,
+        "standingBand": "NEUTRAL",
+        "threads": {
+          "BOS.THREAD.NED.v1": {
+            "threadId": "BOS.THREAD.NED.v1",
+            "flags": {},
+            "status": "UNMET",
+            "trust": 0,
+            "breadcrumb": null
+          },
+          "BOS.THREAD.SARAH.v1": {
+            "threadId": "BOS.THREAD.SARAH.v1",
+            "flags": {},
+            "status": "UNMET",
+            "trust": 0,
+            "breadcrumb": null
+          }
+        },
+        "routes": {
+          "THOMAS_DOCK_ROUTE": "UNLOCKED"
+        },
+        "custody": {
+          "THOMAS_CIRCULAR": "THOMAS",
+          "PIKE_PROOF": "PIKE",
+          "CARRIER_HANDBILLS": "RIDER",
+          "CUSTOMHOUSE_NOTICE": "CUSTOMHOUSE",
+          "PLAIN_WRAP": "PLAYER",
+          "TAVERN_NOTE": "THOMAS",
+          "DOCK_BARREL": "DOCKHAND",
+          "FINAL_PAGE": "PLAYER"
+        },
+        "learner": {
+          "BOS.MD01.CONCEPT.POSTWAR_REVENUE.v1": {
+            "exposures": [
+              {
+                "exposureId": "POLICY.B0.ARCHIVE_ARTICLE_SCENE",
+                "type": "SCENE",
+                "interactionOrdinal": 0,
+                "provenance": {
+                  "sourceId": "B0",
+                  "sourceKind": "EVENT",
+                  "label": "the Archive's intake brief on the war account"
+                }
+              },
+              {
+                "exposureId": "POLICY.B6.PIKE_WAR_DEBT_LINE",
+                "type": "CONVERSATION",
+                "interactionOrdinal": 9,
+                "provenance": {
+                  "sourceId": "NPC-pike",
+                  "sourceKind": "NPC",
+                  "label": "Pike grumbling about the war debt over his desk",
+                  "zone": "Z5"
+                }
+              },
+              {
+                "exposureId": "POLICY.B7_5.CROWN_PROCLAMATION",
+                "type": "ARTICLE",
+                "interactionOrdinal": 11,
+                "provenance": {
+                  "sourceId": "LORE-customhouse-proclamation",
+                  "sourceKind": "LORE",
+                  "label": "the revenue proclamation on the Custom House wall",
+                  "zone": "Z5"
+                }
+              },
+              {
+                "exposureId": "POLICY.RETRY.SECOND_DEBT_EXCERPT",
+                "type": "ARTICLE",
+                "interactionOrdinal": 21,
+                "provenance": {
+                  "sourceId": "RETRY-policy",
+                  "sourceKind": "EVENT",
+                  "label": "the second debt excerpt you took another look at"
+                }
+              }
+            ],
+            "distinctOccasionCount": 4,
+            "exposureTypes": [
+              "SCENE",
+              "CONVERSATION",
+              "ARTICLE"
+            ],
+            "learningGate": "READY",
+            "understanding": "UNDERSTOOD",
+            "firstUnderstandingAttemptCount": 1,
+            "pendingReexposure": null,
+            "notesAddedTransactionId": "tx-12",
+            "demonstration": "DEMONSTRATED",
+            "priorDayReassessment": "NOT_DUE",
+            "misconceptionIds": []
+          },
+          "BOS.MD01.CONCEPT.STAMP_SCOPE.v1": {
+            "exposures": [
+              {
+                "exposureId": "STAMP.B3.PROOF_COMPARISON",
+                "type": "HANDS_ON",
+                "interactionOrdinal": 4,
+                "provenance": {
+                  "sourceId": "MECH-proof-compare",
+                  "sourceKind": "MECHANIC",
+                  "label": "the two proofs you compared side by side on the stone",
+                  "zone": "Z4"
+                }
+              },
+              {
+                "exposureId": "STAMP.B4_5.OFFICIAL_NOTICE",
+                "type": "ARTICLE",
+                "interactionOrdinal": 6,
+                "provenance": {
+                  "sourceId": "LORE-noticeboard",
+                  "sourceKind": "LORE",
+                  "label": "the stamp schedule nailed by the town pump",
+                  "zone": "Z4"
+                }
+              },
+              {
+                "exposureId": "STAMP.B6.PIKE_SCOPE_LINE",
+                "type": "CONVERSATION",
+                "interactionOrdinal": 9,
+                "provenance": {
+                  "sourceId": "NPC-pike",
+                  "sourceKind": "NPC",
+                  "label": "Pike listing which of his papers will need the stamp",
+                  "zone": "Z5"
+                }
+              },
+              {
+                "exposureId": "STAMP.B9.OFFICER_STAMP_LINE",
+                "type": "CONVERSATION",
+                "interactionOrdinal": 14,
+                "provenance": {
+                  "sourceId": "MECH-customs-search",
+                  "sourceKind": "MECHANIC",
+                  "label": "the customs officer naming stamped paper at the checkpoint",
+                  "zone": "Z5"
+                }
+              },
+              {
+                "exposureId": "STAMP.RETRY.COVERED_ITEMS_SCHEDULE",
+                "type": "HANDS_ON",
+                "interactionOrdinal": 19,
+                "provenance": {
+                  "sourceId": "RETRY-stamp",
+                  "sourceKind": "EVENT",
+                  "label": "the covered-items schedule you went back over"
+                }
+              }
+            ],
+            "distinctOccasionCount": 5,
+            "exposureTypes": [
+              "HANDS_ON",
+              "ARTICLE",
+              "CONVERSATION"
+            ],
+            "learningGate": "READY",
+            "understanding": "UNDERSTOOD",
+            "firstUnderstandingAttemptCount": 1,
+            "pendingReexposure": null,
+            "notesAddedTransactionId": "tx-8",
+            "demonstration": "DEMONSTRATED",
+            "priorDayReassessment": "NOT_DUE",
+            "misconceptionIds": []
+          },
+          "BOS.MD01.CONCEPT.REPRESENTATION.v1": {
+            "exposures": [
+              {
+                "exposureId": "REP.B5.THOMAS_CONSENT_LINE",
+                "type": "CONVERSATION",
+                "interactionOrdinal": 7,
+                "provenance": {
+                  "sourceId": "NPC-thomas",
+                  "sourceKind": "NPC",
+                  "label": "Thomas saying it's the not being asked, not the shilling",
+                  "zone": "Z3"
+                }
+              },
+              {
+                "exposureId": "REP.B5_5.FRESH_BROADSIDE",
+                "type": "ARTICLE",
+                "interactionOrdinal": 8,
+                "provenance": {
+                  "sourceId": "LORE-fresh-broadside",
+                  "sourceKind": "LORE",
+                  "label": "the fresh broadside pasted while you were inside",
+                  "zone": "Z4"
+                }
+              },
+              {
+                "exposureId": "REP.B7.CONCEALED_HANDBILL",
+                "type": "HANDS_ON",
+                "interactionOrdinal": 13,
+                "provenance": {
+                  "sourceId": "MECH-conceal",
+                  "sourceKind": "MECHANIC",
+                  "label": "the handbill you wrapped plain under Clarke's eye",
+                  "zone": "Z4"
+                }
+              },
+              {
+                "exposureId": "REP.B10_4.CROWD_BOARD",
+                "type": "ARTICLE",
+                "interactionOrdinal": 15,
+                "provenance": {
+                  "sourceId": "LORE-crowd-board",
+                  "sourceKind": "LORE",
+                  "label": "the one-line broadside on the board by the elm",
+                  "zone": "Z6"
+                }
+              },
+              {
+                "exposureId": "REP.B11.EVENT_BANNER",
+                "type": "SCENE",
+                "interactionOrdinal": 17,
+                "provenance": {
+                  "sourceId": "EVENT-effigy",
+                  "sourceKind": "EVENT",
+                  "label": "the banner over the crowd at the great elm",
+                  "zone": "Z6"
+                }
+              },
+              {
+                "exposureId": "REP.RETRY.MASSACHUSETTS_INSTRUCTION",
+                "type": "ARTICLE",
+                "interactionOrdinal": 20,
+                "provenance": {
+                  "sourceId": "RETRY-rep",
+                  "sourceKind": "EVENT",
+                  "label": "the Massachusetts instruction you reread"
+                }
+              }
+            ],
+            "distinctOccasionCount": 6,
+            "exposureTypes": [
+              "CONVERSATION",
+              "ARTICLE",
+              "HANDS_ON",
+              "SCENE"
+            ],
+            "learningGate": "READY",
+            "understanding": "UNDERSTOOD",
+            "firstUnderstandingAttemptCount": 1,
+            "pendingReexposure": null,
+            "notesAddedTransactionId": "tx-10",
+            "demonstration": "DEMONSTRATED",
+            "priorDayReassessment": "NOT_DUE",
+            "misconceptionIds": []
+          }
+        },
+        "microEngagements": [],
+        "sourceProvenance": [],
+        "formativeEvidence": [],
+        "checkpointId": "BOS.ACT01.CP1.v1",
+        "checkpointVersion": "dev.1"
+      }
+    },
+    "openResponse": {
+      "eligible": [],
+      "activePrompt": null,
+      "evidence": [],
+      "npcFollowups": [],
+      "archiveConnections": []
+    }
+  },
+  "report": {
+    "profileId": "wave3-fixture-profile",
+    "packageId": "PA.BOSTON.DAY1.TEXT.v1",
+    "chapterId": "PA.SEA01.CH02.BOSTON.v1",
+    "generatedAt": "2026-07-23T00:00:00.000Z",
+    "dayComplete": true,
+    "masteredCount": 3,
+    "requiredCount": 3,
+    "concepts": [
+      {
+        "conceptId": "BOS.MD01.CONCEPT.POSTWAR_REVENUE.v1",
+        "conceptName": "Postwar revenue policy",
+        "teksCode": "8.4(A)",
+        "teksClause": "British economic policies following the French and Indian War",
+        "stage": "MASTERED",
+        "exposureCount": 4,
+        "exposureTypes": [
+          "SCENE",
+          "CONVERSATION",
+          "ARTICLE"
+        ],
+        "understandingPassed": true,
+        "understandingAttempts": 1,
+        "demonstrated": true,
+        "misconceptions": []
+      },
+      {
+        "conceptId": "BOS.MD01.CONCEPT.STAMP_SCOPE.v1",
+        "conceptName": "Stamp Act",
+        "teksCode": "8.4(A)",
+        "teksClause": "the Stamp Act",
+        "stage": "MASTERED",
+        "exposureCount": 5,
+        "exposureTypes": [
+          "HANDS_ON",
+          "ARTICLE",
+          "CONVERSATION"
+        ],
+        "understandingPassed": true,
+        "understandingAttempts": 1,
+        "demonstrated": true,
+        "misconceptions": []
+      },
+      {
+        "conceptId": "BOS.MD01.CONCEPT.REPRESENTATION.v1",
+        "conceptName": "Representation",
+        "teksCode": "8.4(A)",
+        "teksClause": "lack of representation in Parliament",
+        "stage": "MASTERED",
+        "exposureCount": 6,
+        "exposureTypes": [
+          "CONVERSATION",
+          "ARTICLE",
+          "HANDS_ON",
+          "SCENE"
+        ],
+        "understandingPassed": true,
+        "understandingAttempts": 1,
+        "demonstrated": true,
+        "misconceptions": []
+      }
+    ],
+    "integrity": {
+      "variationRootSeedHex": "1111111111111111111111111111111111111111111111111111111111111111",
+      "committedEventCount": 61,
+      "deterministic": true,
+      "note": "Reproducible from the run seed and committed events; mastery is gated, not assumed."
+    },
+    "checkpoint": {
+      "checkpointId": "BOS.ACT01.CP1.v1",
+      "status": "TRANSITIONED",
+      "bankVersion": "dev.1",
+      "formId": "BOS.ACT01.CP1.FORM.d986726d",
+      "macroEvidence": [
+        {
+          "conceptId": "RCC.DEBT_POLICY_INTRO",
+          "outcome": "SUPPORTED",
+          "hintsUsed": 0
+        },
+        {
+          "conceptId": "RCC.STAMP_INTERNAL_INTRO",
+          "outcome": "SUPPORTED",
+          "hintsUsed": 0
+        },
+        {
+          "conceptId": "RCC.REPRESENTATION_CAUSE",
+          "outcome": "SUPPORTED",
+          "hintsUsed": 0
+        }
+      ],
+      "enrichment": {
+        "included": false,
+        "responseCount": 0,
+        "correctCount": 0
+      }
+    }
+  }
+}
