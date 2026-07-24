@@ -12,6 +12,7 @@ export interface KnowledgePlacement {
   rotY: number;
   size: readonly [number, number, number];
   micros: readonly MicroConceptId[];
+  losIgnoreIds?: readonly string[];
 }
 
 export const M4_KNOWLEDGE: readonly KnowledgePlacement[] = [
@@ -26,6 +27,7 @@ export const M4_KNOWLEDGE: readonly KnowledgePlacement[] = [
     rotY: -0.35,
     size: [0.64, 0.2, 0.86],
     micros: [MICRO_CONCEPT_IDS.SALUTARY_NEGLECT_END],
+    losIgnoreIds: ["prop:notice-board:6:0:8.8/board"],
   },
   {
     id: "KN-noticeboard-stamp",
@@ -38,6 +40,7 @@ export const M4_KNOWLEDGE: readonly KnowledgePlacement[] = [
     rotY: -0.35,
     size: [0.58, 0.2, 0.82],
     micros: [MICRO_CONCEPT_IDS.STAMP_WHAT_COUNTS],
+    losIgnoreIds: ["prop:notice-board:6:0:8.8/board"],
   },
   {
     id: "KN-liberty-bill",

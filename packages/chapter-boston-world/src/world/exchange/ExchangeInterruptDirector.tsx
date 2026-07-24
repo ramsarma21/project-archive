@@ -691,6 +691,7 @@ export function ExchangeInterruptDirector(props: {
         discoveryRadius: candidate.discoveryRadius,
         approachRadius: candidate.approachRadius,
         importance: candidate.importance,
+        losIgnoreIds: candidate.losIgnoreIds,
         priority: candidate.priority,
         spaceId: candidate.spaceId,
         position: candidate.position,

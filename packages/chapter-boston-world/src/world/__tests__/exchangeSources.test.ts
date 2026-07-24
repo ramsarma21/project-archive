@@ -785,6 +785,13 @@ test("every interaction candidate hands off a registered source id", () => {
   const exterior = day1M4Frame(view, "EXTERIOR");
   const ids = exterior.map((candidate) => candidate.id);
   assert.ok(ids.includes("M4:KN-noticeboard-stamp"));
+  assert.deepEqual(
+    exterior.find(
+      (candidate) => candidate.id === "M4:KN-noticeboard-stamp",
+    )?.losIgnoreIds,
+    ["prop:notice-board:6:0:8.8/board"],
+    "noticeboard paper must ignore only its own board collider",
+  );
   assert.ok(ids.includes("M4:FLV-dog"));
   assert.ok(ids.includes("M4:FLV-gulls"));
   assert.ok(ids.includes("M4:SJ-roof-kid-offer"));

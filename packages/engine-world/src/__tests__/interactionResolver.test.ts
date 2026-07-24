@@ -9,6 +9,7 @@ import {
 import {
   INTERACTION_FACING_WAIVER_M,
   INTERACTION_HYSTERESIS_M,
+  INTERACTION_TARGET_INSET_M,
   resolveInteraction,
   resolveInteractionAffordance,
 } from "../interactionResolver.js";
@@ -222,7 +223,31 @@ test("far affordances preserve LOS, priority, gating, and one-target arbitration
   );
 });
 
+test("an actionable nearby target outranks farther approach hints", () => {
+  const nearbyFlavor = candidate(
+    "dog",
+    INTERACTION_PRIORITIES.FLAVOR,
+    [1.5, 0, 0],
+    { kind: "FLAVOR", radius: 2.9, discoveryRadius: 7 },
+  );
+  const fartherStory = candidate(
+    "goodwife",
+    INTERACTION_PRIORITIES.STORY_NPC,
+    [3, 0, 0],
+    { kind: "NPC", radius: 2.3, discoveryRadius: 11 },
+  );
+  const resolved = resolveInteractionAffordance({
+    candidates: [fartherStory, nearbyFlavor],
+    player,
+    currentId: null,
+    segmentClear: () => true,
+  });
+  assert.equal(resolved?.candidate.id, "dog");
+  assert.equal(resolved?.phase, "ACTION");
+});
+
 test("target collider ignores preserve wall LOS instead of disabling it", () => {
+  assert.equal(INTERACTION_TARGET_INSET_M, 0.4);
   let ignored: ReadonlySet<string> | undefined;
   const artifact = candidate(
     "artifact",

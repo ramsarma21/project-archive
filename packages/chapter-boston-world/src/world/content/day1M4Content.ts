@@ -637,6 +637,7 @@ export interface M4CandidateFrame {
   displayName?: string;
   verb?: InteractionVerb;
   importance?: InteractionImportance;
+  losIgnoreIds?: readonly string[];
   facingDot: number;
   losRequired: boolean;
   /** Offer availability (exchangesEnabled); flavor verbs stay always-on. */
@@ -662,6 +663,7 @@ export function day1M4Frame(
       discoveryRadius: 8,
       approachRadius: 4.2,
       importance: "STORY",
+      losIgnoreIds: knowledge.losIgnoreIds,
       priority: INTERACTION_PRIORITIES.KNOWLEDGE,
       spaceId,
       position: knowledgeWorldPosition(knowledge),

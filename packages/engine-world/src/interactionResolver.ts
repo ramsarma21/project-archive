@@ -25,6 +25,12 @@ export const INTERACTION_HYSTERESIS_M = 0.35;
 // board fussiness (feel-audit-1 P1-3). Facing still gates approach-range
 // offers so distant prompts never fire at the player's back.
 export const INTERACTION_FACING_WAIVER_M = 0.75;
+export const INTERACTION_TARGET_INSET_M = 0.4;
+const PHASE_PRIORITY = {
+  DISCOVERY: 0,
+  APPROACH: 1,
+  ACTION: 2,
+} as const;
 
 function eligible(
   candidate: InteractionCandidate,
@@ -67,11 +73,15 @@ function eligible(
         // must not occlude itself, while any wall in front still blocks.
         x:
           candidate.position[0] -
-          (distance > 0.15 ? (dx / distance) * 0.15 : 0),
+          (distance > INTERACTION_TARGET_INSET_M
+            ? (dx / distance) * INTERACTION_TARGET_INSET_M
+            : 0),
         y: candidate.position[1] + 1.05,
         z:
           candidate.position[2] -
-          (distance > 0.15 ? (dz / distance) * 0.15 : 0),
+          (distance > INTERACTION_TARGET_INSET_M
+            ? (dz / distance) * INTERACTION_TARGET_INSET_M
+            : 0),
       },
       candidate.losIgnoreIds
         ? new Set(candidate.losIgnoreIds)
@@ -115,6 +125,7 @@ function resolve(input: {
     )
     .sort(
       (left, right) =>
+        PHASE_PRIORITY[right.phase] - PHASE_PRIORITY[left.phase] ||
         right.candidate.priority - left.candidate.priority ||
         left.distance - right.distance ||
         right.facing - left.facing ||
