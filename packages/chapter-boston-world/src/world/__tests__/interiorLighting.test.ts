@@ -29,12 +29,16 @@ test("all 36 interiors retain a measurable readability floor", () => {
 test("archetypes keep distinct light balance instead of a flat wash", () => {
   const church = interiorLightingProfile("MEETINGHOUSE");
   const warehouse = interiorLightingProfile("WAREHOUSE");
+  const workroom = interiorLightingProfile("COURT_OFFICE");
   const home = interiorLightingProfile("LABORER_HOME");
   const tavern = interiorLightingProfile("TAVERN");
   assert.notDeepEqual(church, warehouse);
   assert.notDeepEqual(warehouse, home);
+  assert.notDeepEqual(workroom, warehouse);
   assert.notDeepEqual(home, tavern);
   assert.ok(church.window > tavern.window);
   assert.ok(warehouse.roomFill > home.roomFill);
+  assert.ok(workroom.ambient > home.ambient);
+  assert.ok(workroom.exposure > home.exposure);
   assert.ok(tavern.practical > home.practical);
 });

@@ -58,6 +58,23 @@ export interface InteriorLightingProfile {
   practical: number;
 }
 
+const WORKROOM_ARCHETYPES = new Set<InteriorArchetype>([
+  "PRINTSHOP",
+  "MERCHANT_SHOP",
+  "COURT_OFFICE",
+  "CUSTOM_HOUSE",
+  "CIVIC_HALL",
+  "ROPEWALK",
+  "CHANDLERY",
+  "TAILOR",
+  "SHOEMAKER",
+  "PROVISIONS",
+  "DRY_GOODS",
+  "TEXTILE_SHOP",
+  "BAKERY",
+  "BOOKSELLER",
+]);
+
 /** Archetype-specific readability floor without flattening historical mood. */
 export function interiorLightingProfile(
   archetype: InteriorArchetype,
@@ -82,6 +99,17 @@ export function interiorLightingProfile(
       entranceFill: 1,
       exposure: 1.08,
       practical: 1,
+    };
+  }
+  if (WORKROOM_ARCHETYPES.has(archetype)) {
+    return {
+      ambient: 0.6,
+      hemisphere: 0.54,
+      window: 1.18,
+      roomFill: 1.4,
+      entranceFill: 1.05,
+      exposure: 1.13,
+      practical: 1.15,
     };
   }
   if (
