@@ -244,6 +244,28 @@ function TodayPane(props: { view: RuntimeView }) {
           ))}
         </div>
       )}
+      {Object.values(v.field.activities).some(
+        (activity) => activity.stage === "COMPLETED",
+      ) && (
+        <section className="archive-today-history">
+          <strong>Work remembered</strong>
+          {Object.values(v.field.activities)
+            .filter((activity) => activity.stage === "COMPLETED")
+            .map((activity) => (
+              <p key={activity.activityId}>
+                <span>
+                  {activity.activityId === "SJ-dock-haul"
+                    ? "Town Wharf"
+                    : activity.activityId === "SJ-tavern-note"
+                      ? "Tavern"
+                      : "Boston street"}
+                </span>
+                {activity.breadcrumb ??
+                  "The work was finished and its consequence held."}
+              </p>
+            ))}
+        </section>
+      )}
     </div>
   );
 }

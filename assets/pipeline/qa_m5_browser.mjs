@@ -175,6 +175,24 @@ try {
       reducedMotion: false,
     });
     await enter(page, "question");
+    const verifyRationales = async (name) => {
+      const list = page.locator('[aria-label="Why each choice works or fails"]');
+      await list.waitFor({ state: "visible", timeout: 10_000 });
+      const rows = list.locator("li");
+      CET((await rows.count()) >= 2, `${name} omitted option rationales`);
+      CET(
+        (await list.locator("li.is-correct").count()) === 1 &&
+          (await list.locator("li.is-distractor").count()) >= 1,
+        `${name} did not distinguish correct and incorrect rationales`,
+      );
+      for (const row of await rows.all()) {
+        CET(
+          (await row.locator("span").innerText()).trim().length >= 12,
+          `${name} rendered an unreadable rationale`,
+        );
+      }
+      await screenshot(page, name);
+    };
     const options = page.locator(".checkpoint-option");
     CET((await options.count()) <= 3, "CP1 exposed more than three choices");
     const text = await page.locator(".checkpoint-debrief").innerText();
@@ -186,6 +204,7 @@ try {
     await page
       .locator(".checkpoint-answer-feedback")
       .waitFor({ state: "visible", timeout: 10000 });
+    await verifyRationales("cp1-rationale-owner-1");
     await page.keyboard.press("Enter");
     await page.waitForFunction(
       (stem) =>
@@ -202,10 +221,18 @@ try {
       "reload did not restore exact CP1 progress",
     );
     await page.locator(".checkpoint-option").first().tap();
+    await verifyRationales("cp1-rationale-owner-2");
     await page
       .locator(".checkpoint-answer-feedback")
       .getByRole("button", { name: /Continue to/i })
       .tap();
+    await page.waitForFunction(
+      () => /3 OF/.test(document.querySelector(".checkpoint-debrief")?.textContent ?? ""),
+      null,
+      { timeout: 10_000 },
+    );
+    await page.locator(".checkpoint-option").first().tap();
+    await verifyRationales("cp1-rationale-owner-3");
     report.scenarios.push("normal/keyboard/touch/resume");
     await page.waitForTimeout(5000);
     await context.close();

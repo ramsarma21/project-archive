@@ -510,6 +510,17 @@ export function Play(props: {
           ?.targetId ??
         null
       : null;
+  const carryingHeavy = Boolean(
+    view?.field.carriedObjectIds.includes("DOCK_BARREL"),
+  );
+  const carryAnnounced = useRef(false);
+  useEffect(() => {
+    if (carryingHeavy && !carryAnnounced.current) {
+      carryAnnounced.current = true;
+      ambientAudio.playIdentity("footstep-wood-1", 0.42);
+    }
+    if (!carryingHeavy) carryAnnounced.current = false;
+  }, [carryingHeavy]);
   const mapAvailable =
     Boolean(view) &&
     !done &&
@@ -705,6 +716,12 @@ export function Play(props: {
             !speaking
           }
         />
+        {carryingHeavy && !showMap && !showArchive && !showManual && (
+          <div className="carry-weight-cue" role="status">
+            <strong>HEAVY LOAD</strong>
+            <span>Shorter steps · slower turn · both hands occupied</span>
+          </div>
+        )}
         <GlobalNoticeHud
           blocked={
             Boolean(activeSubtitle) ||
