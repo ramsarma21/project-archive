@@ -207,6 +207,22 @@ function TodayPane(props: { view: RuntimeView }) {
   return (
     <div className="archive-ov-today">
       <StandingCard band={v.field.standing.band} />
+      {v.printWorkshop.sheetsPulled > 0 && (
+        <section
+          className="archive-workshop-record"
+          aria-label="Mercer's workshop record"
+        >
+          <span>Mercer's workshop record</span>
+          <strong>
+            Best sheet: {v.printWorkshop.bestQuality?.toLowerCase()}
+          </strong>
+          <small>
+            {v.printWorkshop.sheetsBeforeBell}{" "}
+            {v.printWorkshop.sheetsBeforeBell === 1 ? "sheet" : "sheets"} before
+            the bell · {v.printWorkshop.sheetsPulled} pulled today
+          </small>
+        </section>
+      )}
       <div className="archive-ov-meter" aria-label="Daylight remaining">
         <span className="archive-ov-phase">{phaseLabel(v.clock.phase)}</span>
         <div className="archive-ov-daymeter"><i style={{ width: `${pct}%` }} /></div>

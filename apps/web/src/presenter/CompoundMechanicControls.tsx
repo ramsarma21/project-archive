@@ -35,13 +35,28 @@ function emitVisual(
   );
 }
 
-function qualityFor(phases: PrintJobPhaseScores): PrintJobQuality {
+export function printQualityFor(phases: PrintJobPhaseScores): PrintJobQuality {
   const values = Object.values(phases);
   const average = values.reduce((sum, value) => sum + value, 0) / values.length;
   const minimum = Math.min(...values);
   if (average >= 0.85 && minimum >= 0.6) return "CRISP";
   if (minimum < 0.35) return "SMUDGED";
   return "USABLE";
+}
+
+/** Pure, frame-rate-independent curves for deterministic input scoring. */
+export function timingWindowPosition(elapsedMs: number, periodMs: number): number {
+  const phase = ((elapsedMs % periodMs) + periodMs) % periodMs / periodMs;
+  return phase <= 0.5 ? phase * 2 : (1 - phase) * 2;
+}
+
+export function timingWindowScore(position: number): number {
+  return Math.max(0, Math.min(1, 1 - Math.abs(position - 0.5) * 2));
+}
+
+export function inkBeatScore(elapsedMs: number, strokeIndex: number): number {
+  const targetMs = (strokeIndex + 1) * 560;
+  return Math.max(0.35, 1 - Math.abs(elapsedMs - targetMs) / 520);
 }
 
 // Alignment stages used to open with the marker dead-centre at "100% TRUE" —
@@ -110,13 +125,14 @@ function HoldAdvance(props: {
   disabled: boolean;
   resetKey: string;
   onProgress: (progress: number) => void;
-  onComplete: () => void;
+  onComplete: (steadiness: number) => void;
 }) {
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(0);
   const started = useRef<number | null>(null);
   const raf = useRef(0);
-  const duration = 700;
+  const slips = useRef(0);
+  const duration = 1050;
   const setBoth = (value: number) => {
     progressRef.current = value;
     setProgress(value);
@@ -133,6 +149,7 @@ function HoldAdvance(props: {
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
   const stop = () => {
     if (progressRef.current >= 1) return;
+    if (progressRef.current > 0.12) slips.current += 1;
     cancelAnimationFrame(raf.current);
     started.current = null;
     setBoth(0);
@@ -148,7 +165,7 @@ function HoldAdvance(props: {
       props.onProgress(next);
       if (next >= 1) {
         started.current = null;
-        props.onComplete();
+        props.onComplete(Math.max(0.35, 0.96 - slips.current * 0.18));
         return;
       }
       raf.current = requestAnimationFrame(tick);
@@ -182,6 +199,70 @@ function HoldAdvance(props: {
       </span>
       <kbd>{progress >= 1 ? "" : "HOLD SPACE · OR HOLD CLICK"}</kbd>
     </button>
+  );
+}
+
+function TimingWindow(props: {
+  stage: "CATCH" | "PULL";
+  periodMs: number;
+  disabled: boolean;
+  onComplete: (score: number) => void;
+}) {
+  const [position, setPosition] = useState(0);
+  const [locked, setLocked] = useState(false);
+  const positionRef = useRef(0);
+  const startedAt = useRef(0);
+  const raf = useRef(0);
+  useEffect(() => {
+    startedAt.current = performance.now();
+    const tick = (now: number) => {
+      const next = timingWindowPosition(now - startedAt.current, props.periodMs);
+      positionRef.current = next;
+      setPosition(next);
+      emitVisual("PRINT_JOB", props.stage, next, "ACTIVE");
+      raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [props.periodMs, props.stage]);
+  const commit = () => {
+    if (locked || props.disabled) return;
+    setLocked(true);
+    cancelAnimationFrame(raf.current);
+    props.onComplete(timingWindowScore(positionRef.current));
+  };
+  useMechanicActionKey({
+    enabled: !locked && !props.disabled,
+    codes: ["Space", "Enter"],
+    onDown: commit,
+  });
+  const score = timingWindowScore(position);
+  return (
+    <div className={`timing-window timing-${props.stage.toLowerCase()}`}>
+      <div
+        className="timing-track"
+        role="meter"
+        aria-label={`${props.stage.toLowerCase()} timing`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(score * 100)}
+      >
+        <i className="timing-usable" />
+        <i className="timing-crisp" />
+        <i className="timing-marker" style={{ left: `${position * 100}%` }} />
+      </div>
+      <div className="timing-scale" aria-hidden="true">
+        <span>EARLY</span><strong>CLEAN WINDOW</strong><span>LATE</span>
+      </div>
+      <button
+        className="mechanic-action"
+        disabled={locked || props.disabled}
+        onClick={commit}
+      >
+        {props.stage === "CATCH" ? "CATCH NOW" : "DROP THE BAR"}
+        <kbd>SPACE / CLICK</kbd>
+      </button>
+    </div>
   );
 }
 
@@ -231,11 +312,17 @@ export function PrintJobControl(props: {
   const [inkStrokes, setInkStrokes] = useState(0);
   const [inkExpected, setInkExpected] = useState<"LEFT" | "RIGHT">("LEFT");
   const [inkPenalty, setInkPenalty] = useState(0);
+  const [inkTimingTotal, setInkTimingTotal] = useState(0);
+  const [inkBeatProgress, setInkBeatProgress] = useState(0);
   const [scores, setScores] = useState<Partial<PrintJobPhaseScores>>({});
   const [locked, setLocked] = useState(false);
   const doneTimer = useRef(0);
   const inkTimers = useRef<number[]>([]);
   const accessibleInkRunning = useRef(false);
+  const inkStartedAt = useRef(0);
+  const inkBeatRaf = useRef(0);
+  const inkStrokesRef = useRef(0);
+  inkStrokesRef.current = inkStrokes;
   const stage = PRINT_STAGES[stageIndex]!;
   const alignmentRef = useRef(alignment);
   alignmentRef.current = alignment;
@@ -243,7 +330,7 @@ export function PrintJobControl(props: {
   // Space/Enter commits the align stages; 1/2 daub left/right during INK.
   const isAlignStage =
     !props.accessible &&
-    (stage === "CATCH" || stage === "REGISTER" || stage === "PULL");
+    stage === "REGISTER";
   useMechanicActionKey({
     enabled: isAlignStage && !locked && !props.busy,
     codes: ["Space", "Enter"],
@@ -263,7 +350,24 @@ export function PrintJobControl(props: {
 
   useEffect(() => {
     emitVisual("PRINT_JOB", stage, 0, "READY");
+    if (stage === "INK") {
+      inkStartedAt.current = performance.now();
+      const tick = (now: number) => {
+        setInkBeatProgress(
+          Math.max(
+            0,
+            Math.min(
+              1,
+              (now - inkStartedAt.current - inkStrokesRef.current * 560) / 560,
+            ),
+          ),
+        );
+        inkBeatRaf.current = requestAnimationFrame(tick);
+      };
+      inkBeatRaf.current = requestAnimationFrame(tick);
+    }
     return () => {
+      cancelAnimationFrame(inkBeatRaf.current);
       window.clearTimeout(doneTimer.current);
       for (const timer of inkTimers.current) window.clearTimeout(timer);
       inkTimers.current = [];
@@ -283,10 +387,12 @@ export function PrintJobControl(props: {
     if (stage === "PULL") {
       ambientAudio.playIdentity(
         "press-pull-thunk",
-        score >= 0.92 ? 0.5 : 0.35,
+        score >= 0.92 ? 0.55 : score >= 0.65 ? 0.38 : 0.24,
       );
     }
-    if (stage === "PEEL") ambientAudio.playIdentity("paper-snap");
+    if (stage === "PEEL") {
+      ambientAudio.playIdentity("paper-snap", score >= 0.9 ? 0.48 : 0.3);
+    }
     if (stageIndex < PRINT_STAGES.length - 1) {
       const nextStage = PRINT_STAGES[stageIndex + 1]!;
       setStageIndex((index) => index + 1);
@@ -295,11 +401,17 @@ export function PrintJobControl(props: {
     }
     setLocked(true);
     const phases = next as PrintJobPhaseScores;
+    const quality = printQualityFor(phases);
+    window.dispatchEvent(
+      new CustomEvent("pa:print-quality", {
+        detail: { quality, phases, variant: props.variant },
+      }),
+    );
     doneTimer.current = window.setTimeout(
       () =>
         props.onDone({
           phases,
-          quality: qualityFor(phases),
+          quality,
           accessible: props.accessible,
         }),
       props.accessible ? 0 : 500,
@@ -312,7 +424,7 @@ export function PrintJobControl(props: {
       disabled={props.busy || locked || accessibleInkRunning.current}
       onClick={() => {
         if (stage !== "INK") {
-          completeStage(0.75);
+          completeStage(0.78);
           return;
         }
         // Accessible confirm preserves the same object-space alternating
@@ -349,7 +461,7 @@ export function PrintJobControl(props: {
               inkValid: true,
             });
             accessibleInkRunning.current = false;
-            completeStage(0.75);
+            completeStage(0.78);
           }, 570),
         );
       }}
@@ -379,7 +491,12 @@ export function PrintJobControl(props: {
           return;
         }
         const next = inkStrokes + 1;
+        const timing = inkBeatScore(
+          performance.now() - inkStartedAt.current,
+          inkStrokes,
+        );
         setInkStrokes(next);
+        setInkTimingTotal((value) => value + timing);
         setInkExpected(side === "LEFT" ? "RIGHT" : "LEFT");
         // Alternating leather-on-metal dabs (identity audio, design1 #5).
         ambientAudio.playIdentity(side === "LEFT" ? "ink-dab-1" : "ink-dab-2");
@@ -388,11 +505,29 @@ export function PrintJobControl(props: {
           inkStroke: next,
           inkValid: true,
         });
-        if (next === 4) completeStage(Math.max(0.35, 1 - inkPenalty));
+        if (next === 4) {
+          completeStage(
+            Math.max(0.35, (inkTimingTotal + timing) / 4 - inkPenalty),
+          );
+        }
       };
       strokeRef.current = stroke;
       return (
         <div className="ink-stage">
+          <div
+            className="ink-beat-track"
+            role="meter"
+            aria-label="ink timing"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(inkBeatProgress * 100)}
+          >
+            <i className="ink-beat-window" />
+            <i
+              className="ink-beat-marker"
+              style={{ left: `${inkBeatProgress * 100}%` }}
+            />
+          </div>
           <div className="ink-pips" aria-label={`${inkStrokes} of 4 strokes`}>
             {[0, 1, 2, 3].map((pip) => (
               <i
@@ -430,7 +565,17 @@ export function PrintJobControl(props: {
           label="HOLD TO PEEL"
           disabled={props.busy || locked}
           onProgress={(progress) => emitVisual("PRINT_JOB", stage, progress, "ACTIVE")}
-          onComplete={() => completeStage(0.9)}
+          onComplete={(steadiness) => completeStage(steadiness)}
+        />
+      );
+    }
+    if (stage === "CATCH" || stage === "PULL") {
+      return (
+        <TimingWindow
+          stage={stage}
+          periodMs={stage === "CATCH" ? 1900 : 1280}
+          disabled={props.busy || locked}
+          onComplete={completeStage}
         />
       );
     }
@@ -467,7 +612,7 @@ export function PrintJobControl(props: {
           disabled={props.busy || locked}
           onClick={() => completeStage(alignmentScore(alignment))}
         >
-          {stage === "CATCH" ? "CATCH SHEET" : stage === "REGISTER" ? "SET REGISTER" : "PULL BAR"}
+          SET REGISTER
           <kbd>SLIDE CENTRE · SPACE / CLICK</kbd>
         </button>
       </>

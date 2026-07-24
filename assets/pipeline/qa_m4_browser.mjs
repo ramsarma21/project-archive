@@ -11,6 +11,7 @@ const BASE_URL = process.env.M4_QA_URL ?? "http://127.0.0.1:5190/";
 const OUT = resolve(process.env.M4_QA_OUT ?? "test-results/m4-browser-qa");
 const SEED = "94".repeat(32);
 const ONLY = process.env.M4_QA_ONLY ?? "";
+const POOR_PRINT = process.env.M4_QA_QUALITY === "poor";
 const HIGH_CONTRAST = process.env.M4_QA_HIGH_CONTRAST === "1";
 const EXECUTABLE =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -438,17 +439,32 @@ async function drivePrintJob(page, prefix, accessible) {
     return;
   }
 
-  const catchButton = page.getByRole("button", { name: /CATCH SHEET/i });
+  const catchButton = page.getByRole("button", { name: /CATCH NOW/i });
   // See the accessible branch above: the intro presentation can hold the
   // overlay hidden past 15s on the software renderer.
   await catchButton.waitFor({ state: "visible", timeout: 45000 });
   await shot(page, `${prefix}-catch`);
+  if (!POOR_PRINT) {
+    await page.waitForFunction(
+      () =>
+        Number(
+          document
+            .querySelector('[role="meter"][aria-label="catch timing"]')
+            ?.getAttribute("aria-valuenow") ?? 0,
+        ) >= 92,
+    );
+  }
   await catchButton.click();
 
   const left = page.getByRole("button", { name: /DAUB LEFT/i });
   const right = page.getByRole("button", { name: /DAUB RIGHT/i });
+  const waitInkBeat = async () => {
+    if (POOR_PRINT) return;
+    await page.waitForTimeout(520);
+  };
   await left.waitFor({ state: "visible", timeout: 10000 });
   await shot(page, `${prefix}-ink-ready`);
+  await waitInkBeat();
   await left.click();
   await page.waitForTimeout(140);
   const inkState = await page.evaluate(() => {
@@ -471,19 +487,41 @@ async function drivePrintJob(page, prefix, accessible) {
   );
   report.scenarios.push({ id: `${prefix}-ink-signal`, diagnostics: inkState });
   await shot(page, `${prefix}-ink-left-dab`);
+  if (POOR_PRINT) await page.waitForTimeout(110);
+  await waitInkBeat();
   await right.click();
-  await page.waitForTimeout(110);
+  if (POOR_PRINT) await page.waitForTimeout(110);
+  await waitInkBeat();
   await left.click();
-  await page.waitForTimeout(110);
+  if (POOR_PRINT) await page.waitForTimeout(110);
+  await waitInkBeat();
   await right.click();
 
   // Register and pull are single stage actions: completeStage() silently
   // drops a click that lands while the presenter is momentarily busy (same
   // hazard the accessible branch retries around), which would strand the
   // print in MECHANIC. Retry until each button is consumed.
-  for (const pattern of [/SET REGISTER/i, /PULL BAR/i]) {
+  for (const pattern of [/SET REGISTER/i, /DROP THE BAR/i]) {
     const stageButton = page.getByRole("button", { name: pattern });
     await stageButton.waitFor({ state: "visible", timeout: 10000 });
+    if (!POOR_PRINT && pattern.source.includes("REGISTER")) {
+      await page.locator('input[aria-label="register alignment"]').evaluate((element) => {
+        const input = element;
+        input.value = "50";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    }
+    if (!POOR_PRINT && pattern.source.includes("DROP")) {
+      await page.waitForFunction(
+        () =>
+          Number(
+            document
+              .querySelector('[role="meter"][aria-label="pull timing"]')
+              ?.getAttribute("aria-valuenow") ?? 0,
+          ) >= 92,
+      );
+    }
     for (let attempt = 0; attempt < 5; attempt++) {
       const live =
         (await stageButton.isVisible().catch(() => false)) &&
@@ -505,7 +543,9 @@ async function drivePrintJob(page, prefix, accessible) {
     if (!box || !enabled) break;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(1120);
+    await shot(page, `${prefix}-quality-sheet`);
+    await page.waitForTimeout(130);
     await page.mouse.up();
     await page.waitForTimeout(250);
   }

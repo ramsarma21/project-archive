@@ -397,6 +397,7 @@ export class Ctx {
       },
       objectives: { ...this.world.objectives },
       printJobs: structuredClone(this.world.printJobs),
+      printWorkshop: structuredClone(this.world.printWorkshop),
       relationships: { ...this.world.relationships },
       routes: { ...this.world.routes },
       learner,

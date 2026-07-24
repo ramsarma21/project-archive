@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { startingAlignmentFor } from "../src/presenter/CompoundMechanicControls.js";
+import {
+  inkBeatScore,
+  printQualityFor,
+  startingAlignmentFor,
+  timingWindowPosition,
+  timingWindowScore,
+} from "../src/presenter/CompoundMechanicControls.js";
 
 // Feel-audit-1 P1-18 regression: alignment stages must never open pre-solved
 // at dead centre ("100% TRUE" with zero interaction).
@@ -41,4 +47,50 @@ test("stage keys vary the offset (not one shared constant)", () => {
     ),
   );
   assert.ok(values.size >= 2, "offsets must differ across stages");
+});
+
+test("press timing windows are deterministic and visibly score the center", () => {
+  assert.equal(timingWindowPosition(475, 1900), 0.5);
+  assert.equal(timingWindowPosition(475, 1900), timingWindowPosition(475, 1900));
+  assert.equal(timingWindowScore(0.5), 1);
+  assert.equal(timingWindowScore(0), 0);
+});
+
+test("ink rhythm grades authored beat times without randomness", () => {
+  assert.equal(inkBeatScore(560, 0), 1);
+  assert.equal(inkBeatScore(1120, 1), 1);
+  assert.equal(inkBeatScore(0, 0), 0.35);
+});
+
+test("physical quality tiers follow the committed phase scores", () => {
+  assert.equal(
+    printQualityFor({
+      catch: 0.95,
+      ink: 0.9,
+      register: 0.94,
+      pull: 0.92,
+      peel: 0.9,
+    }),
+    "CRISP",
+  );
+  assert.equal(
+    printQualityFor({
+      catch: 0.8,
+      ink: 0.76,
+      register: 0.7,
+      pull: 0.72,
+      peel: 0.78,
+    }),
+    "USABLE",
+  );
+  assert.equal(
+    printQualityFor({
+      catch: 0.9,
+      ink: 0.25,
+      register: 0.9,
+      pull: 0.9,
+      peel: 0.9,
+    }),
+    "SMUDGED",
+  );
 });

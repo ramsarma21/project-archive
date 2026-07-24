@@ -2,6 +2,25 @@
 // No em dashes anywhere in in-fiction text (hard rule). Design prose is never shown.
 
 export const TEXT = {
+  printReactions: {
+    first: {
+      CRISP: "Clean pull. Careful hands. Good.",
+      USABLE: "It'll serve. Watch the sweep next time.",
+      SMUDGED:
+        "Smudged. It goes in the bag as it is. Pike can take that up with you.",
+    },
+    reprint: {
+      CRISP: "There. Pike cannot quarrel with that one.",
+      USABLE: "Sound enough. Get it back before he grows roots waiting.",
+      SMUDGED: "Twice bitten by the ink. Take it before the bell bites too.",
+    },
+    final: {
+      CRISP: "That impression will hold the street. Hang it clean.",
+      USABLE: "Readable and true. It goes on the line.",
+      SMUDGED:
+        "The edge is smudged, but the evidence still reads. File the craft result and hang it.",
+    },
+  },
   b0: {
     identity: "IDENTITY SYNCHRONIZED\nBoston, 14 August 1765\nCover: runner for Mercer's Press",
     context:

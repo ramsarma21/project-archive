@@ -1,13 +1,18 @@
-import { useEffect, useRef, type MutableRefObject } from "react";
+import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import type { AuthoredMotion } from "@pa/contracts";
+import type {
+  AuthoredMotion,
+  PrintJobPhaseScores,
+  PrintJobQuality,
+} from "@pa/contracts";
 import { FittedGlb } from "./Character.js";
 import { SortFanSlide } from "./MechanicRigs.js";
 import { PrinterInkBall } from "./PrinterInkBalls.js";
 import type { FirstPersonHands } from "./FirstPersonCamera.js";
 import {
   getDocumentTexture,
+  getPrintQualityTexture,
   SORT_FAN_ITEMS,
   type PaperContent,
 } from "./documentTextures.js";
@@ -37,6 +42,10 @@ export function FirstPersonDirector(props: {
   const mechanicStage = useRef<string | null>(null);
   const mechanicPhase = useRef<"READY" | "ACTIVE" | "COMMIT" | "COMPLETE">("READY");
   const mechanicCommitAt = useRef(0);
+  const [printCraft, setPrintCraft] = useState<{
+    quality: PrintJobQuality;
+    phases: PrintJobPhaseScores;
+  } | null>(null);
   const handMid = useRef(new THREE.Vector3());
   // Script-correct document for this beat; legacy default keeps the old
   // Pike-proof look for any unmapped context.
@@ -85,6 +94,20 @@ export function FirstPersonDirector(props: {
     };
     window.addEventListener("pa:mechanic-visual", onVisual);
     return () => window.removeEventListener("pa:mechanic-visual", onVisual);
+  }, []);
+
+  useEffect(() => {
+    const onQuality = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        quality?: PrintJobQuality;
+        phases?: PrintJobPhaseScores;
+      }>).detail;
+      if (detail?.quality && detail.phases) {
+        setPrintCraft({ quality: detail.quality, phases: detail.phases });
+      }
+    };
+    window.addEventListener("pa:print-quality", onQuality);
+    return () => window.removeEventListener("pa:print-quality", onQuality);
   }, []);
 
   useFrame(({ clock }, dt) => {
@@ -427,7 +450,15 @@ export function FirstPersonDirector(props: {
           <SortFan reducedMotion={props.reducedMotion} />
         ) : (
           <ProofSheetMesh
-            texture={getDocumentTexture(paperContent.documentId)}
+            texture={
+              printCraft
+                ? getPrintQualityTexture(
+                    paperContent.documentId,
+                    printCraft.quality,
+                    printCraft.phases,
+                  )
+                : getDocumentTexture(paperContent.documentId)
+            }
             size={[0.22, 0.3]}
           />
         )}

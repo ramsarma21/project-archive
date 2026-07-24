@@ -1,10 +1,18 @@
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import type { InputRequest } from "@pa/contracts";
+import type {
+  InputRequest,
+  PrintJobPhaseScores,
+  PrintJobQuality,
+} from "@pa/contracts";
 import { DAY1_CUES } from "@pa/chapter-boston";
 import { STAGE_ANCHORS } from "./choreography.js";
-import { getDocumentTexture } from "./documentTextures.js";
+import {
+  getDocumentTexture,
+  getPrintQualityTexture,
+  type DocumentId,
+} from "./documentTextures.js";
 import { FittedGlb, ImportedTexturedProp } from "./Character.js";
 
 // World-side execution rigs for the Day 1 gamified mechanics (docs/engine/Production.md §1/§3:
@@ -190,9 +198,34 @@ export function MechanicRigs(props: {
 function PressOutputSheet(props: { effortDriven: boolean; reducedMotion: boolean }) {
   const vis = useMechanicVisual();
   const sheet = useRef<THREE.Group>(null);
+  const [craft, setCraft] = useState<{
+    quality: PrintJobQuality;
+    phases: PrintJobPhaseScores;
+  } | null>(null);
+  useEffect(() => {
+    const onQuality = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        quality?: PrintJobQuality;
+        phases?: PrintJobPhaseScores;
+      }>).detail;
+      if (detail?.quality && detail.phases) {
+        setCraft({ quality: detail.quality, phases: detail.phases });
+      }
+    };
+    window.addEventListener("pa:print-quality", onQuality);
+    return () => window.removeEventListener("pa:print-quality", onQuality);
+  }, []);
+  const documentId: DocumentId = props.effortDriven
+    ? "FINAL_FRONT_PAGE"
+    : "PIKE_PROOF_STAMPED";
   const texture = useMemo(
-    () => mechanicSheetTexture(props.effortDriven ? "PRESS_OUTPUT_FINAL" : "PRESS_OUTPUT"),
-    [props.effortDriven],
+    () =>
+      craft
+        ? getPrintQualityTexture(documentId, craft.quality, craft.phases)
+        : mechanicSheetTexture(
+            props.effortDriven ? "PRESS_OUTPUT_FINAL" : "PRESS_OUTPUT",
+          ),
+    [craft, documentId, props.effortDriven],
   );
   const base = STAGE_ANCHORS.MERCER_PRESS_RIG ?? [-1.35, 0, 14.3];
 

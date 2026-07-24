@@ -52,6 +52,13 @@ function testWorld(): WorldState {
       PARCEL: { custody: "PLAYER", condition: "INTACT" },
     },
     printJobs: {},
+    printWorkshop: {
+      sheetsPulled: 0,
+      sheetsBeforeBell: 0,
+      bestQuality: null,
+      bestAverage: 0,
+      bestPromptId: null,
+    },
     relationships: { TESTER_TRUST: 10 },
     routes: {},
     attention: {

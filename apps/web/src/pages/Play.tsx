@@ -508,6 +508,11 @@ export function Play(props: {
       data-active-chase-id={view?.field.activeChase?.chaseId ?? ""}
       data-profile-source={profile.source}
       data-clock-spent={view?.clock.spentUnits ?? ""}
+      data-print-best-quality={view?.printWorkshop.bestQuality ?? ""}
+      data-print-sheets-pulled={view?.printWorkshop.sheetsPulled ?? 0}
+      data-print-sheets-before-bell={
+        view?.printWorkshop.sheetsBeforeBell ?? 0
+      }
       data-carried-object-ids={view?.field.carriedObjectIds.join(",") ?? ""}
       data-confiscated-object-ids={
         view?.field.confiscatedObjectIds.join(",") ?? ""

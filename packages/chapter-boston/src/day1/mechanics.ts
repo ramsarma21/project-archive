@@ -11,6 +11,12 @@ function clampScore(value: number): number {
   return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
 }
 
+const QUALITY_RANK: Record<PrintJobQuality, number> = {
+  SMUDGED: 0,
+  USABLE: 1,
+  CRISP: 2,
+};
+
 export function scorePrintJob(
   raw: PrintJobPhaseScores,
 ): { phases: PrintJobPhaseScores; quality: PrintJobQuality } {
@@ -73,6 +79,22 @@ export function* printJob(
     attempts: (previous?.attempts ?? 0) + 1,
   };
   ctx.world.printJobs[promptId] = state;
+  const workshop = ctx.world.printWorkshop;
+  const average =
+    Object.values(state.phases).reduce((sum, value) => sum + value, 0) / 5;
+  workshop.sheetsPulled += 1;
+  if (ctx.world.clock.spentUnits < ctx.world.clock.fixedEventBoundary) {
+    workshop.sheetsBeforeBell += 1;
+  }
+  if (
+    workshop.bestQuality === null ||
+    QUALITY_RANK[state.quality] > QUALITY_RANK[workshop.bestQuality] ||
+    (state.quality === workshop.bestQuality && average > workshop.bestAverage)
+  ) {
+    workshop.bestQuality = state.quality;
+    workshop.bestAverage = average;
+    workshop.bestPromptId = promptId;
+  }
   return state;
 }
 

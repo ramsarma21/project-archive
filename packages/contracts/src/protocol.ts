@@ -9,6 +9,7 @@ import type {
   PrintJobQuality,
   PrintJobState,
   PrintJobVariant,
+  PrintWorkshopRecord,
 } from "./state.js";
 import type {
   CheckpointDebriefRequest,
@@ -250,6 +251,7 @@ export interface RuntimeView {
   clock: { spentUnits: number; fixedEventBoundary: number; phase: DayPhase; warningStage: WarningStage };
   objectives: Record<string, string>;
   printJobs: Record<string, PrintJobState>;
+  printWorkshop: PrintWorkshopRecord;
   relationships: Record<string, number>;
   routes: Record<string, string>;
   learner: Record<string, { understanding: string; demonstration: string; occasions: number; types: number }>;

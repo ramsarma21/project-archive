@@ -218,11 +218,7 @@ function* opening(ctx: Ctx): Sub<void> {
   ctx.world.jobObjects.PIKE_PROOF = { custody: "PLAYER", condition: quality };
   ctx.dialogue(
     "ABIGAIL",
-    quality === "CRISP"
-      ? "Clean pull. Careful hands. Good."
-      : quality === "USABLE"
-        ? "It'll serve. Watch the sweep next time."
-        : "Smudged. It goes in the bag as it is. Pike can take that up with you.",
+    TEXT.printReactions.first[quality],
     true,
   );
   const abRespect = quality === "CRISP" ? 45 : quality === "USABLE" ? 35 : 25;
@@ -442,6 +438,7 @@ function* pikeStop(ctx: Ctx): Sub<ErrandOutcome> {
       ).quality;
       ctx.pressQuality = nq;
       ctx.world.jobObjects.PIKE_PROOF = { custody: "PLAYER", condition: nq };
+      ctx.dialogue("ABIGAIL", TEXT.printReactions.reprint[nq], true);
       pikeRespect = nq === "CRISP" ? 50 : nq === "USABLE" ? 45 : 25;
       ctx.spendTime(TIME_COST.fullReprintLoop);
       yield* leaveInterior(ctx, "BOS.MD01.CUE.REPRINT_LEAVE_MERCER.v1");
@@ -927,11 +924,7 @@ function* dayClose(ctx: Ctx): Sub<void> {
   };
   ctx.dialogue(
     "ABIGAIL",
-    finalPrint.quality === "CRISP"
-      ? "That impression will hold the street. Hang it clean."
-      : finalPrint.quality === "USABLE"
-        ? "Readable and true. It goes on the line."
-        : "The edge is smudged, but the evidence still reads. File the craft result and hang it.",
+    TEXT.printReactions.final[finalPrint.quality],
   );
   ctx.narrate(TEXT.headline.finalPull);
   ctx.emit({ kind: "READ_PANEL", objectId: "FINAL_PAGE", title: "Tomorrow's front page", body: TEXT.headline.finalPage });

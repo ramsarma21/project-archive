@@ -75,6 +75,13 @@ function deepEqual(actual: unknown, expected: unknown, message: string): void {
     peel: 0.7,
   }, "accessible phase floor");
   equal(session.ctx.world.jobObjects.PIKE_PROOF?.condition, "USABLE", "proof condition");
+  deepEqual(session.ctx.world.printWorkshop, {
+    sheetsPulled: 1,
+    sheetsBeforeBell: 1,
+    bestQuality: "USABLE",
+    bestAverage: 0.7,
+    bestPromptId: "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1",
+  }, "daily workshop record");
 
   const resumed = createDay1Session({
     variationRootSeedHex: seed,
@@ -84,5 +91,10 @@ function deepEqual(actual: unknown, expected: unknown, message: string): void {
     resumed.ctx.world.printJobs["BOS.MD01.ACT.PRESS_PIKE_PROOF.v1"],
     stored,
     "replay print state",
+  );
+  deepEqual(
+    resumed.ctx.world.printWorkshop,
+    session.ctx.world.printWorkshop,
+    "replay workshop record",
   );
 }

@@ -1,5 +1,9 @@
 import * as THREE from "three";
-import type { InputRequest } from "@pa/contracts";
+import type {
+  InputRequest,
+  PrintJobPhaseScores,
+  PrintJobQuality,
+} from "@pa/contracts";
 import { DAY1_CUES } from "@pa/chapter-boston";
 // Verbatim script strings (docs/archive/2026-07/Localhost-Text-Slice-Spec.md §34) come straight from
 // the runtime content module so the 3D papers can never drift from the script.
@@ -190,6 +194,83 @@ export function getDocumentImageUrl(id: DocumentId): string {
   }
   imageUrlCache.set(id, url);
   return url;
+}
+
+const qualityTextureCache = new Map<string, THREE.CanvasTexture>();
+
+/**
+ * Renders the committed craft result onto the existing document face. This is
+ * a texture treatment on the imported sheet, not replacement geometry.
+ */
+export function getPrintQualityTexture(
+  id: DocumentId,
+  quality: PrintJobQuality,
+  phases: PrintJobPhaseScores,
+): THREE.Texture {
+  if (quality === "CRISP") return getDocumentTexture(id);
+  const key = `${id}:${quality}:${Object.values(phases)
+    .map((value) => Math.round(value * 20))
+    .join("-")}`;
+  const cached = qualityTextureCache.get(key);
+  if (cached) return cached;
+  const base = getDocumentTexture(id).image as HTMLCanvasElement;
+  const canvas = document.createElement("canvas");
+  canvas.width = base.width;
+  canvas.height = base.height;
+  const context = canvas.getContext("2d")!;
+  const severity = quality === "SMUDGED" ? 1 : 0.42;
+  const registerX = (0.5 - phases.register) * 20 * severity;
+  const skew = (0.5 - phases.catch) * 0.055 * severity;
+  const density = 0.72 + phases.ink * 0.28;
+  context.fillStyle = quality === "SMUDGED" ? "#dfd0aa" : "#eadfc0";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.save();
+  context.translate(canvas.width / 2 + registerX, canvas.height / 2);
+  context.rotate(skew);
+  context.globalAlpha = density;
+  context.drawImage(base, -canvas.width / 2, -canvas.height / 2);
+  context.restore();
+  if (quality === "SMUDGED") {
+    // A second, offset impression makes poor register legible even while the
+    // physical sheet is held at arm's length.
+    context.save();
+    context.globalAlpha = 0.18;
+    context.globalCompositeOperation = "multiply";
+    context.drawImage(base, 14 + registerX, 5);
+    context.restore();
+    const rand = mulberry32(
+      311 +
+        Math.round(phases.pull * 1000) +
+        Math.round(phases.peel * 10000),
+    );
+    context.save();
+    context.globalCompositeOperation = "multiply";
+    for (let index = 0; index < 8; index += 1) {
+      const x = canvas.width * (0.12 + rand() * 0.76);
+      const y = canvas.height * (0.12 + rand() * 0.76);
+      const radius = 15 + rand() * 45;
+      const smear = context.createRadialGradient(x, y, 2, x, y, radius);
+      smear.addColorStop(0, "rgba(45,38,28,0.24)");
+      smear.addColorStop(1, "rgba(45,38,28,0)");
+      context.fillStyle = smear;
+      context.fillRect(x - radius * 1.7, y - radius, radius * 3.4, radius * 2);
+    }
+    context.fillStyle = "rgba(38,31,22,0.18)";
+    context.setTransform(1, -0.09, 0.32, 1, -canvas.width * 0.12, 0);
+    context.fillRect(
+      canvas.width * 0.16,
+      canvas.height * 0.52,
+      canvas.width * 0.72,
+      canvas.height * 0.055,
+    );
+    context.resetTransform();
+    context.restore();
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 16;
+  qualityTextureCache.set(key, texture);
+  return texture;
 }
 
 type Ctx2D = CanvasRenderingContext2D;

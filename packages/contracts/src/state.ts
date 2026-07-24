@@ -120,6 +120,18 @@ export interface PrintJobState {
   attempts: number;
 }
 
+/**
+ * A shop-floor record, never progression or XP. It is rebuilt by event replay
+ * with the rest of WorldState and projected into the player's Archive.
+ */
+export interface PrintWorkshopRecord {
+  sheetsPulled: number;
+  sheetsBeforeBell: number;
+  bestQuality: PrintJobQuality | null;
+  bestAverage: number;
+  bestPromptId: string | null;
+}
+
 export type ObjectiveStatus =
   | "NOT_YET_ELIGIBLE"
   | "ACTIVE"
@@ -148,6 +160,7 @@ export interface WorldState {
   objectives: Record<string, ObjectiveStatus>;
   jobObjects: Record<string, JobObjectState>;
   printJobs: Record<string, PrintJobState>;
+  printWorkshop: PrintWorkshopRecord;
   relationships: Record<string, number>;
   routes: Record<string, "LOCKED" | "UNLOCKED">;
   attention: {

@@ -48,6 +48,13 @@ export function createBostonWorldState(): WorldState {
       FINAL_PAGE: { custody: "ABIGAIL", condition: "UNPRINTED" },
     },
     printJobs: {},
+    printWorkshop: {
+      sheetsPulled: 0,
+      sheetsBeforeBell: 0,
+      bestQuality: null,
+      bestAverage: 0,
+      bestPromptId: null,
+    },
     relationships: {
       ABIGAIL_TRUST: BASELINES.abigailTrust,
       ABIGAIL_RESPECT: BASELINES.abigailRespect,
