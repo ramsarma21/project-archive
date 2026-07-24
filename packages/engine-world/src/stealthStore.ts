@@ -22,6 +22,12 @@ import type { FieldRuntimeView } from "@pa/contracts";
 //   CAUGHT  S ≥ 1.0   (confrontation)
 export type DetectionState = "CLEAR" | "WARY" | "ALERTED" | "CAUGHT";
 
+export const SUSPICION_THRESHOLDS = {
+  WARY: 0.35,
+  ALERTED: 0.7,
+  CONFRONTATION: 1,
+} as const;
+
 // D.4 global heat state machine.
 export type HeatState = "calm" | "noticed" | "watched" | "hunted";
 
@@ -148,9 +154,9 @@ export function createStealthStore(): StealthStore {
 // thresholds. Directors call this so the store's detectionState stays in lockstep
 // with the suspicion pip without duplicating the thresholds.
 export function detectionStateForSuspicion(suspicion: number): DetectionState {
-  if (suspicion >= 1) return "CAUGHT";
-  if (suspicion >= 0.7) return "ALERTED";
-  if (suspicion >= 0.35) return "WARY";
+  if (suspicion >= SUSPICION_THRESHOLDS.CONFRONTATION) return "CAUGHT";
+  if (suspicion >= SUSPICION_THRESHOLDS.ALERTED) return "ALERTED";
+  if (suspicion >= SUSPICION_THRESHOLDS.WARY) return "WARY";
   return "CLEAR";
 }
 

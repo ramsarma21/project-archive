@@ -33,7 +33,10 @@ import {
   type WatcherMotion,
 } from "./watcherDetection.js";
 import { detectionStateForSuspicion } from "./stealthStore.js";
-import { dispatchPresentationNotice } from "@pa/engine-world";
+import {
+  dispatchPresentationNotice,
+  SUSPICION_THRESHOLDS,
+} from "@pa/engine-world";
 
 type AlertLevel = "IDLE" | "WARY" | "ALERTED";
 
@@ -112,6 +115,7 @@ export function WatcherDirector(props: {
   const migrationQueued = useRef(false);
   const lastAnnouncement = useRef("");
   const [alertLevels, setAlertLevels] = useState<Record<string, AlertLevel>>({});
+  const alertLevelsRef = useRef<Record<string, AlertLevel>>({});
 
   useEffect(() => {
     localDecay.current = { ...props.field.heat.decay };
@@ -263,12 +267,17 @@ export function WatcherDirector(props: {
       }
     }
 
-    const canDetect =
+    const simulationActive =
       exterior &&
       props.active &&
-      !props.suspended &&
-      props.field.activeInterrupt === null &&
       props.field.activeChase === null;
+    // Scripted exchanges and overlays suppress accrual but do not freeze the
+    // meter. Existing attention drains while the player is occupied, so a
+    // harmless notice read cannot release a queued challenge on close.
+    const canAccrue =
+      simulationActive &&
+      !props.suspended &&
+      props.field.activeInterrupt === null;
     const concealment = effectiveConcealment(props.field);
     const motion = playerMotion(player);
     const covered = Boolean(pointInCover(player.position, services.spaceId));
@@ -281,7 +290,7 @@ export function WatcherDirector(props: {
     const previousTick = lastTick.current;
     const firstTick = previousTick + 1;
     for (let stepTick = firstTick; stepTick <= tick; stepTick++) {
-      if (!canDetect) break;
+      if (!simulationActive) break;
       for (const watcher of WATCHERS) {
         const distraction = attention.current.get(watcher.id);
         const pose = watcherPoseAt(
@@ -291,37 +300,34 @@ export function WatcherDirector(props: {
             ? distraction.target
             : null,
         );
-        const factors = visibilityFactors({
-          watcherPosition: pose.position,
-          watcherForward: pose.forward,
-          playerPosition: player.position,
-          halfAngleRad: watcher.halfAngleRad,
-          rangeM: rangeAtDayProgress(watcher, props.dayProgress),
-          concealment,
-          motion,
-          covered,
-          segmentClear: services.gameplayWorld.segmentClear,
-        });
-        inAnyCone ||= factors.inCone;
+        const factors = canAccrue
+          ? visibilityFactors({
+              watcherPosition: pose.position,
+              watcherForward: pose.forward,
+              playerPosition: player.position,
+              halfAngleRad: watcher.halfAngleRad,
+              rangeM: rangeAtDayProgress(watcher, props.dayProgress),
+              concealment,
+              motion,
+              covered,
+              segmentClear: services.gameplayWorld.segmentClear,
+            })
+          : null;
+        inAnyCone ||= factors?.inCone ?? false;
         const current =
           suspicion.current.get(watcher.id) ?? initialSuspicionState();
         const stepped = stepSuspicion(current, {
           dt: FIELD_DT,
-          visibility: factors.visibility,
+          visibility: factors?.visibility ?? 0,
           heat: props.field.heat.band,
           standing: props.field.standing.band,
         });
         suspicion.current.set(watcher.id, stepped.state);
         if (stepped.crossed.includes("WARY")) {
           announcement = "A watcher has noticed movement nearby.";
-          setAlertLevels((levels) => ({ ...levels, [watcher.id]: "WARY" }));
         }
         if (stepped.crossed.includes("ALERTED")) {
           announcement = "Hold there. A watcher is moving to challenge you.";
-          setAlertLevels((levels) => ({
-            ...levels,
-            [watcher.id]: "ALERTED",
-          }));
           if (props.field.heat.band === "CALM") {
             eventSerial.current += 1;
             enqueue({
@@ -347,6 +353,7 @@ export function WatcherDirector(props: {
         }
       }
 
+      if (!canAccrue) continue;
       for (const volume of CHECKPOINT_VOLUMES) {
         const current =
           checkpoints.current.get(volume.id) ?? initialCheckpointState();
@@ -421,9 +428,31 @@ export function WatcherDirector(props: {
         };
       }
     }
+    const nextAlertLevels = Object.fromEntries(
+      WATCHERS.map((watcher) => {
+        const value =
+          suspicion.current.get(watcher.id)?.value ?? 0;
+        const level: AlertLevel =
+          value >= SUSPICION_THRESHOLDS.ALERTED
+            ? "ALERTED"
+            : value >= SUSPICION_THRESHOLDS.WARY
+              ? "WARY"
+              : "IDLE";
+        return [watcher.id, level];
+      }),
+    );
+    if (
+      WATCHERS.some(
+        (watcher) =>
+          alertLevelsRef.current[watcher.id] !== nextAlertLevels[watcher.id],
+      )
+    ) {
+      alertLevelsRef.current = nextAlertLevels;
+      setAlertLevels(nextAlertLevels);
+    }
 
     if (
-      canDetect &&
+      canAccrue &&
       props.field.identity.clarkeMarked &&
       !announcedClarke.current
     ) {

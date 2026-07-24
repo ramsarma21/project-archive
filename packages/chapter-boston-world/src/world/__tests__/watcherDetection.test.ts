@@ -17,6 +17,9 @@ import {
   checkpointChallenges,
   initialCheckpointState,
   initialSuspicionState,
+  MIN_ACCRUAL_VISIBILITY,
+  SUSPICION_ACCRUAL_PER_SECOND,
+  SUSPICION_DECAY_PER_SECOND,
   rangeAtDayProgress,
   stepCheckpoint,
   stepHeatDecay,
@@ -128,8 +131,17 @@ test("all heat and Standing multipliers drive exact suspicion deltas", () => {
         heat: heatBand as keyof typeof heat,
         standing: standingBand as keyof typeof standing,
       });
+      const legible =
+        (0.5 - MIN_ACCRUAL_VISIBILITY) /
+        (1 - MIN_ACCRUAL_VISIBILITY);
       assert.ok(
-        Math.abs(result.state.value - 0.6 * 0.5 * heatMult * standingMult) <
+        Math.abs(
+          result.state.value -
+            SUSPICION_ACCRUAL_PER_SECOND *
+              legible *
+              heatMult *
+              standingMult,
+        ) <
           1e-12,
       );
     }
@@ -138,7 +150,94 @@ test("all heat and Standing multipliers drive exact suspicion deltas", () => {
     { ...initialSuspicionState(), value: 0.8 },
     { dt: 1, visibility: 0, heat: "HUNTED", standing: "MARKED" },
   );
-  assert.ok(Math.abs(decay.state.value - 0.3) < 1e-12);
+  assert.ok(
+    Math.abs(decay.state.value - (0.8 - SUSPICION_DECAY_PER_SECOND)) <
+      1e-12,
+  );
+});
+
+test("cone feather, concealment, cover, and lost LOS drain suspicion", () => {
+  const lowSignals = [
+    visibility({
+      player: { x: 6, y: 0, z: 5.5 },
+      motion: "STILL",
+    }),
+    visibility({
+      player: { x: 6, y: 0, z: 0 },
+      concealment: "HIDDEN",
+    }),
+    visibility({
+      player: { x: 6, y: 0, z: 0 },
+      concealment: "WRAPPED",
+      motion: "CROUCH",
+      covered: true,
+    }),
+    visibility({
+      player: { x: 8, y: 0, z: 0 },
+      blockers: [wallFromRect("wall", 4, 0, 0.2, 2)],
+    }),
+  ];
+  for (const signal of lowSignals) {
+    assert.ok(
+      signal.visibility <= MIN_ACCRUAL_VISIBILITY,
+      `unexpectedly legible signal ${signal.visibility}`,
+    );
+    const result = stepSuspicion(
+      { ...initialSuspicionState(), value: 0.65, toldWary: true },
+      {
+        dt: 0.5,
+        visibility: signal.visibility,
+        heat: "HUNTED",
+        standing: "MARKED",
+      },
+    );
+    assert.ok(result.state.value < 0.65, "weak signal persisted suspicion");
+    assert.deepEqual(result.crossed, []);
+  }
+});
+
+test("scripted concealment drains queued attention and rearms tells", () => {
+  let state = initialSuspicionState();
+  for (let tick = 0; tick < 240; tick++) {
+    state = stepSuspicion(state, {
+      dt: FIELD_DT,
+      visibility: 0.65,
+      heat: "NOTICED",
+      standing: "NEUTRAL",
+    }).state;
+    if (state.toldAlerted) break;
+  }
+  assert.ok(state.toldAlerted);
+  assert.ok(state.value >= 0.7);
+
+  // An exchange/notice read supplies visibility=0 while detection is
+  // suspended. Four seconds clears both ALERTED and WARY hysteresis.
+  for (let tick = 0; tick < 4 / FIELD_DT; tick++) {
+    state = stepSuspicion(state, {
+      dt: FIELD_DT,
+      visibility: 0,
+      heat: "NOTICED",
+      standing: "NEUTRAL",
+    }).state;
+  }
+  assert.ok(state.value < 0.2, `attention persisted at ${state.value}`);
+  assert.equal(state.toldWary, false);
+  assert.equal(state.toldAlerted, false);
+  assert.equal(state.confronted, false);
+
+  const recrossed: string[] = [];
+  for (let tick = 0; tick < 360; tick++) {
+    const result = stepSuspicion(state, {
+      dt: FIELD_DT,
+      visibility: 0.65,
+      heat: "NOTICED",
+      standing: "NEUTRAL",
+    });
+    state = result.state;
+    recrossed.push(...result.crossed);
+    if (state.confronted) break;
+  }
+  assert.deepEqual(recrossed, ["WARY", "ALERTED", "CONFRONTATION"]);
 });
 
 test("threshold tells and confrontation fire once", () => {
@@ -157,19 +256,27 @@ test("threshold tells and confrontation fire once", () => {
   assert.deepEqual(seen, ["WARY", "ALERTED", "CONFRONTATION"]);
 });
 
-test("fixed-step suspicion is identical at 30, 60, and 120 fps", () => {
+test("fixed-step exposure/concealment sequence is identical at 30, 60, and 120 fps", () => {
   const simulate = (fps: number) => {
     let clock = createFieldClock(7);
     let suspicion = initialSuspicionState();
-    for (let frame = 0; frame < fps * 2; frame++) {
+    let simulationTick = 0;
+    for (let frame = 0; frame < fps * 6; frame++) {
       const advanced = advanceFieldClock(clock, 1 / fps, {
         maxCatchUpSteps: 10,
       });
       clock = advanced.clock;
       for (let step = 0; step < advanced.steps; step++) {
+        simulationTick += 1;
+        const seconds = simulationTick / 60;
         suspicion = stepSuspicion(suspicion, {
           dt: FIELD_DT,
-          visibility: 0.42,
+          visibility:
+            seconds < 2
+              ? 0.42
+              : seconds < 4
+                ? 0
+                : 0.68,
           heat: "NOTICED",
           standing: "NEUTRAL",
         }).state;

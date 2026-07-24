@@ -12,6 +12,7 @@ import type {
 } from "./stealthManifest.js";
 import { FIELD_TICK_HZ } from "./fieldSimulation.js";
 import { WATCHER_SCAN, watcherRange } from "./stealthManifest.js";
+import { SUSPICION_THRESHOLDS } from "@pa/engine-world";
 
 export type WatcherMotion =
   | "STILL"
@@ -103,6 +104,18 @@ const STANDING_FACTORS: Record<StandingBand, number> = {
   NEUTRAL: 1,
   MARKED: 1.4,
 };
+
+// Sub-threshold glimpses at the feathered cone edge, through cover, or while
+// concealed should make the watcher lose the player, not accumulate forever.
+// The floor is applied after LOS/facing/distance/motion/cover factors.
+export const MIN_ACCRUAL_VISIBILITY = 0.1;
+export const SUSPICION_ACCRUAL_PER_SECOND = 0.6;
+export const SUSPICION_DECAY_PER_SECOND = 0.55;
+const TELL_RESET = {
+  WARY: 0.2,
+  ALERTED: 0.5,
+  CONFRONTATION: 0.65,
+} as const;
 
 const HEAT_DECAY_SECONDS: Record<HeatBand, number | null> = {
   CALM: null,
@@ -199,19 +212,29 @@ export function stepSuspicion(
     standing: StandingBand;
   },
 ): SuspicionStep {
-  const increasing = input.visibility > 0;
+  const increasing = input.visibility > MIN_ACCRUAL_VISIBILITY;
+  const legibleVisibility = increasing
+    ? (input.visibility - MIN_ACCRUAL_VISIBILITY) /
+      (1 - MIN_ACCRUAL_VISIBILITY)
+    : 0;
   const delta = increasing
-    ? 0.6 *
-      input.visibility *
+    ? SUSPICION_ACCRUAL_PER_SECOND *
+      legibleVisibility *
       HEAT_FACTORS[input.heat] *
       STANDING_FACTORS[input.standing] *
       input.dt
-    : -0.5 * input.dt;
+    : -SUSPICION_DECAY_PER_SECOND * input.dt;
   const value = clamp01(state.value + delta);
   const crossed: ("WARY" | "ALERTED" | "CONFRONTATION")[] = [];
-  const toldWary = state.toldWary || value >= 0.35;
-  const toldAlerted = state.toldAlerted || value >= 0.7;
-  const confronted = state.confronted || value >= 1;
+  const toldWary =
+    value >= SUSPICION_THRESHOLDS.WARY ||
+    (state.toldWary && value > TELL_RESET.WARY);
+  const toldAlerted =
+    value >= SUSPICION_THRESHOLDS.ALERTED ||
+    (state.toldAlerted && value > TELL_RESET.ALERTED);
+  const confronted =
+    value >= SUSPICION_THRESHOLDS.CONFRONTATION ||
+    (state.confronted && value > TELL_RESET.CONFRONTATION);
   if (!state.toldWary && toldWary) crossed.push("WARY");
   if (!state.toldAlerted && toldAlerted) crossed.push("ALERTED");
   if (!state.confronted && confronted) crossed.push("CONFRONTATION");

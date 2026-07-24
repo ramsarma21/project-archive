@@ -7,7 +7,10 @@
 // for tests and QA inspection.
 
 import { useSyncExternalStore } from "react";
-import type { StealthStore } from "./stealthStore.js";
+import {
+  SUSPICION_THRESHOLDS,
+  type StealthStore,
+} from "./stealthStore.js";
 
 export function StealthHud(props: {
   store: StealthStore;
@@ -76,8 +79,16 @@ export function StealthHud(props: {
                 }
               >
                 <div style={{ width: `${snap.suspicion * 100}%` }} />
-                <i className="tell tell-wary" aria-hidden="true" />
-                <i className="tell tell-alerted" aria-hidden="true" />
+                <i
+                  className="tell tell-wary"
+                  style={{ left: `${SUSPICION_THRESHOLDS.WARY * 100}%` }}
+                  aria-hidden="true"
+                />
+                <i
+                  className="tell tell-alerted"
+                  style={{ left: `${SUSPICION_THRESHOLDS.ALERTED * 100}%` }}
+                  aria-hidden="true"
+                />
               </div>
               <div className="watcher-meta">
                 <span className={`heat-chip heat-${snap.heat}`}>
