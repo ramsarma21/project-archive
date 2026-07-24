@@ -108,6 +108,7 @@ const PRESENTER_EVENT_KEYS: Readonly<Record<string, readonly string[]>> = {
     "reason",
   ],
   FIELD_REPOSITION_APPLIED: ["type", "eventId", "interruptId", "intentEventId"],
+  FIELD_MAP_DISCOVERED: ["type", "eventId", "interruptId", "landmarkId"],
 };
 
 const RAW_RESPONSE_KEY = /^(raw(Text|Response)?|responseText|studentResponse|promptText)$/i;

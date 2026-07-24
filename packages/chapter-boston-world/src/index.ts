@@ -14,6 +14,7 @@ import {
 import { QA_RUNTIME_ENABLED } from "./world/qaEnvironment.js";
 import { World3D } from "./world/World3D.js";
 import type { ChoiceAnimation } from "./world/choiceAnimations.js";
+import { BOSTON_RUNNER_MAP } from "./world/chapterMap.js";
 
 export const BOSTON_1765_WORLD = {
   chapterId: BOSTON_1765_CHAPTER.chapterId,
@@ -24,6 +25,7 @@ export const BOSTON_1765_WORLD = {
     forReadPanel: documentForReadPanel,
     imageUrl: getDocumentImageUrl,
   },
+  map: BOSTON_RUNNER_MAP,
   qa: {
     runtimeEnabled: QA_RUNTIME_ENABLED,
   },
@@ -49,6 +51,7 @@ export {
 } from "./world/stealthStore.js";
 export type { StealthStore } from "./world/stealthStore.js";
 export { ambientAudio } from "./world/ambientAudio.js";
+export { BOSTON_RUNNER_MAP } from "./world/chapterMap.js";
 export { QA_RUNTIME_ENABLED } from "./world/qaEnvironment.js";
 export {
   useFieldEventQaHook,

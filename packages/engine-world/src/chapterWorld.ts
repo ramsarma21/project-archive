@@ -17,6 +17,34 @@ export interface PresenterSpatialState {
   locationId: string;
 }
 
+export interface ChapterMapLandmark {
+  id: string;
+  label: string;
+  position: readonly [number, number];
+  discoveryRadius: number;
+  kind: "PRESS" | "MARKET" | "CIVIC" | "WHARF" | "LIBERTY" | "ALLEY";
+}
+
+export interface ChapterMapRoute {
+  id: string;
+  label: string;
+  points: readonly (readonly [number, number])[];
+}
+
+export interface ChapterMapData {
+  title: string;
+  subtitle: string;
+  bounds: {
+    minX: number;
+    maxX: number;
+    minZ: number;
+    maxZ: number;
+  };
+  landmarks: readonly ChapterMapLandmark[];
+  routes: readonly ChapterMapRoute[];
+  objectiveAnchors: Readonly<Record<string, readonly [number, number]>>;
+}
+
 export interface ChapterWorldComponentProps<TChoiceAnimation, TStealthStore> {
   view: RuntimeView | null;
   presentationLocationId: string | null;
@@ -61,6 +89,7 @@ export interface ChapterWorldDefinition<
     forReadPanel(objectId: string): TDocument | null;
     imageUrl(documentId: string): string;
   };
+  readonly map: ChapterMapData;
   readonly qa: {
     readonly runtimeEnabled: boolean;
   };

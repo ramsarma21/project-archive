@@ -121,6 +121,7 @@ export function initialFieldState(
     activeChase: null,
     chaseHistory: [],
     pendingReposition: null,
+    discoveredMapIds: [],
   };
 }
 
@@ -222,6 +223,7 @@ export function projectFieldRuntimeView(
     activeChase: clone(field.activeChase),
     chaseHistory: clone(field.chaseHistory),
     pendingReposition: clone(field.pendingReposition),
+    discoveredMapIds: [...field.discoveredMapIds].sort(),
     activeInterrupt: clone(activeInterrupt),
   };
 }
@@ -661,6 +663,11 @@ export function applyFieldEvent(
         field.pendingReposition = null;
       }
       return;
+    case "FIELD_MAP_DISCOVERED":
+      if (!field.discoveredMapIds.includes(event.landmarkId)) {
+        field.discoveredMapIds.push(event.landmarkId);
+      }
+      return;
     case "FIELD_INTERRUPT_RESOLVED":
       if (field.activeConfrontation) {
         field.confrontationHistory.push({
@@ -1038,6 +1045,9 @@ export function assertFieldEventPayload(
       ) {
         fail("reposition intent is not pending");
       }
+      return;
+    case "FIELD_MAP_DISCOVERED":
+      nonEmpty(event.landmarkId, "landmarkId");
       return;
   }
 }

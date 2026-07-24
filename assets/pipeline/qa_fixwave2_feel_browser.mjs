@@ -1234,6 +1234,68 @@ await scenario("dock-payoff", async (page) => {
   return { commitMs, audio: audio.identity };
 });
 
+await scenario("runner-map", async (page) => {
+  await seedProfile(
+    page,
+    "b2-runner-map",
+    "B2 Runner Map",
+    [...postMercerSession().committedEvents],
+    ["ARCHIVE", "MOVEMENT", "READ", "WORK", "CHOICE"],
+  );
+  await openProfile(page, "B2 Runner Map");
+  await waitFreeRoam(page);
+  await teleport(page, -0.31, 8.4, 0);
+  await page.waitForTimeout(700);
+  await page.keyboard.press("KeyM");
+  const map = page.getByRole("dialog", { name: /Boston, from Queen Street/i });
+  await map.waitFor({ state: "visible", timeout: 10_000 });
+  await map.getByText("Mercer's Press").waitFor({ state: "visible" });
+  await screenshot(page, "map", "street-known-press");
+  await page.keyboard.press("KeyM");
+  await teleport(page, -132, 3, Math.PI / 2);
+  await page.waitForTimeout(900);
+  await page.keyboard.press("KeyM");
+  await map.getByText("Town Wharf").waitFor({ state: "visible", timeout: 10_000 });
+  await screenshot(page, "map", "wharf-discovered");
+  await page.keyboard.press("KeyM");
+  await teleport(page, -8, -17, 0);
+  await page.waitForTimeout(900);
+  await page.keyboard.press("KeyM");
+  await map.getByText("Back lanes").waitFor({ state: "visible", timeout: 10_000 });
+  await screenshot(page, "map", "alleys-discovered");
+  await page.keyboard.press("KeyM");
+  const compass = page.locator(".compass-ribbon");
+  await compass.waitFor({ state: "visible", timeout: 5000 });
+  await screenshot(page, "map", "street-compass");
+  return { compass: await compass.getAttribute("aria-label") };
+});
+
+await scenario("runner-map-mobile", async (page) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedProfile(
+    page,
+    "b2-runner-map-mobile",
+    "B2 Map Mobile",
+    [...postMercerSession().committedEvents],
+    ["ARCHIVE", "MOVEMENT", "READ", "WORK", "CHOICE"],
+    { highContrast: true, reducedMotion: true },
+  );
+  await openProfile(page, "B2 Map Mobile");
+  await waitFreeRoam(page);
+  await teleport(page, -132, 3, Math.PI / 2);
+  await page.waitForTimeout(900);
+  await page.keyboard.press("KeyM");
+  const map = page.getByRole("dialog", { name: /Boston, from Queen Street/i });
+  await map.waitFor({ state: "visible", timeout: 10_000 });
+  const rect = await map.boundingBox();
+  assert(
+    rect && rect.width <= 390 && rect.height <= 844,
+    `mobile runner map escaped viewport: ${JSON.stringify(rect)}`,
+  );
+  await screenshot(page, "map", "mobile-high-contrast");
+  return { rect };
+});
+
 writeFileSync(
   resolve(OUT, "focused-report.json"),
   JSON.stringify(report, null, 2),

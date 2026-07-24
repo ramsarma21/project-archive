@@ -21,6 +21,7 @@ export * from "./qaChaseContract.js";
 export * from "./qaEnvironment.js";
 export * from "./QuestMarkerHud.js";
 export * from "./questArrivalLatch.js";
+export * from "./RunnerMap.js";
 export * from "./stamina.js";
 export * from "./StealthHud.js";
 export * from "./stealthStore.js";

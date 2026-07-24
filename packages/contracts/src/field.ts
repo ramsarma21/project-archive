@@ -348,6 +348,7 @@ export interface FieldDurableState {
   activeChase: ChaseRecord | null;
   chaseHistory: ChaseRecord[];
   pendingReposition: RepositionIntent | null;
+  discoveredMapIds: string[];
 }
 
 export interface FieldRuntimeView {
@@ -381,6 +382,7 @@ export interface FieldRuntimeView {
   activeChase: ChaseRecord | null;
   chaseHistory: ChaseRecord[];
   pendingReposition: RepositionIntent | null;
+  discoveredMapIds: string[];
   activeInterrupt: FieldInterruptPlan | null;
 }
 
@@ -530,6 +532,10 @@ export type FieldCommittedEvent =
   | (FieldEventMeta & {
       type: "FIELD_REPOSITION_APPLIED";
       intentEventId: string;
+    })
+  | (FieldEventMeta & {
+      type: "FIELD_MAP_DISCOVERED";
+      landmarkId: string;
     });
 
 export type FieldEphemeralEvent =
@@ -564,6 +570,7 @@ const FIELD_COMMITTED_EVENT_TYPES = new Set<FieldCommittedEvent["type"]>([
   "FIELD_CLOCK_ADVANCED",
   "FIELD_REPOSITION_INTENT",
   "FIELD_REPOSITION_APPLIED",
+  "FIELD_MAP_DISCOVERED",
 ]);
 
 export function isFieldEventLike(value: unknown): boolean {

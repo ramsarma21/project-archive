@@ -26,7 +26,11 @@ import {
   type ChoiceAnimation,
 } from "@pa/chapter-boston-world";
 import { BOSTON_1765_REGISTRATION } from "../chapterRegistration.js";
-import { StealthHud } from "@pa/engine-world";
+import {
+  CompassRibbon,
+  RunnerMapOverlay,
+  StealthHud,
+} from "@pa/engine-world";
 import { ConfrontationPanel } from "../presenter/ConfrontationPanel.js";
 import {
   ActTransitionComplete,
@@ -84,6 +88,7 @@ export function Play(props: {
   onExit: () => void;
 }) {
   const World3D = BOSTON_1765_REGISTRATION.world.World;
+  const chapterMap = BOSTON_1765_REGISTRATION.world.map;
   const { profile, chapterId } = props;
   // The live preference set (design1: no pre-game interview — standardized
   // defaults arrive on the profile; the pause surface edits them in place).
@@ -112,6 +117,7 @@ export function Play(props: {
   } = session;
   const [showManual, setShowManual] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
+  const [showMap, setShowMap] = useState(false);
   const [webglAvailable, setWebglAvailable] = useState(true);
   // A world-side cinematic beat (e.g. the Watch House chewed-out scene) hides
   // the center controls so its dialogue is never buried under the task board.
@@ -432,6 +438,7 @@ export function Play(props: {
     speaking ||
     showManual ||
     showArchive ||
+    showMap ||
     openResponseActive ||
     cinematicBeat;
   // An archive-only re-present (e.g. the gold-marker redirect nudge after
@@ -459,6 +466,7 @@ export function Play(props: {
     view?.field.activeInterrupt?.kind === "CONFRONTATION" ||
     showManual ||
     showArchive ||
+    showMap ||
     openResponseActive ||
     cinematicBeat;
   // First-use hints are contextual and NON-BLOCKING (design1 kill list): the
@@ -495,6 +503,94 @@ export function Play(props: {
   useEffect(() => {
     if (!archiveAvailable) setShowArchive(false);
   }, [archiveAvailable]);
+  const objectiveTargetId =
+    plan?.request.kind === "FREE_ROAM"
+      ? plan.request.selectedTargetId ??
+        plan.request.targets.find((target) => target.marker !== "HIDDEN")
+          ?.targetId ??
+        null
+      : null;
+  const mapAvailable =
+    Boolean(view) &&
+    !done &&
+    !error &&
+    !cinematicBeat &&
+    !view?.field.activeInterrupt &&
+    (plan?.request.kind === "FREE_ROAM" ||
+      plan?.request.kind === "BREATHER");
+  const openMap = useCallback(() => {
+    if (!mapAvailable) return;
+    setShowArchive(false);
+    setShowManual(false);
+    setShowMap(true);
+  }, [mapAvailable]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.code !== "KeyM") return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT"
+      ) {
+        return;
+      }
+      event.preventDefault();
+      if (showMap) setShowMap(false);
+      else openMap();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openMap, showMap]);
+  useEffect(() => {
+    if (
+      !mapAvailable ||
+      plan?.request.kind !== "FREE_ROAM" ||
+      !view
+    ) {
+      return;
+    }
+    const discovering = new Set<string>();
+    const timer = window.setInterval(() => {
+      const spatial = presenterSpatialRef.current;
+      if (!spatial || spatial.interiorId) return;
+      for (const landmark of chapterMap.landmarks) {
+        if (
+          view.field.discoveredMapIds.includes(landmark.id) ||
+          discovering.has(landmark.id)
+        ) {
+          continue;
+        }
+        if (
+          Math.hypot(
+            spatial.pos[0] - landmark.position[0],
+            spatial.pos[2] - landmark.position[1],
+          ) <= landmark.discoveryRadius
+        ) {
+          discovering.add(landmark.id);
+          void onFieldEvent({
+            type: "FIELD_MAP_DISCOVERED",
+            eventId: `MAP_DISCOVERED:${landmark.id}`,
+            landmarkId: landmark.id,
+          }).then((accepted) => {
+            if (!accepted) discovering.delete(landmark.id);
+          });
+          break;
+        }
+      }
+    }, 350);
+    return () => window.clearInterval(timer);
+  }, [
+    chapterMap.landmarks,
+    mapAvailable,
+    onFieldEvent,
+    plan?.request.kind,
+    presenterSpatialRef,
+    view,
+  ]);
+  useEffect(() => {
+    if (!mapAvailable) setShowMap(false);
+  }, [mapAvailable]);
 
   return (
     <div
@@ -596,6 +692,19 @@ export function Play(props: {
           highContrast={highContrast}
           reducedMotion={reducedMotion}
         />
+        <CompassRibbon
+          map={chapterMap}
+          spatialRef={presenterSpatialRef}
+          objectiveTargetId={objectiveTargetId}
+          visible={
+            plan?.request.kind === "FREE_ROAM" &&
+            !showArchive &&
+            !showManual &&
+            !showMap &&
+            !cinematicBeat &&
+            !speaking
+          }
+        />
         <GlobalNoticeHud
           blocked={
             Boolean(activeSubtitle) ||
@@ -614,6 +723,7 @@ export function Play(props: {
             hidden={
               done ||
               showArchive ||
+              showMap ||
               Boolean(view?.field.activeInterrupt)
             }
             onExpand={archiveAvailable ? () => setShowArchive(true) : undefined}
@@ -809,6 +919,19 @@ export function Play(props: {
           }}
         />
       )}
+      {showMap && view && (
+        <RunnerMapOverlay
+          map={chapterMap}
+          spatialRef={presenterSpatialRef}
+          discoveredIds={view.field.discoveredMapIds}
+          unlockedRouteIds={Object.entries(view.routes)
+            .filter(([, status]) => status === "UNLOCKED")
+            .map(([routeId]) => routeId)}
+          objectiveTargetId={objectiveTargetId}
+          highContrast={highContrast}
+          onClose={() => setShowMap(false)}
+        />
+      )}
       {showManual && (
         <PauseMenu
           prefs={prefs}
@@ -820,6 +943,7 @@ export function Play(props: {
           busy={busy}
           onSave={(next) => void savePreferences(next)}
           onReplayPrimers={() => void replayPrimers()}
+          onMap={openMap}
           onClose={() => setShowManual(false)}
         />
       )}
@@ -895,6 +1019,7 @@ function PauseMenu(props: {
   busy: boolean;
   onSave: (next: OnboardingPreferences) => void;
   onReplayPrimers: () => void;
+  onMap: () => void;
   onClose: () => void;
 }) {
   const settings = props.prefs;
@@ -924,7 +1049,10 @@ function PauseMenu(props: {
             <div className="archive-kicker">{MANUAL_COPY.kicker}</div>
             <h2>{MANUAL_COPY.heading}</h2>
           </div>
-          <button className="btn-ghost" onClick={props.onClose}>{MANUAL_COPY.close}</button>
+          <div className="pause-head-actions">
+            <button className="btn-ghost" onClick={props.onMap}>Runner's map <kbd>M</kbd></button>
+            <button className="btn-ghost" onClick={props.onClose}>{MANUAL_COPY.close}</button>
+          </div>
         </div>
         <section className="manual-objective">
           <span>{MANUAL_COPY.objectiveKicker}</span>

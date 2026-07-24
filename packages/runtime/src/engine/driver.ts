@@ -228,6 +228,7 @@ export class Session {
       case "FIELD_STANDING_DELTA":
       case "FIELD_THREAD_PATCH":
       case "FIELD_MICRO_ENGAGED":
+      case "FIELD_MAP_DISCOVERED":
         this.assertProjectionContext(event.interruptId);
         this.ctx.applyFieldEvent(event);
         if (this.activeInterrupt) this.refreshInterruptPlan();
