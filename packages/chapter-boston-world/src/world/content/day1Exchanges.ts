@@ -998,6 +998,26 @@ export function dockBarrelPresentation(
   return "SHIP";
 }
 
+export interface ExchangeCompletionReceipt {
+  heading: string;
+  summary: string;
+  consequence: string;
+  cameraTarget: readonly [number, number, number];
+}
+
+export function exchangeCompletionReceipt(
+  sourceId: string,
+): ExchangeCompletionReceipt | null {
+  if (sourceId !== "SJ-dock-haul-setdown") return null;
+  return {
+    heading: "JOB COMPLETE",
+    summary: "The barrel is aboard before the tide.",
+    consequence:
+      "Wharf standing earned · scaffold route filed · 1 daylight spent",
+    cameraTarget: DOCK_BARREL_STAGING.restPosition,
+  };
+}
+
 export interface Day1FigureFrame {
   id: Day1FigureDefinition["id"];
   kind: "THREAD_FIGURE" | "DIRECTED_NPC";

@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { Html, useTexture } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { RuntimeView } from "@pa/contracts";
@@ -43,6 +43,7 @@ import {
   day1ExchangeFrame,
   dockBarrelPresentation,
   DOCK_BARREL_STAGING,
+  exchangeCompletionReceipt,
   type Day1FigureDefinition,
 } from "../content/day1Exchanges.js";
 import {
@@ -54,6 +55,7 @@ import {
 } from "../content/day1M4Content.js";
 import { useExchangeInterrupt } from "./useExchangeInterrupt.js";
 import type { ExchangeInterruptApi } from "./useExchangeInterrupt.js";
+import { ambientAudio } from "../ambientAudio.js";
 
 // Registry grouping keys, matching the legacy directors: the named cast
 // registers per-rig under REACTIVE:<id>, figure/side-job candidates under
@@ -61,6 +63,7 @@ import type { ExchangeInterruptApi } from "./useExchangeInterrupt.js";
 // under M4_CONTENT.
 const FIGURE_CANDIDATE_SOURCE = "REACTIVE_FIGURES";
 const M4_CANDIDATE_SOURCE = "M4_CONTENT";
+const COMPLETION_BEAT_EVENT = "pa:completion-beat";
 
 function figureClip(
   figure: Day1FigureDefinition,
@@ -374,11 +377,79 @@ function playFlavor(flavorId: string) {
   });
 }
 
+function CompletionBeatCamera(props: {
+  apiRef: { current: PlayerApi | null };
+  reducedMotion: boolean;
+}) {
+  const camera = useThree((state) => state.camera);
+  const beat = useRef<{
+    startedAt: number;
+    target: readonly [number, number, number];
+  } | null>(null);
+  const look = useRef(new THREE.Vector3());
+  const playerLook = useRef(new THREE.Vector3());
+  const completionLook = useRef(new THREE.Vector3());
+  useEffect(() => {
+    const onBeat = (raw: Event) => {
+      const target = (
+        raw as CustomEvent<{
+          target?: readonly [number, number, number];
+        }>
+      ).detail?.target;
+      if (!target || props.reducedMotion) return;
+      beat.current = { startedAt: performance.now(), target };
+    };
+    window.addEventListener(COMPLETION_BEAT_EVENT, onBeat);
+    return () => window.removeEventListener(COMPLETION_BEAT_EVENT, onBeat);
+  }, [props.reducedMotion]);
+  useFrame(() => {
+    const active = beat.current;
+    const player = props.apiRef.current;
+    if (!active || !player) return;
+    const progress = (performance.now() - active.startedAt) / 1050;
+    if (progress >= 1) {
+      beat.current = null;
+      return;
+    }
+    const acknowledgement = Math.sin(progress * Math.PI) * 0.72;
+    playerLook.current.set(
+      player.position.x,
+      player.position.y + 1.35,
+      player.position.z,
+    );
+    completionLook.current.set(
+      active.target[0],
+      active.target[1] + 0.55,
+      active.target[2],
+    );
+    look.current
+      .copy(playerLook.current)
+      .lerp(completionLook.current, acknowledgement);
+    camera.lookAt(look.current);
+  });
+  return null;
+}
+
 function ExchangePanel(props: {
   engine: ExchangeInterruptApi;
 }) {
   const { exchange, reply, replyChips, committing, finish, dismiss } =
     props.engine;
+  const completionPlayed = useRef("");
+  const sourceId = exchange?.sourceId ?? "";
+  const receipt = exchangeCompletionReceipt(sourceId);
+  useEffect(() => {
+    if (!reply || !receipt) return;
+    const key = `${sourceId}:${reply}`;
+    if (completionPlayed.current === key) return;
+    completionPlayed.current = key;
+    ambientAudio.playIdentity("coin-clink", 0.46);
+    window.dispatchEvent(
+      new CustomEvent(COMPLETION_BEAT_EVENT, {
+        detail: { target: receipt.cameraTarget },
+      }),
+    );
+  }, [reply, sourceId]);
   if (!exchange) return null;
   return (
     <Html
@@ -399,7 +470,14 @@ function ExchangePanel(props: {
       >
         <header>{exchange.title}</header>
         <p>{reply ?? exchange.line}</p>
-        {reply && replyChips.length > 0 && (
+        {reply && receipt && (
+          <div className="exchange-completion-receipt" role="status">
+            <strong>{receipt.heading}</strong>
+            <span>{receipt.summary}</span>
+            <small>{receipt.consequence}</small>
+          </div>
+        )}
+        {reply && !receipt && replyChips.length > 0 && (
           <div className="exchange-effect-chips" role="status">
             {replyChips.map((chip) => (
               <span key={chip}>{chip}</span>
@@ -658,6 +736,10 @@ export function ExchangeInterruptDirector(props: {
             reducedMotion={props.reducedMotion}
           />
         ))}
+      <CompletionBeatCamera
+        apiRef={props.apiRef}
+        reducedMotion={props.reducedMotion}
+      />
       <ExchangePanel engine={engine} />
     </group>
   );

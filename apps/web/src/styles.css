@@ -1933,6 +1933,21 @@ input[type="text"] {
 .exchange-effect-chips span:nth-child(3) { animation-delay: 0.16s; }
 .exchange-effect-chips span:nth-child(4) { animation-delay: 0.24s; }
 .exchange-effect-chips span:nth-child(5) { animation-delay: 0.32s; }
+.exchange-completion-receipt {
+  display: grid; gap: 3px; margin: 3px 0 5px; padding: 9px 11px;
+  border: 1px solid rgba(242, 193, 78, 0.72);
+  background: linear-gradient(110deg, rgba(95, 62, 12, 0.66), rgba(25, 45, 47, 0.82));
+  box-shadow: 0 0 18px rgba(242, 193, 78, 0.18);
+  animation: chase-shout-pop 0.24s ease-out both;
+}
+.exchange-completion-receipt strong {
+  color: var(--gold); font: 900 12px ui-monospace, monospace;
+  letter-spacing: 1.6px;
+}
+.exchange-completion-receipt span { color: #fff5d6; font-size: 13px; }
+.exchange-completion-receipt small {
+  color: rgba(213, 239, 232, 0.82); font: 650 10px/1.35 ui-monospace, monospace;
+}
 .reactive-exchange-choices { display: grid; gap: 6px; }
 .reactive-exchange-choices button {
   padding: 8px 10px; text-align: left; color: #eaffff;

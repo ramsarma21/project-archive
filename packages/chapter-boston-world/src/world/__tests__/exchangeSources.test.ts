@@ -40,6 +40,7 @@ import {
 import {
   day1ExchangeFrame,
   dockBarrelPresentation,
+  exchangeCompletionReceipt,
 } from "../content/day1Exchanges.js";
 import { day1M4Frame } from "../content/day1M4Content.js";
 
@@ -173,6 +174,17 @@ test("dock barrel has one continuous pickup, carried, and ship presentation", ()
     assert.equal(dockBarrelPresentation(stage), "CARRIED");
   }
   assert.equal(dockBarrelPresentation("COMPLETED"), "SHIP");
+});
+
+test("dock completion collapses rewards into one player-facing receipt", () => {
+  assert.deepEqual(exchangeCompletionReceipt("SJ-dock-haul-setdown"), {
+    heading: "JOB COMPLETE",
+    summary: "The barrel is aboard before the tide.",
+    consequence:
+      "Wharf standing earned · scaffold route filed · 1 daylight spent",
+    cameraTarget: [-139, 1.35, 18.6],
+  });
+  assert.equal(exchangeCompletionReceipt("SJ-dock-haul-balance"), null);
 });
 
 function freshSession(): Session {
