@@ -8,6 +8,7 @@
 // match. Never import this module from production code.
 
 import {
+  CAPSULE_RADIUS,
   SUPPORT_SNAP_UP,
   type Blocker,
   type CollisionWorld,
@@ -281,6 +282,141 @@ function intrudesXZ(b: Blocker, x: number, z: number, radius: number): boolean {
   return Math.hypot(x - nearestX, z - nearestZ) <= shape.radius + radius;
 }
 
+const SWEEP_SAMPLE_DISTANCE = CAPSULE_RADIUS * 0.25;
+const SWEEP_BINARY_STEPS = 18;
+const SWEEP_MAX_CONTACTS = 4;
+const SWEEP_SKIN = 1e-5;
+
+function blockerContactNormal(
+  blocker: Blocker,
+  x: number,
+  z: number,
+  radius: number,
+): readonly [number, number] {
+  const footprint = blocker.footprint;
+  if (footprint?.kind === "capsule") {
+    const abX = footprint.bx - footprint.ax;
+    const abZ = footprint.bz - footprint.az;
+    const lengthSq = abX * abX + abZ * abZ;
+    const t =
+      lengthSq > 1e-12
+        ? Math.max(
+            0,
+            Math.min(
+              1,
+              ((x - footprint.ax) * abX + (z - footprint.az) * abZ) /
+                lengthSq,
+            ),
+          )
+        : 0;
+    const nearestX = footprint.ax + abX * t;
+    const nearestZ = footprint.az + abZ * t;
+    const dx = x - nearestX;
+    const dz = z - nearestZ;
+    const length = Math.hypot(dx, dz);
+    if (length > 1e-9) return [dx / length, dz / length];
+    const segmentLength = Math.hypot(abX, abZ);
+    return segmentLength > 1e-9
+      ? [-abZ / segmentLength, abX / segmentLength]
+      : [1, 0];
+  }
+
+  let localX = x;
+  let localZ = z;
+  let halfX = (blocker.maxX - blocker.minX) / 2;
+  let halfZ = (blocker.maxZ - blocker.minZ) / 2;
+  let centerX = (blocker.minX + blocker.maxX) / 2;
+  let centerZ = (blocker.minZ + blocker.maxZ) / 2;
+  let yaw = 0;
+  if (footprint?.kind === "obb") {
+    centerX = footprint.cx;
+    centerZ = footprint.cz;
+    halfX = footprint.halfX;
+    halfZ = footprint.halfZ;
+    yaw = footprint.yaw;
+    const dx = x - centerX;
+    const dz = z - centerZ;
+    const c = Math.cos(yaw);
+    const s = Math.sin(yaw);
+    localX = dx * c - dz * s;
+    localZ = dx * s + dz * c;
+    centerX = 0;
+    centerZ = 0;
+  }
+  const dx = localX - centerX;
+  const dz = localZ - centerZ;
+  const expandedX = halfX + radius;
+  const expandedZ = halfZ + radius;
+  const distanceX = expandedX - Math.abs(dx);
+  const distanceZ = expandedZ - Math.abs(dz);
+  let nx = 0;
+  let nz = 0;
+  if (distanceX <= distanceZ) nx = dx < 0 ? -1 : 1;
+  else nz = dz < 0 ? -1 : 1;
+  if (footprint?.kind === "obb") {
+    const c = Math.cos(yaw);
+    const s = Math.sin(yaw);
+    return [nx * c + nz * s, -nx * s + nz * c];
+  }
+  return [nx, nz];
+}
+
+function firstIntrusionTime(
+  blocker: Blocker,
+  x: number,
+  z: number,
+  dx: number,
+  dz: number,
+  radius: number,
+): number | null {
+  const distance = Math.hypot(dx, dz);
+  if (distance <= 1e-12) return null;
+  if (intrudesXZ(blocker, x, z, radius)) {
+    const [nx, nz] = blockerContactNormal(blocker, x, z, radius);
+    return dx * nx + dz * nz < -1e-10 ? 0 : null;
+  }
+  const samples = Math.max(1, Math.ceil(distance / SWEEP_SAMPLE_DISTANCE));
+  let clearT = 0;
+  for (let sample = 1; sample <= samples; sample++) {
+    const t = sample / samples;
+    if (!intrudesXZ(blocker, x + dx * t, z + dz * t, radius)) {
+      clearT = t;
+      continue;
+    }
+    let low = clearT;
+    let high = t;
+    for (let step = 0; step < SWEEP_BINARY_STEPS; step++) {
+      const mid = (low + high) * 0.5;
+      if (intrudesXZ(blocker, x + dx * mid, z + dz * mid, radius)) {
+        high = mid;
+      } else {
+        low = mid;
+      }
+    }
+    return low;
+  }
+  return null;
+}
+
+function slideVelocityXZ(
+  velocity: { x: number; z: number },
+  normals: ReadonlyArray<readonly [number, number]>,
+): { x: number; z: number } {
+  let x = velocity.x;
+  let z = velocity.z;
+  for (const [nx, nz] of normals) {
+    const inward = x * nx + z * nz;
+    if (inward < 0) {
+      x -= nx * inward;
+      z -= nz * inward;
+    }
+  }
+  return {
+    x: Math.abs(x) < 1e-10 ? 0 : x,
+    z: Math.abs(z) < 1e-10 ? 0 : z,
+  };
+}
+
 // ---- the brute-force oracle sextet ------------------------------------------
 
 export function bruteForceSegmentOccluderIds(
@@ -336,25 +472,53 @@ export function bruteForceSweepXZ(
   const clampedX = Math.min(Math.max(to.x, world.bounds.minX), world.bounds.maxX);
   const clampedZ = Math.min(Math.max(to.z, world.bounds.minZ), world.bounds.maxZ);
   const hitIds: string[] = [];
-  let blockedX = false;
-  let nextX = clampedX;
-  for (const blocker of active) {
-    if (!intrudesXZ(blocker, clampedX, from.z, radius)) continue;
-    blockedX = true;
-    hitIds.push(blocker.id);
-    nextX = from.x;
-    break;
+  const hitNormals: Array<readonly [number, number]> = [];
+  let x = from.x;
+  let z = from.z;
+  let dx = clampedX - from.x;
+  let dz = clampedZ - from.z;
+
+  for (let contact = 0; contact < SWEEP_MAX_CONTACTS; contact++) {
+    if (Math.hypot(dx, dz) <= 1e-10) break;
+    let bestT = 1;
+    let best: Blocker | null = null;
+    for (const blocker of active) {
+      const t = firstIntrusionTime(blocker, x, z, dx, dz, radius);
+      if (t !== null && t < bestT - 1e-12) {
+        bestT = t;
+        best = blocker;
+      }
+    }
+    if (!best) {
+      x += dx;
+      z += dz;
+      dx = 0;
+      dz = 0;
+      break;
+    }
+    x += dx * bestT;
+    z += dz * bestT;
+    const normal = blockerContactNormal(best, x, z, radius);
+    if (!hitIds.includes(best.id)) hitIds.push(best.id);
+    hitNormals.push(normal);
+    x += normal[0] * SWEEP_SKIN;
+    z += normal[1] * SWEEP_SKIN;
+    const remaining = 1 - bestT;
+    const slid = slideVelocityXZ(
+      { x: dx * remaining, z: dz * remaining },
+      hitNormals,
+    );
+    dx = slid.x;
+    dz = slid.z;
   }
-  let blockedZ = false;
-  let nextZ = clampedZ;
-  for (const blocker of active) {
-    if (!intrudesXZ(blocker, nextX, clampedZ, radius)) continue;
-    blockedZ = true;
-    hitIds.push(blocker.id);
-    nextZ = from.z;
-    break;
-  }
-  return { x: nextX, z: nextZ, blockedX, blockedZ, hitIds };
+
+  x = Math.min(Math.max(x, world.bounds.minX), world.bounds.maxX);
+  z = Math.min(Math.max(z, world.bounds.minZ), world.bounds.maxZ);
+  const blockedX =
+    clampedX !== to.x || hitNormals.some(([nx]) => Math.abs(nx) > 1e-8);
+  const blockedZ =
+    clampedZ !== to.z || hitNormals.some(([, nz]) => Math.abs(nz) > 1e-8);
+  return { x, z, blockedX, blockedZ, hitIds, hitNormals };
 }
 
 export function bruteForceSupportBelow(

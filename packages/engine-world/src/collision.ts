@@ -891,11 +891,16 @@ export function sweepXZ(
   const clampedX = Math.min(Math.max(to.x, world.bounds.minX), world.bounds.maxX);
   const clampedZ = Math.min(Math.max(to.z, world.bounds.minZ), world.bounds.maxZ);
   const broadRadius = radius * BROAD_PHASE_RADIUS_FACTOR;
+  const travelDistance = Math.hypot(clampedX - from.x, clampedZ - from.z);
+  // Contact projection can bend the remaining path outside the direct
+  // start-to-end AABB. Every projected segment preserves or shortens its
+  // remaining length, so the start-centred travel radius is a conservative
+  // bound for every possible slide contact.
   const active = broadPhaseCandidates(world, {
-    minX: Math.min(from.x, clampedX) - broadRadius,
-    maxX: Math.max(from.x, clampedX) + broadRadius,
-    minZ: Math.min(from.z, clampedZ) - broadRadius,
-    maxZ: Math.max(from.z, clampedZ) + broadRadius,
+    minX: from.x - travelDistance - broadRadius,
+    maxX: from.x + travelDistance + broadRadius,
+    minZ: from.z - travelDistance - broadRadius,
+    maxZ: from.z + travelDistance + broadRadius,
     minY: footY,
     maxY: headY,
   });
