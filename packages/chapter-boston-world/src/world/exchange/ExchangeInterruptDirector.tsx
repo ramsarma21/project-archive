@@ -37,7 +37,11 @@ import {
 } from "../reactiveManifest.js";
 import { useWorldServices } from "../WorldServicesContext.js";
 import { clampedPanelPosition } from "../panelPlacement.js";
-import { dispatchPresentationNotice } from "@pa/engine-world";
+import {
+  dispatchPresentationNotice,
+  reactiveEffectPreview,
+  stakeTags,
+} from "@pa/engine-world";
 import {
   DAY1_FIGURES,
   day1ExchangeFrame,
@@ -527,16 +531,24 @@ function ExchangePanel(props: {
         )}
         {!reply && (
           <div className="reactive-exchange-choices">
-            {exchange.choices.slice(0, 3).map((choice, index) => (
-              <button
-                key={choice.id}
-                type="button"
-                disabled={committing}
-                onClick={() => void finish(choice)}
-              >
-                <kbd>{index + 1}</kbd> {choice.label}
-              </button>
-            ))}
+            {exchange.choices.slice(0, 3).map((choice, index) => {
+              const tags = stakeTags(
+                reactiveEffectPreview(choice.effects, choice.label),
+              );
+              return (
+                <button
+                  key={choice.id}
+                  type="button"
+                  disabled={committing}
+                  onClick={() => void finish(choice)}
+                >
+                  <span><kbd>{index + 1}</kbd> {choice.label}</span>
+                  {tags.length > 0 && (
+                    <small className="stake-tags">{tags.join(" · ")}</small>
+                  )}
+                </button>
+              );
+            })}
             {exchange.engine.dismissButton && (
               <button
                 type="button"

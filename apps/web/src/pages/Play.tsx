@@ -1074,13 +1074,14 @@ function DayEnd(props: {
 function GlobalNoticeHud(props: { blocked: boolean; captions: boolean }) {
   const arbiter = useMemo(() => new PresentationNoticeArbiter(), []);
   const [notice, setNotice] = useState<PresentationNotice | null>(null);
+  const noticeRef = useRef<PresentationNotice | null>(null);
+  noticeRef.current = notice;
   const blockedRef = useRef(props.blocked);
   blockedRef.current = props.blocked;
   const timer = useRef(0);
-  useEffect(() => {
-    const onNotice = (raw: Event) => {
-      if (blockedRef.current || !props.captions) return;
-      const detail = (raw as CustomEvent<PresentationNotice>).detail;
+  const queued = useRef<PresentationNotice[]>([]);
+  const showNotice = useCallback(
+    (detail: PresentationNotice) => {
       const selected = arbiter.offer(detail);
       setNotice(selected);
       window.clearTimeout(timer.current);
@@ -1090,19 +1091,55 @@ function GlobalNoticeHud(props: { blocked: boolean; captions: boolean }) {
           setNotice(null);
         }, selected.expiresAt - performance.now());
       }
+    },
+    [arbiter],
+  );
+  useEffect(() => {
+    const onNotice = (raw: Event) => {
+      const detail = (raw as CustomEvent<PresentationNotice>).detail;
+      if (!props.captions) return;
+      if (blockedRef.current) {
+        if (
+          detail.kind === "ARCHIVE_NOTICE" &&
+          !queued.current.some(
+            (entry) =>
+              (entry.dedupeKey ?? entry.id) ===
+              (detail.dedupeKey ?? detail.id),
+          )
+        ) {
+          queued.current.push(detail);
+        }
+        return;
+      }
+      showNotice(detail);
     };
     window.addEventListener(PRESENTATION_NOTICE_EVENT, onNotice);
     return () => {
       window.removeEventListener(PRESENTATION_NOTICE_EVENT, onNotice);
       window.clearTimeout(timer.current);
     };
-  }, [arbiter, props.captions]);
+  }, [props.captions, showNotice]);
   useEffect(() => {
-    if (!props.blocked) return;
-    arbiter.clear();
-    setNotice(null);
-    window.clearTimeout(timer.current);
-  }, [arbiter, props.blocked]);
+    if (props.blocked) {
+      const interrupted = noticeRef.current;
+      if (
+        interrupted?.kind === "ARCHIVE_NOTICE" &&
+        !queued.current.some(
+          (entry) =>
+            (entry.dedupeKey ?? entry.id) ===
+            (interrupted.dedupeKey ?? interrupted.id),
+        )
+      ) {
+        queued.current.unshift(interrupted);
+      }
+      arbiter.clear();
+      setNotice(null);
+      window.clearTimeout(timer.current);
+      return;
+    }
+    const next = queued.current.shift();
+    if (next) showNotice(next);
+  }, [arbiter, props.blocked, showNotice]);
   if (!notice) return null;
   return (
     <div className="ambient-subtitle route-reminder">

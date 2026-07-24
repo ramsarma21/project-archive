@@ -3,6 +3,7 @@ export * from "./cameraOwnership.js";
 export * from "./chaseFieldGating.js";
 export * from "./chapterWorld.js";
 export * from "./collision.js";
+export * from "./consequenceReceipts.js";
 export * from "./fieldSimulation.js";
 export * from "./ImportedPivotAsset.js";
 export * from "./interactionRegistry.js";

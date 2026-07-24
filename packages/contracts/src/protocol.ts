@@ -91,8 +91,22 @@ export interface DayEndCard {
 export interface ChoiceOption {
   choiceId: string;
   label: string;
-  tags: string[]; // e.g. ["costs time", "earns a favor"]
+  /** Legacy tone tags; effect-backed choices use `effects` below. */
+  tags: string[];
+  effects?: ChoiceEffectPreview;
   disabled?: boolean;
+}
+
+export interface ChoiceEffectPreview {
+  /** Positive values spend daylight units. */
+  time?: number;
+  heat?: "UP" | "DOWN" | "RISK";
+  standing?: "UP" | "DOWN";
+  trust?: { person: string; direction: "UP" | "DOWN" };
+  goods?: "GAIN" | "LOSE" | "RISK";
+  route?: "OPEN" | "CLOSE" | "RISK";
+  /** Authored player-voice opening; consequence clauses come from effects. */
+  receiptLead: string;
 }
 
 export type MechanicKind =
@@ -142,6 +156,7 @@ export interface FreeRoamTarget {
   targetId: string;
   label: string;
   marker: "BLUE" | "GOLD" | "HIDDEN";
+  effects?: ChoiceEffectPreview;
 }
 
 // ============================================================================

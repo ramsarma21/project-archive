@@ -1,6 +1,7 @@
 import {
   normalizeConcealment,
   type ConceptId,
+  type ChoiceOption,
 } from "@pa/contracts";
 import {
   breathe,
@@ -46,6 +47,36 @@ const ERRAND_LABEL: Record<Errand, string> = {
   RIDER_HANDBILLS: "Get the handbills to the rider before the bell",
 };
 
+const ERRAND_STAKES: Record<Errand, {
+  time: number;
+  heat?: "RISK";
+  goods: "RISK";
+  receiptLead: string;
+}> = {
+  THOMAS_CIRCULAR: {
+    time: 1,
+    goods: "RISK",
+    receiptLead: "Thomas's circular",
+  },
+  PIKE_PROOF: {
+    time: 1,
+    goods: "RISK",
+    receiptLead: "Pike's proof",
+  },
+  CUSTOMHOUSE_NOTICE: {
+    time: 1,
+    heat: "RISK",
+    goods: "RISK",
+    receiptLead: "Custom House",
+  },
+  RIDER_HANDBILLS: {
+    time: 1,
+    heat: "RISK",
+    goods: "RISK",
+    receiptLead: "Rider run",
+  },
+};
+
 function ambientPick(ctx: Ctx, slotId: string, candidates: readonly string[]): string {
   return resolveOutcome(
     ctx.attemptSeed,
@@ -81,6 +112,7 @@ export function* day1Flow(ctx: Ctx): Flow {
       targetId: id,
       label: ERRAND_LABEL[id],
       marker: (pending.size === 1 ? "GOLD" : "BLUE") as "GOLD" | "BLUE",
+      effects: ERRAND_STAKES[id],
     }));
     const ev = yield* freeRoam(ctx, targets, false);
     if (ev.type === "FREE_ROAM_IDLE") {
@@ -187,9 +219,9 @@ function* opening(ctx: Ctx): Sub<void> {
   // approach animates the threshold; only then does the interior scene begin.
   ctx.world.controlState = "INTERACTION";
   const enter = yield* choose(ctx, "BOS.MD01.ACT.ENTER_MERCER.v1", "You reach the shop door.", [
-    { choiceId: "KNOCK", label: "Knock first.", tags: ["polite approach"] },
-    { choiceId: "WALK_IN", label: "Walk straight in.", tags: ["direct approach"] },
-    { choiceId: "LOOK_FIRST", label: "Look through the window first.", tags: ["observe first"] },
+    { choiceId: "KNOCK", label: "Knock first.", tags: [], effects: { time: TIME_COST.shortDialogue, trust: { person: "Abigail", direction: "UP" }, receiptLead: "Knocked first" } },
+    { choiceId: "WALK_IN", label: "Walk straight in.", tags: [], effects: { time: TIME_COST.shortDialogue, receiptLead: "Walked straight in" } },
+    { choiceId: "LOOK_FIRST", label: "Look through the window first.", tags: [], effects: { time: TIME_COST.shortDialogue + 1, receiptLead: "Window first" } },
   ]);
   ctx.scene("MERCER_PRESS", TEXT.shopInside);
   ctx.meet("Abigail Mercer");
@@ -197,7 +229,18 @@ function* opening(ctx: Ctx): Sub<void> {
   // B2: she needs hands, not conversation. Walking straight in already got
   // "Good, catch." as the greeting; the other approaches still get the toss.
   if (enter !== "WALK_IN") ctx.dialogue("ABIGAIL", "Good, catch.", true);
-  ctx.spendTime(TIME_COST.shortDialogue);
+  if (enter === "KNOCK") {
+    setRelationship(
+      ctx.world,
+      "ABIGAIL_WARMTH",
+      (ctx.world.relationships.ABIGAIL_WARMTH ?? 0) + 5,
+    );
+  }
+  ctx.spendTime(
+    enter === "LOOK_FIRST"
+      ? TIME_COST.shortDialogue + 1
+      : TIME_COST.shortDialogue,
+  );
   ctx.countSpacing();
 
   // Compound print job (catch -> ink -> register -> pull -> peel). Abigail
@@ -370,9 +413,9 @@ function* thomasStop(ctx: Ctx): Sub<ErrandOutcome> {
     "Set the circular on Thomas's counter and hold until it lies flat.",
   );
   const c = yield* choose(ctx, "BOS.MD01.ACT.THOMAS_DELIVERY.v1", "Thomas is hauling cloth from the front of his shop.", [
-    { choiceId: "HELP", label: "Help him haul the cloth in.", tags: ["costs time", "earns a favor"] },
-    { choiceId: "BEG_OFF", label: "Leave the circular and go.", tags: ["saves time", "no favor earned"] },
-    { choiceId: "ASK", label: "Ask why he's so rattled.", tags: [] },
+    { choiceId: "HELP", label: "Help him haul the cloth in.", tags: [], effects: { time: TIME_COST.longHelp, trust: { person: "Thomas", direction: "UP" }, route: "OPEN", receiptLead: "Helped Thomas" } },
+    { choiceId: "BEG_OFF", label: "Leave the circular and go.", tags: [], effects: { time: TIME_COST.shortDialogue, receiptLead: "Left the circular" } },
+    { choiceId: "ASK", label: "Ask why he's so rattled.", tags: [], effects: { time: TIME_COST.shortDialogue, receiptLead: "Heard Thomas out" } },
   ]);
   if (c === "HELP") {
     yield* haulJob(
@@ -419,9 +462,9 @@ function* pikeStop(ctx: Ctx): Sub<ErrandOutcome> {
 
   if (q === "SMUDGED") {
     const c = yield* choose(ctx, "BOS.MD01.ACT.PIKE_SMUDGE.v1", "The proof came out smudged. Pike notices.", [
-      { choiceId: "REPRINT", label: "Offer to run a fresh copy.", tags: ["costs time", "earns respect"] },
-      { choiceId: "OWN_IT", label: "Own the rush, let it stand.", tags: ["earns respect"] },
-      { choiceId: "BRUSH_OFF", label: "Brush it off.", tags: ["loses respect"] },
+      { choiceId: "REPRINT", label: "Offer to run a fresh copy.", tags: [], effects: { time: TIME_COST.fullReprintLoop, trust: { person: "Pike", direction: "UP" }, receiptLead: "Offered Pike a reprint" } },
+      { choiceId: "OWN_IT", label: "Own the rush, let it stand.", tags: [], effects: { time: TIME_COST.shortDialogue, trust: { person: "Pike", direction: "UP" }, receiptLead: "Owned the rushed proof" } },
+      { choiceId: "BRUSH_OFF", label: "Brush it off.", tags: [], effects: { time: TIME_COST.shortDialogue, trust: { person: "Pike", direction: "DOWN" }, receiptLead: "Brushed Pike off" } },
     ]);
     if (c === "REPRINT") {
       ctx.dialogue("PLAYER", TEXT.pike.reprint);
@@ -525,12 +568,12 @@ function* customHouseStop(ctx: Ctx): Sub<ErrandOutcome> {
 
 function* riderStop(ctx: Ctx): Sub<ErrandOutcome> {
   // route select
-  const routeOpts = [
-    { choiceId: "MAIN_FAST", label: "Main street, fast.", tags: ["saves time", "risky"] },
-    { choiceId: "BACK_LANES", label: "Back lanes, careful.", tags: ["costs time", "safe"] },
+  const routeOpts: ChoiceOption[] = [
+    { choiceId: "MAIN_FAST", label: "Main street, fast.", tags: [], effects: { time: TIME_COST.simpleHandoff, heat: "RISK" as const, goods: "RISK" as const, receiptLead: "Main street" } },
+    { choiceId: "BACK_LANES", label: "Back lanes, careful.", tags: [], effects: { time: TIME_COST.effortInteraction, heat: "DOWN" as const, receiptLead: "Back lanes" } },
   ];
   if (ctx.world.routes.THOMAS_DOCK_ROUTE === "UNLOCKED") {
-    routeOpts.push({ choiceId: "DOCK_ROUTE", label: "Thomas's dock shortcut.", tags: ["saves time", "safe"] });
+    routeOpts.push({ choiceId: "DOCK_ROUTE", label: "Thomas's dock shortcut.", tags: [], effects: { heat: "DOWN", route: "OPEN", receiptLead: "Dock shortcut" } });
   }
   // Archive R4 decision-frame (route choice moves time/heat/identity state).
   ctx.archive("(The main street is fast — and it is the watched one.)");
@@ -622,8 +665,8 @@ function* riderStop(ctx: Ctx): Sub<ErrandOutcome> {
   );
   ctx.scene("RIDER_POST", TEXT.rider.scene);
   const hand = yield* choose(ctx, "BOS.MD01.ACT.RIDER_HANDOFF.v1", "The rider waits, reins in hand.", [
-    { choiceId: "QUICK", label: "Hand it over quick.", tags: ["saves time", "risky"] },
-    { choiceId: "WAIT_FOR_GAP", label: "Wait for a gap in the street.", tags: ["costs time", "safe"] },
+    { choiceId: "QUICK", label: "Hand it over quick.", tags: [], effects: { time: TIME_COST.quickHandoff, heat: "RISK", trust: { person: "Rider", direction: "UP" }, goods: "RISK", receiptLead: "Quick handoff" } },
+    { choiceId: "WAIT_FOR_GAP", label: "Wait for a gap in the street.", tags: [], effects: { time: TIME_COST.waitForGap, heat: "DOWN", trust: { person: "Rider", direction: "UP" }, receiptLead: "Waited for the gap" } },
   ]);
   let deliveredUnseen = true;
   if (hand === "QUICK") {
@@ -680,9 +723,9 @@ function* clarkeEncounter(ctx: Ctx): Sub<void> {
   // answer (Archive-Spec §5 — this choice moves attention/heat state).
   ctx.archive("(Clarke is a Loyalist. He reports what he sees.)");
   const c = yield* choose(ctx, "BOS.MD01.ACT.CLARKE_CHALLENGE.v1", "Clarke eyes what you're carrying.", [
-    { choiceId: "CALM_CONCEAL", label: "\"Overruns for the rider.\" Tuck the bundle under the plain wrap.", tags: ["reads as harmless"] },
-    { choiceId: "CURT", label: "\"None of your business.\"", tags: ["risky", "reads as a threat"] },
-    { choiceId: "HEAR_OUT", label: "\"What do you make of the crowd?\"", tags: [] },
+    { choiceId: "CALM_CONCEAL", label: "\"Overruns for the rider.\" Tuck the bundle under the plain wrap.", tags: [], effects: { time: TIME_COST.effortInteraction, heat: "DOWN", goods: "GAIN", receiptLead: "Plain wrap" } },
+    { choiceId: "CURT", label: "\"None of your business.\"", tags: [], effects: { time: TIME_COST.shortDialogue, heat: "UP", standing: "DOWN", receiptLead: "Answered Clarke curtly" } },
+    { choiceId: "HEAR_OUT", label: "\"What do you make of the crowd?\"", tags: [], effects: { time: TIME_COST.shortDialogue, receiptLead: "Heard Clarke out" } },
   ]);
   if (c === "CALM_CONCEAL") {
     ctx.dialogue("PLAYER", TEXT.clarke.calmCover);
@@ -758,9 +801,9 @@ function* eventOnramp(ctx: Ctx): Sub<void> {
   // Archive R4 decision-frame (attention/sympathy state moves on this choice).
   ctx.archive("(The watch remembers faces at the front of a crowd.)");
   const c = yield* choose(ctx, "BOS.MD01.ACT.EVENT_ONRAMP.v1", "The crowd thickens around the great elm.", [
-    { choiceId: "CLIMB", label: "Climb for a clear vantage.", tags: ["costs a little time", "safe"] },
-    { choiceId: "PUSH", label: "Push toward the front.", tags: ["risky", "draws attention"] },
-    { choiceId: "CHANT", label: "Take up the chant.", tags: ["reads as sympathy"] },
+    { choiceId: "CLIMB", label: "Climb for a clear vantage.", tags: ["clear vantage"] },
+    { choiceId: "PUSH", label: "Push toward the front.", tags: [], effects: { heat: "UP", standing: "DOWN", receiptLead: "Pushed to the front" } },
+    { choiceId: "CHANT", label: "Take up the chant.", tags: ["the crowd hears you"] },
   ]);
   yield* effortHold(ctx, `BOS.MD01.ACT.EVENT_${c}.v1`, "Hold to move with the crowd.");
   if (c === "PUSH") ctx.world.attention.watcherHeat += 1;

@@ -18,6 +18,11 @@ import type { PlayerApi } from "../Player.js";
 import { effectChips, MICRO_LABELS } from "../reactiveManifest.js";
 import { useWorldServices } from "../WorldServicesContext.js";
 import {
+  consequenceReceipt,
+  dispatchPresentationNotice,
+  reactiveEffectPreview,
+} from "@pa/engine-world";
+import {
   completedFallbackExchange,
   exchangeCompletionEvent,
   exchangeInterruptId,
@@ -205,6 +210,18 @@ export function useExchangeInterrupt(props: {
       ),
     );
     if (completed) {
+      const effects = reactiveEffectPreview(choice.effects, choice.label);
+      if (effects) {
+        dispatchPresentationNotice({
+          id: `receipt:${interruptId}:${choice.id}`,
+          dedupeKey: `receipt:${interruptId}`,
+          kind: "ARCHIVE_NOTICE",
+          speaker: "YOU",
+          text: consequenceReceipt(effects),
+          durationMs: 4_200,
+          captions: true,
+        });
+      }
       setCommitting(false);
       return;
     }

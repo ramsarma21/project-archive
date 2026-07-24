@@ -8,6 +8,11 @@ import {
 } from "./CompoundMechanicControls.js";
 import { useMechanicActionKey } from "./mechanicKeys.js";
 import { choiceTagline } from "../pages/play/playCopy.js";
+import {
+  consequenceReceipt,
+  dispatchPresentationNotice,
+  stakeTags,
+} from "@pa/engine-world";
 
 type MechanicPhase = "READY" | "ACTIVE" | "COMMIT" | "COMPLETE";
 
@@ -104,7 +109,10 @@ export function Controls(props: {
               <button key={t.targetId} className="choice choice-gold" disabled={busy} onClick={() => onEvent({ type: "FREE_ROAM_SELECT", targetId: t.targetId })}>
                 <span className="clabel">{t.targetId === "RIDER_HANDBILLS" && <b className="timed-glyph">☼</b>}{t.label}</span>
                 <span className="choice-subtext">
-                  {t.targetId === "RIDER_HANDBILLS" ? "Timed · gone at the bell" : "Select this stop"}
+                  {stakeTags(t.effects).join(" · ") ||
+                    (t.targetId === "RIDER_HANDBILLS"
+                      ? "Timed · gone at the bell"
+                      : "Select this stop")}
                 </span>
               </button>
             ))}
@@ -123,9 +131,32 @@ export function Controls(props: {
       const options = (
         <div className={`choices${request.options.length === 1 ? " choices-single" : request.options.length === 2 ? " choices-two" : ""}`}>
           {request.options.map((o) => {
-            const tagline = choiceTagline(o.tags);
+            const tagline =
+              stakeTags(o.effects).join(" · ") || choiceTagline(o.tags);
             return (
-              <button key={o.choiceId} className="choice choice-gold" disabled={busy || o.disabled} onClick={() => onEvent({ type: "CHOICE_SELECTED", promptId: request.promptId, choiceId: o.choiceId })}>
+              <button
+                key={o.choiceId}
+                className="choice choice-gold"
+                disabled={busy || o.disabled}
+                onClick={async () => {
+                  const accepted = await onEvent({
+                    type: "CHOICE_SELECTED",
+                    promptId: request.promptId,
+                    choiceId: o.choiceId,
+                  });
+                  if (accepted !== false && o.effects) {
+                    dispatchPresentationNotice({
+                      id: `receipt:${request.promptId}:${o.choiceId}`,
+                      dedupeKey: `receipt:${request.promptId}`,
+                      kind: "ARCHIVE_NOTICE",
+                      speaker: "YOU",
+                      text: consequenceReceipt(o.effects),
+                      durationMs: 4_200,
+                      captions: true,
+                    });
+                  }
+                }}
+              >
                 <span className="clabel">{o.label}</span>
                 {tagline && <span className="choice-subtext">{tagline}</span>}
               </button>

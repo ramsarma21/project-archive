@@ -637,7 +637,22 @@ await scenario("opening", async (page) => {
     "first-use hints stacked",
   );
   await screenshot(page, "p1-11", "nonblocking-entry-stake-tags");
-  return { bearingState, audio: audioAfter.identity, taglines };
+  await page.getByRole("button", { name: /Knock first/ }).click();
+  const receipt = page.locator(".ambient-subtitle.route-reminder", {
+    hasText: "Knocked first",
+  });
+  await receipt.waitFor({ state: "visible", timeout: 30_000 });
+  assert(
+    (await page.locator(".ambient-subtitle.route-reminder").count()) === 1,
+    "entry resolution emitted more than one consequence receipt",
+  );
+  await screenshot(page, "p2-stakes", "entry-consequence-receipt");
+  return {
+    bearingState,
+    audio: audioAfter.identity,
+    taglines,
+    receipt: await receipt.textContent(),
+  };
 });
 
 await scenario("collision-slide", async (page) => {

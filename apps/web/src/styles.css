@@ -2143,9 +2143,13 @@ input[type="text"] {
 }
 .reactive-exchange-choices { display: grid; gap: 6px; }
 .reactive-exchange-choices button {
-  min-height: 44px; padding: 10px 12px; text-align: left; color: #eaffff;
+  display: grid; gap: 4px; min-height: 44px; padding: 10px 12px; text-align: left; color: #eaffff;
   border: 1px solid rgba(126, 227, 216, 0.38);
   background: rgba(18, 56, 68, 0.62); font-size: 14px; line-height: 1.35;
+}
+.reactive-exchange-choices .stake-tags {
+  color: #efd28a; font: 800 9px/1.25 ui-monospace, monospace;
+  letter-spacing: 0.7px;
 }
 .reactive-exchange-choices button:hover,
 .reactive-exchange-choices button:focus-visible {
