@@ -41,6 +41,7 @@ import { dispatchPresentationNotice } from "@pa/engine-world";
 import {
   DAY1_FIGURES,
   day1ExchangeFrame,
+  dockBarrelPresentation,
   DOCK_BARREL_STAGING,
   type Day1FigureDefinition,
 } from "../content/day1Exchanges.js";
@@ -160,44 +161,56 @@ function ReactiveCastRig(props: {
   );
 }
 
-// Generic staged carried-prop rig (the imported dock barrel): rides the
-// player through the carry stages, rests at its authored drop point during
-// the hand-off stage, hidden otherwise.
+// Generic staged carried-prop rig (the imported dock barrel): one physical
+// instance moves from pickup -> both hand sockets -> ship deck. The prior
+// facing-offset approximation floated beside the hip and teleported to a
+// second deck copy before the player actually set it down.
 function CarriedStagePropRig(props: {
   stage: RuntimeView["field"]["activities"][typeof DOCK_BARREL_STAGING.activityId]["stage"];
   apiRef: { current: PlayerApi | null };
 }) {
   const group = useRef<THREE.Group>(null);
+  const leftHandPosition = useRef(new THREE.Vector3());
+  const rightHandPosition = useRef(new THREE.Vector3());
   useFrame(() => {
     const root = group.current;
     if (!root) return;
-    if (
-      (DOCK_BARREL_STAGING.carryStages as readonly string[]).includes(
-        props.stage,
-      )
-    ) {
+    const presentation = dockBarrelPresentation(props.stage);
+    if (presentation === "CARRIED") {
       const player = props.apiRef.current;
-      if (!player) {
+      const leftHand =
+        player?.bodyRoot?.getObjectByName("mixamorigLeftHand");
+      const rightHand =
+        player?.bodyRoot?.getObjectByName("mixamorigRightHand");
+      if (!player || !leftHand || !rightHand) {
         root.visible = false;
         return;
       }
+      leftHand.getWorldPosition(leftHandPosition.current);
+      rightHand.getWorldPosition(rightHandPosition.current);
       root.visible = true;
       root.position.set(
-        player.position.x +
-          player.motion.facingX * DOCK_BARREL_STAGING.carryForwardM,
-        player.position.y + DOCK_BARREL_STAGING.carryLiftM,
-        player.position.z +
-          player.motion.facingZ * DOCK_BARREL_STAGING.carryForwardM,
+        (leftHandPosition.current.x + rightHandPosition.current.x) * 0.5 +
+          player.motion.facingX * DOCK_BARREL_STAGING.socketForwardM,
+        (leftHandPosition.current.y + rightHandPosition.current.y) * 0.5 -
+          DOCK_BARREL_STAGING.socketDropM,
+        (leftHandPosition.current.z + rightHandPosition.current.z) * 0.5 +
+          player.motion.facingZ * DOCK_BARREL_STAGING.socketForwardM,
       );
-      root.rotation.y = player.facingY;
+      root.rotation.set(0, player.facingY, 0);
       return;
     }
-    if (props.stage === DOCK_BARREL_STAGING.restStage) {
-      root.visible = true;
-      root.position.set(...DOCK_BARREL_STAGING.restPosition);
-      return;
-    }
-    root.visible = false;
+    root.visible = true;
+    const authoredPosition =
+      presentation === "PICKUP"
+        ? DOCK_BARREL_STAGING.pickupPosition
+        : DOCK_BARREL_STAGING.restPosition;
+    root.position.set(
+      authoredPosition[0],
+      authoredPosition[1],
+      authoredPosition[2],
+    );
+    root.rotation.set(0, 0, 0);
   });
   return (
     <group ref={group} visible={false}>

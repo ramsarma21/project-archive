@@ -202,6 +202,7 @@ export function Player(props: {
   stealthStore: import("./stealthStore.js").StealthStore;
   actorCue: ActorChoreography | null;
   mechanicPromptId: string | null;
+  carryingHeavy: boolean;
   hidden: boolean;
   // Head-camera first person: the body stays visible and eases onto the
   // staged anchor so the first-person framing is deterministic wherever the
@@ -1197,7 +1198,12 @@ export function Player(props: {
     interactionClip ??
     (props.actorCue
       ? clipForMotion("playerboy-rigged", props.actorCue.motion)
-      : actionClip ?? locomotion);
+      : actionClip ??
+        (props.carryingHeavy
+          ? locomotion === "idle"
+            ? "carry"
+            : "carryWalk"
+          : locomotion));
   const actionLoopOnce = ACTION_LOOP_ONCE.has(actionClip ?? "");
   const interactionLoopOnce = PLAYER_ACTION_CLIPS.has(interactionClip ?? "");
   return (

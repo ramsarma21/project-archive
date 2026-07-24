@@ -970,13 +970,33 @@ export const DAY1_FIGURES: readonly Day1FigureDefinition[] = [
 export const DOCK_BARREL_STAGING = {
   glbKey: "barrel-group",
   size: [0.9, 1.0, 0.9] as const,
-  carryForwardM: 0.45,
-  carryLiftM: 0.5,
-  carryStages: ["CARRYING", "BALANCING"] as const,
-  restStage: "READY_HANDOFF" as const,
+  pickupPosition: DOCK_ANCHORS.barrel,
+  pickupStages: ["AVAILABLE", "DORMANT", "ACCEPTED"] as const,
+  carryStages: ["CARRYING", "BALANCING", "READY_HANDOFF"] as const,
+  socketForwardM: 0.08,
+  socketDropM: 0.28,
+  restStage: "COMPLETED" as const,
   restPosition: DOCK_ANCHORS.deck,
   activityId: OPTIONAL_ACTIVITY_IDS.DOCK_HAUL,
 } as const;
+
+export type DockBarrelPresentation = "PICKUP" | "CARRIED" | "SHIP";
+
+export function dockBarrelPresentation(
+  stage: RuntimeView["field"]["activities"][typeof OPTIONAL_ACTIVITY_IDS.DOCK_HAUL]["stage"],
+): DockBarrelPresentation {
+  if (
+    (DOCK_BARREL_STAGING.pickupStages as readonly string[]).includes(stage)
+  ) {
+    return "PICKUP";
+  }
+  if (
+    (DOCK_BARREL_STAGING.carryStages as readonly string[]).includes(stage)
+  ) {
+    return "CARRIED";
+  }
+  return "SHIP";
+}
 
 export interface Day1FigureFrame {
   id: Day1FigureDefinition["id"];

@@ -37,7 +37,10 @@ import {
   resolveExchangeForSource,
   type Exchange,
 } from "../exchange/exchangeSources.js";
-import { day1ExchangeFrame } from "../content/day1Exchanges.js";
+import {
+  day1ExchangeFrame,
+  dockBarrelPresentation,
+} from "../content/day1Exchanges.js";
 import { day1M4Frame } from "../content/day1M4Content.js";
 
 const SEED = "31".repeat(32);
@@ -156,6 +159,20 @@ test("Ned's locked notice-board anchor keeps an ambient reader", () => {
   assert.ok(
     live.candidates.some((candidate) => candidate.sourceId === "THR-ned"),
   );
+});
+
+test("dock barrel has one continuous pickup, carried, and ship presentation", () => {
+  for (const stage of ["AVAILABLE", "DORMANT", "ACCEPTED"] as const) {
+    assert.equal(dockBarrelPresentation(stage), "PICKUP");
+  }
+  for (const stage of [
+    "CARRYING",
+    "BALANCING",
+    "READY_HANDOFF",
+  ] as const) {
+    assert.equal(dockBarrelPresentation(stage), "CARRIED");
+  }
+  assert.equal(dockBarrelPresentation("COMPLETED"), "SHIP");
 });
 
 function freshSession(): Session {

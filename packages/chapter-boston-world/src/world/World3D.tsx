@@ -836,6 +836,10 @@ export function World3D(props: {
               mechanicPromptId={
                 props.request?.kind === "MECHANIC" ? props.request.promptId : null
               }
+              carryingHeavy={
+                props.view?.field.carriedObjectIds.includes("DOCK_BARREL") ??
+                false
+              }
               hidden={firstPersonActive && !headCamActive}
               headCam={headCamActive}
             />
