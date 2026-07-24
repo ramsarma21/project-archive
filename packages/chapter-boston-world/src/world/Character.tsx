@@ -3,7 +3,11 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
-import { chooseAvailableClip, PLAYER_ACTION_CLIPS } from "./animationManifest.js";
+import {
+  chooseAvailableClip,
+  compactPlayerAirborneClips,
+  PLAYER_ACTION_CLIPS,
+} from "./animationManifest.js";
 
 // ---- Error boundary so a missing/failed GLB degrades to a placeholder ----
 // TRANSIENT failures retry (feel-audit-1 P1-12): dev-server hiccups and
@@ -199,6 +203,10 @@ function RiggedInner(props: {
     root.position.y -= box2.min.y;
     return { root, skeletons, ownedMaterials };
   }, [gltf.scene, props.height, castShadow, props.tint]);
+  const animationClips = useMemo(
+    () => compactPlayerAirborneClips(props.glbKey, gltf.animations),
+    [gltf.animations, props.glbKey],
+  );
 
   useEffect(() => {
     const pending = pendingResourceDispose.current;
@@ -237,8 +245,14 @@ function RiggedInner(props: {
     if (!mixer) return;
     // Every production character is a self-contained GLB with clips baked
     // against its own rig. Never bind a shared clip from another skeleton.
-    const clipName = chooseAvailableClip(props.glbKey, props.clip, gltf.animations.map((clip) => clip.name));
-    const clip = clipName ? gltf.animations.find((candidate) => candidate.name === clipName) : undefined;
+    const clipName = chooseAvailableClip(
+      props.glbKey,
+      props.clip,
+      animationClips.map((clip) => clip.name),
+    );
+    const clip = clipName
+      ? animationClips.find((candidate) => candidate.name === clipName)
+      : undefined;
     if (!clip) return;
     const next = mixer.clipAction(clip);
     const prev = actionRef.current;
@@ -263,7 +277,7 @@ function RiggedInner(props: {
       next.crossFadeFrom(prev, fade, true);
     }
     actionRef.current = next;
-  }, [props.clip, props.timeOffset, props.loopOnce, gltf.animations, rig]);
+  }, [props.clip, props.timeOffset, props.loopOnce, animationClips, rig]);
 
   useFrame(({ camera }, dt) => {
     if (actionRef.current) {

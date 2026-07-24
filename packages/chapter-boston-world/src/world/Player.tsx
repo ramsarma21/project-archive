@@ -5,7 +5,11 @@ import type { ActorChoreography } from "@pa/contracts";
 import { ContactShadow, RiggedCharacter } from "./Character.js";
 import { STAGE_ANCHORS } from "./choreography.js";
 import { applyProceduralMotion } from "./ActorDirector.js";
-import { clipForMotion, PLAYER_ACTION_CLIPS } from "./animationManifest.js";
+import {
+  AIRBORNE_VISUAL_TUNING,
+  clipForMotion,
+  PLAYER_ACTION_CLIPS,
+} from "./animationManifest.js";
 import { mechanicStageOffset } from "./MechanicRigs.js";
 import { mechanicBodyStagingFor } from "./mechanicBodyStaging.js";
 import {
@@ -217,6 +221,9 @@ export function Player(props: {
   const [interactionClip, setInteractionClip] = useState<string | null>(null);
   const interactionClipRef = useRef<string | null>(null);
   const animRateRef = useRef(1);
+  const landingRecoveryUntil = useRef(0);
+  const landingRecoveryClip = useRef<string | null>(null);
+  const landingRecoveryRate = useRef(1);
   const camera = useThree((s) => s.camera);
   const mechanicProgress = useRef(0);
   const mechanicActive = useRef(false);
@@ -793,6 +800,17 @@ export function Player(props: {
       });
       m = result.state;
       motionRef.current = m;
+      if (
+        result.events.includes("landed") &&
+        !props.reducedMotion &&
+        (actionClipRef.current === "jump" ||
+          actionClipRef.current === "runJump")
+      ) {
+        landingRecoveryUntil.current =
+          clock.elapsedTime + AIRBORNE_VISUAL_TUNING.landingRecoverySeconds;
+        landingRecoveryClip.current = actionClipRef.current;
+        landingRecoveryRate.current = animRateRef.current;
+      }
       const movedThisStep = Math.hypot(
         m.pos.x - beforeStepX,
         m.pos.z - beforeStepZ,
@@ -866,12 +884,11 @@ export function Player(props: {
           ? THREE.MathUtils.clamp(speed / RUN_SPEED, 0.75, 1.25)
           : 1;
     if (m.phase === "STANDING_JUMP") {
-      // The supplied 2.40s performance includes anticipation/recovery; fit it
-      // to the ~0.96s ballistic flight (2*vY/g) so its landing beat meets
-      // physics touchdown (2.40 / 0.963 ≈ 2.48).
-      animRateRef.current = 2.48;
+      // Leave the imported clip's final recovery after ballistic touchdown;
+      // the visual landing window below lets that beat finish on the ground.
+      animRateRef.current = AIRBORNE_VISUAL_TUNING.standingTimeScale;
     } else if (m.phase === "RUNNING_JUMP") {
-      animRateRef.current = 0.97;
+      animRateRef.current = AIRBORNE_VISUAL_TUNING.runningTimeScale;
     } else if (m.action) {
       const sourceDuration =
         m.phase === "VAULT"
@@ -884,7 +901,22 @@ export function Player(props: {
       animRateRef.current = sourceDuration / (m.action.durationMs / 1000);
     }
 
-    const phaseClip = clipForPhase(m.phase, nextLocomotion);
+    const recoveringFromJump =
+      m.phase === "GROUNDED" &&
+      landingRecoveryClip.current !== null &&
+      clock.elapsedTime < landingRecoveryUntil.current;
+    if (recoveringFromJump) {
+      animRateRef.current = landingRecoveryRate.current;
+    } else if (
+      landingRecoveryClip.current &&
+      clock.elapsedTime >= landingRecoveryUntil.current
+    ) {
+      landingRecoveryClip.current = null;
+    }
+    let phaseClip = clipForPhase(m.phase, nextLocomotion);
+    if (!phaseClip && recoveringFromJump) {
+      phaseClip = landingRecoveryClip.current;
+    }
     if (phaseClip !== actionClipRef.current) {
       actionClipRef.current = phaseClip;
       setActionClip(phaseClip);

@@ -1,4 +1,9 @@
 import type { AuthoredMotion } from "@pa/contracts";
+import {
+  AnimationClip,
+  Quaternion,
+  QuaternionKeyframeTrack,
+} from "three";
 
 export interface CharacterAnimationSpec {
   fallback: string;
@@ -29,6 +34,62 @@ export const PLAYER_ACTION_CLIPS: ReadonlySet<string> = new Set([
   "jump", "runJump", "vault", "climbUp", "climbDown", "knock",
   "doorOpenInward", "doorOpenOutward",
 ]);
+
+export const AIRBORNE_VISUAL_TUNING = {
+  standingTimeScale: 2.25,
+  runningTimeScale: 0.86,
+  landingRecoverySeconds: 0.18,
+} as const;
+
+const AIRBORNE_ARM_COMPACTION: Record<string, number> = {
+  jump: 0.36,
+  runJump: 0.52,
+};
+
+/**
+ * The imported Mixamo jump performances have useful anticipation/landing
+ * timing but over-open both upper arms at the apex (the audited "starfish").
+ * Keep every authored keyframe and blend only upper-arm rotation toward the
+ * imported idle stance. No procedural body or replacement clip is introduced.
+ */
+export function compactPlayerAirborneClips(
+  glbKey: string,
+  clips: readonly AnimationClip[],
+): AnimationClip[] {
+  if (glbKey !== "playerboy-rigged") return [...clips];
+  const idle = clips.find((clip) => clip.name === "idle");
+  if (!idle) return [...clips];
+  const idleRotations = new Map<string, Quaternion>();
+  for (const track of idle.tracks) {
+    if (
+      track instanceof QuaternionKeyframeTrack &&
+      /(?:LeftArm|RightArm)\.quaternion$/.test(track.name)
+    ) {
+      idleRotations.set(
+        track.name,
+        new Quaternion().fromArray(track.values, 0),
+      );
+    }
+  }
+  const current = new Quaternion();
+  return clips.map((source) => {
+    const blend = AIRBORNE_ARM_COMPACTION[source.name];
+    if (!blend) return source;
+    const clip = source.clone();
+    for (const track of clip.tracks) {
+      if (!(track instanceof QuaternionKeyframeTrack)) continue;
+      const idleRotation = idleRotations.get(track.name);
+      if (!idleRotation) continue;
+      for (let index = 0; index < track.values.length; index += 4) {
+        current
+          .fromArray(track.values, index)
+          .slerp(idleRotation, blend)
+          .toArray(track.values, index);
+      }
+    }
+    return clip;
+  });
+}
 const NPC_CLIPS = [
   "idle", "walk", "run", "carryWalk", "work1", "work2", "talk", "talk2",
   "argu1", "argue2",
