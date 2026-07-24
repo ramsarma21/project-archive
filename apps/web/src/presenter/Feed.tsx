@@ -71,7 +71,7 @@ function DirectiveView({ d }: { d: PresentationDirective }) {
 
 function speakerName(s: string): string {
   const map: Record<string, string> = {
-    ABIGAIL: "Abigail", THOMAS: "Thomas", PIKE: "Pike", CLARKE: "Clarke",
+    ABIGAIL: "Abigail", NED: "Ned", THOMAS: "Thomas", PIKE: "Pike", CLARKE: "Clarke",
     RIDER: "Rider", OFFICER: "Customs officer", CROWD: "The crowd", NARRATOR: "", ARCHIVE: "Archive",
   };
   return map[s] ?? s;

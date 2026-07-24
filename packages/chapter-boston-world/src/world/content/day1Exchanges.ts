@@ -359,6 +359,75 @@ function nedExchange(
   const fetched = Boolean(thread.flags.NED_FETCHED_TYPE);
   const encouraged = Boolean(thread.flags.NED_ENCOURAGED_CRAFT);
   const covered = Boolean(thread.flags.NED_COVERED_ERRAND);
+  const wagerAccepted = Boolean(thread.flags.NED_WAGER_ACCEPTED);
+  if (thread.flags.MET && !wagerAccepted) {
+    return m3Exchange(M3_AUTHORED_EFFECTS, {
+      sourceId: "THR-ned",
+      title: "Ned // Ink-black wager",
+      line:
+        "New runner's luck is not a skill. Pick your boast. Loser scrubs the ink balls, and I warn you, mine have corners.",
+      position,
+      choices: [
+        {
+          id: "WAGER_BELL",
+          label: "All four errands before the bell",
+          reply:
+            "Bold. The bell has beaten better legs than yours. Try not to look offended when it does.",
+          effects: {
+            threads: [{
+              threadId: THREAD_IDS.NED,
+              flags: {
+                NED_WAGER_ACCEPTED: true,
+                NED_WAGER_BEAT_BELL: true,
+              },
+              status: "ACTIVE",
+              trustDelta: 1,
+              breadcrumb:
+                "Ned bet you cannot finish all four errands before the bell. Loser scrubs the ink balls.",
+            }],
+          },
+        },
+        {
+          id: "WAGER_PRINT",
+          label: "Pull a cleaner sheet than Ned",
+          reply:
+            "My last pull only had one thumbprint. A very small thumbprint. You have chosen poorly.",
+          effects: {
+            threads: [{
+              threadId: THREAD_IDS.NED,
+              flags: {
+                NED_WAGER_ACCEPTED: true,
+                NED_WAGER_OUT_PRINT: true,
+              },
+              status: "ACTIVE",
+              trustDelta: 1,
+              breadcrumb:
+                "Ned wagered that you cannot pull a crisp sheet today. Loser handles ink cleanup.",
+            }],
+          },
+        },
+        {
+          id: "WAGER_WATCH",
+          label: "Finish without being stopped",
+          reply:
+            "That is less a bet and more a request not to meet you at the watch house. Accepted.",
+          effects: {
+            threads: [{
+              threadId: THREAD_IDS.NED,
+              flags: {
+                NED_WAGER_ACCEPTED: true,
+                NED_WAGER_AVOID_STOP: true,
+              },
+              status: "ACTIVE",
+              trustDelta: 1,
+              breadcrumb:
+                "Ned bet you cannot finish the run without the watch stopping you.",
+            }],
+          },
+        },
+      ],
+    });
+  }
   if (covered) {
     return m3Exchange(M3_AUTHORED_EFFECTS, {
       sourceId: "THR-ned",

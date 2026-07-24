@@ -21,6 +21,7 @@ import {
   type Sub,
 } from "@pa/runtime";
 import { CONCEPTS, CONCEPT_PRIORITY } from "../ids.js";
+import { THREAD_IDS } from "../fieldIds.js";
 import { TIME_COST } from "../tuning.js";
 import { TEXT } from "./text.js";
 import { EXPOSURES, DEFICIT_FALLBACKS, OUTCOME_WEIGHTS, AMBIENT_SLOTS, HEADLINE_CHOICES, CAUSE_CHOICES, EVIDENCE_CHOICES, type ExposureDef } from "./tables.js";
@@ -186,6 +187,7 @@ export function* day1Flow(ctx: Ctx): Flow {
   // compressed CP1 debrief -> the celebratory Day Record card LAST. The
   // session's final memory is the day, not paperwork.
   yield* dayClose(ctx);
+  yield* nedWagerCallback(ctx);
   yield* streetHeadlineBeat(ctx);
   yield* cp1CheckpointFlow(ctx);
   yield* dayRecordCard(ctx);
@@ -977,6 +979,61 @@ function* dayClose(ctx: Ctx): Sub<void> {
   if (!dayCompletionSatisfied(ctx.learner)) {
     throw new Error("RUNTIME_DEADLOCK: day-end gate not satisfied");
   }
+}
+
+export function resolveNedWager(input: {
+  flags: Record<string, boolean | undefined>;
+  objectives: Record<string, string>;
+  bestQuality: "CRISP" | "USABLE" | "SMUDGED" | null;
+  confrontationCount: number;
+  chaseCount: number;
+}): { kind: "bell" | "print" | "watch"; won: boolean } | null {
+  if (!input.flags.NED_WAGER_ACCEPTED) return null;
+  const kind = input.flags.NED_WAGER_BEAT_BELL
+    ? "bell"
+    : input.flags.NED_WAGER_OUT_PRINT
+      ? "print"
+      : "watch";
+  return {
+    kind,
+    won:
+      kind === "bell"
+        ? ERRANDS.every((id) => input.objectives[id] === "COMPLETED")
+        : kind === "print"
+          ? input.bestQuality === "CRISP"
+          : input.confrontationCount === 0 && input.chaseCount === 0,
+  };
+}
+
+function* nedWagerCallback(ctx: Ctx): Sub<void> {
+  const thread = ctx.field.threads[THREAD_IDS.NED];
+  if (
+    !thread?.flags.NED_WAGER_ACCEPTED ||
+    thread.flags.NED_WAGER_RESOLVED
+  ) {
+    return;
+  }
+  const resolution = resolveNedWager({
+    flags: thread.flags,
+    objectives: ctx.world.objectives,
+    bestQuality: ctx.world.printWorkshop.bestQuality,
+    confrontationCount: ctx.field.confrontationHistory.length,
+    chaseCount: ctx.field.chaseHistory.length,
+  })!;
+  const { kind, won } = resolution;
+  thread.flags.NED_WAGER_RESOLVED = true;
+  thread.flags.NED_WAGER_WON = won;
+  if (won) {
+    thread.trust = Math.min(10, thread.trust + 2);
+    ctx.world.relationships.NED_CLEANUP_CREDIT = 1;
+    thread.breadcrumb =
+      "You won Ned's wager. He covers tomorrow's ink cleanup and tries not to look impressed.";
+  } else {
+    thread.breadcrumb =
+      "Ned won today's wager and has already placed the ink rags where you can see them.";
+  }
+  ctx.dialogue("NED", TEXT.nedWager[won ? "win" : "lose"][kind], true);
+  yield* waitContinue(ctx, won ? "Collect on the bet" : "Pay up");
 }
 
 // The exterior ending beat: carry the fresh page to the town board, the

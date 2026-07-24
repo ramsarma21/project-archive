@@ -802,6 +802,34 @@ try {
     await page.keyboard.press("Escape");
     await waitResolved(page);
   });
+
+  await scenario("ned-wager", {}, async (page) => {
+    await teleport(page, 9.2, 8.9, Math.PI);
+    await openViaStartedEvent(page, "NED_MEET", "THR-ned");
+    await page.getByRole("button", { name: /Show me the press/i }).click();
+    await page.getByRole("button", { name: /Continue/i }).click();
+    await waitResolved(page);
+    await openViaStartedEvent(page, "NED_WAGER", "THR-ned");
+    const offered = await panelSnapshot(page);
+    assert(
+      offered.title === "Ned // Ink-black wager",
+      `Ned wager offer missing: ${JSON.stringify(offered)}`,
+    );
+    assert(
+      offered.buttons.length === 3 &&
+        offered.buttons.every((button) => button.includes("TRUST Ned ▲")),
+      `Ned wager stakes missing: ${JSON.stringify(offered.buttons)}`,
+    );
+    await shot(page, "22-ned-wager-offer");
+    await page.getByRole("button", { name: /Pull a cleaner sheet than Ned/i }).click();
+    await page.getByText(/My last pull only had one thumbprint/i).waitFor({
+      state: "visible",
+      timeout: 15_000,
+    });
+    await shot(page, "23-ned-wager-accepted");
+    await page.getByRole("button", { name: /Continue/i }).click();
+    await waitResolved(page);
+  });
 } finally {
   writeFileSync(resolve(OUT, "report.json"), JSON.stringify(report, null, 2));
 }

@@ -30,6 +30,7 @@ export {
 } from "./day1/reactive.js";
 export { DAY1_CUES } from "./day1/choreography.js";
 export { scorePrintJob } from "./day1/mechanics.js";
+export { resolveNedWager } from "./day1/flow.js";
 export { createBostonWorldState } from "./world.js";
 
 // CP1 assessment content

@@ -32,6 +32,7 @@ import type {
 export type Speaker =
   | "ARCHIVE" // the meta handler (JARVIS-like); only voice that knows the future
   | "ABIGAIL"
+  | "NED"
   | "THOMAS"
   | "PIKE"
   | "CLARKE"

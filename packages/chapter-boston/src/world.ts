@@ -63,6 +63,7 @@ export function createBostonWorldState(): WorldState {
       PIKE_RESPECT: BASELINES.pikeRespect,
       CLARKE_POLITICAL_READ: BASELINES.clarkePoliticalRead,
       RIDER_TRUST: BASELINES.riderTrust,
+      NED_CLEANUP_CREDIT: 0,
     },
     routes: {
       THOMAS_DOCK_ROUTE: "LOCKED",

@@ -146,6 +146,92 @@ const reprintEvents = eventsUntil(
   },
 );
 
+function nedWagerCallbackEvents(cleanPull) {
+  const session = createDay1Session({ variationRootSeedHex: SEED });
+  let wagerInjected = false;
+  for (let step = 0; step < 900; step += 1) {
+    assert(session.plan, "runtime ended before Ned wager callback");
+    if (
+      session.plan.request.kind === "CONTINUE" &&
+      session.plan.present.some(
+        (directive) =>
+          directive.kind === "DIALOGUE" && directive.speaker === "NED",
+      )
+    ) {
+      return [...session.committedEvents];
+    }
+    if (
+      !wagerInjected &&
+      session.ctx.world.objectives.REPORT_TO_MERCER === "COMPLETED" &&
+      session.ctx.world.locationId === "BOSTON_STREET" &&
+      session.plan.request.kind === "FREE_ROAM"
+    ) {
+      wagerInjected = true;
+      const interruptId = `M4_NED_WAGER_${cleanPull ? "WIN" : "LOSE"}`;
+      session.advance({
+        type: "FIELD_INTERRUPT_STARTED",
+        eventId: `${interruptId}_START`,
+        interruptId,
+        interruptKind: "REACTIVE_EXCHANGE",
+        sourceId: "THR-ned",
+      });
+      session.advance({
+        type: "FIELD_REACTIVE_COMPLETED",
+        eventId: `${interruptId}_COMPLETE`,
+        interruptId,
+        completion: {
+          interactionId: `${interruptId}:accepted`,
+          sourceId: "THR-ned",
+          outcomeId: "WAGER_PRINT",
+          threads: [{
+            threadId: "BOS.THREAD.NED.v1",
+            flags: {
+              MET: true,
+              NED_WAGER_ACCEPTED: true,
+              NED_WAGER_OUT_PRINT: true,
+            },
+            status: "ACTIVE",
+            trustDelta: 1,
+            breadcrumb: "Ned wagered that you cannot pull a crisp sheet today.",
+          }],
+        },
+      });
+      session.advance({
+        type: "FIELD_INTERRUPT_RESOLVED",
+        eventId: `${interruptId}_RESOLVED`,
+        interruptId,
+        outcome: "WAGER_PRINT",
+      });
+      continue;
+    }
+    if (
+      session.plan.request.kind === "MECHANIC" &&
+      session.plan.request.params.kind === "PRINT_JOB"
+    ) {
+      const score = cleanPull ? 0.96 : 0.55;
+      session.advance({
+        type: "MECHANIC_RESULT",
+        promptId: session.plan.request.promptId,
+        result: {
+          kind: "PRINT_JOB",
+          phases: {
+            catch: score,
+            ink: score,
+            register: score,
+            pull: score,
+            peel: score,
+          },
+          quality: cleanPull ? "CRISP" : "USABLE",
+          accessible: false,
+        },
+      });
+      continue;
+    }
+    session.advance(response(session.plan.request));
+  }
+  throw new Error("Ned wager callback generation exceeded step cap");
+}
+
 const eventSets = {
   print: eventsUntil((session) =>
     session.plan?.request.kind === "MECHANIC" &&
@@ -166,6 +252,8 @@ const eventSets = {
     session.plan.request.params.kind === "PRINT_JOB" &&
     session.plan.request.params.printVariant === "FINAL_PAGE"
   ),
+  nedWagerWin: nedWagerCallbackEvents(true),
+  nedWagerLose: nedWagerCallbackEvents(false),
 };
 
 const report = {
@@ -698,6 +786,36 @@ try {
     );
     await shot(page, "m4-b12-complete");
   }, "KEYBOARD_MOUSE");
+
+  if (!ONLY || ONLY === "ned-wager-win") await scenario(
+    "ned-wager-win",
+    eventSets.nedWagerWin,
+    false,
+    "?atmoT=0.98&atmoDusk=1",
+    async (page) => {
+      await page.getByText(/That sheet is cleaner than mine/i).waitFor({
+        state: "visible",
+        timeout: 30_000,
+      });
+      await shot(page, "ned-wager-win-callback");
+    },
+    "KEYBOARD_MOUSE",
+  );
+
+  if (!ONLY || ONLY === "ned-wager-lose") await scenario(
+    "ned-wager-lose",
+    eventSets.nedWagerLose,
+    false,
+    "?atmoT=0.98&atmoDusk=1",
+    async (page) => {
+      await page.getByText(/Usable, yes. Cleaner than mine, no/i).waitFor({
+        state: "visible",
+        timeout: 30_000,
+      });
+      await shot(page, "ned-wager-lose-callback");
+    },
+    "KEYBOARD_MOUSE",
+  );
 
   if (!ONLY || ONLY === "m1-chase") await scenario("m1-chase", eventSets.street, false, "?atmoT=0.55", async (page) => {
     await page.getByRole("button", { name: /Deliver the circular to Thomas/i }).click();

@@ -21,6 +21,24 @@ export const TEXT = {
         "The edge is smudged, but the evidence still reads. File the craft result and hang it.",
     },
   },
+  nedWager: {
+    win: {
+      bell:
+        "Four errands and the bell still had breath left. Fine. I scrub the ink balls tomorrow. Do not look so pleased.",
+      print:
+        "That sheet is cleaner than mine. Suspiciously cleaner. I shall inspect your sleeves after I finish your ink cleanup.",
+      watch:
+        "Not one constable learned your name. Mine barely remembers it. I owe you the cleanup.",
+    },
+    lose: {
+      bell:
+        "Bell beat you. It also beats me most days, but today I get to be unbearable about it.",
+      print:
+        "Usable, yes. Cleaner than mine, no. The left ink ball has a personality. Enjoy meeting it.",
+      watch:
+        "The watch stopped you. I said avoid them, not collect them. Ink rags are by the stone.",
+    },
+  },
   b0: {
     identity: "IDENTITY SYNCHRONIZED\nBoston, 14 August 1765\nCover: runner for Mercer's Press",
     context:
