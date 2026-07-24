@@ -24,6 +24,44 @@ function editableTarget(target: EventTarget | null): boolean {
   );
 }
 
+export function InteractionActionPrompt(props: {
+  affordance: ResolvedInteraction | null;
+  reducedMotion: boolean;
+  highContrast: boolean;
+}) {
+  const resolved = props.affordance;
+  if (!resolved || resolved.phase !== "ACTION") return null;
+  const prompt = resolved.candidate;
+  const metadata = interactionPresentationMetadata(prompt);
+  const classes = `${props.highContrast ? " high-contrast" : ""}${
+    props.reducedMotion ? " reduced-motion" : ""
+  } importance-${metadata.importance.toLowerCase()}`;
+  return (
+    <div
+      className={`interaction-action-layer${classes}`}
+      data-interaction-id={prompt.id}
+      data-interaction-phase="ACTION"
+      data-interaction-verb={metadata.verb}
+    >
+      <button
+        type="button"
+        className={`interaction-glyph interaction-action interaction-${prompt.kind.toLowerCase()}`}
+        aria-label={`${metadata.verb}: ${metadata.displayName}`}
+        onClick={() =>
+          window.dispatchEvent(new CustomEvent(INTERACTION_TOUCH_EVENT))
+        }
+      >
+        <span>{metadata.displayName}</span>
+        <strong>
+          <kbd>F</kbd>
+          <b aria-hidden="true"> — </b>
+          {metadata.verb}
+        </strong>
+      </button>
+    </div>
+  );
+}
+
 export function InteractionDirector(props: {
   apiRef: { current: PlayerApi | null };
   registry: InteractionRegistry;
@@ -31,6 +69,7 @@ export function InteractionDirector(props: {
   busy: boolean;
   reducedMotion: boolean;
   highContrast: boolean;
+  onActionAffordance: (affordance: ResolvedInteraction | null) => void;
 }) {
   const services = useWorldServices();
   const [affordance, setAffordance] = useState<ResolvedInteraction | null>(null);
@@ -99,8 +138,9 @@ export function InteractionDirector(props: {
   useEffect(
     () => () => {
       props.registry.clear();
+      props.onActionAffordance(null);
     },
-    [props.registry],
+    [props.onActionAffordance, props.registry],
   );
 
   useFrame(() => {
@@ -109,6 +149,7 @@ export function InteractionDirector(props: {
       if (affordanceRef.current) {
         affordanceRef.current = null;
         setAffordance(null);
+        props.onActionAffordance(null);
       }
       return;
     }
@@ -133,6 +174,9 @@ export function InteractionDirector(props: {
     }
     affordanceRef.current = resolved;
     setAffordance(resolved);
+    props.onActionAffordance(
+      resolved?.phase === "ACTION" ? resolved : null,
+    );
   });
 
   if (!affordance) return null;
@@ -141,35 +185,7 @@ export function InteractionDirector(props: {
   const classes = `${props.highContrast ? " high-contrast" : ""}${
     props.reducedMotion ? " reduced-motion" : ""
   } importance-${metadata.importance.toLowerCase()}`;
-  if (affordance.phase === "ACTION") {
-    return (
-      <Html fullscreen zIndexRange={[8, 0]}>
-        <div
-          className={`interaction-action-layer${classes}`}
-          data-interaction-id={prompt.id}
-          data-interaction-phase="ACTION"
-          data-interaction-verb={metadata.verb}
-        >
-          <button
-            type="button"
-            className={`interaction-glyph interaction-action interaction-${prompt.kind.toLowerCase()}`}
-            aria-label={`${metadata.verb}: ${metadata.displayName}`}
-            onClick={() => {
-              releasedSinceAction.current = true;
-              activate();
-            }}
-          >
-            <span>{metadata.displayName}</span>
-            <strong>
-              <kbd>F</kbd>
-              <b aria-hidden="true"> — </b>
-              {metadata.verb}
-            </strong>
-          </button>
-        </div>
-      </Html>
-    );
-  }
+  if (affordance.phase === "ACTION") return null;
   return (
     <Html
       position={[

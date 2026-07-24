@@ -33,7 +33,11 @@ import { MechanicRigs } from "./MechanicRigs.js";
 import { DoorDirector } from "./DoorDirector.js";
 import { EntryDirector, useEntryDoorTarget } from "./EntryDirector.js";
 import { TraversalDirector } from "./TraversalDirector.js";
-import { InteractionDirector } from "./InteractionDirector.js";
+import {
+  InteractionActionPrompt,
+  InteractionDirector,
+} from "./InteractionDirector.js";
+import type { ResolvedInteraction } from "./interactionResolver.js";
 import { createInteractionRegistry } from "./interactionRegistry.js";
 import { ExchangeInterruptDirector } from "./exchange/ExchangeInterruptDirector.js";
 import { INTERIOR_HOTSPOT_MICROS } from "./reactiveManifest.js";
@@ -226,6 +230,8 @@ export function World3D(props: {
   const [doorTarget, setDoorTarget] = useState<string | null>(null);
   const [visualInteriorId, setVisualInteriorId] = useState<string | null>(null);
   const [inspectOpen, setInspectOpen] = useState<InteriorInspectHotspotDef | null>(null);
+  const [actionAffordance, setActionAffordance] =
+    useState<ResolvedInteraction | null>(null);
   const [chaseCameraYaw, setChaseCameraYaw] = useState(Math.PI / 2);
   const appliedRepositionRef = useRef<string | null>(null);
   const [releaseSceneActive, setReleaseSceneActive] = useState(false);
@@ -943,6 +949,7 @@ export function World3D(props: {
               busy={props.busy || props.movementLocked}
               reducedMotion={props.reducedMotion}
               highContrast={props.highContrast}
+              onActionAffordance={setActionAffordance}
             />
             <FirstPersonCamera
               active={headCamActive}
@@ -1103,6 +1110,11 @@ export function World3D(props: {
           />
         </WorldServicesProvider>
       </Canvas>
+      <InteractionActionPrompt
+        affordance={actionAffordance}
+        reducedMotion={props.reducedMotion}
+        highContrast={props.highContrast}
+      />
       {!archiveTransit && (
         <QuestMarkerHud
           store={hudStore}
