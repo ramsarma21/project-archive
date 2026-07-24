@@ -26,6 +26,7 @@ import {
   stepSuspicion,
   visibilityFactors,
   watcherAttentionPolicy,
+  watcherHeatMigrationReady,
   watcherPoseAt,
 } from "../watcherDetection.js";
 import {
@@ -54,6 +55,25 @@ test("scripted interrupts drain attention without allowing new accrual", () => {
       interruptActive: false,
     }),
     { simulationActive: true, canAccrue: true },
+  );
+  assert.equal(
+    watcherHeatMigrationReady({
+      active: true,
+      interruptActive: true,
+      legacyAuthority: true,
+      alreadyQueued: false,
+    }),
+    false,
+    "legacy migration must wait until the reconstructed exchange resolves",
+  );
+  assert.equal(
+    watcherHeatMigrationReady({
+      active: true,
+      interruptActive: false,
+      legacyAuthority: true,
+      alreadyQueued: false,
+    }),
+    true,
   );
 });
 

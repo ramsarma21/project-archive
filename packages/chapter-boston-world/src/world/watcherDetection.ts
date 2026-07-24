@@ -93,6 +93,20 @@ export function watcherAttentionPolicy(input: {
   };
 }
 
+export function watcherHeatMigrationReady(input: {
+  active: boolean;
+  interruptActive: boolean;
+  legacyAuthority: boolean;
+  alreadyQueued: boolean;
+}): boolean {
+  return (
+    input.active &&
+    !input.interruptActive &&
+    input.legacyAuthority &&
+    !input.alreadyQueued
+  );
+}
+
 const EXPOSURE_FACTORS: Record<ConcealmentState, number> = {
   EXPOSED: 1,
   WRAPPED: 0.5,

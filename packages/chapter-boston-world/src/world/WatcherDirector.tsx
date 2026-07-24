@@ -28,6 +28,7 @@ import {
   stepSuspicion,
   visibilityFactors,
   watcherAttentionPolicy,
+  watcherHeatMigrationReady,
   watcherPoseAt,
   type CheckpointState,
   type SuspicionState,
@@ -245,9 +246,13 @@ export function WatcherDirector(props: {
       return;
     }
     if (
-      props.active &&
-      props.field.heat.authority === "LEGACY_WATCHER_HEAT" &&
-      !migrationQueued.current
+      watcherHeatMigrationReady({
+        active: props.active,
+        interruptActive: props.field.activeInterrupt !== null,
+        legacyAuthority:
+          props.field.heat.authority === "LEGACY_WATCHER_HEAT",
+        alreadyQueued: migrationQueued.current,
+      })
     ) {
       migrationQueued.current = true;
       enqueue({
