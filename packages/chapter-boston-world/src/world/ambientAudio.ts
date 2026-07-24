@@ -70,6 +70,10 @@ export const IDENTITY_ONESHOT_NAMES = [
   "coin-clink",
   "constable-whistle",
   "cheer-short",
+  "footstep-stone-1",
+  "footstep-stone-2",
+  "footstep-wood-1",
+  "footstep-wood-2",
 ] as const;
 export type IdentityOneShotName = (typeof IDENTITY_ONESHOT_NAMES)[number];
 const IDENTITY_DRUM = "chase-drum-layer";
@@ -86,6 +90,10 @@ export const IDENTITY_GAIN: Record<IdentityOneShotName, number> = {
   "coin-clink": 0.4,
   "constable-whistle": 0.55,
   "cheer-short": 0.5,
+  "footstep-stone-1": 0.28,
+  "footstep-stone-2": 0.28,
+  "footstep-wood-1": 0.24,
+  "footstep-wood-2": 0.24,
 };
 const CHASE_DRUM_GAIN = 0.3;
 
@@ -96,6 +104,16 @@ export const IDENTITY_AUDIO_EVENT = "pa:identity-audio";
 const MUTE_KEY = "pa-audio-muted";
 const MASTER_LEVEL = 0.9;
 const CROSSFADE_TC = 0.35; // setTargetAtTime constant: ~1s to settle
+
+export function initialAudioMuted(storedValue: string | null): boolean {
+  return storedValue === "1";
+}
+
+export function footstepStrideM(speedMps: number): number {
+  if (speedMps >= 3.6) return 1.05;
+  if (speedMps >= 1.6) return 0.72;
+  return 0.58;
+}
 
 function phaseDensity(phase: Phase): number {
   switch (phase) {
@@ -218,7 +236,9 @@ class AmbientAudioEngine {
   constructor() {
     let storedMute = false;
     try {
-      storedMute = typeof localStorage !== "undefined" && localStorage.getItem(MUTE_KEY) === "1";
+      storedMute =
+        typeof localStorage !== "undefined" &&
+        initialAudioMuted(localStorage.getItem(MUTE_KEY));
     } catch {
       storedMute = false;
     }

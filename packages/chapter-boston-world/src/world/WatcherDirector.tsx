@@ -37,6 +37,7 @@ import {
   dispatchPresentationNotice,
   SUSPICION_THRESHOLDS,
 } from "@pa/engine-world";
+import { ambientAudio } from "./ambientAudio.js";
 
 type AlertLevel = "IDLE" | "WARY" | "ALERTED";
 
@@ -340,6 +341,7 @@ export function WatcherDirector(props: {
           }
         }
         if (stepped.crossed.includes("CONFRONTATION")) {
+          ambientAudio.playIdentity("constable-whistle");
           eventSerial.current += 1;
           const suffix = `${props.field.confrontationHistory.length}_${watcher.id}_${stepTick}_${eventSerial.current}`;
           enqueue({

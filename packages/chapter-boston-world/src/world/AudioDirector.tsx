@@ -6,8 +6,13 @@ import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { RuntimeView } from "@pa/contracts";
 import type { PlayerApi } from "./Player.js";
-import { ambientAudio } from "./ambientAudio.js";
+import {
+  ambientAudio,
+  footstepStrideM,
+  type IdentityOneShotName,
+} from "./ambientAudio.js";
 import { weatherBlend, clamp01 } from "./atmosphere.js";
+import { interiorDef } from "./interiorManifest.js";
 
 export function AudioDirector(props: {
   apiRef: { current: PlayerApi | null };
@@ -22,6 +27,13 @@ export function AudioDirector(props: {
   // ambient warning bell). Initialized lazily so a resumed save never tolls
   // its whole backlog at once.
   const lastSpentUnits = useRef<number | null>(null);
+  const lastFootPosition = useRef<{
+    x: number;
+    z: number;
+    space: string | null;
+  } | null>(null);
+  const footstepDistance = useRef(0);
+  const footstepSide = useRef(0);
   useEffect(() => {
     const spent = props.clock?.spentUnits;
     if (spent === undefined) return;
@@ -43,11 +55,46 @@ export function AudioDirector(props: {
 
   useFrame(() => {
     const clock = props.clock;
-    const pos = props.apiRef.current?.position;
+    const player = props.apiRef.current;
+    const pos = player?.position;
     const t = clock
       ? clamp01(clock.spentUnits / Math.max(1, clock.fixedEventBoundary))
       : 0;
     ambientAudio.setChaseDrum(props.hunted, props.reducedMotion);
+    if (player && pos) {
+      const previous = lastFootPosition.current;
+      const sameSpace = previous?.space === props.interiorId;
+      const travelled =
+        previous && sameSpace
+          ? Math.hypot(pos.x - previous.x, pos.z - previous.z)
+          : 0;
+      if (
+        travelled > 0 &&
+        travelled < 1.2 &&
+        player.motion.grounded &&
+        !player.motion.actionActive &&
+        player.motion.speed > 0.12
+      ) {
+        footstepDistance.current += travelled;
+        const stride = footstepStrideM(player.motion.speed);
+        if (footstepDistance.current >= stride) {
+          footstepDistance.current %= stride;
+          footstepSide.current = 1 - footstepSide.current;
+          const wood =
+            props.interiorId !== null &&
+            !interiorDef(props.interiorId)?.floorGlb.includes("brick");
+          const sound = `${wood ? "footstep-wood" : "footstep-stone"}-${footstepSide.current + 1}` as IdentityOneShotName;
+          ambientAudio.playIdentity(sound);
+        }
+      } else if (!sameSpace || travelled >= 1.2) {
+        footstepDistance.current = 0;
+      }
+      lastFootPosition.current = {
+        x: pos.x,
+        z: pos.z,
+        space: props.interiorId,
+      };
+    }
     ambientAudio.update({
       x: pos?.x ?? 0,
       z: pos?.z ?? 0,

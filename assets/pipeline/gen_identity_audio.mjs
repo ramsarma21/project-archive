@@ -525,6 +525,34 @@ const SYNTH = {
     dcBlock(out);
     return normalize(out, 0.64);
   },
+
+  // Short leather-soled steps. Variants are distance-triggered by locomotion,
+  // not looped, so cadence stays locked to actual travel and never plays while
+  // pushing against collision.
+  "footstep-stone": (seed = 5101) => {
+    const rnd = mulberry32(seed);
+    const out = buffer(0.2);
+    const heel = tone(0.11, (t) => 115 - 42 * (t / 0.11), 0.8);
+    envAD(heel, 0.001, 0.035);
+    addInto(out, heel, 0.008, 0.72);
+    const grit = onePoleHP(whiteInto(buffer(0.08), rnd, 1), 1450);
+    envAD(grit, 0.001, 0.022);
+    addInto(out, grit, 0.0, 0.34);
+    addInto(out, woodKnock(rnd, 760, 1.4, 0.08, 0.025), 0.012, 0.48);
+    dcBlock(out);
+    return normalize(out, 0.58);
+  },
+  "footstep-wood": (seed = 5201) => {
+    const rnd = mulberry32(seed);
+    const out = buffer(0.24);
+    addInto(out, woodKnock(rnd, 390, 3.2, 0.18, 0.055), 0.006, 0.8);
+    addInto(out, woodKnock(rnd, 880, 2.1, 0.1, 0.025), 0.0, 0.38);
+    const board = tone(0.2, 165 + (seed % 3) * 14, 0.35);
+    envAD(board, 0.002, 0.06);
+    addInto(out, board, 0.014, 0.42);
+    dcBlock(out);
+    return normalize(out, 0.56);
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -542,6 +570,8 @@ const SOUNDS = [
   { name: "coin-clink", loop: false },
   { name: "constable-whistle", loop: false },
   { name: "cheer-short", loop: false },
+  { name: "footstep-stone", loop: false, variants: [{ suffix: "-1", seed: 5101 }, { suffix: "-2", seed: 5151 }] },
+  { name: "footstep-wood", loop: false, variants: [{ suffix: "-1", seed: 5201 }, { suffix: "-2", seed: 5251 }] },
 ];
 
 // ---------------------------------------------------------------------------
