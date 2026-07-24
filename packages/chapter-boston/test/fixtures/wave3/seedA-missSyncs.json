@@ -424,14 +424,22 @@
         "attempts": 1
       }
     },
+    "printWorkshop": {
+      "sheetsPulled": 2,
+      "sheetsBeforeBell": 1,
+      "bestQuality": "CRISP",
+      "bestAverage": 0.95,
+      "bestPromptId": "BOS.MD01.ACT.PRESS_PIKE_PROOF.v1"
+    },
     "relationships": {
       "ABIGAIL_TRUST": 50,
       "ABIGAIL_RESPECT": 45,
-      "ABIGAIL_WARMTH": 35,
+      "ABIGAIL_WARMTH": 40,
       "THOMAS_OBLIGATION": 40,
       "PIKE_RESPECT": 45,
       "CLARKE_POLITICAL_READ": -20,
-      "RIDER_TRUST": 50
+      "RIDER_TRUST": 50,
+      "NED_CLEANUP_CREDIT": 0
     },
     "routes": {
       "THOMAS_DOCK_ROUTE": "UNLOCKED"
@@ -587,6 +595,7 @@
       "activeChase": null,
       "chaseHistory": [],
       "pendingReposition": null,
+      "discoveredMapIds": [],
       "activeInterrupt": null
     },
     "checkpoint": {
@@ -669,11 +678,12 @@
         "relationships": {
           "ABIGAIL_TRUST": 50,
           "ABIGAIL_RESPECT": 45,
-          "ABIGAIL_WARMTH": 35,
+          "ABIGAIL_WARMTH": 40,
           "THOMAS_OBLIGATION": 40,
           "PIKE_RESPECT": 45,
           "CLARKE_POLITICAL_READ": -20,
-          "RIDER_TRUST": 50
+          "RIDER_TRUST": 50,
+          "NED_CLEANUP_CREDIT": 0
         },
         "heatBand": "CALM",
         "recognized": false,

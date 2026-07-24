@@ -35,11 +35,15 @@ test("Mercer entry cards preview distinct approach stakes", () => {
   assert.equal(request?.kind, "CHOICE");
   if (request?.kind !== "CHOICE") return;
   assert.deepEqual(
-    request.options.map((option) => [option.choiceId, option.tags]),
+    request.options.map((option) => [option.choiceId, option.effects]),
     [
-      ["KNOCK", ["polite approach"]],
-      ["WALK_IN", ["direct approach"]],
-      ["LOOK_FIRST", ["observe first"]],
+      ["KNOCK", {
+        time: 1,
+        trust: { person: "Abigail", direction: "UP" },
+        receiptLead: "Knocked first",
+      }],
+      ["WALK_IN", { time: 1, receiptLead: "Walked straight in" }],
+      ["LOOK_FIRST", { time: 2, receiptLead: "Window first" }],
     ],
   );
 });
