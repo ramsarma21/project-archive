@@ -7,6 +7,7 @@ import {
   startingAlignmentFor,
 } from "./CompoundMechanicControls.js";
 import { useMechanicActionKey } from "./mechanicKeys.js";
+import { choiceTagline } from "../pages/play/playCopy.js";
 
 type MechanicPhase = "READY" | "ACTIVE" | "COMMIT" | "COMPLETE";
 
@@ -121,14 +122,15 @@ export function Controls(props: {
       const isArchiveSync = request.promptId.includes(".SYNC.");
       const options = (
         <div className={`choices${request.options.length === 1 ? " choices-single" : request.options.length === 2 ? " choices-two" : ""}`}>
-          {request.options.map((o) => (
-            <button key={o.choiceId} className="choice choice-gold" disabled={busy || o.disabled} onClick={() => onEvent({ type: "CHOICE_SELECTED", promptId: request.promptId, choiceId: o.choiceId })}>
-              <span className="clabel">{o.label}</span>
-              <span className="choice-subtext">
-                {o.tags.length > 0 ? o.tags.join(" · ") : "Choose this approach"}
-              </span>
-            </button>
-          ))}
+          {request.options.map((o) => {
+            const tagline = choiceTagline(o.tags);
+            return (
+              <button key={o.choiceId} className="choice choice-gold" disabled={busy || o.disabled} onClick={() => onEvent({ type: "CHOICE_SELECTED", promptId: request.promptId, choiceId: o.choiceId })}>
+                <span className="clabel">{o.label}</span>
+                {tagline && <span className="choice-subtext">{tagline}</span>}
+              </button>
+            );
+          })}
         </div>
       );
       if (isArchiveSync) {

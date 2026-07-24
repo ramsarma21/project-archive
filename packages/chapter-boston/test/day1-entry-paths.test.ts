@@ -29,6 +29,21 @@ function sessionAtEntryChoice() {
   return session;
 }
 
+test("Mercer entry cards preview distinct approach stakes", () => {
+  const session = sessionAtEntryChoice();
+  const request = session.plan?.request;
+  assert.equal(request?.kind, "CHOICE");
+  if (request?.kind !== "CHOICE") return;
+  assert.deepEqual(
+    request.options.map((option) => [option.choiceId, option.tags]),
+    [
+      ["KNOCK", ["polite approach"]],
+      ["WALK_IN", ["direct approach"]],
+      ["LOOK_FIRST", ["observe first"]],
+    ],
+  );
+});
+
 for (const entry of ["LOOK_FIRST", "KNOCK", "WALK_IN"] as const) {
   test(`${entry} entry reaches the full Mercer arrival beats`, () => {
     const session = sessionAtEntryChoice();

@@ -37,9 +37,13 @@ const PRIMER_COPY: Record<PrimerId, Primer> = {
   },
   CHOICE: {
     id: "CHOICE",
-    hint: "The small tags under each choice are the cost, up front.",
+    hint: "Small tags preview the tone or cost before you choose.",
   },
 };
+
+export function choiceTagline(tags: readonly string[]): string | null {
+  return tags.length > 0 ? tags.join(" · ") : null;
+}
 
 export function primerFor(request: InputRequest | null, seen: ReadonlySet<PrimerId>): Primer | null {
   if (!request) return null;

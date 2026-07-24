@@ -187,9 +187,9 @@ function* opening(ctx: Ctx): Sub<void> {
   // approach animates the threshold; only then does the interior scene begin.
   ctx.world.controlState = "INTERACTION";
   const enter = yield* choose(ctx, "BOS.MD01.ACT.ENTER_MERCER.v1", "You reach the shop door.", [
-    { choiceId: "KNOCK", label: "Knock first.", tags: [] },
-    { choiceId: "WALK_IN", label: "Walk straight in.", tags: [] },
-    { choiceId: "LOOK_FIRST", label: "Look through the window first.", tags: [] },
+    { choiceId: "KNOCK", label: "Knock first.", tags: ["polite approach"] },
+    { choiceId: "WALK_IN", label: "Walk straight in.", tags: ["direct approach"] },
+    { choiceId: "LOOK_FIRST", label: "Look through the window first.", tags: ["observe first"] },
   ]);
   ctx.scene("MERCER_PRESS", TEXT.shopInside);
   ctx.meet("Abigail Mercer");
