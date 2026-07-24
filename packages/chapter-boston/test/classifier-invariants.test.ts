@@ -192,6 +192,10 @@ test("classifier resolution never mutates progression/mastery/world/relationship
         submittedAt: "2026-07-22T20:00:00.000Z",
         storage: "LOCAL_EPHEMERAL",
       },
+      artifact: {
+        claimId: "CLAIM.COMPARE.COST",
+        evidenceIds: ["SRC.REVENUE_NOTICE"],
+      },
       resolution,
     });
 

@@ -21,11 +21,16 @@ test("CP1 answers show authored rationales before player-controlled advance", ()
   assert.match(checkpoint, /<kbd>\{index \+ 1\}<\/kbd>/);
 });
 
-test("open response distinguishes source context, submit, and continue", () => {
+test("open response typesets a claim, evidence, and original line", () => {
   assert.match(openResponse, /open-response-context/);
   assert.match(openResponse, /sourcePacket\.sourceIds\.length/);
-  assert.match(openResponse, /Submit this line/);
+  assert.match(openResponse, /Set a claim/);
+  assert.match(openResponse, /Set the evidence/);
+  assert.match(openResponse, /Add your line/);
+  assert.match(openResponse, /Print mini-broadside/);
   assert.match(openResponse, /Back to the street/);
+  assert.doesNotMatch(openResponse, /minLength=/);
+  assert.doesNotMatch(openResponse, /more required|character counter|word minimum/i);
   assert.doesNotMatch(openResponse, /Formative—not a grade/);
   assert.doesNotMatch(openResponse, /Return to the exact prior objective/);
 });

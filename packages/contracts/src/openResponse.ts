@@ -45,6 +45,25 @@ const StableId = z.string().min(1).max(160).regex(/^[A-Za-z0-9._:-]+$/);
 const Hash = z.string().regex(/^sha256:[0-9a-f]{64}$/);
 const IsoDate = z.string().datetime({ offset: true });
 
+export const TypesetCompositionSchema = z
+  .object({
+    claimId: StableId,
+    evidenceIds: z.array(StableId).min(1).max(8),
+    learnerLine: z.string().min(1).max(4000),
+  })
+  .strict();
+export type TypesetComposition = z.infer<typeof TypesetCompositionSchema>;
+
+export const TypesetArtifactReferenceSchema = z
+  .object({
+    claimId: StableId,
+    evidenceIds: z.array(StableId).min(1).max(8),
+  })
+  .strict();
+export type TypesetArtifactReference = z.infer<
+  typeof TypesetArtifactReferenceSchema
+>;
+
 export const SourcePacketRefSchema = z
   .object({
     sourcePacketId: StableId,
@@ -301,6 +320,7 @@ export const SubmitOpenResponseRequestSchema = z
     promptId: StableId,
     promptVersion: StableId,
     responseText: z.string().min(1).max(4000),
+    composition: TypesetCompositionSchema,
     idempotencyKey: StableId,
     consent: z
       .object({
@@ -329,6 +349,7 @@ export type SubmitOpenResponseResponse = z.infer<
 
 export interface FormativeEvidenceRecord {
   response: OpenResponseReference;
+  artifact: TypesetArtifactReference;
   resolution: DeterministicResolution;
 }
 

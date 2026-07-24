@@ -19,6 +19,13 @@ const OUT = resolve(
 const EXECUTABLE =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const SEED = "c7".repeat(32);
+const ONLY = new Set(
+  (process.env.COGNITIVE_QA_ONLY ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
+);
+const shouldRun = (id) => ONLY.size === 0 || ONLY.has(id);
 mkdirSync(OUT, { recursive: true });
 
 const report = {
@@ -394,19 +401,30 @@ async function submitPanel(page, authenticated = false) {
     .count();
   assert(underlyingEnabled === 0, "underlying controls stacked under response");
   await panel
+    .locator(".typeset-chips")
+    .first()
+    .getByRole("button")
+    .first()
+    .click();
+  await panel
+    .locator(".typeset-chips.evidence")
+    .getByRole("button")
+    .first()
+    .click();
+  await panel
     .locator("textarea")
     .fill(
       "The notice gives an official reason, while the local source shows what people in Boston experienced and what the official wording leaves out.",
     );
   if (authenticated) {
     const submit = panel.getByRole("button", {
-      name: "Submit this line",
+      name: "Print mini-broadside",
     });
     assert(await submit.isDisabled(), "consent-denied submit was enabled");
     await panel.locator('input[type="checkbox"]').check();
   }
   await panel
-    .getByRole("button", { name: "Submit this line" })
+    .getByRole("button", { name: "Print mini-broadside" })
     .click();
   await page.waitForSelector(".open-response-feedback", {
     timeout: 10_000,
@@ -500,11 +518,17 @@ async function mockAuthenticatedApi(page, googleProfile, mode) {
 const browser = await chromium.launch({
   headless: true,
   executablePath: EXECUTABLE,
-  args: ["--use-angle=swiftshader", "--enable-webgl"],
+  args: [
+    `--use-angle=${process.env.COGNITIVE_QA_ANGLE ?? "swiftshader"}`,
+    "--enable-webgl",
+    ...(process.env.COGNITIVE_QA_ANGLE === "metal"
+      ? []
+      : ["--enable-unsafe-swiftshader"]),
+  ],
 });
 
 try {
-  {
+  if (shouldRun("offline-normal")) {
     const context = await browser.newContext({
       viewport: { width: 1440, height: 1000 },
       hasTouch: true,
@@ -620,12 +644,16 @@ try {
       `imported source artifacts failed: ${failedArtifacts.join(",")}`,
     );
     await screenshot(page, "archive-connections-imported-artifacts");
+    const printedArtifact = page.getByText("Printed mini-broadside").last();
+    await printedArtifact.scrollIntoViewIfNeeded();
+    await printedArtifact.waitFor({ state: "visible" });
+    await screenshot(page, "archive-printed-mini-broadside");
     await page.keyboard.press("Escape");
     report.scenarios.push("offline-normal");
     await context.close();
   }
 
-  {
+  if (shouldRun("mock-timeout")) {
     const context = await browser.newContext({
       viewport: { width: 1280, height: 900 },
     });
@@ -653,7 +681,7 @@ try {
     await context.close();
   }
 
-  {
+  if (shouldRun("accessible-resume")) {
     const context = await browser.newContext({
       viewport: { width: 1024, height: 768 },
       hasTouch: true,
@@ -676,6 +704,17 @@ try {
       ),
       "high contrast class missing",
     );
+    await page
+      .locator(".typeset-chips")
+      .first()
+      .getByRole("button")
+      .first()
+      .click();
+    await page
+      .locator(".typeset-chips.evidence")
+      .getByRole("button")
+      .first()
+      .click();
     await page.locator(".open-response-panel textarea").focus();
     await page.keyboard.type(
       "A resumed keyboard response compares the official source with Boston's local experience and names the difference.",
@@ -687,7 +726,7 @@ try {
     await context.close();
   }
 
-  {
+  if (shouldRun("mock-online")) {
     const context = await browser.newContext({
       viewport: { width: 1440, height: 1000 },
     });
@@ -737,7 +776,7 @@ try {
     await context.close();
   }
 
-  {
+  if (shouldRun("no-immediate-prompt")) {
     const context = await browser.newContext({
       viewport: { width: 1280, height: 900 },
     });

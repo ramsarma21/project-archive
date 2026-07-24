@@ -298,6 +298,10 @@ test("open response suspends exact roam and cannot close before submission", () 
       submittedAt: "2026-07-22T20:00:00.000Z",
       storage: "LOCAL_EPHEMERAL",
     },
+    artifact: {
+      claimId: "CLAIM.COMPARE.COST",
+      evidenceIds: ["SRC.REVENUE_NOTICE"],
+    },
     resolution,
   });
   session.advance({
@@ -308,7 +312,19 @@ test("open response suspends exact roam and cannot close before submission", () 
   });
   assert.deepEqual(session.plan, original);
   assert.equal(ctx.world.currentInteractionOrdinal, 5);
-  assert.equal(ctx.field.openResponseCompletions[PROMPT_ID]?.resolution.status, "AUTHORED_FALLBACK");
+  const completion = ctx.field.openResponseCompletions[PROMPT_ID];
+  assert.equal(completion?.resolution.status, "AUTHORED_FALLBACK");
+  assert.equal(completion?.progressionAuthority, false);
+  assert.equal(completion?.rawTextInSave, false);
+  assert.deepEqual(completion?.artifact, {
+    claimId: "CLAIM.COMPARE.COST",
+    evidenceIds: ["SRC.REVENUE_NOTICE"],
+  });
+  assert.equal(
+    JSON.stringify(completion).includes("learnerLine"),
+    false,
+    "raw learner line leaked into durable field state",
+  );
 });
 
 test("stable named-NPC outcomes resolve effects from the runtime registry", () => {

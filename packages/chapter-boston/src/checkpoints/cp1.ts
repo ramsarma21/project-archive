@@ -93,6 +93,7 @@ function carryover(ctx: Ctx) {
       .sort((a, b) => a.interactionOrdinal - b.interactionOrdinal)
       .map((record) => ({
         response: structuredClone(record.response),
+        artifact: structuredClone(record.artifact),
         resolution: structuredClone(record.resolution),
       })),
     checkpointId: CP1_CHECKPOINT_ID,

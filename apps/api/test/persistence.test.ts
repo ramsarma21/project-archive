@@ -180,6 +180,12 @@ test("open responses are encrypted, CSRF-protected, idempotent, and profile-scop
     promptVersion: "v1",
     responseText:
       "The proclamation states the Crown's revenue purpose, while Thomas shows that harbor delays raise shop prices and cost workers wages. One gives the official reason and the other gives a local economic effect.",
+    composition: {
+      claimId: "CLAIM.COMPARE.COST",
+      evidenceIds: ["SRC.CROWN_PROCLAMATION", "SRC.THOMAS_TRADE"],
+      learnerLine:
+        "The proclamation states the Crown's revenue purpose, while Thomas shows that harbor delays raise shop prices and cost workers wages. One gives the official reason and the other gives a local economic effect.",
+    },
     idempotencyKey: "assessment-idempotency-1",
     consent: {
       granted: true,

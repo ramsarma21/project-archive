@@ -4,6 +4,7 @@ import type {
   FieldCommittedEvent,
   OpenResponseReference,
   RuntimeView,
+  TypesetComposition,
 } from "@pa/contracts";
 import type { LocalProfile } from "../../db.js";
 import { submitOpenResponse } from "../../gradingClient.js";
@@ -30,7 +31,10 @@ export interface OpenResponseFlow {
   retained: boolean;
   closeEnabled: boolean;
   begin: (promptId: string) => Promise<void>;
-  submit: (responseText: string, consent: RetentionConsent | null) => Promise<void>;
+  submit: (
+    composition: TypesetComposition,
+    consent: RetentionConsent | null,
+  ) => Promise<void>;
   close: () => Promise<void>;
 }
 
@@ -85,7 +89,7 @@ export function useOpenResponseFlow(args: {
   );
 
   const submitActiveOpenResponse = useCallback(
-    async (responseText: string, consent: RetentionConsent | null) => {
+    async (composition: TypesetComposition, consent: RetentionConsent | null) => {
       const prompt = view?.openResponse.activePrompt;
       const interrupt = view?.field.activeInterrupt;
       if (
@@ -116,7 +120,8 @@ export function useOpenResponseFlow(args: {
           body: {
             promptId: prompt.promptId,
             promptVersion: prompt.version,
-            responseText,
+            responseText: composition.learnerLine,
+            composition,
             idempotencyKey: interrupt.interruptId,
             consent: {
               granted: true,
@@ -140,6 +145,10 @@ export function useOpenResponseFlow(args: {
         interruptId: interrupt.interruptId,
         promptId: prompt.promptId,
         response,
+        artifact: {
+          claimId: composition.claimId,
+          evidenceIds: composition.evidenceIds,
+        },
         resolution,
       });
       if (!committed) {

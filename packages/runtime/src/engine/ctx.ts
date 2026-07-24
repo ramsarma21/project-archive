@@ -433,6 +433,7 @@ export class Ctx {
           .sort((a, b) => a.interactionOrdinal - b.interactionOrdinal)
           .map((record) => ({
             response: structuredClone(record.response),
+            artifact: structuredClone(record.artifact),
             resolution: structuredClone(record.resolution),
           })),
         npcFollowups: visibleNpcFollowups.map((node) =>

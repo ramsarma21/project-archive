@@ -78,6 +78,7 @@ const PRESENTER_EVENT_KEYS: Readonly<Record<string, readonly string[]>> = {
     "interruptId",
     "promptId",
     "response",
+    "artifact",
     "resolution",
   ],
   FIELD_WATCHER_CHALLENGE: ["type", "eventId", "interruptId", "challengeId", "watcherId", "reason"],

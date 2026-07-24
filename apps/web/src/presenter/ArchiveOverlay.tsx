@@ -615,8 +615,17 @@ function ConnectionsPane(props: {
         >
           <span className="archive-thread-mark" aria-hidden="true" />
           <div>
-            <strong>Your line, filed</strong>
-            <small>Kept with the day. Never a mark, never a score.</small>
+            <strong>Printed mini-broadside</strong>
+            <small>
+              Claim set: {record.artifact.claimId.replaceAll(".", " ")}
+            </small>
+            <p>
+              Evidence locked: {record.artifact.evidenceIds.join(" · ")}
+            </p>
+            <small>
+              Your line remains encrypted or ephemeral; it is never written
+              into the save.
+            </small>
             {record.resolution.feedbackIds.map((feedbackId) => (
               <p key={feedbackId}>
                 {authoredFeedback(feedbackId) ??

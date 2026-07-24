@@ -241,7 +241,7 @@ export async function registerAssessmentRoutes(
       if (
         !content ||
         body.promptVersion !== content.prompt.version ||
-        body.responseText.length < content.prompt.responseChars.min ||
+        body.responseText.trim().length < 1 ||
         body.responseText.length > content.prompt.responseChars.max
       ) {
         return reply.code(400).send({ error: "BAD_REQUEST" });
@@ -386,6 +386,7 @@ export async function registerAssessmentRoutes(
 
       const graded = await gradeFormativeResponse(profileId, {
         responseText: body.responseText,
+        composition: body.composition,
         prompt: content.prompt,
         rubric: content.rubric,
         sourceTexts: content.sourceTexts,

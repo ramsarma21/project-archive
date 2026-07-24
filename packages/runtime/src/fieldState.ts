@@ -3,6 +3,7 @@ import {
   FIELD_STATE_VERSION,
   DeterministicResolutionSchema,
   OpenResponseReferenceSchema,
+  TypesetArtifactReferenceSchema,
   OPTIONAL_ACTIVITY_STAGES,
   THREAD_STATUSES,
   heatBandForLegacyWatcherHeat,
@@ -417,6 +418,9 @@ export function applyFieldEvent(
       field.openResponseCompletions[event.promptId] = {
         promptId: event.promptId,
         response: clone(event.response),
+        artifact: clone(event.artifact),
+        progressionAuthority: false,
+        rawTextInSave: false,
         resolution: clone(event.resolution),
         interactionOrdinal: world.currentInteractionOrdinal,
       };
@@ -897,6 +901,9 @@ export function assertFieldEventPayload(
       nonEmpty(event.promptId, "promptId");
       if (!OpenResponseReferenceSchema.safeParse(event.response).success) {
         fail("invalid open-response reference");
+      }
+      if (!TypesetArtifactReferenceSchema.safeParse(event.artifact).success) {
+        fail("invalid typeset artifact reference");
       }
       if (!DeterministicResolutionSchema.safeParse(event.resolution).success) {
         fail("invalid open-response resolution");

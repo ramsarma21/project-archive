@@ -135,7 +135,9 @@ export class TrueFoundryGradingProvider implements GradingProvider {
           { role: "system", content: systemPrompt(input) },
           {
             role: "user",
-            content: `<student_response>${input.responseText}</student_response>`,
+            content: input.composition
+              ? `<typeset_composition claim_id="${input.composition.claimId}" evidence_ids="${input.composition.evidenceIds.join(",")}"><student_line>${input.composition.learnerLine}</student_line></typeset_composition>`
+              : `<student_response>${input.responseText}</student_response>`,
           },
         ],
       }),

@@ -2445,6 +2445,57 @@ input[type="text"] {
 }
 .open-response-context strong { color: #ffe5a0; font-size: 13px; }
 .open-response-context span { color: #cfe1df; font-size: 12px; line-height: 1.45; }
+.typeset-workbench { display: grid; gap: 14px; margin-top: 15px; }
+.typeset-chips {
+  display: flex; flex-wrap: wrap; gap: 7px; margin: 0; padding: 11px;
+  border: 1px solid rgba(242, 193, 78, 0.3);
+}
+.typeset-chips legend {
+  padding: 0 6px; color: #ffe5a0;
+  font: 800 10px ui-monospace, monospace; letter-spacing: 1px;
+}
+.typeset-chips button {
+  min-height: 38px; padding: 7px 10px; border: 1px solid rgba(239, 210, 138, 0.42);
+  background: rgba(37, 29, 17, 0.78); color: #f1e7ca; text-align: left;
+}
+.typeset-chips button[aria-pressed="true"] {
+  border-color: #fff0ae; background: #9a7022; color: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 224, 122, 0.17);
+}
+.typeset-chips.evidence button[aria-pressed="true"] { background: #35675e; }
+.composing-stick {
+  display: grid; gap: 6px; padding: 10px;
+  border: 2px solid #8b6330; background: linear-gradient(90deg, #2c2116, #4b3823);
+}
+.composing-stick > span { color: #ffe5a0; font-weight: 800; }
+.composing-stick > small { color: #d1c4a4; }
+.open-response-panel .composing-stick textarea {
+  min-height: 92px; border-color: #c89f58; background: #15120e;
+}
+.mini-broadside {
+  box-sizing: border-box; display: grid; gap: 9px; width: min(430px, 92%);
+  min-height: 230px; margin: 0 auto; padding: 26px 34px;
+  background-color: #e9dcba; background-position: center; background-size: cover;
+  color: #2d261c; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+  transform: rotate(-0.45deg);
+}
+.mini-broadside > span {
+  color: #5b4c34; font: 800 9px Georgia, serif; letter-spacing: 1.2px;
+  text-align: center; text-transform: uppercase;
+}
+.mini-broadside > strong {
+  align-self: end; font: 800 21px/1.15 Georgia, serif; text-align: center;
+  text-transform: uppercase;
+}
+.mini-broadside > p {
+  margin: 0; color: #2d261c; font: 600 16px/1.45 Georgia, serif; text-align: center;
+}
+.mini-broadside > small { align-self: end; color: #62543c; text-align: center; }
+.mini-broadside.printed { box-shadow: 0 0 0 3px #9f7630, 0 12px 30px rgba(0,0,0,.5); }
+.pa-reduced-motion .mini-broadside { transform: none; }
+.pa-high-contrast .typeset-chips button { border: 2px solid #fff; background: #000; }
+.pa-high-contrast .typeset-chips button[aria-pressed="true"] { background: #fff; color: #000; }
+.pa-high-contrast .composing-stick { border-color: #fff; background: #000; }
 .open-response-panel > label {
   display: grid;
   gap: 5px;

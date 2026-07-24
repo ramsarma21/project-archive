@@ -2,10 +2,12 @@ import type {
   ClassifierObservation,
   OpenResponsePrompt,
   OpenResponseRubric,
+  TypesetComposition,
 } from "@pa/contracts";
 
 export interface GradingInput {
   responseText: string;
+  composition?: TypesetComposition;
   prompt: OpenResponsePrompt;
   rubric: OpenResponseRubric;
   sourceTexts: Readonly<Record<string, string>>;

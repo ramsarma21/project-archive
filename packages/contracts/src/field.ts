@@ -2,6 +2,7 @@ import type { JobObjectCondition, JobObjectCustody } from "./state.js";
 import type {
   DeterministicResolution,
   OpenResponseReference,
+  TypesetArtifactReference,
 } from "./openResponse.js";
 
 export const FIELD_STATE_VERSION = 4 as const;
@@ -147,6 +148,9 @@ export interface ReactiveCompletionRecord {
 export interface OpenResponseCompletionRecord {
   promptId: string;
   response: OpenResponseReference;
+  artifact: TypesetArtifactReference;
+  progressionAuthority: false;
+  rawTextInSave: false;
   resolution: DeterministicResolution;
   interactionOrdinal: number;
 }
@@ -445,6 +449,7 @@ export type FieldCommittedEvent =
       interruptId: string;
       promptId: string;
       response: OpenResponseReference;
+      artifact: TypesetArtifactReference;
       resolution: DeterministicResolution;
     }
   | {

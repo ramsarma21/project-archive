@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { OpenResponsePrompt } from "@pa/contracts";
+import type {
+  OpenResponsePrompt,
+  TypesetComposition,
+} from "@pa/contracts";
+import { getDocumentImageUrl } from "@pa/chapter-boston-world";
 
 export interface RetentionConsent {
   policyVersion: string;
@@ -14,6 +18,47 @@ const OPERATION_LABELS: Record<OpenResponsePrompt["operation"], string> = {
   CAUSAL_SYNTHESIS: "Explain what caused the change",
 };
 
+const CLAIMS: Record<
+  OpenResponsePrompt["operation"],
+  readonly { id: string; label: string }[]
+> = {
+  COMPARE_SOURCES: [
+    { id: "CLAIM.COMPARE.COST", label: "One gives the reason; one shows the cost" },
+    { id: "CLAIM.COMPARE.AGREE", label: "The sources reinforce each other" },
+    { id: "CLAIM.COMPARE.TENSION", label: "The sources pull in different directions" },
+  ],
+  APPLY_CONCEPT: [
+    { id: "CLAIM.APPLY.EXPLAINS", label: "This idea explains what happened" },
+    { id: "CLAIM.APPLY.LIMIT", label: "This idea explains only part of it" },
+    { id: "CLAIM.APPLY.CHANGES", label: "The event changes how the idea reads" },
+  ],
+  HISTORICAL_PERSPECTIVE: [
+    { id: "CLAIM.POV.SUPPORT", label: "This person would support the choice" },
+    { id: "CLAIM.POV.RESIST", label: "This person would resist the choice" },
+    { id: "CLAIM.POV.DIVIDED", label: "This person would feel divided" },
+  ],
+  STRATEGY_JUSTIFICATION: [
+    { id: "CLAIM.STRATEGY.WORTH", label: "The risk was worth taking" },
+    { id: "CLAIM.STRATEGY.COSTLY", label: "The cost outweighed the gain" },
+    { id: "CLAIM.STRATEGY.ALTERNATE", label: "Another route would work better" },
+  ],
+  CAUSAL_SYNTHESIS: [
+    { id: "CLAIM.CAUSE.POLICY", label: "Policy set the change in motion" },
+    { id: "CLAIM.CAUSE.ENFORCEMENT", label: "Enforcement made the change felt" },
+    { id: "CLAIM.CAUSE.RESPONSE", label: "Boston's response widened the effect" },
+  ],
+};
+
+function evidenceLabel(id: string): string {
+  return id
+    .split(/[.:_-]/)
+    .filter(Boolean)
+    .slice(-3)
+    .join(" ")
+    .toLowerCase()
+    .replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
 export function OpenResponsePanel(props: {
   prompt: OpenResponsePrompt;
   authenticated: boolean;
@@ -22,21 +67,35 @@ export function OpenResponsePanel(props: {
   fallback: boolean;
   retained: boolean;
   closeEnabled: boolean;
-  onSubmit: (responseText: string, consent: RetentionConsent | null) => void;
+  onSubmit: (
+    composition: TypesetComposition,
+    consent: RetentionConsent | null,
+  ) => void;
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [claimId, setClaimId] = useState("");
+  const [evidenceIds, setEvidenceIds] = useState<string[]>([]);
   const [consented, setConsented] = useState(false);
   const [retentionDays, setRetentionDays] = useState(30);
   const textarea = useRef<HTMLTextAreaElement | null>(null);
-  const length = draft.length;
   const validLength =
-    length >= props.prompt.responseChars.min &&
-    length <= props.prompt.responseChars.max;
+    draft.trim().length > 0 &&
+    draft.length <= props.prompt.responseChars.max;
   const canSubmit =
     props.phase === "COMPOSE" &&
     validLength &&
+    Boolean(claimId) &&
+    evidenceIds.length > 0 &&
     (!props.authenticated || consented);
+  const selectedClaim =
+    CLAIMS[props.prompt.operation].find((claim) => claim.id === claimId)
+      ?.label ?? "";
+  const composition = (): TypesetComposition => ({
+    claimId,
+    evidenceIds,
+    learnerLine: draft.trim(),
+  });
 
   useEffect(() => {
     textarea.current?.focus();
@@ -67,8 +126,8 @@ export function OpenResponsePanel(props: {
         aria-describedby="open-response-prompt"
       >
         <header>
-          <span>ARCHIVE // A LINE OF YOUR OWN</span>
-          <strong>Say it the way you would print it</strong>
+          <span>COMPOSING STICK // MINI-BROADSIDE</span>
+          <strong>Set the claim · lock evidence · pull your line</strong>
         </header>
         <h2 id="open-response-title">{props.prompt.title}</h2>
         <p id="open-response-prompt">{props.prompt.prompt}</p>
@@ -84,47 +143,88 @@ export function OpenResponsePanel(props: {
         </aside>
 
         {props.phase !== "FEEDBACK" ? (
-          <>
-            <label htmlFor="open-response-text">
-              Your line
-              <small>A sentence or two in your own words is plenty.</small>
+          <div className="typeset-workbench">
+            <fieldset className="typeset-chips">
+              <legend>1 · Set a claim</legend>
+              {CLAIMS[props.prompt.operation].map((claim) => (
+                <button
+                  key={claim.id}
+                  type="button"
+                  aria-pressed={claimId === claim.id}
+                  disabled={props.phase === "PENDING"}
+                  onClick={() => setClaimId(claim.id)}
+                >
+                  {claim.label}
+                </button>
+              ))}
+            </fieldset>
+            <fieldset className="typeset-chips evidence">
+              <legend>2 · Set the evidence</legend>
+              {props.prompt.sourcePacket.sourceIds.map((evidenceId) => {
+                const selected = evidenceIds.includes(evidenceId);
+                return (
+                  <button
+                    key={evidenceId}
+                    type="button"
+                    aria-pressed={selected}
+                    disabled={props.phase === "PENDING"}
+                    onClick={() =>
+                      setEvidenceIds((current) =>
+                        selected
+                          ? current.filter((id) => id !== evidenceId)
+                          : [...current, evidenceId],
+                      )
+                    }
+                  >
+                    {evidenceLabel(evidenceId)}
+                  </button>
+                );
+              })}
+            </fieldset>
+            <label htmlFor="open-response-text" className="composing-stick">
+              <span>3 · Add your line</span>
+              <small>Your own reason is the line that makes this yours.</small>
+              <textarea
+                ref={textarea}
+                id="open-response-text"
+                value={draft}
+                maxLength={props.prompt.responseChars.max}
+                disabled={props.phase === "PENDING"}
+                placeholder="Set one short line in your own words…"
+                onChange={(event) => setDraft(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (
+                    (event.ctrlKey || event.metaKey) &&
+                    event.key === "Enter" &&
+                    canSubmit
+                  ) {
+                    props.onSubmit(
+                      composition(),
+                      props.authenticated
+                        ? {
+                            policyVersion: "PA.FORMATIVE.PRIVACY.v1",
+                            retentionDays,
+                          }
+                        : null,
+                    );
+                  }
+                }}
+              />
             </label>
-            <textarea
-              ref={textarea}
-              id="open-response-text"
-              value={draft}
-              minLength={props.prompt.responseChars.min}
-              maxLength={props.prompt.responseChars.max}
-              disabled={props.phase === "PENDING"}
-              onChange={(event) => setDraft(event.currentTarget.value)}
-              onKeyDown={(event) => {
-                if (
-                  (event.ctrlKey || event.metaKey) &&
-                  event.key === "Enter" &&
-                  canSubmit
-                ) {
-                  props.onSubmit(
-                    draft,
-                    props.authenticated
-                      ? {
-                          policyVersion: "PA.FORMATIVE.PRIVACY.v1",
-                          retentionDays,
-                        }
-                      : null,
-                  );
-                }
-              }}
-            />
-            {/* Length validation is unchanged underneath (the grading service
-                keeps its contract); the UI only offers a quiet hint instead
-                of a live counter (design1 kill list). */}
-            {length > 0 && !validLength && (
-              <div className="open-response-hint" aria-live="off">
-                {length < props.prompt.responseChars.min
-                  ? "Give it one more beat and it can hold the page."
-                  : "Trim it a little; a page line runs short."}
-              </div>
-            )}
+            <section
+              className="mini-broadside"
+              aria-label="Mini-broadside preview"
+              style={{ backgroundImage: `url(${getDocumentImageUrl("BLANK_SHEET")})` }}
+            >
+              <span>Mercer's Press · A connection</span>
+              <strong>{selectedClaim || "Set a claim above"}</strong>
+              <p>{draft.trim() || "Your line will sit here."}</p>
+              <small>
+                {evidenceIds.length > 0
+                  ? `Evidence: ${evidenceIds.map(evidenceLabel).join(" · ")}`
+                  : "Choose at least one piece of evidence."}
+              </small>
+            </section>
             {props.authenticated ? (
               <fieldset className="open-response-privacy">
                 <legend>Encrypted educator review</legend>
@@ -168,7 +268,7 @@ export function OpenResponsePanel(props: {
               disabled={!canSubmit}
               onClick={() =>
                 props.onSubmit(
-                  draft,
+                  composition(),
                   props.authenticated
                     ? {
                         policyVersion: "PA.FORMATIVE.PRIVACY.v1",
@@ -179,17 +279,28 @@ export function OpenResponsePanel(props: {
               }
             >
               {props.phase === "PENDING"
-                ? "Reading your line…"
-                : "Submit this line"}
+                ? "Setting the forme…"
+                : "Print mini-broadside"}
             </button>
             <small className="open-response-required">
-              Optional, and never marked. Finish the line and the street takes
-              you back.
+              Optional, never gating, and it will not advance without you.
             </small>
-          </>
+          </div>
         ) : (
           <div className="open-response-feedback">
-            <h3>{props.fallback ? "Filed with the day" : "A connection to carry forward"}</h3>
+            <h3>{props.fallback ? "Pulled and filed with the day" : "Fresh from the press"}</h3>
+            <section
+              className="mini-broadside printed"
+              aria-label="Printed mini-broadside"
+              style={{ backgroundImage: `url(${getDocumentImageUrl("BLANK_SHEET")})` }}
+            >
+              <span>Mercer's Press · Archive copy</span>
+              <strong>{selectedClaim}</strong>
+              <p>{draft.trim()}</p>
+              <small>
+                Evidence: {evidenceIds.map(evidenceLabel).join(" · ")}
+              </small>
+            </section>
             {props.feedback.map((line) => (
               <p key={line}>{line}</p>
             ))}
