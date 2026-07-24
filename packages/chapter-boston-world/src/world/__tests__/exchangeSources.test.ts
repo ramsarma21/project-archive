@@ -119,6 +119,45 @@ function baseFreeRoamEvents(): PresenterEvent[] {
 
 const BASE_EVENTS = baseFreeRoamEvents();
 
+test("Ned's locked notice-board anchor keeps an ambient reader", () => {
+  const before = createDay1Session({
+    variationRootSeedHex: SEED,
+    openResponseContentMode: "AUTHOR_DRAFT_QA",
+  });
+  before.advance({ type: "CONTINUE" });
+  const locked = day1ExchangeFrame(
+    before.ctx.view() as RuntimeView,
+    "EXTERIOR",
+  );
+  assert.ok(
+    locked.figures.find((figure) => figure.id === "notice-reader")?.position,
+    "locked anchor should retain an imported ambient figure",
+  );
+  assert.equal(
+    locked.figures.find((figure) => figure.id === "ned")?.position,
+    null,
+  );
+  assert.equal(
+    locked.candidates.some((candidate) => candidate.sourceId === "THR-ned"),
+    false,
+    "ambient stand-in must not leak Ned's gated interaction",
+  );
+
+  const unlocked = freshSession();
+  const live = day1ExchangeFrame(
+    unlocked.ctx.view() as RuntimeView,
+    "EXTERIOR",
+  );
+  assert.ok(live.figures.find((figure) => figure.id === "ned")?.position);
+  assert.equal(
+    live.figures.find((figure) => figure.id === "notice-reader")?.position,
+    null,
+  );
+  assert.ok(
+    live.candidates.some((candidate) => candidate.sourceId === "THR-ned"),
+  );
+});
+
 function freshSession(): Session {
   return createDay1Session({
     variationRootSeedHex: SEED,

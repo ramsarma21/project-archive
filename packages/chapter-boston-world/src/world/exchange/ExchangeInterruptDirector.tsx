@@ -448,7 +448,7 @@ export function ExchangeInterruptDirector(props: {
     () => () => {
       props.interactionRegistry.clearSource(FIGURE_CANDIDATE_SOURCE);
       props.interactionRegistry.clearSource(M4_CANDIDATE_SOURCE);
-      for (const id of ["ned", "sarah", "dockhand-m3"]) {
+      for (const id of ["ned", "notice-reader", "sarah", "dockhand-m3", "ropemaker"]) {
         services.actors.remove(id);
       }
     },

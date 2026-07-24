@@ -903,7 +903,7 @@ registerExchangeSourcePackage("day1-exchanges", {
 // ---------------------------------------------------------------------------
 
 export interface Day1FigureDefinition {
-  id: "ned" | "sarah" | "dockhand-m3" | "ropemaker";
+  id: "ned" | "notice-reader" | "sarah" | "dockhand-m3" | "ropemaker";
   glb: string;
   height: number;
   tint: string;
@@ -921,6 +921,18 @@ export const DAY1_FIGURES: readonly Day1FigureDefinition[] = [
     tint: THREAD_FIGURES.NED.tint,
     workClip: "work2",
     talkSourceIds: ["THR-ned"],
+  },
+  {
+    // Ned remains gated until Mercer introduces the work. Before then an
+    // imported ambient reader occupies the notice-board sight line, so the
+    // corner reads as a lived street rather than a missing quest actor.
+    id: "notice-reader",
+    glb: "townsman-rigged",
+    height: 1.71,
+    tint: "#7b6f5d",
+    rotationY: -Math.PI / 2,
+    workClip: "work2",
+    talkSourceIds: [],
   },
   {
     id: "sarah",
@@ -1033,6 +1045,14 @@ export function day1ExchangeFrame(
         ? THREAD_FIGURES.NED.exteriorPosition
         : null;
   figures.push({ id: "ned", kind: "THREAD_FIGURE", position: nedPosition });
+  figures.push({
+    id: "notice-reader",
+    kind: "DIRECTED_NPC",
+    position:
+      spaceId === "EXTERIOR" && !nedIntroduced && !nedWindowOpen
+        ? THREAD_FIGURES.NED.exteriorPosition
+        : null,
+  });
   if (nedPosition) {
     candidates.push({
       id: "THREAD:NED",
