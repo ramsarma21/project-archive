@@ -848,8 +848,7 @@ export function World3D(props: {
               apiRef={apiRef}
               active={
                 props.request?.kind === "FREE_ROAM" &&
-                !Boolean(activeChase) &&
-                !Boolean(props.view?.field.activeInterrupt)
+                !Boolean(activeChase)
               }
               dayProgress={t}
               suspended={fieldPaused || choreographyCameraActive}

@@ -27,6 +27,7 @@ import {
   stepHeatDecay,
   stepSuspicion,
   visibilityFactors,
+  watcherAttentionPolicy,
   watcherPoseAt,
   type CheckpointState,
   type SuspicionState,
@@ -38,6 +39,7 @@ import {
   SUSPICION_THRESHOLDS,
 } from "@pa/engine-world";
 import { ambientAudio } from "./ambientAudio.js";
+import { QA_RUNTIME_ENABLED } from "./qaEnvironment.js";
 
 type AlertLevel = "IDLE" | "WARY" | "ALERTED";
 
@@ -194,6 +196,30 @@ export function WatcherDirector(props: {
     return () => window.removeEventListener("pa:flavor", onFlavor);
   }, [services.fieldTickRef, services.stealthStore]);
 
+  useEffect(() => {
+    if (!QA_RUNTIME_ENABLED) return;
+    const target = window as unknown as {
+      __PA_QA_SUSPICION__?: (value: number, watcherId?: string) => boolean;
+    };
+    target.__PA_QA_SUSPICION__ = (
+      rawValue,
+      watcherId = "WATCH-customs",
+    ) => {
+      if (!WATCHERS.some((watcher) => watcher.id === watcherId)) return false;
+      const value = Math.max(0, Math.min(1, rawValue));
+      suspicion.current.set(watcherId, {
+        value,
+        toldWary: value >= SUSPICION_THRESHOLDS.WARY,
+        toldAlerted: value >= SUSPICION_THRESHOLDS.ALERTED,
+        confronted: value >= SUSPICION_THRESHOLDS.CONFRONTATION,
+      });
+      return true;
+    };
+    return () => {
+      delete target.__PA_QA_SUSPICION__;
+    };
+  }, []);
+
   useEffect(
     () => () => {
       for (const watcher of WATCHERS) services.actors.remove(watcher.id);
@@ -268,17 +294,18 @@ export function WatcherDirector(props: {
       }
     }
 
-    const simulationActive =
-      exterior &&
-      props.active &&
-      props.field.activeChase === null;
+    const attentionPolicy = watcherAttentionPolicy({
+      exterior,
+      active: props.active,
+      chaseActive: props.field.activeChase !== null,
+      suspended: props.suspended,
+      interruptActive: props.field.activeInterrupt !== null,
+    });
+    const simulationActive = attentionPolicy.simulationActive;
     // Scripted exchanges and overlays suppress accrual but do not freeze the
     // meter. Existing attention drains while the player is occupied, so a
     // harmless notice read cannot release a queued challenge on close.
-    const canAccrue =
-      simulationActive &&
-      !props.suspended &&
-      props.field.activeInterrupt === null;
+    const canAccrue = attentionPolicy.canAccrue;
     const concealment = effectiveConcealment(props.field);
     const motion = playerMotion(player);
     const covered = Boolean(pointInCover(player.position, services.spaceId));

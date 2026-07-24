@@ -25,6 +25,7 @@ import {
   stepHeatDecay,
   stepSuspicion,
   visibilityFactors,
+  watcherAttentionPolicy,
   watcherPoseAt,
 } from "../watcherDetection.js";
 import {
@@ -32,6 +33,29 @@ import {
   createFieldClock,
   FIELD_DT,
 } from "../fieldSimulation.js";
+
+test("scripted interrupts drain attention without allowing new accrual", () => {
+  assert.deepEqual(
+    watcherAttentionPolicy({
+      exterior: true,
+      active: true,
+      chaseActive: false,
+      suspended: false,
+      interruptActive: true,
+    }),
+    { simulationActive: true, canAccrue: false },
+  );
+  assert.deepEqual(
+    watcherAttentionPolicy({
+      exterior: true,
+      active: true,
+      chaseActive: false,
+      suspended: false,
+      interruptActive: false,
+    }),
+    { simulationActive: true, canAccrue: true },
+  );
+});
 
 function world(blockers: CollisionWorld["blockers"] = []) {
   return bindGameplayWorld(

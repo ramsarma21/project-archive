@@ -77,6 +77,22 @@ export interface CheckpointStep {
   ordinal: number | null;
 }
 
+export function watcherAttentionPolicy(input: {
+  exterior: boolean;
+  active: boolean;
+  chaseActive: boolean;
+  suspended: boolean;
+  interruptActive: boolean;
+}): { simulationActive: boolean; canAccrue: boolean } {
+  const simulationActive =
+    input.exterior && input.active && !input.chaseActive;
+  return {
+    simulationActive,
+    canAccrue:
+      simulationActive && !input.suspended && !input.interruptActive,
+  };
+}
+
 const EXPOSURE_FACTORS: Record<ConcealmentState, number> = {
   EXPOSED: 1,
   WRAPPED: 0.5,
