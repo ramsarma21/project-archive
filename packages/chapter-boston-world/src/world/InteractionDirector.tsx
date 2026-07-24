@@ -6,7 +6,11 @@ import type {
   InteractionCandidate,
   InteractionRegistry,
 } from "./interactionRegistry.js";
-import { resolveInteraction } from "./interactionResolver.js";
+import { interactionPresentationMetadata } from "./interactionRegistry.js";
+import {
+  resolveInteractionAffordance,
+  type ResolvedInteraction,
+} from "./interactionResolver.js";
 import { useWorldServices } from "./WorldServicesContext.js";
 
 export const INTERACTION_TOUCH_EVENT = "pa:interaction";
@@ -29,8 +33,8 @@ export function InteractionDirector(props: {
   highContrast: boolean;
 }) {
   const services = useWorldServices();
-  const [prompt, setPrompt] = useState<InteractionCandidate | null>(null);
-  const promptRef = useRef<InteractionCandidate | null>(null);
+  const [affordance, setAffordance] = useState<ResolvedInteraction | null>(null);
+  const affordanceRef = useRef<ResolvedInteraction | null>(null);
   const enabledRef = useRef(props.enabled && !props.busy);
   enabledRef.current = props.enabled && !props.busy;
   const pressed = useRef(false);
@@ -45,8 +49,9 @@ export function InteractionDirector(props: {
     ) {
       return;
     }
-    const candidate = promptRef.current;
-    if (!candidate) return;
+    const resolved = affordanceRef.current;
+    if (!resolved || resolved.phase !== "ACTION") return;
+    const candidate = resolved.candidate;
     releasedSinceAction.current = false;
     actionInFlight.current = true;
     void Promise.resolve(candidate.activate())
@@ -101,13 +106,13 @@ export function InteractionDirector(props: {
   useFrame(() => {
     const player = props.apiRef.current;
     if (!player || !enabledRef.current) {
-      if (promptRef.current) {
-        promptRef.current = null;
-        setPrompt(null);
+      if (affordanceRef.current) {
+        affordanceRef.current = null;
+        setAffordance(null);
       }
       return;
     }
-    const resolved = resolveInteraction({
+    const resolved = resolveInteractionAffordance({
       candidates: props.registry.list(),
       player: {
         position: player.position,
@@ -115,19 +120,56 @@ export function InteractionDirector(props: {
         facingZ: player.motion.facingZ,
         spaceId: services.spaceId,
       },
-      currentId: promptRef.current?.id ?? null,
+      currentId: affordanceRef.current?.candidate.id ?? null,
       segmentClear: services.gameplayWorld.segmentClear,
     });
-    const next = resolved?.candidate ?? null;
-    if (next?.id === promptRef.current?.id && next?.label === promptRef.current?.label) {
-      promptRef.current = next;
+    if (
+      resolved?.candidate.id === affordanceRef.current?.candidate.id &&
+      resolved?.candidate.label === affordanceRef.current?.candidate.label &&
+      resolved?.phase === affordanceRef.current?.phase
+    ) {
+      affordanceRef.current = resolved;
       return;
     }
-    promptRef.current = next;
-    setPrompt(next);
+    affordanceRef.current = resolved;
+    setAffordance(resolved);
   });
 
-  if (!prompt) return null;
+  if (!affordance) return null;
+  const prompt = affordance.candidate;
+  const metadata = interactionPresentationMetadata(prompt);
+  const classes = `${props.highContrast ? " high-contrast" : ""}${
+    props.reducedMotion ? " reduced-motion" : ""
+  } importance-${metadata.importance.toLowerCase()}`;
+  if (affordance.phase === "ACTION") {
+    return (
+      <Html fullscreen zIndexRange={[8, 0]}>
+        <div
+          className={`interaction-action-layer${classes}`}
+          data-interaction-id={prompt.id}
+          data-interaction-phase="ACTION"
+          data-interaction-verb={metadata.verb}
+        >
+          <button
+            type="button"
+            className={`interaction-glyph interaction-action interaction-${prompt.kind.toLowerCase()}`}
+            aria-label={`${metadata.verb}: ${metadata.displayName}`}
+            onClick={() => {
+              releasedSinceAction.current = true;
+              activate();
+            }}
+          >
+            <span>{metadata.displayName}</span>
+            <strong>
+              <kbd>F</kbd>
+              <b aria-hidden="true"> — </b>
+              {metadata.verb}
+            </strong>
+          </button>
+        </div>
+      </Html>
+    );
+  }
   return (
     <Html
       position={[
@@ -139,19 +181,18 @@ export function InteractionDirector(props: {
       occlude={false}
       zIndexRange={[4, 0]}
     >
-      <button
-        type="button"
-        className={`interaction-glyph interaction-${prompt.kind.toLowerCase()}${
-          props.highContrast ? " high-contrast" : ""
-        }${props.reducedMotion ? " reduced-motion" : ""}`}
-        aria-label={`Interact: ${prompt.label}`}
-        onClick={() => {
-          releasedSinceAction.current = true;
-          activate();
-        }}
+      <div
+        className={`interaction-affordance interaction-${affordance.phase.toLowerCase()} interaction-${prompt.kind.toLowerCase()}${classes}`}
+        role="status"
+        aria-label={`${metadata.category}: ${metadata.displayName}. ${metadata.verb} when closer.`}
+        data-interaction-id={prompt.id}
+        data-interaction-phase={affordance.phase}
+        data-interaction-verb={metadata.verb}
       >
-        <kbd>F</kbd> {prompt.label}
-      </button>
+        <small>{metadata.category}</small>
+        <span>{metadata.displayName}</span>
+        {affordance.phase === "APPROACH" && <strong>{metadata.verb}</strong>}
+      </div>
     </Html>
   );
 }

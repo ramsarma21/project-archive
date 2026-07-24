@@ -21,8 +21,10 @@ import {
 } from "../actorRoutes.js";
 import { INTERACTION_PRIORITIES } from "../interactionRegistry.js";
 import type {
+  InteractionImportance,
   InteractionKind,
   InteractionPriority,
+  InteractionVerb,
 } from "../interactionRegistry.js";
 import { interiorPoint } from "../interiorManifest.js";
 import {
@@ -1033,6 +1035,11 @@ export interface Day1CandidateFrame {
   spaceId: string;
   position: readonly [number, number, number];
   radius: number;
+  discoveryRadius?: number;
+  approachRadius?: number;
+  displayName?: string;
+  verb?: InteractionVerb;
+  importance?: InteractionImportance;
   facingDot: number;
   losRequired: boolean;
   /** Handed to the engine: begin(sourceId) resolves through the registry. */
@@ -1098,6 +1105,11 @@ export function day1ExchangeFrame(
       id: "THREAD:NED",
       kind: "THREAD",
       label: "Talk to Ned",
+      displayName: "Ned // The Apprentice",
+      verb: "Talk",
+      discoveryRadius: 10,
+      approachRadius: 4.5,
+      importance: "STORY",
       priority: INTERACTION_PRIORITIES.SIDE_JOB_THREAD,
       spaceId,
       position: nedPosition,
@@ -1119,6 +1131,11 @@ export function day1ExchangeFrame(
       id: "THREAD:SARAH",
       kind: "THREAD",
       label: "Talk to Goodwife Sarah",
+      displayName: "Goodwife Sarah // Wharf widow",
+      verb: "Talk",
+      discoveryRadius: 10,
+      approachRadius: 4.5,
+      importance: "STORY",
       priority: INTERACTION_PRIORITIES.SIDE_JOB_THREAD,
       spaceId: "EXTERIOR",
       position: THREAD_FIGURES.SARAH.interactionPosition,
@@ -1150,6 +1167,22 @@ export function day1ExchangeFrame(
         dockActivity.stage === "AVAILABLE" || dockActivity.stage === "DORMANT"
           ? "Talk to the dockhand"
           : dock.choices[0]!.label,
+      displayName:
+        dockActivity.stage === "AVAILABLE" || dockActivity.stage === "DORMANT"
+          ? "Wharf dockhand"
+          : dock.title,
+      verb:
+        dockActivity.stage === "AVAILABLE" || dockActivity.stage === "DORMANT"
+          ? "Talk"
+          : dockActivity.stage === "READY_HANDOFF"
+            ? "Deliver"
+            : dockActivity.stage === "CARRYING" ||
+                dockActivity.stage === "BALANCING"
+              ? "Cross"
+              : "Take",
+      discoveryRadius: 9,
+      approachRadius: 4.5,
+      importance: "STANDARD",
       priority: INTERACTION_PRIORITIES.SIDE_JOB_THREAD,
       spaceId: "EXTERIOR",
       position: dock.position,
@@ -1170,6 +1203,11 @@ export function day1ExchangeFrame(
       id: "SIDE_JOB:TAVERN_NOTE:HANDOFF",
       kind: "SIDE_JOB",
       label: "Hand the note to the keeper",
+      displayName: "Keeper // Bunch of Grapes",
+      verb: "Deliver",
+      discoveryRadius: 9,
+      approachRadius: 4.5,
+      importance: "STORY",
       priority: INTERACTION_PRIORITIES.SIDE_JOB_THREAD,
       spaceId: "EXPLORE_tavern",
       position: keeperAnchor(),
@@ -1201,6 +1239,16 @@ export function day1ExchangeFrame(
         ropewalk.stage === "AVAILABLE" || ropewalk.stage === "DORMANT"
           ? "Talk to the ropemaker"
           : job.choices[0]!.label,
+      displayName:
+        ropewalk.stage === "AVAILABLE" || ropewalk.stage === "DORMANT"
+          ? "Ropemaker"
+          : job.title,
+      verb:
+        ropewalk.stage === "AVAILABLE" || ropewalk.stage === "DORMANT"
+          ? "Talk"
+          : "Help",
+      discoveryRadius: 9,
+      approachRadius: 4.5,
       priority: INTERACTION_PRIORITIES.SIDE_JOB_THREAD,
       spaceId: "EXPLORE_ropewalk",
       position: job.position,

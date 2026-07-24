@@ -16,8 +16,10 @@ import type { MicroConceptId, OptionalActivityId, RuntimeView } from "@pa/contra
 import { MICRO_CONCEPT_IDS, OPTIONAL_ACTIVITY_IDS, standingDeltaForCause } from "@pa/chapter-boston";
 import { INTERACTION_PRIORITIES } from "../interactionRegistry.js";
 import type {
+  InteractionImportance,
   InteractionKind,
   InteractionPriority,
+  InteractionVerb,
 } from "../interactionRegistry.js";
 import { interiorPoint } from "../interiorManifest.js";
 import {
@@ -560,6 +562,11 @@ export interface M4CandidateFrame {
   spaceId: string;
   position: readonly [number, number, number];
   radius: number;
+  discoveryRadius?: number;
+  approachRadius?: number;
+  displayName?: string;
+  verb?: InteractionVerb;
+  importance?: InteractionImportance;
   facingDot: number;
   losRequired: boolean;
   /** Offer availability (exchangesEnabled); flavor verbs stay always-on. */
@@ -580,6 +587,11 @@ export function day1M4Frame(
       id: `M4:${knowledge.id}`,
       kind: "KNOWLEDGE",
       label: `Read ${knowledge.title}`,
+      displayName: knowledge.title,
+      verb: "Read",
+      discoveryRadius: 8,
+      approachRadius: 4.2,
+      importance: "STORY",
       priority: INTERACTION_PRIORITIES.KNOWLEDGE,
       spaceId,
       position: knowledgeWorldPosition(knowledge),
@@ -608,6 +620,12 @@ export function day1M4Frame(
         id: `M4:${prompt.sourceId}`,
         kind: "SIDE_JOB",
         label: prompt.action,
+        displayName: prompt.title,
+        verb:
+          prompt.sourceId.includes("drop") ? "Deliver" : "Help",
+        discoveryRadius: 9,
+        approachRadius: 4.5,
+        importance: "STANDARD",
         priority: INTERACTION_PRIORITIES.SIDE_JOB_THREAD,
         spaceId,
         position: prompt.position,
@@ -623,6 +641,11 @@ export function day1M4Frame(
         id: `M4:${verb.id}`,
         kind: "FLAVOR",
         label: verb.label,
+        displayName: verb.label,
+        verb: "Interact",
+        discoveryRadius: 7,
+        approachRadius: 4,
+        importance: "AMBIENT",
         priority: INTERACTION_PRIORITIES.FLAVOR,
         spaceId,
         position: verb.position,
@@ -640,6 +663,11 @@ export function day1M4Frame(
       id: `M4:${figure.id}`,
       kind: "NPC",
       label: "Ask for rumors",
+      displayName: figure.title,
+      verb: "Talk",
+      discoveryRadius: 10,
+      approachRadius: 4.5,
+      importance: "STANDARD",
       priority: INTERACTION_PRIORITIES.STORY_NPC,
       spaceId,
       position: figure.position,

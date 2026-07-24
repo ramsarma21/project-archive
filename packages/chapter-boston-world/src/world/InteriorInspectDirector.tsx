@@ -85,35 +85,46 @@ export function InteriorInspectDirector(props: {
       const dx = worldAnchor[0] - api.position.x;
       const dz = worldAnchor[2] - api.position.z;
       const distance = Math.hypot(dx, dz);
-      if (distance > hotspot.radius || distance >= bestDistance) continue;
       const inv = distance > 0.001 ? 1 / distance : 1;
       const facing =
         api.motion.facingX * dx * inv +
         api.motion.facingZ * dz * inv;
-      if (facing < hotspot.facingDot) continue;
-      bestDistance = distance;
-      best = { hotspot, worldAnchor };
+      if (
+        distance <= hotspot.radius + 0.2 &&
+        facing >= hotspot.facingDot &&
+        distance < bestDistance
+      ) {
+        bestDistance = distance;
+        best = { hotspot, worldAnchor };
+      }
+      props.interactionRegistry.upsert({
+        id: `INTERIOR_INSPECT:${hotspot.id}`,
+        sourceId: "INTERIOR_INSPECT",
+        kind: "INTERIOR_INSPECT",
+        label: `Inspect ${hotspot.title}`,
+        displayName: hotspot.title,
+        verb: "Inspect",
+        discoveryRadius: 7,
+        approachRadius: 4,
+        importance: "STANDARD",
+        priority: INTERACTION_PRIORITIES.KNOWLEDGE,
+        spaceId: props.spaceId,
+        position: worldAnchor,
+        radius: hotspot.radius + 0.2,
+        facingDot: hotspot.facingDot,
+        losRequired: true,
+        enabled: props.enabled && !props.open,
+        activate: () => {
+          if (!enabledRef.current || openRef.current) return false;
+          viewed.current.add(hotspot.id);
+          onOpenRef.current(hotspot);
+          return true;
+        },
+      });
     }
     const previous = promptRef.current;
     promptRef.current = best;
     if (!best) return;
-    props.interactionRegistry.upsert({
-      id: `INTERIOR_INSPECT:${best.hotspot.id}`,
-      sourceId: "INTERIOR_INSPECT",
-      kind: "INTERIOR_INSPECT",
-      label: `Inspect ${best.hotspot.title}`,
-      priority: INTERACTION_PRIORITIES.KNOWLEDGE,
-      spaceId: props.spaceId,
-      position: best.worldAnchor,
-      radius: best.hotspot.radius + 0.2,
-      facingDot: best.hotspot.facingDot,
-      losRequired: true,
-      enabled: props.enabled && !props.open,
-      activate: () => {
-        activate();
-        return true;
-      },
-    });
     if (previous?.hotspot.id === best.hotspot.id) return;
   }, -2);
 

@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import {
   INTERACTION_PRIORITIES,
   createInteractionRegistry,
+  interactionPresentationMetadata,
   type InteractionCandidate,
 } from "../interactionRegistry.js";
 import {
   INTERACTION_FACING_WAIVER_M,
   INTERACTION_HYSTERESIS_M,
   resolveInteraction,
+  resolveInteractionAffordance,
 } from "../interactionResolver.js";
 
 function candidate(
@@ -148,4 +150,109 @@ test("registry upsert and source clearing prevent stacked prompts", () => {
   assert.equal(registry.get("same")?.priority, INTERACTION_PRIORITIES.STORY_NPC);
   registry.clearSource("test");
   assert.equal(registry.size, 0);
+});
+
+test("generic affordance resolves discovery, approach, and action ranges", () => {
+  const source = candidate(
+    "source",
+    INTERACTION_PRIORITIES.KNOWLEDGE,
+    [7, 0, 0],
+    {
+      label: "Read Revenue proclamation",
+      radius: 2,
+      discoveryRadius: 9,
+      approachRadius: 4.5,
+      displayName: "Revenue proclamation",
+      verb: "Read",
+    },
+  );
+  const at = (x: number) =>
+    resolveInteractionAffordance({
+      candidates: [{ ...source, position: [x, 0, 0] }],
+      player,
+      currentId: null,
+      segmentClear: () => true,
+    });
+  assert.equal(at(8)?.phase, "DISCOVERY");
+  assert.equal(at(4)?.phase, "APPROACH");
+  assert.equal(at(1.8)?.phase, "ACTION");
+  assert.equal(at(9.1), null);
+  assert.equal(
+    resolveInteraction({
+      candidates: [source],
+      player,
+      currentId: null,
+      segmentClear: () => true,
+    }),
+    null,
+    "the activation resolver stays action-range only",
+  );
+});
+
+test("far affordances preserve LOS, priority, gating, and one-target arbitration", () => {
+  const source = candidate(
+    "source",
+    INTERACTION_PRIORITIES.KNOWLEDGE,
+    [7, 0, 0],
+    { discoveryRadius: 9 },
+  );
+  const npc = candidate(
+    "npc",
+    INTERACTION_PRIORITIES.STORY_NPC,
+    [8, 0, 0],
+    { discoveryRadius: 11 },
+  );
+  const resolve = (
+    candidates: InteractionCandidate[],
+    clear = true,
+  ) =>
+    resolveInteractionAffordance({
+      candidates,
+      player,
+      currentId: null,
+      segmentClear: () => clear,
+    });
+  assert.equal(resolve([source, npc])?.candidate.id, "npc");
+  assert.equal(resolve([source], false), null, "no indicator through walls");
+  assert.equal(resolve([{ ...source, enabled: false }]), null);
+  assert.equal(
+    resolve([{ ...source, spaceId: "MERCER_PRESS" }]),
+    null,
+    "no cross-floor/space indicator",
+  );
+});
+
+test("metadata defaults produce consistent verbs and bounded accessible ranges", () => {
+  const npc = interactionPresentationMetadata(
+    candidate("npc", INTERACTION_PRIORITIES.STORY_NPC, [1, 0, 0], {
+      label: "Talk to Abigail Mercer",
+    }),
+  );
+  assert.deepEqual(
+    {
+      verb: npc.verb,
+      displayName: npc.displayName,
+      category: npc.category,
+      discoveryRadius: npc.discoveryRadius,
+      approachRadius: npc.approachRadius,
+    },
+    {
+      verb: "Talk",
+      displayName: "Abigail Mercer",
+      category: "Person",
+      discoveryRadius: 11,
+      approachRadius: 4,
+    },
+  );
+  const oversizedAction = interactionPresentationMetadata(
+    candidate("job", INTERACTION_PRIORITIES.SIDE_JOB_THREAD, [1, 0, 0], {
+      label: "Deliver the barrel",
+      radius: 5,
+      discoveryRadius: 4,
+      approachRadius: 2,
+    }),
+  );
+  assert.equal(oversizedAction.discoveryRadius, 5);
+  assert.equal(oversizedAction.approachRadius, 5);
+  assert.equal(oversizedAction.verb, "Deliver");
 });

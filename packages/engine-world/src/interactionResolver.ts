@@ -1,4 +1,7 @@
-import type { InteractionCandidate } from "./interactionRegistry.js";
+import {
+  interactionPresentationMetadata,
+  type InteractionCandidate,
+} from "./interactionRegistry.js";
 
 export interface InteractionPlayer {
   position: { x: number; y: number; z: number };
@@ -11,6 +14,7 @@ export interface ResolvedInteraction {
   candidate: InteractionCandidate;
   distance: number;
   facing: number;
+  phase: "DISCOVERY" | "APPROACH" | "ACTION";
 }
 
 export const INTERACTION_HYSTERESIS_M = 0.35;
@@ -26,6 +30,7 @@ function eligible(
   candidate: InteractionCandidate,
   player: InteractionPlayer,
   currentId: string | null,
+  includeDiscovery: boolean,
   segmentClear: (
     from: { x: number; y: number; z: number },
     to: { x: number; y: number; z: number },
@@ -35,9 +40,11 @@ function eligible(
   const dx = candidate.position[0] - player.position.x;
   const dz = candidate.position[2] - player.position.z;
   const distance = Math.hypot(dx, dz);
-  const radius =
-    candidate.radius +
-    (candidate.id === currentId ? INTERACTION_HYSTERESIS_M : 0);
+  const metadata = interactionPresentationMetadata(candidate);
+  const sticky = candidate.id === currentId ? INTERACTION_HYSTERESIS_M : 0;
+  const radius = (includeDiscovery
+    ? metadata.discoveryRadius
+    : candidate.radius) + sticky;
   if (distance > radius) return null;
   const inverse = distance > 0.001 ? 1 / distance : 1;
   const facing =
@@ -46,7 +53,7 @@ function eligible(
     return null;
   }
   if (
-    candidate.losRequired &&
+    (includeDiscovery || candidate.losRequired) &&
     !segmentClear(
       {
         x: player.position.x,
@@ -54,21 +61,35 @@ function eligible(
         z: player.position.z,
       },
       {
-        x: candidate.position[0],
+        // Stop just before the authored anchor: posters, doors, and artifacts
+        // often sit directly on their owning collision surface. That surface
+        // must not occlude itself, while any wall in front still blocks.
+        x:
+          candidate.position[0] -
+          (distance > 0.15 ? (dx / distance) * 0.15 : 0),
         y: candidate.position[1] + 1.05,
-        z: candidate.position[2],
+        z:
+          candidate.position[2] -
+          (distance > 0.15 ? (dz / distance) * 0.15 : 0),
       },
     )
   ) {
     return null;
   }
-  return { candidate, distance, facing };
+  const phase =
+    distance <= candidate.radius + sticky
+      ? "ACTION"
+      : distance <= metadata.approachRadius + sticky
+        ? "APPROACH"
+        : "DISCOVERY";
+  return { candidate, distance, facing, phase };
 }
 
-export function resolveInteraction(input: {
+function resolve(input: {
   candidates: readonly InteractionCandidate[];
   player: InteractionPlayer;
   currentId: string | null;
+  includeDiscovery: boolean;
   segmentClear: (
     from: { x: number; y: number; z: number },
     to: { x: number; y: number; z: number },
@@ -80,6 +101,7 @@ export function resolveInteraction(input: {
         candidate,
         input.player,
         input.currentId,
+        input.includeDiscovery,
         input.segmentClear,
       ),
     )
@@ -109,4 +131,28 @@ export function resolveInteraction(input: {
     return current;
   }
   return best;
+}
+
+export function resolveInteraction(input: {
+  candidates: readonly InteractionCandidate[];
+  player: InteractionPlayer;
+  currentId: string | null;
+  segmentClear: (
+    from: { x: number; y: number; z: number },
+    to: { x: number; y: number; z: number },
+  ) => boolean;
+}): ResolvedInteraction | null {
+  return resolve({ ...input, includeDiscovery: false });
+}
+
+export function resolveInteractionAffordance(input: {
+  candidates: readonly InteractionCandidate[];
+  player: InteractionPlayer;
+  currentId: string | null;
+  segmentClear: (
+    from: { x: number; y: number; z: number },
+    to: { x: number; y: number; z: number },
+  ) => boolean;
+}): ResolvedInteraction | null {
+  return resolve({ ...input, includeDiscovery: true });
 }
