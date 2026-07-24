@@ -24,6 +24,28 @@ export function startRuntimeWorker(registry: ChapterRegistry): void {
     ctx.postMessage(msg);
   }
 
+  function projection() {
+    if (!session) throw new Error("RUNTIME_DEADLOCK: no session");
+    const chapter = registry.require(chapterId);
+    return {
+      view: session.ctx.view(),
+      report: buildMasteryReport(
+        session.ctx.learner,
+        {
+          profileId,
+          packageId: chapter.packageId,
+          chapterId,
+          variationRootSeedHex: seedHex,
+          committedEventCount: session.committedEvents.length,
+          generatedAt: new Date().toISOString(),
+        },
+        session.ctx.checkpoint,
+        session.ctx.field.engagedMicroIds,
+        chapter.report,
+      ),
+    };
+  }
+
   ctx.onmessage = (e: MessageEvent<WorkerRequest>) => {
     const req = e.data;
     try {
@@ -64,6 +86,7 @@ export function startRuntimeWorker(registry: ChapterRegistry): void {
         case "EVENT": {
           if (!session) throw new Error("RUNTIME_DEADLOCK: no session");
           const r = session.advance(req.payload);
+          const projected = projection();
           post({
             id: req.id,
             type: "STEP",
@@ -71,12 +94,14 @@ export function startRuntimeWorker(registry: ChapterRegistry): void {
             newDirectives: r.newDirectives,
             committedEventCount: session.committedEvents.length,
             done: r.done,
+            ...projected,
           });
           return;
         }
         case "FIELD_EVENT": {
           if (!session) throw new Error("RUNTIME_DEADLOCK: no session");
           const r = session.emitFieldEvent(req.payload);
+          const projected = projection();
           post({
             id: req.id,
             type: "STEP",
@@ -84,12 +109,13 @@ export function startRuntimeWorker(registry: ChapterRegistry): void {
             newDirectives: r.newDirectives,
             committedEventCount: session.committedEvents.length,
             done: r.done,
+            ...projected,
           });
           return;
         }
         case "SNAPSHOT": {
           if (!session) throw new Error("RUNTIME_DEADLOCK: no session");
-          const chapter = registry.require(chapterId);
+          const projected = projection();
           post({
             id: req.id,
             type: "SNAPSHOT",
@@ -99,21 +125,7 @@ export function startRuntimeWorker(registry: ChapterRegistry): void {
               committedEvents: session.committedEvents,
               worldRevision: session.ctx.world.revision,
               done: session.isDone,
-              view: session.ctx.view(),
-              report: buildMasteryReport(
-                session.ctx.learner,
-                {
-                  profileId,
-                  packageId: chapter.packageId,
-                  chapterId,
-                  variationRootSeedHex: seedHex,
-                  committedEventCount: session.committedEvents.length,
-                  generatedAt: new Date().toISOString(),
-                },
-                session.ctx.checkpoint,
-                session.ctx.field.engagedMicroIds,
-                chapter.report,
-              ),
+              ...projected,
             },
           });
           return;

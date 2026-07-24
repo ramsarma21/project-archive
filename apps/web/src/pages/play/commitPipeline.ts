@@ -4,7 +4,6 @@ import type {
   MasteryReport,
   PresentationDirective,
   PresenterEvent,
-  RuntimeSnapshot,
   RuntimeView,
 } from "@pa/contracts";
 import type { LocalSave, PresenterSpatialState } from "../../db.js";
@@ -29,14 +28,17 @@ export interface CommitClient {
     newDirectives: PresentationDirective[];
     done: boolean;
     committedEventCount: number;
+    view: RuntimeView;
+    report: MasteryReport;
   }>;
   submitFieldEvent(event: FieldCommittedEvent): Promise<{
     plan: ExecutionPlan | null;
     newDirectives: PresentationDirective[];
     done: boolean;
     committedEventCount: number;
+    view: RuntimeView;
+    report: MasteryReport;
   }>;
-  snapshot(): Promise<RuntimeSnapshot>;
 }
 
 export interface PersistDeps {
@@ -190,12 +192,11 @@ export function createOnEvent<Animation extends ChoiceAnimationLike>(
       runtimeAdvanced = true;
       deps.eventsRef.current = [...priorEvents, ev];
       deps.setTranscript((t) => [...t, ...r.newDirectives]);
-      const snap = await client.snapshot();
-      deps.setView(snap.view);
+      deps.setView(r.view);
       deps.setPresentationOriginLocation(originLocation);
       deps.setPresentationLocationId(originLocation);
       deps.setPlan(r.plan);
-      deps.setReport(snap.report);
+      deps.setReport(r.report);
       deps.setDone(r.done);
       await deps.persist(r.done ? "COMPLETE" : "IN_PROGRESS");
       return true;
@@ -255,12 +256,11 @@ export function createOnFieldEvent<Animation extends ChoiceAnimationLike>(
           ...result.newDirectives,
         ]);
       }
-      const snap = await client.snapshot();
-      deps.setView(snap.view);
+      deps.setView(result.view);
       deps.setPresentationOriginLocation(originLocation);
       deps.setPresentationLocationId(originLocation);
       deps.setPlan(result.plan);
-      deps.setReport(snap.report);
+      deps.setReport(result.report);
       deps.setDone(result.done);
       await deps.persist(result.done ? "COMPLETE" : "IN_PROGRESS");
       return true;

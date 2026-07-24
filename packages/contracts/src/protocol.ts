@@ -221,7 +221,17 @@ export interface InitPayload {
 
 export type WorkerResponse =
   | { id: number; type: "READY"; plan: ExecutionPlan; transcript: PresentationDirective[]; committedEventCount: number }
-  | { id: number; type: "STEP"; plan: ExecutionPlan | null; newDirectives: PresentationDirective[]; committedEventCount: number; done: boolean }
+  | {
+      id: number;
+      type: "STEP";
+      plan: ExecutionPlan | null;
+      newDirectives: PresentationDirective[];
+      committedEventCount: number;
+      done: boolean;
+      /** Projection returned with the commit; avoids a second full snapshot. */
+      view: RuntimeView;
+      report: import("./teks.js").MasteryReport;
+    }
   | { id: number; type: "SNAPSHOT"; snapshot: RuntimeSnapshot }
   | { id: number; type: "ERROR"; code: string; message: string };
 

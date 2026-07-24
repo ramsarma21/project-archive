@@ -5,6 +5,8 @@ import type {
   PresenterEvent,
   ExecutionPlan,
   PresentationDirective,
+  RuntimeView,
+  MasteryReport,
   RuntimeSnapshot,
 } from "@pa/contracts";
 
@@ -78,9 +80,25 @@ export class RuntimeClient {
     throw new Error(r.type === "ERROR" ? r.message : "init failed");
   }
 
-  async advance(ev: PresenterEvent): Promise<{ plan: ExecutionPlan | null; newDirectives: PresentationDirective[]; done: boolean; committedEventCount: number }> {
+  async advance(ev: PresenterEvent): Promise<{
+    plan: ExecutionPlan | null;
+    newDirectives: PresentationDirective[];
+    done: boolean;
+    committedEventCount: number;
+    view: RuntimeView;
+    report: MasteryReport;
+  }> {
     const r = await this.send({ type: "EVENT", payload: ev });
-    if (r.type === "STEP") return { plan: r.plan, newDirectives: r.newDirectives, done: r.done, committedEventCount: r.committedEventCount };
+    if (r.type === "STEP") {
+      return {
+        plan: r.plan,
+        newDirectives: r.newDirectives,
+        done: r.done,
+        committedEventCount: r.committedEventCount,
+        view: r.view,
+        report: r.report,
+      };
+    }
     throw new Error(r.type === "ERROR" ? r.message : "advance failed");
   }
 
@@ -91,6 +109,8 @@ export class RuntimeClient {
     newDirectives: PresentationDirective[];
     done: boolean;
     committedEventCount: number;
+    view: RuntimeView;
+    report: MasteryReport;
   }> {
     const r = await this.send({ type: "FIELD_EVENT", payload: event });
     if (r.type === "STEP") {
@@ -99,6 +119,8 @@ export class RuntimeClient {
         newDirectives: r.newDirectives,
         done: r.done,
         committedEventCount: r.committedEventCount,
+        view: r.view,
+        report: r.report,
       };
     }
     throw new Error(r.type === "ERROR" ? r.message : "field event failed");

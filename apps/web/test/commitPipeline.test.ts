@@ -5,7 +5,6 @@ import type {
   FieldCommittedEvent,
   MasteryReport,
   PresenterEvent,
-  RuntimeSnapshot,
   RuntimeView,
 } from "@pa/contracts";
 import {
@@ -36,24 +35,19 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-const SNAPSHOT = {
-  view: { locationId: "BOSTON_STREET" } as unknown as RuntimeView,
-  report: {} as MasteryReport,
-  done: false,
-} as unknown as RuntimeSnapshot;
-
 const STEP = {
   plan: null,
   newDirectives: [],
   done: false,
   committedEventCount: 1,
+  view: { locationId: "BOSTON_STREET" } as unknown as RuntimeView,
+  report: {} as MasteryReport,
 };
 
 function fakeClient(overrides: Partial<CommitClient> = {}): CommitClient {
   return {
     advance: async () => ({ ...STEP }),
     submitFieldEvent: async () => ({ ...STEP }),
-    snapshot: async () => SNAPSHOT,
     ...overrides,
   };
 }
@@ -66,6 +60,8 @@ interface Recorded {
   locationWrites: (string | null)[];
   waits: number[];
   animations: (unknown | null)[];
+  views: RuntimeView[];
+  reports: MasteryReport[];
 }
 
 function makeDeps(
@@ -79,6 +75,8 @@ function makeDeps(
     locationWrites: [],
     waits: [],
     animations: [],
+    views: [],
+    reports: [],
   };
   const deps: CommitDeps<{ durationMs: number }> = {
     clientRef: { current: fakeClient() },
@@ -100,11 +98,11 @@ function makeDeps(
     setBusy: (busy) => recorded.busyStates.push(busy),
     setError: (error) => recorded.errors.push(error),
     setTranscript: () => {},
-    setView: () => {},
+    setView: (view) => recorded.views.push(view),
     setPresentationOriginLocation: (id) => recorded.originWrites.push(id),
     setPresentationLocationId: (id) => recorded.locationWrites.push(id),
     setPlan: () => {},
-    setReport: () => {},
+    setReport: (report) => recorded.reports.push(report),
     setDone: () => {},
     persist: async (status) => {
       recorded.persistCalls.push(status);
@@ -141,6 +139,21 @@ test("acceptance: onEvent returns true only after advance + persist land", async
   // Busy toggled on then off; in-flight released.
   assert.deepEqual(recorded.busyStates, [true, false]);
   assert.equal(deps.inFlightRef.current, false);
+  assert.deepEqual(recorded.views, [STEP.view]);
+  assert.deepEqual(recorded.reports, [STEP.report]);
+});
+
+test("interrupt commits consume inline projection without a snapshot RPC", async () => {
+  let snapshotCalls = 0;
+  const client = Object.assign(fakeClient(), {
+    snapshot: async () => {
+      snapshotCalls += 1;
+      throw new Error("full snapshots are forbidden on the commit path");
+    },
+  });
+  const { deps } = makeDeps({ clientRef: { current: client } });
+  assert.equal(await createOnFieldEvent(deps)(FIELD_EVENT), true);
+  assert.equal(snapshotCalls, 0);
 });
 
 test("a done advance persists COMPLETE", async () => {
