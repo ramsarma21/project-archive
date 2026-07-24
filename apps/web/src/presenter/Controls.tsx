@@ -232,6 +232,11 @@ export function SystemWindow(props: { heading: string; children: ReactNode }) {
 // RETRIES until the runtime actually accepts the event. A fire-once timer
 // wedged the whole plan in BREATHER forever (feel-audit-1 P0-5).
 const BREATHER_RETRY_MS = 800;
+export function breatherScheduleKey(
+  request: Extract<InputRequest, { kind: "BREATHER" }>,
+): string {
+  return `${request.requestId}:${request.durationMs}`;
+}
 
 function Breather(props: {
   request: Extract<InputRequest, { kind: "BREATHER" }>;
@@ -239,6 +244,7 @@ function Breather(props: {
 }) {
   const onEventRef = useRef(props.onEvent);
   onEventRef.current = props.onEvent;
+  const scheduleKey = breatherScheduleKey(props.request);
   useEffect(() => {
     let cancelled = false;
     let timer = 0;
@@ -261,9 +267,10 @@ function Breather(props: {
       cancelled = true;
       window.clearTimeout(timer);
     };
-    // Re-arm per presented request instance (a new plan object), not just per
-    // duration value, so consecutive breathers can never share a stale timer.
-  }, [props.request]);
+    // Re-arm only for a new semantic breather. Projection-only plan refreshes
+    // (heat decay, map discovery) clone the request object but preserve this
+    // key, so they cannot starve the required completion timer.
+  }, [scheduleKey, props.request.durationMs]);
   return null;
 }
 

@@ -46,6 +46,11 @@ export function ExplorePortals(props: {
     if (!props.enabled) return;
     const api = props.apiRef.current;
     if (!api) return;
+    // A QA route goal must exercise real locomotion/collision without
+    // accidentally accepting an unrelated optional doorway it crosses.
+    // Production players never have qaWalkTarget, so portal behavior is
+    // unchanged outside the dev-only navigation contract.
+    if (api.qaWalkTarget) return;
     if (props.interiorId) {
       const portal = EXPLORE_PORTALS.find((p) => p.loc.id === props.interiorId);
       if (!portal) return; // hero interiors exit through their runtime flow

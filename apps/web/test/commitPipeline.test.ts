@@ -125,6 +125,18 @@ const REPOSITION_APPLIED = {
   interruptId: "R1",
   intentEventId: "R1",
 } as FieldCommittedEvent;
+const MAP_DISCOVERED = {
+  type: "FIELD_MAP_DISCOVERED",
+  eventId: "MAP_DISCOVERED:MERCER",
+  landmarkId: "MERCER",
+} as FieldCommittedEvent;
+const HEAT_DECAY_CHECKPOINT = {
+  type: "FIELD_HEAT_DECAY_CHECKPOINT",
+  eventId: "HEAT_DECAY_1",
+  band: "WATCHED",
+  elapsedSeconds: 3,
+  paused: false,
+} as FieldCommittedEvent;
 
 test("acceptance: onEvent returns true only after advance + persist land", async () => {
   const { deps, recorded } = makeDeps();
@@ -275,6 +287,13 @@ test("onFieldEvent envelope exemptions: system cleanup and reactive exchange", a
   const plan = { cueId: "CUE_A", request: { kind: "CONTINUE" }, present: [] } as unknown as ExecutionPlan;
   const cleanup = makeDeps({ busy: true, plan, readyCueId: null });
   assert.equal(await createOnFieldEvent(cleanup.deps)(REPOSITION_APPLIED), true);
+  const mapHandoff = makeDeps({ busy: true, plan, readyCueId: null });
+  assert.equal(await createOnFieldEvent(mapHandoff.deps)(MAP_DISCOVERED), true);
+  const decayHandoff = makeDeps({ busy: true, plan, readyCueId: null });
+  assert.equal(
+    await createOnFieldEvent(decayHandoff.deps)(HEAT_DECAY_CHECKPOINT),
+    true,
+  );
   // A live REACTIVE_EXCHANGE interrupt commits inside the busy envelope.
   const reactive = makeDeps({
     busy: true,

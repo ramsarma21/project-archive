@@ -140,7 +140,7 @@ export type InputRequest =
   | { kind: "CHOICE"; promptId: string; frame: string; options: ChoiceOption[]; mechanic?: MechanicParams }
   | { kind: "MECHANIC"; promptId: string; params: MechanicParams }
   | { kind: "FOCUS_READ"; objectId: string; title: string; teaser: string }
-  | { kind: "BREATHER"; durationMs: number }
+  | { kind: "BREATHER"; durationMs: number; requestId: string }
   | {
       kind: "FREE_ROAM";
       targets: FreeRoamTarget[];

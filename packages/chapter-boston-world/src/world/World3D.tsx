@@ -1028,6 +1028,7 @@ export function World3D(props: {
             <QuestArrivalTracker
               markers={markers}
               apiRef={apiRef}
+              hostRef={hostRef}
               busy={
                 props.movementLocked ||
                 Boolean(doorTarget) ||

@@ -26,6 +26,7 @@ import {
 export function QuestArrivalTracker(props: {
   markers: ResolvedQuestMarker[];
   apiRef: { current: PlayerApi | null };
+  hostRef?: { current: HTMLDivElement | null };
   busy: boolean;
   selectedTargetId: string | null;
   cueId: string | null;
@@ -48,8 +49,18 @@ export function QuestArrivalTracker(props: {
   useFrame(() => {
     const s = state.current;
     const api = props.apiRef.current;
+    const host = props.hostRef?.current;
+    if (host) {
+      host.dataset.arrivalBusy = String(props.busy);
+      host.dataset.arrivalSelectedId = props.selectedTargetId ?? "";
+      host.dataset.arrivalMarkerCount = String(props.markers.length);
+    }
     if (props.busy || !api) {
       s.dwellEnter = null;
+      if (host) {
+        host.dataset.arrivalPhase = "BLOCKED";
+        host.dataset.arrivalReady = "false";
+      }
       return;
     }
     const px = api.position.x;
@@ -62,6 +73,15 @@ export function QuestArrivalTracker(props: {
       for (const m of props.markers) {
         const th = KIND_THRESHOLDS[m.kind];
         const d = planarDistance(px, pz, m.arrivalAnchor[0], m.arrivalAnchor[2]);
+        if (host) {
+          host.dataset.arrivalPhase = "SELECT";
+          host.dataset.arrivalTargetId = m.targetId;
+          host.dataset.arrivalAnchor = m.arrivalAnchor.join(",");
+          host.dataset.arrivalDistance = d.toFixed(3);
+          host.dataset.arrivalInside = String(d <= th.arrival);
+          host.dataset.arrivalThreshold = String(th.arrival);
+          host.dataset.arrivalReady = "false";
+        }
         if (d <= th.arrival) {
           if (shouldAttemptArrival(s.select, m.targetId, now, true)) {
             s.select = beginArrivalAttempt(s.select, m.targetId);
@@ -82,6 +102,11 @@ export function QuestArrivalTracker(props: {
     const marker = props.markers.find((m) => m.targetId === props.selectedTargetId);
     if (!marker) {
       s.dwellEnter = null;
+      if (host) {
+        host.dataset.arrivalPhase = "NO_MARKER";
+        host.dataset.arrivalTargetId = "";
+        host.dataset.arrivalReady = "false";
+      }
       return;
     }
     const th = KIND_THRESHOLDS[marker.kind];
@@ -99,6 +124,21 @@ export function QuestArrivalTracker(props: {
       dwellMs,
       msSinceSelection: now - s.selectedAt,
     });
+    if (host) {
+      host.dataset.arrivalPhase = "ARRIVE";
+      host.dataset.arrivalTargetId = marker.targetId;
+      host.dataset.arrivalAnchor = marker.arrivalAnchor.join(",");
+      host.dataset.arrivalDistance = d.toFixed(3);
+      host.dataset.arrivalInside = String(inside);
+      host.dataset.arrivalThreshold = String(th.arrival);
+      host.dataset.arrivalDwellMs = String(Math.round(dwellMs));
+      host.dataset.arrivalSinceSelectionMs = String(
+        Math.round(now - s.selectedAt),
+      );
+      host.dataset.arrivalReady = String(ready);
+      host.dataset.arrivalInFlightKey = s.arrive.inFlightKey ?? "";
+      host.dataset.arrivalFiredKey = s.arrive.firedKey ?? "";
+    }
     if (shouldAttemptArrival(s.arrive, key, now, ready)) {
       s.arrive = beginArrivalAttempt(s.arrive, key);
       void props.onArrive(marker.targetId).then((accepted) => {

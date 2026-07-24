@@ -25,13 +25,18 @@ export function PlayerPosProbe(props: {
     if (!QA_RUNTIME_ENABLED) return;
     type QaWindow = Window & {
       __PA_QA_TELEPORT__?: (x: number, z: number, faceY?: number) => void;
+      __PA_QA_WALK_TO__?: (x: number, z: number, sprint?: boolean) => void;
     };
     const qaWindow = window as QaWindow;
     qaWindow.__PA_QA_TELEPORT__ = (x, z, faceY) => {
       props.apiRef.current?.teleport([x, 0, z], faceY);
     };
+    qaWindow.__PA_QA_WALK_TO__ = (x, z, sprint = false) => {
+      props.apiRef.current?.setQaWalkTarget([x, 0, z], sprint);
+    };
     return () => {
       delete qaWindow.__PA_QA_TELEPORT__;
+      delete qaWindow.__PA_QA_WALK_TO__;
     };
   }, [props.apiRef]);
   useFrame(({ scene, camera }) => {
@@ -68,6 +73,9 @@ export function PlayerPosProbe(props: {
       host.dataset.playerFacing = `${api.motion.facingX.toFixed(3)},${api.motion.facingZ.toFixed(3)}`;
       host.dataset.playerActionSerial = String(api.motion.actionSerial);
       host.dataset.playerInputLocked = String(api.motion.inputLocked);
+      host.dataset.qaWalkTarget = api.qaWalkTarget
+        ? `${api.qaWalkTarget.x.toFixed(3)},${api.qaWalkTarget.z.toFixed(3)}`
+        : "";
       const stealth = props.stealthStore.getSnapshot();
       host.dataset.chaseActive = String(stealth.chaseActive);
       host.dataset.chaseState = stealth.chaseState;

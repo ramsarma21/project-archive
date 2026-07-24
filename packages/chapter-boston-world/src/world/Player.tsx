@@ -107,6 +107,12 @@ export interface PlayerApi {
   // layer for its facing checks.
   facingY: number;
   teleport: (pos: [number, number, number], faceY?: number) => void;
+  /** QA-only navigation intent; still uses normal acceleration/collision. */
+  setQaWalkTarget: (
+    pos: [number, number, number] | null,
+    sprint?: boolean,
+  ) => void;
+  readonly qaWalkTarget: THREE.Vector3 | null;
   // One-shot pose driver for beats/mechanics (seat, flavor, staging): places
   // the body like teleport but WITHOUT the camera snap. Never called per-frame
   // by the traversal layer any more — authored traversal runs through the
@@ -130,6 +136,19 @@ export interface PlayerApi {
     pos: [number, number, number],
     obstacleId?: string,
   ) => boolean;
+}
+
+export function qaWalkDirection(
+  from: readonly [number, number],
+  target: readonly [number, number],
+  stopRadius = 0.28,
+): { x: number; z: number; distance: number } | null {
+  const dx = target[0] - from[0];
+  const dz = target[1] - from[1];
+  const distance = Math.hypot(dx, dz);
+  return distance <= stopRadius
+    ? null
+    : { x: dx / distance, z: dz / distance, distance };
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -268,6 +287,8 @@ export function Player(props: {
   const collisionWorld = props.gameplayWorld.collision;
   const worldRef = useRef<CollisionWorld>(collisionWorld);
   worldRef.current = collisionWorld;
+  const qaWalkTarget = useRef<THREE.Vector3 | null>(null);
+  const qaWalkSprint = useRef(false);
 
   const api = useMemo<PlayerApi>(() => {
     const status: PlayerMotionStatus = {
@@ -293,6 +314,9 @@ export function Player(props: {
     return {
       position: new THREE.Vector3(-6, 0, 1.5),
       facingY: Math.PI / 2,
+      get qaWalkTarget() {
+        return qaWalkTarget.current;
+      },
       bodyRoot: null,
       motion: status,
       teleport(pos, faceY) {
@@ -308,6 +332,10 @@ export function Player(props: {
           group.current.rotation.y = heading.current;
         }
         snapCam.current = true;
+      },
+      setQaWalkTarget(pos, sprint = false) {
+        qaWalkTarget.current = pos ? new THREE.Vector3(...pos) : null;
+        qaWalkSprint.current = Boolean(pos && sprint);
       },
       setPose(pos, faceY) {
         this.position.set(pos[0], pos[1], pos[2]);
@@ -422,6 +450,8 @@ export function Player(props: {
       setInputLocked(locked) {
         externalInputLocked.current = locked;
         if (locked) {
+          qaWalkTarget.current = null;
+          qaWalkSprint.current = false;
           spacePressedAt.current = null;
           crouchPressedAt.current = null;
           keys.current = {};
@@ -629,6 +659,8 @@ export function Player(props: {
   const lookTarget = useRef(new THREE.Vector3());
   useEffect(() => {
     if (!props.disabled) return;
+    qaWalkTarget.current = null;
+    qaWalkSprint.current = false;
     keys.current = {};
     spacePressedAt.current = null;
     crouchPressedAt.current = null;
@@ -694,8 +726,25 @@ export function Player(props: {
       if (k.KeyA || k.ArrowLeft) strafe += 1;
       if (k.KeyD || k.ArrowRight) strafe -= 1;
     }
-    const shiftHeld = Boolean(k.ShiftLeft || k.ShiftRight);
-    const moving = fwd !== 0 || strafe !== 0;
+    let shiftHeld = Boolean(k.ShiftLeft || k.ShiftRight);
+    let qaDirection: { x: number; z: number } | null = null;
+    if (freeControl && !actionActive && qaWalkTarget.current) {
+      const direction = qaWalkDirection(
+        [m.pos.x, m.pos.z],
+        [qaWalkTarget.current.x, qaWalkTarget.current.z],
+      );
+      if (!direction) {
+        qaWalkTarget.current = null;
+        qaWalkSprint.current = false;
+      } else {
+        qaDirection = direction;
+        // Long QA route legs may request the player's real sprint mode;
+        // arrival approaches use walk speed. Motion, collision, animation,
+        // stamina policy, and arrival dwell remain the production path.
+        shiftHeld = qaWalkSprint.current;
+      }
+    }
+    const moving = fwd !== 0 || strafe !== 0 || qaDirection !== null;
     let crouched = m.phase === "CROUCH" || m.phase === "DUCK_UNDER";
     let sprintingThisFrame = false;
 
@@ -789,6 +838,10 @@ export function Player(props: {
         vz = (vz / len) * speed;
         targetVelX = vx;
         targetVelZ = vz;
+        if (qaDirection) {
+          targetVelX = qaDirection.x * speed;
+          targetVelZ = qaDirection.z * speed;
+        }
       }
       const beforeStepX = m.pos.x;
       const beforeStepZ = m.pos.z;

@@ -247,6 +247,7 @@ function QuestMarkerDirectorInner(props: {
           host.dataset.questDistance = "";
           host.dataset.questOccluded = "";
           host.dataset.questEdgeVisible = "false";
+          host.dataset.questArrivalAnchor = "";
         }
       }
       return;
@@ -408,11 +409,19 @@ function QuestMarkerDirectorInner(props: {
       });
       const host = props.hostRef.current;
       if (host) {
+        const activeMarker = activeHud
+          ? props.markers.find(
+              (marker) => marker.targetId === activeHud!.targetId,
+            )
+          : undefined;
         host.dataset.questActiveId = activeHud?.targetId ?? "";
         host.dataset.questState = activeHud?.state ?? "";
         host.dataset.questDistance = activeHud ? String(activeHud.distanceM) : "";
         host.dataset.questOccluded = activeHud ? String(activeHud.occluded) : "";
         host.dataset.questEdgeVisible = String(Boolean(activeHud && !activeHud.onScreen));
+        host.dataset.questArrivalAnchor = activeMarker
+          ? activeMarker.arrivalAnchor.join(",")
+          : "";
       }
     }
   });
@@ -478,6 +487,7 @@ export function QuestMarkerDirector(props: {
       host.dataset.questOccluded = "";
       host.dataset.questEdgeVisible = "false";
       host.dataset.questBuiltCount = "0";
+      host.dataset.questArrivalAnchor = "";
     }
   }, [empty, props.highContrast, props.hostRef, props.hudStore, props.reducedMotion]);
   if (empty) return null;

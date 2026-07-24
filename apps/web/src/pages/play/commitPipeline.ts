@@ -218,14 +218,18 @@ export function createOnEvent<Animation extends ChoiceAnimationLike>(
 }
 
 // Commits a durable field event. Same acceptance semantics as onEvent, with
-// two envelope exemptions: FIELD_REPOSITION_APPLIED is system cleanup and
-// REACTIVE_EXCHANGE interrupts commit inside an already-busy envelope.
+// envelope exemptions: reposition/map maintenance may settle across a request
+// handoff, and REACTIVE_EXCHANGE commits inside an already-busy envelope.
 export function createOnFieldEvent<Animation extends ChoiceAnimationLike>(
   deps: CommitDeps<Animation>,
 ): (event: FieldCommittedEvent) => Promise<boolean> {
   return async function onFieldEvent(event: FieldCommittedEvent): Promise<boolean> {
     const client = deps.clientRef.current;
-    const systemCleanup = event.type === "FIELD_REPOSITION_APPLIED";
+    const systemCleanup =
+      event.type === "FIELD_REPOSITION_APPLIED" ||
+      event.type === "FIELD_MAP_DISCOVERED" ||
+      event.type === "FIELD_HEAT_DECAY_CHECKPOINT" ||
+      (event.type === "FIELD_HEAT_TRANSITION" && event.cause === "DECAY");
     const reactiveEnvelope = deps.activeInterruptKind === "REACTIVE_EXCHANGE";
     if (
       !client ||

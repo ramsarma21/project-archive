@@ -92,7 +92,11 @@ export function* breathe(
   durationMs = 7000,
 ): Sub<void> {
   while (true) {
-    const ev = yield* request(ctx, { kind: "BREATHER", durationMs }, cueId);
+    const ev = yield* request(
+      ctx,
+      { kind: "BREATHER", durationMs, requestId: cueId },
+      cueId,
+    );
     if (ev.type === "BREATHER_COMPLETE") return;
   }
 }

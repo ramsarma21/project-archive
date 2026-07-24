@@ -222,13 +222,39 @@ export class Session {
         this.ctx.applyFieldEvent(event);
         if (this.activeInterrupt) this.refreshInterruptPlan();
         break;
-      case "FIELD_HEAT_TRANSITION":
+      case "FIELD_MAP_DISCOVERED":
+        // Passive, idempotent exploration maintenance may settle just after a
+        // free-roam arrival opens its next request. It changes no gameplay
+        // authority and must not crash the new choice/mechanic envelope.
+        this.ctx.applyFieldEvent(event);
+        if (this.activeInterrupt) this.refreshInterruptPlan();
+        break;
       case "FIELD_HEAT_DECAY_CHECKPOINT":
+        // A fixed-step decay sample can settle after free roam opens a choice.
+        // It is maintenance state, not a player-caused consequence.
+        this.ctx.applyFieldEvent(event);
+        if (this.activeInterrupt) this.refreshInterruptPlan();
+        break;
+      case "FIELD_HEAT_TRANSITION":
+        if (event.cause === "DECAY") {
+          if (this.ctx.field.heat.band !== event.from) {
+            // A newer fixed-step checkpoint/transition already won the race.
+            // Accept this maintenance event as an idempotent no-op so a stale
+            // HUNTED→WATCHED sample cannot crash a now-WATCHED choice.
+            break;
+          }
+          this.ctx.applyFieldEvent(event);
+          if (this.activeInterrupt) this.refreshInterruptPlan();
+          break;
+        }
+        this.assertProjectionContext(event.interruptId);
+        this.ctx.applyFieldEvent(event);
+        if (this.activeInterrupt) this.refreshInterruptPlan();
+        break;
       case "FIELD_IDENTITY_CHANGED":
       case "FIELD_STANDING_DELTA":
       case "FIELD_THREAD_PATCH":
       case "FIELD_MICRO_ENGAGED":
-      case "FIELD_MAP_DISCOVERED":
         this.assertProjectionContext(event.interruptId);
         this.ctx.applyFieldEvent(event);
         if (this.activeInterrupt) this.refreshInterruptPlan();
