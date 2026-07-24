@@ -6,6 +6,14 @@ export interface RetentionConsent {
   retentionDays: number;
 }
 
+const OPERATION_LABELS: Record<OpenResponsePrompt["operation"], string> = {
+  COMPARE_SOURCES: "Compare two pieces of evidence",
+  APPLY_CONCEPT: "Apply an idea to what happened",
+  HISTORICAL_PERSPECTIVE: "Write from a historical point of view",
+  STRATEGY_JUSTIFICATION: "Support a decision with evidence",
+  CAUSAL_SYNTHESIS: "Explain what caused the change",
+};
+
 export function OpenResponsePanel(props: {
   prompt: OpenResponsePrompt;
   authenticated: boolean;
@@ -64,6 +72,16 @@ export function OpenResponsePanel(props: {
         </header>
         <h2 id="open-response-title">{props.prompt.title}</h2>
         <p id="open-response-prompt">{props.prompt.prompt}</p>
+        <aside className="open-response-context" aria-label="Response context">
+          <strong>{OPERATION_LABELS[props.prompt.operation]}</strong>
+          <span>
+            Use the {props.prompt.sourcePacket.sourceIds.length}{" "}
+            {props.prompt.sourcePacket.sourceIds.length === 1
+              ? "source"
+              : "sources"}{" "}
+            you already handled today.
+          </span>
+        </aside>
 
         {props.phase !== "FEEDBACK" ? (
           <>
@@ -160,7 +178,9 @@ export function OpenResponsePanel(props: {
                 )
               }
             >
-              {props.phase === "PENDING" ? "Setting it down…" : "Set it down"}
+              {props.phase === "PENDING"
+                ? "Reading your line…"
+                : "Submit this line"}
             </button>
             <small className="open-response-required">
               Optional, and never marked. Finish the line and the street takes

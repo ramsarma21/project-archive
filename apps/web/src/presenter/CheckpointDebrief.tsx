@@ -383,7 +383,41 @@ function CheckpointQuestion(props: {
   // Answers stay locked until the gate's dwell+pause elapses. No gate =
   // immediately ready. The keyed remount (per attempt) resets this.
   const [gateReady, setGateReady] = useState(!gate);
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const disabled = new Set(gate?.disabledOptionIds ?? []);
+  const selected = item.options.find(
+    (option) => option.optionId === selectedOptionId,
+  );
+  const selectedCorrect = selectedOptionId === item.correctOptionId;
+  const submitSelection = () => {
+    if (!selectedOptionId || props.busy) return;
+    props.onEvent({
+      type: "DEBRIEF_ANSWERED",
+      checkpointId: request.checkpointId,
+      formId,
+      itemId: item.itemId,
+      optionId: selectedOptionId,
+    });
+  };
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (props.busy || !gateReady) return;
+      if (selectedOptionId) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          submitSelection();
+        }
+        return;
+      }
+      if (!/^[1-4]$/.test(event.key)) return;
+      const option = item.options[Number(event.key) - 1];
+      if (!option || disabled.has(option.optionId)) return;
+      event.preventDefault();
+      setSelectedOptionId(option.optionId);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
   return (
     <div className={props.rootClass} data-checkpoint-phase="QUESTION">
       <SystemWindow
@@ -400,6 +434,12 @@ function CheckpointQuestion(props: {
             only.
           </p>
         )}
+        {(item.provenance || item.era) && (
+          <p className="checkpoint-source-context">
+            {item.era ? `Context: ${item.era}` : "Historical context"}
+            {item.provenance ? ` · Source: ${item.provenance}` : ""}
+          </p>
+        )}
         <h2 className="checkpoint-stem">{item.stem}</h2>
         {gate && (
           <GateCard
@@ -414,29 +454,75 @@ function CheckpointQuestion(props: {
           role="group"
           aria-label="Response choices"
         >
-          {item.options.map((option) => {
+          {item.options.map((option, index) => {
             const eliminated = disabled.has(option.optionId);
+            const isSelected = selectedOptionId === option.optionId;
             return (
               <button
                 key={option.optionId}
-                className={`checkpoint-option${eliminated ? " is-eliminated" : ""}`}
-                disabled={props.busy || eliminated || !gateReady}
-                aria-disabled={eliminated || !gateReady}
-                onClick={() =>
-                  props.onEvent({
-                    type: "DEBRIEF_ANSWERED",
-                    checkpointId: request.checkpointId,
-                    formId,
-                    itemId: item.itemId,
-                    optionId: option.optionId,
-                  })
+                className={`checkpoint-option${eliminated ? " is-eliminated" : ""}${isSelected ? " is-selected" : ""}`}
+                disabled={
+                  props.busy ||
+                  eliminated ||
+                  !gateReady ||
+                  selectedOptionId !== null
                 }
+                aria-disabled={eliminated || !gateReady}
+                aria-pressed={isSelected}
+                onClick={() => setSelectedOptionId(option.optionId)}
               >
+                <kbd>{index + 1}</kbd>
                 {eliminated ? <s>{option.text}</s> : option.text}
               </button>
             );
           })}
         </div>
+        {selected && (
+          <section
+            className={`checkpoint-answer-feedback ${selectedCorrect ? "is-correct" : "is-incorrect"}`}
+            role="status"
+            aria-live="polite"
+          >
+            <header>{selectedCorrect ? "That answer holds" : "Look once more"}</header>
+            <p>
+              {selected.rationale ??
+                (selectedCorrect
+                  ? "This choice fits the evidence in the question."
+                  : "This choice does not fit the question's time, source, or claim.")}
+            </p>
+            <ul aria-label="Why each choice works or fails">
+              {item.options.map((option) => (
+                <li
+                  key={`rationale-${option.optionId}`}
+                  className={
+                    option.optionId === item.correctOptionId
+                      ? "is-correct"
+                      : "is-distractor"
+                  }
+                >
+                  <strong>{option.text}</strong>
+                  <span>
+                    {option.rationale ??
+                      (option.optionId === item.correctOptionId
+                        ? "Fits the evidence."
+                        : "Does not fit the evidence.")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              className="checkpoint-feedback-continue"
+              disabled={props.busy}
+              onClick={submitSelection}
+            >
+              {selectedCorrect
+                ? "Continue to the next call"
+                : "Continue to the hint"}
+              <kbd>Enter</kbd>
+            </button>
+          </section>
+        )}
       </SystemWindow>
     </div>
   );

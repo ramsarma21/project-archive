@@ -33,6 +33,7 @@ import {
   type Exchange,
   type ExchangeChoiceEffects,
   type ExchangeEngineProfile,
+  type ExchangeSourceCard,
   type ExchangeSource,
 } from "../exchange/exchangeSources.js";
 
@@ -55,6 +56,8 @@ interface ContentPrompt {
   sourceId: string;
   title: string;
   text: string;
+  reply?: string;
+  sourceCard?: ExchangeSourceCard;
   action: string;
   position: readonly [number, number, number];
   effects: ExchangeChoiceEffects;
@@ -68,12 +71,15 @@ function m4Exchange(prompt: ContentPrompt): Exchange {
     sourceId: prompt.sourceId,
     title: prompt.title,
     line: prompt.text,
+    sourceCard: prompt.sourceCard,
     position: prompt.position,
     choices: [
       {
         id: prompt.outcomeId,
         label: prompt.action,
-        reply: prompt.text,
+        reply: prompt.sourceCard
+          ? `Filed in the Archive. ${prompt.sourceCard.whyItMatters}`
+          : prompt.reply ?? prompt.text,
         effects: prompt.effects,
         afterCommit: prompt.afterCommit,
       },
@@ -91,10 +97,51 @@ export function knowledgeWorldPosition(
 }
 
 function knowledgePrompt(placement: KnowledgePlacement): ContentPrompt {
+  const isPublicPrint =
+    placement.carrier === "PAPER" || placement.carrier === "HANGING_SIGN";
+  const claimType = placement.id.includes("sign-")
+    ? "Trade identifier"
+    : placement.carrier === "EVENT_PROP"
+      ? "Political symbol"
+      : isPublicPrint
+        ? "Public claim"
+        : placement.carrier === "COIN_SET"
+          ? "Economic evidence"
+          : "Material evidence";
+  const whyItMatters = placement.micros.includes(
+    MICRO_CONCEPT_IDS.PORT_TOWN_BOSTON,
+  )
+    ? "Connects policy and protest to ships, wages, shops, and household trade."
+    : placement.micros.includes(MICRO_CONCEPT_IDS.PRINTERS_ROLE)
+      ? "Shows how printers make arguments visible and move them through town."
+      : placement.micros.includes(MICRO_CONCEPT_IDS.NON_IMPORTATION)
+        ? "Shows how refusing imports turns an argument into economic pressure."
+        : placement.micros.includes(MICRO_CONCEPT_IDS.NEWS_NETWORKS)
+          ? "Reveals how signs, taverns, print, and riders carry news together."
+          : placement.micros.includes(MICRO_CONCEPT_IDS.LIBERTY_TREE) ||
+              placement.micros.includes(MICRO_CONCEPT_IDS.EFFIGY_PROTEST)
+            ? "Connects this place and object to the protest gathering at the elm."
+            : placement.micros.includes(
+                  MICRO_CONCEPT_IDS.SALUTARY_NEGLECT_END,
+                )
+              ? "Makes the end of loose enforcement visible in ordinary work and payment."
+              : "Preserves a street-level clue about work, authority, and daily life in Boston.";
   return {
     sourceId: placement.id,
     title: placement.title,
     text: placement.body,
+    sourceCard: {
+      visualUrl: placement.texture
+        ? `/world/posters/${placement.texture}.png`
+        : undefined,
+      sourceLabel: isPublicPrint
+        ? "Publicly displayed print in Boston, 1765"
+        : placement.spaceId === "MERCER_PRESS"
+          ? "Object observed inside Mercer’s press"
+          : "Object or place observed in the Boston streetscape",
+      claimType,
+      whyItMatters,
+    },
     action: "Finish reading",
     position: knowledgeWorldPosition(placement),
     outcomeId: "READ",
@@ -121,6 +168,7 @@ const M4_ACTIVITY_PROMPTS: Record<
     sourceId: "SJ-roof-kid-offer",
     title: "A worried goodwife",
     text: "My Jonah is on the painters' scaffold again. Fetch him down before he breaks his neck.",
+    reply: "She points to the central scaffold. Jonah will listen better to another young runner than to a shout from below.",
     action: "Take the roof-kid job",
     position: activityAnchor(OPTIONAL_ACTIVITY_IDS.ROOF_KID, 0),
     outcomeId: "ACCEPT",
@@ -133,6 +181,7 @@ const M4_ACTIVITY_PROMPTS: Record<
     sourceId: "SJ-roof-kid-reached",
     title: "Jonah on the scaffold",
     text: "I can see the whole harbor! All right—I'll take the ladder when you turn around.",
+    reply: "Jonah edges toward the ladder and leaves you a clear view of the short roof-board route.",
     action: "Shoo Jonah toward the ladder",
     position: activityAnchor(OPTIONAL_ACTIVITY_IDS.ROOF_KID, 1),
     outcomeId: "COMPLETED",
@@ -150,6 +199,7 @@ const M4_ACTIVITY_PROMPTS: Record<
     sourceId: "SJ-crier-offer",
     title: "Town crier",
     text: "My voice is gone. Take up the cry at three street corners; the subtitles carry the words until a voiced pass is approved.",
+    reply: "He gives you the meeting call. West, center, then east: each corner reaches a different part of the street.",
     action: "Take up the cry",
     position: activityAnchor(OPTIONAL_ACTIVITY_IDS.CRIER, 0),
     outcomeId: "ACCEPT",
@@ -173,6 +223,10 @@ const M4_ACTIVITY_PROMPTS: Record<
               : stageIndex === 2
                 ? "NEWS FROM THE BOARD—THE MEETING IS TONIGHT."
                 : "PASS THE WORD: BOSTON MEETS BEFORE THE BELL.",
+          reply:
+            stageIndex === 3
+              ? "The third call carries. Spoken news and printed notices now point the street toward the same meeting."
+              : `The call carries to this block. The next corner reaches people who could not hear this one.`,
           action: "Call with attributed subtitles",
           position: activityAnchor(OPTIONAL_ACTIVITY_IDS.CRIER, stageIndex),
           outcomeId: `CALL_${stageIndex}`,
@@ -195,6 +249,7 @@ const M4_ACTIVITY_PROMPTS: Record<
     sourceId: "CH-agitator-dare-offer",
     title: "Agitator's dare",
     text: "Take this wrapped bundle past the two Custom House constables. The job is optional; getting checked changes the outcome, never the day's learning.",
+    reply: "The bundle stays wrapped in your hands. A clean crossing protects the route; a search exposes it.",
     action: "Accept the watched crossing",
     position: activityAnchor(OPTIONAL_ACTIVITY_IDS.AGITATOR_DARE, 0),
     outcomeId: "ACCEPT",
@@ -212,6 +267,9 @@ const M4_ACTIVITY_PROMPTS: Record<
       text: clean
         ? "Clean crossing. The watch never laid a hand on it."
         : "They marked the route, but the message still arrives. Next time, read the gaps.",
+      reply: clean
+        ? "The contact hides the bundle and names a scaffold path away from the Custom House sightline."
+        : "The contact takes the bundle but warns that the marked route will draw more eyes next time.",
       action: "Hand over the bundle",
       position: activityAnchor(OPTIONAL_ACTIVITY_IDS.AGITATOR_DARE, 1),
       outcomeId: clean ? "CLEAN" : "SEEN",
@@ -230,6 +288,7 @@ const M4_ACTIVITY_PROMPTS: Record<
     sourceId: "CH-rooftop-run-start",
     title: "Short roof-board run",
     text: "Use the scaffold board and the Liberty perch. This is a bounded two-vantage challenge, not a continuous citywide roof course.",
+    reply: "The route is set: one scaffold board, then the Liberty perch. Height trades easy footing for a clearer line across town.",
     action: "Start the short roof run",
     position: activityAnchor(OPTIONAL_ACTIVITY_IDS.ROOFTOP_RUN, 0),
     outcomeId: "START",
@@ -241,6 +300,7 @@ const M4_ACTIVITY_PROMPTS: Record<
     sourceId: "CH-rooftop-run-goal",
     title: "Liberty roof perch",
     text: "The short route is complete. The event pocket and harbor approaches are visible from here.",
+    reply: "From the perch, the elm gathering and harbor road read as one connected route through the town.",
     action: "Claim the vantage",
     position: activityAnchor(OPTIONAL_ACTIVITY_IDS.ROOFTOP_RUN, 1),
     outcomeId: "COMPLETED",
@@ -253,6 +313,7 @@ const M4_ACTIVITY_PROMPTS: Record<
     sourceId: "CH-lose-watch-start",
     title: "Lose the watch",
     text: "Draw the central patrol, choose Run, then break sight and hold the gap. The same chase rules and real heat consequences apply.",
+    reply: "The patrol turns toward you. If you run, corners and broken sight—not an invisible timer—will decide whether you shake him.",
     action: "Provoke the patrol",
     position: activityAnchor(OPTIONAL_ACTIVITY_IDS.LOSE_WATCH, 0),
     outcomeId: "PROVOKE",
@@ -285,6 +346,9 @@ const M4_ACTIVITY_PROMPTS: Record<
       text: escaped
         ? "You broke the patrol's sightline and held the gap."
         : "The watch caught you. The dare ends, and the heat remains real.",
+      reply: escaped
+        ? "The patrol loses the trail. You proved that cover and distance work together."
+        : "The patrol remembers your face. Running created a consequence even though the optional dare is complete.",
       action: "Close the dare",
       position: activityAnchor(OPTIONAL_ACTIVITY_IDS.LOSE_WATCH, 0),
       outcomeId: chase.outcome,
@@ -304,6 +368,7 @@ const M4_ACTIVITY_PROMPTS: Record<
       sourceId: "CH-lose-watch-backdown",
       title: "Dare declined",
       text: "You stood for the patrol instead of running. The dare ends quietly — the searches were still real.",
+      reply: "You kept the street calm, but the encounter still showed how quickly a constable could turn movement into a search.",
       action: "Close the dare",
       position: activityAnchor(OPTIONAL_ACTIVITY_IDS.LOSE_WATCH, 0),
       outcomeId: "BACKED_DOWN",
@@ -365,6 +430,7 @@ interface InfoFigureDefinition {
   id: string;
   title: string;
   text: string;
+  reply: string;
   spaceId: string;
   position: readonly [number, number, number];
   micros: readonly MicroConceptId[];
@@ -381,6 +447,7 @@ export const M4_INFO_FIGURES: readonly InfoFigureDefinition[] = [
     id: "INFO-tavern-keeper",
     title: "Keeper's rumors",
     text: "The Loyal Nine use taverns, printers, and trusted runners to move word without an official network.",
+    reply: "A tavern table, a press room, and a runner's feet make a network precisely because no official list names it.",
     spaceId: "EXPLORE_tavern",
     position: interiorPoint("EXPLORE_tavern", [-5.2, 0, 1]),
     micros: [MICRO_CONCEPT_IDS.LOYAL_NINE, MICRO_CONCEPT_IDS.NEWS_NETWORKS],
@@ -390,6 +457,7 @@ export const M4_INFO_FIGURES: readonly InfoFigureDefinition[] = [
     id: "INFO-dockhand",
     title: "Dock rumors",
     text: "Idle hulls mean idle wages. The harbor feels every customs delay first.",
+    reply: "Watch the tide and the hiring apron: policy becomes lost hours before it becomes a line in a newspaper.",
     spaceId: "EXTERIOR",
     position: [-134, 0, 3],
     micros: [MICRO_CONCEPT_IDS.PORT_TOWN_BOSTON],
@@ -399,6 +467,7 @@ export const M4_INFO_FIGURES: readonly InfoFigureDefinition[] = [
     id: "INFO-goodwife",
     title: "A goodwife's word",
     text: "Find Sarah at the market. Refusing English goods sounds noble until a widow's stall pays the price.",
+    reply: "Sarah can tell you what a boycott costs a household, not only what its organizers hope to achieve.",
     spaceId: "EXTERIOR",
     position: [-28, 0, 9.2],
     micros: [MICRO_CONCEPT_IDS.NON_IMPORTATION],
@@ -411,6 +480,7 @@ function infoPrompt(figure: InfoFigureDefinition): ContentPrompt {
     sourceId: figure.id,
     title: figure.title,
     text: figure.text,
+    reply: figure.reply,
     action: "Thank them",
     position: figure.position,
     outcomeId: "HEARD",

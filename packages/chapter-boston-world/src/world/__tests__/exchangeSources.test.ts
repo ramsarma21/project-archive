@@ -400,6 +400,33 @@ test("every registered source id reconstructs a completable exchange from a STAR
       engineFieldSeed(view),
     );
     assertCompletable(exchange, source.sourceId);
+    if (source.owner === "KNOWLEDGE") {
+      assert.ok(exchange.sourceCard, `${source.sourceId} has no source context`);
+      assert.ok(
+        exchange.sourceCard.sourceLabel.length > 12 &&
+          exchange.sourceCard.claimType.length > 4 &&
+          exchange.sourceCard.whyItMatters.length > 30,
+        `${source.sourceId} source context is too thin`,
+      );
+    }
+    for (const choice of exchange.choices) {
+      const deliberateExit =
+        /later|keep moving|keep .*for now|say nothing|leave|let him|pause|wait|not now|decline|step away|see you|sorry/i.test(
+          choice.label,
+        );
+      if (deliberateExit) continue;
+      assert.ok(
+        choice.reply.length >= 30,
+        `${source.sourceId}/${choice.id} reply is filler: ${choice.reply}`,
+      );
+      if (source.owner !== "KNOWLEDGE") {
+        assert.notEqual(
+          choice.reply,
+          exchange.line,
+          `${source.sourceId}/${choice.id} repeats the opening instead of responding`,
+        );
+      }
+    }
     // Named-cast sources may legitimately reconstruct as the actor's eligible
     // follow-up node (the legacy override); anything else must round-trip.
     assert.ok(
@@ -791,10 +818,12 @@ test("the unified panel keeps the fix-wave presentation contract", () => {
     new URL("../exchange/useExchangeInterrupt.ts", import.meta.url),
     "utf8",
   );
-  assert.match(
+  assert.match(hook, /const continueReply = async/);
+  assert.match(hook, /event\.key === "Enter" \|\| event\.code === "Space"/);
+  assert.doesNotMatch(
     hook,
-    /props\.reducedMotion \? 900 : 2400/,
-    "reply dwell must stay nonzero under reduced motion",
+    /resolutionTimer/,
+    "authored replies must wait for player-controlled continuation",
   );
   assert.match(hook, /event\.key === "Escape"/);
 });

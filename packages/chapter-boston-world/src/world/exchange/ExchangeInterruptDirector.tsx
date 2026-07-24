@@ -438,8 +438,15 @@ function CompletionBeatCamera(props: {
 function ExchangePanel(props: {
   engine: ExchangeInterruptApi;
 }) {
-  const { exchange, reply, replyChips, committing, finish, dismiss } =
-    props.engine;
+  const {
+    exchange,
+    reply,
+    replyChips,
+    committing,
+    finish,
+    continueReply,
+    dismiss,
+  } = props.engine;
   const completionPlayed = useRef("");
   const sourceId = exchange?.sourceId ?? "";
   const receipt = exchangeCompletionReceipt(sourceId);
@@ -474,6 +481,25 @@ function ExchangePanel(props: {
         aria-label={exchange.title}
       >
         <header>{exchange.title}</header>
+        {exchange.sourceCard && (
+          <section className="exchange-source-card" aria-label="Source context">
+            {exchange.sourceCard.visualUrl ? (
+              <img
+                src={exchange.sourceCard.visualUrl}
+                alt={`${exchange.title} artifact`}
+              />
+            ) : (
+              <div className="exchange-source-mark" aria-hidden="true">
+                {exchange.sourceCard.claimType.slice(0, 1)}
+              </div>
+            )}
+            <div>
+              <small>{exchange.sourceCard.claimType}</small>
+              <strong>{exchange.sourceCard.sourceLabel}</strong>
+              <span>{exchange.sourceCard.whyItMatters}</span>
+            </div>
+          </section>
+        )}
         <p>{reply ?? exchange.line}</p>
         {reply && receipt && (
           <div className="exchange-completion-receipt" role="status">
@@ -482,12 +508,22 @@ function ExchangePanel(props: {
             <small>{receipt.consequence}</small>
           </div>
         )}
-        {reply && !receipt && replyChips.length > 0 && (
+        {reply && !receipt && !exchange.sourceCard && replyChips.length > 0 && (
           <div className="exchange-effect-chips" role="status">
             {replyChips.map((chip) => (
               <span key={chip}>{chip}</span>
             ))}
           </div>
+        )}
+        {reply && (
+          <button
+            type="button"
+            className="exchange-continue"
+            disabled={committing}
+            onClick={() => void continueReply()}
+          >
+            Continue <kbd>Enter</kbd>
+          </button>
         )}
         {!reply && (
           <div className="reactive-exchange-choices">

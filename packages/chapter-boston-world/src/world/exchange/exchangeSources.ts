@@ -73,10 +73,19 @@ export interface ExchangeEngineProfile {
   dismissButton: boolean;
 }
 
+export interface ExchangeSourceCard {
+  /** Reuses the exact authored poster/artifact texture shown in the world. */
+  visualUrl?: string;
+  sourceLabel: string;
+  claimType: string;
+  whyItMatters: string;
+}
+
 export interface Exchange {
   sourceId: string;
   title: string;
   line: string;
+  sourceCard?: ExchangeSourceCard;
   position: readonly [number, number, number];
   choices: readonly ExchangeChoice[];
   engine: ExchangeEngineProfile;

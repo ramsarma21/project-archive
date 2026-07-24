@@ -4,7 +4,7 @@
 //   - begin/finish/dismiss lifecycle + unique interrupt ids
 //   - resume-from-activeInterrupt reconstruction for EVERY registered source
 //   - input-lock / interaction-clip choreography
-//   - the reply dwell (reduced motion keeps a nonzero dwell)
+//   - player-controlled reply continuation (keyboard/touch, no auto-dismiss)
 //   - resolution submission through the typed field-event path
 //
 // Ported from the duplicated engines in ReactiveNpcDirector (M3 sources) and
@@ -40,6 +40,7 @@ export interface ExchangeInterruptApi {
   fieldSeed: number;
   begin: (sourceId: string) => Promise<void>;
   finish: (choice: ExchangeChoice) => Promise<void>;
+  continueReply: () => Promise<void>;
   dismiss: () => Promise<void>;
 }
 
@@ -58,16 +59,15 @@ export function useExchangeInterrupt(props: {
   const [replyChips, setReplyChips] = useState<string[]>([]);
   const [committing, setCommitting] = useState(false);
   const interruptRef = useRef<string | null>(null);
-  const resolutionTimer = useRef(0);
+  const completedChoiceRef = useRef<ExchangeChoice | null>(null);
   const warnedUnregistered = useRef(new Set<string>());
   const fieldSeed = useMemo(
     () => Number.parseInt(props.view.field.seedHex.slice(0, 8), 16) || 1765,
     [props.view.field.seedHex],
   );
-  const replyDwellMs = props.reducedMotion ? 900 : 2400;
-
   const clearPanel = () => {
     interruptRef.current = null;
+    completedChoiceRef.current = null;
     setReply(null);
     setReplyChips([]);
     setExchange(null);
@@ -80,8 +80,8 @@ export function useExchangeInterrupt(props: {
 
   // Resume: an activeInterrupt with no local panel state means the exchange
   // was interrupted by a reload. Reconstruct it from the source registry; if
-  // the completion already committed (save landed inside the reply dwell),
-  // replay the reply and schedule the resolution the dwell owed.
+  // the completion already committed (save landed on the reply), replay that
+  // reply and keep it open until the player explicitly continues.
   useEffect(() => {
     const interrupt = props.view.field.activeInterrupt;
     if (
@@ -126,18 +126,9 @@ export function useExchangeInterrupt(props: {
       ? resumed.choices.find((choice) => choice.id === completed.outcomeId)
       : undefined;
     if (completed && completedChoice) {
+      completedChoiceRef.current = completedChoice;
       setReply(completedChoice.reply);
       setReplyChips(effectChips(completedChoice.effects, MICRO_LABELS));
-      window.clearTimeout(resolutionTimer.current);
-      resolutionTimer.current = window.setTimeout(() => {
-        void (async () => {
-          await services.submitFieldEvent(
-            exchangeResolvedEvent(interrupt.interruptId, completed.outcomeId),
-          );
-          unlockPlayer();
-          clearPanel();
-        })();
-      }, replyDwellMs);
     }
   }, [
     exchange,
@@ -145,7 +136,6 @@ export function useExchangeInterrupt(props: {
     props.apiRef,
     props.view,
     props.view.field.reactiveCompletions,
-    props.reducedMotion,
     services,
     services.fieldTickRef,
     services.spaceId,
@@ -200,6 +190,7 @@ export function useExchangeInterrupt(props: {
     const interruptId = interruptRef.current;
     if (!active || !interruptId || committing) return;
     setCommitting(true);
+    completedChoiceRef.current = choice;
     setReply(choice.reply);
     setReplyChips(effectChips(choice.effects, MICRO_LABELS));
     if (choice.actionClip !== undefined) {
@@ -215,24 +206,32 @@ export function useExchangeInterrupt(props: {
     );
     if (completed) {
       setCommitting(false);
-      window.clearTimeout(resolutionTimer.current);
-      resolutionTimer.current = window.setTimeout(() => {
-        void (async () => {
-          await services.submitFieldEvent(
-            exchangeResolvedEvent(interruptId, choice.id),
-          );
-          await choice.afterCommit?.({
-            view: props.view,
-            submitFieldEvent: services.submitFieldEvent,
-          });
-          unlockPlayer();
-          clearPanel();
-        })();
-      }, replyDwellMs);
       return;
     }
     unlockPlayer();
     setCommitting(false);
+    clearPanel();
+  };
+
+  const continueReply = async () => {
+    const active = exchange;
+    const interruptId = interruptRef.current;
+    const choice = completedChoiceRef.current;
+    if (!active || !interruptId || !choice || !reply || committing) return;
+    setCommitting(true);
+    const resolved = await services.submitFieldEvent(
+      exchangeResolvedEvent(interruptId, choice.id),
+    );
+    if (!resolved) {
+      setCommitting(false);
+      return;
+    }
+    await choice.afterCommit?.({
+      view: props.view,
+      submitFieldEvent: services.submitFieldEvent,
+    });
+    setCommitting(false);
+    unlockPlayer();
     clearPanel();
   };
 
@@ -257,7 +256,14 @@ export function useExchangeInterrupt(props: {
   useEffect(() => {
     if (!exchange) return;
     const onKey = (event: KeyboardEvent) => {
-      if (committing || reply) return;
+      if (committing) return;
+      if (reply) {
+        if (event.key === "Enter" || event.code === "Space") {
+          event.preventDefault();
+          void continueReply();
+        }
+        return;
+      }
       if (/^[123]$/.test(event.key)) {
         const choice = exchange.choices[Number(event.key) - 1];
         if (choice) {
@@ -275,7 +281,6 @@ export function useExchangeInterrupt(props: {
 
   useEffect(
     () => () => {
-      window.clearTimeout(resolutionTimer.current);
       props.apiRef.current?.setInputLocked(false);
       props.apiRef.current?.setInteractionClip(null);
     },
@@ -291,6 +296,7 @@ export function useExchangeInterrupt(props: {
     fieldSeed,
     begin,
     finish,
+    continueReply,
     dismiss,
   };
 }
