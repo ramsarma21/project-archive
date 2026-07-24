@@ -13,6 +13,7 @@ import { mkdirSync } from "node:fs";
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  BOSTON_DAY1_FLOW_VERSION,
   CHAPTER_ID,
   MICRO_CONCEPT_IDS,
   PACKAGE_ID,
@@ -23,7 +24,12 @@ import {
 const BASE_URL = process.env.SLICE_QA_URL ?? "http://127.0.0.1:5183/";
 const OUT = resolve(process.env.SLICE_QA_OUT ?? "test-results/slice-visual-qa");
 const SEED = "42".repeat(32);
-const FLOW_VERSION = 5;
+// The web boot path discards any save whose flowVersion != the chapter's
+// current BOSTON_DAY1_FLOW_VERSION (useRuntimeSession), restarting at B0. The
+// alive-world and caught-release scenes seed committed events, so the seeded
+// save MUST carry the live flow version or those scenes reset to a fresh
+// session and their state waits time out.
+const FLOW_VERSION = BOSTON_DAY1_FLOW_VERSION;
 const HEADLESS_SHELL =
   "/tmp/pw-browsers/chromium_headless_shell-1228/chrome-headless-shell-mac-arm64/chrome-headless-shell";
 mkdirSync(OUT, { recursive: true });

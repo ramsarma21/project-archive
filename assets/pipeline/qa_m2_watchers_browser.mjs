@@ -46,33 +46,94 @@ async function visible(locator) {
   return (await locator.count()) > 0 && (await locator.first().isVisible().catch(() => false));
 }
 
+const SEED_HEX = "a1".repeat(32);
+const DISPLAY_NAME = "M2 QA Watchers";
+
+// design1 kill list (product decision): the pre-game calibration interview is
+// DELETED, so accessibility/assist preferences are no longer chosen through an
+// onboarding wizard. QA seeds them directly onto the profile — with
+// `calibrated: true` so the explicit high-contrast / reduced-motion /
+// keyboard-only choices are honored verbatim (never OS-overridden) — exactly
+// as the shipped pause-settings surface would persist them.
+async function seedProfile(onboarding) {
+  await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() =>
+    document.body.textContent?.includes("Project Archive"),
+  );
+  await page.waitForFunction(
+    async () => {
+      const opened = indexedDB.open("project-archive");
+      const database = await new Promise((res) => {
+        opened.onsuccess = () => res(opened.result);
+        opened.onerror = () => res(null);
+      });
+      if (!database) return false;
+      const ready = database.objectStoreNames.contains("profiles");
+      database.close();
+      return ready;
+    },
+    null,
+    { timeout: 20000 },
+  );
+  await page.evaluate(
+    async ({ seed, onboarding, displayName }) => {
+      const request = indexedDB.open("project-archive");
+      await new Promise((res, rej) => {
+        request.onerror = () => rej(request.error);
+        request.onsuccess = () => {
+          const database = request.result;
+          const tx = database.transaction(["profiles"], "readwrite");
+          tx.objectStore("profiles").put({
+            profileId: "m2-qa-watchers",
+            accountId: "local:m2-qa-watchers",
+            displayName,
+            variationRootSeedHex: seed,
+            source: "LOCAL",
+            createdAt: "2026-07-23T00:00:00.000Z",
+            onboarding,
+          });
+          tx.oncomplete = () => {
+            database.close();
+            res();
+          };
+          tx.onerror = () => rej(tx.error);
+        };
+      });
+    },
+    { seed: SEED_HEX, onboarding, displayName: DISPLAY_NAME },
+  );
+}
+
+async function openProfile(displayName) {
+  await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+  const row = page
+    .locator(".profile-row, [data-profile-row], li, article, div")
+    .filter({ hasText: displayName })
+    .filter({ has: page.getByRole("button", { name: "Play" }) })
+    .first();
+  const play = row.getByRole("button", { name: "Play" }).first();
+  await play.waitFor({ state: "visible", timeout: 15000 });
+  await play.click();
+}
+
 async function bootstrap() {
-  await page.goto(BASE_URL, { waitUntil: "networkidle" });
-  const nameInput = page.locator('input[placeholder="Display name"]');
-  if (await visible(nameInput)) {
-    await nameInput.fill(`M2-QA-${Date.now()}`);
-    await page.locator('button:has-text("Create")').click();
-    await page.waitForTimeout(400);
-  }
-  const play = page.locator('button:has-text("Play")').first();
-  if (await visible(play)) {
-    await play.click();
-    await page.waitForTimeout(300);
-  }
-  let next = page.getByRole("button", { name: "Continue calibration" });
-  if (await visible(next)) {
-    await next.click();
-    for (const label of ["High contrast", "Reduced motion"]) {
-      const row = page.locator(".calibration-toggle").filter({ hasText: label });
-      const input = row.locator('input[type="checkbox"]');
-      if ((await input.count()) && !(await input.isChecked())) await row.click();
-    }
-    next = page.getByRole("button", { name: "Continue calibration" });
-    await next.click();
-    const keyboard = page.getByRole("button", { name: /Keyboard only/ });
-    if (await visible(keyboard)) await keyboard.click();
-    await page.getByRole("button", { name: "Begin synchronization" }).click();
-  }
+  // Keyboard-only + high-contrast + reduced-motion, seeded and calibrated so
+  // the accessibility assertions below read the intended, explicit choices.
+  await seedProfile({
+    version: 1,
+    readingSpeed: "STANDARD",
+    captions: true,
+    audioDescription: false,
+    inputMethod: "KEYBOARD_ONLY",
+    archiveAssistAutoOffer: true,
+    highContrast: true,
+    reducedMotion: true,
+    chaseAssist: "STANDARD",
+    primersSeen: ["ARCHIVE", "MOVEMENT", "READ", "WORK", "CHOICE"],
+    calibrated: true,
+    completedAt: "2026-07-23T00:00:00.000Z",
+  });
+  await openProfile(DISPLAY_NAME);
 
   const labels = [
     "Continue",
@@ -154,6 +215,7 @@ const report = {
   comply: null,
   talk: null,
   run: null,
+  cited: null,
   bell: null,
   accessibility: null,
   diagnostics,
@@ -200,7 +262,24 @@ try {
   );
 
   await page.evaluate(() => window.__PA_QA_TELEPORT__(-70, 0, 0));
-  await challenge("COMPLY");
+
+  // Talk belongs to the UNARMED confrontation triangle, so it is exercised
+  // first — before any stop resolves. A resolved stop durably engages the
+  // writs-of-assistance micro, which arms the design1 CITE defense; the cited
+  // option then deterministically takes the Talk slot on every later stop
+  // (ConfrontationPanel renders cited-in-place-of-Talk). Heat is raised to
+  // WATCHED first so this talk lands on its authored bounded-failure branch
+  // (standing NEUTRAL + heat WATCHED is below the release threshold), proving
+  // the failure stays comply-or-run rather than opening a new path.
+  await fieldEvent({
+    type: "FIELD_HEAT_TRANSITION",
+    eventId: "M2_QA_HEAT_WATCHED",
+    from: "CALM",
+    to: "WATCHED",
+    cause: "DETECTION",
+  });
+
+  await challenge("TALK", "SUSPICION");
   await page.waitForTimeout(500);
   console.log(
     "M2_AFTER_CHALLENGE",
@@ -230,10 +309,35 @@ try {
     (await panel.locator("button").count()) === 3,
     "initial confrontation must expose exactly three options",
   );
+  assert(
+    await visible(page.getByRole("button", { name: /Talk/ })),
+    "unarmed confrontation must offer the plain Talk verb",
+  );
   await page.screenshot({
     path: resolve(OUT, "confrontation-three-options.png"),
     fullPage: true,
   });
+
+  await page.getByRole("button", { name: /Talk/ }).click();
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector(".confrontation-panel")
+        ?.getAttribute("data-confrontation-phase") === "TALK_FAILED",
+  );
+  const talkPanel = page.locator(".confrontation-panel");
+  assert(await visible(talkPanel), "failed talk must keep the panel mounted");
+  report.talk = "FAILED_BOUNDED";
+  assert(
+    (await talkPanel.locator("button").count()) === 2,
+    "failed talk must offer only comply or run",
+  );
+  await page.screenshot({
+    path: resolve(OUT, "talk-failure-bounded-options.png"),
+    fullPage: true,
+  });
+
+  // Recover from the failed talk by complying — the comply resolution path.
   await page.getByRole("button", { name: /Comply/ }).click();
   await page.waitForFunction(
     () =>
@@ -253,32 +357,35 @@ try {
   );
   report.comply = "RESOLVED";
 
-  await challenge("TALK", "SUSPICION");
-  await page.getByRole("button", { name: /Talk/ }).click();
-  await page.waitForFunction(() => {
-    const panel = document.querySelector(".confrontation-panel");
-    return (
-      !panel ||
-      panel.getAttribute("data-confrontation-phase") === "TALK_FAILED"
-    );
-  });
-  const talkPanel = page.locator(".confrontation-panel");
-  if (await visible(talkPanel)) {
-    report.talk = "FAILED_BOUNDED";
-    assert(
-      (await talkPanel.locator("button").count()) === 2,
-      "failed talk must offer only comply or run",
-    );
-    await page.screenshot({
-      path: resolve(OUT, "talk-failure-bounded-options.png"),
-      fullPage: true,
-    });
-    await page.getByRole("button", { name: /Run/ }).click();
-  } else {
-    report.talk = "RELEASED";
-    await challenge("RUN");
-    await page.getByRole("button", { name: /Run/ }).click();
-  }
+  // The resolved stop has engaged the writs micro. The next stop must now
+  // surface the CITE defense in the Talk slot (knowledge as ammunition) — a
+  // direct check that the chapter field vocabulary still feeds the confrontation
+  // after the @pa/chapter-boston(-world) split — while Run stays open. Choosing
+  // Run proves the run -> chase handoff.
+  await challenge("RUN");
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector('[data-game-root="play"]')
+        ?.getAttribute("data-field-interrupt") === "CONFRONTATION" &&
+      Boolean(document.querySelector(".confrontation-panel")),
+  );
+  const runPanel = page.locator(".confrontation-panel");
+  assert(
+    (await runPanel.locator("button").count()) === 3,
+    "armed confrontation must still expose exactly three options",
+  );
+  const citedButton = runPanel.locator(".confrontation-cited");
+  assert(
+    await visible(citedButton),
+    "engaged writs must arm the cited defense on the armed stop",
+  );
+  assert(
+    !(await visible(page.getByRole("button", { name: /Talk/ }))),
+    "the cited defense must take the Talk slot once armed",
+  );
+  report.cited = (await citedButton.getAttribute("data-cited-micro")) ?? "PRESENT";
+  await page.getByRole("button", { name: /Run/ }).click();
   await page.waitForFunction(
     () =>
       document

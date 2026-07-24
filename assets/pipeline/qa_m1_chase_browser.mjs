@@ -83,63 +83,91 @@ async function createPage() {
   return { context, page, pageErrors, assetErrors, diagnostics };
 }
 
-async function chooseToggle(page, labelText, checked) {
-  const row = page.locator(".calibration-toggle").filter({ hasText: labelText });
-  const input = row.locator('input[type="checkbox"]');
-  if (!(await input.count())) return;
-  if ((await input.isChecked()) !== checked) await row.click();
+// design1 kill list (product decision): the pre-game calibration interview is
+// DELETED, so the chase assist and accessibility preferences are no longer
+// chosen through an onboarding wizard. QA seeds them directly onto a per-run
+// profile — with `calibrated: true` so the explicit choices are honored
+// verbatim (never OS-overridden) — exactly as the shipped pause-settings
+// surface would persist them. Each scenario runs in its own fresh context, so
+// its IndexedDB starts empty and the seed cannot collide across scenarios.
+async function seedProfile(page, options) {
+  await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() =>
+    document.body.textContent?.includes("Project Archive"),
+  );
+  await page.waitForFunction(
+    async () => {
+      const opened = indexedDB.open("project-archive");
+      const database = await new Promise((res) => {
+        opened.onsuccess = () => res(opened.result);
+        opened.onerror = () => res(null);
+      });
+      if (!database) return false;
+      const ready = database.objectStoreNames.contains("profiles");
+      database.close();
+      return ready;
+    },
+    null,
+    { timeout: 20000 },
+  );
+  const onboarding = {
+    version: 1,
+    readingSpeed: "STANDARD",
+    captions: true,
+    audioDescription: false,
+    inputMethod: options.keyboardOnly ? "KEYBOARD_ONLY" : "KEYBOARD_MOUSE",
+    archiveAssistAutoOffer: true,
+    highContrast: Boolean(options.highContrast),
+    reducedMotion: Boolean(options.reducedMotion),
+    chaseAssist: options.assist,
+    primersSeen: ["ARCHIVE", "MOVEMENT", "READ", "WORK", "CHOICE"],
+    calibrated: true,
+    completedAt: "2026-07-23T00:00:00.000Z",
+  };
+  await page.evaluate(
+    async ({ profileId, displayName, onboarding }) => {
+      const request = indexedDB.open("project-archive");
+      await new Promise((res, rej) => {
+        request.onerror = () => rej(request.error);
+        request.onsuccess = () => {
+          const database = request.result;
+          const tx = database.transaction(["profiles"], "readwrite");
+          tx.objectStore("profiles").put({
+            profileId,
+            accountId: `local:${profileId}`,
+            displayName,
+            variationRootSeedHex: "a1".repeat(32),
+            source: "LOCAL",
+            createdAt: "2026-07-23T00:00:00.000Z",
+            onboarding,
+          });
+          tx.oncomplete = () => {
+            database.close();
+            res();
+          };
+          tx.onerror = () => rej(tx.error);
+        };
+      });
+    },
+    {
+      profileId: `m1-qa-${options.name}`,
+      displayName: options.name,
+      onboarding,
+    },
+  );
 }
 
 async function bootstrap(page, options) {
-  await page.goto(BASE_URL, { waitUntil: "networkidle" });
-  const nameInput = page.locator('input[placeholder="Display name"]');
-  if (await nameInput.count()) {
-    await nameInput.fill(`${options.name}-${Date.now()}`);
-    await page.locator('button:has-text("Create")').click();
-    await page.waitForTimeout(500);
-  }
-  const play = page.locator('button:has-text("Play")').first();
-  if (await play.count()) {
-    await play.click();
-    await page.waitForTimeout(350);
-  }
-  const firstNext = page.getByRole("button", {
-    name: "Continue calibration",
-  });
-  if (await firstNext.count()) {
-    await firstNext.click();
-    await chooseToggle(page, "High contrast", Boolean(options.highContrast));
-    await chooseToggle(page, "Reduced motion", Boolean(options.reducedMotion));
-    await page
-      .getByRole("button", { name: "Continue calibration" })
-      .click();
-    if (options.keyboardOnly) {
-      await page
-        .getByRole("button", { name: /Keyboard only/ })
-        .click();
-    }
-    const assistLabels = {
-      STANDARD: "Standard",
-      SLOW_PURSUER: "Slower pursuer",
-      AUTO_STAMINA: "Automatic stamina",
-      CONFIRM_RESOLVE: "Confirm outcome",
-    };
-    if (options.assist !== "STANDARD") {
-      const assist = page
-        .locator(".calibration-choice")
-        .filter({ hasText: assistLabels[options.assist] });
-      assert(
-        (await assist.count()) > 0,
-        `missing onboarding assist ${options.assist}: ${(
-          await page.locator("body").innerText()
-        ).slice(0, 1200)}`,
-      );
-      await assist.first().click();
-    }
-    await page
-      .getByRole("button", { name: "Begin synchronization" })
-      .click();
-  }
+  await seedProfile(page, options);
+  await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+  const row = page
+    .locator(".profile-row, [data-profile-row], li, article, div")
+    .filter({ hasText: options.name })
+    .filter({ has: page.getByRole("button", { name: "Play" }) })
+    .first();
+  const play = row.getByRole("button", { name: "Play" }).first();
+  await play.waitFor({ state: "visible", timeout: 15000 });
+  await play.click();
 
   const advanceLabels = [
     "Continue",
