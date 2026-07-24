@@ -16,7 +16,11 @@ import {
   chooseInteriorFloorGrid,
 } from "./InteriorStructure.js";
 import { InteriorPopulationDirector } from "./InteriorPopulationDirector.js";
-import type { InteriorDef, InteriorPropPlacement } from "./interiorManifest.js";
+import type {
+  InteriorArchetype,
+  InteriorDef,
+  InteriorPropPlacement,
+} from "./interiorManifest.js";
 import { weatherBlend } from "./atmosphere.js";
 import { QA_RUNTIME_ENABLED } from "./qaEnvironment.js";
 
@@ -43,8 +47,78 @@ class InteriorAssetBoundary extends Component<
 const WINDOW_KEY = { day: 1.0, drizzle: 0.8, dusk: 0.35 } as const;
 const HEARTH = { day: 2.5, dusk: 4.0, distance: 7, decay: 2 } as const;
 const CANDLE = { day: 0.8, dusk: 1.8, distance: 4, decay: 2 } as const;
-const INTERIOR_EXPOSURE = 0.9;
-const INTERIOR_AMBIENT = 0.35; // top of the 0.28–0.35 band for readable wood
+
+export interface InteriorLightingProfile {
+  ambient: number;
+  hemisphere: number;
+  window: number;
+  roomFill: number;
+  entranceFill: number;
+  exposure: number;
+  practical: number;
+}
+
+/** Archetype-specific readability floor without flattening historical mood. */
+export function interiorLightingProfile(
+  archetype: InteriorArchetype,
+): InteriorLightingProfile {
+  if (archetype === "MEETINGHOUSE") {
+    return {
+      ambient: 0.52,
+      hemisphere: 0.5,
+      window: 1.25,
+      roomFill: 1.3,
+      entranceFill: 1.15,
+      exposure: 1.08,
+      practical: 1.15,
+    };
+  }
+  if (archetype === "WAREHOUSE" || archetype === "MARITIME_STORE") {
+    return {
+      ambient: 0.5,
+      hemisphere: 0.45,
+      window: 1.15,
+      roomFill: 1.2,
+      entranceFill: 1,
+      exposure: 1.08,
+      practical: 1,
+    };
+  }
+  if (
+    archetype.endsWith("_HOME") ||
+    archetype === "HOME_SHOP"
+  ) {
+    return {
+      ambient: 0.44,
+      hemisphere: 0.38,
+      window: 1,
+      roomFill: 0.8,
+      entranceFill: 0.75,
+      exposure: 1.03,
+      practical: 1,
+    };
+  }
+  if (archetype === "TAVERN") {
+    return {
+      ambient: 0.44,
+      hemisphere: 0.35,
+      window: 0.85,
+      roomFill: 0.75,
+      entranceFill: 0.8,
+      exposure: 1.02,
+      practical: 1.15,
+    };
+  }
+  return {
+    ambient: 0.46,
+    hemisphere: 0.4,
+    window: 1.05,
+    roomFill: 0.9,
+    entranceFill: 0.85,
+    exposure: 1.04,
+    practical: 1,
+  };
+}
 
 function InteriorEnvironment(props: {
   def: InteriorDef;
@@ -60,6 +134,10 @@ function InteriorEnvironment(props: {
     exposure: number;
   } | null>(null);
   const fogEnabled = props.def.lighting.fogEnabled;
+  const profile = interiorLightingProfile(props.def.archetype);
+  const drizzle = props.dusk ? 0 : weatherBlend(props.t).drizzle;
+  const exposure =
+    profile.exposure + (props.dusk ? 0.06 : 0) - drizzle * 0.02;
   const fog = useMemo(
     () =>
       fogEnabled
@@ -79,7 +157,7 @@ function InteriorEnvironment(props: {
     scene.background = new THREE.Color("#171512");
     scene.fog = fog;
     gl.toneMapping = THREE.ACESFilmicToneMapping;
-    gl.toneMappingExposure = INTERIOR_EXPOSURE;
+    gl.toneMappingExposure = exposure;
     return () => {
       scene.background = prior.current?.background ?? null;
       scene.fog = prior.current?.fog ?? null;
@@ -89,17 +167,21 @@ function InteriorEnvironment(props: {
       }
     };
   }, [fog, gl, scene]);
+  useFrame(() => {
+    gl.toneMappingExposure = exposure;
+  });
 
   const [ox, oy, oz] = props.def.origin;
   const window = props.def.lighting.windowLocal;
   const hearth = props.def.lighting.hearthLocal;
   // Day/drizzle/dusk window key. drizzle amount is derived from the same
   // deterministic weather schedule the exterior uses.
-  const drizzle = props.dusk ? 0 : weatherBlend(props.t).drizzle;
   const windowKey = props.dusk
-    ? WINDOW_KEY.dusk
-    : THREE.MathUtils.lerp(WINDOW_KEY.day, WINDOW_KEY.drizzle, drizzle);
-  const candleKey = props.dusk ? CANDLE.dusk : CANDLE.day;
+    ? WINDOW_KEY.dusk * profile.window
+    : THREE.MathUtils.lerp(WINDOW_KEY.day, WINDOW_KEY.drizzle, drizzle) *
+      profile.window;
+  const candleKey =
+    (props.dusk ? CANDLE.dusk : CANDLE.day) * profile.practical;
   const hearthRef = useRef<THREE.PointLight>(null);
   const hearthBase = props.dusk ? HEARTH.dusk : HEARTH.day;
   useFrame(({ clock }) => {
@@ -111,7 +193,12 @@ function InteriorEnvironment(props: {
 
   return (
     <group>
-      <ambientLight intensity={INTERIOR_AMBIENT} color="#c8b99f" />
+      <ambientLight intensity={profile.ambient} color="#c8b99f" />
+      <hemisphereLight
+        color={props.dusk ? "#a8b8ce" : "#d6e0df"}
+        groundColor="#4a3528"
+        intensity={profile.hemisphere}
+      />
       <directionalLight
         position={[ox + window[0], oy + window[1] + 2, oz + window[2] - 3]}
         target-position={[ox, oy + 1.1, oz]}
@@ -126,8 +213,24 @@ function InteriorEnvironment(props: {
           oz - props.def.dimensions[2] / 2 + 1.4,
         ]}
         color="#d9b57d"
-        intensity={props.dusk ? 0.9 : 0.55}
-        distance={4.2}
+        intensity={
+          profile.entranceFill * (props.dusk ? 1.08 : 0.88)
+        }
+        distance={Math.min(10, Math.max(5, props.def.dimensions[2] * 0.36))}
+        decay={2}
+        castShadow={false}
+      />
+      <pointLight
+        position={[
+          ox,
+          oy + Math.min(2.4, props.def.dimensions[1] * 0.55),
+          oz + props.def.dimensions[2] * 0.08,
+        ]}
+        color={props.dusk ? "#b7b7a8" : "#d7cab0"}
+        intensity={profile.roomFill * (props.dusk ? 0.82 : 1)}
+        distance={
+          Math.max(props.def.dimensions[0], props.def.dimensions[2]) * 0.68
+        }
         decay={2}
         castShadow={false}
       />
@@ -142,7 +245,7 @@ function InteriorEnvironment(props: {
           castShadow={false}
         />
       )}
-      {props.def.lighting.candleLocals.slice(0, 2).map((local, index) => (
+      {props.def.lighting.candleLocals.slice(0, 4).map((local, index) => (
         <pointLight
           key={index}
           position={[ox + local[0], oy + local[1], oz + local[2]]}
