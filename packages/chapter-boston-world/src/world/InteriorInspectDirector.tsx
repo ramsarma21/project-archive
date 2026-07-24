@@ -113,6 +113,10 @@ export function InteriorInspectDirector(props: {
         radius: hotspot.radius + 0.2,
         facingDot: hotspot.facingDot,
         losRequired: true,
+        losIgnoreIds: [
+          hotspot.placementId,
+          ...(hotspot.losOwnerPlacementIds ?? []),
+        ].map((placementId) => `${props.def.id}:prop:${placementId}`),
         enabled: props.enabled && !props.open,
         activate: () => {
           if (!enabledRef.current || openRef.current) return false;

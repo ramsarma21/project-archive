@@ -70,6 +70,8 @@ export interface InteriorOccupantDef {
 export interface InteriorInspectHotspotDef {
   id: string;
   placementId: string;
+  /** Supporting visible props that belong to this target's LOS surface. */
+  losOwnerPlacementIds?: string[];
   localAnchor: InteriorVec3;
   radius: number;
   facingDot: number;
@@ -484,6 +486,7 @@ function hotspotsFor(
       {
         id: "mercer-proofs",
         placementId: "proof-old",
+        losOwnerPlacementIds: ["proof-table"],
         localAnchor: [1.8, 1.0, 3.4],
         radius: 1.5,
         facingDot: 0.1,

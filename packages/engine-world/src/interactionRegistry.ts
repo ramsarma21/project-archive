@@ -62,6 +62,8 @@ export interface InteractionCandidate {
   importance?: InteractionImportance;
   facingDot: number;
   losRequired: boolean;
+  /** Owning target surfaces may be ignored; intervening walls never are. */
+  losIgnoreIds?: readonly string[];
   enabled: boolean;
   activate: () => boolean | Promise<boolean>;
 }

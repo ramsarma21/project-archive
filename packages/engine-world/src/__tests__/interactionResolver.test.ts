@@ -222,6 +222,32 @@ test("far affordances preserve LOS, priority, gating, and one-target arbitration
   );
 });
 
+test("target collider ignores preserve wall LOS instead of disabling it", () => {
+  let ignored: ReadonlySet<string> | undefined;
+  const artifact = candidate(
+    "artifact",
+    INTERACTION_PRIORITIES.KNOWLEDGE,
+    [5, 0, 0],
+    {
+      kind: "INTERIOR_INSPECT",
+      discoveryRadius: 7,
+      losRequired: true,
+      losIgnoreIds: ["ROOM:prop:artifact"],
+    },
+  );
+  const resolved = resolveInteractionAffordance({
+    candidates: [artifact],
+    player,
+    currentId: null,
+    segmentClear: (_from, _to, ignore) => {
+      ignored = ignore;
+      return true;
+    },
+  });
+  assert.equal(resolved?.candidate.id, "artifact");
+  assert.deepEqual([...ignored!], ["ROOM:prop:artifact"]);
+});
+
 test("metadata defaults produce consistent verbs and bounded accessible ranges", () => {
   const npc = interactionPresentationMetadata(
     candidate("npc", INTERACTION_PRIORITIES.STORY_NPC, [1, 0, 0], {

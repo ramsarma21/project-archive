@@ -34,6 +34,7 @@ function eligible(
   segmentClear: (
     from: { x: number; y: number; z: number },
     to: { x: number; y: number; z: number },
+    ignore?: ReadonlySet<string>,
   ) => boolean,
 ): ResolvedInteraction | null {
   if (!candidate.enabled || candidate.spaceId !== player.spaceId) return null;
@@ -72,6 +73,9 @@ function eligible(
           candidate.position[2] -
           (distance > 0.15 ? (dz / distance) * 0.15 : 0),
       },
+      candidate.losIgnoreIds
+        ? new Set(candidate.losIgnoreIds)
+        : undefined,
     )
   ) {
     return null;
@@ -93,6 +97,7 @@ function resolve(input: {
   segmentClear: (
     from: { x: number; y: number; z: number },
     to: { x: number; y: number; z: number },
+    ignore?: ReadonlySet<string>,
   ) => boolean;
 }): ResolvedInteraction | null {
   const eligibleCandidates = input.candidates
@@ -140,6 +145,7 @@ export function resolveInteraction(input: {
   segmentClear: (
     from: { x: number; y: number; z: number },
     to: { x: number; y: number; z: number },
+    ignore?: ReadonlySet<string>,
   ) => boolean;
 }): ResolvedInteraction | null {
   return resolve({ ...input, includeDiscovery: false });
@@ -152,6 +158,7 @@ export function resolveInteractionAffordance(input: {
   segmentClear: (
     from: { x: number; y: number; z: number },
     to: { x: number; y: number; z: number },
+    ignore?: ReadonlySet<string>,
   ) => boolean;
 }): ResolvedInteraction | null {
   return resolve({ ...input, includeDiscovery: true });
