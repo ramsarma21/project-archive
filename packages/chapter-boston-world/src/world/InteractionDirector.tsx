@@ -12,6 +12,7 @@ import {
   type ResolvedInteraction,
 } from "./interactionResolver.js";
 import { useWorldServices } from "./WorldServicesContext.js";
+import { QA_RUNTIME_ENABLED } from "./qaEnvironment.js";
 
 export const INTERACTION_TOUCH_EVENT = "pa:interaction";
 
@@ -79,6 +80,55 @@ export function InteractionDirector(props: {
   const pressed = useRef(false);
   const releasedSinceAction = useRef(true);
   const actionInFlight = useRef(false);
+
+  useEffect(() => {
+    if (!QA_RUNTIME_ENABLED) return;
+    const target = window as unknown as {
+      __PA_QA_INTERACTIONS__?: () => unknown;
+    };
+    target.__PA_QA_INTERACTIONS__ = () => {
+      const player = props.apiRef.current;
+      return {
+        spaceId: services.spaceId,
+        player: player
+          ? {
+              x: player.position.x,
+              y: player.position.y,
+              z: player.position.z,
+              facingX: player.motion.facingX,
+              facingZ: player.motion.facingZ,
+            }
+          : null,
+        candidates: props.registry.list().map((candidate) => ({
+          id: candidate.id,
+          enabled: candidate.enabled,
+          position: candidate.position,
+          radius: candidate.radius,
+          losIgnoreIds: candidate.losIgnoreIds ?? [],
+          occluders: player
+            ? services.gameplayWorld.segmentOccluderIds(
+                {
+                  x: player.position.x,
+                  y: player.position.y + 1.05,
+                  z: player.position.z,
+                },
+                {
+                  x: candidate.position[0],
+                  y: candidate.position[1] + 1.05,
+                  z: candidate.position[2],
+                },
+                candidate.losIgnoreIds
+                  ? new Set(candidate.losIgnoreIds)
+                  : undefined,
+              )
+            : [],
+        })),
+      };
+    };
+    return () => {
+      delete target.__PA_QA_INTERACTIONS__;
+    };
+  }, [props.apiRef, props.registry, services]);
 
   const activate = () => {
     if (

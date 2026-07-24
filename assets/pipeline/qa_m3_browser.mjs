@@ -8,14 +8,20 @@ import { chromium } from "/tmp/pw-check/node_modules/playwright/index.mjs";
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createDay1Session } from "../../packages/chapter-boston/src/index.ts";
-import { CHAPTER_ID, PACKAGE_ID } from "../../packages/chapter-boston/src/index.ts";
+import {
+  BOSTON_DAY1_FLOW_VERSION,
+  CHAPTER_ID,
+  PACKAGE_ID,
+  createDay1Session,
+} from "../../packages/chapter-boston/src/index.ts";
 
 const BASE_URL = process.env.M3_QA_URL ?? "http://127.0.0.1:5183/";
 const OUT = resolve(process.env.M3_QA_OUT ?? "test-results/m3-visual-qa");
 const PROFILE_ID = "m3-visual-qa";
 const SEED = "31".repeat(32);
-const FLOW_VERSION = Number(process.env.M3_QA_FLOW_VERSION ?? 5);
+const FLOW_VERSION = Number(
+  process.env.M3_QA_FLOW_VERSION ?? BOSTON_DAY1_FLOW_VERSION,
+);
 const HEADLESS_SHELL =
   "/tmp/pw-browsers/chromium_headless_shell-1228/chrome-headless-shell-mac-arm64/chrome-headless-shell";
 mkdirSync(OUT, { recursive: true });
@@ -174,8 +180,8 @@ const report = {
 async function sourceProbe() {
   let devSourceAvailable = true;
   for (const path of [
-    "src/world/exchange/ExchangeInterruptDirector.tsx",
-    "src/world/InteractionDirector.tsx",
+    "src/presenter/ArchiveOverlay.tsx",
+    "src/presenter/CheckpointDebrief.tsx",
     "src/pages/Play.tsx",
   ]) {
     const response = await fetch(new URL(path, BASE_URL));
@@ -555,6 +561,13 @@ async function domClick(locator) {
   await locator.evaluate((element) => element.click());
 }
 
+async function continueExchangeReply(page) {
+  const button = page.getByRole("button", { name: /Continue/i });
+  await button.waitFor({ state: "visible", timeout: 10_000 });
+  await domClick(button);
+  await waitResumed(page);
+}
+
 async function waitResumed(page) {
   await page.waitForFunction(
     () => {
@@ -716,7 +729,7 @@ async function approach(
   await page.getByRole("dialog").waitFor({ state: "visible" });
   await screenshot(page, screenshotName, { world: false });
   await domClick(page.getByRole("button", { name: choiceName }));
-  await waitResumed(page);
+  await continueExchangeReply(page);
   report.interactions.push({
     accessibleName: String(accessibleName),
     choiceName: String(choiceName),
@@ -813,7 +826,7 @@ async function runMatrix(page) {
   );
   await approach(
     page,
-    /Talk to Ned/i,
+    /Ned \/\/ The Apprentice/i,
     { x: 9.2, z: 7.0 },
     "thread-ned",
     /Fetch the tray of type/i,
@@ -824,11 +837,11 @@ async function runMatrix(page) {
   );
 
   const named = [
-    ["Abigail", "abigail", /Talk to Abigail/i, /Ask about the press/i],
-    ["Thomas", "thomas", /Talk to Thomas/i, /Ask what the duties change/i],
-    ["Pike", "pike", /Talk to Pike/i, /Ask about the courts/i],
-    ["Clarke", "clarke", /Talk to Clarke/i, /Hear him out/i],
-    ["Rider", "rider", /Talk to the rider/i, /Ask where the news goes/i],
+    ["Abigail", "abigail", /Talk: Abigail/i, /Ask about the press/i],
+    ["Thomas", "thomas", /Talk: Thomas/i, /Ask what the duties change/i],
+    ["Pike", "pike", /Talk: Mr\. Pike/i, /Ask about the courts/i],
+    ["Clarke", "clarke", /Talk: Edward Clarke/i, /Hear him out/i],
+    ["Rider", "rider", /Talk: The rider/i, /Ask where the news goes/i],
   ];
   for (const [label, id, prompt, choice] of named) {
     const actorPosition = await namedActorPosition(page, id);
@@ -864,15 +877,15 @@ async function runMatrix(page) {
   );
   await screenshot(page, "dock-offer", { world: false });
   await domClick(page.getByRole("button", { name: /Lend a back/i }));
-  await waitResumed(page);
+  await continueExchangeReply(page);
   const dockStages = [
-    [-135.2, 4.5, Math.PI, /Lift the barrel/i, "dock-load", "SJ-dock-haul-lift"],
-    [-142, 14.2, Math.PI / 2, /Balance and cross/i, "dock-balance", "SJ-dock-haul-balance"],
-    [-140, 12.0, 0, /Set down the barrel/i, "dock-setdown", "SJ-dock-haul-setdown"],
+    [-135.2, 4.5, Math.PI, /Take: Dock haul \/\/ Load/i, /Lift the barrel/i, "dock-load", "SJ-dock-haul-lift"],
+    [-142, 14.2, Math.PI / 2, /Cross: Dock haul \/\/ Balance/i, /Balance and cross/i, "dock-balance", "SJ-dock-haul-balance"],
+    [-140, 14.6, 0, /Deliver: Dock haul \/\/ Set down/i, /Set down the barrel/i, "dock-setdown", "SJ-dock-haul-setdown"],
   ];
-  for (const [x, z, yaw, label, name, sourceId] of dockStages) {
+  for (const [x, z, yaw, glyphName, label, name, sourceId] of dockStages) {
     await teleport(page, x, z, yaw);
-    const glyph = page.getByRole("button", { name: label });
+    const glyph = page.getByRole("button", { name: glyphName });
     await glyph.waitFor({ state: "visible" });
     const interruptId = `M3_VISUAL_${name.toUpperCase()}`;
     await fieldEvent(page, {
@@ -890,7 +903,7 @@ async function runMatrix(page) {
     );
     await screenshot(page, name, { world: false });
     await domClick(page.getByRole("button", { name: label }));
-    await waitResumed(page);
+    await continueExchangeReply(page);
   }
 
   await fieldEvent(page, {
@@ -937,7 +950,7 @@ async function runMatrix(page) {
   await teleport(page, 732.2, 833, -Math.PI / 2);
   // Validate the keeper handoff is actually OFFERED as a contextual F glyph
   // (custody + tavern-stage + space gating all satisfied)...
-  const keeper = page.getByRole("button", { name: /note to the keeper/i });
+  const keeper = page.getByRole("button", { name: /Deliver: Keeper/i });
   await keeper.waitFor({ state: "visible" });
   // ...then start the exchange through the same durable field-event path the
   // other reactive side-job figures (Sarah, Ned, the Thomas offer) use in this
@@ -962,7 +975,7 @@ async function runMatrix(page) {
   await domClick(
     page.getByRole("button", { name: /Hand over the folded note/i }),
   );
-  await waitResumed(page);
+  await continueExchangeReply(page);
   assert(
     !(await page
       .locator('[data-game-root="play"]')
@@ -1100,8 +1113,14 @@ async function smokeVariant(variant) {
       path: resolve(OUT, `launch-failed-${variant.id}.png`),
       fullPage: true,
     });
-    await context.close();
-    await browser.close();
+    await Promise.race([
+      context.close().catch(() => undefined),
+      new Promise((resolvePromise) => setTimeout(resolvePromise, 2500)),
+    ]);
+    await Promise.race([
+      browser.close().catch(() => undefined),
+      new Promise((resolvePromise) => setTimeout(resolvePromise, 3000)),
+    ]);
     return null;
   }
   return { browser, context, page, errors, diagnostics, variant };
@@ -1155,8 +1174,14 @@ try {
     resolve(OUT, "report.json"),
     JSON.stringify(report, null, 2),
   );
-  await selected.context.close();
-  await selected.browser.close();
+  await Promise.race([
+    selected.context.close().catch(() => undefined),
+    new Promise((resolvePromise) => setTimeout(resolvePromise, 2500)),
+  ]);
+  await Promise.race([
+    selected.browser.close().catch(() => undefined),
+    new Promise((resolvePromise) => setTimeout(resolvePromise, 3000)),
+  ]);
 }
 
 console.log(

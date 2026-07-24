@@ -25,13 +25,11 @@ const TOUR_INTERIORS = process.env.INTERIOR_QA_IDS
   ? process.env.INTERIOR_QA_IDS.split(",").map((id) => id.trim()).filter(Boolean)
   : INTERIORS;
 
-const headed = process.env.INTERIOR_QA_HEADED === "1";
 const browser = await chromium.launch({
   executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  headless: !headed,
+  headless: true,
   args: [
-    headed ? "--use-angle=metal" : "--use-angle=swiftshader",
-    ...(headed ? [] : ["--enable-unsafe-swiftshader"]),
+    "--use-angle=metal",
     "--enable-webgl",
     "--ignore-gpu-blocklist",
     "--disable-dev-shm-usage",
@@ -54,6 +52,64 @@ page.on("response", (response) => {
     diagnostics.push(`http ${response.status()}: ${response.url()}`);
   }
 });
+
+async function captureReadableScene(path) {
+  const buffer = await page.screenshot({ path });
+  const metrics = await page.evaluate(async (base64) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${base64}`;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let sum = 0;
+    let samples = 0;
+    let nonBlack = 0;
+    let crushed = 0;
+    let centerSum = 0;
+    let centerSamples = 0;
+    for (let y = 52; y < canvas.height; y += 3) {
+      for (let x = 0; x < canvas.width; x += 3) {
+        const index = (y * canvas.width + x) * 4;
+        const luma =
+          0.2126 * pixels[index] +
+          0.7152 * pixels[index + 1] +
+          0.0722 * pixels[index + 2];
+        sum += luma;
+        samples++;
+        if (luma > 18) nonBlack++;
+        if (luma < 8) crushed++;
+        if (
+          x >= canvas.width * 0.25 &&
+          x <= canvas.width * 0.75 &&
+          y >= canvas.height * 0.22 &&
+          y <= canvas.height * 0.82
+        ) {
+          centerSum += luma;
+          centerSamples++;
+        }
+      }
+    }
+    return {
+      meanLuma: Number((sum / samples).toFixed(3)),
+      nonBlackRatio: Number((nonBlack / samples).toFixed(4)),
+      crushedBlackRatio: Number((crushed / samples).toFixed(4)),
+      centerMeanLuma: Number((centerSum / centerSamples).toFixed(3)),
+    };
+  }, buffer.toString("base64"));
+  if (
+    metrics.meanLuma < 12 ||
+    metrics.nonBlackRatio < 0.15 ||
+    metrics.crushedBlackRatio > 0.75 ||
+    metrics.centerMeanLuma < 10
+  ) {
+    errors.push(`interior readability failed ${path}: ${JSON.stringify(metrics)}`);
+  }
+  return metrics;
+}
 
 async function enterWorld() {
   await page.goto(BASE_URL, { waitUntil: "networkidle" });
@@ -213,19 +269,21 @@ for (let index = 0; index < Math.min(TOUR_INTERIORS.length, LIMIT); index++) {
     { timeout: 10000 },
   );
   // Call once more after Player has committed its API; this guarantees the
-  // scene-local landing wins over the rig's initial exterior position.
-  await stageInterior(id, "CENTER");
+  // collision-safe authored landing and its entry-camera preset win over the
+  // rig's initial exterior position. Room centres can contain counters/tables
+  // and are not representative player viewpoints.
+  await stageInterior(id, "LANDING");
   await page.waitForTimeout(index < 7 ? 1500 : 750);
   await clearBlockingOverlays();
   await page.waitForTimeout(450);
-  // The canonical entrance is on -Z. QA staging uses faceY=0, which looks back
-  // through that doorway into the black isolation space; rotate 180° so each
-  // screenshot reads the room, floor, furniture, and rear/side walls.
+  // The canonical entrance is on -Z. Face +Z from the landing so each
+  // screenshot reads into the room (primary work surface, props, occupants)
+  // instead of looking back at the street door.
   await page.evaluate(() => {
     const raw = document.querySelector(".world3d")?.dataset.playerPos3d;
     const [x, , z] = (raw ?? "").split(",").map(Number);
     if (Number.isFinite(x) && Number.isFinite(z) && typeof window.__PA_QA_TELEPORT__ === "function") {
-      window.__PA_QA_TELEPORT__(x, z, Math.PI);
+      window.__PA_QA_TELEPORT__(x, z, 0);
     }
   });
   await page.waitForTimeout(index === 0 ? 2600 : 600);
@@ -248,13 +306,16 @@ for (let index = 0; index < Math.min(TOUR_INTERIORS.length, LIMIT); index++) {
   }));
   const collision = await page.evaluate(() =>
     typeof window.__paCollision === "function" ? window.__paCollision() : null);
+  const safe = id.replace(/^EXPLORE_/, "").replaceAll("_", "-").toLowerCase();
+  const readability = await captureReadableScene(
+    resolve(OUT, `${String(index).padStart(2, "0")}-${safe}.png`),
+  );
   rooms.push({
     ...host,
     collisionHits: collision?.hitIds ?? [],
     blockers: collision?.blockers?.length ?? 0,
+    readability,
   });
-  const safe = id.replace(/^EXPLORE_/, "").replaceAll("_", "-").toLowerCase();
-  await page.screenshot({ path: resolve(OUT, `${String(index).padStart(2, "0")}-${safe}.png`) });
 }
 
 // Focused inspection QA at the active Mercer press.
@@ -336,7 +397,8 @@ async function rendererMemory() {
 }
 const stabilityIds = ["MERCER_PRESS", "EXPLORE_rowN1", "EXPLORE_warehouseHero", "EXPLORE_church"];
 const stabilitySamples = [];
-for (let cycle = 0; cycle < 3; cycle++) {
+const stabilityCycles = Number(process.env.INTERIOR_QA_STABILITY_CYCLES ?? 3);
+for (let cycle = 0; cycle < stabilityCycles; cycle++) {
   for (const id of stabilityIds) {
     await stageInterior(id, "CENTER");
     await page.waitForTimeout(650);
@@ -381,6 +443,9 @@ console.log(JSON.stringify({
   errors: report.errors,
 }, null, 2));
 
-await browser.close();
+await Promise.race([
+  browser.close().catch(() => undefined),
+  new Promise((resolvePromise) => setTimeout(resolvePromise, 3000)),
+]);
 process.exit(report.errors.length ? 1 : 0);
 

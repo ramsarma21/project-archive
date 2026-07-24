@@ -14,8 +14,12 @@
 import { chromium } from "/tmp/pw-check/node_modules/playwright/index.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createDay1Session } from "../../packages/chapter-boston/src/index.ts";
-import { CHAPTER_ID, PACKAGE_ID } from "../../packages/chapter-boston/src/index.ts";
+import {
+  BOSTON_DAY1_FLOW_VERSION,
+  CHAPTER_ID,
+  PACKAGE_ID,
+  createDay1Session,
+} from "../../packages/chapter-boston/src/index.ts";
 
 const BASE_URL = process.env.W2_QA_URL ?? "http://127.0.0.1:5188/";
 const OUT = resolve(
@@ -152,7 +156,15 @@ async function bootstrap(page, profileId, events, reducedMotion) {
     document.body.textContent?.includes("Project Archive"),
   );
   await page.evaluate(
-    async ({ profileId, seed, events, chapterId, packageId, reducedMotion }) => {
+    async ({
+      profileId,
+      seed,
+      events,
+      chapterId,
+      packageId,
+      flowVersion,
+      reducedMotion,
+    }) => {
       const request = indexedDB.open("project-archive");
       await new Promise((resolvePromise, reject) => {
         request.onerror = () => reject(request.error);
@@ -184,7 +196,7 @@ async function bootstrap(page, profileId, events, reducedMotion) {
             profileId,
             chapterId,
             packageId,
-            flowVersion: 5,
+            flowVersion,
             committedEvents: events,
             revision: 1,
             status: "IN_PROGRESS",
@@ -204,6 +216,7 @@ async function bootstrap(page, profileId, events, reducedMotion) {
       events,
       chapterId: CHAPTER_ID,
       packageId: PACKAGE_ID,
+      flowVersion: BOSTON_DAY1_FLOW_VERSION,
       reducedMotion,
     },
   );
@@ -270,6 +283,13 @@ async function waitResolved(page) {
     null,
     { timeout: 20000 },
   );
+}
+
+async function continueReply(page) {
+  const button = page.getByRole("button", { name: /Continue/i });
+  await button.waitFor({ state: "visible", timeout: 10_000 });
+  await button.evaluate((element) => element.click());
+  await waitResolved(page);
 }
 
 async function teleport(page, x, z, faceY) {
@@ -542,7 +562,7 @@ try {
     // Numeric hotkey commit on the RECONSTRUCTED panel (fix-wave P0-2).
     await page.evaluate(() => document.activeElement?.blur());
     await page.keyboard.press("1");
-    await waitResolved(page);
+    await continueReply(page);
     await shot(page, "03-pike-completed");
   });
 
@@ -551,7 +571,7 @@ try {
     await openViaCandidate(
       page,
       { x: -50, z: -4.7 },
-      /Talk to Goodwife Sarah/i,
+      /Talk: Goodwife Sarah/i,
     );
     const before = await panelSnapshot(page);
     assert(
@@ -572,13 +592,13 @@ try {
       timeout: 8000,
     });
     await shot(page, "06-sarah-reply-chips");
-    await waitResolved(page);
+    await continueReply(page);
   });
 
   // 3. Dock haul offer (reduced motion): candidate click, reload, verify the
   //    reply dwell still presents feedback before resolving.
   await scenario("dock-haul", { reducedMotion: true }, async (page) => {
-    await openViaCandidate(page, { x: -134, z: 3.0 }, /Talk to the dockhand/i);
+    await openViaCandidate(page, { x: -134, z: 3.0 }, /Talk: Wharf dockhand/i);
     const before = await panelSnapshot(page);
     assert(before.title === "Wharf dockhand", `dock title ${before.title}`);
     await shot(page, "07-dock-before-reload");
@@ -600,7 +620,7 @@ try {
       null,
       { timeout: 4000 },
     );
-    await waitResolved(page);
+    await continueReply(page);
     await shot(page, "09-dock-accepted");
   });
 
@@ -672,7 +692,7 @@ try {
       name: /Hand over the folded note/i,
     });
     await handoff.evaluate((element) => element.click());
-    await waitResolved(page);
+    await continueReply(page);
     const carried = await page
       .locator('[data-game-root="play"]')
       .getAttribute("data-carried-object-ids");
@@ -691,7 +711,7 @@ try {
     await openViaCandidate(
       page,
       { x: -139, z: -10.4 },
-      /Read Wharfage schedule/i,
+      /Read: Wharfage schedule/i,
     );
     const before = await panelSnapshot(page);
     assert(before.title === "Wharfage schedule", `poster title ${before.title}`);
@@ -708,12 +728,16 @@ try {
     await shot(page, "16-poster-after-reload");
     const finish = page.getByRole("button", { name: /Finish reading/i });
     await finish.evaluate((element) => element.click());
-    await page.locator(".exchange-effect-chips").waitFor({
+    await page.locator(".exchange-continue").waitFor({
       state: "visible",
       timeout: 8000,
     });
-    await shot(page, "17-poster-reply-chips");
-    await waitResolved(page);
+    assert(
+      (await page.locator(".exchange-source-card").count()) === 1,
+      "poster reply lost its source context",
+    );
+    await shot(page, "17-poster-source-feedback");
+    await continueReply(page);
   });
 
   // 6. M4 challenge (stage B): the agitator's dare accepted through a full
@@ -722,7 +746,7 @@ try {
     await openViaCandidate(
       page,
       { x: -16, z: 6 },
-      /Accept the watched crossing/i,
+      /Help: Agitator's dare/i,
     );
     const before = await panelSnapshot(page);
     assert(
@@ -738,15 +762,15 @@ try {
     await shot(page, "19-challenge-after-reload");
     await page.evaluate(() => document.activeElement?.blur());
     await page.keyboard.press("1");
-    await waitResolved(page);
+    await continueReply(page);
     // Accepting flips the dare ACCEPTED: the drop-off exchange now exists at
     // the Custom House contact (openViaCandidate handles the watcher
     // spot-checks that Custom House teleports can trip).
-    await openViaCandidate(page, { x: 50, z: 8 }, /Hand over the bundle/i);
+    await openViaCandidate(page, { x: 50, z: 8 }, /Deliver: Custom House contact/i);
     await shot(page, "20-challenge-dropoff-panel");
     await page.evaluate(() => document.activeElement?.blur());
     await page.keyboard.press("1");
-    await waitResolved(page);
+    await continueReply(page);
     await shot(page, "21-challenge-completed");
   });
 

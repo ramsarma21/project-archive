@@ -9,15 +9,25 @@ import {
   duckRequestFor,
 } from "../../packages/chapter-boston-world/src/world/traversalRegistration.ts";
 
-const out = "/tmp/locomotion-qa";
+const out = process.env.LOCOMOTION_QA_OUT ?? "/tmp/locomotion-qa";
 mkdirSync(out, { recursive: true });
 
 const browser = await chromium.launch({
   executablePath:
-    "/tmp/pw-browsers/chromium_headless_shell-1228/chrome-headless-shell-mac-arm64/chrome-headless-shell",
-  env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: "/tmp/pw-browsers" },
-  args: ["--use-gl=angle", "--enable-webgl", "--ignore-gpu-blocklist"],
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  args: [
+    "--use-angle=metal",
+    "--enable-webgl",
+    "--ignore-gpu-blocklist",
+    "--disable-dev-shm-usage",
+  ],
 });
+async function closeBrowser() {
+  await Promise.race([
+    browser.close().catch(() => undefined),
+    new Promise((resolvePromise) => setTimeout(resolvePromise, 3000)),
+  ]);
+}
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
 const failedRequests = [];
@@ -210,15 +220,10 @@ if (process.env.MERCER_HANDOFF_QA_ONLY === "1") {
   await page.waitForFunction(
     () =>
       document.querySelector(".play")?.getAttribute("data-plan-request") ===
-        "CHOICE" &&
-      document.querySelector(".play")?.getAttribute("data-primer") ===
         "CHOICE",
     undefined,
     { timeout: 30000 },
   );
-  const choicePrimer = page.getByRole("button", { name: "ACKNOWLEDGE" });
-  await choicePrimer.waitFor({ state: "visible", timeout: 5000 });
-  await choicePrimer.click();
   const entryChoice = page.getByRole("button", { name: /Walk straight in/ });
   try {
     await entryChoice.waitFor({ state: "visible", timeout: 30000 });
@@ -256,6 +261,17 @@ if (process.env.MERCER_HANDOFF_QA_ONLY === "1") {
       .getByRole("button", { name: label })
       .waitFor({ state: "visible", timeout: 5000 });
   }
+  const entryTaglines = await page.locator(".choice-panel .choice-subtext").allTextContents();
+  assert(
+    entryTaglines.length === 3 &&
+      new Set(entryTaglines.map((tagline) => tagline.trim())).size === 3,
+    `entry choices did not expose distinct stakes: ${JSON.stringify(entryTaglines)}`,
+  );
+  assert(
+    (await page.getByRole("button", { name: "ACKNOWLEDGE" }).count()) === 0,
+    "entry choice regressed to a blocking primer",
+  );
+  await page.screenshot({ path: `${out}/mercer-entry-stake-tags.png` });
   const choiceState = await page.locator(".world3d").evaluate((element) => ({
     owner: element.dataset.cameraOwner,
     movement: element.dataset.movementActive,
@@ -290,23 +306,15 @@ if (process.env.MERCER_HANDOFF_QA_ONLY === "1") {
   );
   await page.waitForFunction(
     () =>
-      document.querySelector(".play")?.getAttribute("data-primer") === "WORK" &&
-      document
-        .querySelector(".play")
-        ?.getAttribute("data-interaction-busy") === "false",
-    undefined,
-    { timeout: 30000 },
-  );
-  const workPrimer = page.getByRole("button", { name: "ACKNOWLEDGE" });
-  await workPrimer.click();
-  await page.waitForFunction(
-    () =>
-      document.querySelector(".play")?.getAttribute("data-primer") === "" &&
       document
         .querySelector(".play")
         ?.getAttribute("data-interaction-busy") === "false",
     undefined,
     { timeout: 10000 },
+  );
+  assert(
+    (await page.getByRole("button", { name: "ACKNOWLEDGE" }).count()) === 0,
+    "work handoff regressed to a blocking primer",
   );
   await page
     .locator(".world-controls-overlay.request-mechanic .mechanic-action")
@@ -339,7 +347,7 @@ if (process.env.MERCER_HANDOFF_QA_ONLY === "1") {
     "MERCER_HANDOFF_QA_OK",
     JSON.stringify({ choiceState, firstPersonState }),
   );
-  await browser.close();
+  await closeBrowser();
   process.exit(0);
 }
 
@@ -388,7 +396,7 @@ if (process.env.EXTERNAL_CAMERA_QA_ONLY === "1") {
     `unexpected failed requests: ${relevantFailures.join(" | ")}`,
   );
   console.log("EXTERNAL_CAMERA_QA_OK", JSON.stringify({ before, after, moved }));
-  await browser.close();
+  await closeBrowser();
   process.exit(0);
 }
 
@@ -503,7 +511,7 @@ if (process.env.JUMP_QA_ONLY === "1") {
   assert(jumpHttp.length === 0, `unexpected HTTP errors: ${jumpHttp.join(" | ")}`);
   assert(jumpFailures.length === 0, `unexpected failed requests: ${jumpFailures.join(" | ")}`);
   console.log("JUMP_QA_OK");
-  await browser.close();
+  await closeBrowser();
   process.exit(0);
 }
 
@@ -526,7 +534,7 @@ await teleport(
 );
 await page.waitForTimeout(250);
 assert(
-  !(await page.locator(".traversal-glyph").allTextContents()).some((text) => text.includes("Duck")),
+  !(await page.locator(".interaction-action-layer").allTextContents()).some((text) => text.includes("Duck")),
   "misaligned duck approach showed a prompt",
 );
 await page.keyboard.press("KeyF");
@@ -554,12 +562,12 @@ for (let step = 0; step < 30; step++) {
   ) break;
 }
 await page.keyboard.up("KeyW");
-await page.locator(".traversal-glyph", { hasText: "Duck" }).waitFor({
+await page.locator(".interaction-action-layer", { hasText: "Duck" }).waitFor({
   state: "visible",
   timeout: 2500,
 });
 console.log("DUCK_ALIGNED", await state(), {
-  glyphs: await page.locator(".traversal-glyph").allTextContents(),
+  glyphs: await page.locator(".interaction-action-layer").allTextContents(),
   active: await page.evaluate(() => document.activeElement?.tagName),
   traversal: await page.locator(".world3d").getAttribute("data-traversal-active"),
 });
@@ -601,7 +609,7 @@ if (process.env.DUCK_QA_ONLY === "1") {
   assert(relevantErrors.length === 0, `page/runtime errors: ${relevantErrors.join(" | ")}`);
   assert(relevantHttpErrors.length === 0, `unexpected HTTP errors: ${relevantHttpErrors.join(" | ")}`);
   assert(relevantFailures.length === 0, `unexpected failed requests: ${relevantFailures.join(" | ")}`);
-  await browser.close();
+  await closeBrowser();
   process.exit(0);
 }
 
@@ -622,6 +630,9 @@ await waitGrounded();
 
 // F at the same endpoint selects the exact authored vault.
 await teleport(vault.path[0].pos, yawBetween(vault.path[0].pos, vault.path[1].pos));
+await page
+  .locator(".interaction-action-layer", { hasText: "Vault" })
+  .waitFor({ state: "visible", timeout: 2500 });
 await page.keyboard.press("KeyF");
 current = await waitPhase("VAULT");
 assert(current.clip === "vault", `F vault selected ${current.clip}`);
@@ -633,6 +644,9 @@ await waitGrounded();
 // pure tests; this browser pass verifies the actual clips are selected.
 const climb = marker("WHARF_CRANE_LADDER");
 await teleport(climb.path[0].pos, yawBetween(climb.path[0].pos, climb.path[1].pos));
+await page
+  .locator(".interaction-action-layer", { hasText: "Climb" })
+  .waitFor({ state: "visible", timeout: 2500 });
 await page.keyboard.press("KeyF");
 current = await waitPhase("CLIMB_UP");
 assert(current.clip === "climbUp", `climb up selected ${current.clip}`);
@@ -642,7 +656,10 @@ await page.waitForTimeout(climb.durationMs + 300);
 const top = climb.path.at(-1);
 const below = climb.path.at(-2);
 await teleport(top.pos, yawBetween(top.pos, below.pos));
-console.log("CLIMB_DOWN_READY", await state(), await page.locator(".traversal-glyph").allTextContents());
+console.log("CLIMB_DOWN_READY", await state(), await page.locator(".interaction-action-layer").allTextContents());
+await page
+  .locator(".interaction-action-layer", { hasText: "Climb" })
+  .waitFor({ state: "visible", timeout: 2500 });
 await page.keyboard.press("KeyF");
 await page.waitForTimeout(250);
 current = await state();
@@ -658,4 +675,4 @@ console.log("FAILED_REQUESTS", JSON.stringify(failedRequests));
 console.log("OUTPUT", out);
 assert(errors.length === 0, `page/runtime errors: ${errors.join(" | ")}`);
 assert(failedRequests.length === 0, `failed requests: ${failedRequests.join(" | ")}`);
-await browser.close();
+await closeBrowser();

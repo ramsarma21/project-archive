@@ -400,13 +400,13 @@ async function submitPanel(page, authenticated = false) {
     );
   if (authenticated) {
     const submit = panel.getByRole("button", {
-      name: "Set it down",
+      name: "Submit this line",
     });
     assert(await submit.isDisabled(), "consent-denied submit was enabled");
     await panel.locator('input[type="checkbox"]').check();
   }
   await panel
-    .getByRole("button", { name: "Set it down" })
+    .getByRole("button", { name: "Submit this line" })
     .click();
   await page.waitForSelector(".open-response-feedback", {
     timeout: 10_000,

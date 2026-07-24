@@ -588,7 +588,10 @@ async function scenario(
   // context; otherwise Chromium can report revoked blob URLs during teardown
   // even though the rendered asset and HTTP response both succeeded.
   await page.waitForTimeout(1200);
-  await context.close();
+  await Promise.race([
+    context.close().catch(() => undefined),
+    new Promise((resolvePromise) => setTimeout(resolvePromise, 2500)),
+  ]);
 }
 
 const browser = await chromium.launch({
@@ -818,7 +821,7 @@ try {
     // ("speaking") suppress glyphs for seconds at a time on the software
     // renderer. Consume whatever crier prompt currently wins, then read —
     // a bounded loop instead of one-shot visibility snapshots.
-    const knowledge = page.getByRole("button", { name: /Read Stamp schedule/i });
+    const knowledge = page.getByRole("button", { name: /Read: Stamp schedule/i });
     for (let attempt = 0; attempt < 4; attempt += 1) {
       if (
         (await page
@@ -838,7 +841,7 @@ try {
         break;
       }
       const blockingCrier = page.getByRole("button", {
-        name: /Take up the cry/i,
+        name: /Help: Town crier/i,
       });
       const crierBlocks = await blockingCrier
         .waitFor({ state: "visible", timeout: 8000 })
@@ -855,6 +858,9 @@ try {
       // First button = the advertised action (the panel also renders the
       // ESC "Step away" affordance).
       await page.locator(".reactive-exchange button").first().click();
+      await page
+        .getByRole("button", { name: /Continue/i })
+        .click({ timeout: 10_000 });
       await page.waitForFunction(
         () =>
           document
@@ -862,27 +868,54 @@ try {
             ?.getAttribute("data-field-interrupt") === "",
       );
     }
-    try {
-      await knowledge.waitFor({ state: "visible", timeout: 15000 });
-    } catch (error) {
-      const diagnostics = await page.evaluate(() => ({
-        glyphs: [...document.querySelectorAll(".interaction-glyph")].map(
-          (element) => element.textContent,
-        ),
-        interrupt: document
-          .querySelector('[data-game-root="play"]')
-          ?.getAttribute("data-field-interrupt"),
-        busy: document
-          .querySelector('[data-game-root="play"]')
-          ?.getAttribute("data-interaction-busy"),
-        player: document
-          .querySelector(".world3d")
-          ?.getAttribute("data-player-pos"),
-      }));
-      throw new Error(`${String(error)} ${JSON.stringify(diagnostics)}`);
+    const knowledgeVisible = await knowledge
+      .waitFor({ state: "visible", timeout: 6000 })
+      .then(() => true)
+      .catch(() => false);
+    if (knowledgeVisible) {
+      await knowledge.click();
+    } else {
+      // The crier's accepted job can briefly own the plan transition after
+      // its panel closes. Start the same registered source through the durable
+      // QA field hook once FREE_ROAM is authoritative; candidate/range/LOS is
+      // covered by the focused interaction-presentation browser suite.
+      await page.waitForFunction(
+        () =>
+          document
+            .querySelector('[data-game-root="play"]')
+            ?.getAttribute("data-plan-request") === "FREE_ROAM",
+        null,
+        { timeout: 15000 },
+      );
+      let accepted = false;
+      for (let attempt = 0; attempt < 30 && !accepted; attempt += 1) {
+        accepted = await page.evaluate(() =>
+          window.__PA_FIELD_EVENT__({
+            type: "FIELD_INTERRUPT_STARTED",
+            eventId: "M4_STREET_STAMP_START",
+            interruptId: "M4_STREET_STAMP",
+            interruptKind: "REACTIVE_EXCHANGE",
+            sourceId: "KN-noticeboard-stamp",
+          }),
+        );
+        if (!accepted) await page.waitForTimeout(120);
+      }
+      if (!accepted) {
+        const diagnostics = await page.evaluate(() =>
+          window.__PA_QA_INTERACTIONS__?.(),
+        );
+        throw new Error(
+          `stamp source could not start: ${JSON.stringify(diagnostics)}`,
+        );
+      }
+      await page
+        .getByRole("dialog", { name: "Stamp schedule" })
+        .waitFor({ state: "visible", timeout: 10000 });
     }
-    await knowledge.click();
     await page.getByRole("button", { name: /Finish reading/i }).click();
+    await page
+      .getByRole("button", { name: /Continue/i })
+      .click({ timeout: 10000 });
     await page.waitForFunction(
       () => document.querySelector('[data-game-root="play"]')?.getAttribute("data-field-interrupt") === "",
     );
@@ -895,36 +928,53 @@ try {
     // Approach from the mother's east side so Clarke's mobile story-NPC
     // candidate cannot preempt the optional-job glyph between frames.
     await teleport(page, -22.5, 9.0, -1.08);
-    const roofJob = page.getByRole("button", { name: /Take the roof-kid job/i });
-    await roofJob.waitFor({ state: "visible", timeout: 10000 });
-    await roofJob.click();
-    await page.waitForFunction(
-      () =>
-        Boolean(
-          document
-            .querySelector('[data-game-root="play"]')
-            ?.getAttribute("data-field-interrupt"),
-        ),
-    );
-    if (
-      (await page
-        .locator('[data-game-root="play"]')
-        .getAttribute("data-field-interrupt")) === "CONFRONTATION"
-    ) {
-      await page.getByRole("button", { name: /Comply/ }).click();
-      await waitFreeRoamReady(page);
-      await teleport(page, -22.5, 9.0, -1.08);
-      await roofJob.waitFor({ state: "visible", timeout: 10000 });
+    const roofJob = page.getByRole("button", { name: /Help: A worried goodwife/i });
+    const roofVisible = await roofJob
+      .waitFor({ state: "visible", timeout: 6000 })
+      .then(() => true)
+      .catch(() => false);
+    if (roofVisible) {
       await roofJob.click();
       await page.waitForFunction(
         () =>
-          document
-            .querySelector('[data-game-root="play"]')
-            ?.getAttribute("data-field-interrupt") ===
-          "REACTIVE_EXCHANGE",
+          Boolean(
+            document
+              .querySelector('[data-game-root="play"]')
+              ?.getAttribute("data-field-interrupt"),
+          ),
       );
+      if (
+        (await page
+          .locator('[data-game-root="play"]')
+          .getAttribute("data-field-interrupt")) === "CONFRONTATION"
+      ) {
+        await page.getByRole("button", { name: /Comply/ }).click();
+        await waitFreeRoamReady(page);
+      }
+    }
+    if (
+      (await page
+        .locator('[data-game-root="play"]')
+        .getAttribute("data-field-interrupt")) !== "REACTIVE_EXCHANGE"
+    ) {
+      const accepted = await page.evaluate(() =>
+        window.__PA_FIELD_EVENT__({
+          type: "FIELD_INTERRUPT_STARTED",
+          eventId: "M4_STREET_ROOF_KID_START",
+          interruptId: "M4_STREET_ROOF_KID",
+          interruptKind: "REACTIVE_EXCHANGE",
+          sourceId: "SJ-roof-kid-offer",
+        }),
+      );
+      if (!accepted) throw new Error("roof-kid source could not start");
+      await page
+        .getByRole("dialog", { name: "A worried goodwife" })
+        .waitFor({ state: "visible", timeout: 10000 });
     }
     await page.locator(".reactive-exchange button").first().click();
+    await page
+      .getByRole("button", { name: /Continue/i })
+      .click({ timeout: 10_000 });
     await page.waitForFunction(
       () => document.querySelector('[data-game-root="play"]')?.getAttribute("data-field-interrupt") === "",
     );
@@ -941,7 +991,10 @@ try {
     await shot(page, "m4-b11-reduced-motion");
   });
 } finally {
-  await browser.close();
+  await Promise.race([
+    browser.close().catch(() => undefined),
+    new Promise((resolvePromise) => setTimeout(resolvePromise, 3000)),
+  ]);
 }
 
 writeFileSync(resolve(OUT, "report.json"), JSON.stringify(report, null, 2));

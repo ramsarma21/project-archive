@@ -372,6 +372,11 @@ async function sceneGate(page) {
   // network latency.
   const answer = async (index) => {
     await options.nth(index).click({ timeout: 60000 });
+    const feedback = page.locator(".checkpoint-answer-feedback");
+    await feedback.waitFor({ state: "visible", timeout: 10000 });
+    await feedback
+      .getByRole("button", { name: /Continue to/i })
+      .click({ timeout: 10000 });
   };
   const waitGate = async (kind) => {
     await page.waitForSelector(`.checkpoint-gate[data-gate-kind="${kind}"]`, { timeout: 60000 });

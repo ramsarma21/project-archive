@@ -414,8 +414,14 @@ try {
   assert(errors.length === 0, `browser errors: ${errors.join("\n")}`);
 } finally {
   writeFileSync(resolve(OUT, "report.json"), JSON.stringify(report, null, 2));
-  await context.close();
-  await browser.close();
+  await Promise.race([
+    context.close().catch(() => undefined),
+    new Promise((resolvePromise) => setTimeout(resolvePromise, 2500)),
+  ]);
+  await Promise.race([
+    browser.close().catch(() => undefined),
+    new Promise((resolvePromise) => setTimeout(resolvePromise, 3000)),
+  ]);
 }
 
 console.log("M2_BROWSER_QA_PASS", JSON.stringify(report));

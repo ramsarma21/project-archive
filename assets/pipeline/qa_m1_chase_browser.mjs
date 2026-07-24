@@ -41,6 +41,12 @@ const browser = await chromium.launch({
     "--disable-dev-shm-usage",
   ],
 });
+async function closeBrowser() {
+  await Promise.race([
+    browser.close().catch(() => undefined),
+    new Promise((resolvePromise) => setTimeout(resolvePromise, 3000)),
+  ]);
+}
 
 const report = {
   baseUrl: BASE_URL,
@@ -445,7 +451,7 @@ async function finishScenario(env, name) {
     );
     await shot(page, "trigger-only-active");
     await env.context.close();
-    await browser.close();
+    await closeBrowser();
     process.exit(0);
   }
   const active = await worldState(page);
@@ -853,5 +859,5 @@ assert(
   unexpectedDiagnostics.length === 0,
   `unexpected browser HTTP diagnostics: ${unexpectedDiagnostics.join(" | ")}`,
 );
-await browser.close();
+await closeBrowser();
 console.log(`M1 browser QA passed. Evidence: ${OUT}`);
