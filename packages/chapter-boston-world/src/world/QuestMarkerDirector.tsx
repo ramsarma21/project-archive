@@ -221,6 +221,7 @@ function QuestMarkerDirectorInner(props: {
   const tmpDir = useRef(new THREE.Vector3());
   const tmpProj = useRef(new THREE.Vector3());
   const tmpView = useRef(new THREE.Vector3());
+  const cameraForward = useRef(new THREE.Vector3());
   const lastDistAt = useRef(0);
   const lastOccAt = useRef(0);
   const lastHudAt = useRef(0);
@@ -360,6 +361,23 @@ function QuestMarkerDirectorInner(props: {
         const occluded = occludedRef.current;
         const onScreen = edge.onScreen && !occluded;
         const near = state === "NEARBY" || state === "ARRIVING";
+        camera.getWorldDirection(cameraForward.current);
+        cameraForward.current.y = 0;
+        if (cameraForward.current.lengthSq() < 1e-8) {
+          cameraForward.current.set(0, 0, 1);
+        } else {
+          cameraForward.current.normalize();
+        }
+        tmpDir.current.set(vx - px, 0, vz - pz);
+        if (tmpDir.current.lengthSq() < 1e-8) {
+          tmpDir.current.copy(cameraForward.current);
+        } else {
+          tmpDir.current.normalize();
+        }
+        const forwardDot = tmpDir.current.dot(cameraForward.current);
+        const rightDot =
+          tmpDir.current.x * -cameraForward.current.z +
+          tmpDir.current.z * cameraForward.current.x;
         activeHud = {
           targetId: meta.targetId,
           label: meta.label,
@@ -374,6 +392,7 @@ function QuestMarkerDirectorInner(props: {
           edgeX: edge.x,
           edgeY: edge.y,
           edgeAngleRad: edge.angleRad,
+          bearingRad: Math.atan2(rightDot, forwardDot),
         };
         void near;
       }

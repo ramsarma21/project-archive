@@ -25,6 +25,8 @@ export interface QuestHudActive {
   edgeX: number; // viewport fraction of the clamped edge wedge
   edgeY: number;
   edgeAngleRad: number;
+  /** Camera-relative target bearing: 0 ahead, positive to the right. */
+  bearingRad: number;
 }
 
 export interface QuestHudSnapshot {
@@ -65,8 +67,22 @@ function sameActive(a: QuestHudActive | null, b: QuestHudActive | null): boolean
     Math.abs(a.labelY - b.labelY) < 0.002 &&
     Math.abs(a.edgeX - b.edgeX) < 0.002 &&
     Math.abs(a.edgeY - b.edgeY) < 0.002 &&
-    Math.abs(a.edgeAngleRad - b.edgeAngleRad) < 0.01
+    Math.abs(a.edgeAngleRad - b.edgeAngleRad) < 0.01 &&
+    Math.abs(a.bearingRad - b.bearingRad) < 0.01
   );
+}
+
+export function relativeBearingLabel(angleRad: number): string {
+  let angle = angleRad;
+  while (angle > Math.PI) angle -= Math.PI * 2;
+  while (angle < -Math.PI) angle += Math.PI * 2;
+  const side = angle < 0 ? "LEFT" : "RIGHT";
+  const absolute = Math.abs(angle);
+  if (absolute <= Math.PI / 8) return "AHEAD";
+  if (absolute <= (Math.PI * 3) / 8) return `FRONT ${side}`;
+  if (absolute <= (Math.PI * 5) / 8) return side;
+  if (absolute <= (Math.PI * 7) / 8) return `BACK ${side}`;
+  return "BEHIND";
 }
 
 export function createQuestMarkerHudStore(): QuestMarkerHudStore {
@@ -156,7 +172,24 @@ export function QuestMarkerHud(props: {
       data-quest-distance={active ? String(active.distanceM) : ""}
       data-quest-occluded={active ? String(active.occluded) : ""}
       data-quest-edge-visible={String(showEdge)}
+      data-quest-bearing={active ? relativeBearingLabel(active.bearingRad) : ""}
     >
+      {active && active.state === "ACTIVE" && (
+        <div className="quest-bearing" aria-label={`Target ${relativeBearingLabel(active.bearingRad).toLowerCase()}`}>
+          <i
+            aria-hidden="true"
+            style={{ transform: `rotate(${active.bearingRad}rad)` }}
+          >
+            ↑
+          </i>
+          <span>
+            <strong>{active.label}</strong>
+            <small>
+              {relativeBearingLabel(active.bearingRad)} · {active.distanceM}m
+            </small>
+          </span>
+        </div>
+      )}
       {showWorldLabel && active && (
         <div
           className={`quest-world-label${near ? " is-near" : ""}${active.state === "ARRIVING" ? " is-arriving" : ""}`}

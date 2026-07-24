@@ -399,6 +399,26 @@ input[type="text"] {
 .quest-world-label.is-arriving { opacity: 0.85; }
 .quest-label-dist { color: #f2c14e; font-variant-numeric: tabular-nums; }
 .quest-timed-glyph { color: #ffd97a; font-weight: 900; }
+.quest-bearing {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; min-width: 190px;
+  padding: 5px 12px; border: 1px solid rgba(242, 193, 78, 0.5);
+  border-radius: 3px; background: rgba(8, 11, 16, 0.72);
+  color: #fff1c4; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.32);
+}
+.quest-bearing i {
+  color: var(--gold); font: 900 17px/1 ui-monospace, monospace;
+  transform-origin: center; text-shadow: 0 0 7px rgba(242, 193, 78, 0.72);
+}
+.quest-bearing span { display: grid; min-width: 0; }
+.quest-bearing strong {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 11px; letter-spacing: 0.2px;
+}
+.quest-bearing small {
+  color: rgba(242, 193, 78, 0.88);
+  font: 750 9px/1.2 ui-monospace, monospace; letter-spacing: 1px;
+}
 
 /* Gold edge wedge: an arrow at the safe-area border pointing toward the marker,
    plus a compact label. --wedge-angle points the arrow (screen-space radians). */
@@ -425,7 +445,8 @@ input[type="text"] {
 /* High contrast: near-white/gold face on an opaque black plate, strong text
    contrast, no reliance on bloom. */
 .quest-hud.quest-hc .quest-world-label,
-.quest-hud.quest-hc .quest-edge-label {
+.quest-hud.quest-hc .quest-edge-label,
+.quest-hud.quest-hc .quest-bearing {
   background: #000; border-color: #ffffff; color: #ffffff;
   box-shadow: none; font-weight: 800;
 }
@@ -437,7 +458,8 @@ input[type="text"] {
 /* Reduced motion: no animated edge/label transitions (positions still update). */
 .quest-hud.quest-rm .quest-world-label,
 .quest-hud.quest-rm .quest-edge-wedge,
-.quest-hud.quest-rm .quest-edge-arrow { transition: none !important; animation: none !important; }
+.quest-hud.quest-rm .quest-edge-arrow,
+.quest-hud.quest-rm .quest-bearing i { transition: none !important; animation: none !important; }
 
 .world-cinematic-ui {
   position: absolute; z-index: 5; left: 18px; right: 18px; bottom: 16px;
