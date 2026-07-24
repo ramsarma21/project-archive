@@ -947,7 +947,21 @@ function makeInterior(spec: InteriorSpec): InteriorDef {
   const fogFar = Math.round(depth * 3);
   // Camera boom: common rooms 3.0; warehouse/meetinghouse halls may boom wider.
   const wideHall = spec.archetype === "MEETINGHOUSE" || spec.archetype === "WAREHOUSE";
-  const props = propsForSpec(spec);
+  const props = [
+    ...propsForSpec(spec),
+    // Every room exposes the same imported, visibly ajar street door. The
+    // audit's black exit panel was only the unlit shell opening, with no
+    // physical leaf or handle to read as an affordance.
+    p(
+      "exit-door",
+      "colonial-door",
+      [0, 0, -depth / 2 + 0.38],
+      -0.42,
+      [1.5, 2.5, 0.5],
+      undefined,
+      ["door", "exit"],
+    ),
+  ];
   const partitions = partitionsForSpec(spec);
   const colliders: InteriorColliderDef[] = [...props, ...partitions]
     .filter((placement) => placement.collide)
@@ -1142,6 +1156,15 @@ export function validateInteriorManifest(): string[] {
     }
 
     const placementIds = new Set([...def.props, ...def.partitions].map((placement) => placement.id));
+    const exitDoor = def.props.find((placement) => placement.id === "exit-door");
+    if (!exitDoor || exitDoor.glb !== "colonial-door") {
+      errors.push(`${id} missing imported exit-door affordance`);
+    }
+    for (const pew of def.props.filter((placement) => placement.tags?.includes("pew"))) {
+      if (Math.abs(pew.local[1]) > 1e-6) {
+        errors.push(`${id} pew ${pew.id} is not grounded`);
+      }
+    }
     for (const hotspot of def.hotspots) {
       if (!placementIds.has(hotspot.placementId)) {
         errors.push(`${id} hotspot ${hotspot.id} references missing ${hotspot.placementId}`);

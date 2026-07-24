@@ -4,6 +4,12 @@ import type { PlayerApi } from "../Player.js";
 import { EXPLORE_LOCATIONS } from "../manifest.js";
 import { thresholdAnchorForLocation } from "../doorwayContract.js";
 import { interiorExitSensor } from "../interiorManifest.js";
+import {
+  INTERACTION_PRIORITIES,
+  type InteractionRegistry,
+} from "../interactionRegistry.js";
+
+const EXPLORE_EXIT_SOURCE = "EXPLORE_EXIT_PORTAL";
 
 // ---- Explore interiors (Bible §4: every building enterable) -----------------
 // Presentation-only portals: the runtime never leaves its exterior location;
@@ -21,6 +27,7 @@ export function ExplorePortals(props: {
   apiRef: { current: PlayerApi | null };
   interiorId: string | null;
   enabled: boolean;
+  interactionRegistry: InteractionRegistry;
   onEnter: (locId: string) => void;
   onExit: (locId: string) => void;
 }) {
@@ -30,13 +37,36 @@ export function ExplorePortals(props: {
   useEffect(() => {
     armed.current = false;
   }, [props.interiorId]);
+  useEffect(
+    () => () => props.interactionRegistry.clearSource(EXPLORE_EXIT_SOURCE),
+    [props.interactionRegistry],
+  );
   useFrame(() => {
+    props.interactionRegistry.clearSource(EXPLORE_EXIT_SOURCE);
     if (!props.enabled) return;
     const api = props.apiRef.current;
     if (!api) return;
     if (props.interiorId) {
       const portal = EXPLORE_PORTALS.find((p) => p.loc.id === props.interiorId);
       if (!portal) return; // hero interiors exit through their runtime flow
+      props.interactionRegistry.upsert({
+        id: `PORTAL:EXIT:${portal.loc.id}`,
+        sourceId: EXPLORE_EXIT_SOURCE,
+        kind: "PORTAL",
+        label: "Open the street door",
+        priority: INTERACTION_PRIORITIES.SAFETY_TRAVERSAL,
+        spaceId: portal.loc.id,
+        position: portal.inside,
+        radius: 2.4,
+        facingDot: -0.35,
+        losRequired: false,
+        enabled: true,
+        activate: () => {
+          armed.current = false;
+          props.onExit(portal.loc.id);
+          return true;
+        },
+      });
       const dx = api.position.x - portal.inside[0];
       const dz = api.position.z - portal.inside[2];
       const d2 = dx * dx + dz * dz;

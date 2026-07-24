@@ -16,6 +16,7 @@ export type InteractionPriority =
 
 export type InteractionKind =
   | "TRAVERSAL"
+  | "PORTAL"
   | "INTERIOR_INSPECT"
   | "NPC"
   | "THREAD"

@@ -1003,6 +1003,7 @@ export function World3D(props: {
             <ExplorePortals
               apiRef={apiRef}
               interiorId={interiorId}
+              interactionRegistry={interactionRegistry}
               enabled={
                 !archiveTransit &&
                 !runtimeLoc.interior &&

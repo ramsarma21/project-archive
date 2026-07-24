@@ -109,6 +109,26 @@ test("visible interior definitions reference imported geometry only", () => {
   }
 });
 
+test("P1-17 dressing stays grounded and every explore exit reads as a door", () => {
+  for (const def of Object.values(INTERIORS)) {
+    const door = def.props.find((placement) => placement.id === "exit-door");
+    assert.ok(door, `${def.id} exit door`);
+    assert.equal(door?.glb, "colonial-door");
+    assert.ok(door?.tags?.includes("exit"));
+    for (const pew of def.props.filter((placement) =>
+      placement.tags?.includes("pew"),
+    )) {
+      assert.equal(pew.local[1], 0, `${def.id}:${pew.id} grounded`);
+    }
+  }
+  assert.equal(
+    INTERIORS.EXPLORE_church?.props.filter((placement) =>
+      placement.tags?.includes("pew"),
+    ).length,
+    12,
+  );
+});
+
 test("every referenced structural and furnishing GLB is deployed", () => {
   const root = resolve(process.cwd().endsWith("apps/web") ? "../.." : ".");
   for (const def of Object.values(INTERIORS)) {

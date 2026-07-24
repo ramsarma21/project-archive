@@ -119,6 +119,18 @@ function InteriorEnvironment(props: {
         intensity={windowKey}
         castShadow={false}
       />
+      <pointLight
+        position={[
+          ox,
+          oy + 1.45,
+          oz - props.def.dimensions[2] / 2 + 1.4,
+        ]}
+        color="#d9b57d"
+        intensity={props.dusk ? 0.9 : 0.55}
+        distance={4.2}
+        decay={2}
+        castShadow={false}
+      />
       {hearth && (
         <pointLight
           ref={hearthRef}
