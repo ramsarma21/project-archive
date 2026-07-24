@@ -3,8 +3,11 @@ import assert from "node:assert/strict";
 import {
   type CollisionWorld,
   wallFromRect,
+  wallFromOrientedRect,
+  wallFromCapsule,
   platformFromRect,
   sweepXZ,
+  positionClear,
   supportBelow,
   headClearance,
   landingValid,
@@ -107,6 +110,125 @@ test("running jump collides with a wall, no collider bypass", () => {
   s = beginRunningJump(s);
   const { state } = run(world, s, 300, 1 / 120);
   assert.ok(state.pos.x < 1.5 - 0.3, `passed through wall to x=${state.pos.x}`);
+});
+
+test("swept capsule cannot tunnel through a thin wall at extreme speed", () => {
+  const world: CollisionWorld = {
+    blockers: [wallFromRect("THIN", 0, 0, 0.02, 8)],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  const result = sweepXZ(
+    world,
+    { x: -8, y: 0, z: 0 },
+    { x: 8, z: 0 },
+    CAPSULE_RADIUS,
+    STAND_HEIGHT,
+  );
+  assert.ok(result.x < -0.36, `tunnelled to x=${result.x}`);
+  assert.deepEqual(result.hitIds, ["THIN"]);
+  assert.ok(positionClear(world, { x: result.x, y: 0, z: result.z }, CAPSULE_RADIUS, STAND_HEIGHT));
+});
+
+test("sprint diagonal preserves tangent speed along a wall without sticking", () => {
+  const world: CollisionWorld = {
+    blockers: [wallFromRect("WALL", 1, 0, 0.1, 20)],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  let state = createGroundedState({ x: 0, y: 0, z: -4 }, 0);
+  let previousZ = state.pos.z;
+  let wallContactFrames = 0;
+  for (let frame = 0; frame < 180; frame++) {
+    state = stepMotion(world, state, {
+      dt: 1 / 60,
+      targetVelX: 4.6 / Math.SQRT2,
+      targetVelZ: 4.6 / Math.SQRT2,
+      reducedMotion: false,
+    }).state;
+    assert.ok(state.pos.z >= previousZ - 1e-9, `oscillated backward at ${frame}`);
+    assert.ok(positionClear(world, state.pos, CAPSULE_RADIUS, state.capsuleHeight));
+    if (state.pos.x > 0.53) wallContactFrames += 1;
+    previousZ = state.pos.z;
+  }
+  assert.ok(wallContactFrames > 90, "never established sustained wall contact");
+  assert.ok(state.pos.z > 3.5, `lost tangent travel at z=${state.pos.z}`);
+  assert.ok(state.pos.x > 0.54 && state.pos.x < 0.551, `bad contact x=${state.pos.x}`);
+  assert.ok(Math.abs(state.vel.x) < 1e-8, `retained inward velocity ${state.vel.x}`);
+  assert.ok(state.vel.z > 3, `tangent velocity collapsed to ${state.vel.z}`);
+});
+
+test("inside corner settles once with no axis oscillation or invisible snag", () => {
+  const world: CollisionWorld = {
+    blockers: [
+      wallFromRect("EAST", 1, 0, 0.1, 8),
+      wallFromRect("NORTH", 0, 1, 8, 0.1),
+    ],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  let state = createGroundedState({ x: -1, y: 0, z: -1 }, 0);
+  const settled: Array<readonly [number, number]> = [];
+  for (let frame = 0; frame < 240; frame++) {
+    state = stepMotion(world, state, {
+      dt: 1 / 60,
+      targetVelX: 4.6 / Math.SQRT2,
+      targetVelZ: 4.6 / Math.SQRT2,
+      reducedMotion: false,
+    }).state;
+    assert.ok(positionClear(world, state.pos, CAPSULE_RADIUS, state.capsuleHeight));
+    if (frame >= 180) settled.push([state.pos.x, state.pos.z]);
+  }
+  const spreadX = Math.max(...settled.map(([x]) => x)) - Math.min(...settled.map(([x]) => x));
+  const spreadZ = Math.max(...settled.map(([, z]) => z)) - Math.min(...settled.map(([, z]) => z));
+  assert.ok(spreadX < 1e-7 && spreadZ < 1e-7, `corner jitter ${spreadX},${spreadZ}`);
+  assert.ok(state.pos.x > 0.54 && state.pos.x < 0.551);
+  assert.ok(state.pos.z > 0.54 && state.pos.z < 0.551);
+});
+
+test("OBB and capsule edges slide deterministically and remain clear", () => {
+  const blockers = [
+    wallFromOrientedRect("OBB", 0, 0, 0.2, 4, Math.PI / 4),
+    wallFromCapsule(
+      "PROP",
+      { x: 4, y: 0, z: -1 },
+      { x: 4, y: 0, z: 1 },
+      0.35,
+      { topY: 2 },
+    ),
+  ];
+  const world: CollisionWorld = { blockers, platforms: [], bounds: OPEN_BOUNDS };
+  const starts = [
+    { x: -3, y: 0, z: 3 },
+    { x: 2, y: 0, z: 0 },
+  ];
+  const targets = [
+    { x: 3, z: -2 },
+    { x: 6, z: 1.2 },
+  ];
+  starts.forEach((start, index) => {
+    const first = sweepXZ(
+      world,
+      start,
+      targets[index]!,
+      CAPSULE_RADIUS,
+      STAND_HEIGHT,
+    );
+    const second = sweepXZ(
+      world,
+      start,
+      targets[index]!,
+      CAPSULE_RADIUS,
+      STAND_HEIGHT,
+    );
+    assert.deepEqual(first, second, `non-deterministic shape ${index}`);
+    assert.ok(first.hitIds.length > 0, `shape ${index} never collided`);
+    assert.ok(positionClear(world, { x: first.x, y: 0, z: first.z }, CAPSULE_RADIUS, STAND_HEIGHT));
+    assert.ok(
+      Math.hypot(first.x - start.x, first.z - start.z) > 0.5,
+      `shape ${index} dead-stopped`,
+    );
+  });
 });
 
 test("gap jump: solvable landing validates, void does not", () => {

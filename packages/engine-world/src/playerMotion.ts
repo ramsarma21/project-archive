@@ -15,6 +15,7 @@ import {
   type CollisionWorld,
   type Vec3,
   sweepXZ,
+  slideVelocityXZ,
   supportBelow,
   headClearance,
   canStand,
@@ -345,8 +346,13 @@ function stepGrounded(world: CollisionWorld, state: MotionState, dt: number, inp
   if (speed > 0.02) {
     const to = { x: pos.x + vel.x * dt, z: pos.z + vel.z * dt };
     const sweep = sweepXZ(world, pos, to, CAPSULE_RADIUS, state.capsuleHeight);
-    if (sweep.blockedX) vel.x *= 0.4;
-    if (sweep.blockedZ) vel.z *= 0.4;
+    if (sweep.hitNormals.length > 0) {
+      const slid = slideVelocityXZ(vel, sweep.hitNormals);
+      vel.x = slid.x;
+      vel.z = slid.z;
+    }
+    if (sweep.blockedX && sweep.hitNormals.length === 0) vel.x = 0;
+    if (sweep.blockedZ && sweep.hitNormals.length === 0) vel.z = 0;
     pos.x = sweep.x;
     pos.z = sweep.z;
     const desired = Math.atan2(vel.x, vel.z);
@@ -407,8 +413,9 @@ function stepBallistic(world: CollisionWorld, state: MotionState, dt: number): M
     // Horizontal sweep against every obstacle (no collider bypass).
     const to = { x: pos.x + vel.x * h, z: pos.z + vel.z * h };
     const sweep = sweepXZ(world, pos, to, CAPSULE_RADIUS, state.capsuleHeight, ignore);
-    if (sweep.blockedX) vel.x = 0;
-    if (sweep.blockedZ) vel.z = 0;
+    const slid = slideVelocityXZ(vel, sweep.hitNormals);
+    vel.x = slid.x;
+    vel.z = slid.z;
     pos.x = sweep.x;
     pos.z = sweep.z;
 
@@ -631,8 +638,9 @@ export function simulateBallistic(
     v.y -= GRAVITY * h;
     const to = { x: pos.x + v.x * h, z: pos.z + v.z * h };
     const sweep = sweepXZ(world, pos, to, CAPSULE_RADIUS, STAND_HEIGHT, ignore);
-    if (sweep.blockedX) v.x = 0;
-    if (sweep.blockedZ) v.z = 0;
+    const slid = slideVelocityXZ(v, sweep.hitNormals);
+    v.x = slid.x;
+    v.z = slid.z;
     pos.x = sweep.x;
     pos.z = sweep.z;
     if (v.y > 0) {

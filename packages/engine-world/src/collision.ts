@@ -727,13 +727,157 @@ export interface SweepResult {
   blockedX: boolean;
   blockedZ: boolean;
   hitIds: string[];
+  /** Outward contact normals, in deterministic hit order. */
+  hitNormals: ReadonlyArray<readonly [number, number]>;
 }
 
-// Axis-separated slide from `from` to the desired `to`, resolving against any
-// blocker whose solid vertical span overlaps the capsule [footY, footY+height].
-// Blockers listed in `ignore` are skipped (used so a vault ignores only the
-// obstacle it is clearing). Motion stays deterministic: X is resolved first,
-// then Z against the already-resolved X.
+const SWEEP_SAMPLE_DISTANCE = CAPSULE_RADIUS * 0.25;
+const SWEEP_BINARY_STEPS = 18;
+const SWEEP_MAX_CONTACTS = 4;
+const SWEEP_SKIN = 1e-5;
+
+function blockerContactNormal(
+  blocker: Blocker,
+  x: number,
+  z: number,
+  radius: number,
+): readonly [number, number] {
+  const footprint = blocker.footprint;
+  if (footprint?.kind === "capsule") {
+    const abX = footprint.bx - footprint.ax;
+    const abZ = footprint.bz - footprint.az;
+    const lengthSq = abX * abX + abZ * abZ;
+    const t =
+      lengthSq > 1e-12
+        ? Math.max(
+            0,
+            Math.min(
+              1,
+              ((x - footprint.ax) * abX + (z - footprint.az) * abZ) /
+                lengthSq,
+            ),
+          )
+        : 0;
+    const nearestX = footprint.ax + abX * t;
+    const nearestZ = footprint.az + abZ * t;
+    const dx = x - nearestX;
+    const dz = z - nearestZ;
+    const length = Math.hypot(dx, dz);
+    if (length > 1e-9) return [dx / length, dz / length];
+    const segmentLength = Math.hypot(abX, abZ);
+    return segmentLength > 1e-9
+      ? [-abZ / segmentLength, abX / segmentLength]
+      : [1, 0];
+  }
+
+  let localX = x;
+  let localZ = z;
+  let halfX = (blocker.maxX - blocker.minX) / 2;
+  let halfZ = (blocker.maxZ - blocker.minZ) / 2;
+  let centerX = (blocker.minX + blocker.maxX) / 2;
+  let centerZ = (blocker.minZ + blocker.maxZ) / 2;
+  let yaw = 0;
+  if (footprint?.kind === "obb") {
+    centerX = footprint.cx;
+    centerZ = footprint.cz;
+    halfX = footprint.halfX;
+    halfZ = footprint.halfZ;
+    yaw = footprint.yaw;
+    const dx = x - centerX;
+    const dz = z - centerZ;
+    const c = Math.cos(yaw);
+    const s = Math.sin(yaw);
+    localX = dx * c - dz * s;
+    localZ = dx * s + dz * c;
+    centerX = 0;
+    centerZ = 0;
+  }
+  const dx = localX - centerX;
+  const dz = localZ - centerZ;
+  const expandedX = halfX + radius;
+  const expandedZ = halfZ + radius;
+  const distanceX = expandedX - Math.abs(dx);
+  const distanceZ = expandedZ - Math.abs(dz);
+  let nx = 0;
+  let nz = 0;
+  if (distanceX <= distanceZ) nx = dx < 0 ? -1 : 1;
+  else nz = dz < 0 ? -1 : 1;
+  if (footprint?.kind === "obb") {
+    const c = Math.cos(yaw);
+    const s = Math.sin(yaw);
+    return [nx * c + nz * s, -nx * s + nz * c];
+  }
+  return [nx, nz];
+}
+
+function firstIntrusionTime(
+  blocker: Blocker,
+  x: number,
+  z: number,
+  dx: number,
+  dz: number,
+  radius: number,
+): number | null {
+  const distance = Math.hypot(dx, dz);
+  if (distance <= 1e-12) return null;
+  const startInside = intrudesXZ(blocker, x, z, radius);
+  if (startInside) {
+    const normal = blockerContactNormal(blocker, x, z, radius);
+    return dx * normal[0] + dz * normal[1] < -1e-10 ? 0 : null;
+  }
+  const samples = Math.max(1, Math.ceil(distance / SWEEP_SAMPLE_DISTANCE));
+  let clearT = 0;
+  for (let sample = 1; sample <= samples; sample++) {
+    const t = sample / samples;
+    if (!intrudesXZ(blocker, x + dx * t, z + dz * t, radius)) {
+      clearT = t;
+      continue;
+    }
+    let low = clearT;
+    let high = t;
+    for (let step = 0; step < SWEEP_BINARY_STEPS; step++) {
+      const mid = (low + high) * 0.5;
+      if (intrudesXZ(blocker, x + dx * mid, z + dz * mid, radius)) {
+        high = mid;
+      } else {
+        low = mid;
+      }
+    }
+    return low;
+  }
+  return null;
+}
+
+/**
+ * Projects horizontal velocity onto all contact planes in authored hit order.
+ * Keeping this pure and shared prevents grounded and ballistic motion from
+ * disagreeing about wall-slide response.
+ */
+export function slideVelocityXZ(
+  velocity: { x: number; z: number },
+  normals: ReadonlyArray<readonly [number, number]>,
+): { x: number; z: number } {
+  let x = velocity.x;
+  let z = velocity.z;
+  for (const [nx, nz] of normals) {
+    const inward = x * nx + z * nz;
+    if (inward < 0) {
+      x -= nx * inward;
+      z -= nz * inward;
+    }
+  }
+  return {
+    x: Math.abs(x) < 1e-10 ? 0 : x,
+    z: Math.abs(z) < 1e-10 ? 0 : z,
+  };
+}
+
+// Deterministic swept-capsule slide from `from` to `to`. Each contact advances
+// to the earliest clear point, removes only the inward normal component, then
+// consumes the tangent remainder. This keeps forward momentum along walls and
+// settles cleanly at corners instead of alternating X-first/Z-first dead stops.
+// A bounded spatial march plus fixed binary refinement covers AABB, OBB, and
+// capsule footprints with the exact same intrusion predicate as positionClear.
 export function sweepXZ(
   world: CollisionWorld,
   from: Vec3,
@@ -756,34 +900,60 @@ export function sweepXZ(
     maxY: headY,
   });
   const hitIds: string[] = [];
+  const hitNormals: Array<readonly [number, number]> = [];
+  let x = from.x;
+  let z = from.z;
+  let dx = clampedX - from.x;
+  let dz = clampedZ - from.z;
 
-  let blockedX = false;
-  let nextX = clampedX;
-  for (const blockerIndex of active) {
-    const b = world.blockers[blockerIndex]!;
-    if (ignore?.has(b.id)) continue;
-    if (intrudesXZ(b, clampedX, from.z, radius)) {
-      blockedX = true;
-      hitIds.push(b.id);
-      nextX = from.x;
+  for (let contact = 0; contact < SWEEP_MAX_CONTACTS; contact++) {
+    if (Math.hypot(dx, dz) <= 1e-10) break;
+    let bestT = 1;
+    let best: Blocker | null = null;
+    for (const blockerIndex of active) {
+      const blocker = world.blockers[blockerIndex]!;
+      if (ignore?.has(blocker.id)) continue;
+      const t = firstIntrusionTime(blocker, x, z, dx, dz, radius);
+      if (t !== null && t < bestT - 1e-12) {
+        bestT = t;
+        best = blocker;
+      }
+    }
+    if (!best) {
+      x += dx;
+      z += dz;
+      dx = 0;
+      dz = 0;
       break;
     }
+
+    x += dx * bestT;
+    z += dz * bestT;
+    const normal = blockerContactNormal(best, x, z, radius);
+    if (!hitIds.includes(best.id)) hitIds.push(best.id);
+    hitNormals.push(normal);
+    // A microscopic outward skin prevents the closed intrusion predicate from
+    // re-hitting the same face while preserving sub-millimetre correctness.
+    x += normal[0] * SWEEP_SKIN;
+    z += normal[1] * SWEEP_SKIN;
+    const remaining = 1 - bestT;
+    const slid = slideVelocityXZ(
+      { x: dx * remaining, z: dz * remaining },
+      hitNormals,
+    );
+    dx = slid.x;
+    dz = slid.z;
   }
 
-  let blockedZ = false;
-  let nextZ = clampedZ;
-  for (const blockerIndex of active) {
-    const b = world.blockers[blockerIndex]!;
-    if (ignore?.has(b.id)) continue;
-    if (intrudesXZ(b, nextX, clampedZ, radius)) {
-      blockedZ = true;
-      hitIds.push(b.id);
-      nextZ = from.z;
-      break;
-    }
-  }
-
-  return { x: nextX, z: nextZ, blockedX, blockedZ, hitIds };
+  x = Math.min(Math.max(x, world.bounds.minX), world.bounds.maxX);
+  z = Math.min(Math.max(z, world.bounds.minZ), world.bounds.maxZ);
+  const boundBlockedX = clampedX !== to.x;
+  const boundBlockedZ = clampedZ !== to.z;
+  const blockedX =
+    boundBlockedX || hitNormals.some(([nx]) => Math.abs(nx) > 1e-8);
+  const blockedZ =
+    boundBlockedZ || hitNormals.some(([, nz]) => Math.abs(nz) > 1e-8);
+  return { x, z, blockedX, blockedZ, hitIds, hitNormals };
 }
 
 // ---- support queries -------------------------------------------------------
