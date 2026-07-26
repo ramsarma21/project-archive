@@ -1,0 +1,437 @@
+/* ===========================================================================
+   The duel — presentation only.
+
+   Extends the hub's System language (cyan-blue holographic glass, sharp corner
+   brackets, wide-tracked uppercase kickers) with one addition of its own: gold
+   is ammunition and nothing else. A gold pip is a ball a player earned by
+   answering, so the colour is never spent on decoration.
+
+   Reduced motion removes every animation at the bottom of the file. Nothing here
+   conveys state through motion alone.
+   =========================================================================== */
+
+.duel {
+  --duel-cyan: #9fdcff;
+  --duel-cyan-dim: rgba(94, 200, 255, 0.4);
+  --duel-ink: #eaf8ff;
+  --duel-ink-dim: #9dc3dd;
+  --duel-ball: #f2c14e;
+  --duel-blood: #ff6b6b;
+  --duel-glass: linear-gradient(180deg, rgba(6, 22, 38, 0.86), rgba(4, 12, 22, 0.92));
+
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: #05080d;
+  color: var(--duel-ink);
+  user-select: none;
+}
+
+.duel-stage { position: absolute; inset: 0; z-index: 0; }
+.duel-canvas { display: block; }
+
+.duel-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(180deg, rgba(150, 220, 255, 0.02) 0 1px, transparent 1px 3px),
+    radial-gradient(124% 98% at 50% 46%, transparent 54%, rgba(2, 6, 12, 0.5) 94%);
+}
+
+/* ---- shared type -------------------------------------------------------- */
+
+.duel-kicker {
+  font-size: 10.5px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--duel-cyan);
+  opacity: 0.86;
+}
+.duel-kicker-dim { color: var(--duel-ink-dim); opacity: 0.7; }
+
+.duel-panel {
+  position: relative;
+  padding: 16px 18px;
+  border: 1px solid var(--duel-cyan-dim);
+  border-radius: 3px;
+  background: var(--duel-glass);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), inset 0 0 24px rgba(60, 160, 220, 0.06);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+}
+/* Corner brackets, as in the hub's System windows. */
+.duel-panel::before,
+.duel-panel::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--duel-cyan);
+  opacity: 0.75;
+}
+.duel-panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.duel-panel::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+/* ---- the HUD ------------------------------------------------------------ */
+
+.duel-hud {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 22px;
+  padding: 18px 26px;
+  pointer-events: none;
+  animation: duel-fade-down 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.duel-hud-side { display: grid; gap: 8px; max-width: 320px; }
+.duel-hud-right { justify-self: end; }
+.duel-hud-right .duel-health-head { flex-direction: row-reverse; }
+.duel-hud-right .duel-mag { align-items: flex-end; }
+.duel-hud-right .duel-health-hits { text-align: right; }
+
+.duel-health-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+.duel-health-count { font-size: 15px; font-variant-numeric: tabular-nums; }
+.duel-health-max { color: var(--duel-ink-dim); font-size: 11px; }
+.duel-health-track {
+  position: relative;
+  height: 7px;
+  border: 1px solid var(--duel-cyan-dim);
+  background: rgba(3, 10, 18, 0.7);
+  overflow: hidden;
+}
+.duel-health-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6fe0ff, #3f9fe0);
+  transition: width 0.22s ease-out;
+}
+/* What this round has cost so far: the gap between now and the round's opening. */
+.duel-health-lost {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 107, 107, 0.55) 0 3px,
+    rgba(255, 107, 107, 0.16) 3px 6px
+  );
+  transition: left 0.22s ease-out, width 0.22s ease-out;
+}
+.duel-health-boss .duel-health-fill {
+  background: linear-gradient(90deg, #ff8f6b, #d8452f);
+}
+.duel-health.is-down .duel-health-fill { background: #3a4654; }
+/* The duel's real clock: how many clean hits are left in this body. */
+.duel-health-hits {
+  margin-top: 4px;
+  font-size: 10.5px;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: var(--duel-ink-dim);
+}
+.duel-health-boss .duel-health-hits { color: rgba(255, 155, 125, 0.9); }
+.duel-health.is-down .duel-health-hits { color: var(--duel-blood); }
+.duel-health-hits.is-closing {
+  color: var(--duel-ball);
+  animation: duel-hits-pulse 1.1s ease-in-out infinite;
+}
+@keyframes duel-hits-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.pa-reduced-motion .duel-health-hits.is-closing { animation: none; }
+
+.duel-mag { display: grid; gap: 4px; justify-items: start; }
+.duel-hud-right .duel-mag { justify-items: end; }
+.duel-mag-rows { display: grid; gap: 3px; }
+.duel-ball {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(242, 193, 78, 0.4);
+  background: rgba(10, 16, 24, 0.7);
+}
+.duel-ball.is-loaded {
+  background: radial-gradient(circle at 34% 30%, #fff0c4, var(--duel-ball) 62%, #8a6410);
+  border-color: var(--duel-ball);
+  box-shadow: 0 0 7px rgba(242, 193, 78, 0.45);
+}
+.duel-mag-label {
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  color: var(--duel-ink-dim);
+  text-transform: uppercase;
+}
+
+.duel-hud-centre { display: grid; justify-items: center; gap: 2px; }
+.duel-round { display: grid; justify-items: center; }
+.duel-round strong { font-size: 17px; letter-spacing: 1px; }
+.duel-clock {
+  font-size: 40px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--duel-ink);
+  text-shadow: 0 0 22px rgba(120, 210, 255, 0.35);
+}
+.duel-clock-unit { font-size: 15px; color: var(--duel-ink-dim); margin-left: 2px; }
+.duel-clock.is-urgent { color: var(--duel-blood); text-shadow: 0 0 24px rgba(255, 107, 107, 0.45); }
+.duel-phase {
+  font-size: 10.5px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--duel-ink-dim);
+}
+
+/* ---- the face-off ------------------------------------------------------- */
+
+.duel-faceoff {
+  position: absolute;
+  inset: auto 0 12% 0;
+  z-index: 3;
+  display: grid;
+  justify-items: center;
+  pointer-events: none;
+  text-align: center;
+  animation: duel-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.duel-faceoff-inner { display: grid; gap: 6px; max-width: 640px; }
+.duel-faceoff h1 {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.8);
+}
+.duel-faceoff-line {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--duel-ink-dim);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+}
+.duel-faceoff-count {
+  margin: 6px 0 0;
+  font-size: 12px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--duel-cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the round beats ---------------------------------------------------- */
+
+.duel-beats {
+  position: absolute;
+  inset: auto 0 26px 0;
+  z-index: 4;
+  display: grid;
+  justify-items: center;
+  padding: 0 24px;
+  pointer-events: none;
+}
+
+.duel-question { width: min(720px, 100%); animation: duel-rise 0.32s ease-out both; }
+.duel-panel-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.duel-speaker {
+  margin: 0 0 2px;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--duel-ink-dim);
+}
+.duel-prompt {
+  margin: 0 0 12px;
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--duel-ink);
+}
+.duel-answer {
+  width: 100%;
+  resize: vertical;
+  padding: 11px 13px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--duel-ink);
+  background: rgba(2, 8, 14, 0.82);
+  border: 1px solid var(--duel-cyan-dim);
+  border-radius: 2px;
+  user-select: text;
+}
+.duel-answer:focus { outline: none; border-color: var(--duel-cyan); box-shadow: 0 0 0 1px rgba(159, 220, 255, 0.28); }
+.duel-question-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 11px;
+}
+.duel-stake { font-size: 12.5px; color: var(--duel-ink-dim); }
+.duel-stake strong { color: var(--duel-ball); }
+/* Recycled items are disclosed, never hidden: the core marks them and so do we. */
+.duel-again { color: var(--duel-ball); }
+
+.duel-submit {
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  padding: 9px 20px;
+  color: #04121c;
+  background: linear-gradient(180deg, #b6e6ff, #6fc2ef);
+  border: 1px solid #b6e6ff;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.duel-submit:hover:not(:disabled) { background: linear-gradient(180deg, #d2f0ff, #8ad2f7); }
+.duel-submit:disabled { opacity: 0.5; cursor: progress; }
+.duel-ghost {
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  padding: 9px 20px;
+  color: var(--duel-ink);
+  background: transparent;
+  border: 1px solid var(--duel-cyan-dim);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.duel-notice { margin: 9px 0 0; font-size: 12.5px; color: var(--duel-ball); }
+.duel-fineprint { margin: 8px 0 0; font-size: 11.5px; color: var(--duel-ink-dim); opacity: 0.8; }
+
+.duel-verdict, .duel-break, .duel-outcome {
+  width: min(440px, 100%);
+  text-align: center;
+  animation: duel-rise 0.28s ease-out both;
+}
+.duel-verdict.is-correct { border-color: rgba(242, 193, 78, 0.55); }
+.duel-verdict.is-wrong { border-color: rgba(255, 107, 107, 0.45); }
+.duel-verdict-grant { margin: 6px 0 2px; font-size: 26px; letter-spacing: 1px; }
+.duel-verdict-grant strong { color: var(--duel-ball); font-size: 34px; }
+.duel-verdict-detail { margin: 0; font-size: 12px; color: var(--duel-ink-dim); }
+.duel-verdict-count {
+  margin: 10px 0 0;
+  font-size: 11px;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: var(--duel-cyan);
+}
+.duel-break p { margin: 8px 0 0; font-size: 14px; color: var(--duel-ink-dim); }
+/* The round's damage exchange: the convergence report the round count used to give. */
+.duel-break .duel-ledger {
+  margin: 12px 0 0;
+  font-size: 14.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--duel-ink);
+}
+.duel-break .duel-ledger .is-dealt { color: #8ce3a8; }
+.duel-break .duel-ledger .is-taken { color: var(--duel-blood); }
+.duel-break .duel-ledger.is-still { color: var(--duel-ball); }
+.duel-break .duel-standing {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--duel-ink-dim);
+}
+.duel-break .duel-standing.is-ahead { color: #8ce3a8; }
+.duel-break .duel-standing.is-behind { color: var(--duel-blood); }
+
+.duel-outcome h2 { margin: 8px 0 6px; font-size: 27px; letter-spacing: 2px; text-transform: uppercase; }
+.duel-outcome-line { margin: 0; font-size: 13px; color: var(--duel-ink-dim); font-variant-numeric: tabular-nums; }
+.duel-outcome-verdict { margin-top: 8px; color: var(--duel-ink); }
+.duel-outcome.is-won { border-color: rgba(242, 193, 78, 0.6); }
+.duel-outcome.is-lost { border-color: rgba(255, 107, 107, 0.5); }
+.duel-outcome-actions { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
+
+/* ---- feedback ----------------------------------------------------------- */
+
+.duel-damage {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 50%, transparent 46%, rgba(196, 34, 34, 0.55) 100%);
+  animation: duel-damage 0.44s ease-out both;
+}
+
+.duel-evade {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  z-index: 5;
+  transform: translateX(-50%);
+  font-size: 12px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--duel-ink-dim);
+  pointer-events: none;
+  animation: duel-drift 0.7s ease-out both;
+}
+
+.duel-controls {
+  position: absolute;
+  left: 26px;
+  bottom: 22px;
+  z-index: 3;
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  color: var(--duel-ink-dim);
+  pointer-events: none;
+}
+.duel-controls kbd {
+  display: inline-block;
+  min-width: 22px;
+  margin-right: 8px;
+  padding: 1px 6px;
+  font: inherit;
+  text-align: center;
+  border: 1px solid var(--duel-cyan-dim);
+  border-radius: 2px;
+  color: var(--duel-ink);
+}
+
+/* ---- motion ------------------------------------------------------------- */
+
+@keyframes duel-fade-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes duel-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes duel-damage {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes duel-drift {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  30% { opacity: 1; }
+  to { opacity: 0; transform: translate(-50%, -18px); }
+}
+
+.pa-reduced-motion .duel-hud,
+.pa-reduced-motion .duel-faceoff,
+.pa-reduced-motion .duel-question,
+.pa-reduced-motion .duel-verdict,
+.pa-reduced-motion .duel-break,
+.pa-reduced-motion .duel-outcome,
+.pa-reduced-motion .duel-damage,
+.pa-reduced-motion .duel-evade {
+  animation: none;
+}
+.pa-reduced-motion .duel-health-fill { transition: none; }

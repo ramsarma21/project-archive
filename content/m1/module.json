@@ -1,0 +1,181 @@
+{
+  "$schema": "./schema/learning-module.schema.json",
+  "contentId": "BOS.MD01.CONTENT.MODULE.v1",
+  "reviewStatus": "AUTHOR_DRAFT",
+  "authoredFor": {
+    "missionId": "M1",
+    "stableMissionId": "PA.SEA01.CH02.BOSTON.MD01.v1",
+    "chapterId": "boston-1765",
+    "slateSections": ["4.7", "4.9"]
+  },
+  "consumedBy": {
+    "payload": "module",
+    "type": "LearningModuleDefinition",
+    "declaredIn": "apps/web/src/module/moduleFormat.ts",
+    "note": "`module` is exactly a LearningModuleDefinition and nothing else. JSON.parse(file).module casts cleanly, and every key inside it — including each card's — is one the format declares. Everything this file adds for authoring lives outside `module`, so the player never sees a field it does not know."
+  },
+  "module": {
+    "moduleId": "BOS.MD01.MODULE.BRIEF.v1",
+    "chapterId": "boston-1765",
+    "missionId": "PA.SEA01.CH02.BOSTON.MD01",
+    "title": "Nailed to the Post",
+    "subtitle": "Three minutes. Everything the constable can ask you is in here.",
+    "cards": [
+      {
+        "id": "BOS.MD01.MODULE.CARD.IDENTITY.v1",
+        "cueId": "BOS.MD01.CUE.BRIEF_IDENTITY.v1",
+        "throughSeconds": 12,
+        "kicker": "Identity",
+        "body": [
+          "Boston, 14 August 1765. You run printed sheets through this town for Mercer's Press and nobody looks twice.",
+          "Today one sheet matters. Read it before you carry it."
+        ],
+        "conceptIds": [],
+        "codexCardIds": [],
+        "advanceLabel": "Open the brief"
+      },
+      {
+        "id": "BOS.MD01.MODULE.CARD.POSTWAR.v1",
+        "cueId": "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
+        "throughSeconds": 46,
+        "kicker": "Postwar revenue",
+        "body": [
+          "Britain's war with France ended in 1763. Britain won it, and came out owing more than it had ever owed before — with an army still to pay for in America.",
+          "Parliament looked across the Atlantic and decided the colonies should pay a share of that debt. That decision is why a tax is suddenly reaching into Boston.",
+          "Keep the order straight: the debt came first, and the tax is Parliament's answer to it, not the other way round."
+        ],
+        "conceptIds": ["BOS.CONCEPT.POSTWAR_REVENUE.v1"],
+        "codexCardIds": [
+          "BOS.MD01.CARD.WAR_DEBT.v1",
+          "BOS.MD01.CARD.COLONIAL_REVENUE.v1"
+        ],
+        "advanceLabel": "Trace the cause"
+      },
+      {
+        "id": "BOS.MD01.MODULE.CARD.STAMP.v1",
+        "cueId": "BOS.MD01.CUE.BRIEF_STAMP.v1",
+        "throughSeconds": 84,
+        "kicker": "Stamp scope",
+        "body": [
+          "The tax has a shape, and the shape is the thing to learn. From 1 November, printed paper and legal paper must carry a stamp that somebody has paid for.",
+          "Inside it: newspapers, handbills, deeds, court papers, licences, even playing cards. Outside it: a bolt of cloth, a barrel of nails, a letter you wrote out by hand yourself. Ordinary goods are not the target.",
+          "Which is why the shop you run for is where this lands hardest. A printer's entire trade is the one thing being taxed."
+        ],
+        "conceptIds": ["BOS.CONCEPT.STAMP_SCOPE.v1"],
+        "codexCardIds": [
+          "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1",
+          "BOS.MD01.CARD.STAMP_DATE.v1",
+          "BOS.MD01.CARD.PRINTER_IMPACT.v1"
+        ],
+        "advanceLabel": "Compare the papers"
+      },
+      {
+        "id": "BOS.MD01.MODULE.CARD.REPRESENTATION.v1",
+        "cueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
+        "throughSeconds": 134,
+        "kicker": "Representation",
+        "body": [
+          "Boston does elect people — its own town meeting, its own representatives in the Massachusetts assembly. Those men could tax this town tomorrow.",
+          "Boston elects nobody in Parliament. Not one member. And Parliament is what laid this tax.",
+          "The claim underneath your sheet is this: a tax may be laid only by a body the taxed people chose. So the complaint is not the price — the town would say the same if the stamp cost a farthing. The complaint is who laid it.",
+          "London answers that Parliament speaks for every subject, voted for or not. Boston's reply is short: we chose none of you. A lawful vote by men we never picked is still not consent."
+        ],
+        "conceptIds": ["BOS.CONCEPT.REPRESENTATION.v1"],
+        "codexCardIds": [
+          "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1",
+          "BOS.MD01.CARD.CONSENT_GROUND.v1",
+          "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1"
+        ],
+        "advanceLabel": "Name the missing voice"
+      },
+      {
+        "id": "BOS.MD01.MODULE.CARD.SYNTHESIS.v1",
+        "cueId": "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1",
+        "throughSeconds": 165,
+        "kicker": "How the three connect",
+        "body": [
+          "Three facts, one chain: a war left a debt, the debt produced a policy of raising money in America, and the policy produced the stamp.",
+          "Parliament wrote that much into the Act."
+        ],
+        "excerpt": {
+          "sourceId": "M01_STAMP_ACT_EXCERPT",
+          "title": "The Stamp Act",
+          "attribution": "22 March 1765 · 5 George III c. 12, §I",
+          "lines": [
+            "…it is just and necessary, that provision be made for raising a further revenue… in America, towards defraying the said expences…"
+          ]
+        },
+        "conceptIds": [
+          "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+          "BOS.CONCEPT.STAMP_SCOPE.v1",
+          "BOS.CONCEPT.REPRESENTATION.v1"
+        ],
+        "codexCardIds": ["BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"],
+        "advanceLabel": "Take the sheet"
+      },
+      {
+        "id": "BOS.MD01.MODULE.CARD.INSERT.v1",
+        "cueId": "BOS.MD01.CUE.BRIEF_INSERT.v1",
+        "throughSeconds": 180,
+        "kicker": "Mission frame",
+        "body": [
+          "Nail your sheet beside the Crown's notice at the public pump, before the constable papers over the board.",
+          "He will be standing there when you finish, and he will ask you what you think you know."
+        ],
+        "conceptIds": [],
+        "codexCardIds": [],
+        "advanceLabel": "Enter Boston"
+      }
+    ]
+  },
+  "budget": {
+    "targetSeconds": 180,
+    "readingRateWpm": {
+      "planning": 140,
+      "slowerReader": 120,
+      "strongReader": 160,
+      "basis": "Hasbrouck & Tindal (2017) oral reading fluency norms put the grade-8 spring 50th percentile at 151 words correct per minute. Silent reading of unfamiliar informational prose on a screen runs at or a little below that for this age, so 140 wpm is the planning rate and 120/160 bracket it. The card windows are sized against 140."
+    },
+    "excerptRateWpm": {
+      "planning": 70,
+      "basis": "Period statutory English at half the modern-prose rate. A 24-word clause of 1765 legal syntax is not a 24-word sentence of ours, and pretending otherwise is how a three-minute module becomes four."
+    },
+    "note": "Per-card and whole-deck arithmetic is recomputed from these strings by verify.mjs; the table in README.md is that script's output, not a hand tally."
+  },
+  "windowRecut": {
+    "slateWindows": [15, 35, 40, 40, 30, 20],
+    "authoredWindows": [13, 33, 38, 50, 31, 15],
+    "why": "Mission-Slate §4.7 sized its six windows before the cards had prose in them. Written out, the representation card needs about fifty seconds and not forty: it carries three propositions, the positive consent principle, and the answer to Parliament's speaks-for-everyone claim, and six of the eighteen duel items draw on it. The seconds come from the two frame cards and the stamp card, which came in under. The deck still totals exactly 180 and no window is shorter than its card's measured reading time.",
+    "slateFollowUp": "§4.7's table still prints the old windows. Whoever next edits that section should copy the authored column across; this file is the content and that table is now a summary of it."
+  },
+  "reinstated": [
+    {
+      "content": "The cost of keeping an army in America — 'with an army still to pay for in America', on the postwar card.",
+      "wasExcluded": "Mission-Slate §4.9's third verification note recorded that the retired multiple-choice item K1 graded this clause while the module taught it nowhere, and closed it on the rule that nothing may be graded that is taught nowhere.",
+      "whyItIsBackIn": "The capstone serves STAAR.2018MAY.G8SS.05, the only released TEA item on postwar revenue, and TEA's keyed option is 'To recover the cost of defending the colonies'. The item almost certainly discriminates on cost-recovery rather than on defence — its other three options are Britain spending rather than Britain recouping — but 'almost certainly' is not what should stand between a student and the concept's only item with real provenance. Seven words remove the doubt and honour §4.9's rule in the direction it always allowed: teach it, then grade it.",
+      "costInSeconds": "Zero. The seven words are paid for by tightening the sentence directly below them — 'Keep the order straight, because the order is the whole argument. The debt came first. The tax is Parliament's answer to the debt, not the other way round' became 'Keep the order straight: the debt came first, and the tax is Parliament's answer to it, not the other way round'. Same proposition, same anti-reversal guard, seven fewer words. The card is 79 words before and after, and the deck is unchanged at 180.9 seconds.",
+      "whatItDoesNotDo": "It does not widen any duel rubric. WHAT_IT_LEFT already accepted any financial answer, so 'they had an army to pay for over here' was correct before the module said it and is correct now; it is added to that item's accept list so the connection is visible. Territory named without a cost — 'they got Canada' — is still wrong, because the item asks what Parliament is solving and land is not a bill."
+    }
+  ],
+  "deliberateExclusions": [
+    {
+      "content": "Stamp duties payable in scarce hard coin.",
+      "why": "Real, and TEA's own 2023 rubric accepts it, but nothing in the eighteen items asks for it. The module is 1:1 with the duel: content no item asks for is three minutes spent on something the mission does not test."
+    },
+    {
+      "content": "Andrew Oliver, his effigy, the Liberty Tree, and the Loyal Nine — the actual events of 14 August 1765.",
+      "why": "The most tempting cut of all, because the module is dated the day it happened and the story is better than anything here. They are MICRO enrichment in the curriculum registry, no duel item asks for them, and each one costs eight to ten seconds of a hard budget. They belong in the reactive world or the Codex, not in the mission's preparation."
+    },
+    {
+      "content": "The Proclamation of 1763.",
+      "why": "A named clause of 8.4(A) and a live gap in the registry, but M1 does not own it and no M1 item asks for it."
+    }
+  ],
+  "engagementDecisions": [
+    "Second person throughout, and the reader is a runner rather than a student. The identity card gives them a job in the first eight words.",
+    "Every abstraction is spent immediately on something physical: the deed and the bolt of cloth, the barrel of nails, the letter in a woman's own hand, three pence against a farthing.",
+    "The two frame cards are the stakes. The last line of the deck is the constable saying he will ask, which is literally true — the six questions are the next thing that happens.",
+    "The cognitive load is deliberate and is concentrated in three sentences: the order of debt and tax, the boundary between paper and goods, and the difference between a lawful vote and consent. Those three are the hard part of the chapter and the module says so rather than smoothing them.",
+    "The primary source is the payoff of the synthesis card rather than decoration. A student reads Parliament calling it 'just and necessary' to raise a revenue in America after having just been told the debt came first, and the two halves meet."
+  ]
+}

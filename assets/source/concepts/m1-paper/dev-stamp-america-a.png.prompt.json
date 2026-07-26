@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Centred on a perfectly plain flat pure white background, filling most of the frame, straight on and flat. No paper texture, no parchment, no aging, no border, no frame, no drop shadow, no vignette, no background detail of any kind: white, and the subject. The 1765 American revenue stamp device, drawn as a single circular embossed mark about the size of a large coin, filling the frame. Inside the circle: a royal crown above a Tudor rose and a thistle sprig on one stem. Around the rim, following the circle, the single word AMERICA at the top and the words ONE PENNY at the bottom, in small 18th century roman capitals, correctly spelled and legible. Printed in dark rose-red ink, slightly uneven, with the crisp bitten edge of an intaglio die and a faint blind impression around it. Nothing else in the frame.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T15:25:10.607Z",
+  "files": [
+    "dev-stamp-america-a.png"
+  ]
+}

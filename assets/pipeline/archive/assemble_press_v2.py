@@ -4,14 +4,23 @@
 #
 # Run:
 #   /Applications/Blender.app/Contents/MacOS/Blender --background \
-#     --python assets/pipeline/assemble_press_v2.py
+#     --python assets/pipeline/archive/assemble_press_v2.py
 import bpy
 import math
 import os
+import sys
 import numpy as np
 from mathutils import Vector
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PIPELINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PIPELINE)
+from transcode_static_textures import enforce_texture_policy  # noqa: E402
+
+# .../assets. Resolved from PIPELINE rather than by counting dirname() calls from
+# __file__: this script was written in assets/pipeline/ and later moved down into
+# archive/, which silently retargeted every path at assets/pipeline/build/... and
+# left it unable to find its own inputs.
+ROOT = os.path.dirname(PIPELINE)
 RAW = os.path.join(ROOT, "build", "interior-kit", "press-v2-components")
 COMPONENT_OPT = os.path.join(ROOT, "build", "interior-kit-opt", "press-v2-components")
 FINAL = os.path.join(ROOT, "build", "interior-kit-opt", "press-common-operable-v2.glb")
@@ -424,6 +433,13 @@ bpy.ops.export_scene.gltf(
     export_animation_mode="NLA_TRACKS",
     export_merge_animation="ACTION",
 )
+# write_atlas() builds each atlas as a PNG so the intermediate on disk stays
+# lossless, and AUTO then embedded both at full size - 3.14MB of the 4.58MB the
+# press shipped. Both atlases are base colour only, so re-encoding them here costs
+# 40.4dB (mechanism) and 43.1dB (frame) and saves 2.24MB. Done after export rather
+# than by writing JPEG atlases directly, so the on-disk atlas stays lossless for
+# anyone re-atlasing from it.
+enforce_texture_policy(FINAL, quality=95, skip_normals=True)
 print("WROTE", FINAL, os.path.getsize(FINAL))
 print("TRIS", sum(tris(obj) for obj in parts.values()))
 print("NODES", ", ".join(parts.keys()))

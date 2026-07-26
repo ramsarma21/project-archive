@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Photographed dead flat and perfectly straight on, no perspective, no tilt. FULL BLEED: the sheet of paper is LARGER than this picture and is cropped by all four edges of it, so every single pixel of the image is paper or printing ink. No desk, no table, no wall, no surface, no drop shadow, no vignette, no background of any kind is visible anywhere. The printed type block occupies only the middle three quarters of the width, leaving wide clear paper margins down the left and right edges, and the type block is taller than it is wide. A small cheap 1765 Boston handbill, printed in haste. Laid rag paper, warm off-white to pale oatmeal, visible laid lines and chain lines. Letterpress in a transitional serif with a blackletter display line; uneven inking, some letters grey and starved, some over-inked and squashed, slight show-through from the back. Generous margins. Small-capital dateline at the top reads \"BOSTON, August 14. 1765.\" Large display line reads \"WHAT greater Joy did NEW-ENGLAND see\". Second display line reads \"Than a STAMPMAN hanging on a Tree!\" Then two lines of smaller roman text reading \"The Stamp-Master is this Day exhibited in the great Elm at the South End.\" and \"Let every Friend to LIBERTY come and behold him.\" Then a bold line in spaced capitals: \"NO STAMPED PAPER TO BE HAD.\" At the foot, small italic: \"EDES and GILL, in Queen-Street.\" The long s is used throughout, as in \"Stamp-Maſter\" and \"ſee\". No royal arms, no crown, no stamp device of any kind anywhere on the sheet: this sheet is unstamped and that absence is the whole point. Slight foxing, one thumb-smudge of ink, faint crease. No em dash characters anywhere. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:22:45.036Z",
+  "files": [
+    "handbill-unstamped-a.png"
+  ]
+}

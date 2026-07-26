@@ -8,22 +8,23 @@
   },
   "scripts": {
     "build": "pnpm -r --filter \"./packages/*\" build",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "node scripts/check-boundaries.mjs",
-    "content:compile": "pnpm --filter @pa/chapter-boston content:compile",
-    "keys:dev": "node scripts/gen-dev-keys.mjs",
+    "typecheck": "pnpm -r --no-bail typecheck",
+    "lint": "node scripts/check-boundaries.mjs && node scripts/check-dangling-imports.mjs && node scripts/check-world-textures.mjs --selftest && node scripts/check-world-textures.mjs",
     "db:up": "docker compose up -d",
     "db:migrate": "pnpm --filter @pa/api migrate",
     "dev": "concurrently -n api,web -c blue,green \"pnpm --filter @pa/api dev\" \"pnpm --filter @pa/web dev\"",
     "aws:secret": "pnpm --filter @pa/infra sync-google-secret",
+    "aws:secrets:check": "pnpm --filter @pa/infra check-secrets",
     "aws:synth": "pnpm --filter @pa/infra synth",
     "aws:bootstrap": "pnpm --filter @pa/infra bootstrap",
     "aws:deploy": "pnpm --filter @pa/infra run deploy",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "playwright:install": "playwright install chromium"
   },
   "devDependencies": {
     "concurrently": "9.1.2",
     "typescript": "5.7.3",
-    "tsx": "4.19.2"
+    "tsx": "4.19.2",
+    "playwright": "1.61.1"
   }
 }

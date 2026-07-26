@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Eighteenth-century Boston brickwork in Flemish bond, seen from directly in front, flat on. Soft hand-made red clay brick, unevenly fired so the colour runs from orange-red through dull rose to purple-black where a brick was over-burnt. Each brick slightly different in size and set slightly out of line, faces pitted and worn, arrises chipped. Wide creamy lime mortar joints struck by hand, some raked back, some smeared, small losses where the mortar has fallen out. Faint white lime bloom and a wash of grey soot low in the joints. Perfectly overhead orthographic seamless square albedo texture, filling the frame edge to edge. No perspective, no object edges, no background, no border, no cast shadows, no lighting gradient, no vignette. Opposite edges tile invisibly. Flat even illumination. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:20:36.664Z",
+  "files": [
+    "mat-boston-brick-flemish-a.png"
+  ]
+}

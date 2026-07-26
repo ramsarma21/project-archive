@@ -6,7 +6,13 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./fieldSimulation": "./src/fieldSimulation.ts",
+    "./collision": "./src/collision.ts",
+    "./playerMotion": "./src/playerMotion.ts",
+    "./playerInput": "./src/playerInput.ts",
+    "./parkour": "./src/parkour/index.ts",
+    "./stealth": "./src/stealth/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -1,6 +1,12 @@
 {
   "note": "Single source of truth for every allowlisted enumeration in this package. The validator enforces these. Concept and micro IDs mirror @pa/contracts (assessment.ts CP1_REQUIRED_MACROS, field.ts MICRO_CONCEPT_IDS); they are duplicated here intentionally so this content package validates in isolation without importing runtime code owned by another worker.",
 
+  "chapterIdNote": "CHAPTER_BOSTON in packages/curriculum/src/chapters.ts, and the key in every chapter-scoped database row. Pinned here for the same reason the concept ids are: this package validates without importing runtime code, so the only way a divergence is catchable is to write the other side's value down. package.manifest.json said PA.SEA01.CH02.BOSTON.v1, a fourth spelling of the chapter that nothing else in the repository used, and nothing read the field so nothing noticed.",
+  "chapterId": "boston-1765",
+
+  "missionDayIdNote": "The content-versioned form of the runtime mission id, which Mission-Slate.md section 3 calls the stable mission ID. The runtime id itself drops the .v1; resolveMissionId in packages/curriculum/src/missionIds.ts maps this form onto it.",
+  "missionDayIds": ["PA.SEA01.CH02.BOSTON.MD01.v1"],
+
   "macroConceptIds": [
     "RCC.DEBT_POLICY_INTRO",
     "RCC.STAMP_INTERNAL_INTRO",

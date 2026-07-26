@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Centred on a perfectly plain flat pure white background, filling most of the frame, straight on and flat. No paper texture, no parchment, no aging, no border, no frame, no drop shadow, no vignette, no background detail of any kind: white, and the subject. An 18th century printer's woodcut of the royal arms of Great Britain, as a colonial printing office would have owned it: a crowned shield with a lion supporter on the left and a unicorn supporter on the right, a scroll below. Cut in heavy black lines with coarse hatching for shading, the way a woodcut is, slightly crude and slightly worn, one line broken where the block has chipped. Solid black ink only, no colour, no grey wash, no lettering of any kind. Nothing else in the frame.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T15:25:10.596Z",
+  "files": [
+    "cut-royal-arms-a.png"
+  ]
+}

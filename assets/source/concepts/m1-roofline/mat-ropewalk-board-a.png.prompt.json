@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Exterior wall of a colonial ropewalk: wide vertical unpainted pine boards with narrow batten strips over the joints, seen flat on from directly in front. Boards weathered to a dark grey-brown, streaked and blackened with pine tar and stockholm tar which is what a rope house was full of, sap bleed at the knots, long vertical checks and shakes. Hand-forged nails in vertical rows, each with a rust run beneath it. Green algae staining low down, pale sun-bleaching high up. Perfectly overhead orthographic seamless square albedo texture, filling the frame edge to edge. No perspective, no object edges, no background, no border, no cast shadows, no lighting gradient, no vignette. Opposite edges tile invisibly. Flat even illumination. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:20:38.302Z",
+  "files": [
+    "mat-ropewalk-board-a.png"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "contentId": "BOS.MD01.CONTENT.CONCEPT_BINDING.v1",
+  "purpose": "Where every identifier in content/m1 comes from. Nothing in this directory invents a concept id, a standard code, or a naming scheme; this file is the receipt for that.",
+
+  "registry": {
+    "package": "@pa/curriculum",
+    "path": "packages/curriculum/src/conceptRegistry.ts",
+    "authority": "Canonical. That package exists specifically because this repository accumulated at least eight incompatible curriculum vocabularies, and content authored against anything else becomes the ninth.",
+    "notOwnedHere": "This content pass does not edit the registry. Where M1 content implies a registry change, it is recorded under `followUps` below rather than made."
+  },
+
+  "concepts": [
+    {
+      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+      "label": "Postwar revenue policy",
+      "parentSe": "8.4(A)",
+      "parentClauseId": "POSTWAR_POLICY",
+      "standardType": "READINESS",
+      "aliases": {
+        "LEARNER_CONCEPT_ID": "BOS.MD01.CONCEPT.POSTWAR_REVENUE.v1",
+        "ASSESSMENT_CONCEPT_RCC": "RCC.DEBT_POLICY_INTRO"
+      },
+      "moduleCueId": "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
+      "duelPoolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
+      "duelItems": 6,
+      "codexCards": 3
+    },
+    {
+      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
+      "label": "Stamp Act scope",
+      "parentSe": "8.4(A)",
+      "parentClauseId": "STAMP_ACT",
+      "standardType": "READINESS",
+      "aliases": {
+        "LEARNER_CONCEPT_ID": "BOS.MD01.CONCEPT.STAMP_SCOPE.v1",
+        "ASSESSMENT_CONCEPT_RCC": "RCC.STAMP_INTERNAL_INTRO"
+      },
+      "moduleCueId": "BOS.MD01.CUE.BRIEF_STAMP.v1",
+      "duelPoolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
+      "duelItems": 6,
+      "codexCards": 3
+    },
+    {
+      "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
+      "label": "Representation and consent",
+      "parentSe": "8.4(A)",
+      "parentClauseId": "NO_REPRESENTATION",
+      "standardType": "READINESS",
+      "aliases": {
+        "LEARNER_CONCEPT_ID": "BOS.MD01.CONCEPT.REPRESENTATION.v1",
+        "ASSESSMENT_CONCEPT_RCC": "RCC.REPRESENTATION_CAUSE"
+      },
+      "moduleCueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
+      "duelPoolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1",
+      "duelItems": 6,
+      "codexCards": 3
+    }
+  ],
+
+  "externalCorroboration": {
+    "note": "Not a source of ids, but worth recording next to them: all three concepts sit under 8.4(A), and content/staar establishes that TEA has published six released 8.4(A) items plus a scored short constructed response on the same standard. The 2023 rubric bullet 'All colonists had to pay taxes on documents and paper' is TEA's own statement of the stamp-scope proposition, and the twelve scored student responses in content/staar/eval are where this bank's grading line is calibrated from.",
+    "readOnly": "content/staar is another agent's directory. Nothing here modifies it."
+  },
+
+  "followUps": [
+    {
+      "target": "packages/curriculum/src/conceptRegistry.ts",
+      "change": "Append BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1 to the REPRESENTATION concept's `cards` array.",
+      "why": "M1's module now teaches, and two of its duel items now ask for, the proposition that a lawful vote by an unelected body is not consent. The registry lists two cards for that concept and there are three.",
+      "owner": "curriculum registry"
+    },
+    {
+      "target": "packages/curriculum/src/conceptRegistry.ts",
+      "change": "Consider widening the STAMP_SCOPE definition to name exemplars, or record that exemplars live in the Codex card rather than the concept definition.",
+      "why": "Five of six stamp-scope duel items grade a boundary, and the registry's definition states the boundary without instances. The instances are now authored in BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1.",
+      "owner": "curriculum registry",
+      "severity": "cosmetic"
+    },
+    {
+      "target": "docs/chapters/boston-1765/Mission-Slate.md §4.7 and §4.9",
+      "change": "Both sections are now summaries of this directory rather than the source of it: §4.7's card windows are 15/35/40/40/30/20 where the authored deck is 12/34/38/50/31/15, and §4.9's rubrics are three-valued where the duel's verdict is binary.",
+      "why": "Divergence is deliberate and explained in README.md, but the slate should not keep printing superseded numbers.",
+      "owner": "whoever next edits §4 — deliberately not touched by this pass, which was scoped to §1.8 and §3"
+    },
+    {
+      "target": "apps/web/src/module/m1Module.ts",
+      "change": "Replace the transcribed deck with the authored one — load content/m1/module.json's `module` value, or paste it.",
+      "why": "That file is a faithful transcription of §4.7's summary table, which was written before the cards had prose. The deck in this directory is the content: it is written to a measured reading budget, it names the stamp exemplars the duel needs, and it teaches the consent principle positively.",
+      "owner": "module player"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+Architectural reference photograph of the Old State House, Boston — the 1713 Town House on Washington Street, the oldest surviving public building in Boston — as it stood in August 1765, photographed as a single detached object for 3D scanning. No other buildings, no street, no ground plane beyond the building's own stone base, no people, no text or watermark. Centered, the complete building from the pavement to the tip of the weathervane inside the frame with clear margin all round, THREE-QUARTER VIEW FROM THE SOUTH-EAST, camera at about first-floor height so the open arcade below and the leaded roof walk above are both visible, plain light gray studio background, soft even daylight, no cast shadow.
+
+PLAN AND PROPORTION ARE CRITICAL. Model the SHORT COMPACT EAST PAVILION of the building, not the long hall: a three-bay block whose plan is SQUARE — exactly as wide as it is deep — carrying a square brick tower. Total height from pavement to weathervane is about one and a half times the width of the block. Do not draw a long low building and do not let the flank run away out of frame; both visible faces are three bays wide and equal.
+
+The building stood in the middle of the roadway with the traffic passing round it on both sides, so EVERY face is a finished front: no blank party wall, no back.
+
+The vertical divisions matter as much as the plan. Reading the total height from pavement (0) to the top of the cupola gallery rail (1.0), the building steps outward and inward at these heights, and each step must read as a real horizontal ledge with a visible top surface:
+- 0.00 to 0.32  OPEN ARCADED GROUND STOREY, a full third of the height: heavy square brick piers carrying tall round-headed brick arches on all four faces, open right through the building with deep shadow inside and paving under it, because the merchants' exchange and the market stood beneath. No shopfronts, no glazing, no doors at ground level.
+- 0.32  A LONG WHITE-PAINTED WOODEN GALLERY BALCONY, level with the first floor, running the entire length of the south front and returning round the east end. Turned balustrade, deep enough for a man to walk along, carried on moulded brackets over the heads of the arcade arches.
+- 0.41  A SMALL PEDIMENTED HOOD over the centre bay of that gallery: a triangular pediment on scrolled brackets, its flat soffit sheltering the middle of the balcony.
+- 0.48  A BOLD PROJECTING MOULDED STONE LEDGE across the east gable, carrying a large white-framed circular CLOCK DIAL above it.
+- 0.58  A DEEP WHITE PAINTED MODILLIONED CORNICE with a leaded gutter walk behind it, running unbroken round all four sides at the head of the brick wall.
+- 0.58 to 0.70  A GREY SLATE GAMBREL ROOF: steep lower slope, a clear break, then a shallow upper slope.
+- 0.70  A FLAT LEADED ROOF WALK across the whole top of the gambrel, its lead sheets and rolls visible.
+- 0.70 to 1.00  A SQUARE BRICK TOWER rising from the roof walk in THREE DIMINISHING STAGES, each stage set back from the one below with a moulded brick band between them; at 0.86 the first setback is wide enough to be a balustraded walk-around ledge round the tower shaft; the top stage carries a white-painted OCTAGONAL CUPOLA with louvred arched openings and slender columns, ringed at its foot by a turned balustraded gallery, above it a small lead dome and an iron WEATHERVANE.
+
+Other documented features, all of which must be present and clearly readable:
+- Deep red brick laid in Flemish bond, the darker glazed header bricks picked out in the coursing.
+- The stepped-and-scrolled Dutch-influenced EAST GABLE, with the gilded LION AND UNICORN standing on its cornice at either end, facing outward — the building's signature pair.
+- The east-end BALCONY at gallery level over a moulded central doorway, the balcony from which proclamations were read to the crowd.
+- Two ranges of tall twelve-over-twelve small-pane sash windows with white painted trim and flat brick arches, and a moulded brick string course between the ranges.
+
+Weathered brick, white painted joinery, grey slate and lead, muted colours. Realistic materials, photogrammetry reference plate style, evenly lit for 3D reconstruction, sharp and undistorted.

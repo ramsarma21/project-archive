@@ -23,11 +23,69 @@ export type Vec3 = { x: number; y: number; z: number };
 // so landings/apex are frame-rate independent and reproducible in tests.
 export const PHYSICS_SUBSTEP = 1 / 120;
 
-// Capsule dimensions (Day-1 spec): standing ~1.55m, crouched ~0.98m, radius
-// 0.35m. Kept here so collision and motion agree on the same body.
+// ---- the shared body model -------------------------------------------------
+//
+// THE BODY IS ONE CAPSULE AND IT IS DESCRIBED BY FIVE NUMBERS, ALL OF THEM HERE:
+// a radius, a standing height, a crouched height, and the two landmarks anything
+// aiming at or looking at a body needs. They live together because splitting them
+// is how a game ends up with a guard whose sightline and a projectile's aim point
+// disagree about where a crouching person's chest is.
+//
+// The landmarks are FRACTIONS of the live capsule height, never absolute metres.
+// That is the whole point: a crouched silhouette is automatically the same
+// silhouette to a patrol's vision cone, to an incoming ball, and to the collision
+// capsule itself, with no per-system stance table to keep in step.
 export const CAPSULE_RADIUS = 0.35;
 export const STAND_HEIGHT = 1.55;
 export const CROUCH_HEIGHT = 0.98;
+
+/** Eye line, as a fraction of capsule height. Eyes sit just below the crown. */
+export const EYE_HEIGHT_FRACTION = 0.92;
+/** Torso centre, as a fraction of capsule height. The aim point for a body shot. */
+export const CHEST_HEIGHT_FRACTION = 0.72;
+
+/** A body of `capsuleHeight` has its eyes here, above its feet. */
+export function eyeHeightForCapsule(capsuleHeight: number): number {
+  return capsuleHeight * EYE_HEIGHT_FRACTION;
+}
+
+/** A body of `capsuleHeight` has its chest here, above its feet. */
+export function chestHeightForCapsule(capsuleHeight: number): number {
+  return capsuleHeight * CHEST_HEIGHT_FRACTION;
+}
+
+/**
+ * The minimum a body needs: where its feet are and how tall it currently is.
+ * MotionState satisfies this structurally, and so does any actor that is not a
+ * MotionState — a patrol, a civilian, a duel opponent.
+ */
+export interface BodyPose {
+  pos: Vec3;
+  capsuleHeight: number;
+}
+
+/** Where this body's eyes are. Line of sight starts and ends here. */
+export function eyePosition(body: BodyPose): Vec3 {
+  return {
+    x: body.pos.x,
+    y: body.pos.y + eyeHeightForCapsule(body.capsuleHeight),
+    z: body.pos.z,
+  };
+}
+
+/** Where this body's chest is. Aimed shots and sight targets resolve here. */
+export function chestPosition(body: BodyPose): Vec3 {
+  return {
+    x: body.pos.x,
+    y: body.pos.y + chestHeightForCapsule(body.capsuleHeight),
+    z: body.pos.z,
+  };
+}
+
+/** Is this body crouched? Derived from the capsule, so stance has one source. */
+export function isCrouched(capsuleHeight: number): boolean {
+  return capsuleHeight < STAND_HEIGHT - 0.05;
+}
 
 // Vertical tolerances.
 export const CONTACT_EPS = 0.01; // "on the surface" band (<=1cm support snap)
@@ -610,6 +668,87 @@ export function segmentClear(
   ignore?: ReadonlySet<string>,
 ): boolean {
   return segmentOccluderIds(world, a, b, ignore).length === 0;
+}
+
+// ---- segment vs actor ------------------------------------------------------
+//
+// Actors are NOT blockers. A person must not occlude a sightline and must not
+// block traversal, so they are absent from the CollisionWorld entirely — which
+// means a projectile that should hit or pass a body cannot use the world queries
+// above. This is that test: the same closest-approach maths the blocker footprints
+// use, against a free-standing vertical capsule, with the vertical band included.
+//
+// The vertical band is not a shortcut. It is what makes crouching mean something
+// in both directions: a ball aimed at a standing torso genuinely passes over a
+// body that has dropped below it, and a thrown object arcing down genuinely
+// catches a body on the way past.
+
+export interface SegmentCapsuleHit {
+  /** Parametric position along the segment, 0..1, of the closest approach. */
+  readonly t: number;
+  /** Squared horizontal distance at closest approach. */
+  readonly distanceSq: number;
+}
+
+/**
+ * Does the segment a->b touch a vertical capsule standing at `footPos`?
+ *
+ * Returns the closest approach WITHIN the span of the segment that is actually
+ * inside the body's vertical band, so a sloped or arcing segment is handled
+ * correctly rather than being judged by one of its endpoints.
+ */
+export function segmentHitsCapsule(
+  a: Vec3,
+  b: Vec3,
+  footPos: Vec3,
+  height: number,
+  radius: number = CAPSULE_RADIUS,
+): SegmentCapsuleHit | null {
+  if (height <= 0 || radius < 0) return null;
+  const vertical = segmentSpanInterval(a.y, b.y, footPos.y, footPos.y + height);
+  if (!vertical) return null;
+  const [enter, exit] = vertical;
+
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const lengthSq = dx * dx + dz * dz;
+  // Closest approach to the capsule axis, clamped to the part of the segment that
+  // is inside the vertical band.
+  const unclamped =
+    lengthSq <= 1e-12
+      ? enter
+      : ((footPos.x - a.x) * dx + (footPos.z - a.z) * dz) / lengthSq;
+  const t = Math.max(enter, Math.min(exit, unclamped));
+  const offsetX = footPos.x - (a.x + dx * t);
+  const offsetZ = footPos.z - (a.z + dz * t);
+  const distanceSq = offsetX * offsetX + offsetZ * offsetZ;
+  return distanceSq <= radius * radius ? { t, distanceSq } : null;
+}
+
+/**
+ * The first actor a segment hits, in authored order on a tie. Callers pass their
+ * own actor list because actor bookkeeping (sides, teams, downed state) is theirs;
+ * only the geometry is the engine's.
+ */
+export function firstActorHit<T extends BodyPose & { id: string }>(
+  a: Vec3,
+  b: Vec3,
+  actors: readonly T[],
+  radius: number = CAPSULE_RADIUS,
+): { actor: T; hit: SegmentCapsuleHit } | null {
+  let best: { actor: T; hit: SegmentCapsuleHit } | null = null;
+  for (const actor of actors) {
+    const hit = segmentHitsCapsule(
+      a,
+      b,
+      actor.pos,
+      actor.capsuleHeight,
+      radius,
+    );
+    if (!hit) continue;
+    if (!best || hit.t < best.hit.t - 1e-12) best = { actor, hit };
+  }
+  return best;
 }
 
 // Would a capsule footprint at (x,z) intrude into this blocker's XZ box,

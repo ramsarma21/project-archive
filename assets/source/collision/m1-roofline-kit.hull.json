@@ -1,0 +1,742 @@
+{
+  "roof-plank-gantry": {
+    "buildInputs": {
+      "fitBox": [
+        2.8,
+        0.03,
+        1.2
+      ],
+      "fitBoxByTag": {}
+    },
+    "key": "roof-plank-gantry",
+    "declaredSizeM": [
+      2.8,
+      0.03,
+      1.2
+    ],
+    "declaredPath": "world/props/roof-plank-gantry.glb",
+    "draws": [
+      {
+        "id": "LEADS_GANTRY",
+        "kind": "DECK",
+        "fit": "PROP",
+        "pos": [
+          59.9,
+          12.37,
+          4.2
+        ],
+        "size": [
+          2.8,
+          0.03,
+          1.2
+        ],
+        "parts": [
+          "LEADS_GANTRY"
+        ]
+      }
+    ],
+    "distinctBoxes": [
+      "2.8x0.03x1.2"
+    ],
+    "masses": [],
+    "decks": [
+      {
+        "id": "LEADS_GANTRY",
+        "rect": {
+          "minX": 58.5,
+          "maxX": 61.3,
+          "minZ": 3.6,
+          "maxZ": 4.8
+        },
+        "y": 12.4,
+        "tags": [
+          "plank",
+          "safe-line"
+        ]
+      }
+    ]
+  },
+  "roof-ridge-walk": {
+    "buildInputs": {
+      "fitBox": [
+        9.4,
+        0.042,
+        2.8
+      ],
+      "fitBoxByTag": {}
+    },
+    "key": "roof-ridge-walk",
+    "declaredSizeM": [
+      9.4,
+      0.042,
+      2.8
+    ],
+    "declaredPath": "world/props/roof-ridge-walk.glb",
+    "draws": [
+      {
+        "id": "MEETING_RIDGE",
+        "kind": "DECK",
+        "fit": "PROP",
+        "pos": [
+          80,
+          11.158,
+          9
+        ],
+        "size": [
+          9.4,
+          0.042,
+          2.8
+        ],
+        "parts": [
+          "MEETING_RIDGE"
+        ]
+      }
+    ],
+    "distinctBoxes": [
+      "9.4x0.042x2.8"
+    ],
+    "masses": [],
+    "decks": [
+      {
+        "id": "MEETING_RIDGE",
+        "rect": {
+          "minX": 75.3,
+          "maxX": 84.7,
+          "minZ": 7.6,
+          "maxZ": 10.4
+        },
+        "y": 11.2,
+        "tags": [
+          "roof-run"
+        ]
+      }
+    ]
+  },
+  "roof-chimney-stack": {
+    "buildInputs": {
+      "fitBox": [
+        1.1,
+        1.05,
+        1.1
+      ],
+      "fitBoxByTag": {
+        "prop": [
+          1.1,
+          1.05,
+          1.1
+        ],
+        "vault": [
+          1.1,
+          1.05,
+          1.1
+        ],
+        "roof-run": [
+          1.1,
+          1.05,
+          1.1
+        ]
+      }
+    },
+    "key": "roof-chimney-stack",
+    "declaredSizeM": [
+      1.1,
+      1.05,
+      1.1
+    ],
+    "declaredPath": "world/props/roof-chimney-stack.glb",
+    "draws": [
+      {
+        "id": "CHIMNEY_0",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          64.95,
+          12.4,
+          6.15
+        ],
+        "size": [
+          1.1,
+          1.05,
+          1.1
+        ],
+        "parts": [
+          "CHIMNEY_0"
+        ]
+      },
+      {
+        "id": "CHIMNEY_1",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          68.15,
+          12.4,
+          6.15
+        ],
+        "size": [
+          1.1,
+          1.05,
+          1.1
+        ],
+        "parts": [
+          "CHIMNEY_1"
+        ]
+      },
+      {
+        "id": "ROPEWALK_VENT_0",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          69.55,
+          8.6,
+          19.95
+        ],
+        "size": [
+          1.1,
+          1.05,
+          1.1
+        ],
+        "parts": [
+          "ROPEWALK_VENT_0"
+        ]
+      },
+      {
+        "id": "ROPEWALK_VENT_1",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          72.75,
+          8.6,
+          19.95
+        ],
+        "size": [
+          1.1,
+          1.05,
+          1.1
+        ],
+        "parts": [
+          "ROPEWALK_VENT_1"
+        ]
+      }
+    ],
+    "distinctBoxes": [
+      "1.1x1.05x1.1"
+    ],
+    "masses": [
+      {
+        "id": "CHIMNEY_0",
+        "rect": {
+          "minX": 64.4,
+          "maxX": 65.5,
+          "minZ": 5.6,
+          "maxZ": 6.7
+        },
+        "baseY": 12.4,
+        "topY": 13.450000000000001,
+        "landable": true,
+        "tags": [
+          "prop",
+          "vault",
+          "roof-run"
+        ]
+      },
+      {
+        "id": "CHIMNEY_1",
+        "rect": {
+          "minX": 67.6,
+          "maxX": 68.69999999999999,
+          "minZ": 5.6,
+          "maxZ": 6.7
+        },
+        "baseY": 12.4,
+        "topY": 13.450000000000001,
+        "landable": true,
+        "tags": [
+          "prop",
+          "vault",
+          "roof-run"
+        ]
+      },
+      {
+        "id": "ROPEWALK_VENT_0",
+        "rect": {
+          "minX": 69,
+          "maxX": 70.1,
+          "minZ": 19.4,
+          "maxZ": 20.5
+        },
+        "baseY": 8.6,
+        "topY": 9.65,
+        "landable": true,
+        "tags": [
+          "prop",
+          "vault",
+          "roof-run"
+        ]
+      },
+      {
+        "id": "ROPEWALK_VENT_1",
+        "rect": {
+          "minX": 72.2,
+          "maxX": 73.3,
+          "minZ": 19.4,
+          "maxZ": 20.5
+        },
+        "baseY": 8.6,
+        "topY": 9.65,
+        "landable": true,
+        "tags": [
+          "prop",
+          "vault",
+          "roof-run"
+        ]
+      }
+    ],
+    "decks": []
+  },
+  "service-wall-end": {
+    "buildInputs": {
+      "fitBox": [
+        0.6,
+        3.4,
+        1
+      ],
+      "fitBoxByTag": {
+        "prop": [
+          0.6,
+          3.4,
+          1
+        ],
+        "arcade": [
+          0.6,
+          3.4,
+          1
+        ],
+        "cover": [
+          0.6,
+          3.4,
+          1
+        ]
+      }
+    },
+    "key": "service-wall-end",
+    "declaredSizeM": [
+      0.6,
+      3.4,
+      1
+    ],
+    "declaredPath": "world/props/service-wall-end.glb",
+    "draws": [
+      {
+        "id": "ARCADE_PIER_N",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          41.9,
+          0,
+          5.5
+        ],
+        "size": [
+          0.6,
+          3.4,
+          1
+        ],
+        "parts": [
+          "ARCADE_PIER_N"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_1",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          41.9,
+          0,
+          9.1
+        ],
+        "size": [
+          0.6,
+          3.4,
+          1
+        ],
+        "parts": [
+          "ARCADE_PIER_1"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_2",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          41.9,
+          0,
+          11.9
+        ],
+        "size": [
+          0.6,
+          3.4,
+          1
+        ],
+        "parts": [
+          "ARCADE_PIER_2"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_3",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          41.9,
+          0,
+          15.5
+        ],
+        "size": [
+          0.6,
+          3.4,
+          1
+        ],
+        "parts": [
+          "ARCADE_PIER_3"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_4",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          41.9,
+          0,
+          18.3
+        ],
+        "size": [
+          0.6,
+          3.4,
+          1
+        ],
+        "parts": [
+          "ARCADE_PIER_4"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_S",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          41.9,
+          0,
+          21.3
+        ],
+        "size": [
+          0.6,
+          3.4,
+          1
+        ],
+        "parts": [
+          "ARCADE_PIER_S"
+        ]
+      }
+    ],
+    "distinctBoxes": [
+      "0.6x3.4x1"
+    ],
+    "masses": [
+      {
+        "id": "ARCADE_PIER_N",
+        "rect": {
+          "minX": 41.6,
+          "maxX": 42.2,
+          "minZ": 5,
+          "maxZ": 6
+        },
+        "baseY": 0,
+        "topY": 3.4,
+        "landable": false,
+        "tags": [
+          "prop",
+          "arcade",
+          "cover"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_1",
+        "rect": {
+          "minX": 41.6,
+          "maxX": 42.2,
+          "minZ": 8.6,
+          "maxZ": 9.6
+        },
+        "baseY": 0,
+        "topY": 3.4,
+        "landable": false,
+        "tags": [
+          "prop",
+          "arcade",
+          "cover"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_2",
+        "rect": {
+          "minX": 41.6,
+          "maxX": 42.2,
+          "minZ": 11.4,
+          "maxZ": 12.4
+        },
+        "baseY": 0,
+        "topY": 3.4,
+        "landable": false,
+        "tags": [
+          "prop",
+          "arcade",
+          "cover"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_3",
+        "rect": {
+          "minX": 41.6,
+          "maxX": 42.2,
+          "minZ": 15,
+          "maxZ": 16
+        },
+        "baseY": 0,
+        "topY": 3.4,
+        "landable": false,
+        "tags": [
+          "prop",
+          "arcade",
+          "cover"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_4",
+        "rect": {
+          "minX": 41.6,
+          "maxX": 42.2,
+          "minZ": 17.8,
+          "maxZ": 18.8
+        },
+        "baseY": 0,
+        "topY": 3.4,
+        "landable": false,
+        "tags": [
+          "prop",
+          "arcade",
+          "cover"
+        ]
+      },
+      {
+        "id": "ARCADE_PIER_S",
+        "rect": {
+          "minX": 41.6,
+          "maxX": 42.2,
+          "minZ": 20.8,
+          "maxZ": 21.8
+        },
+        "baseY": 0,
+        "topY": 3.4,
+        "landable": false,
+        "tags": [
+          "prop",
+          "arcade",
+          "cover"
+        ]
+      }
+    ],
+    "decks": []
+  },
+  "int-shell-ropewalk-a": {
+    "buildInputs": {
+      "fitBox": [
+        22,
+        8.6,
+        10
+      ],
+      "fitBoxByTag": {
+        "prop": [
+          22,
+          8.6,
+          10
+        ],
+        "interior-shell": [
+          22,
+          8.6,
+          10
+        ]
+      }
+    },
+    "key": "int-shell-ropewalk-a",
+    "declaredSizeM": [
+      22,
+      8.6,
+      10
+    ],
+    "declaredPath": "world/structures/int-shell-ropewalk-a.glb",
+    "draws": [
+      {
+        "id": "ROPEWALK_WALL_N_W",
+        "kind": "MASS",
+        "fit": "SHELL",
+        "pos": [
+          69,
+          0,
+          22
+        ],
+        "size": [
+          22,
+          8.6,
+          10
+        ],
+        "parts": [
+          "ROPEWALK_WALL_N_W",
+          "ROPEWALK_WALL_W",
+          "ROPEWALK_WALL_S",
+          "ROPEWALK_WALL_E",
+          "ROPEWALK_WALL_N_E",
+          "ROPEWALK_ROOF_W",
+          "ROPEWALK_ROOF_E",
+          "ROPEWALK_ROOF_N",
+          "ROPEWALK_ROOF_S"
+        ]
+      }
+    ],
+    "distinctBoxes": [
+      "22x8.6x10"
+    ],
+    "masses": [
+      {
+        "id": "ROPEWALK_WALL_N_W",
+        "rect": {
+          "minX": 58,
+          "maxX": 73.4,
+          "minZ": 17,
+          "maxZ": 17.6
+        },
+        "baseY": 0,
+        "topY": 8.6,
+        "landable": false,
+        "tags": [
+          "prop",
+          "interior-shell"
+        ]
+      },
+      {
+        "id": "ROPEWALK_WALL_N_E",
+        "rect": {
+          "minX": 76.6,
+          "maxX": 80,
+          "minZ": 17,
+          "maxZ": 17.6
+        },
+        "baseY": 0,
+        "topY": 8.6,
+        "landable": false,
+        "tags": [
+          "prop",
+          "interior-shell"
+        ]
+      },
+      {
+        "id": "ROPEWALK_WALL_S",
+        "rect": {
+          "minX": 58,
+          "maxX": 80,
+          "minZ": 26.4,
+          "maxZ": 27
+        },
+        "baseY": 0,
+        "topY": 8.6,
+        "landable": false,
+        "tags": [
+          "prop",
+          "interior-shell"
+        ]
+      },
+      {
+        "id": "ROPEWALK_WALL_W",
+        "rect": {
+          "minX": 58,
+          "maxX": 58.6,
+          "minZ": 17,
+          "maxZ": 27
+        },
+        "baseY": 0,
+        "topY": 8.6,
+        "landable": false,
+        "tags": [
+          "prop",
+          "interior-shell"
+        ]
+      },
+      {
+        "id": "ROPEWALK_WALL_E",
+        "rect": {
+          "minX": 79.4,
+          "maxX": 80,
+          "minZ": 17,
+          "maxZ": 27
+        },
+        "baseY": 0,
+        "topY": 8.6,
+        "landable": false,
+        "tags": [
+          "prop",
+          "interior-shell"
+        ]
+      }
+    ],
+    "decks": [
+      {
+        "id": "ROPEWALK_ROOF_W",
+        "rect": {
+          "minX": 58,
+          "maxX": 74.6,
+          "minZ": 17,
+          "maxZ": 27
+        },
+        "y": 8.6,
+        "tags": [
+          "roof"
+        ]
+      },
+      {
+        "id": "ROPEWALK_ROOF_E",
+        "rect": {
+          "minX": 77.6,
+          "maxX": 80,
+          "minZ": 17,
+          "maxZ": 27
+        },
+        "y": 8.6,
+        "tags": [
+          "roof"
+        ]
+      },
+      {
+        "id": "ROPEWALK_ROOF_N",
+        "rect": {
+          "minX": 74.6,
+          "maxX": 77.6,
+          "minZ": 17,
+          "maxZ": 19.8
+        },
+        "y": 8.6,
+        "tags": [
+          "roof"
+        ]
+      },
+      {
+        "id": "ROPEWALK_ROOF_S",
+        "rect": {
+          "minX": 74.6,
+          "maxX": 77.6,
+          "minZ": 22.8,
+          "maxZ": 27
+        },
+        "y": 8.6,
+        "tags": [
+          "roof"
+        ]
+      }
+    ]
+  }
+}

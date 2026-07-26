@@ -13,6 +13,14 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      // PvP's routes are mounted under /api rather than /v1 and need the same
+      // treatment: two profiles duelling in two windows are two sessions, and a
+      // session cookie only travels if the request is first-party.
+      "/api": {
+        target: process.env.VITE_API_PROXY_TARGET ?? "http://localhost:3001",
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
   worker: {

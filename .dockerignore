@@ -1,12 +1,36 @@
 .git
 .cursor
+.github
 .env
 .env.*
 node_modules
 **/node_modules
 **/dist
 **/cdk.out
-apps/web
+**/*.tsbuildinfo
+
+# The web app is not part of the API image, but pnpm validates the lockfile
+# against every project in the workspace, so its manifest has to stay in the
+# build context or `pnpm install --frozen-lockfile` fails on a missing project.
+apps/web/**
+!apps/web/package.json
+
 assets
+docs
+sim
+test-results
 *.md
 *.tgz
+
+# Local caches and QA output. None of it is source, all of it is gitignored, and
+# together it was 1.6 GB of build context: CDK stages the whole context into
+# infra/cdk.out and uploads it as an image asset, so every deploy was carrying a
+# Playwright browser bundle and a folder of screenshots to ECR. It is also how
+# .shots/ probe scripts ended up inside cdk.out, where `pnpm lint`'s
+# dangling-import scan finds them and fails on relative paths that cannot resolve
+# from a staged copy.
+.pnpm-store
+.pw-browsers
+.shots
+.nm-trash-*
+*.log

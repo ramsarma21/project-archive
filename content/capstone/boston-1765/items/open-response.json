@@ -1,0 +1,460 @@
+{
+  "contentId": "BOS.CAPSTONE.CONTENT.OR_ITEMS.v1",
+  "reviewStatus": "AUTHOR_DRAFT",
+  "consumedBy": {
+    "payload": "entries[].descriptor",
+    "type": "AssessmentItemDescriptor",
+    "declaredIn": "packages/assessment/src/items.ts",
+    "rubricGoesTo": "the grading authority, not the assessment engine. packages/assessment cannot hold a rubric by design, so `entries[].rubric` is addressed to packages/grading and is kept in this file only so the item and its line are read together."
+  },
+
+  "gradingPolicy": {
+    "policyId": "BOS.CAPSTONE.GRADING_POLICY.v1",
+    "inheritsFrom": "content/m1/duel-items.json · BOS.MD01.GRADING_POLICY.v1",
+    "inheritsWhat": "The whole of it — the binary verdict space, the decision procedure, the ignore list, the never-sufficient list, the untrusted-input rule, and the calibration read off the twelve TEA-scored responses in content/staar/eval. Nothing in that policy is relaxed here and none of it is restated; a grader should be given that policy and then these three amendments.",
+
+    "whyThisSurfaceIsStricter": "A duel round is worth the difference between fourteen balls and seven. This is worth the concept. Mastery is all-or-nothing across the two items on a form, so a single false negative denies the concept, and denying the concept denies the chapter unlock and every PvP-legal Codex card hanging off it. With two items a form, the chance of losing a concept is roughly twice the per-item false-negative rate — a grader that is wrong one time in twenty on prose loses about one concept in ten to a student who knew it.",
+
+    "theseItemsAreAlsoPvPContent": {
+      "what": "The nine prose items in this file are shared into the PvP duel pool. content/m1/duel-items.json → pvpPool composes them with the PvE duel items and the PvP-only items, and carries the current totals. They were not rewritten for it: same rubric, same policy, same binary.",
+      "guardedBy": "PVP.GUARD.CAPSTONE_ALREADY_MASTERED.v1",
+      "rule": "PvP may draw a capstone item only for a concept this profile has already mastered.",
+      "whyThisFileCaresAboutIt": "Without the guard, a duel could serve a gate item before the gate is sat, and the capstone's first-attempt score — the number a teacher is told — would be measuring recall of a duel. The full statement, the pseudocode and the reasoning live with the pool in duel-items.json; the rule is repeated here word for word because a reader of these items must not have to go looking for the condition on their reuse. verify.mjs asserts the two copies are identical."
+    },
+
+    "amendments": [
+      {
+        "id": "A1_WIDER_ACCEPT",
+        "rule": "Every accept list here is deliberately wider than its duel equivalent, and where a duel rubric and a capstone rubric disagree about the same wording, the capstone's reading wins on the capstone. The asymmetry that made the duel generous is larger here by exactly the amount the stakes are larger."
+      },
+      {
+        "id": "A2_NO_TIMEOUT_CREDIT",
+        "rule": "There is no grant-on-timeout on this surface. packages/assessment has no GRADING_TIMEOUT verdict source, because a timeout here would hand out mastery, a chapter unlock and a permanent PvP card for a response nobody graded; the attempt stays open instead. Nothing in these rubrics may assume a generous fallback exists, which is another reason the accept lists carry the weight."
+      },
+      {
+        "id": "A3_FLAG_THE_NEAR_MISSES",
+        "rule": "Every item carries `falseNegativeRisk`. On a HIGH item, a WRONG verdict should reach the review log even when the classifier is confident, because that is the verdict most likely to be the one a human review of attempt 1 later revises. The engine already flags a wrong verdict that carried partial evidence; this field says which items to watch before any data exists."
+      }
+    ],
+
+    "whatIsNotRelaxed": "A restatement of the prompt, a bare choice on a two-way question the prompt asked a reason for, generic affect, and naming without explaining are wrong here exactly as they are in the duel. Widening the accept list is not the same as lowering the bar, and a capstone that credited 'the British were unfair' would certify nothing."
+  },
+
+  "entries": [
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.POSTWAR.CORRECTION.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+        "format": "OPEN_RESPONSE",
+        "probe": "CORRECTION",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/open-response.json",
+          "modelledOnItemId": "STAAR.2023.G8SS.07"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1763-1765",
+        "stem": null,
+        "prompt": "A merchant tells you the order was the other way round: that the Stamp Act came first, and that Britain's debt grew out of collecting it. Correct him, and say what the real order was.",
+        "options": [],
+        "usableAsIs": true,
+        "optionPoolComplete": null
+      },
+      "rubric": {
+        "rubricId": "BOS.CAP.RUBRIC.POSTWAR.CORRECTION.v1",
+        "requiredCore": "The debt came before the tax — the tax was Parliament's answer to the debt, not its cause.",
+        "line": "The correction has to reverse the merchant's ordering. It does not have to name 1763, the war, or the amount. What fails is agreeing with him, refusing to commit to an order, or correcting him about something else.",
+        "acceptExamples": [
+          { "text": "no, they were in debt first from the war and then made the tax", "why": "The reversal with its cause." },
+          { "text": "backwards. debt then stamp act", "why": "Four words. The ordering is the answer." },
+          { "text": "the war put them in debt and the tax was how they got money back, not the other way around", "why": "The reversal stated at length; length is neither required nor rewarded." },
+          { "text": "he has it flipped, the money was already owed before anyone printed a stamp", "why": "The ordering in the student's own image." }
+        ],
+        "rejectExamples": [
+          { "text": "he's right, the stamp act came first and then the debt", "why": "Agrees with the error the item exists to catch." },
+          { "text": "they both happened around the same time", "why": "A tie is not the ordering." },
+          { "text": "he's wrong because the stamp act was unfair to the colonists", "why": "Corrects a different thing. True, and not the order." },
+          { "text": "the debt came first because they had to pay for the stamps", "why": "States the order and then contradicts it." }
+        ],
+        "falseNegativeRisk": "LOW",
+        "reviewWhenWrong": false
+      },
+      "authoring": {
+        "distinctFrom": "The two selected-response postwar items ask the student to recognise a step and a payer. This asks them to overturn a stated claim, which is the one thing a four-option item cannot ask for.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.POSTWAR.DISCRIMINATION.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+        "format": "OPEN_RESPONSE",
+        "probe": "DISCRIMINATION",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/open-response.json",
+          "modelledOnItemId": "STAAR.2023.G8SS.07"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1763-1765",
+        "stem": null,
+        "prompt": "Two explanations are offered for the Stamp Act. One: Parliament wanted to keep tighter control over the colonies. Two: Parliament needed money to pay down a debt. Choose the one the events of 1763 to 1765 support, and give the reason you chose it.",
+        "options": [],
+        "usableAsIs": true,
+        "optionPoolComplete": null
+      },
+      "rubric": {
+        "rubricId": "BOS.CAP.RUBRIC.POSTWAR.DISCRIMINATION.v1",
+        "requiredCore": "The money explanation, connected to the war having left Britain owing money.",
+        "line": "The choice plus a reason that names the war's cost or the debt. The student does not have to argue against the control explanation — choosing correctly on a stated ground is the whole measurement, and demanding a refutation as well would be asking for a second item. A bare choice fails because it is a coin flip on a two-way question, and the prompt asks for the reason in its own words.",
+        "acceptExamples": [
+          { "text": "the second one. they came out of the war owing a fortune and needed money", "why": "Choice and ground." },
+          { "text": "money. the war with france left them in debt", "why": "Seven words, both halves." },
+          { "text": "number 2, the debt came first and the tax was how they paid it off", "why": "Choice and ground with the ordering thrown in." },
+          { "text": "the debt one, because britain was broke after fighting france", "why": "Informal, complete." },
+          { "text": "two, they needed the money. they might have wanted control as well but the debt is what started it", "why": "Concedes the other explanation partly and still chooses on the right ground. A hedge that names the ground is not a refusal to choose." }
+        ],
+        "rejectExamples": [
+          { "text": "the first one, britain wanted to control us and show who was in charge", "why": "The wrong explanation, chosen confidently. This is the most common wrong answer in the pool." },
+          { "text": "both are true at the same time", "why": "Refuses the discrimination the item is." },
+          { "text": "the second one", "why": "A bare choice on a two-way question after the prompt asked for the reason." },
+          { "text": "number two because the british were greedy", "why": "Chooses correctly on a ground that is a feeling rather than the debt. TEA's scorers give this shape no credit." }
+        ],
+        "falseNegativeRisk": "MEDIUM",
+        "reviewWhenWrong": true,
+        "reviewNote": "The hedge case is where this one will go wrong. A student who says the control explanation also has something in it, and then chooses the debt on the debt's ground, is correct; a grader reading for a clean choice may not see it."
+      },
+      "authoring": {
+        "distinctFrom": "CORRECTION overturns a false ordering; this one arbitrates between two candidate causes, only one of which is false. Different work, and a student can do either without the other.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.POSTWAR.APPLICATION.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+        "format": "OPEN_RESPONSE",
+        "probe": "APPLICATION",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/open-response.json",
+          "modelledOnItemId": "STAAR.2023.G8SS.07"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1765",
+        "stem": null,
+        "prompt": "Imagine it is 1755. The war with France is being fought and will not end for another eight years. Would Parliament have laid this stamp duty on Boston in that year? Answer, and explain what makes 1765 different.",
+        "options": [],
+        "usableAsIs": true,
+        "optionPoolComplete": null
+      },
+      "rubric": {
+        "rubricId": "BOS.CAP.RUBRIC.POSTWAR.APPLICATION.v1",
+        "requiredCore": "No, or not yet — because the debt that produced the tax did not exist in 1755; the war had not ended and left Britain owing.",
+        "line": "The reason has to be the missing debt, not the missing date. 'No, because the Stamp Act was 1765' is circular and fails; 'no, because the bill had not come due yet' passes. A bare no fails, and the prompt asks for the difference. A student who says Parliament might have wanted money during the war but had not yet been left with the debt is correct — that is a better answer than the reference one.",
+        "acceptExamples": [
+          { "text": "no because they werent in debt yet, the war hadnt even finished", "why": "The causal reason." },
+          { "text": "probably not. the debt came after the war ended in 1763", "why": "Hedged and correct." },
+          { "text": "no. in 1755 they were still fighting and the bill hadnt come due", "why": "The reason in the student's own image." },
+          { "text": "no, in 1755 the reason for the tax hadnt happened yet", "why": "The causal structure named without the noun." },
+          { "text": "they were spending money in 1755 not trying to get it back, thats the difference", "why": "Answers the difference without a yes or no, and the difference is the item." }
+        ],
+        "rejectExamples": [
+          { "text": "yes, britain taxed the colonies whenever it wanted to", "why": "Wrong, and it denies the causal claim the concept is." },
+          { "text": "no", "why": "Bare, after the prompt asked for the difference." },
+          { "text": "no because the stamp act was passed in 1765", "why": "Circular: the date is the thing being explained." },
+          { "text": "no because there werent enough printers in boston in 1755", "why": "Invented, and about the wrong side of the transaction." }
+        ],
+        "falseNegativeRisk": "HIGH",
+        "reviewWhenWrong": true,
+        "reviewNote": "The hardest item in the postwar pool to grade, because a correct answer can arrive as a bare difference with no yes or no in it — the fifth accept example is the shape. Any WRONG verdict here is worth a human eye."
+      },
+      "authoring": {
+        "distinctFrom": "A counterfactual year the module never mentions. Nothing else in the pool asks the student to run the causal chain backwards against a date that does not appear in the content.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1", "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.STAMP.CORRECTION.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
+        "format": "OPEN_RESPONSE",
+        "probe": "CORRECTION",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/open-response.json",
+          "modelledOnItemId": "STAAR.2023.G8SS.07"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1765",
+        "stem": null,
+        "prompt": "An apprentice has it that the Stamp Act taxed everything Boston bought — bread, cloth, nails, all of it. Correct him: say what the Act actually reached.",
+        "options": [],
+        "usableAsIs": true,
+        "optionPoolComplete": null
+      },
+      "rubric": {
+        "rubricId": "BOS.CAP.RUBRIC.STAMP.CORRECTION.v1",
+        "requiredCore": "The Act does not reach ordinary goods; what it taxes is printed and/or legal paper.",
+        "line": "The correction must name what is actually taxed, not merely deny the apprentice. An incomplete list still holds the boundary and earns it — a student who says 'only newspapers and things like that' has separated paper from goods, which is the concept, and only the enumeration is short. A bare contradiction fails.",
+        "acceptExamples": [
+          { "text": "no, only paper things like newspapers and deeds", "why": "Denial plus the category, instantiated." },
+          { "text": "its printed and legal papers, not food or cloth", "why": "Both sides of the line." },
+          { "text": "hes wrong, only documents and printed stuff got the stamp", "why": "Category named in a student's own words." },
+          { "text": "no. bread and nails were fine. it was paper", "why": "The boundary as a contrast, nine words." },
+          { "text": "only newspapers and papers like that, not everything in the market", "why": "Short enumeration, correct boundary. Accepted on purpose." }
+        ],
+        "rejectExamples": [
+          { "text": "hes right, they taxed everything eventually", "why": "Agrees, with a hedge that sounds like nuance." },
+          { "text": "hes wrong", "why": "Bare contradiction. Nothing here shows what the student knows is taxed." },
+          { "text": "no, only things brought in on ships from britain", "why": "A different and wrong boundary — the Sugar Act's shape." },
+          { "text": "no, only tea was taxed", "why": "Wrong Act by eight years." },
+          { "text": "no, only rich people had to pay it", "why": "Substitutes who pays for what is taxed." }
+        ],
+        "falseNegativeRisk": "LOW",
+        "reviewWhenWrong": false
+      },
+      "authoring": {
+        "distinctFrom": "RECALL names the category from four options; this asks the student to produce it against a stated error. The selected-response version cannot tell whether the student recognised the right option or eliminated three wrong ones.",
+        "sharedWithDuel": "Mission-Slate §4.9's CORRECT_THE_APPRENTICE asks the same scenario. Deliberate: it is the clearest statement of the boundary in the chapter, and a student meets it in the duel with a round's ammunition riding on it and here with a concept riding on it. The rubric line is the same and the accept list here is wider.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.STAMP.DISCRIMINATION.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
+        "format": "OPEN_RESPONSE",
+        "probe": "DISCRIMINATION",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/open-response.json",
+          "modelledOnItemId": "STAAR.2023.G8SS.07"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1765",
+        "stem": null,
+        "prompt": "A blacksmith and a printer both say the Stamp Act will ruin them. One of the two is much more nearly right. Say which, and what it is about the Act that decides it.",
+        "options": [],
+        "usableAsIs": true,
+        "optionPoolComplete": null
+      },
+      "rubric": {
+        "rubricId": "BOS.CAP.RUBRIC.STAMP.DISCRIMINATION.v1",
+        "requiredCore": "The printer, because what the Act taxes is printed paper and printed paper is the printer's whole product — while ironwork is outside the Act.",
+        "line": "The choice plus a reason tied to what the Act taxes. Either direction of the reason counts: the printer's product being the taxed thing, or the blacksmith's not being. A bare choice fails on a two-way question and the prompt says what is wanted. A reason about printers being political fails, however true it is elsewhere.",
+        "acceptExamples": [
+          { "text": "the printer. paper is what he sells and paper is what gets taxed", "why": "Choice and the direct link." },
+          { "text": "printer. nails arent on the act, paper is", "why": "The link stated from the blacksmith's side, six words." },
+          { "text": "the printer because every single thing off his press needs a stamp now", "why": "The link plus its scale." },
+          { "text": "printer, the tax is on the exact thing his shop makes", "why": "The link without naming paper at all, which is fine — the relation is the idea." }
+        ],
+        "rejectExamples": [
+          { "text": "the blacksmith, because nails will cost more", "why": "Wrong trade, and an invented price mechanism." },
+          { "text": "both of them equally", "why": "Refuses the discrimination the item is." },
+          { "text": "the printer", "why": "Bare choice after the prompt asked what decides it." },
+          { "text": "the printer, because printers were the ones stirring up trouble", "why": "Politics for scope. Appealing, historically not silly, and a different question." }
+        ],
+        "falseNegativeRisk": "LOW",
+        "reviewWhenWrong": false
+      },
+      "authoring": {
+        "distinctFrom": "CORRECTION asks the breadth of the category. This asks who inside the town the category lands on, which is the concept applied to people rather than to objects.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.STAMP.APPLICATION.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
+        "format": "OPEN_RESPONSE",
+        "probe": "APPLICATION",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/open-response.json",
+          "modelledOnItemId": "STAAR.2023.G8SS.07"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1765",
+        "stem": null,
+        "prompt": "Two things are on the counter: a letter a woman wrote to her sister in her own hand, and a handbill printed on a press. Decide for each whether the Act reaches it, and give the reason that decides both.",
+        "options": [],
+        "usableAsIs": true,
+        "optionPoolComplete": null
+      },
+      "rubric": {
+        "rubricId": "BOS.CAP.RUBRIC.STAMP.APPLICATION.v1",
+        "requiredCore": "The handbill is reached and the letter is not, because the Act covers printed and legal paper and a handwritten private letter is neither.",
+        "line": "Both decisions must be right. The reason is asked for and should be there, but two correct decisions with no reason still earn it — the outcome space is four and getting both right is real evidence, and on a surface where a false negative costs the chapter, demanding prose on top of a correct two-sided classification is the wrong risk to take. Getting either decision wrong fails regardless of how good the reason is.",
+        "acceptExamples": [
+          { "text": "the handbill needs it because its printed, the letter doesnt because she wrote it herself", "why": "Both decisions, both reasons." },
+          { "text": "handbill yes, letter no. the tax is on printed and official paper", "why": "Both decisions, one reason covering both." },
+          { "text": "printed sheet gets stamped, private letter doesnt", "why": "Both decisions with the reason carried inside the words 'printed' and 'private'." },
+          { "text": "handbill yes letter no", "why": "Decisions only. Accepted deliberately; see `line`." }
+        ],
+        "rejectExamples": [
+          { "text": "both of them, theyre both paper", "why": "The over-generalisation the item exists to catch." },
+          { "text": "neither, its only official government documents", "why": "Excludes the printed half — half the boundary lost." },
+          { "text": "the letter needs it and the handbill doesnt", "why": "Both decisions inverted." },
+          { "text": "the handbill, because handbills are political", "why": "Right decision on one, silent on the other, and the reason is not the Act's category." }
+        ],
+        "falseNegativeRisk": "MEDIUM",
+        "reviewWhenWrong": true,
+        "reviewNote": "Watch for answers that decide correctly in an order the grader does not expect — 'the letter is fine, the handbill isn't' names the letter first and is the same answer."
+      },
+      "authoring": {
+        "distinctFrom": "The two selected-response scope items each ask one classification. This asks two at once, in opposite directions, which is the only item in the pool that can catch a student who has one side of the boundary and not the other.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.REP.CORRECTION.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
+        "format": "OPEN_RESPONSE",
+        "probe": "CORRECTION",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/open-response.json",
+          "modelledOnItemId": "STAAR.2023.G8SS.07"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1765",
+        "stem": null,
+        "prompt": "A student writes that the colonists objected to the Stamp Act because three pence was more than they could afford. Correct that, and say what the objection actually rested on.",
+        "options": [],
+        "usableAsIs": true,
+        "optionPoolComplete": null
+      },
+      "rubric": {
+        "rubricId": "BOS.CAP.RUBRIC.REP.CORRECTION.v1",
+        "requiredCore": "The objection was not the amount; it was that the tax was laid by a body the colonists had not elected — taxation without their consent.",
+        "line": "The answer must move the ground off cost and name where it lands. Any wording of consent or of who laid it counts, including 'we had no say'. A denial with nothing named fails, and so does a correction that lands on some other grievance.",
+        "acceptExamples": [
+          { "text": "it wasnt the money, it was that parliament had no right to because we never voted for them", "why": "The move plus the ground." },
+          { "text": "wrong. theyd have said the same about one penny. the problem is who taxed them", "why": "Cost dismissed by the counterfactual, ground named." },
+          { "text": "the objection was being taxed by people they had no say in choosing", "why": "Ground named without ever mentioning cost, which is fine — the prompt supplies the cost claim." },
+          { "text": "not the price. they wanted their own assembly to be the one taxing them", "why": "The ground stated positively." }
+        ],
+        "rejectExamples": [
+          { "text": "shes right, three pence was a lot back then", "why": "Agrees with the error." },
+          { "text": "shes wrong", "why": "Bare contradiction with no ground." },
+          { "text": "it was because the british were treating them unfairly", "why": "Generic affect. TEA's scorers give this shape no credit." },
+          { "text": "it was because they wanted to be an independent country", "why": "1765. Independence is eleven years away, and this is the anachronism the concept most often collects." },
+          { "text": "it was because the money went to britain instead of staying in boston", "why": "An economic objection, plausible and not the consent claim." }
+        ],
+        "falseNegativeRisk": "LOW",
+        "reviewWhenWrong": false
+      },
+      "authoring": {
+        "distinctFrom": "The selected-response BOUNDARY item asks which body could lawfully tax Boston. This asks the student to reject a stated wrong ground and supply the right one, which is the same concept approached from its most common misconception.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.REP.ORDERING.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
+        "format": "OPEN_RESPONSE",
+        "probe": "ORDERING",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/open-response.json",
+          "modelledOnItemId": "STAAR.2023.G8SS.07"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1765",
+        "stem": null,
+        "prompt": "Set out the colonists' argument in the order its steps depend on. Start from what Boston did and did not elect, and end at why the stamp duty was unjust. Two or three steps is enough.",
+        "options": [],
+        "usableAsIs": true,
+        "optionPoolComplete": null
+      },
+      "rubric": {
+        "rubricId": "BOS.CAP.RUBRIC.REP.ORDERING.v1",
+        "requiredCore": "A chain running from Boston having elected no member of Parliament, to the tax therefore being laid without the town's consent, to that being what makes it unjust.",
+        "line": "Two links are required: the missing representation, and the tax being laid without consent because of it. The word 'unjust' need not appear — ending at 'so we never agreed to it' is the same claim. What fails is running the chain backwards, asserting injustice with no representation step, or substituting a different grievance.",
+        "acceptExamples": [
+          { "text": "we elect nobody in parliament -> parliament taxed us -> so we never agreed to it", "why": "An arrow chain is a chain, and both links are there." },
+          { "text": "boston has no members in parliament. so when parliament taxes boston, nobody boston chose voted for it. thats not our consent", "why": "Three steps, in order." },
+          { "text": "no vote, no consent, unjust", "why": "Five words. The whole argument." },
+          { "text": "first, we only elect our own assembly and nobody in london. second, london taxed us anyway. so the tax was put on us by people we never picked", "why": "Numbered, informal, correct." }
+        ],
+        "rejectExamples": [
+          { "text": "the tax was unjust, so the colonists should have been given representation", "why": "The chain reversed. The injustice is the conclusion, not the premise." },
+          { "text": "it was unjust because three pence was too much for a sheet of paper", "why": "Cost, and no representation step." },
+          { "text": "they wanted to be free of britain so they said the tax was unjust", "why": "Independence as the premise, which is both anachronistic and backwards." },
+          { "text": "parliament was not allowed to make any law at all for the colonies", "why": "The over-claim. Boston's own argument in 1765 disputed the taxing power, not the whole legislative one." }
+        ],
+        "falseNegativeRisk": "MEDIUM",
+        "reviewWhenWrong": true,
+        "reviewNote": "A student who writes the two links as one sentence rather than as steps has still ordered them. Do not read the absence of numbering as the absence of a chain."
+      },
+      "authoring": {
+        "distinctFrom": "Every other representation item asks for one link. This asks for the connection between them, and a student can hold each link separately and be unable to say which depends on which.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.REP.APPLICATION.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
+        "format": "OPEN_RESPONSE",
+        "probe": "APPLICATION",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/open-response.json",
+          "modelledOnItemId": "STAAR.2023.G8SS.07"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1765",
+        "stem": null,
+        "prompt": "The Massachusetts assembly also lays taxes, and the people of Boston pay them without calling them unjust. Explain why the colonists accepted those taxes and not the stamp duty.",
+        "options": [],
+        "usableAsIs": true,
+        "optionPoolComplete": null
+      },
+      "rubric": {
+        "rubricId": "BOS.CAP.RUBRIC.REP.APPLICATION.v1",
+        "requiredCore": "Because Boston elected the assembly and did not elect Parliament — the objection is to being taxed by a body the town had no part in choosing, not to taxation itself.",
+        "line": "The distinction has to rest on who was chosen. Any wording of elected-versus-not-elected counts, including 'ours' versus 'theirs' when the student has made clear that ours means the one we vote for. What fails is any distinction drawn on some other axis — size, distance, what the money was spent on — and any answer that denies the premise by claiming the colonists objected to both.",
+        "acceptExamples": [
+          { "text": "because we voted for the assembly and we never voted for parliament", "why": "The distinction, eleven words." },
+          { "text": "the assembly is ours, we chose those men. nobody chose the ones in parliament", "why": "'Ours' made explicit as chosen." },
+          { "text": "its not about paying taxes, its about who decides them. we picked the assembly", "why": "Names the axis and then applies it." },
+          { "text": "a tax from people you elected is one you agreed to. a tax from people you didnt is one done to you", "why": "The principle generalised. More than the item asked for." }
+        ],
+        "rejectExamples": [
+          { "text": "because the assembly's taxes were smaller", "why": "Size. The cost axis again, in its most plausible form." },
+          { "text": "because the assembly was right there in massachusetts and parliament was far away", "why": "Distance. The rebuttal Boston's own case does not make, and the one students reach for first." },
+          { "text": "because the assembly spent the money on boston and parliament spent it on britain", "why": "Where the money goes. A genuinely reasonable-sounding answer that is not the consent claim." },
+          { "text": "they didnt accept either one, they hated all taxes", "why": "Denies the premise, and denies the concept with it." }
+        ],
+        "falseNegativeRisk": "HIGH",
+        "reviewWhenWrong": true,
+        "reviewNote": "The best item in the pool and the one most likely to be mis-graded. It is the only item that separates a student who holds the consent principle from one who has learned that taxes were bad, and its correct answers arrive in the widest range of wordings. Every WRONG verdict here should be reviewed before it costs anyone a card."
+      },
+      "authoring": {
+        "distinctFrom": "Nothing else in the chapter asks the student to explain a tax the colonists ACCEPTED. The module states the fact in one clause — that Boston's own men could tax the town tomorrow — and this is the only item that makes the student do something with it.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+Architectural reference photograph of the Old State House, Boston — the 1713 Town House on Washington Street, the oldest surviving public building in Boston — as it stood in August 1765. Single isolated building, centered, the entire building from the pavement to the top of its tower inside the frame, straight-on view of the EAST GABLE END, plain light gray studio background, soft even daylight, no cast shadow on the ground, no other buildings, no street, no people, no cars, no text or watermark.
+
+Documented features, all of which must be present and clearly readable:
+- Deep red brick laid in Flemish bond, with the darker glazed header bricks visible in the pattern.
+- The stepped-and-curved Dutch-influenced EAST GABLE, crowned by the gilded LION AND UNICORN statues standing on the cornice at the two ends of the gable, facing outward. The gilded lion rampant and the white-and-gold unicorn are the building's signature.
+- The east-end BALCONY: a small white-painted wooden balcony with a turned balustrade, projecting from the centre of the east front at first-floor level, above a moulded door surround — the balcony from which proclamations were read to the crowd in the street.
+- A large white-framed circular CLOCK DIAL high on the east gable above the balcony.
+- An OPEN ARCADED GROUND STOREY: the whole ground floor is a row of tall round-headed brick arches on heavy square piers, open right through the building, because the merchants' exchange and the market stood beneath it and the road ran round the building on both sides. No shopfronts, no glazing at ground level.
+- Regular bays of tall twelve-over-twelve small-pane sash windows with white painted trim and flat brick arches.
+- A GAMBREL ROOF of grey slate behind the gable, its lower slope steep and its upper slope shallow.
+- A three-stage square brick TOWER rising behind the gable, diminishing at each stage, carrying a white-painted OCTAGONAL CUPOLA with louvred arched openings, a small lead dome, and an iron WEATHERVANE.
+
+Compact three-bay proportions: the brick block reads roughly as wide as it is deep, and about one and a half times as tall as it is wide including the tower. Weathered brick, white painted joinery, grey slate and lead. Realistic materials, muted colours, photogrammetry reference plate style, evenly lit for 3D reconstruction.

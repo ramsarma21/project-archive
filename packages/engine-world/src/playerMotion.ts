@@ -44,9 +44,126 @@ const ACCEL = 9;
 const DECEL = 14;
 const MAX_DT = 0.05;
 
+// ---- burst tuning ----------------------------------------------------------
+//
+// One burst, shared by every system that needs a short directed surge: the duel's
+// dodge, a parkour dash, and any future movement ability (a grapple pull is the
+// same physical act with a different direction source). Because they are all the
+// same phase driving the same integrator, a dash across a rooftop and a dodge in a
+// duel move identically.
+
+/**
+ * Multiple of the caller's base speed a burst travels at.
+ *
+ * THE TUNED QUANTITY IS THE DISTANCE, NOT THIS NUMBER. A burst from a standing
+ * start covers ~2.22 m, which is what the duel's dodge, its boss evasion curves and
+ * its whole winnability table were measured against.
+ *
+ * This was 2.6 when the burst accelerated into its speed from a scaled target
+ * velocity. Setting the velocity outright instead is a real improvement in feel —
+ * see `beginDash` — but at an unchanged scale it stretched the same burst to 3.99 m,
+ * which in a compact courtyard is a large fraction of the arena. 1.45 keeps the
+ * snappier onset and restores the tuned distance exactly. If a longer burst turns
+ * out to be better, change it deliberately against fresh numbers.
+ */
+export const DASH_SPEED_SCALE = 1.45;
+/** Authored length of a burst. */
+export const DASH_DURATION_MS = 320;
+
+/** Burst speed for a base locomotion speed. The multiply lives in the engine. */
+export function dashSpeed(baseSpeed: number, scale = DASH_SPEED_SCALE): number {
+  return baseSpeed * scale;
+}
+
+// ---- launch scaling --------------------------------------------------------
+//
+// A jump's launch velocity may be scaled by the caller. That is the whole of the
+// mechanism: `beginStandingJump(state, 1.45)` sets a higher vy and the SAME
+// ballistic integrator produces the arc, so a boosted jump still sweeps against
+// every obstacle, still clips its head on an overhang and still lands only on
+// validated support. It is an impulse to velocity, never a write to position.
+//
+// THE FLOOR IS 1, DELIBERATELY. This channel may only ever ADD height.
+//
+// A launch scale below 1 would be a per-player movement penalty, and a per-player
+// movement penalty is a difficulty band wearing different clothes — the same thing
+// stealth/tuning.ts deleted STANDING_FACTORS and HEAT_FACTORS to be rid of. Refusing
+// the whole lower half of the range in the engine means no caller can express one,
+// however well-intentioned. If a carried-load system ever genuinely needs a
+// penalty, it should widen this clamp on purpose, with its own reasoning next to it,
+// rather than inherit the ability channel's licence by accident.
+//
+// The ceiling is 2, which is a 4x apex: 1.25 m becomes 5.0 m. Above the engine's
+// own 3.2 m climb limit the geometry stops being something level design can reason
+// about, so 2 is the point past which a number is a bug rather than a decision.
+
+export const MIN_JUMP_LAUNCH_SCALE = 1;
+export const MAX_JUMP_LAUNCH_SCALE = 2;
+
+/** Clamp a launch scale into the legal band. Non-finite input is neutral. */
+export function jumpLaunchScale(scale: number): number {
+  if (!Number.isFinite(scale)) return MIN_JUMP_LAUNCH_SCALE;
+  return Math.min(MAX_JUMP_LAUNCH_SCALE, Math.max(MIN_JUMP_LAUNCH_SCALE, scale));
+}
+
+// ---- contact tuning --------------------------------------------------------
+//
+// A non-lethal grab, shoulder check or crowd collision. The player loses control
+// for a short window and is pushed off their line; they never lose the run, and
+// nothing here touches the body that made contact.
+//
+// THIS IS A PENALTY THE PLAYER SUFFERS, NOT A CAPABILITY THE PLAYER WIELDS, and
+// that distinction is the reason it is safe to build when a non-lethal takedown was
+// refused. A takedown deletes a guard, and once a guard can be deleted the
+// diversion, the crowd blend and the reflex window are all slower answers to a
+// solved problem. A stagger deletes nothing: it is the cost of having been touched,
+// so AVOIDING contact strictly dominates recovering from it, at every recovery
+// scale, forever. See contact.ts, which is the only way to open one.
+
+/** How a body made contact. Drives the window, the push and the noise. */
+export type ContactKind = "GRAB" | "SHOULDER" | "CROWD";
+
+/** Authored recovery window per contact kind, before any ability scaling. */
+export const CONTACT_STAGGER_MS: Readonly<Record<ContactKind, number>> = {
+  GRAB: 900,
+  SHOULDER: 520,
+  CROWD: 380,
+};
+
+/** Push speed away from the contact, in m/s. Decays across the window. */
+export const CONTACT_PUSH_MPS: Readonly<Record<ContactKind, number>> = {
+  GRAB: 1.2,
+  SHOULDER: 2,
+  CROWD: 1,
+};
+
+/**
+ * Shortest a recovery may ever be, as a fraction of its authored window.
+ *
+ * THE FLOOR IS NOT ZERO, AND THAT IS THE SCARCITY GUARANTEE. At zero the stagger
+ * would be a no-op and walking into a guard would become a legal route — which is
+ * the rejected takedown arriving through the back door. At 0.2 the best ability in
+ * the game still leaves a fifth of the window, and leaves the noise untouched, so
+ * being grabbed is always worse than not being grabbed.
+ */
+export const MIN_STAGGER_RECOVERY_SCALE = 0.2;
+/** A recovery may be shortened, never lengthened: 1 is the authored window. */
+export const MAX_STAGGER_RECOVERY_SCALE = 1;
+
+/** Clamp a recovery scale into the legal band. Non-finite input is neutral. */
+export function staggerRecoveryScale(scale: number): number {
+  if (!Number.isFinite(scale)) return MAX_STAGGER_RECOVERY_SCALE;
+  return Math.min(
+    MAX_STAGGER_RECOVERY_SCALE,
+    Math.max(MIN_STAGGER_RECOVERY_SCALE, scale),
+  );
+}
+
 export type MotionPhase =
   | "GROUNDED"
   | "CROUCH"
+  | "DASH"
+  | "STAGGER"
   | "STANDING_JUMP"
   | "RUNNING_JUMP"
   | "FALLING"
@@ -66,6 +183,22 @@ export const AUTHORED_PHASES: ReadonlySet<MotionPhase> = new Set<MotionPhase>([
   "CLIMB_UP",
   "CLIMB_DOWN",
   "DUCK_UNDER",
+]);
+/**
+ * Velocity-driven bursts. Deliberately NOT an authored phase: an authored action
+ * follows a fixed anchored trajectory, while a burst is ordinary grounded motion
+ * with the target velocity scaled up, and therefore still collides, slides along
+ * walls, snaps to support and falls off ledges exactly like running does.
+ *
+ * STAGGER is a burst for exactly the same reason and by exactly the same mechanism:
+ * a shove is a substituted target velocity handed to `stepGrounded`. One of them is
+ * the player's idea and the other is not, which is a difference of authorship rather
+ * than of physics. Both being in this set also means `canDash` refuses during a
+ * stagger — you cannot burst out of having been grabbed.
+ */
+export const BURST_PHASES: ReadonlySet<MotionPhase> = new Set<MotionPhase>([
+  "DASH",
+  "STAGGER",
 ]);
 
 export interface AuthoredAnchor {
@@ -93,6 +226,50 @@ export interface AuthoredAction {
   endYaw: number;
 }
 
+/**
+ * An open burst. Exposed on MotionState so layers above can observe the window
+ * without owning it: the duel hangs immunity frames and its use ledger on these
+ * ticks, and a renderer hangs a trail or a camera kick on them. The window is
+ * motion's; the meanings are the caller's.
+ */
+export interface DashWindow {
+  /** Unit XZ direction, fixed at the start. A burst is a commitment. */
+  dirX: number;
+  dirZ: number;
+  /** Burst speed in m/s. Handed to the integrator as a target velocity. */
+  speed: number;
+  elapsedMs: number;
+  durationMs: number;
+  /** Stance to restore on exit, so a burst from a crouch ends crouched. */
+  fromPhase: "GROUNDED" | "CROUCH";
+}
+
+/**
+ * An open stagger. Same shape as `DashWindow` on purpose — it is the same kind of
+ * thing, a bounded window during which the target velocity is substituted — with two
+ * additions that exist only so a caller can attribute the contact for noise and
+ * presentation.
+ *
+ * NOTE WHAT IS ABSENT, AND KEEP IT ABSENT: there is no field here describing the
+ * body that made contact beyond an opaque id, and nothing anywhere returns a state
+ * for it. A stagger is a thing that happens TO the player. See
+ * `assertContactCannotAffectTheOtherBody` in contact.ts.
+ */
+export interface StaggerWindow {
+  /** Unit XZ push direction, away from the contact. Fixed at the start. */
+  dirX: number;
+  dirZ: number;
+  /** Push speed in m/s at the start; decays linearly across the window. */
+  speed: number;
+  elapsedMs: number;
+  durationMs: number;
+  /** Stance to restore on exit. */
+  fromPhase: "GROUNDED" | "CROUCH";
+  kind: ContactKind;
+  /** Opaque id of the body that made contact, for noise attribution and tells. */
+  sourceId: string | null;
+}
+
 export interface MotionState {
   phase: MotionPhase;
   pos: Vec3;
@@ -102,6 +279,8 @@ export interface MotionState {
   grounded: boolean;
   airtimeMs: number;
   action: AuthoredAction | null;
+  dash: DashWindow | null;
+  stagger: StaggerWindow | null;
 }
 
 export interface MotionInput {
@@ -117,7 +296,11 @@ export type MotionEventType =
   | "landed"
   | "actionComplete"
   | "actionCancelled"
-  | "jumpStarted";
+  | "jumpStarted"
+  | "dashStarted"
+  | "dashEnded"
+  | "staggerStarted"
+  | "staggerEnded";
 
 export interface MotionResult {
   state: MotionState;
@@ -136,6 +319,8 @@ export function createGroundedState(pos: Vec3, yaw: number): MotionState {
     grounded: true,
     airtimeMs: 0,
     action: null,
+    dash: null,
+    stagger: null,
   };
 }
 
@@ -156,30 +341,237 @@ function shortestAngle(a: number, b: number): number {
 
 // Standing jump: primarily vertical, negligible horizontal drift. Only allowed
 // from a grounded/crouch state.
-export function beginStandingJump(state: MotionState): MotionState {
+//
+// `launchScale` multiplies the vertical launch only, and only upward (see
+// `jumpLaunchScale`). Horizontal reach is deliberately untouched: distance is the
+// move-speed channel's business, which keeps "jump higher" and "travel further" two
+// separate decisions instead of one number that quietly does both.
+export function beginStandingJump(
+  state: MotionState,
+  launchScale = MIN_JUMP_LAUNCH_SCALE,
+): MotionState {
   return {
     ...state,
     phase: "STANDING_JUMP",
     capsuleHeight: STAND_HEIGHT,
     grounded: false,
     airtimeMs: 0,
-    vel: { x: 0, y: STANDING_JUMP_VY, z: 0 },
+    vel: { x: 0, y: STANDING_JUMP_VY * jumpLaunchScale(launchScale), z: 0 },
     action: null,
+    dash: null,
+    stagger: null,
   };
 }
 
 // Running jump: preserves the launch horizontal velocity into an honest arc.
 // No teleport, no collider bypass, minimal air steering (none applied here).
-export function beginRunningJump(state: MotionState): MotionState {
+export function beginRunningJump(
+  state: MotionState,
+  launchScale = MIN_JUMP_LAUNCH_SCALE,
+): MotionState {
   return {
     ...state,
     phase: "RUNNING_JUMP",
     capsuleHeight: STAND_HEIGHT,
     grounded: false,
     airtimeMs: 0,
-    vel: { x: state.vel.x, y: RUNNING_JUMP_VY, z: state.vel.z },
+    vel: {
+      x: state.vel.x,
+      y: RUNNING_JUMP_VY * jumpLaunchScale(launchScale),
+      z: state.vel.z,
+    },
     action: null,
+    dash: null,
+    stagger: null,
   };
+}
+
+// ---- burst initiation ------------------------------------------------------
+
+/** Can a burst start from this state? A burst is grounded and not mid-action. */
+export function canDash(state: MotionState): boolean {
+  return (
+    state.grounded &&
+    state.action === null &&
+    !AIRBORNE_PHASES.has(state.phase) &&
+    !AUTHORED_PHASES.has(state.phase) &&
+    !BURST_PHASES.has(state.phase)
+  );
+}
+
+/**
+ * Open a burst in a direction. This is the shared dodge/dash/pull.
+ *
+ * THE BURST IS A SCALE ON THE TARGET VELOCITY HANDED TO THE EXISTING INTEGRATOR,
+ * NEVER A DISPLACEMENT. `stepDash` below hands the burst velocity to the same
+ * `stepGrounded` that walking uses, so acceleration, swept collision, wall slide,
+ * support snapping, ledge fall and bounds clamping are all unchanged and
+ * unduplicated. That is exactly why a dodge in a duel and a dash across a rooftop
+ * behave identically — it is not two implementations that agree, it is one.
+ *
+ * The initial velocity is set outright rather than accelerated into, matching
+ * `beginRunningJump`: a burst that ramps up over a fifth of a second does not read
+ * as a burst. That is an impulse to velocity, not a write to position.
+ *
+ * Returns the state unchanged when a burst is not currently legal, so a caller may
+ * treat it as a no-op; use `canDash` when the refusal needs to be observed. Not
+ * available airborne: an air dash is an ability decision, and adding an untested
+ * airborne branch here would be speculation.
+ */
+export function beginDash(
+  state: MotionState,
+  dirX: number,
+  dirZ: number,
+  speed: number,
+  durationMs: number = DASH_DURATION_MS,
+): MotionState {
+  const length = Math.hypot(dirX, dirZ);
+  if (length < 1e-6 || speed <= 0 || !canDash(state)) return state;
+  const unitX = dirX / length;
+  const unitZ = dirZ / length;
+  return {
+    ...state,
+    phase: "DASH",
+    vel: { x: unitX * speed, y: 0, z: unitZ * speed },
+    action: null,
+    stagger: null,
+    dash: {
+      dirX: unitX,
+      dirZ: unitZ,
+      speed,
+      elapsedMs: 0,
+      durationMs: Math.max(1000 / 60, durationMs),
+      fromPhase: state.phase === "CROUCH" ? "CROUCH" : "GROUNDED",
+    },
+  };
+}
+
+/** Is a burst open? */
+export function isDashing(state: MotionState): boolean {
+  return state.phase === "DASH" && state.dash !== null;
+}
+
+/** Milliseconds left in the open burst, or 0. */
+export function dashRemainingMs(state: MotionState): number {
+  if (!state.dash) return 0;
+  return Math.max(0, state.dash.durationMs - state.dash.elapsedMs);
+}
+
+/** Progress through the open burst, 0..1. For i-frame windows and presentation. */
+export function dashProgress(state: MotionState): number {
+  if (!state.dash || state.dash.durationMs <= 0) return 0;
+  return Math.min(1, state.dash.elapsedMs / state.dash.durationMs);
+}
+
+/** End a burst early, keeping whatever velocity the integrator has produced. */
+export function cancelDash(state: MotionState): MotionState {
+  if (!isDashing(state)) return state;
+  return {
+    ...state,
+    phase: state.dash!.fromPhase,
+    capsuleHeight:
+      state.dash!.fromPhase === "CROUCH" ? CROUCH_HEIGHT : state.capsuleHeight,
+    dash: null,
+  };
+}
+
+// ---- stagger initiation ----------------------------------------------------
+
+/**
+ * Can a stagger open from this state?
+ *
+ * Grounded, not mid-authored-action, not already staggered — the same conditions a
+ * burst needs, with one deliberate difference: a stagger MAY interrupt an open
+ * DASH. Contact has to land on a player who is bursting, or the burst becomes a
+ * contact immunity and "dash through the crowd" turns the whole contact model off.
+ * Combined with `canDash` refusing during a stagger, the burst neither prevents
+ * contact nor escapes it.
+ *
+ * Airborne contact is not modelled. A body cannot shoulder-check somebody who is
+ * mid-vault, and level design puts crowds on the ground.
+ */
+export function canStagger(state: MotionState): boolean {
+  return (
+    state.grounded &&
+    state.action === null &&
+    !AIRBORNE_PHASES.has(state.phase) &&
+    !AUTHORED_PHASES.has(state.phase) &&
+    state.stagger === null
+  );
+}
+
+/**
+ * Open a recovery window after non-lethal body contact.
+ *
+ * Prefer `resolveContact` in contact.ts, which is the only path that also emits the
+ * noise. This is exposed because the phase belongs to motion, in the same way
+ * `beginDash` is exposed and the duel wraps it with combat meaning.
+ *
+ * THE PUSH IS A SUBSTITUTED TARGET VELOCITY, exactly as a burst is. `stepStagger`
+ * hands a decaying push to the same `stepGrounded` walking uses, so a staggering
+ * player still collides, still slides along walls, still snaps to support and still
+ * falls off a ledge they were shoved over. No second integrator, no position write.
+ *
+ * `recoveryScale` shortens the window and may only ever shorten it (see
+ * `staggerRecoveryScale`): it is clamped to a floor above zero, so no ability can
+ * make being grabbed free.
+ *
+ * Returns the state unchanged when a stagger is not legal; use `canStagger` when the
+ * refusal needs to be observed.
+ */
+export function beginStagger(
+  state: MotionState,
+  input: {
+    kind: ContactKind;
+    /** Direction the push travels, away from the contact. Need not be unit. */
+    dirX: number;
+    dirZ: number;
+    sourceId?: string | null;
+    recoveryScale?: number;
+  },
+): MotionState {
+  if (!canStagger(state)) return state;
+  const length = Math.hypot(input.dirX, input.dirZ);
+  // A contact with no direction still costs the window; it just does not push.
+  const unitX = length < 1e-6 ? 0 : input.dirX / length;
+  const unitZ = length < 1e-6 ? 0 : input.dirZ / length;
+  const scale = staggerRecoveryScale(input.recoveryScale ?? MAX_STAGGER_RECOVERY_SCALE);
+  const fromPhase = state.phase === "CROUCH" ? "CROUCH" : "GROUNDED";
+  const speed = CONTACT_PUSH_MPS[input.kind];
+  return {
+    ...state,
+    phase: "STAGGER",
+    vel: { x: unitX * speed, y: 0, z: unitZ * speed },
+    action: null,
+    dash: null,
+    stagger: {
+      dirX: unitX,
+      dirZ: unitZ,
+      speed,
+      elapsedMs: 0,
+      durationMs: Math.max(1000 / 60, CONTACT_STAGGER_MS[input.kind] * scale),
+      fromPhase,
+      kind: input.kind,
+      sourceId: input.sourceId ?? null,
+    },
+  };
+}
+
+/** Is a recovery window open? */
+export function isStaggered(state: MotionState): boolean {
+  return state.phase === "STAGGER" && state.stagger !== null;
+}
+
+/** Milliseconds left in the open recovery, or 0. */
+export function staggerRemainingMs(state: MotionState): number {
+  if (!state.stagger) return 0;
+  return Math.max(0, state.stagger.durationMs - state.stagger.elapsedMs);
+}
+
+/** Progress through the open recovery, 0..1. For HUD and presentation. */
+export function staggerProgress(state: MotionState): number {
+  if (!state.stagger || state.stagger.durationMs <= 0) return 0;
+  return Math.min(1, state.stagger.elapsedMs / state.stagger.durationMs);
 }
 
 // Free C crouch is independent of authored DUCK_UNDER. C toggles this state;
@@ -257,6 +649,8 @@ export function beginAuthored(
     vel: { x: 0, y: 0, z: 0 },
     yaw: faceObstacle ? Math.atan2(-normal.x, -normal.z) : state.yaw,
     action,
+    dash: null,
+    stagger: null,
   };
 }
 
@@ -311,6 +705,8 @@ export function cancelAction(world: CollisionWorld, state: MotionState): MotionR
       grounded: true,
       airtimeMs: 0,
       action: null,
+      dash: null,
+      stagger: null,
     },
     events: ["actionCancelled"],
   };
@@ -326,7 +722,140 @@ export function stepMotion(world: CollisionWorld, state: MotionState, input: Mot
   if (AIRBORNE_PHASES.has(state.phase)) {
     return stepBallistic(world, state, dt);
   }
+  if (state.stagger && state.phase === "STAGGER") {
+    return stepStagger(world, state, dt, input);
+  }
+  if (state.dash && state.phase === "DASH") {
+    return stepDash(world, state, dt, input);
+  }
   return stepGrounded(world, state, dt, input);
+}
+
+/**
+ * One step of an open recovery window.
+ *
+ * Structurally identical to `stepDash`, and that is the point: it replaces the
+ * target velocity and counts the window down, and every metre of displacement is
+ * produced by `stepGrounded`. The two differences are both about authorship rather
+ * than physics:
+ *
+ *   1. THE PLAYER'S INPUT IS DISCARDED. That is what "recovery" means — you are not
+ *      steering. It is also the entire cost of the window, and it is why the
+ *      shortest legal recovery still costs something.
+ *   2. The push DECAYS across the window, so control returns gradually instead of
+ *      snapping back. `stepGrounded` blends toward the target, so a decaying target
+ *      reads as regaining your feet.
+ */
+function stepStagger(
+  world: CollisionWorld,
+  state: MotionState,
+  dt: number,
+  input: MotionInput,
+): MotionResult {
+  const stagger = state.stagger!;
+  const elapsedMs = input.reducedMotion
+    ? stagger.durationMs
+    : stagger.elapsedMs + dt * 1000;
+
+  const remaining =
+    stagger.durationMs <= 0
+      ? 0
+      : Math.max(0, 1 - stagger.elapsedMs / stagger.durationMs);
+  const pushSpeed = stagger.speed * remaining;
+
+  const result = stepGrounded(world, state, dt, {
+    ...input,
+    targetVelX: stagger.dirX * pushSpeed,
+    targetVelZ: stagger.dirZ * pushSpeed,
+  });
+  const events = [...result.events];
+
+  // Shoved off a ledge is a fall, exactly as running off one is.
+  if (AIRBORNE_PHASES.has(result.state.phase) || !result.state.grounded) {
+    events.push("staggerEnded");
+    return { state: { ...result.state, stagger: null }, events };
+  }
+
+  if (elapsedMs >= stagger.durationMs) {
+    events.push("staggerEnded");
+    return {
+      state: {
+        ...result.state,
+        phase: stagger.fromPhase,
+        capsuleHeight:
+          stagger.fromPhase === "CROUCH"
+            ? CROUCH_HEIGHT
+            : result.state.capsuleHeight,
+        stagger: null,
+      },
+      events,
+    };
+  }
+
+  return {
+    state: {
+      ...result.state,
+      phase: "STAGGER",
+      stagger: { ...stagger, elapsedMs },
+    },
+    events,
+  };
+}
+
+/**
+ * One step of an open burst.
+ *
+ * The only thing this function does that grounded motion does not is REPLACE THE
+ * TARGET VELOCITY and count down the window. Every metre of displacement is
+ * produced by `stepGrounded`, which is the same call ordinary walking makes.
+ * There is no second integrator here and no path by which one could be added
+ * without deleting this comment.
+ */
+function stepDash(
+  world: CollisionWorld,
+  state: MotionState,
+  dt: number,
+  input: MotionInput,
+): MotionResult {
+  const dash = state.dash!;
+  const elapsedMs = input.reducedMotion
+    ? dash.durationMs
+    : dash.elapsedMs + dt * 1000;
+
+  const result = stepGrounded(world, state, dt, {
+    ...input,
+    targetVelX: dash.dirX * dash.speed,
+    targetVelZ: dash.dirZ * dash.speed,
+  });
+  const events = [...result.events];
+
+  // A burst off a ledge is a fall, exactly as running off one is. Grounded motion
+  // has already made that decision; the window just closes with it.
+  if (AIRBORNE_PHASES.has(result.state.phase) || !result.state.grounded) {
+    events.push("dashEnded");
+    return { state: { ...result.state, dash: null }, events };
+  }
+
+  if (elapsedMs >= dash.durationMs) {
+    events.push("dashEnded");
+    return {
+      state: {
+        ...result.state,
+        phase: dash.fromPhase,
+        capsuleHeight:
+          dash.fromPhase === "CROUCH" ? CROUCH_HEIGHT : result.state.capsuleHeight,
+        dash: null,
+      },
+      events,
+    };
+  }
+
+  // Velocity survives the exit rather than being zeroed, so a burst flows into a
+  // run instead of ending in a stop the player did not ask for.
+  return {
+    state: { ...result.state, phase: "DASH", dash: { ...dash, elapsedMs } },
+    events,
+  };
 }
 
 function stepGrounded(world: CollisionWorld, state: MotionState, dt: number, input: MotionInput): MotionResult {

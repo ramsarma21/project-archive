@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Eighteenth-century New England chimney brickwork, English bond, flat elevation seen straight on. Hand-made clay bricks in warm brick-red and burnt umber, considerable variation brick to brick, several badly spalled and one replaced with a paler brick. Thick pale lime mortar joints, irregular, tooled by hand. Sooty grey-black staining washed down from above, heaviest at the top of the frame and thinning downward. Perfectly overhead orthographic seamless square albedo texture, filling the frame edge to edge. No perspective, no object edges, no background, no border, no cast shadows, no lighting gradient, no vignette. Opposite edges tile invisibly. Flat even illumination. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:20:36.999Z",
+  "files": [
+    "mat-boston-brick-english-a.png"
+  ]
+}

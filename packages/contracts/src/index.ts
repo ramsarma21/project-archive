@@ -9,3 +9,5 @@ export * from "./teks.js";
 export * from "./choreography.js";
 export * from "./assessment.js";
 export * from "./openResponse.js";
+export * from "./progression.js";
+export * from "./progressionRules.js";

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Architectural reference photograph of the TOWER AND STEEPLE ONLY of Old North Church — Christ Church, Boston, built 1723, still standing in the North End — as it stood in 1765. The tower is isolated as a single free-standing object: no church body, no roof, no other buildings, no street, no people, no text or watermark. Centered, the whole tower from base to weathervane inside the frame with clear margin, THREE-QUARTER VIEW from slightly below so the projecting stage ledges read as undersides, plain light gray studio background, soft even daylight, no cast shadow.\n\nVery tall and narrow: about five times as tall as it is wide, a slender vertical object filling the frame.\n\nDocumented features, all of which must be present and clearly readable:\n- A square base of deep red brick in Flemish bond with a moulded water table, rising through the lower half of the tower, with one small arched opening.\n- Above it a white-painted wooden steeple of THREE DIMINISHING SQUARE STAGES and then an octagonal spire, every stage set back from the one below with a DEEP PROJECTING MOULDED CORNICE LEDGE between them that is wide enough to stand on. Those stepped ledges are the most important feature of the picture.\n- The belfry stage: tall arched LOUVRED OPENINGS on each face with keystones, over a heavy projecting sill band.\n- The clock stage above it: pilasters at the corners, a white circular clock dial, and a dentilled cornice.\n- The gallery stage above that: an open square BALUSTRADED PARAPET with turned balusters and urn finials on the corner pedestals.\n- The spire: a slender white OCTAGONAL SPIRE with a small octagonal lantern at its foot, rising to a gilt ball and an iron WEATHERVANE.\n- Crisp classical mouldings, dentils and pilasters in white lead paint over timber, weathered.\n\nRealistic painted timber and brick materials, muted colours, photogrammetry reference plate style, evenly lit for 3D reconstruction.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:16:23.803Z",
+  "files": [
+    "steeple-meetinghouse-climbable-b.png"
+  ]
+}

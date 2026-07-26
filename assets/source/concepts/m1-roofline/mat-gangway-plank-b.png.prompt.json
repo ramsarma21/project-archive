@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Old builder's staging boards, colonial New England, viewed from directly above. Five or six wide unpainted spruce planks of slightly different widths butted together, weathered to a dry bone-grey with tan streaks. Coarse open grain, torn fibres where a saw ran out, splinter edges, mortar spatter and tar spots trodden in, boot scuffing worn pale along the middle of each board. Wrought iron nails with square heads, some proud, some sunk, each ringed with rust. Fine dark shadow lines in the board gaps. Perfectly overhead orthographic seamless square albedo texture, filling the frame edge to edge. No perspective, no object edges, no background, no border, no cast shadows, no lighting gradient, no vignette. Opposite edges tile invisibly. Flat even illumination. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:20:18.413Z",
+  "files": [
+    "mat-gangway-plank-b.png"
+  ]
+}

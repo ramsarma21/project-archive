@@ -10,38 +10,48 @@ in-world.
 The core promise: **no two players play the same game, but every player learns the
 same required history.**
 
-## Status: built
+## Status
 
-The game is implemented and playable, not a paper design. The Boston 1765 reference
-chapter is built end to end:
+**Mission 1 and PvP are playable end to end.** The rest of the Boston chapter is
+scaffolded but not authored: all fourteen operations are declared, thirteen of them
+carry `built: false` and the hub draws those as forthcoming. Adding one is changing
+a line of that array into a definition — content and assets, not code.
 
-- **Milestones M0–M5 complete** — foundations, stamina + chase, watchers/suspicion/
-  heat, Standing + reactive world, content + assets, and micro tracking + the CP1
-  debrief.
-- **Cognitive learning core** — event-sourced deterministic runtime with the full
-  exposure → gate → understanding → demonstration → reassessment lifecycle, the
-  two-tier concept ledger, and seeded, reproducible assessment selection.
-- **World v3** — the "big street" district with **36 explorable interiors**, all
-  visible production geometry imported through the asset pipeline.
-- **All suites green** — workspace typechecks, runtime tests, web (world/collision/
-  stealth/chase) tests, content validators, API tests, and the browser QA harnesses
-  (zero game/page/HTTP/WebGL errors, non-black rendering).
+A run of Mission 1 is: the hub, a mandatory three-minute learning module, a held
+briefing moment where the System annotates the world, three minutes of stealth
+parkour against a dawn clock, a precision-timed beat at the Liberty Tree, and a gun
+duel where each round's free-response question is graded live and buys 14 balls for
+a right answer or 7 for a wrong one. PvP is that duel between two accounts.
 
 ## Quickstart
 
 ```sh
 pnpm install
-pnpm dev            # runs @pa/api + @pa/web concurrently
+pnpm db:up          # Postgres in Docker — progression will not save without it
+pnpm db:migrate
+pnpm dev            # @pa/api on :3001 and @pa/web on :5173
+```
 
+Then open **http://localhost:5173**. Sign in with Google, or take the local-profile
+path on the landing page, which runs the hub as labelled practice that saves nothing.
+
+To duel yourself, open `http://localhost:5173/src/pvp/pvp.html` in a normal window
+and again in a private one, and sign in as a different account in each. Two windows
+are needed because a duel is between two accounts and one browser context holds one
+session — joining your own lobby is refused by name.
+
+Grading needs a TrueFoundry credential. `packages/grading` accepts the generic
+`TRUEFOUNDRY_API_KEY` outside production, so a working `.env` is enough; without one,
+answers fall back to granting the maximum, which looks like working grading and is
+not. See `.env.example`.
+
+```sh
 # verify
 pnpm typecheck
 pnpm test
+pnpm lint
 pnpm --filter @pa/web build
 ```
-
-Google login and save persistence need the API configured (see `.env.example` and
-`infra/README.md`). The full verification matrix is in
-[`docs/process/QA-PLAYBOOK.md`](docs/process/QA-PLAYBOOK.md).
 
 ## Documentation
 
@@ -79,6 +89,14 @@ contract. Then:
 
 ### `docs/archive/2026-07/` — historical build briefs and integration handoffs
 Point-in-time planning and milestone-integration notes, kept for provenance.
+
+> **A caution on the docs above.** The game was redesigned and its previous
+> implementation deleted — roughly 70,000 lines, including the open-world district,
+> the Standing and chase systems and the formative open-response grading. Documents
+> written for that version still describe it. The ones known to match what is built
+> are [`ARCHITECTURE.md`](ARCHITECTURE.md), the Mission Slate, the M1 fun audit, and
+> the package READMEs under `packages/`. Treat the rest as design intent rather than
+> as a description of the code until it has been checked.
 
 ## Curriculum target
 

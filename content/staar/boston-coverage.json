@@ -1,0 +1,1179 @@
+{
+  "title": "Released TEA item coverage against the 23 Boston chapter student expectations",
+  "generatedAt": "2026-07-26T02:25Z",
+  "bostonSECount": 23,
+  "bostonSESource": "docs/chapters/boston-1765/Concept-Delivery-Map.md, section 'All 23 SEs - classified'",
+  "seStatementSource": "TEA, STAAR Grade 8 Social Studies Assessment Eligible Texas Essential Knowledge and Skills, Revised August 2024 (staar-8-social-studies-assessed-curriculum.pdf). Statements are verbatim.",
+  "administrationsSearched": [
+    "2018 May",
+    "2019 May",
+    "2021 May",
+    "2022 May",
+    "2023",
+    "2024",
+    "2025",
+    "2023 New Question Type Sampler"
+  ],
+  "note2020": "There is no 2020 administration. STAAR was cancelled in spring 2020 and TEA's released-test-questions page has no 2020 tab.",
+  "definitions": {
+    "releasedItemsIndexed": "Items TEA published data for on this SE, from TEA's own student-expectations-tested tables. Metadata is certain; item text may not exist.",
+    "releasedItemsWithPublishedText": "Of those, how many TEA published actual item text for. From 2023 onward TEA publishes text only for non-multiple-choice items, so this number is much smaller than the indexed count for recent years.",
+    "gap": "COVERED_STRONG = several era-appropriate items with text. COVERED = at least one usable era-appropriate item. COVERED_THIN = exactly one usable item. PARTIAL = items exist with text but they miss the clause, era or framing Boston uses. PARTIAL_WRONG_CLAUSE / PARTIAL_WRONG_ERA / PARTIAL_LABEL_ISSUE = the specific reason. GAP_NO_USABLE_ITEM = text exists but no item is usable. GAP_NO_PUBLISHED_TEXT = the item exists but TEA published no text. GAP_NO_SUMMATIVE_ITEM = no item on any summative form.",
+    "authoringRequired": "MANDATORY means in-house authoring is the only way to cover what Boston teaches on this SE. Recommended / Optional mean released coverage exists and authoring adds depth."
+  },
+  "summary": {
+    "sesWithAtLeastOneIndexedItem": 22,
+    "sesWithAtLeastOneTextPublishedItem": 21,
+    "sesWhereAuthoringIsMandatory": 12,
+    "totalIndexedItemsOnBostonSEs": 79,
+    "totalTextPublishedItemsOnBostonSEs": 50,
+    "gapTally": {
+      "COVERED_STRONG": 1,
+      "COVERED": 4,
+      "COVERED_THIN": 3,
+      "PARTIAL": 6,
+      "PARTIAL_WRONG_CLAUSE": 1,
+      "PARTIAL_WRONG_ERA": 3,
+      "PARTIAL_LABEL_ISSUE": 1,
+      "GAP_NO_USABLE_ITEM": 2,
+      "GAP_NO_PUBLISHED_TEXT": 1,
+      "GAP_NO_SUMMATIVE_ITEM": 1
+    }
+  },
+  "standards": [
+    {
+      "studentExpectation": "8.3(A)",
+      "teaStatementVerbatim": "explain the reasons for the growth of representative government and institutions during the colonial period",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 1,
+      "releasedItemsIndexed": 7,
+      "releasedItemsWithPublishedText": 5,
+      "items": [
+        {
+          "administration": "2018 May",
+          "itemNumberAsPublished": 14,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "F",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 9,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 3,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 26,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "G",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 25,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "A",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 18,
+          "itemType": "Drag and Drop",
+          "maxPoints": 2,
+          "correctAnswerFromOfficialKey": "The Virginia House of Burgesses’ Contributions: “Established a representative government”, “Established a method of checks and balances”\nSee Appendix 1.3",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 12,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "COVERED_STRONG",
+      "bostonUse": "Representative government, carried by the town meeting and choice systems. A dual-delivered pattern that gets an Archive Sync.",
+      "whatExists": "Seven indexed items, five with published text, and four of the five are colonial or era-neutral: 2018 #14 (Virginia Company general assembly), 2019 #9 (Mayflower Compact), 2021 #3 (slow communication produced self-government) and 2022 #26 (Samuel Adams on natural rights, 1772). 2022 #26 sits inside Boston's own window and quotes a Boston figure.",
+      "whatIsStillMissing": "Nothing blocking. This is the best-covered Boston SE after 8.4(A).",
+      "authoringRequired": "Optional depth only."
+    },
+    {
+      "studentExpectation": "8.1(A)",
+      "teaStatementVerbatim": "identify the major eras in U.S. history through 1877, including colonization, revolution, creation and ratification of the Constitution, early republic, the Age of Jackson, westward expansion, reform movements, sectionalism, Civil War, and Reconstruction, and describe their causes and effects",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 1,
+      "releasedItemsIndexed": 7,
+      "releasedItemsWithPublishedText": 5,
+      "items": [
+        {
+          "administration": "2018 May",
+          "itemNumberAsPublished": 23,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "A",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 21,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "A",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 6,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 9,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 19,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 2,
+          "itemType": "Drag and Drop",
+          "maxPoints": 2,
+          "correctAnswerFromOfficialKey": "American Revolution Era: “Conflict over issue of mercantilism” and “Ideas of Thomas Paine inspired action; Civil War Era: “Conflict over issue of slavery” and “Ideas of Jefferson Davis inspired action”\nSee Appendix\n1.1",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 2,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "COVERED",
+      "bostonUse": "Archive act-prologue era framing; also mission M11 pairs 8.1(A) with 8.4(A).",
+      "whatExists": "Seven indexed items, five with published text. Four are about the wrong era (Reconstruction, the Second Great Awakening, the Civil War), but 2024 item 2 is a drag-and-drop that explicitly sorts 'Conflict over issue of mercantilism' and 'Ideas of Thomas Paine inspired action' into the American Revolution Era.",
+      "whatIsStillMissing": "Nothing blocking. 2024 #2 is genuinely revolution-era and its correct placements are confirmed by TEA's key.",
+      "authoringRequired": "Optional depth only."
+    },
+    {
+      "studentExpectation": "8.12(A)",
+      "teaStatementVerbatim": "identify economic differences among different regions of the United States",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 4,
+      "releasedItemsIndexed": 3,
+      "releasedItemsWithPublishedText": 1,
+      "items": [
+        {
+          "administration": "2018 May",
+          "itemNumberAsPublished": 22,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 4,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 36,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "D",
+          "reportingCategory": 4,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 10,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 4,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "COVERED",
+      "bostonUse": "Regional economic differences, carried by the economy and trade systems. Mission M2.",
+      "whatExists": "Three indexed items, one with published text: 2018 item 22, 'Which American colony's economy was based primarily on shipbuilding and fishing?' with Massachusetts as the keyed answer.",
+      "whatIsStillMissing": "Depth. One item is coverage, not a bank.",
+      "authoringRequired": "Optional for coverage, needed for depth. 2018 #22 is the most Boston-native released item on this SE."
+    },
+    {
+      "studentExpectation": "8.15(C)",
+      "teaStatementVerbatim": "identify colonial grievances listed in the Declaration of Independence and explain how those grievances were addressed in the U.S. Constitution and the Bill of Rights",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 4,
+      "releasedItemsWithPublishedText": 2,
+      "items": [
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 30,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "G",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 18,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "F",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 8,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "A",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 26,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "COVERED",
+      "bostonUse": "Colonial grievances (writs of assistance, quartering), carried by the Watch, stealth and enforcement systems. A dual-delivered pattern with an Archive Sync. Mission M3 may retain it.",
+      "whatExists": "Four indexed items, two with published text: 2019 #30 (which grievance the Sixth Amendment addresses, with the trial-by-jury and quartering grievances quoted as options) and 2021 #18 (the military-superior-to-civil-power grievance). Both quote the Declaration directly.",
+      "whatIsStillMissing": "Writs of assistance specifically. Both released items look forward from the grievance to its constitutional remedy; Boston needs items that sit in the grievance itself, in 1765-1770 Boston.",
+      "authoringRequired": "Recommended. Coverage exists, the framing is inverted from what Boston needs."
+    },
+    {
+      "studentExpectation": "8.4(A)",
+      "teaStatementVerbatim": "analyze causes of the American Revolution, including the Proclamation of 1763, the Intolerable Acts, the Stamp Act, mercantilism, lack of representation in Parliament, and British economic policies following the French and Indian War",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 1,
+      "releasedItemsIndexed": 6,
+      "releasedItemsWithPublishedText": 6,
+      "items": [
+        {
+          "administration": "2018 May",
+          "itemNumberAsPublished": 5,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 24,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "H",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 38,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "H",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 4,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 7,
+          "itemType": "Short Constructed Response",
+          "maxPoints": 2,
+          "correctAnswerFromOfficialKey": "See Appendix 1.1",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 37,
+          "itemType": "Multiselect",
+          "maxPoints": 2,
+          "correctAnswerFromOfficialKey": "B, C\nSee Appendix 1.7",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": true
+        }
+      ],
+      "gap": "COVERED",
+      "bostonUse": "Mission one's three concepts (postwar British debt and revenue policy, the scope of the Stamp Act, taxation without representation) plus the Proclamation of 1763 in Act 2, the Intolerable Acts in Act 4, and mercantilism as an Act 1 gameplay pattern.",
+      "whatExists": "Six released items across 2018, 2019, 2021, 2022, 2023 and 2024, and TEA published usable text for all six. All six of the SE's named clauses have at least some released coverage: Proclamation of 1763 (2023 #7), Intolerable Acts (2021 #38 and 2022 #4), Stamp Act (2018 #5, 2019 #24, 2023 #7), mercantilism (2024 #37), lack of representation (2019 #24, 2023 #7), postwar British economic policies (2018 #5, 2023 #7).",
+      "whatIsStillMissing": "Two things. First, no released multiple-choice item asks about the Stamp Act's SCOPE on printed and legal paper, which is the specific mission-one concept. The only released source that states it is the 2023 short-constructed-response rubric, whose bullet reads 'All colonists had to pay taxes on documents and paper.' Second, the mercantilism clause's only dedicated item (2024 #37) depends on a cartoon TEA did not publish in reproducible form.",
+      "authoringRequired": "Optional, not mandatory. Author Stamp-Act-scope items to depth against the 2023 rubric language; author a mercantilism item with our own stimulus."
+    },
+    {
+      "studentExpectation": "8.15(A)",
+      "teaStatementVerbatim": "identify the influence of ideas from historic documents, including the Magna Carta, the English Bill of Rights, the Mayflower Compact, and the Federalist Papers, on the U.S. system of government",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 3,
+      "releasedItemsWithPublishedText": 1,
+      "items": [
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 11,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "A",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 34,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "D",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 13,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "D",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "COVERED_THIN",
+      "bostonUse": "Historic documents and the 'rights of Englishmen' argument, carried by broadsides and dialogue.",
+      "whatExists": "Three indexed items, one with published text: 2022 item 11, which keys the English Bill of Rights as the greatest influence on the first ten amendments. That is precisely the document Boston's 'rights of Englishmen' argument rests on.",
+      "whatIsStillMissing": "Depth, and any item that uses the Magna Carta or the English Bill of Rights in a pre-1776 colonial argument rather than looking back from the Constitution.",
+      "authoringRequired": "Recommended for depth."
+    },
+    {
+      "studentExpectation": "8.15(E)",
+      "teaStatementVerbatim": "explain the role of significant individuals such as Thomas Hooker, Charles de Montesquieu, and John Locke in the development of self-government in colonial America",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 1,
+      "releasedItemsWithPublishedText": 1,
+      "items": [
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 29,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        }
+      ],
+      "gap": "COVERED_THIN",
+      "bostonUse": "Locke and Montesquieu, carried by broadsides and dialogue. Mission M4.",
+      "whatExists": "Exactly one item in seven administrations: 2021 item 29 on Thomas Hooker's Fundamental Orders of Connecticut. TEA published its text.",
+      "whatIsStillMissing": "Locke and Montesquieu, who are the two individuals Boston's M4 names. The SE lists Hooker, Montesquieu and Locke; only the Hooker branch is covered. Note the 2023 sampler item 1 does key Charles de Montesquieu, but the sampler carries weaker provenance and the item is about the three branches of government, not colonial self-government.",
+      "authoringRequired": "MANDATORY for Locke and Montesquieu."
+    },
+    {
+      "studentExpectation": "8.19(A)",
+      "teaStatementVerbatim": "define and give examples of unalienable rights",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 2,
+      "releasedItemsWithPublishedText": 1,
+      "items": [
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 31,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 20,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "COVERED_THIN",
+      "bostonUse": "Unalienable and natural rights, carried by the town meeting and broadsides. A dual-delivered pattern with an Archive Sync. Mission M9.",
+      "whatExists": "Two indexed items, one with published text: 2021 item 31, which asks for an example of an unalienable right from the Declaration. Also relevant, 2022 #26 (labelled 8.3(A)) quotes Samuel Adams on the natural rights of the Colonists in 1772, which is the same idea in Boston's own era.",
+      "whatIsStillMissing": "Depth. One directly-labelled item.",
+      "authoringRequired": "Recommended for depth."
+    },
+    {
+      "studentExpectation": "8.10(C)",
+      "teaStatementVerbatim": "analyze the effects of physical and human geographic factors such as weather, landforms, waterways, transportation, and communication on major historical events in the United States",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 2,
+      "releasedItemsIndexed": 6,
+      "releasedItemsWithPublishedText": 4,
+      "items": [
+        {
+          "administration": "2018 May",
+          "itemNumberAsPublished": 16,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "F",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 18,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 27,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 38,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "F",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 34,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "D",
+          "reportingCategory": 2,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 22,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 2,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "PARTIAL",
+      "bostonUse": "Waterways and communication: the harbor and the committees of correspondence. Mission M8.",
+      "whatExists": "Six indexed items, four with published text: 2018 #16 (city population 1840-1870), 2019 #18 (Oglethorpe 1733 on rivers as a defensive frontier), 2021 #27 (Louisiana Purchase and the Mississippi) and 2022 #38 (Union railroads). 2019 #18 is the only colonial one.",
+      "whatIsStillMissing": "Anything about a harbor as an economic and informational artery, or about a communication network between towns. The released items treat waterways as transport or defense, never as a news network.",
+      "authoringRequired": "MANDATORY for Boston's framing."
+    },
+    {
+      "studentExpectation": "8.11(A)",
+      "teaStatementVerbatim": "analyze how physical characteristics of the environment influenced population distribution, settlement patterns, and economic activities in the United States",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 2,
+      "releasedItemsIndexed": 7,
+      "releasedItemsWithPublishedText": 4,
+      "items": [
+        {
+          "administration": "2018 May",
+          "itemNumberAsPublished": 8,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 40,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "G",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 8,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "F",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 6,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "G",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 10,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 2,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 21,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "D",
+          "reportingCategory": 2,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 5,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 2,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "PARTIAL",
+      "bostonUse": "Geography drives economy: the port. A dual-delivered pattern that gets an Archive Sync.",
+      "whatExists": "Seven indexed items, four with published text. Two are colonial: 2018 #8 (the Proclamation of 1763 boundary at the Appalachians) and 2022 #6 (where to settle to grow tobacco in the early 1700s). 2018 #8 is a bonus, because its subject matter is an 8.4(A) clause even though TEA labelled it 8.11(A).",
+      "whatIsStillMissing": "Any item where a natural harbor is the correct answer. 2021 #8 offers 'Natural harbors for whaling' as a distractor and nothing more.",
+      "authoringRequired": "MANDATORY for the port framing; released items give useful breadth."
+    },
+    {
+      "studentExpectation": "8.12(C)",
+      "teaStatementVerbatim": "analyze the causes and effects of economic differences among different regions of the United States at selected times",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 4,
+      "releasedItemsIndexed": 3,
+      "releasedItemsWithPublishedText": 2,
+      "items": [
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 14,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "G",
+          "reportingCategory": 4,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 3,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 4,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 39,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "A",
+          "reportingCategory": 4,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "PARTIAL",
+      "bostonUse": "Causes and effects of regional economic differences. Ambient / Archive cross-era synthesis, completed in later chapters. Mission M10.",
+      "whatExists": "Three indexed items, two with published text: 2021 #14 (New England shipbuilding and excellent harbors produce dried fish exports) and 2022 #3 (1840 enslaved population by region). 2021 #14 is colonial New England and directly relevant.",
+      "whatIsStillMissing": "Little. 2021 #14 covers the Boston-side economics well.",
+      "authoringRequired": "Optional depth only."
+    },
+    {
+      "studentExpectation": "8.14(A)",
+      "teaStatementVerbatim": "explain why a free enterprise system of economics developed in the new nation, including minimal government regulation, taxation, and property rights",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 4,
+      "releasedItemsIndexed": 4,
+      "releasedItemsWithPublishedText": 2,
+      "items": [
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 14,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 4,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 37,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 4,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 16,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "D",
+          "reportingCategory": 4,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 3,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 4,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "PARTIAL",
+      "bostonUse": "Free enterprise, taxation and property rights, carried by the economy and trade systems. Mission M4.",
+      "whatExists": "Four indexed items, two with published text: 2019 #14 (a four-cell mercantilism diagram; opposition to that system produced free enterprise) and 2022 #37 (Jefferson 1801 on minimal regulation). 2019 #14 is the closest thing in the whole corpus to a mercantilism item with usable text.",
+      "whatIsStillMissing": "Anything on taxation or property rights in the colonial period, which are the two branches of this SE Boston's world actually models.",
+      "authoringRequired": "Recommended. The regulation branch is covered; taxation and property rights are not."
+    },
+    {
+      "studentExpectation": "8.20(A)",
+      "teaStatementVerbatim": "evaluate the contributions of the Founding Fathers as models of civic virtue",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 2,
+      "releasedItemsWithPublishedText": 1,
+      "items": [
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 23,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 21,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "PARTIAL",
+      "bostonUse": "Civic virtue, carried by Samuel Adams and John Adams as NPC exemplars. Mission M7.",
+      "whatExists": "Two indexed items, one with published text: 2022 item 23 on Jefferson's writing of the Declaration.",
+      "whatIsStillMissing": "Samuel Adams and John Adams as models of civic virtue, which is Boston's whole use of this SE. See also 2019 #43, which is about John Adams and the Boston Massacre trial but which TEA labelled 8.20(B); that label carries a review flag.",
+      "authoringRequired": "Recommended, with 2019 #43 resolved by a reviewer first since it may in substance be the 8.20(A) item Boston needs."
+    },
+    {
+      "studentExpectation": "8.22(A)",
+      "teaStatementVerbatim": "analyze the leadership qualities of elected and appointed leaders of the United States such as George Washington, John Marshall, and Abraham Lincoln",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 3,
+      "releasedItemsWithPublishedText": 3,
+      "items": [
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 23,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 40,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 37,
+          "itemType": "Hot Text",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "history and experience prove that foreign influence is one of the most [harmful enemies] of Republican Government\nSee Appendix 1.8",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": true
+        }
+      ],
+      "gap": "PARTIAL",
+      "bostonUse": "Leadership: Washington takes command at the Siege of Boston. An Act 4 gated fact. Mission M14.",
+      "whatExists": "Three indexed items, all three with published text: 2019 #23 (Lincoln's second inaugural, matched to a leadership quality), 2022 #40 (which president established the cabinet, the title 'Mr. President', and the two-term tradition, keying George Washington) and 2023 #37 (a hot-text item on Washington's Farewell Address, whose excerpt is too damaged in TEA's PDF text layer to transcribe faithfully).",
+      "whatIsStillMissing": "Washington as a military leader, and the Siege of Boston. Every released Washington item is about his presidency. 2019 #23's format, pairing a named quality with an explanation, is a strong authoring template.",
+      "authoringRequired": "MANDATORY for Boston's framing."
+    },
+    {
+      "studentExpectation": "8.4(C)",
+      "teaStatementVerbatim": "explain the issues surrounding important events of the American Revolution, including declaring independence; fighting the battles of Lexington and Concord, Saratoga, and Yorktown; enduring the winter at Valley Forge; and signing the Treaty of Paris of 1783",
+      "teaDesignation": "Readiness",
+      "reportingCategory": 1,
+      "releasedItemsIndexed": 5,
+      "releasedItemsWithPublishedText": 3,
+      "items": [
+        {
+          "administration": "2018 May",
+          "itemNumberAsPublished": 4,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "G",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 35,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 12,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 1,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 35,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "A",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 9,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 1,
+          "readinessOrSupporting": "Readiness",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "PARTIAL_WRONG_CLAUSE",
+      "bostonUse": "Missions M13 and M14 target Lexington and Concord and their result.",
+      "whatExists": "Five indexed items, three with published text: 2018 #4 (Articles of Confederation, under the older meaning of the 8.4(C) code), 2019 #35 (Yorktown 1781) and 2021 #12 (Valley Forge 1777).",
+      "whatIsStillMissing": "Lexington and Concord. No released item found in any administration is about the battles of Lexington and Concord, which is the only 8.4(C) clause Boston carries. The two usable items are Yorktown and Valley Forge, both outside the chapter.",
+      "authoringRequired": "MANDATORY for Boston's clause. The released items are bank depth for 8.4(C) generally, not coverage of what Boston teaches."
+    },
+    {
+      "studentExpectation": "8.21(A)",
+      "teaStatementVerbatim": "identify different points of view of political parties and interest groups on important historical issues",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 2,
+      "releasedItemsWithPublishedText": 1,
+      "items": [
+        {
+          "administration": "2021 May",
+          "itemNumberAsPublished": 23,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 19,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "PARTIAL_WRONG_ERA",
+      "bostonUse": "Patriot versus Loyalist points of view, carried by NPC dialogue and relationships.",
+      "whatExists": "Two indexed items, one with published text: 2021 item 23 on what the Free-Soil and Republican parties had in common in the mid-1800s.",
+      "whatIsStillMissing": "Any colonial-era point-of-view item. Nothing released contrasts Patriot and Loyalist positions, which is the only thing Boston uses this SE for. The 'describes BOTH X and Y' comparison frame does transfer as an authoring template.",
+      "authoringRequired": "MANDATORY."
+    },
+    {
+      "studentExpectation": "8.23(B)",
+      "teaStatementVerbatim": "explain how urbanization contributed to conflicts resulting from differences in religion, social class, and political beliefs",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 2,
+      "releasedItemsIndexed": 2,
+      "releasedItemsWithPublishedText": 2,
+      "items": [
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 16,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "F",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 33,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        }
+      ],
+      "gap": "PARTIAL_WRONG_ERA",
+      "bostonUse": "Urbanization produces conflict, with the 1770 Boston Massacre as the gated event. Missions M5 and M6.",
+      "whatExists": "Two indexed items, both with published text: 2019 #16 (Know-Nothing Party, 1854) and 2022 #33 (nativist slogan, 1857). Both are 19th-century nativism.",
+      "whatIsStillMissing": "Anything colonial. Neither released item touches crowding, soldiers billeted in a town, or class and political friction in a port, which is how Boston delivers this SE.",
+      "authoringRequired": "MANDATORY."
+    },
+    {
+      "studentExpectation": "8.23(E)",
+      "teaStatementVerbatim": "identify the political, social, and economic contributions of women to American society",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 2,
+      "releasedItemsIndexed": 3,
+      "releasedItemsWithPublishedText": 3,
+      "items": [
+        {
+          "administration": "2018 May",
+          "itemNumberAsPublished": 36,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2022 May",
+          "itemNumberAsPublished": 20,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "G",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 20,
+          "itemType": "Drag and Drop",
+          "maxPoints": 2,
+          "correctAnswerFromOfficialKey": "Harriet Beecher Stowe: Wrote about the hardships of slavery, Dorothea Dix: Worked to improve conditions for the mentally ill, Elizabeth Cady Stanton: Led efforts to promote women’s right to vote\nSee Appendix 1.4",
+          "reportingCategory": 2,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": true
+        }
+      ],
+      "gap": "PARTIAL_WRONG_ERA",
+      "bostonUse": "Women's contributions, carried by the Daughters of Liberty boycott thread. Mission M12, with Mercy Otis Warren and Abigail Adams.",
+      "whatExists": "Three indexed items, all three with published text: 2018 #36 (Dorothea Dix), 2022 #20 (Dorothea Dix again, from an 1843 memorial written 'near Boston') and 2023 #20 (a drag-and-drop matching Stowe, Dix and Stanton to their contributions).",
+      "whatIsStillMissing": "Any revolution-era woman. All three released items are 19th-century reform. Mercy Otis Warren and Abigail Adams appear in no released item, which compounds the 8.4(B) gap.",
+      "authoringRequired": "MANDATORY."
+    },
+    {
+      "studentExpectation": "8.20(B)",
+      "teaStatementVerbatim": "analyze reasons for and the impact of selected examples of civil disobedience in U.S. history such as the Boston Tea Party and Henry David Thoreau's refusal to pay a tax",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 2,
+      "releasedItemsWithPublishedText": 1,
+      "items": [
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 43,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "A",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 29,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "PARTIAL_LABEL_ISSUE",
+      "bostonUse": "The Boston Tea Party as civil disobedience, an Act 3 gated fact. Missions M9 and M10.",
+      "whatExists": "Two items indexed under 8.20(B): 2019 #43 (the John Adams list, whose label we have flagged as questionable) and 2023 #29 (multiple-choice, no published text). Separately, 2018 item 39 quotes the Boston Gazette of 1773 on 342 chests of tea and asks why the action was carried out; that is textbook 8.20(B) content, but TEA labelled it 8.20(C), a code retired from the assessed curriculum.",
+      "whatIsStillMissing": "A clean, currently-coded, text-published 8.20(B) Tea Party item. The content exists (2018 #39) under a retired code. Using it as 8.20(B) coverage requires a reviewer to accept our remapping.",
+      "authoringRequired": "Recommended. The 2018 #39 remapping is the cheapest path and needs sign-off, not authoring."
+    },
+    {
+      "studentExpectation": "8.10(A)",
+      "teaStatementVerbatim": "locate places and regions directly related to major eras and turning points in the United States during the 17th, 18th, and 19th centuries",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 2,
+      "releasedItemsIndexed": 3,
+      "releasedItemsWithPublishedText": 1,
+      "items": [
+        {
+          "administration": "2018 May",
+          "itemNumberAsPublished": 2,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "J",
+          "reportingCategory": 2,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 12,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "D",
+          "reportingCategory": 2,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 13,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "B",
+          "reportingCategory": 2,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "GAP_NO_USABLE_ITEM",
+      "bostonUse": "Archive map framing; mission M13 pairs it with the Lexington and Concord corridor.",
+      "whatExists": "Three indexed items but only one with published text, 2018 item 2, and that item is a map-dependent question about a state acquired from Spain in 1819. The 2023 and 2024 items are multiple-choice from the online-only era, so TEA published no text for them.",
+      "whatIsStillMissing": "Any usable item. The one item with text cannot be used without its map, and its content is 1819 Florida.",
+      "authoringRequired": "MANDATORY."
+    },
+    {
+      "studentExpectation": "8.21(B)",
+      "teaStatementVerbatim": "describe the importance of free speech and press in a constitutional republic",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 3,
+      "releasedItemsWithPublishedText": 1,
+      "items": [
+        {
+          "administration": "2019 May",
+          "itemNumberAsPublished": 34,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "F",
+          "reportingCategory": 3,
+          "readinessOrSupporting": null,
+          "teaPublishedItemText": true
+        },
+        {
+          "administration": "2023",
+          "itemNumberAsPublished": 38,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "C",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        },
+        {
+          "administration": "2025",
+          "itemNumberAsPublished": 20,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "A",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "GAP_NO_USABLE_ITEM",
+      "bostonUse": "Free speech and press, carried by the Press system. Mission M5.",
+      "whatExists": "Three indexed items, one with published text: 2019 item 34, which depends on an illustration of people reacting to a modern campaign sign. The 2023 and 2025 items are multiple-choice from the online-only era with no published text.",
+      "whatIsStillMissing": "Any usable item, and in particular anything about a colonial printer, a broadside, or the press as a political instrument, which is Boston's entire M5 premise.",
+      "authoringRequired": "MANDATORY."
+    },
+    {
+      "studentExpectation": "8.19(C)",
+      "teaStatementVerbatim": "identify examples of responsible citizenship, including obeying rules and laws, staying informed on public issues, voting, and serving on juries",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 3,
+      "releasedItemsIndexed": 1,
+      "releasedItemsWithPublishedText": 0,
+      "items": [
+        {
+          "administration": "2024",
+          "itemNumberAsPublished": 17,
+          "itemType": "Multiple Choice",
+          "maxPoints": 1,
+          "correctAnswerFromOfficialKey": "D",
+          "reportingCategory": 3,
+          "readinessOrSupporting": "Supporting",
+          "teaPublishedItemText": false
+        }
+      ],
+      "gap": "GAP_NO_PUBLISHED_TEXT",
+      "bostonUse": "Responsible citizenship, juries and the town meeting. Mission M7, the Boston Massacre trial.",
+      "whatExists": "One indexed item in seven administrations, 2024 item 17, a multiple-choice item. Because 2024 is online-only and multiple-choice items are not reproduced in TEA's appendix, its text is NOT published. We know only that it exists, is Supporting, sits in Reporting Category 3, and keys D.",
+      "whatIsStillMissing": "All item text. Note that 2018 item 33 (a jury-duty handbook item) covers juries but TEA labelled it 8.19(D), a code no longer in the assessed curriculum, so it cannot be claimed as 8.19(C) coverage.",
+      "authoringRequired": "MANDATORY."
+    },
+    {
+      "studentExpectation": "8.4(B)",
+      "teaStatementVerbatim": "explain the roles played by significant individuals during the American Revolution, including Abigail Adams, John Adams, Wentworth Cheswell, Samuel Adams, Mercy Otis Warren, James Armistead, Benjamin Franklin, Crispus Attucks, King George III, Patrick Henry, Thomas Jefferson, the Marquis de Lafayette, Thomas Paine, and George Washington",
+      "teaDesignation": "Supporting",
+      "reportingCategory": 1,
+      "releasedItemsIndexed": 0,
+      "releasedItemsWithPublishedText": 0,
+      "items": [],
+      "gap": "GAP_NO_SUMMATIVE_ITEM",
+      "bostonUse": "Samuel Adams in Act 3, John Adams and Crispus Attucks in Act 2, King George III, Mercy Otis Warren and Abigail Adams, and Washington in Act 4. The delivery map promotes these from context to assessed facts.",
+      "whatExists": "ZERO items across all seven summative administrations, 2018 through 2025. The only TEA-published 8.4(B) item found anywhere is item 7 of the 2023 New Question Type Sampler, which matches Jefferson, Washington, Paine and Crispus Attucks to their contributions. TEA states sampler questions 'may have been previously administered', so that item is published and officially keyed but NOT confirmed to have been given to students.",
+      "whatIsStillMissing": "Everything with confirmed operational provenance. Also note that no released item at all names Samuel Adams, Mercy Otis Warren or Abigail Adams as the answer, and Samuel Adams is Boston's Act 3 gated individual.",
+      "authoringRequired": "MANDATORY. This is the single hardest gap in the chapter. In-house authoring is the only option for Boston's own individuals."
+    }
+  ]
+}

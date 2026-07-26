@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-archive.local/content/m1/schema/codex-card.schema.json",
+  "title": "Codex card definitions",
+  "description": "What each Codex card says. The per-profile STATE of a card — learnedAt and pvpLegalAt — already exists as CodexCardStateSchema in packages/contracts/src/progression.ts; the definitions did not exist anywhere, which is the gap this file closes. `cardId` and `conceptId` are the two fields that join the two, and both spellings are consumed from surfaces that already use them rather than minted here.",
+  "type": "object",
+  "required": ["contentId", "reviewStatus", "namespace", "lifecycle", "cards"],
+  "additionalProperties": true,
+  "properties": {
+    "contentId": { "type": "string", "minLength": 1 },
+    "reviewStatus": { "enum": ["AUTHOR_DRAFT", "HISTORICAL_REVIEW_PENDING", "SME_APPROVED"] },
+    "namespace": { "type": "object", "required": ["pattern", "decision", "why"], "additionalProperties": true },
+    "lifecycle": { "type": "object", "additionalProperties": true },
+    "cards": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/card" } }
+  },
+  "$defs": {
+    "card": {
+      "type": "object",
+      "required": ["cardId", "conceptId", "title", "proposition", "sourceCueId", "askedBy"],
+      "additionalProperties": false,
+      "properties": {
+        "cardId": { "type": "string", "pattern": "^[A-Z]{3}\\.[A-Z0-9]+\\.CARD\\.[A-Z][A-Z0-9_]*\\.v\\d+$" },
+        "conceptId": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}\\.CONCEPT\\.[A-Z][A-Z0-9_]*\\.v\\d+$",
+          "description": "Exactly one concept per card. CodexCardStateSchema.conceptId is a single id, and per-concept mastery is what mints PvP legality."
+        },
+        "legacyConceptId": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "proposition": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the student must be able to state. One card is one proposition; if it needs an 'and' between two unrelated claims it is two cards."
+        },
+        "sourceCueId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The module card that teaches this. Exactly one, so 'learned' is a fact about the deck rather than a judgement about the student."
+        },
+        "askedBy": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "alsoKnownAs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "note": { "type": "string", "minLength": 1 },
+        "new": { "type": "boolean" },
+        "whyNew": { "type": "string", "minLength": 1 },
+        "followUp": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

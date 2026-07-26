@@ -1,0 +1,770 @@
+/* ---------------------------------------------------------------------------
+   The mission container's surfaces.
+
+   Scoped under .msn / .msn-* so nothing here can reach the hub or the module,
+   both of which are owned elsewhere. Colour language follows the System's:
+   cold blue for the interface, warm amber for a warning, and the era's grey-green
+   for the world behind it.
+   --------------------------------------------------------------------------- */
+
+.msn {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: #05080d;
+  color: #dceaf7;
+  font-family: inherit;
+}
+
+.msn-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---- curtains (loading, briefing, returning, duel absent) ---------------- */
+
+.msn-curtain {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 2.5rem clamp(1.5rem, 8vw, 9rem);
+  text-align: center;
+  background:
+    radial-gradient(120% 90% at 50% 40%, rgba(20, 44, 68, 0.55), rgba(5, 8, 13, 0.97));
+}
+
+.msn-curtain-kicker {
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+.msn-curtain-headline {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.4vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.msn-curtain-detail {
+  margin: 0;
+  max-width: 56ch;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #a9c2d8;
+}
+
+.msn-curtain-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.msn-curtain-actions button,
+.msn-block button,
+.msn-confirm-actions button,
+.msn-result-return,
+.msn-hud-leave {
+  padding: 0.55rem 1.1rem;
+  border: 1px solid rgba(120, 186, 234, 0.42);
+  border-radius: 2px;
+  background: rgba(18, 40, 62, 0.72);
+  color: #dceaf7;
+  font: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.msn-curtain-actions button:hover,
+.msn-block button:hover,
+.msn-confirm-actions button:hover,
+.msn-result-return:hover,
+.msn-hud-leave:hover {
+  background: rgba(30, 66, 100, 0.9);
+  border-color: rgba(150, 214, 255, 0.7);
+}
+
+.msn-curtain-actions button.is-dev {
+  border-color: rgba(232, 168, 74, 0.5);
+  color: #f0cd94;
+}
+
+.msn-confirm-actions .is-destructive {
+  border-color: rgba(226, 110, 96, 0.55);
+  color: #f2c0b6;
+}
+
+/* ---- HUD ---------------------------------------------------------------- */
+
+.msn-hud {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 16rem) 1fr minmax(0, 12rem);
+  grid-template-rows: auto 1fr auto auto;
+  grid-template-areas:
+    "top top top"
+    "left . right"
+    "beat beat beat"
+    "keys keys keys";
+  gap: 1rem;
+  padding: 1rem clamp(0.9rem, 3vw, 2rem);
+  pointer-events: none;
+}
+
+.msn-hud button {
+  pointer-events: auto;
+}
+
+.msn-hud-top {
+  grid-area: top;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.msn-hud-ident {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.msn-hud-kicker,
+.msn-hud-card-kicker {
+  font-size: 0.63rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+.msn-hud-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75);
+}
+
+.msn-hud-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The clock's own sky. The strip is filled with the colour the world is actually
+ * that second — both come from `dawnSky` — and the fill is the share of the night
+ * already spent, so the band is a second reading of the digits under it for a
+ * player who is looking at the street rather than at the text.
+ */
+.msn-hud-dawn-band {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 5px;
+  border: 1px solid rgba(104, 164, 212, 0.28);
+  overflow: hidden;
+}
+
+.msn-hud-dawn-band-fill {
+  display: block;
+  height: 100%;
+  box-shadow: 0 0 10px rgba(240, 200, 150, 0.35);
+  transition: width 240ms linear;
+}
+
+.msn-hud-clock-now {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.8);
+}
+
+/* Past dawn is information, not an alarm: nothing fails on time. What it costs
+   is drawn on the cover card, because that is where the consequence lives. */
+.msn-hud-clock.is-over .msn-hud-clock-now {
+  color: #e9c893;
+}
+
+.msn-hud-clock-target {
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7fa5c6;
+}
+
+.msn-hud-left {
+  grid-area: left;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.msn-hud-right {
+  grid-area: right;
+  align-self: center;
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.msn-hud-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(104, 164, 212, 0.24);
+  border-left: 2px solid rgba(120, 186, 234, 0.55);
+  background: rgba(6, 14, 24, 0.66);
+  backdrop-filter: blur(3px);
+}
+
+.msn-hud-objectives {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.msn-hud-objective {
+  display: flex;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #b7cee1;
+}
+
+.msn-hud-objective.is-met {
+  color: #8fe0c0;
+}
+
+.msn-hud-objective.is-optional {
+  opacity: 0.72;
+  font-style: italic;
+}
+
+.msn-hud-objective-mark {
+  color: #5f93bd;
+}
+
+.msn-hud-objective.is-met .msn-hud-objective-mark {
+  color: #8fe0c0;
+}
+
+.msn-hud-meter {
+  position: relative;
+  display: block;
+  height: 3px;
+  width: 100%;
+  min-width: 6rem;
+  background: rgba(120, 186, 234, 0.16);
+  overflow: hidden;
+}
+
+.msn-hud-meter-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #e0b46a, #e2705f);
+  transition: width 120ms linear;
+}
+
+.msn-hud-meter-fill.is-reflex {
+  background: linear-gradient(90deg, #9fd8ff, #5aa6e0);
+}
+
+/* Darkness remaining: cold and full at midnight, gone at sun-up. Deliberately
+   not the warning gradient the suspicion meter uses — this is a resource
+   draining, not a threat rising. */
+.msn-hud-meter-fill.is-shadow {
+  background: linear-gradient(90deg, #2c4a68, #8fb6d8);
+}
+
+.msn-hud-note {
+  font-size: 0.7rem;
+  color: #85a8c6;
+}
+
+.msn-hud-note.is-quiet {
+  color: rgba(133, 168, 198, 0.72);
+  font-variant-numeric: tabular-nums;
+}
+
+.msn-hud-note.is-lost {
+  color: #e9c893;
+}
+
+.msn-hud-cover-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.msn-hud-chain,
+.msn-hud-charges {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid rgba(104, 164, 212, 0.24);
+  background: rgba(6, 14, 24, 0.6);
+}
+
+.msn-hud-chain.is-flow {
+  border-color: rgba(150, 226, 255, 0.65);
+  box-shadow: 0 0 18px rgba(90, 180, 240, 0.28);
+}
+
+.msn-hud-chain-count {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.msn-hud-chain-label,
+.msn-hud-reflex-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #7fa5c6;
+}
+
+.msn-hud-reflex {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  min-width: 7rem;
+}
+
+.msn-hud-keys {
+  grid-area: keys;
+  justify-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2rem 1rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: rgba(150, 178, 202, 0.6);
+}
+
+.msn-hud-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.msn-hud-key kbd {
+  font: inherit;
+  padding: 0.05rem 0.32rem;
+  border: 1px solid rgba(104, 164, 212, 0.3);
+  border-radius: 2px;
+  color: #a8c8e4;
+}
+
+/* ---- the precision beat -------------------------------------------------- */
+/*
+ * One convergence against one fixed line. The lane is the approach — 0.8s of
+ * travel — and the line sits at its right-hand end, so a mark reaching the line
+ * IS the beat. The bands are drawn from BEAT_BANDS, which is the same normalised
+ * space `approach01` is in, so their width is a conversion and never a second
+ * tuning of the windows.
+ */
+
+.msn-beat {
+  grid-area: beat;
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: min(30rem, 70vw);
+  padding: 0.7rem 1rem 0.85rem;
+  border: 1px solid rgba(104, 164, 212, 0.24);
+  border-bottom: 2px solid rgba(224, 180, 106, 0.5);
+  background: rgba(6, 14, 24, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.msn-beat-kicker {
+  font-size: 0.63rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+.msn-beat-lane {
+  position: relative;
+  width: 100%;
+  height: 2.1rem;
+  border-top: 1px solid rgba(104, 164, 212, 0.14);
+  border-bottom: 1px solid rgba(104, 164, 212, 0.14);
+}
+
+/* The one thing that never moves. Everything arrives at it. */
+.msn-beat-line {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #e9dcc0;
+  box-shadow: 0 0 10px rgba(233, 220, 192, 0.55);
+}
+
+.msn-beat-window {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  transform: translateX(50%);
+  background: rgba(120, 186, 234, 0.1);
+}
+
+.msn-beat-window.is-true {
+  background: rgba(143, 224, 192, 0.14);
+}
+
+.msn-beat-window.is-flush {
+  background: rgba(233, 220, 192, 0.24);
+}
+
+.msn-beat-mark {
+  position: absolute;
+  top: 50%;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: -0.375rem 0 0 -0.375rem;
+  border-radius: 50%;
+  background: #e0b46a;
+  box-shadow: 0 0 12px rgba(224, 180, 106, 0.6);
+}
+
+.msn-beat-mark.is-resolved {
+  background: #8fe0c0;
+  opacity: 0.5;
+}
+
+/* The whole chart at its real spacing, before the player commits to it: the
+   double is two marks close together and is visible in advance. */
+.msn-beat-preview {
+  position: absolute;
+  top: 50%;
+  width: 0.34rem;
+  height: 0.34rem;
+  margin: -0.17rem 0 0 -0.17rem;
+  border-radius: 50%;
+  background: rgba(168, 200, 228, 0.55);
+}
+
+.msn-beat-read {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: #b7cee1;
+}
+
+.msn-beat-read.is-heard {
+  color: #e9c893;
+}
+
+.msn-beat-heard {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+/* ---- confirm and block -------------------------------------------------- */
+
+.msn-confirm {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 2rem;
+  text-align: center;
+  background: rgba(5, 8, 13, 0.86);
+  backdrop-filter: blur(4px);
+}
+
+.msn-confirm-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.msn-confirm-copy {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #b7cee1;
+}
+
+.msn-confirm-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.msn-block {
+  position: fixed;
+  right: clamp(1rem, 3vw, 2.5rem);
+  bottom: clamp(1rem, 3vw, 2.5rem);
+  z-index: 45;
+  max-width: 26rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(232, 168, 74, 0.4);
+  border-left: 2px solid rgba(232, 168, 74, 0.8);
+  background: rgba(10, 16, 24, 0.94);
+  color: #e8eef5;
+}
+
+.msn-block-kicker {
+  font-size: 0.63rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #e0b46a;
+}
+
+.msn-block-copy {
+  margin: 0;
+  font-size: 0.87rem;
+  line-height: 1.55;
+  color: #c2d3e2;
+}
+
+.msn-block button {
+  align-self: flex-start;
+}
+
+/* ---- result ------------------------------------------------------------- */
+
+.msn-result {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  padding: clamp(1.5rem, 6vh, 4rem) clamp(1.25rem, 8vw, 10rem);
+  background:
+    radial-gradient(110% 80% at 50% 0%, rgba(22, 48, 74, 0.6), rgba(5, 8, 13, 0.98));
+}
+
+.msn-result.is-failed {
+  background:
+    radial-gradient(110% 80% at 50% 0%, rgba(58, 30, 26, 0.55), rgba(5, 8, 13, 0.98));
+}
+
+.msn-result-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.022) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.msn-result-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.msn-result-kicker,
+.msn-result-section-kicker {
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+.msn-result-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.6vw, 2.5rem);
+  font-weight: 600;
+}
+
+.msn-result-detail {
+  margin: 0;
+  max-width: 70ch;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #b0c7db;
+}
+
+.msn-result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1px;
+  margin: 0;
+  background: rgba(104, 164, 212, 0.2);
+  border: 1px solid rgba(104, 164, 212, 0.2);
+}
+
+.msn-result-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  background: rgba(6, 14, 24, 0.86);
+}
+
+.msn-result-cell dt {
+  font-size: 0.63rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+.msn-result-cell dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #dceaf7;
+}
+
+.msn-result-cell.is-xp dd {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.msn-result-xp {
+  font-size: 1.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+.msn-result-xp-note {
+  font-size: 0.72rem;
+  color: #8fadc8;
+}
+
+.msn-result-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.msn-result-round-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.35rem;
+}
+
+.msn-result-round {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 2px solid rgba(226, 110, 96, 0.7);
+  background: rgba(6, 14, 24, 0.7);
+  font-size: 0.8rem;
+}
+
+.msn-result-round.is-correct {
+  border-left-color: rgba(120, 214, 172, 0.8);
+}
+
+.msn-result-round-no {
+  font-variant-numeric: tabular-nums;
+  color: #7fa5c6;
+}
+
+.msn-result-round-concept {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #b7cee1;
+}
+
+.msn-result-round-bullets {
+  font-variant-numeric: tabular-nums;
+  color: #dceaf7;
+}
+
+.msn-result-pacing {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.msn-result-pacing-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.15rem 1.2rem;
+}
+
+.msn-result-pacing-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(104, 164, 212, 0.12);
+  font-size: 0.8rem;
+  color: #a9c2d8;
+}
+
+.msn-result-pacing-list li span:last-child {
+  font-variant-numeric: tabular-nums;
+  color: #dceaf7;
+}
+
+.msn-result-pacing-list .is-over {
+  color: #e9c893;
+}
+
+.msn-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: auto;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(104, 164, 212, 0.2);
+}
+
+.msn-result-standing {
+  font-size: 0.82rem;
+  color: #97b4cd;
+}
+
+/* The app sets .pa-reduced-motion on the document root. The only transition here
+   is the suspicion meter's width; holding it still keeps the readout legible. */
+.pa-reduced-motion .msn-hud-meter-fill {
+  transition: none;
+}

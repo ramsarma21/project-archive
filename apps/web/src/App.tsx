@@ -1,30 +1,47 @@
-import { useEffect, useState } from "react";
-import { CHAPTER_ID } from "@pa/chapter-boston";
+import { useEffect, useRef, useState } from "react";
 import { Home } from "./pages/Home.js";
+import { Hub } from "./pages/hub/Hub.js";
 import {
   effectiveReducedMotion,
   osPrefersReducedMotion,
   standardizedPreferences,
 } from "./pages/preferences.js";
-import { Play } from "./pages/Play.js";
 import { AppErrorBoundary } from "./AppErrorBoundary.js";
-import { getSession, apiStatus, pullSave, saveOnboardingPreferences } from "./api.js";
-import { getSave, listProfiles, putSave, upsertProfile, type LocalProfile } from "./db.js";
+import { getSession, apiStatus, saveOnboardingPreferences } from "./api.js";
+import { listProfiles, upsertProfile, type LocalProfile } from "./db.js";
 
 // The pre-game calibration interview is deleted (design1 kill list, product
-// decision): profile -> straight into Play with standardized preferences.
+// decision): profile -> straight into the hub with standardized preferences.
+// The hub is the game's only entry point; missions, duels and the capstone are
+// all deployed from it.
 type View =
   | { name: "home" }
-  | { name: "play"; profile: LocalProfile };
+  | { name: "hub"; profile: LocalProfile | null };
+
+/**
+ * `?hub=1` opens the hub directly on the fresh-runner state. The hub is a
+ * presentation surface with no runtime session, so it must not sit behind the
+ * profile list or the account service — this is read synchronously so review
+ * never waits on (or is blocked by) an API that is not running.
+ */
+function hubBypassRequested(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get("hub") === "1";
+  } catch {
+    return false;
+  }
+}
 
 export function App() {
-  const [view, setView] = useState<View>({ name: "home" });
+  const [view, setView] = useState<View>(() =>
+    hubBypassRequested() ? { name: "hub", profile: null } : { name: "home" },
+  );
   const [profiles, setProfiles] = useState<LocalProfile[]>([]);
   const [apiUp, setApiUp] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
   const [googleName, setGoogleName] = useState<string | null>(null);
   const [activeGoogleProfileId, setActiveGoogleProfileId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !hubBypassRequested());
   const [startupError, setStartupError] = useState<string | null>(null);
 
   async function refreshData(): Promise<LocalProfile | null> {
@@ -38,23 +55,14 @@ export function App() {
       const s = await getSession();
       if (s?.authenticated && s.profile) {
         const existing = localProfiles.find((p) => p.profileId === s.profile!.profileId);
-        const remoteSave = await pullSave(s.profile.profileId);
-        const localSave = existing ? await getSave(s.profile.profileId) : undefined;
-        const useRemoteSave = Boolean(remoteSave && (!localSave || remoteSave.revision >= localSave.revision));
+        // The device keeps whichever seed it already had; the account service is
+        // only authoritative for a profile it has never seen here. Progression
+        // itself syncs through apps/web/src/progression, not through this path.
         const variationRootSeedHex =
-          (useRemoteSave
-            ? remoteSave?.variationRootSeedHex
-            : localSave
-              ? existing?.variationRootSeedHex
-              : undefined) ??
-          remoteSave?.variationRootSeedHex ??
-          existing?.variationRootSeedHex ??
-          s.profile.variationRootSeedHex;
+          existing?.variationRootSeedHex ?? s.profile.variationRootSeedHex;
         if (!variationRootSeedHex || !/^[0-9a-f]{64}$/.test(variationRootSeedHex)) {
           throw new Error("The API profile response is out of date.");
         }
-        // The selected save and seed are one deterministic unit. A newer cloud
-        // save must never be replayed using a stale device profile's seed.
         const mirrored: LocalProfile = {
           ...existing,
           profileId: s.profile.profileId,
@@ -63,25 +71,11 @@ export function App() {
           variationRootSeedHex,
           source: "GOOGLE",
           createdAt: s.profile.createdAt,
-          cloudRevision: remoteSave?.revision ?? existing?.cloudRevision ?? 0,
           onboarding: existing?.onboarding ?? s.profile.onboarding ?? undefined,
         };
         await upsertProfile(mirrored);
         if (existing?.onboarding && !s.profile.onboarding) {
           void saveOnboardingPreferences(mirrored.profileId, existing.onboarding);
-        }
-        if (remoteSave && useRemoteSave) {
-          await putSave({
-            profileId: remoteSave.profileId,
-            chapterId: remoteSave.chapterId,
-            packageId: remoteSave.packageId,
-            flowVersion: remoteSave.flowVersion,
-            committedEvents: remoteSave.committedEvents,
-            revision: remoteSave.revision,
-            status: remoteSave.status,
-            updatedAt: remoteSave.updatedAt,
-            presenterSpatial: remoteSave.presenterSpatial,
-          });
         }
         signedInProfile = mirrored;
         setGoogleName(s.profile.displayName);
@@ -123,13 +117,13 @@ export function App() {
     }
   }
 
-  // Every play entry goes straight in-world: a profile without stored
+  // Every play entry goes straight to the hub: a profile without stored
   // preferences receives the standardized defaults (calibrated: false) —
   // there is no upfront interview. Existing profiles with explicitly chosen
   // preferences keep them verbatim. Settings live in the pause surface.
   async function enterPlay(profile: LocalProfile): Promise<void> {
     if (profile.onboarding) {
-      setView({ name: "play", profile });
+      setView({ name: "hub", profile });
       return;
     }
     const onboarding = standardizedPreferences();
@@ -143,8 +137,12 @@ export function App() {
         item.profileId === withDefaults.profileId ? withDefaults : item,
       ),
     );
-    setView({ name: "play", profile: withDefaults });
+    setView({ name: "hub", profile: withDefaults });
   }
+
+  // True while the hub bypass has deferred startup, so leaving the hub knows it
+  // still owes Home a profile load.
+  const startupDeferred = useRef(hubBypassRequested());
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -153,12 +151,16 @@ export function App() {
       url.searchParams.delete("auth");
       window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     }
+    // The hub has no profile and no session. Skipping startup entirely keeps it
+    // off the account service, so reviewing it with the API down produces no
+    // failed requests and a clean console.
+    if (startupDeferred.current) return;
     void refresh().then((profile) => {
       if (enterGame && profile) void enterPlay(profile);
     });
   }, []);
 
-  const viewProfile = view.name === "home" ? null : view.profile;
+  const viewProfile = view.name === "hub" ? view.profile : null;
   // Uncalibrated (standardized-default) profiles follow the OS
   // prefers-reduced-motion query LIVE; explicit choices always win.
   const [osReduced, setOsReduced] = useState(() => osPrefersReducedMotion());
@@ -186,6 +188,32 @@ export function App() {
     };
   }, [viewProfile?.profileId, viewProfile?.onboarding, osReduced]);
 
+  // Ahead of the loading and account-service gates on purpose: the hub needs
+  // neither a profile nor a session to render, so neither should be able to
+  // hide it. A profile, when there is one, only supplies display preferences.
+  if (view.name === "hub") {
+    return (
+      <AppErrorBoundary onReset={() => setView({ name: "home" })}>
+        <Hub
+          reducedMotion={osReduced}
+          onExit={() => {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has("hub")) {
+              url.searchParams.delete("hub");
+              window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+            }
+            if (startupDeferred.current) {
+              startupDeferred.current = false;
+              setLoading(true);
+              void refresh();
+            }
+            setView({ name: "home" });
+          }}
+        />
+      </AppErrorBoundary>
+    );
+  }
+
   if (loading) {
     return <div className="center"><div className="card"><h1>Project Archive</h1><p className="sub">Loading…</p></div></div>;
   }
@@ -206,30 +234,6 @@ export function App() {
     );
   }
 
-  if (view.name === "play") {
-    return (
-      <AppErrorBoundary
-        onReset={() => { void refresh(); setView({ name: "home" }); }}
-      >
-        <Play
-          profile={view.profile}
-          chapterId={CHAPTER_ID}
-          apiUp={apiUp}
-          osReducedMotion={osReduced}
-          onPreferencesSaved={(profile) => {
-            setProfiles((current) =>
-              current.map((item) =>
-                item.profileId === profile.profileId ? profile : item,
-              ),
-            );
-            setView({ name: "play", profile });
-          }}
-          onExit={() => { void refresh(); setView({ name: "home" }); }}
-        />
-      </AppErrorBoundary>
-    );
-  }
-
   return (
     <Home
       profiles={profiles}
@@ -240,6 +244,7 @@ export function App() {
         if (p.source === "GOOGLE" && p.profileId !== activeGoogleProfileId) return;
         void enterPlay(p);
       }}
+      onOpenHub={() => setView({ name: "hub", profile: null })}
       onChanged={() => refresh().then(() => undefined)}
     />
   );

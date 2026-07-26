@@ -1,0 +1,28 @@
+{
+  "name": "@pa/pvp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "test": "node --import tsx --test src/__tests__/*.test.ts"
+  },
+  "dependencies": {
+    "@pa/abilities": "workspace:*",
+    "@pa/assessment": "workspace:*",
+    "@pa/contracts": "workspace:*",
+    "@pa/duel": "workspace:*",
+    "@pa/grading": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3"
+  }
+}

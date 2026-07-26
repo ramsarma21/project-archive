@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A 1765 Boston letterpress handbill, photographed dead flat straight on. PORTRAIT ORIENTATION: the sheet is clearly taller than it is wide, three units wide by four units tall, and the type is set to that tall shape. FULL BLEED: the sheet of paper is LARGER than this picture and is cropped by all four edges of the picture, so every single pixel of the image is paper or printing ink. There is no table, no wall, no desk, no surface, no drop shadow, no vignette and no background anywhere in the image. Laid rag paper, warm off-white oatmeal, visible laid lines and chain lines, light foxing. Letterpress in an 18th century transitional serif with long s, plus one blackletter display line; uneven inking, some letters starved and grey, some over-inked. Generous margins inside the sheet. Small-capital dateline reads \"BOSTON, August 14. 1765.\" Blackletter display line reads \"WHAT greater Joy did NEW-ENGLAND see\". Next line reads \"Than a STAMPMAN hanging on a Tree!\" Then smaller roman text reading \"The Stamp-Master is this Day exhibited in the great Elm at the South End.\" and \"Let every Friend to LIBERTY come and behold him.\" Then a bold spaced-capital line \"NO STAMPED PAPER TO BE HAD.\" At the foot small italic \"EDES and GILL, in Queen-Street.\" No royal arms, no crown and no revenue stamp device anywhere: this sheet is unstamped and that absence is the point. No em dash characters anywhere. Boston 1765, muted and weathered, nothing modern.",
+  "size": "2048x2048",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:20:40.691Z",
+  "files": [
+    "_probe-handbill-portrait.png"
+  ]
+}

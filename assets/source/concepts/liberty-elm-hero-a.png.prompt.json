@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single massive old American elm tree, isolated, centered, the entire tree from root flare to crown inside the frame, straight-on elevation view, plain light gray studio background, soft even lighting, no cast shadow on the ground, no other objects, no people, no text or watermark. A 120-year-old New England white elm, the Liberty Tree at Boston in August 1765: one very heavy fluted bole with pronounced root flare, rising unbranched and solid through the lower two thirds of the tree's height. Above the bole the classic vase-shaped elm form, with three clearly separated tiers of massive near-horizontal scaffold limbs radiating from the bole at roughly 36 percent, 46 percent and 62 percent of the tree's total height; each tier's limbs are as thick as a barrel and spread wide enough to walk out along, and the gaps between tiers are open air. Above the top tier the crown arches out and up into a broad fountain of finer branches. Deeply furrowed gray-brown bark, realistic bark and leaf materials, muted natural colors, game asset reference photo style. Full green midsummer foliage carried in the outer crown so the heavy limb architecture beneath stays clearly readable.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T08:09:56.758Z",
+  "files": [
+    "liberty-elm-hero-a.png"
+  ]
+}

@@ -2,7 +2,7 @@
   "packageId": "PA.BOS.ACT01.OPENRESPONSE",
   "packageVersion": "0.1.0-draft",
   "title": "Boston Act 1 — Cognitive Learning Open-Response Content Package (author draft)",
-  "chapterId": "PA.SEA01.CH02.BOSTON.v1",
+  "chapterId": "boston-1765",
   "missionDayId": "PA.SEA01.CH02.BOSTON.MD01.v1",
   "checkpointId": "BOS.ACT01.CP1.v1",
   "authoredWith": "Claude Opus 4.8",

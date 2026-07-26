@@ -1,5 +1,11 @@
 {
   "001_initial.sql": "e093f039df5e17d832cb5b0bf61ff6a293f87a5dc2de517aa12d96ea842f5fdc",
   "002_open_responses.sql": "8e6aa4234c677d80b2a8268bbf10fba7e5569a2a1338b23e36692b1df3244ed6",
-  "003_open_response_content_versions.sql": "03c8f521dc55c3be19a7711cfe7ca3a09d607e5d156b59ddd07cfd952bee2b25"
+  "003_open_response_content_versions.sql": "03c8f521dc55c3be19a7711cfe7ca3a09d607e5d156b59ddd07cfd952bee2b25",
+  "004_presenter_spatial.sql": "1f314b57ac7de439008892d8e7d287d209bb53cd3e8a54c73fb525dd3a21f6d9",
+  "005_progression.sql": "95f104aae287cfa25382627f3ad8485f64d8ae0c756d0372509dc59cc36dc2ad",
+  "006_assessment_open_response.sql": "991a28ba4afe4e08262bfde9988449b0981992a633e85b225b8c4e8be11980c6",
+  "007_pvp_standing.sql": "b43e39d1d77ef090eccb053309bf3cf78af208b933f870b0bfaa003108be1911",
+  "008_reporting_audit.sql": "67c763f34a3a36e0ee2fb89c82a7ef3ca81fa558de55f65e3d786b7dbc453962",
+  "009_drop_retired_tables.sql": "90ca7cf55fcbf74dc8be96d5a46c21c104e8b0974c9f90541e924c12a6a1b72f"
 }

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Single isolated product photograph of one mid-18th-century British flintlock pistol, circa 1760, Queen Anne style officer's sidearm. Strict left-side profile view, weapon horizontal, muzzle pointing to the right, filling the frame. Walnut stock with a smooth rounded butt, browned steel octagonal barrel about 9 inches, polished brass side plate and trigger guard, visible frizzen, flint jaws, hammer cock and lock plate screw. Plain flat neutral light grey seamless studio background, soft even diffuse lighting, no shadows on the background, no hand, no holster, no table, no other objects, no text, no watermark, no logo, sharp focus across the whole weapon, photorealistic museum catalogue reference photo.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T03:00:50.686Z",
+  "files": [
+    "flintlock-pistol.png"
+  ]
+}

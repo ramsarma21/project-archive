@@ -1,0 +1,78 @@
+{
+  "contentId": "BOS.CAPSTONE.CONTENT.KEY.v1",
+  "reviewStatus": "AUTHOR_DRAFT",
+
+  "whyThisIsItsOwnFile": "packages/assessment cannot grade, and that is structural rather than a convention: AssessmentItemDescriptor has no correctOptionId, no isCorrect on an option, and no rubric, so no bundle built from that package can leak a key. Keeping the key beside the descriptors would put it back. This file is addressed to the grading authority's key table and to nothing else, it is the only place in content/capstone an answer exists, and verify.mjs fails if a key-shaped field appears in an item file.",
+
+  "destination": "packages/grading — the same authority that classifies prose. `GradingAuthority.grade` is async even for selected response precisely because the key lives on the server and not in the form the student is looking at.",
+
+  "releasedItems": {
+    "policy": "Not keyed here. Point the key table at content/staar, where each capture carries `correctAnswerFromOfficialKey` copied from a TEA key document — often a different document from the one the text came from, which is the point of holding both URLs. Copying the letter into this file would give the key two homes and one of them would eventually be wrong.",
+    "items": [
+      {
+        "itemId": "STAAR.2018MAY.G8SS.05",
+        "keyAt": "content/staar/items/staar-2018-may-grade8-social-studies.json → correctAnswerFromOfficialKey"
+      },
+      {
+        "itemId": "STAAR.2019MAY.G8SS.24",
+        "keyAt": "content/staar/items/staar-2019-may-grade8-social-studies.json → correctAnswerFromOfficialKey"
+      }
+    ]
+  },
+
+  "authoredItems": [
+    {
+      "itemId": "BOS.CAP.POSTWAR.ORDERING.v1",
+      "itemVersion": "v1",
+      "correctOptionId": "B",
+      "why": "The debt and the turn to the colonies is the step that connects the war's end to the Act."
+    },
+    {
+      "itemId": "BOS.CAP.POSTWAR.BOUNDARY.v1",
+      "itemVersion": "v1",
+      "correctOptionId": "C",
+      "why": "Parliament looked to the American colonies for part of the revenue."
+    },
+    {
+      "itemId": "BOS.CAP.STAMP.RECALL.v1",
+      "itemVersion": "v1",
+      "correctOptionId": "D",
+      "why": "Printed and legal papers are the taxed category."
+    },
+    {
+      "itemId": "BOS.CAP.STAMP.BOUNDARY.v1",
+      "itemVersion": "v1",
+      "correctOptionId": "C",
+      "why": "A barrel of nails is an ordinary good. The other three are printed or legal papers and all needed the stamp.",
+      "negativeStem": true
+    },
+    {
+      "itemId": "BOS.CAP.STAMP.ORDERING.v1",
+      "itemVersion": "v1",
+      "correctOptionId": "A",
+      "why": "The Act passed in March 1765 and its duties began on 1 November 1765."
+    },
+    {
+      "itemId": "BOS.CAP.REP.RECALL.v1",
+      "itemVersion": "v1",
+      "correctOptionId": "B",
+      "why": "Boston elected its own colonial assembly and no member of Parliament."
+    },
+    {
+      "itemId": "BOS.CAP.REP.BOUNDARY.v1",
+      "itemVersion": "v1",
+      "correctOptionId": "D",
+      "why": "On the colonists' own argument, a tax was lawful only from a body they had elected — their own assembly."
+    }
+  ],
+
+  "openResponseItems": {
+    "policy": "No key. The nine open-response items are classified against the binary rubrics carried in items/open-response.json, by the same authority and the same policy the duel uses. A rubric is not a key and must never be flattened into one."
+  },
+
+  "keyingDiscipline": {
+    "singleCorrect": "Every authored item has exactly one defensible answer. No 'best answer' items, where two options are arguably right and the student is asked to rank them — a 100% per-concept gate has no room for an item a careful student can lose on judgement.",
+    "positionBalance": "A:1 B:2 C:2 D:2. The first draft keyed six of seven to A, because an author writes the correct option first; the options were permuted and this file rewritten with them. verify.mjs recomputes the distribution and fails if any letter takes more than half the keys, so the defect cannot come back through a later edit.",
+    "positionBalanceWhyItMatters": "A capstone at 100% per concept is a gate. A student who notices that A is usually right does not need the history, and the selected-response half of the pool stops measuring anything."
+  }
+}

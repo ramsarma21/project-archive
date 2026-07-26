@@ -22,7 +22,11 @@
 import bpy
 import math
 import os
+import sys
 from mathutils import Vector
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from transcode_static_textures import enforce_texture_policy  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COMPONENTS = os.path.join(ROOT, "build", "door-kit", "components")
@@ -218,6 +222,16 @@ def main():
         export_apply=True,
         use_selection=True,
     )
+    # Meshy returns each component as a PNG albedo plus a PNG normal map, and the
+    # exporter's default image handling keeps both. That shipped six 1024x1024
+    # PNGs, 6.57MB of kit. The three albedos re-encode to JPEG q95 at 43.2-45.7dB;
+    # the three normal maps must NOT, and are the case that proves the policy has
+    # to read the material slot rather than the file size: JPEG below q100
+    # subsamples chroma 4:2:0, which is where a tangent-space map keeps X and Y,
+    # and it cost 2.1-4.1deg of mean normal error here with the quality knob doing
+    # nothing (q85 to q97 moved PSNR 0.05dB). q100 avoids the subsampling and
+    # encodes at 109-121% of the PNG, so there is no JPEG win to have.
+    enforce_texture_policy(FINAL, quality=95, skip_normals=True)
     total = tris(frame) + tris(recess) + tris(leaf)
     print("WROTE", FINAL)
     print("nodes: Door_Frame, Door_Recess, Door_Leaf")

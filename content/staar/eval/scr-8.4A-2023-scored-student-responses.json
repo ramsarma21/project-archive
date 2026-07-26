@@ -1,0 +1,151 @@
+{
+  "datasetId": "STAAR.EVAL.SCR.8.4A.2023",
+  "title": "TEA-scored student responses to the released 2023 STAAR Grade 8 Social Studies short constructed response on 8.4(A)",
+  "capturedAt": "2026-07-26T02:25Z",
+  "whyThisExists": "The build plan's grading-service work item requires the free-response classifier to ship 'behind a human-labeled eval set stocked with correct-but-unusually-worded answers.' This is that eval set, and it is not synthetic. These are real Texas eighth-grade responses to a real STAAR item on the exact standard Boston mission one teaches, each carrying the score a trained TEA scorer awarded and that scorer's written reason. Boundary cases between score points 0, 1 and 2 are the hardest cases our classifier will face, and TEA has already labelled them.",
+  "item": {
+    "itemRef": "STAAR.2023.G8SS.07",
+    "itemFile": "../items/staar-2023-2025-redesign-grade8-social-studies.json",
+    "administration": "2023",
+    "itemNumberAsPublished": 7,
+    "teksAsPublished": "8.4.A",
+    "studentExpectation": "8.4(A)",
+    "reportingCategory": 1,
+    "readinessOrSupporting": "Readiness",
+    "maxPoints": 2,
+    "prompt": "Select TWO of the following issues. How was each issue a cause of the American Revolution?\n• Proclamation of 1763\n• The Stamp Act\n• Lack of representation in Parliament\n• British economic policies following the French and Indian War\nThink about the question carefully. Then enter your answer in the box provided.",
+    "rubricSummary": {
+      "2": "Correct answers that include references to any two of the four issues, with an adequate explanation of each.",
+      "1": "The response provides only half of the correct details.",
+      "0": "The response is incorrect or irrelevant."
+    }
+  },
+  "provenance": {
+    "publisher": "Texas Education Agency, Student Assessment Division",
+    "document": "STAAR Grade 8 Social Studies Short Constructed Response Scoring Guide, Spring 2023",
+    "documentId": "2023-staar-8-social-studies-scoring-guide",
+    "sourceUrl": "https://tea.texas.gov/data-reports/staar/2023-staar-8-social-studies-scoring-guide.pdf",
+    "sha256": "995012859efa567f2b74f2c180ec328632a65cd9a3cc2de08f426bfe199f1438",
+    "teaStatementsVerbatim": [
+      "This State of Texas Assessments of Academic Readiness (STAAR®) constructed-response scoring guide provides student exemplars at all score points for constructed-response questions from the STAAR grade 8 social studies operational test.",
+      "The questions are presented as they appeared on the test, and responses were scored based on the two-point rubrics that were developed with the input of Texas educators.",
+      "The responses in this guide are actual student responses submitted online during the testing window. To protect the privacy of individual students, all names and other references of a personal nature have been altered or removed. Otherwise, the responses appear as the students wrote them and have not been modified."
+    ],
+    "operationalItemConfirmed": true,
+    "operationalItemConfirmedBy": "TEA describes these as coming from 'the STAAR grade 8 social studies operational test', which confirms this item was administered to Texas students."
+  },
+  "transcriptionFidelity": {
+    "spellingPreserved": true,
+    "note": "Student spelling, grammar, capitalization and typos are reproduced exactly as TEA published them ('texes', 'poeple', 'appilation', 'thet', 'Britian', 'reated', 'loas of debt', 'Proclamation of 1863'). Do NOT normalize these. The misspellings and the odd phrasings are the point of the eval set: a classifier that only accepts clean prose will fail real students. TEA states the responses have not been modified apart from removing personal references.",
+    "recoveredFrom": "PDF text layer of the scoring guide, which extracted cleanly for this document."
+  },
+  "responseCount": 12,
+  "countsByScore": { "0": 4, "1": 4, "2": 4 },
+  "responses": [
+    {
+      "responseId": "SCR.8.4A.2023.SP0.R1",
+      "officialScore": 0,
+      "responseText": "All of these lead to the anger and unsatisfaction of the american citizens so they decided to fight back.",
+      "officialScorerAnnotation": "The response attempts to address the prompt but is not specific enough to earn credit. An issue from the prompt is not named or explained.",
+      "issuesAddressed": [],
+      "evalNote": "Vague-but-directionally-true failure. A naive classifier that rewards topical relevance will over-score this."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP0.R2",
+      "officialScore": 0,
+      "responseText": "Proclamation of 1763- It caused wars/fights with ative Americans.\nBritish economic policies- Caused war with Britian",
+      "officialScorerAnnotation": "The response does not address how the issues caused the Revolutionary War.",
+      "issuesAddressed": ["Proclamation of 1763", "British economic policies following the French and Indian War"],
+      "evalNote": "Names two issues correctly and still scores 0. Naming the issue is not the task; explaining causation is. A keyword-matching classifier will over-score this badly."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP0.R3",
+      "officialScore": 0,
+      "responseText": "The Stamp Act was an issue to cause the American Revolution because many the people did not like the Stamp Acts and what it was doing. The British econimic policies following the French and Indian War were an issue to cause the American Revolution because British was just using the people and wasn't being fair to them.",
+      "officialScorerAnnotation": "The response attempts to address the prompt, but the reasoning provided is too vague and undeveloped (\"many the people did not like the Stamp Acts and what it was doing. . . . British was just using the people and wasn't being fair to them\"). A more specific explanation is required to earn a score point.",
+      "issuesAddressed": ["The Stamp Act", "British economic policies following the French and Indian War"],
+      "evalNote": "Long, fluent, on-topic, structurally correct, and still 0. Length and fluency are not evidence of understanding."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP0.R4",
+      "officialScore": 0,
+      "responseText": "British economic policies following the french an indian war and the stamp act lead to the American revolution because britian and America stop trading and the stamp act gave more money to the govennent so America started the America revolution to produce there own resorces.",
+      "officialScorerAnnotation": "The response attempts to address the prompt but provides an incorrect explanation of the first issue (\"britian and America stop trading\"). The explanation provided for the Stamp Act is too vague to receive credit.",
+      "issuesAddressed": ["British economic policies following the French and Indian War", "The Stamp Act"],
+      "evalNote": "Contains an affirmatively wrong historical claim. Tests whether the classifier penalizes incorrect content rather than just rewarding coverage."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP1.R1",
+      "officialScore": 1,
+      "responseText": "stamp act put texes on paper and other stuff which made the poeple mad",
+      "officialScorerAnnotation": "The response addresses only one of the issues from the prompt (\"stamp act put texes on paper and other stuff\").",
+      "issuesAddressed": ["The Stamp Act"],
+      "evalNote": "Eleven words, two misspellings, no capitalization, and it earns half credit because 'taxes on paper' is the substantive core of the Stamp Act rubric bullet. This is the canonical correct-but-unusually-worded case."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP1.R2",
+      "officialScore": 1,
+      "responseText": "Americans wanted to be able to have a say in what laws and acts were passed in parliment, such as the Stamp Act, but the British did not allow it leading to Americans to protest.",
+      "officialScorerAnnotation": "The response earns credit for the explanation of lack of representation in Parliament (\"Americans wanted to be able to have a say in what laws and acts were passed in parliment\"). No explanation of the Stamp Act is provided.",
+      "issuesAddressed": ["Lack of representation in Parliament"],
+      "evalNote": "Mentions the Stamp Act by name but earns nothing for it, because a mention is not an explanation. Tests mention-versus-explanation discrimination."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP1.R3",
+      "officialScore": 1,
+      "responseText": "Lack of representation in Parliament - Let's start with the saying the \"No taxation without representation\" on how people were paying taxes in order to live in a place where they had no say they basically a riot or sorta protest.\nThe Stamp Act - An act which the british government I believe proclaimed as a chance to oppress the people into doing as the British government bid.",
+      "officialScorerAnnotation": "The response earns credit for adequately explaining unfair taxation/lack of representation in Parliament (\"people were paying taxes in order to live in a place where they had no say\"). The explanation provided for the Stamp Act is incorrect.",
+      "issuesAddressed": ["Lack of representation in Parliament", "The Stamp Act"],
+      "evalNote": "Mixed response: one issue right, one issue wrong, net 1. Tests per-issue rather than whole-response scoring."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP1.R4",
+      "officialScore": 1,
+      "responseText": "The Proclamation of 1863 directly correlated to the Revolution because it was one of the first times that the colonists didn't get want they wanted. Lack of representation in Parliament also contributed because the colonists did not want to be taxed without representation.",
+      "officialScorerAnnotation": "The issue of lack of representation in Parliament is sufficient for credit (\"because the colonists did not want to be taxed without representation\"). The explanation provided for the Proclamation of 1763 is lacking in detail and does not receive credit (\"it was one of the first times that the colonists didn't get want they wanted\").",
+      "issuesAddressed": ["Proclamation of 1763", "Lack of representation in Parliament"],
+      "evalNote": "Note the student wrote 'Proclamation of 1863', a hundred-year date error, and TEA did not treat the date error as the disqualifier; the vagueness was. Also note that 'did not want to be taxed without representation' earns credit even though it is close to restating the prompt."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP2.R1",
+      "officialScore": 2,
+      "responseText": "The lack of representation in the Parliament was a big factor in the American Revolution because the citizens felt as if they had no say in anything tat happened within the Parliament. After the French and Indian War Great Britian was in loas of debt so they reated several taxes which angered the citizens.",
+      "officialScorerAnnotation": "The response provides relevant explanation for two causes of the American Revolution (\"the citizens felt as if they had no say in anything tat happened within the Parliament. . . . Great Britian was in loas of debt so they reated several taxes which angered the citizens\"). There is minimal explanation, but enough reasoning is given to achieve two points.",
+      "issuesAddressed": ["Lack of representation in Parliament", "British economic policies following the French and Indian War"],
+      "evalNote": "Full credit with three typos ('tat', 'loas of debt', 'reated'), and the second issue is never named, only described. Tests whether the classifier can credit an unnamed issue from its description alone."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP2.R2",
+      "officialScore": 2,
+      "responseText": "The proclamation of 1763 was a cause because it would not let people settle to the west of the appilation mountains even though people fought and died for that land.\nThe stamp act was a cause because paper, books, and even letters were taxted on the american people.",
+      "officialScorerAnnotation": "The response adequately explains the Proclamation of 1763 and its contribution to the cause of the American Revolution (\"because it would not let people settle to the west of the appilation mountains\"). A second issue, the Stamp Act, is also explained (\"paper, books, and even letters were taxted on the american people\").",
+      "issuesAddressed": ["Proclamation of 1763", "The Stamp Act"],
+      "evalNote": "Full credit. 'paper, books, and even letters' earns the Stamp Act point even though TEA's rubric bullet says 'documents and paper'. The classifier must accept a student's own enumeration of the category."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP2.R3",
+      "officialScore": 2,
+      "responseText": "the proclamation of 1763 was a cause of the american revolution because the people were angry thet they could not settle their territories.\nthe stamp act was a cause of the american revolution because the people were angry that they had to pay to use every day objects like paper.",
+      "officialScorerAnnotation": "The response succinctly explains two causes of the American Revolution: the Proclamation of 1763 (\"because the people were angry thet they could not settle their territories\") and the Stamp Act (\"people were angry that they had to pay to use every day objects like paper\"). Details are minimal but adequate for credit.",
+      "issuesAddressed": ["Proclamation of 1763", "The Stamp Act"],
+      "evalNote": "Full credit with no capitalization at all and 'every day objects like paper' standing in for the Stamp Act's scope. Contrast directly with SP0.R3, which is longer and better spelled and scored 0."
+    },
+    {
+      "responseId": "SCR.8.4A.2023.SP2.R4",
+      "officialScore": 2,
+      "responseText": "The Stamp Act - Taxed all printed material. This angered the colonists and became on eof the reasons they colonies wanted to seperate from Great Britain.\nLack of repersentation in Parliment- The British Monarchy did not account for the general populations opionons. They just did whatever they pleased, this frustruated the colonists and created a reason for them to break away.",
+      "officialScorerAnnotation": "The response provides an explanation of the Stamp Act (\"Taxed all printed material\") and also provides a thorough explanation of the effects of the lack of representation in Parliament (\"The British Monarchy did not account for the general populations opionons. . . . this frustruated the colonists . . .\").",
+      "issuesAddressed": ["The Stamp Act", "Lack of representation in Parliament"],
+      "evalNote": "Full credit. Note the student attributes the problem to 'The British Monarchy' rather than Parliament, a real conceptual slip, and TEA credited it anyway. A classifier tuned too tightly on Parliament-versus-Crown precision will under-score this."
+    }
+  ],
+  "howToUseThis": {
+    "asAClassifierEvalSet": "Feed responseText plus the item prompt and rubric to the grader; compare the predicted score against officialScore. Report per-score-point accuracy, not just overall, since the 0-versus-1 boundary is where TEA's judgment is least obvious.",
+    "hardestPairs": [
+      ["SCR.8.4A.2023.SP0.R3", "SCR.8.4A.2023.SP2.R3"],
+      ["SCR.8.4A.2023.SP0.R2", "SCR.8.4A.2023.SP1.R1"]
+    ],
+    "hardestPairsNote": "In each pair the lower-scoring response is longer or better written than the higher-scoring one. Any classifier that ranks these pairs the wrong way round is scoring style, not history.",
+    "sampleSizeCaveat": "Twelve responses is a smoke test, not a statistically meaningful eval. It is enough to catch a grader that rewards fluency or keyword overlap; it is not enough to certify one. TEA's 2024 and 2025 scoring guides contain further scored exemplars for other standards and can extend this set if a larger sample is needed."
+  }
+}

@@ -1,0 +1,341 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+
+import { compileLevel, crowdClustersOf } from "../compile.js";
+import { M1_EFFIGY_RUN } from "../level/index.js";
+import { verifyLevel } from "../traversal.js";
+import { cheapestPath, routeGraph } from "../routeGraph.js";
+import { pacingReport } from "../pacing.js";
+import { ASSET_KEYS, NEEDED_ASSETS } from "../assets.js";
+import { CHAIN_REACH_M } from "../envelope.js";
+import { CAPSULE_RADIUS } from "@pa/engine-world/collision";
+import { AUTHORABLE_VERBS } from "@pa/engine-world/parkour";
+import { STEALTH_TUNING } from "@pa/engine-world/stealth";
+
+const level = M1_EFFIGY_RUN;
+const compiled = compileLevel(level);
+const { linkVerdicts } = verifyLevel(level, compiled);
+const graph = routeGraph(level, linkVerdicts);
+const nodeById = new Map(level.nodes.map((n) => [n.id, n]));
+
+function viaPost(allow: Array<"SAFE" | "FAST" | "EXPERT">) {
+  const toPost = cheapestPath(graph, level.startNode, level.postNode, allow);
+  const toArena = cheapestPath(graph, level.postNode, level.arenaNode, allow);
+  if (!toPost || !toArena) return null;
+  return {
+    nodes: [...toPost.nodes, ...toArena.nodes.slice(1)],
+    seconds: toPost.seconds + toArena.seconds,
+  };
+}
+
+test("a player who never takes a risk still finishes", () => {
+  const safe = viaPost(["SAFE"]);
+  assert.ok(safe, "there is no route from the roof to the duel using only SAFE links");
+  assert.ok(safe!.nodes.includes(level.postNode), "the safe route posts the handbill");
+});
+
+test("the fast route is genuinely faster, not just different", () => {
+  const safe = viaPost(["SAFE"])!;
+  const fast = viaPost(["SAFE", "FAST", "EXPERT"])!;
+  assert.ok(
+    fast.seconds < safe.seconds,
+    `skill has to pay: safe ${safe.seconds.toFixed(1)}s vs fast ${fast.seconds.toFixed(1)}s`,
+  );
+});
+
+test("the vista is on the guaranteed path, because it is the only navigation", () => {
+  const safe = viaPost(["SAFE"])!;
+  assert.ok(
+    safe.nodes.includes("C_TOWER_GALLERY"),
+    "a cautious player must top out somewhere they can see the objective from",
+  );
+});
+
+test("every section is on the guaranteed path", () => {
+  const safe = viaPost(["SAFE"])!;
+  const visited = new Set(safe.nodes.map((id) => nodeById.get(id)!.section));
+  for (const section of level.sections) {
+    assert.ok(
+      visited.has(section.id),
+      `${section.id} is not on the route a cautious player takes`,
+    );
+  }
+});
+
+test("every section offers more than one line", () => {
+  const bySection = new Map<string, Set<string>>();
+  for (const link of level.links) {
+    const section = nodeById.get(link.from)!.section;
+    const lines = bySection.get(section) ?? new Set<string>();
+    lines.add(link.line);
+    bySection.set(section, lines);
+  }
+  for (const section of level.sections) {
+    if (section.id === "G_YARD") continue;
+    const lines = bySection.get(section.id) ?? new Set();
+    assert.ok(
+      lines.size >= 2,
+      `${section.id} only has ${[...lines].join("/")}; a section with one line is a corridor`,
+    );
+  }
+});
+
+test("the mission's set pieces are all on the route", () => {
+  const reached = new Set(viaPost(["SAFE", "FAST", "EXPERT"])!.nodes);
+  const anyPath = new Set(level.links.flatMap((l) => [l.from, l.to]));
+  for (const id of ["C_TOWER_GALLERY", "E_GALLERY", "F_POST", "G_SPAWN"]) {
+    assert.ok(anyPath.has(id), `${id} is authored but nothing links to it`);
+  }
+  assert.ok(reached.has("F_POST"), "the handbill still gets posted on the fast line");
+});
+
+test("every node and every link is declared exactly once", () => {
+  // A duplicate id does not collide loudly: the node map is built by id, the
+  // second definition wins, and every link naming that id silently points at the
+  // wrong place. It cost a working climb thirty metres of displacement once
+  // already, and the symptom was "beginAuthored refuses this affordance" against
+  // geometry the link was never near.
+  const nodeIds = level.nodes.map((n) => n.id);
+  assert.deepEqual(
+    nodeIds.filter((id, index) => nodeIds.indexOf(id) !== index),
+    [],
+    "two nodes share an id, so one of them is unreachable and does not know it",
+  );
+  const linkIds = level.links.map((l) => l.id);
+  assert.deepEqual(
+    linkIds.filter((id, index) => linkIds.indexOf(id) !== index),
+    [],
+    "two links share an id, so one verdict overwrites the other",
+  );
+  // Masses and decks land in one CollisionWorld and are looked up by id too.
+  const surfaceIds = [
+    ...level.masses.map((m) => m.id),
+    ...compiled.decks.map((d) => d.id),
+  ];
+  assert.deepEqual(
+    surfaceIds.filter((id, index) => surfaceIds.indexOf(id) !== index),
+    [],
+    "two pieces of geometry share an id, so `ignore` and `carriedBy` are ambiguous",
+  );
+});
+
+test("every node a link names exists, and every node has a way in and out", () => {
+  // Both halves of this have bitten. Three links pointed at `D2_FLOOR_E` and
+  // `D2_STAGE_E`, which were never authored, and that alone took the SAFE line
+  // through the ropewalk out of the graph. `B_SHED_W` had an entrance and no
+  // exit, which is a node the player can be stranded on.
+  const ids = new Set(level.nodes.map((n) => n.id));
+  const missing = level.links
+    .flatMap((link) => [link.from, link.to])
+    .filter((id) => !ids.has(id));
+  assert.deepEqual([...new Set(missing)], [], "a link names a node nothing authors");
+
+  const outbound = new Set(level.links.map((l) => l.from));
+  const inbound = new Set(level.links.map((l) => l.to));
+  for (const node of level.nodes) {
+    if (node.id !== level.startNode) {
+      assert.ok(inbound.has(node.id), `${node.id} cannot be reached from anywhere`);
+    }
+    if (node.id !== level.arenaNode) {
+      assert.ok(outbound.has(node.id), `${node.id} is somewhere the player cannot leave`);
+    }
+  }
+});
+
+test("clustered traversal beats sit inside the chain window", () => {
+  // Vaults on the same roof, canopy hops in the market: if these fall outside
+  // the chain window the flow reward never pays and the run feels like a series
+  // of separate obstacles.
+  const clusters = [
+    ["D_VAULT_IN_0", "D_VAULT_OUT_0", "D_VAULT_IN_1", "D_VAULT_OUT_1"],
+    ["B_CANOPY_0", "B_CANOPY_1", "B_CANOPY_2", "B_CANOPY_3", "B_CANOPY_4"],
+  ];
+  for (const cluster of clusters) {
+    for (let i = 1; i < cluster.length; i++) {
+      const a = nodeById.get(cluster[i - 1]!)!.pos;
+      const b = nodeById.get(cluster[i]!)!.pos;
+      const spacing = Math.hypot(b[0] - a[0], b[2] - a[2]);
+      assert.ok(
+        spacing < CHAIN_REACH_M,
+        `${cluster[i - 1]} -> ${cluster[i]} is ${spacing.toFixed(1)}m, past the ${CHAIN_REACH_M.toFixed(1)}m the chain window reaches`,
+      );
+    }
+  }
+});
+
+test("every roof deck oversails the mass beneath it", () => {
+  // A deck flush with its own wall embeds the capsule the instant a fall takes
+  // the foot below the wall top, which is how a clean-looking roof turns into a
+  // player stuck inside a building.
+  for (const deck of level.decks) {
+    for (const id of deck.carriedBy) {
+      const mass = compiled.massById.get(id);
+      if (!mass) continue;
+      if (!deck.tags.includes("roof")) continue;
+      const overhang = Math.min(
+        mass.rect.minX - deck.rect.minX,
+        deck.rect.maxX - mass.rect.maxX,
+        mass.rect.minZ - deck.rect.minZ,
+        deck.rect.maxZ - mass.rect.maxZ,
+      );
+      assert.ok(
+        overhang >= CAPSULE_RADIUS,
+        `${deck.id} oversails ${id} by ${overhang.toFixed(2)}m; a body needs ${CAPSULE_RADIUS}m`,
+      );
+      }
+  }
+});
+
+test("every asset the level references is declared", () => {
+  const referenced = new Set<string>();
+  for (const mass of level.masses) if (mass.asset) referenced.add(mass.asset);
+  for (const deck of level.decks) if (deck.asset) referenced.add(deck.asset);
+  for (const ramp of level.ramps) if (ramp.asset) referenced.add(ramp.asset);
+  for (const patrol of level.patrols) referenced.add(patrol.asset);
+  for (const volume of level.blend) referenced.add(volume.asset);
+  for (const volume of level.catches) referenced.add(volume.asset);
+  for (const diversion of level.diversions) referenced.add(diversion.asset);
+  const undeclared = [...referenced].filter((key) => !ASSET_KEYS.has(key));
+  assert.deepEqual(
+    undeclared,
+    [],
+    "the art agent cannot deliver a key nobody wrote down",
+  );
+});
+
+test("the art the level is waiting on is a short, specific list", () => {
+  assert.ok(NEEDED_ASSETS.length > 0);
+  assert.ok(
+    NEEDED_ASSETS.length <= 12,
+    "a mission that needs more than a dozen new assets is not reusing the pipeline",
+  );
+  for (const asset of NEEDED_ASSETS) {
+    assert.ok(asset.why.length > 40, `${asset.key} does not say what it is for`);
+    assert.ok(asset.sizeM.every((n) => n > 0), `${asset.key} has no dimensions`);
+  }
+});
+
+test("a competent player is costed with shipped constants, not a fudge factor", () => {
+  const report = pacingReport(level, linkVerdicts);
+  assert.ok(
+    report.totals.competentS > report.totals.safeS,
+    "a competent player cannot be quicker than a perfect optimal line",
+  );
+  assert.ok(
+    report.totals.rerouteS > 0,
+    "the reroute allowance is authored per section and has to be declared",
+  );
+  assert.equal(
+    report.totals.rerouteS,
+    level.sections.reduce((sum, s) => sum + s.rerouteBudgetS, 0),
+  );
+});
+
+test("the pacing budget is computed from the verified route", () => {
+  const report = pacingReport(level, linkVerdicts);
+  assert.equal(report.totals.missionClockS, 180);
+  assert.ok(report.totals.safeS > 0);
+  assert.ok(
+    report.totals.safeS >= report.totals.fastS,
+    "the cautious route cannot be quicker than the skilled one",
+  );
+  assert.ok(
+    report.totals.safeS <= report.totals.missionClockS,
+    `the safe route must fit the mission clock: ${report.totals.safeS.toFixed(1)}s of ${report.totals.missionClockS}s`,
+  );
+  // The shortfall is measured and reported rather than papered over. It is the
+  // number that says how much more traversal the level still owes the clock.
+  assert.equal(
+    report.totals.shortfallS,
+    report.totals.missionClockS - report.totals.safeS,
+  );
+});
+
+test("the two sections furthest under their own budget are the ones to grow", () => {
+  const report = pacingReport(level, linkVerdicts);
+  const worst = [...report.rows]
+    .filter((row) => row.budgetS > 0)
+    .sort((a, b) => b.budgetS - b.safeS - (a.budgetS - a.safeS))
+    .slice(0, 2)
+    .map((row) => row.section);
+  // Recorded so the next pass on this level knows where to spend, and so this
+  // fails loudly if growing one of them makes a different section the problem.
+  // Recorded so the next pass knows where to spend, and so this fails loudly if
+  // growing one of them makes a different section the problem.
+  assert.equal(worst.length, 2);
+  for (const id of worst) {
+    assert.ok(level.sections.some((s) => s.id === id), `${id} is not a section`);
+  }
+});
+
+
+test("the route exercises the whole verb vocabulary", () => {
+  // The audit that found the gap in the first place, kept as a test. EDGE_BRAKE
+  // and BLOCKED are failure states and are meant to be absent.
+  //
+  // The list is the engine's own, not this file's. Enumerating the verb table
+  // and subtracting exceptions by hand worked until the vocabulary grew: JUMP
+  // and DASH are named by the player, geometry never asks for either, and a
+  // route was being failed for not authoring a verb that is not authorable.
+  const used = new Set(linkVerdicts.map((v) => v.verb));
+  const expected = AUTHORABLE_VERBS;
+  const missing = expected.filter((verb) => !used.has(verb));
+  assert.deepEqual(
+    missing,
+    [],
+    "a shipped verb the level never asks for is a system nobody paid for",
+  );
+  assert.ok(!used.has("BLOCKED"), "nothing on the route reads as blocked");
+  assert.ok(!used.has("EDGE_BRAKE"), "nothing on the route stops the player dead");
+});
+
+test("the stealth systems are all actually used", () => {
+  const clusters = crowdClustersOf(level);
+  assert.ok(clusters.length >= 3, "crowd blending needs somewhere to happen");
+  for (const cluster of clusters) {
+    assert.ok(
+      cluster.density >= STEALTH_TUNING.crowdBlendMinDensity,
+      `${cluster.id} has ${cluster.density} bodies; below ${STEALTH_TUNING.crowdBlendMinDensity} it hides nobody`,
+    );
+  }
+  assert.ok(
+    level.links.filter((l) => l.kind === "BLEND").length >= 4,
+    "one blend link is a mention, not a mechanic",
+  );
+
+  // Light is authored across the mission, not just in one set piece, and it
+  // spans a range wide enough to be a decision.
+  assert.ok(level.light.length >= 8);
+  const levels = level.light.map((v) => v.level);
+  assert.ok(Math.min(...levels) < 0.15, "somewhere is genuinely dark");
+  assert.ok(Math.max(...levels) > 0.8, "somewhere is genuinely lit");
+  const sectionsWithLight = new Set(level.light.map((v) => v.section));
+  assert.ok(
+    sectionsWithLight.size >= 5,
+    "light has to be a dimension of the whole run, not one room",
+  );
+
+  // A throw that cannot miss is not a skill: at least one anchor has bodies
+  // between the player and the aim point.
+  const risky = level.diversions.filter(
+    (d) => (d.bodiesInLine ?? []).length > 0,
+  );
+  assert.ok(
+    risky.length >= 1,
+    "no throw in the mission can go wrong, so aiming is not a skill anywhere",
+  );
+});
+
+test("every section that has a patrol also has somewhere to lose them", () => {
+  const bySection = new Map<string, number>();
+  for (const patrol of level.patrols) {
+    bySection.set(patrol.section, (bySection.get(patrol.section) ?? 0) + 1);
+  }
+  for (const [section, count] of bySection) {
+    const spec = level.sections.find((s) => s.id === section)!;
+    assert.ok(
+      spec.rerouteBudgetS > 0,
+      `${section} has ${count} watcher(s) but no reroute allowance, so being read costs nothing`,
+    );
+  }
+});

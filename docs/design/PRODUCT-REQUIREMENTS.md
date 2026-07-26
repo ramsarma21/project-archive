@@ -4,7 +4,9 @@
 **Product horizon:** Full Texas Grade 8 U.S. History course through 1877  
 **Validation MVP:** Boston Mission Day 1  
 **First content milestone:** Boston on the Brink, four Mission Days and Mission Debrief  
-**Primary source documents:** `Project-Archive-v3.md`, `Day-1.md`, `Chapter-Day-Template.md`, `Interaction-Spec.md`, `Backend-AI-System.md`, and `Localhost-Text-Slice-Spec.md`
+**Primary source documents:** `Project-Archive-v3.md`, `Day-1.md`, `Chapter-Day-Template.md`, `Interaction-Spec.md`, `Backend-AI-System.md`, and `Localhost-Text-Slice-Spec.md`  
+**Amendment, 24 July 2026:** Principle 2, FR-11, and §17 amended to permit learning-coupled progression and a bounded asynchronous social layer under the guardrails in §17.1, and to separate adaptive mechanical difficulty from adaptive assessment difficulty in §17.2. Derives from the redesign in `docs/design/Game-Concept-The-System.md`.  
+**Amendment, 25 July 2026:** Principle 2, FR-6, FR-11, §17, §17.1, §17.2, and §18 amended to absorb the game restructure. Rank is an integer advancing one step per ten Levels; stat axes, the fixed named set of ability verbs, and Titles are cut; there is one difficulty for everyone and no difficulty dial of any kind; PvE leaderboards and flawless-run tracking are cut and the only leaderboard is PvP; the 3-minute learning module is mandatory and pays no XP; missions carry three attempts with decaying XP and no knowledge checks. The ranking prohibition in §17.1 is deliberately relaxed in one part and retained absolutely in another — see the amendment block at the end of §17.1. Derives from `docs/chapters/boston-1765/Mission-Slate.md` §1 and `.cursor/plans/pvp_and_mastery_redesign_aeaa8e2b.plan.md`; `docs/design/Game-Concept-The-System.md` is superseded and carries a staleness banner.
 
 ## 1. Purpose
 
@@ -113,7 +115,7 @@ A curriculum, technology, accessibility, privacy, or research stakeholder who ne
 ## 6. Product principles and non-negotiable constraints
 
 1. **History is fixed; local consequences are real.** The student cannot alter recorded events, but can alter work quality, timing, object state, attention, routes, relationships, and local outcomes.
-2. **Required learning is path-invariant.** Every legal route, outcome, accessibility profile, offline path, and resume boundary must preserve required curriculum obligations.
+2. **Required learning is path-invariant.** Every legal route, outcome, accessibility profile, progression state, Level, Rank, mission attempt outcome, spent-attempt state, PvP participation, offline path, and resume boundary must preserve required curriculum obligations. A permanently failed mission removes no obligation and closes no learning surface.
 3. **Player-facing content is authored and approved.** Runtime systems may select approved content but may not generate or rewrite history, dialogue, questions, feedback, objectives, or consequences.
 4. **The game never waits for runtime AI.** Selection is local and deterministic. Network or model availability cannot block the required experience.
 5. **Learning is embedded in action.** Jobs, evidence, conversations, work products, and historical pressure carry instruction before the Archive adds explanation.
@@ -286,6 +288,8 @@ The current prototype proves feasibility. It must not be represented as a certif
 ### FR-6: Learning lifecycle
 
 - Track exposure, first understanding, demonstration, and later reassessment as distinct states.
+- Require the learning module before a mission's first attempt and again before every retry. It is always exactly 3 minutes, is never skippable, and pays no XP.
+- Keep every required-learning surface uncapped. The module may be repeated, and the mastery assessment retries with a shrinking scope and fresh items until every concept reaches 100 percent. Attempt economies belong to missions, never to learning (§17.1).
 - Do not count movement, reaction time, route choice, accessibility use, or free-roam duration as learning evidence.
 - Trigger first-understanding checks only after the required evidence threshold.
 - Space Archive Syncs so they do not feel like a quiz block.
@@ -334,7 +338,8 @@ The current prototype proves feasibility. It must not be represented as a certif
 
 - Use Mission Debriefs for chapter-level claim, evidence, and reasoning.
 - Use Season Reviews for common STAAR-style verification and transfer.
-- Keep assessment forms independent of replay route, support history, and learner-state labels.
+- Keep assessment forms, item difficulty, and the correctness bar independent of replay route, support history, learner-state labels, mission attempt history, Level, Rank, PvP standing, and any other progression or social state.
+- Treat mission outcomes and duel verdicts, in PvE and PvP alike, as gameplay results rather than assessment evidence. They may not enter the formal record, be reported as mastery, or reach teachers as standards evidence.
 - Provide teachers aggregate standards-aligned evidence appropriate to their role.
 - Separate exposure, formative interaction, Chapter verification, Season verification, and independent research measures.
 - Do not infer or market an official STAAR score from internal telemetry.
@@ -650,18 +655,18 @@ Project Archive is not:
 
 - a free-form historical sandbox;
 - alternate history;
-- a combat-centered game;
-- a crafting, inventory-grind, collectible, XP, skill-tree, or morality-meter product;
-- a multiplayer or cooperative game;
+- a combat-centered game; the authored duel that closes a mission, and the same format in PvP, are permitted because knowledge is the resource that wins them and the mission itself is traversal, stealth, and precision work, but combat may not spread beyond that bounded beat, may not become the product's centre of gravity, and may not carry gore;
+- a crafting, inventory-grind, or morality-meter product; experience points, Levels, an integer Rank advancing one step per ten Levels, abilities unlocked at Level milestones, and a Codex collection are permitted only as learning-coupled progression bound by §17.1. The lettered E-through-S Rank ladder, stat axes, the fixed named set of ability verbs, and Titles are cut and may not return;
+- a multiplayer, cooperative, shared-session, or open social game; a friends list and opt-in 1v1 PvP duels with a PvP-only ladder are permitted only as the bounded social layer defined in §17.1. No required curriculum may run through them, and PvE has no competitive layer of any kind;
 - a general-purpose AI tutor;
 - a chatbot that invents historical dialogue;
 - a textbook or quiz sequence rendered in 3D;
 - a literal city-scale or photorealistic open world;
 - a simulation where student motor skill determines learning evidence;
-- a system that changes assessment difficulty based on inferred ability;
+- a system that changes required knowledge, assessment difficulty, or the mastery bar based on inferred ability, measured motor skill, accessibility profile, calibration result, Level, Rank, or PvP standing; there is one difficulty for everyone and no difficulty dial of any kind, mechanical or otherwise (§17.2);
 - an official STAAR score predictor;
 - a replacement for a teacher or the complete classroom curriculum without validated evidence;
-- an engagement product optimized for endless play or streaks.
+- an engagement product optimized for endless play, streaks, or compulsion loops.
 
 The Boston Day 1 MVP does not attempt to validate:
 
@@ -672,6 +677,53 @@ The Boston Day 1 MVP does not attempt to validate:
 - commercial learning or STAAR-improvement claims;
 - localization beyond the approved pilot language;
 - production throughput for twenty Chapters.
+
+### 17.1 Progression and social guardrails
+
+Progression and social features are permitted only under every constraint below. These constraints replace the withdrawn non-goal text, bind at the level of §6, and derive from the restructure recorded in `docs/chapters/boston-1765/Mission-Slate.md` §1. A feature that fails any one of them is out of scope rather than out of tune. There are seven, and other documents cite them by that count.
+
+- **Every reward is coupled to learning or skill demonstration.** No XP, Level, Rank, ability unlock, or Codex entry may be granted decoupled from demonstrated learning or demonstrated mission performance. XP has exactly one payer, completing a mission; modules and assessments pay none. Codex cards are minted only at 100 percent per concept. No reward for time spent.
+- **No dark patterns.** No penalty zones, streak shaming, loss-aversion mechanics, artificial scarcity, compulsion or endless-engagement loops, or monetization hooks. Rewards are carrot only. The finite three-attempt mission economy and its decaying XP are the one bounded exception, and they are bounded to the game layer: a spent attempt costs score and nothing else, a failed mission still advances the player, and no attempt economy, decay, or expiry may ever touch a module, an assessment retry, or any other required-learning surface.
+- **The only leaderboard is PvP, and it ranks duel outcomes, never the learning record.** *Relaxed and re-tightened 25 July 2026; the reasoning and the mitigations are recorded in the amendment block at the end of this section.* PvE leaderboards, flawless-run tracking, ghosts, times, and scores are cut outright, so no public ordering of mission performance exists. The PvP ladder may rank match results and Rank. It may never rank, display, publish, or derive from mastery state, concept coverage, assessment scores, module completion, remediation history, or per-question answer accuracy. Ranking learners by their formal learning record remains prohibited absolutely.
+- **The social layer is bounded.** Friend-by-code only, with no user search and no discovery; no free-text chat of any kind; display names must not be real names and no surface may resolve one to a roster identity; opt-in 1v1 duels in the boss-duel format, bracketed by Rank, are the only interaction channel. A duel's free-response answer is grader input, not a message: it is submitted to rubric classification and is never relayed, displayed, or stored as text an opponent can read.
+- **The formal assessment record stays route-independent and private.** Progression state, social state, PvP standing, and ladder position do not alter it, appear in it, or derive from it (FR-11).
+- **Required learning stays path-invariant, ungated, and retryable without limit,** with an accessible floor. This survives the three-attempt mission cap, because **missions are not required learning**: they carry no knowledge checks, and no required concept, exposure obligation, or mastery judgement runs through a mission's win condition. The required-learning surfaces are the mandatory 3-minute module and the mastery assessment, and both stay uncapped — the module is re-run before every attempt and may be repeated, and the assessment retries with a shrinking scope and fresh items until every concept reaches 100 percent. Interposing required instruction before a retry is teaching, not rationing. What may never exist is a limit on how many times a student may attempt to reach mastery, or a spent-attempt economy anywhere on the learning spine. There is one difficulty for everyone (§17.2), so no progression, Rank, or PvP state may gate, ration, or delay required learning.
+- **Accessibility equivalents are preserved for every graded or skill-based beat** (FR-10). Using one carries no progression, grade, ladder, or match penalty and supports no inference about ability.
+
+**Amendment, 25 July 2026 — the PvP ladder and the ranking prohibition.**
+
+The restructure cuts PvE leaderboards and flawless-run tracking outright and leaves exactly one competitive surface, the PvP ladder. That ladder strains the original prohibition harder than a mission-time board ever did. The strain is recorded here rather than resolved by quietly deleting the guardrail.
+
+**The strain is real, and calling it something else would be a word game.** A PvP duel pauses before each of six rounds and asks a free-response history question. A correct answer grants three bullets and a wrong one grants one, so knowledge converts directly into the resource that wins the match. Matchmaking is bracketed by Rank, Rank is Level divided by ten, and Level is driven only by mission XP. A student's standing on that ladder is therefore influenced by what they know. This is materially closer to ranking students by their knowledge than anything the original guardrail contemplated.
+
+**What is relaxed, stated plainly.** Exactly one thing: the product now permits a public standing whose outcome is *partly* determined by history knowledge. What is being ordered is a set of match results — events with winners — not a measurement of a student.
+
+**What is retained, absolutely.** The formal learning record may never be ranked, compared, published, or made visible to another student. Mastery state, concept coverage, assessment scores, first-attempt scores, module completion, remediation history, and per-question answer accuracy sit outside every leaderboard, profile view, and social surface. No ladder may be derived from them, and none may be reverse-inferred from a ladder: a board that published duel accuracy rates, or ordered students by questions answered correctly, would be the prohibited thing wearing the permitted thing's name.
+
+**Why the retained half is the half that protects students.** The harm this guardrail was written against is a child's deficit becoming publicly legible — a durable, unambiguous, school-sanctioned statement that this student knows less than that one. A duel result does not carry that. It is one match, multi-causal, and deniable; the bullet economy is deliberately built so that a mechanically strong player can still win on a single bullet, and a wrong answer costs a round rather than a label. A mastery ranking carries it exactly, permanently, and in the same currency the school already uses to grade. Losing a duel says you lost a duel. Standing last on a mastery board says what you are.
+
+**Mitigations. Each is load-bearing, and none may be dropped without reopening this amendment.**
+
+1. **The formal assessment record stays private, route-independent, and unaffected by PvP standing** (FR-11). PvP results do not enter it, alter it, or derive from it, and they never reach teachers as standards evidence.
+2. **The mastery assessment, not PvP, gates curriculum progression.** Progression is bought with a private, deterministic, multiple-choice gate requiring 100 percent per concept, and that gate has no effect on Rank. Nothing a student does or fails to do in PvP opens or closes a mission set.
+3. **PvP is opt-in and unlocks only after a full chapter is complete.** A student may finish the entire curriculum, reach full mastery, and never appear on a ladder at all.
+4. **Matchmaking is bracketed, not a global ordering.** A student meets peers inside their own Rank bracket. There is no all-class, all-school, or all-product ranking of children, and no bracket may expose the population's full ordering.
+5. **Display names are not real names,** and no social surface resolves one to a roster identity.
+6. **The answer field is not a chat channel.** Typed free-response answers go to rubric classification and are never shown to an opponent as text, so the no-free-text-chat rule holds without exception.
+7. **Rank measures mission performance only.** Level is driven solely by mission XP, and the assessment pays none, so the seed of matchmaking is play rather than knowledge. If XP ever becomes payable for learning, this amendment must be reopened: that one change would convert Rank itself into a public mastery ordering, which is the prohibited thing.
+
+### 17.2 One difficulty, and no knowledge dial
+
+**Rewritten 25 July 2026.** This section used to govern two adaptive axes and permit movement on one of them. The restructure removes the difficulty dial entirely, so what remains is one rule about an axis that no longer moves and one prohibition that was always absolute. The guardrail's intent is unchanged; it is simply now enforced trivially.
+
+- **There is one difficulty for everyone.** No Easy mode, no difficulty bands, no mission levels, no player-minus-mission delta, and no hidden or adaptive per-player easing of any kind. The input bar is authored once, low enough for a school trackpad, and never moves. Detection radii, cone angles, patrol speed, pattern density, timers, and error tolerance are authored constants, not per-player variables. Later missions are harder because their bosses and floors are authored harder, never because a dial turned for one student.
+- **Forbidden, the knowledge axis, unchanged and absolute.** Required concepts, exposure obligations, item and check difficulty, the correctness bar, the number of gating knowledge checks, and how mastery is judged may never adapt to inferred ability, measured motor skill, accessibility profile, calibration result, Level, Rank, or PvP standing. No knowledge dial exists.
+
+The original purpose of the two-axis rule was to stop a mechanical accommodation from quietly becoming a curricular one. That purpose is retained and is now satisfied by construction: with no mechanical dial to turn, there is no adaptive pathway into the knowledge bar at all. Authored difficulty is identical for every student, committed, deterministic, and reproducible (FR-8, FR-9), and no difficulty or performance state is ever exposed to a student as a learner label (principle 9, FR-7).
+
+Failure diagnosis is correspondingly single-axis: a mission attempt either clears or it does not. Nothing infers which axis failed, because the mission no longer measures knowledge. Knowledge is measured per question and per concept in the duel and, for the record that counts, on the mastery assessment.
+
+Accessibility equivalents (FR-10) are not a difficulty setting and are unaffected by this section. They may change input or timing; they may not change information, stakes, meaningful options, consequence range, or the knowledge bar (principle 7).
 
 ## 18. Open product decisions
 
@@ -695,6 +747,7 @@ The following decisions must be closed before the corresponding milestone:
 - Independent assessment partner, instrument ownership, and research protocol.
 - Support and recovery workflow for school administrators.
 - Content update and rollback policy during a study.
+- Whether PvP ships in the pilot at all, since chapter completion is the first point at which it unlocks, and if it does, whether the ladder is live or asynchronous against stored answers. Live duelling suits friend-arranged matches, but same-Rank live matchmaking needs a population a class of 25 cannot supply.
 
 ### Before Season 1
 

@@ -1,0 +1,645 @@
+/* ---------------------------------------------------------------------------
+   PvP surfaces.
+
+   Scoped under .pvp / .pvp-* so nothing here can reach the hub, the mission
+   container or the duel view, all of which are owned elsewhere. Colour language
+   follows the System's: cold blue for the interface, amber for a warning, green
+   for your own side and red for the other one.
+   --------------------------------------------------------------------------- */
+
+.pvp {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: #05080d;
+  color: #dceaf7;
+  font-family: inherit;
+  overflow: hidden;
+}
+
+.pvp-kicker {
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+.pvp-muted {
+  color: #8fa8c0;
+}
+
+.pvp-warn {
+  color: #f2c14e;
+}
+
+.pvp-bad {
+  color: #ff8f8f;
+}
+
+/* ---- lobby ---------------------------------------------------------------- */
+
+.pvp-lobby {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  padding: 2.5rem clamp(1.5rem, 8vw, 9rem);
+  text-align: center;
+  background: radial-gradient(
+    120% 90% at 50% 35%,
+    rgba(20, 44, 68, 0.55),
+    rgba(5, 8, 13, 0.97)
+  );
+}
+
+.pvp-lobby h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.6vw, 2.4rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pvp-lobby p {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #a9c2d8;
+}
+
+.pvp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.pvp-btn {
+  padding: 0.7rem 1.4rem;
+  border-radius: 8px;
+  border: 1px solid #2f4a66;
+  background: #14202e;
+  color: #dceaf7;
+  font: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.pvp-btn:hover:not(:disabled) {
+  background: #1b2c3e;
+  border-color: #47739c;
+}
+
+.pvp-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pvp-btn-primary {
+  background: #1d3f5e;
+  border-color: #47739c;
+}
+
+.pvp-btn-danger {
+  border-color: #6d3138;
+  background: #2a1519;
+  color: #ffbdbd;
+}
+
+.pvp-input {
+  padding: 0.7rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid #2f4a66;
+  background: #0c141d;
+  color: #dceaf7;
+  font: inherit;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-align: center;
+  width: 10ch;
+}
+
+/* The code, big enough to read off one screen and type into another. */
+.pvp-code {
+  font-size: clamp(2.4rem, 8vw, 4rem);
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  color: #9fdcff;
+  padding-left: 0.32em;
+  font-variant-numeric: tabular-nums;
+}
+
+.pvp-handle {
+  font-size: 0.95rem;
+  color: #7ee3d8;
+}
+
+.pvp-error {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #6d3138;
+  background: rgba(60, 20, 26, 0.55);
+  color: #ffbdbd;
+  font-size: 0.9rem;
+  max-width: 56ch;
+}
+
+.pvp-note {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #2b3f55;
+  background: rgba(16, 30, 44, 0.7);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: #a9c2d8;
+  max-width: 62ch;
+  text-align: left;
+}
+
+/* ---- match layout --------------------------------------------------------- */
+
+.pvp-match {
+  flex: 1;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+
+.pvp-body {
+  display: grid;
+  grid-template-columns: 1fr minmax(320px, 26rem);
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .pvp-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+}
+
+.pvp-arena {
+  position: relative;
+  min-height: 0;
+  background: radial-gradient(
+    120% 90% at 50% 40%,
+    rgba(18, 38, 58, 0.5),
+    rgba(4, 7, 11, 0.98)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+/* A mounted arena fills its cell: the centring and the padding above are for the
+   pending surface, which is a block of text, not a canvas. */
+.pvp-arena-live {
+  padding: 0;
+  display: block;
+  overflow: hidden;
+}
+
+.pvp-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.pvp-canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+  /* The pointer aims. A text cursor over the yard reads as a document. */
+  cursor: crosshair;
+}
+
+/* Sight-line notice, over the arena because it changes what to do right now. */
+.pvp-sight {
+  position: absolute;
+  top: 0.85rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(159, 220, 255, 0.35);
+  background: rgba(6, 14, 22, 0.72);
+  color: #9fdcff;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.pvp-stage-keys {
+  position: absolute;
+  bottom: 0.7rem;
+  left: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
+  font-size: 0.7rem;
+  color: rgba(169, 194, 216, 0.72);
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.pvp-stage-keys kbd {
+  font-family: inherit;
+  font-size: 0.68rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  border: 1px solid rgba(107, 138, 168, 0.5);
+  background: rgba(10, 20, 30, 0.7);
+  color: #cfe1f2;
+}
+
+.pvp-side {
+  border-left: 1px solid #1d2a38;
+  background: #080d14;
+  padding: 1.1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .pvp-side {
+    border-left: none;
+    border-top: 1px solid #1d2a38;
+    max-height: 45vh;
+  }
+}
+
+/* ---- the header strip ----------------------------------------------------- */
+
+.pvp-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1.1rem;
+  border-bottom: 1px solid #1d2a38;
+  background: #070c12;
+}
+
+.pvp-strip-group {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.pvp-round {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.pvp-phase {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid #24384c;
+  border-radius: 999px;
+}
+
+.pvp-conn {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pvp-conn-ok {
+  color: #57d38c;
+}
+
+.pvp-conn-off {
+  color: #f2c14e;
+}
+
+/* ---- health and convergence ----------------------------------------------- */
+
+.pvp-fighters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.pvp-fighter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pvp-fighter-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.pvp-fighter-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pvp-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #16202c;
+  overflow: hidden;
+  border: 1px solid #22303f;
+}
+
+.pvp-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 160ms linear;
+}
+
+.pvp-bar-self .pvp-bar-fill {
+  background: linear-gradient(90deg, #2f8f5f, #57d38c);
+}
+
+.pvp-bar-opponent .pvp-bar-fill {
+  background: linear-gradient(90deg, #a33f3f, #ff8f8f);
+}
+
+/* The swing: which way the fight is actually going. Centre is even. */
+.pvp-swing {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: #16202c;
+  border: 1px solid #22303f;
+  overflow: hidden;
+}
+
+.pvp-swing-mid {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #3b5570;
+}
+
+.pvp-swing-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  transition: left 200ms ease, width 200ms ease;
+}
+
+.pvp-swing-ahead {
+  background: #57d38c;
+}
+
+.pvp-swing-behind {
+  background: #ff8f8f;
+}
+
+.pvp-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 0.9rem;
+  font-size: 0.82rem;
+}
+
+.pvp-stat {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #16202c;
+}
+
+.pvp-stat-label {
+  color: #7d94ab;
+}
+
+.pvp-stat-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.pvp-panel {
+  border: 1px solid #1d2a38;
+  border-radius: 10px;
+  background: #0b1219;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.pvp-panel-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+/* ---- the question --------------------------------------------------------- */
+
+.pvp-question {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #e6f1fb;
+  margin: 0;
+}
+
+.pvp-answer {
+  width: 100%;
+  min-height: 8.5rem;
+  resize: vertical;
+  padding: 0.7rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #2f4a66;
+  background: #0c141d;
+  color: #dceaf7;
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.pvp-answer:focus {
+  outline: none;
+  border-color: #47739c;
+}
+
+.pvp-reward {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #8fa8c0;
+}
+
+.pvp-reward b {
+  color: #dceaf7;
+  font-variant-numeric: tabular-nums;
+}
+
+.pvp-verdict {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.pvp-verdict-correct {
+  background: rgba(35, 90, 62, 0.35);
+  border: 1px solid #2f8f5f;
+  color: #a8f0c8;
+}
+
+.pvp-verdict-wrong {
+  background: rgba(90, 40, 40, 0.35);
+  border: 1px solid #a33f3f;
+  color: #ffc4c4;
+}
+
+.pvp-waiting {
+  font-size: 0.88rem;
+  color: #a9c2d8;
+  line-height: 1.55;
+}
+
+/* ---- arena pending -------------------------------------------------------- */
+
+.pvp-pending {
+  max-width: 46rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  text-align: left;
+}
+
+.pvp-pending h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.pvp-telemetry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.55rem;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pvp-telemetry div {
+  border: 1px solid #1d2a38;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  background: #0a1017;
+}
+
+.pvp-telemetry span {
+  display: block;
+  color: #7d94ab;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+
+.pvp-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #8fa8c0;
+}
+
+.pvp-keys kbd {
+  border: 1px solid #2b3f55;
+  border-radius: 5px;
+  padding: 0.1rem 0.4rem;
+  background: #101a24;
+  font: inherit;
+  font-size: 0.72rem;
+  color: #cfe2f2;
+}
+
+/* ---- result and board ----------------------------------------------------- */
+
+.pvp-result {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  padding: 2.5rem;
+  text-align: center;
+}
+
+.pvp-result h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+  font-weight: 600;
+}
+
+.pvp-board {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.pvp-board th {
+  text-align: left;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+  font-weight: 500;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #1d2a38;
+}
+
+.pvp-board td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #121b25;
+  font-variant-numeric: tabular-nums;
+}
+
+.pvp-board tr:last-child td {
+  border-bottom: none;
+}
+
+.pvp-board-you td {
+  color: #9fdcff;
+  font-weight: 600;
+}
+
+.pvp-rejects {
+  font-size: 0.72rem;
+  color: #8a7c4e;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pvp-bar-fill,
+  .pvp-swing-fill {
+    transition: none;
+  }
+}

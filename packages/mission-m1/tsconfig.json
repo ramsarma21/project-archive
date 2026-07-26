@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "paths": {
+      "@pa/beat": ["../beat/src/index.ts"],
+      "@pa/engine-world/collision": ["../engine-world/src/collision.ts"],
+      "@pa/engine-world/parkour": ["../engine-world/src/parkour/index.ts"],
+      "@pa/engine-world/stealth": ["../engine-world/src/stealth/index.ts"],
+      "@pa/engine-world/playerMotion": ["../engine-world/src/playerMotion.ts"],
+      "@pa/engine-world/traversalClassifier": ["../engine-world/src/traversalClassifier.ts"],
+      "@pa/engine-world/fieldSimulation": ["../engine-world/src/fieldSimulation.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["src/__tests__/**"]
+}

@@ -16,160 +16,51 @@ build/
 # content build output
 content/**/compiled/
 
-# generated 3D assets (rebuild via assets/pipeline scripts)
+# ---- runtime world assets: admitted, not allow-listed --------------------
+#
+# apps/web/public/world is what the browser loads, and it is admitted by
+# default. This used to be inverted: the directory was denied and each approved
+# asset was re-admitted with its own `!` line, which meant a newly generated
+# asset was silently excluded until a human remembered to add one. Nothing
+# catches that omission - a missing GLB renders nothing, no test fails, and the
+# world simply has a hole in it. 88 assets, including 13 of the 15 rigged
+# characters, had accumulated behind that pattern.
+#
+# So the default is now the safe direction: forgetting a rule costs repository
+# size, which is visible and reversible, instead of costing an invisible hole.
+# The pipeline stages sources and intermediates under assets/ (denied below) and
+# syncs only finished, approved assets here, so the denials that follow are
+# guards against accidents rather than part of the routine.
+
+# Authoring sources and interchange formats never belong in the served tree.
+apps/web/public/world/**/*.blend
+apps/web/public/world/**/*.blend[0-9]
+apps/web/public/world/**/*.fbx
+apps/web/public/world/**/*.obj
+apps/web/public/world/**/*.mtl
+apps/web/public/world/**/*.abc
+apps/web/public/world/**/*.psd
+apps/web/public/world/**/*.tif
+apps/web/public/world/**/*.tiff
+apps/web/public/world/**/*.exr
+apps/web/public/world/**/*.zip
+
+# Intermediates and experiments, by the pipeline's naming conventions.
+apps/web/public/world/**/*-raw.glb
+apps/web/public/world/**/*-unoptimized.glb
+apps/web/public/world/**/*-wip.glb
+apps/web/public/world/**/*-draft.glb
+apps/web/public/world/**/*-test.glb
+apps/web/public/world/**/*-experiment*.glb
+apps/web/public/world/**/*.tmp.*
+apps/web/public/world/**/tmp/
+apps/web/public/world/**/scratch/
+
+# Pipeline working trees: generated or third-party sources, rebuilt by the
+# assets/pipeline scripts and never served to the browser.
 assets/build/
-apps/web/public/world/
 assets/source/characters/
 assets/source/mixamo/
-
-# Production interaction assets generated and visually approved for runtime.
-!apps/web/public/world/
-apps/web/public/world/*
-!apps/web/public/world/props/
-apps/web/public/world/props/*
-!apps/web/public/world/props/colonial-door.glb
-!apps/web/public/world/props/colonial-door-kit.glb
-!apps/web/public/world/props/first-person-left-arm.glb
-!apps/web/public/world/props/first-person-left-grip.glb
-# world-v3 interior furnishing kit (INTERIORS factory)
-!apps/web/public/world/props/hearth-mantel.glb
-!apps/web/public/world/props/bed-fourpost.glb
-!apps/web/public/world/props/table-chairs-set.glb
-!apps/web/public/world/props/dresser-shelves.glb
-!apps/web/public/world/props/shop-counter-long.glb
-!apps/web/public/world/props/storage-chest.glb
-!apps/web/public/world/props/spinning-wheel.glb
-!apps/web/public/world/props/church-pew-block.glb
-!apps/web/public/world/props/church-pulpit.glb
-!apps/web/public/world/props/tavern-table-set.glb
-!apps/web/public/world/props/candle-sconce.glb
-!apps/web/public/world/props/drying-line-rack.glb
-!apps/web/public/world/props/bookshelf-ledgers.glb
-!apps/web/public/world/props/iron-stove.glb
-!apps/web/public/world/props/washbasin-stand.glb
-!apps/web/public/world/props/tavern-bar-barrels.glb
-# world-v3 wharf & ships (WHARF factory)
-!apps/web/public/world/props/ship-brig-hero.glb
-!apps/web/public/world/props/ship-snow-background.glb
-!apps/web/public/world/props/ship-sloop.glb
-!apps/web/public/world/props/rowboat.glb
-!apps/web/public/world/props/gangplank.glb
-!apps/web/public/world/props/buoy.glb
-!apps/web/public/world/props/wharf-pier-module.glb
-!apps/web/public/world/props/wharf-boardwalk-plank.glb
-!apps/web/public/world/props/bldg-warehouse-wharf-a.glb
-!apps/web/public/world/props/bldg-warehouse-wharf-b.glb
-!apps/web/public/world/props/timber-crane.glb
-!apps/web/public/world/props/bollard.glb
-!apps/web/public/world/props/rope-coil-large.glb
-!apps/web/public/world/props/cargo-net-bundle.glb
-!apps/web/public/world/props/crate-mound.glb
-!apps/web/public/world/props/fish-flakes-rack.glb
-# world-v3 street & civic buildings (STREET & CIVIC factory)
-!apps/web/public/world/props/church-meetinghouse.glb
-!apps/web/public/world/props/bldg-townhouse-civic.glb
-!apps/web/public/world/props/bldg-tavern.glb
-!apps/web/public/world/props/bldg-row-clapboard-a.glb
-!apps/web/public/world/props/bldg-row-clapboard-b.glb
-!apps/web/public/world/props/bldg-row-clapboard-c.glb
-!apps/web/public/world/props/bldg-row-brick-a.glb
-!apps/web/public/world/props/bldg-row-brick-b.glb
-!apps/web/public/world/props/bldg-row-shop.glb
-!apps/web/public/world/props/bldg-warehouse-street.glb
-!apps/web/public/world/props/bldg-scaffold.glb
-!apps/web/public/world/props/town-gate.glb
-!apps/web/public/world/props/skyline-cluster-a.glb
-!apps/web/public/world/props/skyline-cluster-b.glb
-!apps/web/public/world/props/skyline-cluster-c.glb
-!apps/web/public/world/props/street-lantern-bracket.glb
-!apps/web/public/world/props/hitching-post.glb
-!apps/web/public/world/props/firewood-stack.glb
-!apps/web/public/world/props/hay-cart.glb
-!apps/web/public/world/props/market-awning.glb
-!apps/web/public/world/props/churchyard-fence.glb
-!apps/web/public/world/props/stone-steps.glb
-# imported colonial road/yard kit (Gemini -> Meshy -> Blender -> sync_web)
-!apps/web/public/world/props/colonial-street-a.glb
-!apps/web/public/world/props/colonial-street-b.glb
-!apps/web/public/world/props/colonial-street-c.glb
-!apps/web/public/world/props/colonial-alley-a.glb
-!apps/web/public/world/props/colonial-alley-b.glb
-!apps/web/public/world/props/colonial-gutter-straight.glb
-!apps/web/public/world/props/colonial-gutter-corner.glb
-!apps/web/public/world/props/colonial-street-junction.glb
-!apps/web/public/world/props/colonial-street-endcap.glb
-!apps/web/public/world/props/colonial-civic-square.glb
-!apps/web/public/world/props/colonial-yard-ground.glb
-!apps/web/public/world/props/colonial-yard-perimeter.glb
-!apps/web/public/world/props/colonial-yard-east-cap.glb
-!apps/web/public/world/props/colonial-liberty-courtyard.glb
-!apps/web/public/world/props/colonial-wharf-apron.glb
-!apps/web/public/world/props/colonial-wharf-boardwalk.glb
-!apps/web/public/world/props/colonial-wharf-pier-finger.glb
-# imported outdoor density kit (Gemini -> Meshy -> Blender)
-!apps/web/public/world/props/yard-fence-straight.glb
-!apps/web/public/world/props/yard-fence-corner.glb
-!apps/web/public/world/props/yard-fence-end.glb
-!apps/web/public/world/props/yard-fence-gate.glb
-!apps/web/public/world/props/service-wall-straight.glb
-!apps/web/public/world/props/service-wall-corner.glb
-!apps/web/public/world/props/service-wall-end.glb
-!apps/web/public/world/props/town-gate-wing-straight.glb
-!apps/web/public/world/props/town-gate-wing-corner.glb
-!apps/web/public/world/props/town-gate-wing-end.glb
-!apps/web/public/world/props/wharf-rope-rail-straight.glb
-!apps/web/public/world/props/wharf-rope-rail-corner.glb
-!apps/web/public/world/props/wharf-rope-rail-end.glb
-!apps/web/public/world/props/infill-lean-to.glb
-!apps/web/public/world/props/infill-passage-gate.glb
-!apps/web/public/world/props/infill-service-shed.glb
-!apps/web/public/world/props/city-block-rear-a.glb
-!apps/web/public/world/props/city-block-rear-b.glb
-!apps/web/public/world/props/city-block-rear-c.glb
-!apps/web/public/world/props/work-ladder.glb
-!apps/web/public/world/props/balance-plank.glb
-!apps/web/public/world/props/duck-beam-frame.glb
-# targeted Mercer facade sign
-!apps/web/public/world/props/printshop-hanging-sign.glb
-# world-v3 final fill-in props (integration pass)
-!apps/web/public/world/props/scaffold-low.glb
-!apps/web/public/world/props/roof-ramp-cart.glb
-!apps/web/public/world/props/tankard-cluster.glb
-# objective quest-marker kit (Gemini -> Meshy -> Blender -> optimize_quest_marker_kit)
-!apps/web/public/world/props/objective-marker-kit.glb
-# Act 1 M4 production content (scoped imported asset batch)
-!apps/web/public/world/props/roof-walk-board.glb
-!apps/web/public/world/props/roof-walk-board-long.glb
-!apps/web/public/world/props/effigy-oliver.glb
-!apps/web/public/world/props/effigy-boot.glb
-!apps/web/public/world/props/organizer-crate-perch.glb
-!apps/web/public/world/props/protest-torch.glb
-!apps/web/public/world/props/protest-banner.glb
-!apps/web/public/world/props/coin-paper-set.glb
-!apps/web/public/world/props/street-dog.glb
-# print-mechanic ink-ball pair (Gemini -> Meshy -> assemble_ink_balls.py)
-!apps/web/public/world/props/printer-ink-balls.glb
-# poster/signage textures (INTERIORS & SIGNAGE factory)
-!apps/web/public/world/posters/
-!apps/web/public/world/characters/
-apps/web/public/world/characters/*
-!apps/web/public/world/characters/abigail-rigged.glb
-!apps/web/public/world/characters/constable-rigged.glb
-# canonical 36-interior structural kit (Gemini -> Meshy -> Blender)
-!apps/web/public/world/structures/
-apps/web/public/world/structures/*
-!apps/web/public/world/structures/structures-manifest.json
-!apps/web/public/world/structures/int-shell-domestic-narrow-a.glb
-!apps/web/public/world/structures/int-shell-domestic-wide-b.glb
-!apps/web/public/world/structures/int-shell-shopfront-a.glb
-!apps/web/public/world/structures/int-shell-workroom-a.glb
-!apps/web/public/world/structures/int-shell-warehouse-a.glb
-!apps/web/public/world/structures/int-shell-civic-a.glb
-!apps/web/public/world/structures/int-shell-meetinghouse-hero.glb
-!apps/web/public/world/structures/int-shell-ropewalk-a.glb
-!apps/web/public/world/structures/int-floor-wide-pine-a.glb
-!apps/web/public/world/structures/int-floor-wide-pine-b.glb
-!apps/web/public/world/structures/int-floor-brick-work-a.glb
 
 # logs
 *.log
@@ -180,3 +71,38 @@ npm-debug.log*
 test-results/
 .pnpm-store/
 apps/web/dist*/
+
+.install*.log
+.nm-trash-*
+
+.api.log
+.web.log
+.t.log
+.tc.log
+.build.log
+
+.pw-browsers/
+.shots/
+
+# ---- pipeline intermediates: provenance kept, payloads not ----------------
+#
+# The served tree above is admitted by default because a missing GLB is an
+# invisible hole. These are the opposite case: raw generator output and concept
+# plates are large, reproducible from the prompts beside them, and never loaded
+# by the browser. So the small JSON that records how an asset was made stays,
+# and the megabytes it produced do not.
+assets/source/raw/**/*.glb
+assets/source/raw/**/*.fbx
+assets/source/raw/**/*.obj
+assets/source/raw/**/*.zip
+assets/source/concepts/**/*.png
+assets/source/concepts/**/*.jpg
+assets/source/concepts/**/*.jpeg
+
+# OS and editor droppings
+.DS_Store
+**/.DS_Store
+
+# stray probe files agents leave behind
+**/tsconfig.tmp.json
+apps/api/.diag-*.mts

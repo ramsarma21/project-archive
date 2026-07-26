@@ -191,3 +191,70 @@ Do not "fix" them without revisiting that decision.
 - **Assessment applies no Standing bonus or ding** — Archive Syncs and checkpoint
   debriefs never move the player's Standing (see
   [`docs/engine/Learning-Ledger-Spec.md`](docs/engine/Learning-Ledger-Spec.md)).
+
+---
+
+## 6. Refactor invariants: pin the observable, and distrust a matched number
+
+Two rules, learned the hard way on the same day, both about consolidating a system
+that something else was already tuned against. They generalise, and this project
+will keep hitting them as packages merge into shared cores.
+
+**Pin the observable, not the parameter.** A test that pinned
+`DASH_SPEED_SCALE === 2.6` passed happily while the dodge distance it existed to
+protect went from 2.22 m to 3.99 m, because the burst changed from accelerating
+into its speed to setting velocity outright. The parameter was stable; the thing
+anyone cares about nearly doubled. The pin now asserts the measured burst distance
+and treats the scale as secondary
+([`sharedPrimitives.test.ts`](packages/engine-world/src/__tests__/sharedPrimitives.test.ts)).
+Ask what a reader of the constant actually believes about the game, and assert
+that.
+
+**Matching an observable does not guarantee matching behaviour, because the
+*profile* by which the quantity is reached is itself a balance change.** Setting
+`DASH_SPEED_SCALE` to 1.45 restored 2.22 m exactly — and the duel still shifted,
+because the same distance is now covered front-loaded rather than back-loaded. A
+burst that clears a body's width in 8 ticks instead of 13 turns a dodge that used
+to arrive too late into one that always works, which silently promoted the boss's
+evasion from "sometimes escapes" to "always escapes" and cost the wrong-answer path
+two wins in eight. The correction was to re-derive the dependent dial from measured
+behaviour (`dodgeChance` in
+[`boss.ts`](packages/duel/src/boss.ts)), not to trust the matched number.
+
+Practical consequences:
+
+- After consolidating a system, **re-measure the behaviour that depended on it**,
+  even when every shared quantity is provably identical. Cheap simulation sweeps
+  beat argument; see `winnability.test.ts` in `packages/duel`.
+- **Distinguish a repair from a decision.** Restoring a value a refactor moved by
+  accident needs no owner call; changing it on purpose does. Say which one a commit
+  is doing.
+- **A dial that cannot be shown to move an outcome is not a difficulty dial.**
+  `dodgeReactionTicks` swept from 4 to 30 ticks changes a win rate by at most one
+  run in eight; it is documented as a trigger so nobody reaches for it expecting
+  authority.
+- **Beware a curve where two steps land on the same tier.** The tier 5 boss took a
+  magazine step at the same time its damage peaked — 112 potential damage a round
+  against tier 4's 72 — and that, not the refactor, was what killed a
+  perfect-playing reference player in half its one-bullet runs.
+
+### Corollary: some things a shared dial cannot buy
+
+A prepared player currently faces no real risk from the tier 5 boss — three bullets
+a round wins every run by knockout. That is recorded as accepted, because the
+obvious fix does not exist:
+
+The two knowledge paths **share every dial**. On the wrong-answer path the player
+has exactly six shots for the whole duel, and `BOSS_HEALTH_CEILING` therefore caps
+boss health at five times player damage. So every point of health added to threaten
+a well-supplied player walks the one-bullet path back toward the state that was just
+repaired, and every point of offence added does the same by killing the unprepared
+player outright. **You cannot buy risk for a prepared player without selling
+winnability for an unprepared one, because it is one set of numbers.**
+
+The conclusion is that texture at the top of the difficulty curve needs a
+**mechanic, not a number**: a phase change, an ability, a positional demand —
+something structural that threatens a player who has ammunition to spare without
+adding raw volume. That is a design decision for the late-chapter bosses. M1 ships
+at tier 1, where the numbers are good, so nothing is blocked. Anyone tempted to
+crank tier 5 health should read this paragraph first.

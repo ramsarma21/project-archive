@@ -1,4 +1,4 @@
-import "./config.js";
+import { requiredEnv } from "./config.js";
 import crypto from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -8,28 +8,50 @@ import pg from "pg";
 const { Pool } = pg;
 
 function poolConfig(): pg.PoolConfig {
-  const ssl = process.env.DB_SSL === "true"
+  const production = process.env.NODE_ENV === "production";
+  // TLS is on by default in production and must be turned off deliberately.
+  // The image ships the RDS trust bundle, so the secure path is the one that
+  // works without configuration.
+  const sslRequested = production
+    ? process.env.DB_SSL !== "false"
+    : process.env.DB_SSL === "true";
+  const ssl = sslRequested
     ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false" }
     : undefined;
+  const shared = {
+    ssl,
+    max: Number(process.env.DB_POOL_MAX ?? 10),
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+  };
+
   if (process.env.DATABASE_URL) {
+    return { connectionString: process.env.DATABASE_URL, ...shared };
+  }
+
+  // Production is configured explicitly or it does not start. The development
+  // defaults below would otherwise let a deployed task come up healthy while
+  // pointed at a database nobody is watching, or fail to connect for a reason
+  // that reads as a network problem rather than as missing configuration.
+  if (production) {
     return {
-      connectionString: process.env.DATABASE_URL,
-      ssl,
-      max: Number(process.env.DB_POOL_MAX ?? 10),
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 10_000,
+      host: requiredEnv("DB_HOST"),
+      port: Number(process.env.DB_PORT ?? 5432),
+      database: process.env.DB_NAME ?? "project_archive",
+      user: requiredEnv("DB_USER"),
+      password: requiredEnv("DB_PASSWORD"),
+      ...shared,
     };
   }
+
+  // Local development against docker-compose (container 5432 -> host 55432).
   return {
     host: process.env.DB_HOST ?? "localhost",
     port: Number(process.env.DB_PORT ?? 55432),
     database: process.env.DB_NAME ?? "project_archive",
     user: process.env.DB_USER ?? "project_archive",
     password: process.env.DB_PASSWORD ?? "project_archive",
-    ssl,
-    max: Number(process.env.DB_POOL_MAX ?? 10),
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 10_000,
+    ...shared,
   };
 }
 

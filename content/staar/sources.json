@@ -1,0 +1,341 @@
+{
+  "note": "Every TEA document consulted for content/staar. Hashes are of the bytes served at retrievedAt so a later pass can detect a changed or withdrawn document. The documents themselves are deliberately NOT vendored into this repo; see README 'Licensing'.",
+  "publisher": "Texas Education Agency (TEA), Student Assessment Division",
+  "indexPage": "https://tea.texas.gov/data-reports/staar/staar-released-test-questions",
+  "termsPage": "https://tea.texas.gov/about-tea/welcome-and-overview/site-policies",
+  "socialStudiesResourcesPage": "https://tea.texas.gov/data-reports/staar/staar-social-studies-resources",
+  "retrievedAt": "2026-07-26T02:25Z",
+  "documentCount": 33,
+  "documents": [
+    {
+      "documentId": "2018-staar-8-social-studies-test",
+      "fileName": "2018-staar-8-social-studies-test.pdf",
+      "kind": "released-test-form",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+      "sha256": "e83ac8eedb7966fa2939917c4908c008ea6632d5c4d5fd142358901afb4aa0f2",
+      "bytes": 4954151,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Full 44-item form, verbatim item text"
+    },
+    {
+      "documentId": "2018-staar-8-social-studies-key",
+      "fileName": "2018-staar-8-social-studies-key.pdf",
+      "kind": "answer-key",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-key.pdf",
+      "sha256": "96fb27ace187a76b4e470d82b0c6426235cbfb89f40b61c16adde19ec2c05877",
+      "bytes": 36852,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Official answer key"
+    },
+    {
+      "documentId": "2018-staar-8-social-studies-rationale",
+      "fileName": "2018-staar-8-social-studies-rationale.pdf",
+      "kind": "item-rationale",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-rationale.pdf",
+      "sha256": "41f4c7743cfe1fd8e66c0634dd8069dd0dbb9eb215bae8b47fbd2bfa5bbbb573",
+      "bytes": 162666,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Per-option rationales"
+    },
+    {
+      "documentId": "2018-staar-8-social-studies-exptested",
+      "fileName": "2018-staar-8-social-studies-exptested.csv",
+      "kind": "student-expectations-tested",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv",
+      "sha256": "472188931562f8b15528cfe004a577ce9a4599eda86b7ba91e55a7d40f69c05f",
+      "bytes": 2567,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Item -> correct response, reporting category, content SE, process SE"
+    },
+    {
+      "documentId": "2019-staar-8-social-studies-test",
+      "fileName": "2019-staar-8-social-studies-test.pdf",
+      "kind": "released-test-form",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+      "sha256": "e92b8f0459e8fcb6baacab9bb2b3785d735a7b15a697102697a95444dc99380c",
+      "bytes": 751153,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Full 44-item form, verbatim item text"
+    },
+    {
+      "documentId": "2019-staar-8-social-studies-answer-key",
+      "fileName": "2019-staar-8-social-studies-answer-key.pdf",
+      "kind": "answer-key",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-answer-key.pdf",
+      "sha256": "66a1f6b1b1a57faa87d3761360afe3ef47b7aaa25d1727290a442e2fa4facf75",
+      "bytes": 83698,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Official answer key"
+    },
+    {
+      "documentId": "2019-staar-8-social-studies-rationale",
+      "fileName": "2019-staar-8-social-studies-rationale.pdf",
+      "kind": "item-rationale",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-rationale.pdf",
+      "sha256": "8bf84e0d3f9b6a5dcf341bdb3201256073f0e41c8269cf11d4f8db7f39b5c896",
+      "bytes": 236593,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Per-option rationales"
+    },
+    {
+      "documentId": "2019-staar-8-social-studies-exptested",
+      "fileName": "2019-staar-8-social-studies-exptested.csv",
+      "kind": "student-expectations-tested",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv",
+      "sha256": "eb0027efe176e103b02fb12d8415ab495765803b335a96b4f44355168c5f7dfa",
+      "bytes": 2567,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Item -> correct response, reporting category, content SE, process SE"
+    },
+    {
+      "documentId": "2021-staar-gr-8-social-studies-test-tagged",
+      "fileName": "2021-staar-gr-8-social-studies-test-tagged.pdf",
+      "kind": "released-test-form",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+      "sha256": "f649469a0a0013568fd533dbbd4f2b02c50e059c8b8de500c13faf4357dc5abb",
+      "bytes": 1595456,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Full 44-item form, verbatim item text"
+    },
+    {
+      "documentId": "staar-2021-grade-8-social-studies-rationales",
+      "fileName": "staar-2021-grade-8-social-studies-rationales.pdf",
+      "kind": "item-rationale",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-2021-grade-8-social-studies-rationales.pdf",
+      "sha256": "a3e094098719b4ef4e8a498db23029dce62c8c2b6a906d6d62f7f749b47f523c",
+      "bytes": 323496,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Per-option rationales"
+    },
+    {
+      "documentId": "staar-expectation-tested-2021-may-grade-8-social-studies",
+      "fileName": "staar-expectation-tested-2021-may-grade-8-social-studies.csv",
+      "kind": "student-expectations-tested",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv",
+      "sha256": "b2f1b432f7ce27547909d005bf02a874a58368fb72caec354ccc3f9390856563",
+      "bytes": 3232,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Item -> correct response, reporting category, content SE, process SE"
+    },
+    {
+      "documentId": "2022-staar-may-grade-8-socialstudies-releasedtest",
+      "fileName": "2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+      "kind": "released-test-form",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+      "sha256": "2c51c5d83bd1b21ab2f05f2fcaeed28e9903ad54d00b01991b596d5bab23e5f4",
+      "bytes": 2038639,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Full 44-item form, verbatim item text"
+    },
+    {
+      "documentId": "may-2022-staar-socialstudies-8-answerkey-final-2",
+      "fileName": "may-2022-staar-socialstudies-8-answerkey-final-2.pdf",
+      "kind": "answer-key",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/may-2022-staar-socialstudies-8-answerkey-final-2.pdf",
+      "sha256": "84e182f685aa2c6653623514415397121e799b722b9194de8c41eb718d422686",
+      "bytes": 54009,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Official answer key"
+    },
+    {
+      "documentId": "may-2022-staar-socialstudies-8-rationale-2",
+      "fileName": "may-2022-staar-socialstudies-8-rationale-2.pdf",
+      "kind": "item-rationale",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/may-2022-staar-socialstudies-8-rationale-2.pdf",
+      "sha256": "a6f8aa4326b557a091f2bf4083b34aeb1a2ec0d6c7c4da4ee29452a698286dc3",
+      "bytes": 563345,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Per-option rationales"
+    },
+    {
+      "documentId": "staar-expectation-tested-2022-may-grade-8-social-studies",
+      "fileName": "staar-expectation-tested-2022-may-grade-8-social-studies.xlsx",
+      "kind": "student-expectations-tested",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx",
+      "sha256": "8cd2fcc92275d0b754defd9028f9845ebe576ad2c943e49fb559ae9ee5f47693",
+      "bytes": 13900,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Item -> correct response, reporting category, content SE, process SE"
+    },
+    {
+      "documentId": "2023-staar-social-studies-grade-8-answer-key",
+      "fileName": "2023-staar-social-studies-grade-8-answer-key.pdf",
+      "kind": "answer-key",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2023-staar-social-studies-grade-8-answer-key.pdf",
+      "sha256": "c5dcd11c5f467790605c9ef9ca9afad68bea5d6c8ee8069e1cb9c2a83c11a4c0",
+      "bytes": 499962,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "40-item key + Appendix reproducing every non-multiple-choice item"
+    },
+    {
+      "documentId": "2023-staar-social-studies-grade-8-rationale",
+      "fileName": "2023-staar-social-studies-grade-8-rationale.pdf",
+      "kind": "item-rationale",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2023-staar-social-studies-grade-8-rationale.pdf",
+      "sha256": "29cde2a531e9eafaa6d022ec2004595c2656df5c498df5ba2e97258a24798358",
+      "bytes": 342966,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Per-option rationales"
+    },
+    {
+      "documentId": "2023-staar-grade-8-social-studies-student-expectations",
+      "fileName": "2023-staar-grade-8-social-studies-student-expectations.xlsx",
+      "kind": "student-expectations-tested",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2023-staar-grade-8-social-studies-student-expectations.xlsx",
+      "sha256": "a225fcc6ad051a577a412fff698680525e85a54d9d48c705c7f477060f1a0e97",
+      "bytes": 20575,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Item -> item type, TEKS, max points, correct answer(s), reporting category, readiness/supporting"
+    },
+    {
+      "documentId": "2023-staar-8-social-studies-scoring-guide",
+      "fileName": "2023-staar-8-social-studies-scoring-guide.pdf",
+      "kind": "constructed-response-scoring-guide",
+      "url": "https://tea.texas.gov/data-reports/staar/2023-staar-8-social-studies-scoring-guide.pdf",
+      "sha256": "995012859efa567f2b74f2c180ec328632a65cd9a3cc2de08f426bfe199f1438",
+      "bytes": 1127758,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Short constructed response prompts, item-specific rubrics, scored student exemplars"
+    },
+    {
+      "documentId": "2023-staar-8-social-studies-item-sampler",
+      "fileName": "2023-staar-8-social-studies-item-sampler.pdf",
+      "kind": "new-question-type-sampler",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2023-staar-8-social-studies-item-sampler.pdf",
+      "sha256": "b9fbc8d40b2723e3c852d09f48cfca2e79e7c9e868cf0778917f87cc4fa7f884",
+      "bytes": 908138,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Verbatim sampler item text (new STAAR item types)"
+    },
+    {
+      "documentId": "2023-staar-8-social-studies-paper-sampler-key",
+      "fileName": "2023-staar-8-social-studies-paper-sampler-key.pdf",
+      "kind": "new-question-type-sampler-key",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2023-staar-8-social-studies-paper-sampler-key.pdf",
+      "sha256": "ceca5641ba283174f81dfb3940d318902bceab21de30acf3f92c994366cc6254",
+      "bytes": 178863,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Sampler answer key; TEKS column is prefixed with reporting category"
+    },
+    {
+      "documentId": "2023-staar-redesign-8-social-studies-practice-test",
+      "fileName": "2023-staar-redesign-8-social-studies-practice-test.pdf",
+      "kind": "practice-test",
+      "url": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2023-staar-redesign-8-social-studies-practice-test.pdf",
+      "sha256": "c5571fad0541bd92a54a479f06f5d7a473bba8bb60de5df353d6a114efa8244d",
+      "bytes": 3027611,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Full-length practice test item text. NO published answer key for grade 8 social studies."
+    },
+    {
+      "documentId": "2024-staar-8-social-studies-answer-key",
+      "fileName": "2024-staar-8-social-studies-answer-key.pdf",
+      "kind": "answer-key",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-answer-key.pdf",
+      "sha256": "f4d7b99ce96e6a7d05bb40016a2774a02624c79b0b799c01308799dd35b84fb2",
+      "bytes": 512768,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "40-item key + Appendix reproducing every non-multiple-choice item"
+    },
+    {
+      "documentId": "2024-staar-8-social-studies-rationale",
+      "fileName": "2024-staar-8-social-studies-rationale.pdf",
+      "kind": "item-rationale",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-rationale.pdf",
+      "sha256": "93d8705590e466f8df4afbe6dcac5af5286378388e521148554c38d4f99cc73c",
+      "bytes": 286488,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Per-option rationales"
+    },
+    {
+      "documentId": "2024-staar-8-social-studies-student-expectations",
+      "fileName": "2024-staar-8-social-studies-student-expectations.xlsx",
+      "kind": "student-expectations-tested",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-student-expectations.xlsx",
+      "sha256": "201a10fa253bdc0d0c3bb49afc851fd1aa649d8afec147c2b6504649b302a21e",
+      "bytes": 21801,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Item -> item type, TEKS, max points, correct answer(s), reporting category, readiness/supporting"
+    },
+    {
+      "documentId": "2024-staar-8-social-studies-scoring-guide",
+      "fileName": "2024-staar-8-social-studies-scoring-guide.pdf",
+      "kind": "constructed-response-scoring-guide",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-scoring-guide.pdf",
+      "sha256": "0309fb22de476c917f3ca022af91f60fe1875d6c88306ddc0eda5061f00dae74",
+      "bytes": 177987,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Short constructed response prompts, rubrics, scored student exemplars"
+    },
+    {
+      "documentId": "2025-staar-social-studies-8-answer-key",
+      "fileName": "2025-staar-social-studies-8-answer-key.pdf",
+      "kind": "answer-key",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2025-staar-social-studies-8-answer-key.pdf",
+      "sha256": "c08186cd709bbe7deb79ad2e76a555c6785ed7442cb1c703f6697fe89da2345d",
+      "bytes": 464470,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "40-item key + Appendix reproducing every non-multiple-choice item"
+    },
+    {
+      "documentId": "2025-staar-social-studies-8-rationale",
+      "fileName": "2025-staar-social-studies-8-rationale.pdf",
+      "kind": "item-rationale",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2025-staar-social-studies-8-rationale.pdf",
+      "sha256": "adf75bd8a3bfdc080c94daf8e9a59539be031dc4bae0aa7925fb1508e1390b9d",
+      "bytes": 287379,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Per-option rationales"
+    },
+    {
+      "documentId": "2025-staar-8-social-studies-student-expectations",
+      "fileName": "2025-staar-8-social-studies-student-expectations.xlsx",
+      "kind": "student-expectations-tested",
+      "url": "https://tea.texas.gov/data-reports/staar/released-test-questions/2025-staar-8-social-studies-student-expectations.xlsx",
+      "sha256": "1c55b01d930974a256e20d360e6a98dc49f72897fb46ac983b4f4b667caa4cdd",
+      "bytes": 24658,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Item -> item type, TEKS assessed (bare N.L form), max points, correct answer(s), reporting category, readiness/supporting"
+    },
+    {
+      "documentId": "2025-staar-8-social-studies-released-scoring-guide",
+      "fileName": "2025-staar-8-social-studies-released-scoring-guide.pdf",
+      "kind": "constructed-response-scoring-guide",
+      "url": "https://tea.texas.gov/data-reports/staar/2025-staar-8-social-studies-released-scoring-guide.pdf",
+      "sha256": "3f80b7b68648ba775665f1d7073532c13936eca1d4f100b18047fa9f733ba302",
+      "bytes": 222699,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Short constructed response prompts, rubrics, scored student exemplars"
+    },
+    {
+      "documentId": "2022-staar-grade-8-social-studies-constructed-response-scoring-guide",
+      "fileName": "2022-staar-grade-8-social-studies-constructed-response-scoring-guide.pdf",
+      "kind": "constructed-response-scoring-guide",
+      "url": "https://tea.texas.gov/data-reports/staar/2022-staar-grade-8-social-studies-constructed-response-scoring-guide.pdf",
+      "sha256": "da897bfec7fde1464aa79ff76fd3dda7450e7bd1dc588a616b45df98e2693abd",
+      "bytes": 256055,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Constructed response scoring guide"
+    },
+    {
+      "documentId": "staar-8-social-studies-assessed-curriculum",
+      "fileName": "staar-8-social-studies-assessed-curriculum.pdf",
+      "kind": "assessed-curriculum",
+      "url": "https://tea.texas.gov/data-reports/staar/staar-8-social-studies-assessed-curriculum.pdf",
+      "sha256": "dc48abcad536d4e47a9b54374324dd494f3ae870174d1bb08fe2c40a7b0483a5",
+      "bytes": 615579,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Verbatim eligible TEKS student-expectation text + readiness/supporting designation (Revised August 2024)"
+    },
+    {
+      "documentId": "staar-g8-ss-blueprint",
+      "fileName": "staar-g8-ss-blueprint.pdf",
+      "kind": "blueprint",
+      "url": "https://tea.texas.gov/data-reports/staar/staar-g8-ss-blueprint.pdf",
+      "sha256": "66f4d1d85dc1483947efa833ec741a7bfbfd17e68c4e3e8011cfb1c476bd89cf",
+      "bytes": 153862,
+      "retrievedAt": "2026-07-26T02:25Z",
+      "provides": "Reporting-category point distribution and item-type counts, effective AY 2022-23"
+    }
+  ]
+}

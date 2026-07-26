@@ -1,0 +1,478 @@
+{
+  "$schema": "../schema/staar-released-item.schema.json",
+  "administration": {
+    "administrationId": "2019",
+    "label": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+    "grade": 8,
+    "subject": "Social Studies",
+    "language": "English",
+    "formItemCount": 44,
+    "allItemsMultipleChoice": true,
+    "teksAlignmentVintage": "Pre-2019 Grade 8 Social Studies TEKS. See the 2018 file's teksAlignmentVintage note; the same nine retired SE codes apply across 2018 and 2019.",
+    "sourceDocuments": {
+      "form": "2019-staar-8-social-studies-test",
+      "answerKey": "2019-staar-8-social-studies-answer-key",
+      "studentExpectationsTested": "2019-staar-8-social-studies-exptested",
+      "itemRationale": "2019-staar-8-social-studies-rationale"
+    }
+  },
+  "capture": {
+    "capturedAt": "2026-07-26T02:25Z",
+    "capturedBy": "content/staar sourcing pass",
+    "scope": "Items whose TEA-published content student expectation is one of the 23 Boston chapter SEs.",
+    "method": "Item text transcribed from TEA's released form PDF text layer. Correct answers taken from TEA's official student-expectations-tested table, never inferred from the item.",
+    "verbatim": true,
+    "itemsCapturedFromThisForm": 12,
+    "itemsOnForm": 44,
+    "thirdPartyContentObserved": "This form contains at least two items quoting copyrighted third-party works that are NOT Boston-relevant and were not captured: item 5 quotes a PBS film resource by Judith E. Harper, and item 11 quotes The New York Times (Mary Frances Berry, September 13, 1987). Recorded here as evidence that social studies released forms do include third-party copyrighted text. See README 'Licensing'."
+  },
+  "items": [
+    {
+      "itemId": "STAAR.2019MAY.G8SS.09",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 9,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.3(A)",
+        "processStudentExpectationAsPublished": "8.29(A)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "B",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.3(A)",
+      "era": "1620",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "We whose names are underwritten . . . do by these presents solemnly and mutually in the presence of God, and one of another, covenant and combine ourselves together into a civil Body Politick, for our better Ordering and Preservation, and Furtherance of the Ends aforesaid: And by Virtue hereof do enact, constitute and frame, such just and equal Laws, Ordinances, Acts, Constitutions, and Officers, from time to time, as shall be thought most meet and convenient for the general Good of the Colony; unto which we promise all due Submission and Obedience.",
+        "attribution": "—Mayflower Compact, 1620",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "For what reason did a group of colonists agree to this compact?",
+      "options": [
+        { "optionId": "A", "text": "To declare independence from all European nations" },
+        { "optionId": "B", "text": "To form a social contract among themselves" },
+        { "optionId": "C", "text": "To demonstrate goodwill toward local American Indians" },
+        { "optionId": "D", "text": "To establish trade relations with other colonies" }
+      ],
+      "correctOptionId": "B",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.14",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 14,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.14(A)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 4,
+        "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.14(A)",
+      "contentNote": "The stimulus defines mercantilism, which is a named clause of 8.4(A). TEA's published label is 8.14(A). This is the only released item found whose stimulus lays out mercantilism's mechanics, so it is the closest real coverage of the 8.4(A) mercantilism clause. The dual relevance is our observation, not a TEA statement.",
+      "stimulus": {
+        "type": "DIAGRAM",
+        "title": "Mercantilism",
+        "text": "Colonists were barred from producing finished goods. | Colonists were to provide raw materials for England.\nColonial imports had to be first shipped to England. | Exported goods could only be shipped to England.",
+        "attribution": null,
+        "imageDependent": false,
+        "note": "Rendered as a four-cell diagram labelled 'Mercantilism'. The four cell texts are captured verbatim; the visual arrangement is not."
+      },
+      "stem": "How did opposition to this system affect the economy of the early republic?",
+      "options": [
+        { "optionId": "F", "text": "The government prevented taxes on domestic goods." },
+        { "optionId": "G", "text": "Cottage workers needed governmental assistance." },
+        { "optionId": "H", "text": "Interstate trade taxes were forbidden." },
+        { "optionId": "J", "text": "A free enterprise system was adopted." }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.16",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 16,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.23(B)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 2,
+        "correctAnswerFromOfficialKey": "F",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.23(B)",
+      "era": "1854",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "Are you willing to . . . elect to all offices of Honor, Profit, or Trust, none but native born citizens of America, of this country to the exclusion of all foreigners . . . ?",
+        "attribution": "—Examiner’s questions for admittance to the Know-Nothing Party, 1854",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "Which inference about the Know-Nothing Party is supported by the excerpt above?",
+      "options": [
+        { "optionId": "F", "text": "Its members blamed Irish immigrants for taking away jobs." },
+        { "optionId": "G", "text": "The party encouraged western migration of settlers." },
+        { "optionId": "H", "text": "Its members opposed enforcement of the Fugitive Slave Act in the Northeast." },
+        { "optionId": "J", "text": "The party was in favor of universal suffrage." }
+      ],
+      "correctOptionId": "F",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE for Boston's 8.23(B), but the era (1854 nativism) is far outside the Boston window. Boston uses 8.23(B) to carry the 1770 Boston Massacre; no released item does that. See the gap list."
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.18",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 18,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.10(C)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 2,
+        "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.10(C)",
+      "era": "1733",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "As towns are established . . . along the rivers Savannah and Alatamaha, they will make such a barrier as will render the southern frontier of the British Colonies on the Continent of America, safe from Indian and other enemies.",
+        "attribution": "—General James Oglethorpe, 1733",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "Which human geographic factor most likely prompted this observation?",
+      "options": [
+        { "optionId": "F", "text": "The number of Quakers living in British colonies" },
+        { "optionId": "G", "text": "The Caribbean slave trade with British colonies" },
+        { "optionId": "H", "text": "The number of religious sects in the British colonies" },
+        { "optionId": "J", "text": "The Spanish land claims close to the British colonies" }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.21",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 21,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.1(A)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "A",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.1(A)",
+      "stimulus": {
+        "type": "SECONDARY_SOURCE_EXCERPT",
+        "text": "[The] ? consisted of several kinds of activity, distinguished by locale and expression of religious commitment. In New England, the renewed interest in religion inspired a wave of social activism. In western New York, the spirit of revival encouraged the emergence of new denominations. In the Appalachian region of Kentucky and Tennessee, the revival strengthened the Methodists and the Baptists, and spawned a new form of religious expression—the camp meeting.",
+        "attribution": "—Outline of U.S. History, Bureau of International Information Programs, U.S. Department of State, 2011",
+        "attributionParty": "THIRD_PARTY_US_FEDERAL",
+        "imageDependent": false
+      },
+      "stem": "Which term best completes this excerpt?",
+      "options": [
+        { "optionId": "A", "text": "Second Great Awakening" },
+        { "optionId": "B", "text": "temperance movement" },
+        { "optionId": "C", "text": "Era of Good Feelings" },
+        { "optionId": "D", "text": "abolitionist movement" }
+      ],
+      "correctOptionId": "A",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE for Boston's 8.1(A) (eras), but the era named is the Second Great Awakening, not the revolution era Boston frames."
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.23",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 23,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.22(A)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "B",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.22(A)",
+      "era": "1865",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "With malice toward none, with charity for all, with firmness in the right as God gives us to see the right, let us strive on to finish the work we are in, to bind up the nation’s wounds, to care for him who shall have borne the battle and for his widow and his orphan, to do all which may achieve and cherish a just and lasting peace among ourselves and with all nations.",
+        "attribution": "—President Abraham Lincoln, second inaugural address, March 4, 1865",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "Which leadership quality does President Lincoln best demonstrate in this address?",
+      "options": [
+        { "optionId": "A", "text": "Inspiration — He wants the Union to be a model of democracy for all nations." },
+        { "optionId": "B", "text": "Compassion — He wants to help those who suffered during the Civil War." },
+        { "optionId": "C", "text": "Persistence — He believes the Union must surrender in order to have peace." },
+        { "optionId": "D", "text": "Confidence — He believes history would prove him correct to fight in the Civil War." }
+      ],
+      "correctOptionId": "B",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE for Boston's 8.22(A) (leadership), but about Lincoln. Boston uses 8.22(A) for Washington at the Siege of Boston; no released item does that. See the gap list. Note also that the option format (quality name plus explanation) is a useful authoring pattern for our own 8.22(A) items."
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.24",
+      "itemVersion": "tea.released.1",
+      "priority": "MISSION_ONE",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 24,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.4(A)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "H",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.4(A)",
+      "teksClause": "lack of representation in Parliament",
+      "bostonConcept": "RCC.REPRESENTATION_CAUSE",
+      "era": "1765",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "Resolved, that the taxation of the people by themselves, or by persons chosen by themselves to represent them . . . is the only security against a burdensome taxation . . .",
+        "attribution": "—Virginia Stamp Act Resolutions, May 30, 1765",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "Which statement best explains why this resolution was adopted?",
+      "options": [
+        { "optionId": "F", "text": "Colonists were upset by the punishment imposed after the Boston Tea Party." },
+        { "optionId": "G", "text": "Colonists created this in order to address the causes of the Boston Massacre." },
+        { "optionId": "H", "text": "Colonists were opposed to colonial laws being created only by Parliament." },
+        { "optionId": "J", "text": "Colonists wanted to expand powers given to governors appointed by King George III." }
+      ],
+      "correctOptionId": "H",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q24.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (H). See owner-item-provenance-map.json."
+      }
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.30",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 30,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.15(C)",
+        "processStudentExpectationAsPublished": null,
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "G",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.15(C)",
+      "era": "1776 / 1791",
+      "bostonRelevance": "8.15(C) colonial grievances is a Boston Act 2 pattern (writs of assistance, quartering). Options F and J name the dissolved-legislature and quartering grievances, both of which Boston's world uses.",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Which grievance from the Declaration of Independence is addressed by the Sixth Amendment to the U.S. Constitution?",
+      "options": [
+        { "optionId": "F", "text": "“He has dissolved Representative Houses repeatedly.”" },
+        { "optionId": "G", "text": "“For depriving us in many cases, of the benefits of Trial by Jury . . .”" },
+        { "optionId": "H", "text": "“He has obstructed the . . . Laws for establishing Judiciary powers.”" },
+        { "optionId": "J", "text": "“For Quartering large bodies of armed troops among us . . .”" }
+      ],
+      "correctOptionId": "G",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q30.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (G). The repo tags it TEKS.PENDING_SME_REVIEW; TEA's published label is 8.15(C)."
+      }
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.34",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 34,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.21(B)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "F",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.21(B)",
+      "stimulus": {
+        "type": "ILLUSTRATION",
+        "text": null,
+        "attribution": null,
+        "imageDependent": true,
+        "note": "The stimulus is a drawing of people reacting to a 'DR. HOPKINS FOR TEXAS GOVERNOR' sign with speech bubbles ('He can make a difference!' / 'That's a terrible idea!'). The image cannot be reproduced from the PDF text layer."
+      },
+      "stem": "Why is this type of interaction important in U.S. society?",
+      "options": [
+        { "optionId": "F", "text": "Free speech allows people to help create a better government." },
+        { "optionId": "G", "text": "Due process laws are guaranteed by the Fifth Amendment." },
+        { "optionId": "H", "text": "Individual protections are guaranteed by the Fourteenth Amendment." },
+        { "optionId": "J", "text": "Freedom of the press helps the government respond to public opinion." }
+      ],
+      "correctOptionId": "F",
+      "usableAsIs": false,
+      "usabilityNote": "Image-dependent, and the stimulus is a modern scenario rather than a period one."
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.35",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 35,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.4(C)",
+        "processStudentExpectationAsPublished": null,
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "C",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.4(C)",
+      "era": "1781-1783",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Which event occurred as a result of General Cornwallis’s surrender at the Battle of Yorktown?",
+      "options": [
+        { "optionId": "A", "text": "France recognized American independence and declared war against Great Britain." },
+        { "optionId": "B", "text": "The Second Continental Congress agreed to the Articles of Confederation." },
+        { "optionId": "C", "text": "Great Britain and the United States signed the Treaty of Paris." },
+        { "optionId": "D", "text": "The Second Continental Congress sent the Olive Branch Petition to King George III." }
+      ],
+      "correctOptionId": "C",
+      "usableAsIs": true,
+      "usabilityNote": "8.4(C) is a Boston SE via missions M13/M14 (Lexington and Concord). Yorktown 1781 is past Boston's window, so this is bank depth for 8.4(C) rather than era-appropriate Boston selection.",
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q35.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (C). The repo tags it TEKS.PENDING_SME_REVIEW; TEA's published label is 8.4(C)."
+      }
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.40",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 40,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.11(A)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 2,
+        "correctAnswerFromOfficialKey": "G",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.11(A)",
+      "era": "1850-1860",
+      "stimulus": {
+        "type": "TABLE",
+        "title": "California Census Data",
+        "text": "Year | Population\n1850 | 92,597\n1860 | 379,994",
+        "attribution": "Source: U.S. Census Bureau",
+        "attributionParty": "THIRD_PARTY_US_FEDERAL",
+        "imageDependent": false
+      },
+      "stem": "Which factor contributed most to the population change shown in this table?",
+      "options": [
+        { "optionId": "F", "text": "Completion of the Erie Canal" },
+        { "optionId": "G", "text": "Discovery of gold at Sutter’s Mill" },
+        { "optionId": "H", "text": "Completion of the Transcontinental Railroad" },
+        { "optionId": "J", "text": "Relocation of American Indians to reservations" }
+      ],
+      "correctOptionId": "G",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE but era and region are wrong for Boston. Boston uses 8.11(A) for the port economy."
+    },
+    {
+      "itemId": "STAAR.2019MAY.G8SS.43",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2019 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2019, RELEASED",
+        "itemNumberAsPublished": 43,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.20(B)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "A",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2019-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.20(B)",
+      "labelReviewFlag": "TEA published 8.20(B) for this item. In the current assessed curriculum 8.20(B) is civil disobedience and 8.20(A) is 'evaluate the contributions of the Founding Fathers as models of civic virtue', which fits this item's content better. Compare 2022 item 23 (Jefferson and the Declaration), which TEA labelled 8.20(A). We are NOT resolving this; TEA's label is recorded as published and the discrepancy is flagged for a reviewer.",
+      "era": "1770-1797",
+      "bostonRelevance": "Names John Adams, the Boston Massacre trial, and the Treaty of Paris. John Adams is a Boston 8.4(B) individual and the Massacre trial is Boston mission M7.",
+      "stimulus": {
+        "type": "LIST",
+        "text": "• Responsibility: Second President of the United States\n• Courage: Defending Redcoats at the Boston Massacre Trial\n• Perseverance: Negotiating the Treaty of Paris",
+        "attribution": null,
+        "imageDependent": false
+      },
+      "stem": "This list refers to the contributions of which Founding Father?",
+      "options": [
+        { "optionId": "A", "text": "John Adams" },
+        { "optionId": "B", "text": "Benjamin Franklin" },
+        { "optionId": "C", "text": "James Madison" },
+        { "optionId": "D", "text": "John Jay" }
+      ],
+      "correctOptionId": "A",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q43.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (A). The repo tags it TEKS.PENDING_SME_REVIEW; TEA's published label is 8.20(B), which itself carries a review flag (above)."
+      }
+    }
+  ]
+}

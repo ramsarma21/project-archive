@@ -2,6 +2,39 @@
 // Usage: node assets/pipeline/sync_web.mjs
 import { cpSync, mkdirSync, existsSync, readdirSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
+import { inspectWorldGlb } from "../../scripts/check-world-textures.mjs";
+
+let refused = 0;
+/**
+ * Publish one GLB, unless its textures carry the Meshy bake defect.
+ *
+ * This is the only place a NEW asset can be stopped before it ships: seven of
+ * fifteen character rigs reached public/ with a multi-megabyte opaque-alpha PNG
+ * and an alphaMode of BLEND, and nothing failed at any point. The check decodes
+ * alpha rather than looking at the format, so an asset that genuinely needs
+ * transparency still publishes. See scripts/check-world-textures.mjs.
+ *
+ * Set WORLD_TEXTURE_GUARD=off to publish anyway; it prints what it let through.
+ */
+function publish(from, to) {
+  const blocking = inspectWorldGlb(from).findings.filter((finding) => finding.block);
+  if (blocking.length === 0) {
+    cpSync(from, to);
+    return true;
+  }
+  if (process.env.WORLD_TEXTURE_GUARD === "off") {
+    console.warn(`[sync] OVERRIDE: publishing ${from} despite ${blocking.length} texture defect(s)`);
+    cpSync(from, to);
+    return true;
+  }
+  console.error(`[sync] REFUSED ${from}`);
+  for (const finding of blocking) {
+    console.error(`        ${finding.code}: ${finding.detail}`);
+    console.error(`        fix: ${finding.fix}`);
+  }
+  refused++;
+  return false;
+}
 
 const pairs = [
   ["assets/build/anims", "apps/web/public/world/anims"],
@@ -16,6 +49,13 @@ const pairs = [
   // Scoped Act 1 M4 production batch. Never broad-copy source concepts or
   // unverified raw Meshy output.
   ["assets/build/world-m4-opt", "apps/web/public/world/props"],
+  // M1 duel weapon batch (Gemini concept -> Meshy image-to-3D ->
+  // finish_flintlock.py real-scale/grip-origin pass).
+  ["assets/build/world-m1-duel-opt", "apps/web/public/world/props"],
+  // M1 Liberty Tree (Gemini concept -> Meshy image-to-3D ->
+  // build_liberty_elm.py, which fits the mesh to the collision M1 already
+  // authored). Gated on verify_liberty_elm.mjs, not on eyeballing it.
+  ["assets/build/world-m1-elm-opt", "apps/web/public/world/props"],
   ["assets/build/world-v3-structures-opt", "apps/web/public/world/structures"],
 ];
 
@@ -29,26 +69,56 @@ for (const [src, dst] of pairs) {
     if (!f.endsWith(".glb")) continue;
     const from = join(s, f);
     if (!statSync(from).isFile()) continue;
-    cpSync(from, join(d, f));
-    copied++;
+    if (publish(from, join(d, f))) copied++;
   }
 }
 
 // Never copy characters-opt here: those files are optimized meshes with zero
 // animation clips and would silently replace the working self-contained cast.
 const cast = {
-  "playerboy-v6-native.glb": "playerboy-rigged.glb",
+  // v10 (2026-07-26): dropRoll given its own "Falling To Roll" instead of
+  // aliasing dodge, and leapOfFaith un-pinned from 2.39m downrange. 35 of 37
+  // clips are bit-identical to v9.
+  "playerboy-v10-native.glb": "playerboy-rigged.glb",
   "abigail-production.glb": "abigail-rigged.glb",
-  "thomas-native.glb": "thomas-rigged.glb",
+  // v2 (2026-07-26): PNG albedo -> JPEG q95. See the texture note below.
+  "thomas-v2-native.glb": "thomas-rigged.glb",
   // Pike's auto-rig rest pose is an A-pose, so his clips are rebaked with
   // retarget_native_mixamo_rest_delta.py (absolute mode) instead of the
-  // direct action attach used for the T-pose-rest cast members.
-  "pike-production.glb": "pike-rigged.glb",
-  "clarke-native.glb": "clarke-rigged.glb",
-  "rider-native.glb": "rider-rigged.glb",
-  "officer-native.glb": "officer-rigged.glb",
-  "townsman-native.glb": "townsman-rigged.glb",
-  "townswoman-native.glb": "townswoman-rigged.glb",
+  // direct action attach used for the T-pose-rest cast members. His v2 keeps the
+  // "-production" lineage marker for that reason; it is NOT a native-action bake.
+  "pike-v2-production.glb": "pike-rigged.glb",
+  "clarke-v2-native.glb": "clarke-rigged.glb",
+  "rider-v2-native.glb": "rider-rigged.glb",
+  // v2 (2026-07-25): M1 duel antagonist. Full combat set, dialogue clips dropped.
+  "officer-v2-native.glb": "officer-rigged.glb",
+  // v2 (2026-07-26): six rigs whose Meshy bake returned a 2048 RGBA PNG albedo
+  // with an alpha channel holding 5-74 stray pixels out of 4.19M. PNG cost
+  // 2.35-4.45MB apiece, and alphaMode BLEND additionally bought a sorted
+  // transparent draw for every body wearing one - 36 of them in the market.
+  // transcode_rig_textures.py re-encoded the albedo and relaxed the material to
+  // OPAQUE. Mesh, skin, bone hierarchy and every animation channel are
+  // bit-identical to v1, gated by verify_rig_transcode.py.
+  //
+  // Quality is set per role, measured with measure_texture_error.py rather than
+  // eyeballed. The four story NPCs are met face-to-face and went at q95, which
+  // lands at 46.3-48.7dB PSNR. townswoman is ambient only (culled beyond 26-38m)
+  // and stays at q90.
+  //
+  // v3 (2026-07-26): townsman went to q98, because World-Content.md also casts him
+  // as the tavern keeper behind the bar - a dialogue close-up, not a crowd body.
+  // His albedo is the hardest in the cast: q90 measures 44.5dB and the quality
+  // curve is nearly flat above it (q95 44.9, q98 45.3, q99 45.3), so q98 is the
+  // top of the plateau. Only q100 goes materially higher and it costs 2.37MB for
+  // the albedo alone, giving back most of the saving. If his face ever proves
+  // inadequate at 45.3dB the fix is a cleaner bake, not a higher quality number.
+  //
+  //   townsman   8.22 -> 5.28MB q98   pike    7.68 -> 4.82MB q95
+  //   townswoman 8.30 -> 4.55MB q90   rider   6.65 -> 4.40MB q95
+  //                                   thomas  6.06 -> 4.13MB q95
+  //                                   clarke  6.03 -> 4.13MB q95
+  "townsman-v3-native.glb": "townsman-rigged.glb",
+  "townswoman-v2-native.glb": "townswoman-rigged.glb",
   // World-v3 street archetypes (Bible §9), built via Meshy image-to-3D ->
   // Meshy rig -> bake_character_anims.py rest-delta retarget (the
   // abigail-production path; no Mixamo web automation involved).
@@ -68,7 +138,10 @@ for (const [sourceName, destinationName] of Object.entries(cast)) {
     console.warn(`[sync] keeping deployed ${destinationName}; missing native source ${sourceName}`);
     continue;
   }
-  cpSync(source, join(castDest, destinationName));
-  copied++;
+  if (publish(source, join(castDest, destinationName))) copied++;
 }
 console.log(`synced ${copied} glb files into apps/web/public/world`);
+if (refused > 0) {
+  console.error(`refused ${refused} glb file(s) carrying a texture defect; nothing else was changed`);
+  process.exit(1);
+}

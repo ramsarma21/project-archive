@@ -1,0 +1,425 @@
+{
+  "$schema": "../schema/staar-released-item.schema.json",
+  "administration": {
+    "administrationId": "2022",
+    "label": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+    "grade": 8,
+    "subject": "Social Studies",
+    "language": "English",
+    "formItemCount": 44,
+    "allItemsMultipleChoice": true,
+    "teksAlignmentVintage": "Post-streamlining Grade 8 Social Studies TEKS. Every SE code used on this form is still listed in TEA's current assessed curriculum.",
+    "note": "This is the last Grade 8 Social Studies administration for which TEA published a full PDF test form. From 2023 onward STAAR is administered primarily online and TEA states that 'PDF versions of STAAR released tests are no longer available'.",
+    "sourceDocuments": {
+      "form": "2022-staar-may-grade-8-socialstudies-releasedtest",
+      "answerKey": "may-2022-staar-socialstudies-8-answerkey-final-2",
+      "studentExpectationsTested": "staar-expectation-tested-2022-may-grade-8-social-studies",
+      "itemRationale": "may-2022-staar-socialstudies-8-rationale-2"
+    }
+  },
+  "capture": {
+    "capturedAt": "2026-07-26T02:25Z",
+    "capturedBy": "content/staar sourcing pass",
+    "scope": "Items whose TEA-published content student expectation is one of the 23 Boston chapter SEs, plus item 22 (8.16(A), not a Boston SE) because the repo already carries a paraphrase of it.",
+    "method": "Item text transcribed from TEA's released form PDF text layer. Correct answers taken from TEA's official student-expectations-tested table, never inferred from the item.",
+    "verbatim": true,
+    "itemsCapturedFromThisForm": 13,
+    "itemsOnForm": 44
+  },
+  "items": [
+    {
+      "itemId": "STAAR.2022MAY.G8SS.03",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 3, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.12(C)", "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 4, "correctAnswerFromOfficialKey": "B",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.12(C)",
+      "era": "1840",
+      "stimulus": {
+        "type": "TABLE",
+        "title": "U.S. Enslaved Population by Select Region, 1840",
+        "text": "Region | Enslaved Population\nNortheast | 765\nSouth | 2,427,986",
+        "attribution": "Source: U.S. Census Bureau",
+        "attributionParty": "THIRD_PARTY_US_FEDERAL",
+        "imageDependent": false
+      },
+      "stem": "Which statement describes a factor that MOST contributed to the population difference shown in the table?",
+      "options": [
+        { "optionId": "A", "text": "The South had a society that relied on wage labor." },
+        { "optionId": "B", "text": "The South had an economy that relied on cotton." },
+        { "optionId": "C", "text": "The South had a variety of natural resources." },
+        { "optionId": "D", "text": "The South had an abundance of large cities." }
+      ],
+      "correctOptionId": "B",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE, wrong era and region for Boston."
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.04",
+      "itemVersion": "tea.released.1",
+      "priority": "MISSION_ONE_ADJACENT",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 4, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.4(A)", "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 1, "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.4(A)",
+      "teksClause": "the Intolerable Acts",
+      "bostonConcept": "Boston Act 4 gated fact: Intolerable / Coercive Acts",
+      "era": "1774",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "How did the American colonies react to enforcement of the Intolerable Acts?",
+      "options": [
+        { "optionId": "F", "text": "By collecting funds to pay for the tea destroyed in Boston Harbor" },
+        { "optionId": "G", "text": "By sending ambassadors to France to request military aid" },
+        { "optionId": "H", "text": "By placing a tax on all goods imported from Great Britain" },
+        { "optionId": "J", "text": "By holding the First Continental Congress to discuss unified resistance" }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q04.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (J). The repo's tag 8.4(A):INTOLERABLE_ACTS agrees with TEA's published label."
+      }
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.06",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 6, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.11(A)", "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 2, "correctAnswerFromOfficialKey": "G",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.11(A)",
+      "era": "early 1700s",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "An immigrant sails to North America in the early 1700s hoping to start a tobacco farm. He has done some research on the best environment for tobacco farming. Where is the immigrant most likely to settle?",
+      "options": [
+        { "optionId": "F", "text": "Massachusetts" },
+        { "optionId": "G", "text": "Virginia" },
+        { "optionId": "H", "text": "Rhode Island" },
+        { "optionId": "J", "text": "Pennsylvania" }
+      ],
+      "correctOptionId": "G",
+      "usableAsIs": true,
+      "usabilityNote": "Colonial-era 8.11(A) item that names Massachusetts as a distractor. Closest released 8.11(A) item to Boston's era, though the correct answer is Virginia."
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.09",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 9, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.1(A)", "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 1, "correctAnswerFromOfficialKey": "B",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.1(A)",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Which era involved legislation enacted by the Radical Republicans?",
+      "options": [
+        { "optionId": "A", "text": "Civil War" },
+        { "optionId": "B", "text": "Reconstruction" },
+        { "optionId": "C", "text": "Early republic" },
+        { "optionId": "D", "text": "Antebellum" }
+      ],
+      "correctOptionId": "B",
+      "usableAsIs": true,
+      "usabilityNote": "Clean era-identification pattern for 8.1(A); wrong era for Boston. The stem shape ('Which era involved X?') transfers directly to a Boston revolution-era item."
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.11",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 11, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.15(A)", "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3, "correctAnswerFromOfficialKey": "A",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.15(A)",
+      "bostonRelevance": "Boston uses 8.15(A) for the 'rights of Englishmen' argument carried by broadsides and dialogue. The English Bill of Rights is the document that argument rests on, so this is the strongest released 8.15(A) match.",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Which historic document had the greatest influence on the first ten amendments to the U.S. Constitution?",
+      "options": [
+        { "optionId": "A", "text": "The English Bill of Rights" },
+        { "optionId": "B", "text": "The Mayflower Compact" },
+        { "optionId": "C", "text": "The Fundamental Orders of Connecticut" },
+        { "optionId": "D", "text": "The Articles of Confederation" }
+      ],
+      "correctOptionId": "A",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.20",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 20, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.23(E)", "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 2, "correctAnswerFromOfficialKey": "G",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.23(E)",
+      "era": "1843",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "I found, near Boston, in the jails and asylums for the poor, a numerous class brought into unsuitable connection with criminals and the general mass of paupers. I refer to . . . insane persons, dwelling in circumstances not only adverse to their own physical and moral improvement, but productive of extreme disadvantages to all other persons brought into association with them.",
+        "attribution": "—Memorial to the Legislature of Massachusetts, 1843",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "Which woman fought to create legislation to help the people described in this excerpt?",
+      "options": [
+        { "optionId": "F", "text": "Sojourner Truth" },
+        { "optionId": "G", "text": "Dorothea Dix" },
+        { "optionId": "H", "text": "Harriet Beecher Stowe" },
+        { "optionId": "J", "text": "Elizabeth Cady Stanton" }
+      ],
+      "correctOptionId": "G",
+      "usableAsIs": true,
+      "usabilityNote": "Boston-set (the excerpt says 'near Boston') but 1843, eighty years past the chapter window."
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.22",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 22, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.16(A)", "processStudentExpectationAsPublished": "8.29(A)",
+        "reportingCategory": 3, "correctAnswerFromOfficialKey": "F",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.16(A)",
+      "isBostonSE": false,
+      "captureReason": "Not one of the 23 Boston SEs. Captured only because the repo carries a paraphrase of it (BANK.BOSTON.USER.Q22.v1) and the retagging pass needs its true provenance. Content is quartering, which Boston does dramatize, but TEA assessed it as an amendment-purpose item.",
+      "era": "1789-1791",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Why was the Third Amendment prohibiting the quartering of troops added to the U.S. Constitution?",
+      "options": [
+        { "optionId": "F", "text": "To address colonial treatment by the British military" },
+        { "optionId": "G", "text": "To maintain control over members of the British military" },
+        { "optionId": "H", "text": "To ensure the national government could pay for the U.S. military" },
+        { "optionId": "J", "text": "To reinforce the need for state militias in the United States" }
+      ],
+      "correctOptionId": "F",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q22.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (F). The repo tags it TEKS.PENDING_SME_REVIEW; TEA's published label is 8.16(A), which is NOT one of Boston's 23 SEs."
+      }
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.23",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 23, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.20(A)", "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3, "correctAnswerFromOfficialKey": "B",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.20(A)",
+      "era": "1776",
+      "bostonRelevance": "8.20(A) civic virtue is a Boston pattern carried by Samuel Adams and John Adams as NPC exemplars. This item uses Jefferson.",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Why is Thomas Jefferson’s writing of the Declaration of Independence considered to be one of his greatest contributions to American history?",
+      "options": [
+        { "optionId": "A", "text": "He showed responsibility by outlining the structure for a new government." },
+        { "optionId": "B", "text": "He helped define rights that would defeat tyranny." },
+        { "optionId": "C", "text": "He developed a military plan to defeat the British." },
+        { "optionId": "D", "text": "He outlined a strategy for acquiring the Louisiana Territory." }
+      ],
+      "correctOptionId": "B",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q23.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (B). The repo tags it TEKS.PENDING_SME_REVIEW; TEA's published label is 8.20(A)."
+      }
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.26",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 26, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.3(A)", "processStudentExpectationAsPublished": "8.29(A)",
+        "reportingCategory": 1, "correctAnswerFromOfficialKey": "G",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.3(A)",
+      "era": "1772",
+      "bostonRelevance": "Quotes Samuel Adams, a Boston 8.4(B) individual, in 1772, inside the chapter's Act 3 window. Carries both Boston's 8.3(A) representative-government pattern and its 8.19(A) natural-rights pattern in one stimulus. The single most Boston-native released item outside 8.4(A).",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "Among the natural rights of the Colonists are these: First, a right to life; Secondly, to liberty; Thirdly, to property; together with the right to support and defend them in the best manner they can.",
+        "attribution": "—Samuel Adams, 1772",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "In the early days of the colonies, a belief in these rights helped lead to —",
+      "options": [
+        { "optionId": "F", "text": "the establishment of royal courts" },
+        { "optionId": "G", "text": "the growth of representative government" },
+        { "optionId": "H", "text": "the implementation of the mercantile system" },
+        { "optionId": "J", "text": "the abolishment of indentured servitude" }
+      ],
+      "correctOptionId": "G",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q26.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (G). The repo tags it 8.4(A):NO_REPRESENTATION; TEA's published label is 8.3(A). This is a real mis-tag in the repo, not a vintage difference."
+      }
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.33",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 33, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.23(B)", "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 2, "correctAnswerFromOfficialKey": "B",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.23(B)",
+      "era": "1857",
+      "stimulus": {
+        "type": "SLOGAN",
+        "title": "American Platform of Principles, 1857",
+        "text": "Americans must rule America!",
+        "attribution": null,
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false,
+        "note": "Presented as a period political slogan graphic. The slogan text is captured verbatim; the graphic treatment is not."
+      },
+      "stem": "What motivated some people to support this nativist slogan?",
+      "options": [
+        { "optionId": "A", "text": "An affirmation of states’ rights by Jefferson Davis and the belief that tariffs are un-American" },
+        { "optionId": "B", "text": "Large-scale immigration to cities and the belief that immigrants stole jobs from native-born citizens" },
+        { "optionId": "C", "text": "The desire for an independent country free from foreign rule and unfair mercantile economic policies" },
+        { "optionId": "D", "text": "A rejection of anti-American influence following the Battle of San Jacinto and the addition of new territories" }
+      ],
+      "correctOptionId": "B",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE, wrong era for Boston. Both released 8.23(B) items are 19th-century nativism; neither touches the urban conflict Boston uses this SE for."
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.37",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 37, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.14(A)", "processStudentExpectationAsPublished": "8.29(A)",
+        "reportingCategory": 4, "correctAnswerFromOfficialKey": "C",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.14(A)",
+      "era": "1801",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "Agriculture, manufactures, commerce, and navigation, the four pillars of our prosperity, are the most thriving when left most free to individual enterprise.",
+        "attribution": "—President Thomas Jefferson, first annual message, December 8, 1801",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "Which economic principle is President Jefferson showing support for in this excerpt?",
+      "options": [
+        { "optionId": "A", "text": "Protective tariffs" },
+        { "optionId": "B", "text": "Limited competition" },
+        { "optionId": "C", "text": "Minimal government regulation" },
+        { "optionId": "D", "text": "Taxes to fund internal improvements" }
+      ],
+      "correctOptionId": "C",
+      "usableAsIs": true,
+      "usabilityNote": "8.14(A) explicitly names 'minimal government regulation, taxation, and property rights', and this item tests the regulation branch. Boston uses 8.14(A) via the economy and trade systems in mission M4."
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.38",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 38, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.10(C)", "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 2, "correctAnswerFromOfficialKey": "F",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.10(C)",
+      "era": "1861-1865",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Which human geographic factor helped the Union win the Civil War?",
+      "options": [
+        { "optionId": "F", "text": "A network of railroads in the North allowed Union soldiers to be moved quickly over long distances." },
+        { "optionId": "G", "text": "The Oregon Trail allowed Union military supplies to be moved quickly to the West." },
+        { "optionId": "H", "text": "Northern farms started producing cotton used to make Union military uniforms." },
+        { "optionId": "J", "text": "Canals in the Midwest allowed food for Union soldiers to be moved quickly to the front lines." }
+      ],
+      "correctOptionId": "F",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE, wrong era. The transportation-network reasoning is the same shape Boston needs for the rider run and committees of correspondence."
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.40",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency", "administration": "2022 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2022, RELEASED",
+        "itemNumberAsPublished": 40, "itemType": "Multiple Choice", "maxPoints": 1,
+        "teksAsPublished": "8.22(A)", "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3, "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2022-staar-may-grade-8-socialstudies-releasedtest.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2022-may-grade-8-social-studies.xlsx"
+      },
+      "studentExpectation": "8.22(A)",
+      "era": "1789-1797",
+      "bostonRelevance": "The only released 8.22(A) item whose subject is George Washington, the individual Boston's 8.22(A) uses (Washington takes command at the Siege of Boston). The content is his presidency, not the Siege.",
+      "stimulus": {
+        "type": "DIAGRAM",
+        "text": "First to appoint cabinet members | Recommended the title “Mr. President” | First to serve two terms",
+        "attribution": null,
+        "imageDependent": false,
+        "note": "Rendered as three boxes feeding a question mark. Box text captured verbatim."
+      },
+      "stem": "Which president established these traditions for the executive branch?",
+      "options": [
+        { "optionId": "F", "text": "John Adams" },
+        { "optionId": "G", "text": "Thomas Jefferson" },
+        { "optionId": "H", "text": "James Madison" },
+        { "optionId": "J", "text": "George Washington" }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": true
+    }
+  ]
+}

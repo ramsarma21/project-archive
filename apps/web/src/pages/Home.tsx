@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { createLocalProfile, deleteAllLocalProfiles, getSave, type LocalProfile } from "../db.js";
+import { useState } from "react";
+import { createLocalProfile, deleteAllLocalProfiles, type LocalProfile } from "../db.js";
 import { googleLoginUrl, logout } from "../api.js";
 
 export function Home(props: {
@@ -8,6 +8,7 @@ export function Home(props: {
   googleReady: boolean;
   googleName: string | null;
   onPlay: (p: LocalProfile) => void;
+  onOpenHub: () => void;
   onChanged: () => Promise<void> | void;
 }) {
   const { profiles, apiUp, googleReady, googleName } = props;
@@ -64,6 +65,18 @@ export function Home(props: {
           <ProfileRow key={p.profileId} profile={p} onPlay={() => props.onPlay(p)} />
         ))}
 
+        <div className="panel-title">Hub</div>
+        <button
+          className="btn-ghost archive-manual-button"
+          style={{ width: "100%" }}
+          onClick={props.onOpenHub}
+        >
+          Open the System hub
+        </button>
+        <p className="small muted" style={{ marginTop: 6 }}>
+          Placeholder state, no profile or server needed.
+        </p>
+
         <div className="panel-title row">
           <span className="grow">New local profile (for testing)</span>
           {profiles.some((profile) => profile.source === "LOCAL") && (
@@ -93,21 +106,8 @@ function ProfileRow(props: { profile: LocalProfile; onPlay: () => void }) {
         </div>
       </div>
       <div className="row">
-        <ResumeBadge profileId={profile.profileId} />
         <button onClick={props.onPlay}>Play</button>
       </div>
     </div>
   );
-}
-
-function ResumeBadge(props: { profileId: string }) {
-  const [label, setLabel] = useState<string>("");
-  useEffect(() => {
-    void getSave(props.profileId).then((s) => {
-      if (!s) setLabel("new");
-      else if (s.status === "COMPLETE") setLabel("complete");
-      else setLabel(`resume · ${s.committedEvents.length} steps`);
-    });
-  }, [props.profileId]);
-  return <span className="tag">{label}</span>;
 }

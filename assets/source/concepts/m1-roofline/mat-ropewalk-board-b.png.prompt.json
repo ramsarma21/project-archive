@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Exterior wall of a colonial ropewalk: WIDE vertical unpainted pine boards butted side by side, seen dead flat on from directly in front. Each board is clearly separate from its neighbours, with a narrow dark shadow gap between them, and each has its own colour: weathered grey-brown, warm tan where the tar has worn thin, silver where the sun has had it. Coarse sawn grain running vertically, long checks and shakes, dark knots, sap bleed at the knots, streaks and spatters of pine tar down some boards but not all. Hand-forged nails in vertical rows with a rust run beneath each one. IMPORTANT: the weathering is EVEN over the whole square. No gradient from top to bottom, no darker band along the bottom, no lighter band along the top, no algae, no moss, no ground, no sky, no roof, no framing, no window, no door. The image must tile invisibly against itself on ALL FOUR edges, top to bottom as well as left to right, so the boards continue straight through the top and bottom edges. Perfectly overhead orthographic seamless square albedo texture, filling the frame edge to edge. No perspective, no object edges, no background, no border, no cast shadows, no lighting gradient, no vignette. Opposite edges tile invisibly. Flat even illumination. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T16:14:40.650Z",
+  "files": [
+    "mat-ropewalk-board-b.png"
+  ]
+}

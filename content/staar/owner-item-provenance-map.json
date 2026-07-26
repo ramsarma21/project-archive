@@ -1,0 +1,218 @@
+{
+  "title": "Provenance map: the repo's 16 owner-supplied items traced to released TEA items",
+  "generatedAt": "2026-07-26T02:25Z",
+  "targetFile": "packages/chapter-boston/src/checkpoints/cp1Bank.ts",
+  "targetSymbol": "OWNER_ITEMS",
+  "readOnly": "This sourcing pass did not modify any code. This file is the input a later retagging pass consumes.",
+
+  "headline": "Fifteen of the 16 items the repo labels 'user-supplied 2026-07-23' are condensed paraphrases of real released STAAR Grade 8 Social Studies items. In every one of the 15 the repo's correctOptionId matches TEA's official key, and in every one the repo's item id number matches the item's published position on the form (Q05 is item 5 of the 2018 form, Q24 is item 24 of the 2019 form, and so on). The repo's claim that these are 'STAAR-style' understates what they are: they are STAAR items, paraphrased.",
+
+  "whyThisMatters": [
+    "It converts the design-document promise from unbacked to partly backed, per item, today.",
+    "It resolves all nine TEKS.PENDING_SME_REVIEW placeholders with TEA's own published labels.",
+    "It surfaces two real mis-tags and one item that is not traceable at all.",
+    "It also surfaces a licensing consequence: paraphrases of copyrighted TEA items are derivative of TEA items, so the licensing question in the README applies to the existing bank too, not only to anything new we might add."
+  ],
+
+  "matchMethod": {
+    "steps": [
+      "Search all four TEA released form PDFs (2018, 2019, 2021, 2022) for distinctive strings from each repo stem and option set.",
+      "Confirm the matched item's published position equals the number embedded in the repo item id.",
+      "Confirm the repo's correctOptionId equals TEA's official key for that item.",
+      "Confirm the repo's option letters (A/B/C/D or F/G/H/J) match the released item's letter set."
+    ],
+    "confidenceBasis": "A match is called VERIFIED only when position, official key, and option-letter set all agree with the repo item, in addition to the text match. All 15 matches meet all four conditions.",
+    "notVerified": "One item (BANK.BOSTON.USER.STAMP.v1) was searched for and not found in any released form or sampler. It is reported as untraceable rather than guessed at."
+  },
+
+  "summary": {
+    "ownerItemsInRepo": 16,
+    "tracedToReleasedTeaItems": 15,
+    "untraceable": 1,
+    "keyAgreementAmongTraced": "15 of 15",
+    "teksPlaceholdersResolved": 9,
+    "repoTagsConfirmedCorrect": 3,
+    "repoTagsFoundIncorrect": 2,
+    "tracedItemsWhoseTeaLabelIsNotABostonSE": 3
+  },
+
+  "mappings": [
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q05.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2018MAY.G8SS.05",
+      "administration": "2018 May", "itemNumberAsPublished": 5,
+      "teaTeksAsPublished": "8.4(A)", "teaReportingCategory": 1, "teaOfficialKey": "C",
+      "repoTeksTags": ["8.4(A):POSTWAR_POLICY"], "repoCorrectOptionId": "C",
+      "verdict": "TAG_CONFIRMED",
+      "action": "Set provenance to the 2018 released item. TEA's label agrees with the repo's 8.4(A) tag. The POSTWAR_POLICY clause refinement is ours, not TEA's, and is a reasonable reading of the Sugar/Stamp/Townshend stimulus."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q24.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2019MAY.G8SS.24",
+      "administration": "2019 May", "itemNumberAsPublished": 24,
+      "teaTeksAsPublished": "8.4(A)", "teaReportingCategory": 1, "teaOfficialKey": "H",
+      "repoTeksTags": ["8.4(A):NO_REPRESENTATION"], "repoCorrectOptionId": "H",
+      "verdict": "TAG_CONFIRMED",
+      "action": "Set provenance to the 2019 released item. TEA's label agrees. The NO_REPRESENTATION clause refinement is ours and is well supported by the Virginia Stamp Act Resolutions stimulus."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q04.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2022MAY.G8SS.04",
+      "administration": "2022 May", "itemNumberAsPublished": 4,
+      "teaTeksAsPublished": "8.4(A)", "teaReportingCategory": 1, "teaOfficialKey": "J",
+      "repoTeksTags": ["8.4(A):INTOLERABLE_ACTS"], "repoCorrectOptionId": "J",
+      "verdict": "TAG_CONFIRMED",
+      "action": "Set provenance to the 2022 released item. TEA's label agrees."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q38.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2021MAY.G8SS.38",
+      "administration": "2021 May", "itemNumberAsPublished": 38,
+      "teaTeksAsPublished": "8.4(A)", "teaReportingCategory": 1, "teaOfficialKey": "H",
+      "repoTeksTags": ["8.4(A):INTOLERABLE_ACTS"], "repoCorrectOptionId": "H",
+      "verdict": "TAG_CONFIRMED",
+      "action": "Set provenance to the 2021 released item. TEA's label agrees. Note the repo compressed the four mock headlines into a parenthetical; the released stimulus names the closure of Boston Harbor explicitly, which is worth restoring for Boston mission M11."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q26.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2022MAY.G8SS.26",
+      "administration": "2022 May", "itemNumberAsPublished": 26,
+      "teaTeksAsPublished": "8.3(A)", "teaReportingCategory": 1, "teaOfficialKey": "G",
+      "repoTeksTags": ["8.4(A):NO_REPRESENTATION"], "repoCorrectOptionId": "G",
+      "verdict": "TAG_INCORRECT",
+      "action": "Retag from 8.4(A):NO_REPRESENTATION to 8.3(A). TEA assessed this Samuel Adams natural-rights excerpt as growth of representative government, not as lack of representation in Parliament. This is a genuine mis-tag in the repo, not a TEKS vintage difference: 8.3(A) meant the same thing in 2022 as it does now. The item remains highly Boston-relevant, since it quotes Samuel Adams in 1772."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q39.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2018MAY.G8SS.39",
+      "administration": "2018 May", "itemNumberAsPublished": 39,
+      "teaTeksAsPublished": "8.20(C)", "teaTeksStatus": "RETIRED", "teaReportingCategory": 3, "teaOfficialKey": "B",
+      "repoTeksTags": ["8.4(A):NO_REPRESENTATION"], "repoCorrectOptionId": "B",
+      "verdict": "TAG_INCORRECT_AND_TEA_CODE_RETIRED",
+      "action": "Two problems. TEA labelled it 8.20(C), which is not 8.4(A), so the repo's tag is wrong. And 8.20(C) no longer exists in the assessed curriculum. The content, the Boston Tea Party as protest against taxation, maps to today's 8.20(B). Retag to 8.20(B) ONLY with reviewer sign-off, and record that the remapping is ours rather than TEA's."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q12.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2021MAY.G8SS.12",
+      "administration": "2021 May", "itemNumberAsPublished": 12,
+      "teaTeksAsPublished": "8.4(C)", "teaReportingCategory": 1, "teaOfficialKey": "J",
+      "repoTeksTags": ["TEKS.PENDING_SME_REVIEW"], "repoCorrectOptionId": "J",
+      "verdict": "PLACEHOLDER_RESOLVED",
+      "action": "Replace the placeholder with 8.4(C). Boston SE."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q35.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2019MAY.G8SS.35",
+      "administration": "2019 May", "itemNumberAsPublished": 35,
+      "teaTeksAsPublished": "8.4(C)", "teaReportingCategory": 1, "teaOfficialKey": "C",
+      "repoTeksTags": ["TEKS.PENDING_SME_REVIEW"], "repoCorrectOptionId": "C",
+      "verdict": "PLACEHOLDER_RESOLVED",
+      "action": "Replace the placeholder with 8.4(C). Boston SE."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q18.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2021MAY.G8SS.18",
+      "administration": "2021 May", "itemNumberAsPublished": 18,
+      "teaTeksAsPublished": "8.15(C)", "teaReportingCategory": 3, "teaOfficialKey": "F",
+      "repoTeksTags": ["TEKS.PENDING_SME_REVIEW"], "repoCorrectOptionId": "F",
+      "verdict": "PLACEHOLDER_RESOLVED",
+      "action": "Replace the placeholder with 8.15(C). Boston SE, and one Boston actively needs: this is the standing-army-over-civil-power grievance."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q30.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2019MAY.G8SS.30",
+      "administration": "2019 May", "itemNumberAsPublished": 30,
+      "teaTeksAsPublished": "8.15(C)", "teaReportingCategory": 3, "teaOfficialKey": "G",
+      "repoTeksTags": ["TEKS.PENDING_SME_REVIEW"], "repoCorrectOptionId": "G",
+      "verdict": "PLACEHOLDER_RESOLVED",
+      "action": "Replace the placeholder with 8.15(C). Boston SE."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q31.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2021MAY.G8SS.31",
+      "administration": "2021 May", "itemNumberAsPublished": 31,
+      "teaTeksAsPublished": "8.19(A)", "teaReportingCategory": 3, "teaOfficialKey": "C",
+      "repoTeksTags": ["TEKS.PENDING_SME_REVIEW"], "repoCorrectOptionId": "C",
+      "verdict": "PLACEHOLDER_RESOLVED",
+      "action": "Replace the placeholder with 8.19(A). Boston SE."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q23.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2022MAY.G8SS.23",
+      "administration": "2022 May", "itemNumberAsPublished": 23,
+      "teaTeksAsPublished": "8.20(A)", "teaReportingCategory": 3, "teaOfficialKey": "B",
+      "repoTeksTags": ["TEKS.PENDING_SME_REVIEW"], "repoCorrectOptionId": "B",
+      "verdict": "PLACEHOLDER_RESOLVED",
+      "action": "Replace the placeholder with 8.20(A). Boston SE."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q43.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2019MAY.G8SS.43",
+      "administration": "2019 May", "itemNumberAsPublished": 43,
+      "teaTeksAsPublished": "8.20(B)", "teaReportingCategory": 3, "teaOfficialKey": "A",
+      "repoTeksTags": ["TEKS.PENDING_SME_REVIEW"], "repoCorrectOptionId": "A",
+      "verdict": "PLACEHOLDER_RESOLVED_WITH_REVIEW_FLAG",
+      "action": "TEA published 8.20(B). Record 8.20(B) as TEA's label, but flag it: in the current assessed curriculum 8.20(B) is civil disobedience while 8.20(A) is 'evaluate the contributions of the Founding Fathers as models of civic virtue', which describes this John Adams item better. Compare 2022 #23, which TEA labelled 8.20(A) for very similar content. Do not silently substitute 8.20(A); get a reviewer to decide."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q22.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2022MAY.G8SS.22",
+      "administration": "2022 May", "itemNumberAsPublished": 22,
+      "teaTeksAsPublished": "8.16(A)", "teaReportingCategory": 3, "teaOfficialKey": "F",
+      "repoTeksTags": ["TEKS.PENDING_SME_REVIEW"], "repoCorrectOptionId": "F",
+      "verdict": "PLACEHOLDER_RESOLVED_NOT_A_BOSTON_SE",
+      "action": "Replace the placeholder with 8.16(A). Note that 8.16(A) is NOT one of Boston's 23 SEs, so this item contributes bank breadth but not Boston coverage, even though its quartering content is thematically close to Boston's Act 2."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.Q21.v1",
+      "match": "VERIFIED",
+      "releasedItemRef": "STAAR.2021MAY.G8SS.21",
+      "administration": "2021 May", "itemNumberAsPublished": 21,
+      "teaTeksAsPublished": "8.22(B)", "teaReportingCategory": 3, "teaOfficialKey": "A",
+      "repoTeksTags": ["TEKS.PENDING_SME_REVIEW"], "repoCorrectOptionId": "A",
+      "verdict": "PLACEHOLDER_RESOLVED_NOT_A_BOSTON_SE",
+      "action": "Replace the placeholder with 8.22(B). Note that 8.22(B) is NOT one of Boston's 23 SEs; Boston carries 8.22(A). This John Paul Jones item is bank breadth, not Boston coverage."
+    },
+    {
+      "repoItemId": "BANK.BOSTON.USER.STAMP.v1",
+      "match": "NOT_FOUND",
+      "releasedItemRef": null,
+      "administration": null, "itemNumberAsPublished": null,
+      "teaTeksAsPublished": null, "teaReportingCategory": null, "teaOfficialKey": null,
+      "repoTeksTags": ["8.4(A)"], "repoCorrectOptionId": "C",
+      "verdict": "UNTRACEABLE_TREAT_AS_AUTHORED",
+      "searchedIn": [
+        "2018 May released form", "2019 May released form", "2021 May released form",
+        "2022 May released form", "2023 New Question Type Sampler",
+        "2023 / 2024 / 2025 answer-key appendices", "2023 / 2024 / 2025 constructed-response scoring guides",
+        "2023 full-length practice test"
+      ],
+      "action": "This item has no released-item source. Its shape also differs from every released item: four long full-sentence options with 'Sons of Liberty' and 'non-importation agreements' named in the correct option's rationale, whereas released STAAR options are short. Treat it as authored content and label its provenance honestly as authored, not STAAR-derived. It is also the item currently satisfying Boston's RCC.STAMP_INTERNAL_INTRO macro, which means the mission-one Stamp Act concept is presently carried by the ONE owner item with no released provenance. That is worth knowing before the accountability claim is made.",
+      "recommendation": "The 2023 short constructed response (STAAR.2023.G8SS.07) is the real released item that covers Stamp Act scope, via its rubric bullet 'All colonists had to pay taxes on documents and paper.' Use it, or author a multiple-choice item against that rubric language, to give RCC.STAMP_INTERNAL_INTRO genuine released backing."
+    }
+  ],
+
+  "clauseCoverageAfterRetagging": {
+    "note": "Which 8.4(A) clauses the existing owner bank would honestly claim after retagging, counting only items with verified released provenance.",
+    "8.4(A) Proclamation of 1763": "none in the owner bank; covered by STAAR.2023.G8SS.07 and, indirectly, STAAR.2018MAY.G8SS.08",
+    "8.4(A) Intolerable Acts": "Q04 and Q38, both verified 8.4(A)",
+    "8.4(A) Stamp Act": "Q05 and Q24 touch it; the dedicated Stamp Act item (STAMP) is untraceable",
+    "8.4(A) mercantilism": "none in the owner bank",
+    "8.4(A) lack of representation in Parliament": "Q24, verified 8.4(A)",
+    "8.4(A) British economic policies after the French and Indian War": "Q05, verified 8.4(A)"
+  }
+}

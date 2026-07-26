@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-archive.local/content/m1/schema/learning-module.schema.json",
+  "title": "Authored learning module",
+  "description": "Envelope around one LearningModuleDefinition. The `module` property is byte-for-byte the shape declared in apps/web/src/module/moduleFormat.ts, so a consumer does JSON.parse(file).module and casts. Everything else in the envelope is authoring evidence — reading-rate arithmetic, deliberate exclusions, the window re-cut against Mission-Slate §4.7 — and no runtime reads it.",
+  "type": "object",
+  "required": ["contentId", "reviewStatus", "module", "budget"],
+  "additionalProperties": true,
+  "properties": {
+    "contentId": { "type": "string", "pattern": "^[A-Z]+\\.[A-Z0-9]+\\.CONTENT\\.[A-Z_]+\\.v\\d+$" },
+    "reviewStatus": { "enum": ["AUTHOR_DRAFT", "HISTORICAL_REVIEW_PENDING", "SME_APPROVED"] },
+    "module": {
+      "type": "object",
+      "required": ["moduleId", "chapterId", "missionId", "title", "subtitle", "cards"],
+      "additionalProperties": false,
+      "properties": {
+        "moduleId": { "type": "string", "minLength": 1 },
+        "chapterId": { "type": "string", "minLength": 1 },
+        "missionId": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "subtitle": { "type": "string", "minLength": 1 },
+        "cards": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/card" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "card": {
+      "type": "object",
+      "description": "One screen. `throughSeconds` is where this card's presentation target ENDS, measured from module start; the format cannot express a minimum dwell, so no author can turn a target into a lock-out. The last card's value is the whole module length and must be 180.",
+      "required": ["id", "cueId", "throughSeconds", "kicker", "body", "conceptIds", "codexCardIds", "advanceLabel"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "cueId": { "type": "string", "minLength": 1 },
+        "throughSeconds": { "type": "integer", "minimum": 1, "maximum": 180 },
+        "kicker": { "type": "string", "minLength": 1 },
+        "body": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "excerpt": {
+          "type": "object",
+          "description": "A quoted primary source. Verbatim always; runtime never generates or paraphrases one.",
+          "required": ["sourceId", "title", "attribution", "lines"],
+          "additionalProperties": false,
+          "properties": {
+            "sourceId": { "type": "string", "minLength": 1 },
+            "title": { "type": "string", "minLength": 1 },
+            "attribution": { "type": "string", "minLength": 1 },
+            "lines": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          }
+        },
+        "conceptIds": {
+          "type": "array",
+          "description": "Empty on a frame card, which teaches none and says so rather than being absent from a list.",
+          "items": { "type": "string", "pattern": "^[A-Z]{3}\\.CONCEPT\\.[A-Z][A-Z0-9_]*\\.v\\d+$" }
+        },
+        "codexCardIds": {
+          "type": "array",
+          "description": "Propositions this card is the sole source for. This is the field that makes the duel's answerable-from-the-module claim checkable rather than asserted.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "advanceLabel": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A photograph of a sheet of blank unprinted paper, lit flat and evenly, straight on with no perspective. FULL BLEED: the sheet is LARGER than this picture and is cropped away by all four edges, so every single pixel is paper. No desk, no table, no wall, no surface, no drop shadow, no vignette, no background. ABSOLUTELY NOTHING IS PRINTED OR WRITTEN ON THIS PAPER: no letters, no words, no numbers, no type, no handwriting, no lines of text, no border, no watermark device, no seal, no ornament, no picture. It is a blank sheet and nothing but a blank sheet. Heavy good laid rag paper, warm grey-white, weathered outdoors: broad soft rain-run stains down both sides, dust and soot greying the surface unevenly, a dried brown watermark across one corner, small insect-nibbled edge losses, four tack holes with rust bleeding into the fibre. Firm smooth stock, laid lines showing where the light rakes it. Completely unprinted. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T15:24:52.883Z",
+  "files": [
+    "stock-notice-heavy-b.png"
+  ]
+}

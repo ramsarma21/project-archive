@@ -1,0 +1,209 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://project-archive.local/content/staar/schema/staar-released-item.schema.json",
+  "title": "Released TEA STAAR item capture",
+  "description": "Shape of the per-administration item files in content/staar/items. Deliberately close to AssessmentItem in packages/contracts/src/assessment.ts so a later retagging pass is mechanical: itemId, itemVersion, stem, options[{optionId,text}], correctOptionId and era all carry the same meaning. Everything specific to released-item sourcing is nested under provenance so it can be lifted out or dropped wholesale.",
+  "type": "object",
+  "required": ["administration", "capture", "items"],
+  "properties": {
+    "administration": {
+      "type": "object",
+      "description": "What TEA published for this administration and how it is aligned.",
+      "required": ["administrationId", "label", "grade", "subject", "sourceDocuments"],
+      "properties": {
+        "administrationId": { "type": "string" },
+        "label": { "type": "string", "description": "TEA's own form title, verbatim." },
+        "grade": { "const": 8 },
+        "subject": { "const": "Social Studies" },
+        "language": { "type": "string" },
+        "formItemCount": { "type": "integer" },
+        "allItemsMultipleChoice": { "type": "boolean" },
+        "itemTypesObserved": { "type": "array", "items": { "type": "string" } },
+        "teksAlignmentVintage": {
+          "type": "string",
+          "description": "Which vintage of the Grade 8 Social Studies TEKS this form was aligned to, and whether any SE code it uses has since been retired or redefined. Required reading before trusting a code."
+        },
+        "textAvailabilityWarning": { "type": "string" },
+        "blueprint": { "type": "object" },
+        "note": { "type": "string" },
+        "sourceDocuments": {
+          "type": "object",
+          "description": "documentId values that resolve against ../sources.json."
+        }
+      }
+    },
+    "capture": {
+      "type": "object",
+      "description": "How this file was produced, so a reviewer can judge how much to trust it.",
+      "required": ["capturedAt", "scope", "method", "verbatim"],
+      "properties": {
+        "capturedAt": { "type": "string" },
+        "capturedBy": { "type": "string" },
+        "scope": { "type": "string", "description": "Which items were captured and which were deliberately skipped." },
+        "method": { "type": "string" },
+        "verbatim": { "type": "boolean", "description": "True means item text is reproduced word for word from TEA's document, not summarized." },
+        "transcriptionNote": { "type": "string", "description": "Any OCR or overprinting damage in the source, and how it was handled." },
+        "optionPoolWarning": { "type": "string" },
+        "thirdPartyContentObserved": { "type": "string" },
+        "itemsCapturedFromThisForm": { "type": "integer" },
+        "itemsOnForm": { "type": "integer" }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["itemId", "itemVersion", "provenance", "studentExpectation", "stem"],
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "STAAR.<ADMIN>.G8SS.<NN>. Stable and derived from published provenance, so two independent captures produce the same id."
+          },
+          "itemVersion": { "type": "string" },
+
+          "provenance": {
+            "type": "object",
+            "description": "The entire point of this dataset. Every field here is copied from a TEA document; none is inferred. An item missing any of the required fields does not belong in this dataset.",
+            "required": [
+              "publisher", "administration", "testForm", "itemNumberAsPublished",
+              "itemType", "teksAsPublished", "reportingCategory",
+              "correctAnswerFromOfficialKey", "sourceUrl", "keySourceUrl"
+            ],
+            "properties": {
+              "publisher": { "const": "Texas Education Agency" },
+              "administration": { "type": "string", "description": "Administration year and month as TEA labels it, e.g. '2019 May'." },
+              "testForm": { "type": "string", "description": "TEA's form title, verbatim." },
+              "itemNumberAsPublished": { "type": "integer", "description": "Item position exactly as TEA numbered it on the form. Never renumbered." },
+              "itemType": { "type": "string", "description": "TEA's own item-type string, e.g. 'Multiple Choice', 'Multiselect', 'Drag and Drop', 'Short Constructed Response'." },
+              "maxPoints": { "type": "integer" },
+              "teksAsPublished": {
+                "type": "string",
+                "description": "The tested student expectation exactly as TEA labels it, including TEA's notation for that year: '8.4(A)' for 2018-2022, '8.4.A' for 2023-2024, a bare '4.A' for 2025, and 'RC.SE' form such as '1.4.B' in the 2023 sampler key. Never normalized here."
+              },
+              "teksAsPublishedNote": { "type": "string" },
+              "processStudentExpectationAsPublished": { "type": ["string", "null"], "description": "The process SE TEA paired with the content SE. Only published for 2018-2022." },
+              "reportingCategory": { "type": "integer", "minimum": 1, "maximum": 4 },
+              "readinessOrSupporting": { "type": ["string", "null"], "enum": ["Readiness", "Supporting", null] },
+              "correctAnswerFromOfficialKey": {
+                "type": "string",
+                "description": "Taken from TEA's answer key or student-expectations-tested table. NEVER derived by reading the item and deciding which option looks right."
+              },
+              "sourceUrl": { "type": "string", "format": "uri", "description": "URL of the TEA document the item text came from." },
+              "keySourceUrl": { "type": "string", "format": "uri", "description": "URL of the TEA document the correct answer came from. Often a different document from sourceUrl, which is the point." },
+              "corroboratingSourceUrl": { "type": "string", "format": "uri" },
+              "textFoundIn": { "type": "string" },
+              "provenanceCaveat": { "type": "string", "description": "Present when provenance is weaker than 'appeared on a released operational form'." }
+            }
+          },
+
+          "provenanceStrength": {
+            "type": "string",
+            "enum": ["RELEASED_FORM_ITEM", "SAMPLER_NOT_CONFIRMED_ADMINISTERED"],
+            "description": "Absent means RELEASED_FORM_ITEM: the item appeared on a form TEA administered to Texas students. SAMPLER_NOT_CONFIRMED_ADMINISTERED means TEA published and keyed it but states only that sampler questions 'may have been previously administered'."
+          },
+
+          "studentExpectation": { "type": "string", "pattern": "^8\\.[0-9]+\\([A-Z]\\)$", "description": "teksAsPublished normalized to the 8.N(L) form used elsewhere in this repo. The normalization is the ONLY transformation applied to TEA's label." },
+          "studentExpectationStatus": { "type": "string", "enum": ["RETIRED"], "description": "Present when the SE code TEA used is no longer in the current assessed curriculum." },
+          "teksClause": { "type": "string", "description": "Which named clause inside a multi-clause SE the item exercises. This is our reading unless the item says so." },
+          "labelNote": { "type": "string", "description": "Explains a difference between TEA's label and the current assessed curriculum. Any remapping stated here is explicitly marked as ours." },
+          "labelReviewFlag": { "type": "string", "description": "TEA's label looks inconsistent with the current assessed curriculum and a human must decide. Deliberately NOT auto-resolved." },
+          "contentNote": { "type": "string" },
+          "bostonConcept": { "type": ["string", "array"], "description": "Boston concept id(s) or delivery-map entry this item serves. Ours, not TEA's." },
+          "bostonRelevance": { "type": "string" },
+          "isBostonSE": { "type": "boolean" },
+          "captureReason": { "type": "string", "description": "Why a non-Boston-SE item was captured anyway." },
+          "priority": { "type": "string", "enum": ["MISSION_ONE", "MISSION_ONE_ADJACENT"] },
+          "highestValueItem": { "type": "boolean" },
+          "era": { "type": "string", "description": "Same meaning as AssessmentItem.era: the historical era the item is set in." },
+
+          "stimulus": {
+            "type": "object",
+            "description": "The excerpt, table, list, diagram, map or image that precedes the question. Kept separate from stem so a consumer can compose them; the repo's AssessmentItem.stem is the concatenation of stimulus.text and stem.",
+            "required": ["type", "imageDependent"],
+            "properties": {
+              "type": { "type": "string", "enum": ["NONE", "PRIMARY_SOURCE_EXCERPT", "SECONDARY_SOURCE_EXCERPT", "LIST", "TABLE", "DIAGRAM", "MAP", "PHOTOGRAPH", "POLITICAL_CARTOON", "ILLUSTRATION", "HEADLINES", "SLOGAN"] },
+              "title": { "type": ["string", "null"] },
+              "text": { "type": ["string", "null"], "description": "Verbatim stimulus text, or null when the stimulus is an image." },
+              "stemLeadIn": { "type": "string" },
+              "attribution": { "type": ["string", "null"], "description": "TEA's own source line, verbatim, including the em dash or 'Source:' prefix." },
+              "attributionParty": { "type": "string", "enum": ["PUBLIC_DOMAIN_PERIOD_SOURCE", "THIRD_PARTY_US_FEDERAL", "THIRD_PARTY_COPYRIGHTED", "UNKNOWN"], "description": "Our classification of who holds rights in the stimulus, used to triage the third-party licensing question. Ours, not TEA's." },
+              "imageDependent": { "type": "boolean", "description": "True when the item cannot be answered without an image TEA did not publish as text. Such items are not usable as captured." },
+              "note": { "type": "string" }
+            }
+          },
+
+          "stem": { "type": ["string", "null"], "description": "The question sentence, verbatim." },
+          "stemLeadIn": { "type": "string" },
+          "prompt": { "type": "string", "description": "Used instead of stem for short constructed response items, where TEA's wording is a prompt rather than a question." },
+          "instruction": { "type": "string", "description": "TEA's response instruction, e.g. 'Select TWO correct answers.'" },
+          "responseConstraint": { "type": "string" },
+
+          "itemFormat": { "type": "string", "enum": ["MULTIPLE_CHOICE", "MULTISELECT", "MULTIPART", "DRAG_AND_DROP", "INLINE_CHOICE", "HOT_TEXT", "HOT_SPOT", "MATCH_TABLE_GRID", "SHORT_CONSTRUCTED_RESPONSE"], "description": "Absent means MULTIPLE_CHOICE. Present for every redesign-era item type that AssessmentItem does not model today." },
+          "selectCount": { "type": "integer" },
+          "buckets": { "type": "array", "items": { "type": "string" }, "description": "Target categories for drag-and-drop and match-grid items." },
+
+          "options": {
+            "type": ["array", "null"],
+            "description": "Verbatim options. optionId preserves TEA's own letter (A-D, F-J, or A-E) so ids stay keyed to the published item. Null for short constructed response.",
+            "items": {
+              "type": "object",
+              "required": ["optionId", "text"],
+              "properties": {
+                "optionId": { "type": "string" },
+                "text": { "type": "string" },
+                "isCorrect": { "type": "boolean" },
+                "rationale": { "type": "string", "description": "Same meaning as AssessmentOption.rationale. Not populated by this pass; TEA's per-option rationale documents are listed in sources.json and can fill this in later." }
+              }
+            }
+          },
+          "optionPoolComplete": { "type": ["boolean", "null"], "description": "False when TEA published only the correct placements and the distractor pool is unknown. Null when completeness could not be determined. Such items must not be treated as reconstructed items." },
+          "optionPoolNote": { "type": "string" },
+
+          "correctOptionId": { "type": ["string", "null"], "description": "Same meaning as AssessmentItem.correctOptionId. Null for item types with more than one correct response." },
+          "correctOptionIds": { "type": "array", "items": { "type": "string" }, "description": "Used for multiselect." },
+          "correctPlacements": { "type": "object", "description": "Used for drag-and-drop and match-grid: bucket to option ids." },
+
+          "rubric": {
+            "type": "object",
+            "description": "TEA's item-specific rubric for short constructed response items, verbatim. The score-2 acceptable content is directly usable as the pre-authored acceptable-answer set for the duel grader.",
+            "properties": {
+              "maxPoints": { "type": "integer" },
+              "scorePoints": { "type": "array" },
+              "verbatim": { "type": "boolean" },
+              "source": { "type": "string" }
+            }
+          },
+
+          "usableAsIs": { "type": "boolean", "description": "False when the item cannot be used as captured, almost always because it depends on an image TEA did not publish or because its option pool is incomplete. Independent of the licensing question, which gates every item in this dataset." },
+          "usabilityNote": { "type": "string" },
+          "whyThisMatters": { "type": "string" },
+          "bostonNote": { "type": "string" },
+          "scoredStudentResponses": { "type": "string" },
+
+          "repoLinkage": {
+            "type": "object",
+            "description": "Links this released item to an existing item in packages/chapter-boston that turns out to be derived from it. Consumed by the retagging pass; see ../owner-item-provenance-map.json.",
+            "properties": {
+              "existingItemId": { "type": "string" },
+              "relationship": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "notCapturedButPublished": {
+      "type": "array",
+      "description": "Items TEA published that were deliberately NOT captured, each with the reason. Keeping this list explicit is what makes the dataset's completeness auditable.",
+      "items": {
+        "type": "object",
+        "required": ["reason"],
+        "properties": {
+          "itemId": { "type": "string" },
+          "teksAsPublished": { "type": "string" },
+          "itemType": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

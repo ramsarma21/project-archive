@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Architectural reference photograph of the isolated TOWER AND STEEPLE of the Old South Meeting House, Boston (1729), photographed as a single detached object for 3D scanning. No meeting-house body, no roof, no adjoining brickwork, no ground plane, no other buildings, no people, no text or watermark. Centered, the entire tower from its base to its weathervane inside the frame with clear margin, THREE-QUARTER VIEW at eye level, plain light gray studio background, soft even daylight from the front, no cast shadow.\n\nSlender proportions: roughly five times as tall as it is wide.\n\nDocumented features, all of which must be present and clearly readable:\n- Square deep red brick shaft in Flemish bond with glazed headers, a moulded stone water table at the foot, and a single small round-headed window high on the shaft. The brick shaft carries the lower two thirds of the height.\n- Above the brick, a white-painted timber steeple in DIMINISHING STAGES, each set back behind a DEEP PROJECTING MOULDED CORNICE that returns right round the tower and reads as a ledge wide enough for a person to stand on. Strong horizontal shadow lines at every stage break.\n- The BELFRY stage: square, white clapboard, with tall arched louvred openings on each face, keystones, and a heavy moulded sill band beneath.\n- Above it a square stage with an open BALUSTRADED GALLERY: turned white balusters between corner pedestals.\n- Above that a white OCTAGONAL LANTERN with slender columns at the angles, louvred arched openings, and a moulded cornice with dentils.\n- A short tapered white spire with corner crockets and pinnacles, ending in a gilt ball and an iron WEATHERVANE shaped as an arrow with a cardinal-point cross.\n- Weathered white lead paint over close-boarded timber, fine classical mouldings.\n\nRealistic painted timber and brick materials, muted colours, photogrammetry reference plate style, evenly lit for 3D reconstruction, sharp and undistorted.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:17:00.158Z",
+  "files": [
+    "steeple-meetinghouse-climbable-d.png"
+  ]
+}

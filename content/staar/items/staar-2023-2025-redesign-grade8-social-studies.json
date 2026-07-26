@@ -1,0 +1,354 @@
+{
+  "$schema": "../schema/staar-released-item.schema.json",
+  "administration": {
+    "administrationId": "2023-2025-redesign",
+    "label": "STAAR Grade 8 Social Studies, redesigned STAAR, 2023 / 2024 / 2025 administrations",
+    "grade": 8,
+    "subject": "Social Studies",
+    "language": "English",
+    "formItemCount": 40,
+    "allItemsMultipleChoice": false,
+    "itemTypesObserved": [
+      "Multiple Choice", "Multiselect", "Multipart", "Drag and Drop",
+      "Inline Choice", "Hot Text", "Hot Spot", "Match Table Grid",
+      "Short Constructed Response"
+    ],
+    "blueprint": {
+      "effective": "Academic Year 2022-23",
+      "onePointQuestions": 31,
+      "twoPointQuestions": 9,
+      "totalQuestions": 40,
+      "totalPoints": 49,
+      "source": "staar-g8-ss-blueprint"
+    },
+    "textAvailabilityWarning": "This is the central finding for the redesign era. TEA states: 'Since STAAR is now an online assessment with technology enhanced items, PDF versions of STAAR released tests are no longer available.' For 2023, 2024, and 2025, TEA publishes the answer key, the item rationale, and the student-expectations-tested table for all 40 items, but publishes ITEM TEXT only for the non-multiple-choice items, which are reproduced in an Appendix to the answer key and in the constructed-response scoring guides. Every multiple-choice item from 2023 to 2025 is therefore metadata-only: we know its position, item type, TEA's TEKS label, reporting category, readiness/supporting designation, and official key, but not its stem or options. Those items are recorded in ../item-index.json and cannot be captured here.",
+    "sourceDocuments": {
+      "answerKeys": ["2023-staar-social-studies-grade-8-answer-key", "2024-staar-8-social-studies-answer-key", "2025-staar-social-studies-8-answer-key"],
+      "studentExpectationsTested": ["2023-staar-grade-8-social-studies-student-expectations", "2024-staar-8-social-studies-student-expectations", "2025-staar-8-social-studies-student-expectations"],
+      "itemRationales": ["2023-staar-social-studies-grade-8-rationale", "2024-staar-8-social-studies-rationale", "2025-staar-social-studies-8-rationale"],
+      "scoringGuides": ["2023-staar-8-social-studies-scoring-guide", "2024-staar-8-social-studies-scoring-guide", "2025-staar-8-social-studies-released-scoring-guide"],
+      "sampler": ["2023-staar-8-social-studies-item-sampler", "2023-staar-8-social-studies-paper-sampler-key"]
+    }
+  },
+  "capture": {
+    "capturedAt": "2026-07-26T02:25Z",
+    "capturedBy": "content/staar sourcing pass",
+    "scope": "Every redesign-era item that (a) TEA published text for AND (b) is tagged to one of the 23 Boston chapter SEs.",
+    "method": "Item text transcribed from the Appendix of TEA's answer-key PDFs, from TEA's constructed-response scoring guides, and from the 2023 paper item sampler. Correct answers taken from TEA's official key tables.",
+    "verbatim": true,
+    "transcriptionNote": "The 2023 and 2024 answer-key appendices are PDFs whose text layer contains character overprinting and OCR artifacts (for example 'Bcsed' for 'Based', and doubled letters throughout). Obvious artifacts of that kind were corrected during transcription. Any text that could not be recovered with confidence is set to null and flagged, never guessed.",
+    "optionPoolWarning": "For several drag-and-drop items TEA's appendix shows only the CORRECT placements, not the full pool of draggable options, and the prompt says 'Not all answers will be used'. Those items carry optionPoolComplete: false. Do not treat their option list as the full item.",
+    "itemsCaptured": 6
+  },
+  "items": [
+    {
+      "itemId": "STAAR.2023.G8SS.07",
+      "itemVersion": "tea.released.1",
+      "priority": "MISSION_ONE",
+      "highestValueItem": true,
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2023",
+        "testForm": "STAAR Spring 2023 Grade 8 Social Studies summative, online administration",
+        "itemNumberAsPublished": 7,
+        "itemType": "Short Constructed Response",
+        "maxPoints": 2,
+        "teksAsPublished": "8.4.A",
+        "reportingCategory": 1,
+        "readinessOrSupporting": "Readiness",
+        "correctAnswerFromOfficialKey": "See Appendix 1.1 (rubric-scored; there is no single keyed option)",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/2023-staar-8-social-studies-scoring-guide.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2023-staar-social-studies-grade-8-answer-key.pdf",
+        "corroboratingSourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2023-staar-grade-8-social-studies-student-expectations.xlsx",
+        "textFoundIn": "Appendix 1.1 of the answer key AND, identically, in the 2023 constructed-response scoring guide. Two independent TEA documents carry the same prompt and rubric."
+      },
+      "studentExpectation": "8.4(A)",
+      "teksClause": "Covers four of the six named 8.4(A) clauses in one item: the Proclamation of 1763, the Stamp Act, lack of representation in Parliament, and British economic policies following the French and Indian War.",
+      "bostonConcept": [
+        "RCC.STAMP_INTERNAL_INTRO",
+        "RCC.REPRESENTATION_CAUSE",
+        "RCC.DEBT_POLICY_INTRO"
+      ],
+      "era": "1763-1765",
+      "itemFormat": "SHORT_CONSTRUCTED_RESPONSE",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "prompt": "Select TWO of the following issues. How was each issue a cause of the American Revolution?\n• Proclamation of 1763\n• The Stamp Act\n• Lack of representation in Parliament\n• British economic policies following the French and Indian War\nThink about the question carefully. Then enter your answer in the box provided.",
+      "responseConstraint": "475 character limit (the item displays '# Chars 0/475')",
+      "options": null,
+      "correctOptionId": null,
+      "rubric": {
+        "maxPoints": 2,
+        "scorePoints": [
+          {
+            "score": 2,
+            "description": "Score two points for correct answers that include references to any two:",
+            "acceptableContentByIssue": {
+              "Proclamation of 1763": [
+                "The British restricted/prevented westward expansion and settlement."
+              ],
+              "Stamp Act": [
+                "All colonists had to pay taxes on documents and paper.",
+                "Taxes had to be paid in silver, which was difficult to acquire."
+              ],
+              "Unfair taxation/lack of representation in Parliament": [
+                "Colonists had to pay taxes that were created by a government in which they did not have representation."
+              ],
+              "British economic policies following the French and Indian War": [
+                "The British used taxes from the colonies to pay off debt from the war."
+              ]
+            }
+          },
+          { "score": 1, "description": "The response provides only half of the correct details." },
+          { "score": 0, "description": "The response is incorrect or irrelevant." }
+        ],
+        "verbatim": true,
+        "source": "2023-staar-8-social-studies-scoring-guide"
+      },
+      "usableAsIs": true,
+      "whyThisMatters": "This is the single most valuable released item found for this repo. It is an official TEA free-response item on 8.4(A) with an official rubric, and it covers three of Boston mission one's concepts directly: the Stamp Act's scope on documents and paper, taxation without representation, and postwar British debt policy. It is also the only released item that matches the boss-duel format, which is free response graded against pre-authored acceptable answers. TEA's own rubric bullets are a ready-made acceptable-answer set for that grader. Note also the second Stamp Act bullet, 'Taxes had to be paid in silver, which was difficult to acquire' — TEA treats the hard-coin problem as acceptable content, which is exactly the HARD_COIN_SCARCITY micro-concept the repo already has.",
+      "scoredStudentResponses": "12 real, TEA-scored student responses for this item are captured in ../eval/scr-8.4A-2023-scored-student-responses.json."
+    },
+    {
+      "itemId": "STAAR.2024.G8SS.37",
+      "itemVersion": "tea.released.1",
+      "priority": "MISSION_ONE_ADJACENT",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2024",
+        "testForm": "STAAR Spring 2024 Grade 8 Social Studies summative, online administration",
+        "itemNumberAsPublished": 37,
+        "itemType": "Multiselect",
+        "maxPoints": 2,
+        "teksAsPublished": "8.4.A",
+        "reportingCategory": 1,
+        "readinessOrSupporting": "Readiness",
+        "correctAnswerFromOfficialKey": "B, C",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-answer-key.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-student-expectations.xlsx",
+        "textFoundIn": "Appendix 1.7 of the 2024 answer key."
+      },
+      "studentExpectation": "8.4(A)",
+      "teksClause": "mercantilism",
+      "bostonConcept": "Boston Act 1 gameplay pattern: mercantilism, trade controlled for the Crown",
+      "era": "17th-18th century",
+      "itemFormat": "MULTISELECT",
+      "selectCount": 2,
+      "stimulus": {
+        "type": "POLITICAL_CARTOON",
+        "title": null,
+        "text": null,
+        "attribution": null,
+        "attributionParty": "UNKNOWN",
+        "imageDependent": true,
+        "note": "The stimulus is a cartoon. TEA's appendix reproduces it as an image with a rotated credit line that did not survive text extraction, so the rightsholder is unknown. The item is unanswerable without the cartoon."
+      },
+      "stemLeadIn": "This cartoon shows a popular economic belief in Europe during the seventeenth and eighteenth centuries.",
+      "stem": "Which events in U.S. history are directly associated with this cartoon?",
+      "instruction": "Select TWO correct answers.",
+      "options": [
+        { "optionId": "A", "text": "Passage of the Northwest Ordinance" },
+        { "optionId": "B", "text": "Passage of the Navigation Acts" },
+        { "optionId": "C", "text": "Boston Tea Party" },
+        { "optionId": "D", "text": "Great Awakening" },
+        { "optionId": "E", "text": "Shays’s Rebellion" }
+      ],
+      "optionPoolComplete": true,
+      "correctOptionIds": ["B", "C"],
+      "correctOptionId": null,
+      "usableAsIs": false,
+      "usabilityNote": "The option list is complete and verified against the official key, and the content is directly Boston-relevant (mercantilism plus the Navigation Acts plus the Boston Tea Party). But the item cannot be used as published because the cartoon stimulus is not reproducible from TEA's text layer and its rightsholder is unknown. Usable as an authoring template if we supply our own mercantilism stimulus."
+    },
+    {
+      "itemId": "STAAR.2024.G8SS.02",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2024",
+        "testForm": "STAAR Spring 2024 Grade 8 Social Studies summative, online administration",
+        "itemNumberAsPublished": 2,
+        "itemType": "Drag and Drop",
+        "maxPoints": 2,
+        "teksAsPublished": "8.1.A",
+        "reportingCategory": 1,
+        "readinessOrSupporting": "Readiness",
+        "correctAnswerFromOfficialKey": "American Revolution Era: “Conflict over issue of mercantilism” and “Ideas of Thomas Paine inspired action”; Civil War Era: “Conflict over issue of slavery” and “Ideas of Jefferson Davis inspired action”",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-answer-key.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-student-expectations.xlsx",
+        "textFoundIn": "Appendix 1.1 of the 2024 answer key; the placements are also spelled out in the student-expectations table."
+      },
+      "studentExpectation": "8.1(A)",
+      "bostonRelevance": "The American Revolution Era column names mercantilism (an 8.4(A) clause) and Thomas Paine (an 8.4(B) individual). This is the only released 8.1(A) item whose content sits in Boston's era.",
+      "era": "revolution era contrasted with Civil War era",
+      "itemFormat": "DRAG_AND_DROP",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Which characteristics are associated with the American Revolution era and which are associated with the Civil War era?",
+      "instruction": "Move each characteristic to the correct era.",
+      "buckets": ["American Revolution Era", "Civil War Era"],
+      "options": [
+        { "optionId": "OPT_MERCANTILISM", "text": "Conflict over issue of mercantilism" },
+        { "optionId": "OPT_PAINE", "text": "Ideas of Thomas Paine inspired action" },
+        { "optionId": "OPT_SLAVERY", "text": "Conflict over issue of slavery" },
+        { "optionId": "OPT_DAVIS", "text": "Ideas of Jefferson Davis inspired action" }
+      ],
+      "optionPoolComplete": null,
+      "optionPoolNote": "These four options are confirmed by TEA's official key. The prompt says 'Move each characteristic to the correct era' rather than 'Not all answers will be used', which suggests all four are used and the pool is complete, but TEA does not state the pool size and the appendix image did not extract, so completeness is UNCONFIRMED.",
+      "correctPlacements": {
+        "American Revolution Era": ["OPT_MERCANTILISM", "OPT_PAINE"],
+        "Civil War Era": ["OPT_SLAVERY", "OPT_DAVIS"]
+      },
+      "correctOptionId": null,
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2024.G8SS.18",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2024",
+        "testForm": "STAAR Spring 2024 Grade 8 Social Studies summative, online administration",
+        "itemNumberAsPublished": 18,
+        "itemType": "Drag and Drop",
+        "maxPoints": 2,
+        "teksAsPublished": "8.3.A",
+        "reportingCategory": 1,
+        "readinessOrSupporting": "Readiness",
+        "correctAnswerFromOfficialKey": "The Virginia House of Burgesses’ Contributions: “Established a representative government”, “Established a method of checks and balances”",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-answer-key.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2024-staar-8-social-studies-student-expectations.xlsx",
+        "textFoundIn": "Appendix 1.3 of the 2024 answer key."
+      },
+      "studentExpectation": "8.3(A)",
+      "era": "1619",
+      "itemFormat": "DRAG_AND_DROP",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "stemLeadIn": "This excerpt describes a system of government used in Virginia during the 1600s.",
+        "text": "Membership in the Council and . . . in the Assembly . . . was composed . . . both of members elected by the people and of members of the Council appointed by the authorities in England . . . .\nAt this first meeting of the General Assembly the Burgesses . . . and the members of the Council, with the governor, sat together as one body, in which each member had one vote, and questions were decided by the vote of the majority, the governor, however, having the power to veto any measure whatever.",
+        "attribution": "—Journals of the House of Burgesses of Virginia, 1619",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "Based on the excerpt and your knowledge of U.S. history, how did the House of Burgesses contribute to the democratic tradition of the United States?",
+      "instruction": "Move the correct answer to each box in the chart. Not all answers will be used.",
+      "buckets": ["The Virginia House of Burgesses’ Contributions"],
+      "options": [
+        { "optionId": "OPT_REP_GOV", "text": "Established a representative government", "isCorrect": true },
+        { "optionId": "OPT_CHECKS", "text": "Established a method of checks and balances", "isCorrect": true }
+      ],
+      "optionPoolComplete": false,
+      "optionPoolNote": "INCOMPLETE. The prompt explicitly says 'Not all answers will be used', so unused distractors exist, but TEA's appendix reproduces only the two correct placements. The distractor pool is NOT published in recoverable form. Do not use this item as a multiple-choice item without authoring new distractors.",
+      "correctPlacements": { "The Virginia House of Burgesses’ Contributions": ["OPT_REP_GOV", "OPT_CHECKS"] },
+      "correctOptionId": null,
+      "usableAsIs": false,
+      "usabilityNote": "Correct placements are verified, but the item is not reconstructible because the distractor pool is unpublished."
+    },
+    {
+      "itemId": "STAAR.2023.G8SS.20",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2023",
+        "testForm": "STAAR Spring 2023 Grade 8 Social Studies summative, online administration",
+        "itemNumberAsPublished": 20,
+        "itemType": "Drag and Drop",
+        "maxPoints": 2,
+        "teksAsPublished": "8.23.E",
+        "reportingCategory": 2,
+        "readinessOrSupporting": "Supporting",
+        "correctAnswerFromOfficialKey": "Harriet Beecher Stowe: Wrote about the hardships of slavery, Dorothea Dix: Worked to improve conditions for the mentally ill, Elizabeth Cady Stanton: Led efforts to promote women’s right to vote",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2023-staar-social-studies-grade-8-answer-key.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2023-staar-grade-8-social-studies-student-expectations.xlsx",
+        "textFoundIn": "Appendix 1.4 of the 2023 answer key."
+      },
+      "studentExpectation": "8.23(E)",
+      "era": "19th century",
+      "itemFormat": "DRAG_AND_DROP",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stemLeadIn": "These contributions were made by leading reformers in U.S. history.",
+      "stem": "Move each contribution to the correct reformer.",
+      "instruction": "Not all answers will be used.",
+      "buckets": ["Harriet Beecher Stowe", "Dorothea Dix", "Elizabeth Cady Stanton"],
+      "options": [
+        { "optionId": "OPT_SUFFRAGE", "text": "Led efforts to promote women’s right to vote" },
+        { "optionId": "OPT_MENTAL_HEALTH", "text": "Worked to improve conditions for the mentally ill" },
+        { "optionId": "OPT_EDUCATION", "text": "Argued for universal access to education" },
+        { "optionId": "OPT_SLAVERY_HARDSHIP", "text": "Wrote about the hardships of slavery" }
+      ],
+      "optionPoolComplete": true,
+      "optionPoolNote": "Complete. All four draggable options are legible in TEA's appendix, three are used, and 'Argued for universal access to education' is the unused distractor.",
+      "correctPlacements": {
+        "Harriet Beecher Stowe": ["OPT_SLAVERY_HARDSHIP"],
+        "Dorothea Dix": ["OPT_MENTAL_HEALTH"],
+        "Elizabeth Cady Stanton": ["OPT_SUFFRAGE"]
+      },
+      "correctOptionId": null,
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE for Boston's 8.23(E), but 19th-century reform, not Boston's Daughters of Liberty boycott thread. Included because it is the only released 8.23(E) item with a complete option pool, and because the match-person-to-contribution format is the exact format Boston's 8.4(B) individuals need."
+    },
+    {
+      "itemId": "STAAR.2023.SAMPLER.G8SS.07",
+      "itemVersion": "tea.released.1",
+      "provenanceStrength": "SAMPLER_NOT_CONFIRMED_ADMINISTERED",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2023 New Question Type Sampler (paper item sampler)",
+        "testForm": "STAAR Grade 8 Social Studies Paper Item Sampler, 2023",
+        "itemNumberAsPublished": 7,
+        "itemType": "Drag and Drop",
+        "maxPoints": 2,
+        "teksAsPublished": "1.4.B",
+        "teksAsPublishedNote": "The sampler key's 'TEKS Alignment' column prefixes the SE with its reporting category, so '1.4.B' means Reporting Category 1 plus SE 8.4(B). That reading is OUR INFERENCE, but it is corroborated across all 16 sampler items: every prefix matches the correct reporting category for its SE (for example '3.15.E' is Government/RC3 plus 8.15(E), '2.10.A' is Geography/RC2 plus 8.10(A), '4.12.B' is Economics/RC4 plus 8.12(B)). Flagged for reviewer confirmation.",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "Thomas Jefferson: Summarized the reasons for breaking away from Britain in the Declaration of Independence; George Washington: Led the Continental Army in key victories against the British; Thomas Paine: Wrote ideas in the pamphlet Common Sense that inspired colonists to support the revolution; Crispus Attucks: Became the first casualty of the American Revolution when he was killed at the Boston Massacre",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2023-staar-8-social-studies-item-sampler.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2023-staar-8-social-studies-paper-sampler-key.pdf",
+        "provenanceCaveat": "IMPORTANT. This is a SAMPLE test question, not a released test form item. TEA distinguishes the two: 'A test form is a set of released test questions previously administered together to Texas students... Sample test questions are small subsets of test questions released from the STAAR test banks. These test questions MAY HAVE BEEN previously administered.' So unlike every other item in content/staar, we CANNOT assert that this item was administered to Texas students. It is genuinely published by TEA and genuinely keyed by TEA; it is not confirmed to be an operational item."
+      },
+      "studentExpectation": "8.4(B)",
+      "teksClause": "explain the roles played by significant individuals during the American Revolution",
+      "bostonConcept": "Boston 8.4(B) individuals; Crispus Attucks and the Boston Massacre are mission M6",
+      "era": "1770-1776",
+      "itemFormat": "DRAG_AND_DROP",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Determine which contribution explains each individual’s significance to the American Revolution.",
+      "instruction": "Select the correct answer for each box.",
+      "buckets": ["Thomas Jefferson", "George Washington", "Thomas Paine", "Crispus Attucks"],
+      "options": [
+        { "optionId": "A", "text": "Summarized the reasons for breaking away from Britain in the Declaration of Independence" },
+        { "optionId": "B", "text": "Became the first casualty of the American Revolution when he was killed at the Boston Massacre" },
+        { "optionId": "C", "text": "Led the Continental Army in key victories against the British" },
+        { "optionId": "D", "text": "Wrote ideas in the pamphlet Common Sense that inspired colonists to support the revolution" }
+      ],
+      "optionPoolComplete": true,
+      "correctPlacements": {
+        "Thomas Jefferson": ["A"],
+        "George Washington": ["C"],
+        "Thomas Paine": ["D"],
+        "Crispus Attucks": ["B"]
+      },
+      "correctOptionId": null,
+      "usableAsIs": true,
+      "whyThisMatters": "This is the ONLY TEA-published item found for 8.4(B) across seven summative administrations plus the sampler. 8.4(B) is otherwise a total gap. It names Crispus Attucks and the Boston Massacre, which is Boston mission M6, and George Washington, which supports mission M14. Its weaker provenance (sampler, not confirmed administered) is exactly why it is tagged provenanceStrength SAMPLER_NOT_CONFIRMED_ADMINISTERED rather than being silently mixed in with the form items."
+    }
+  ],
+  "notCapturedButPublished": [
+    {
+      "itemId": "STAAR.2023.G8SS.37",
+      "teksAsPublished": "8.22.A",
+      "itemType": "Hot Text",
+      "reason": "Boston SE (8.22(A)) and TEA published the item in Appendix 1.8 of the 2023 answer key, but the excerpt's PDF text layer is too badly damaged by overprinting to transcribe faithfully. The correct selection is recoverable from the key ('history and experience prove that foreign influence is one of the most [harmful enemies] of Republican Government'), and the source is George Washington's Farewell Address, September 19, 1796. Content is outside Boston's era regardless. Re-transcribe from the PDF page image if this item is ever needed."
+    },
+    {
+      "itemId": "STAAR.2025.*",
+      "teksAsPublished": "n/a",
+      "itemType": "various",
+      "reason": "The 2025 administration tested NO Boston-priority SE with a published-text item. Its two short constructed responses are 8.5(H) (Jackson's plan for American Indians) and 8.23(D) (Spanish influence in the American Southwest); neither is a Boston SE. 2025 also tested no 8.4(A) item at all. All 40 items of 2025 appear in ../item-index.json as metadata."
+    },
+    {
+      "itemId": "PRACTICE_TEST_2023",
+      "teksAsPublished": "n/a",
+      "itemType": "various",
+      "reason": "TEA publishes a full-length Grade 8 Social Studies practice test with complete item text (2023-staar-redesign-8-social-studies-practice-test.pdf), but publishes NO answer key and NO TEKS alignment for it. TEA publishes practice-test answer keys for Math, RLA, Science, Biology, Algebra I, English I and English II, but not for Grade 8 Social Studies. Because there is no official key and no official SE label, these items fail the provenance bar for this dataset and are deliberately NOT captured. Capturing them would mean inventing keys and standard codes, which is the one thing this dataset must never do."
+    }
+  ]
+}

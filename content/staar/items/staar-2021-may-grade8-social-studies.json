@@ -1,0 +1,465 @@
+{
+  "$schema": "../schema/staar-released-item.schema.json",
+  "administration": {
+    "administrationId": "2021",
+    "label": "STAAR Grade 8 Social Studies, Administered May 2021",
+    "grade": 8,
+    "subject": "Social Studies",
+    "language": "English",
+    "formItemCount": 44,
+    "allItemsMultipleChoice": true,
+    "teksAlignmentVintage": "Post-streamlining Grade 8 Social Studies TEKS. Every SE code used on this form is still listed in TEA's current assessed curriculum.",
+    "note": "TEA published no Grade 8 Social Studies released form for the 2020 administration; STAAR was cancelled in spring 2020. There is no 2020 tab on TEA's released-test-questions page.",
+    "sourceDocuments": {
+      "form": "2021-staar-gr-8-social-studies-test-tagged",
+      "answerKey": "staar-expectation-tested-2021-may-grade-8-social-studies",
+      "studentExpectationsTested": "staar-expectation-tested-2021-may-grade-8-social-studies",
+      "itemRationale": "staar-2021-grade-8-social-studies-rationales"
+    }
+  },
+  "capture": {
+    "capturedAt": "2026-07-26T02:25Z",
+    "capturedBy": "content/staar sourcing pass",
+    "scope": "Items whose TEA-published content student expectation is one of the 23 Boston chapter SEs, plus item 21 (8.22(B), not a Boston SE) because the repo already carries a paraphrase of it.",
+    "method": "Item text transcribed from TEA's released form PDF text layer. Correct answers taken from TEA's official student-expectations-tested table, never inferred from the item.",
+    "verbatim": true,
+    "itemsCapturedFromThisForm": 12,
+    "itemsOnForm": 44
+  },
+  "items": [
+    {
+      "itemId": "STAAR.2021MAY.G8SS.03",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 3,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.3(A)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "B",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.3(A)",
+      "bostonRelevance": "This is the strongest released match for Boston's 8.3(A) pattern (representative government grown from distance and self-rule). Era-neutral colonial framing, no image, no era conflict.",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "What was one way slow communication with the British government affected the American colonies?",
+      "options": [
+        { "optionId": "A", "text": "The colonies united for trade and defense." },
+        { "optionId": "B", "text": "Self-government developed in the colonies." },
+        { "optionId": "C", "text": "Smuggling of goods in the colonies decreased." },
+        { "optionId": "D", "text": "The colonies petitioned the government to establish a navy." }
+      ],
+      "correctOptionId": "B",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.06",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 6,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.1(A)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.1(A)",
+      "stimulus": {
+        "type": "PHOTOGRAPH",
+        "title": "President Abraham Lincoln Visiting the Battlefield at Antietam, October 3, 1862",
+        "text": null,
+        "attribution": "Source: NARA",
+        "attributionParty": "THIRD_PARTY_US_FEDERAL",
+        "imageDependent": true,
+        "note": "The stimulus is a photograph. The item is unanswerable without it."
+      },
+      "stem": "Which era is represented by this photograph?",
+      "options": [
+        { "optionId": "F", "text": "The early republic" },
+        { "optionId": "G", "text": "The Age of Jackson" },
+        { "optionId": "H", "text": "Westward expansion" },
+        { "optionId": "J", "text": "Civil War" }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": false,
+      "usabilityNote": "Image-dependent and outside the Boston era. The item-type pattern (identify the era from a period image) is a usable authoring template for Boston's 8.1(A) Archive framing."
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.08",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 8,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.11(A)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 2,
+        "correctAnswerFromOfficialKey": "F",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.11(A)",
+      "stimulus": {
+        "type": "MAP",
+        "title": "Mississippi Territory, 1798",
+        "text": null,
+        "attribution": null,
+        "imageDependent": true,
+        "note": "The stimulus is a map with a key and compass rose. The item is unanswerable without it."
+      },
+      "stem": "Which physical characteristic attracted settlers to this area during the late-eighteenth and early-nineteenth centuries?",
+      "options": [
+        { "optionId": "F", "text": "Large amounts of fertile soil for crops" },
+        { "optionId": "G", "text": "Accessible mountain passes for mining" },
+        { "optionId": "H", "text": "Natural harbors for whaling" },
+        { "optionId": "J", "text": "Grassy plains for cattle ranching" }
+      ],
+      "correctOptionId": "F",
+      "usableAsIs": false,
+      "usabilityNote": "Map-dependent. Note option H names natural harbors, the physical characteristic Boston's 8.11(A) actually turns on."
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.12",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 12,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.4(C)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.4(C)",
+      "teksClause": "enduring the winter at Valley Forge",
+      "era": "1777",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "I am now convinced, beyond a doubt that unless some great and capital change suddenly takes place . . . this Army must inevitably be reduced to one or other of these three things. Starve, dissolve, or disperse, in order to obtain subsistence in the best manner they can; rest assured Sir this is not an exaggerated picture. . . .",
+        "attribution": "—General George Washington, letter to the Continental Congress, December 23, 1777",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "Which of the following prompted General Washington to write this letter?",
+      "options": [
+        { "optionId": "F", "text": "A shortage of Continental soldiers to maintain the siege of Yorktown" },
+        { "optionId": "G", "text": "The high number of casualties suffered during the Battle of Bunker Hill" },
+        { "optionId": "H", "text": "Low morale after the British army captured New York City" },
+        { "optionId": "J", "text": "Concern for the Continental troops during the winter at Valley Forge" }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q12.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (J). The repo tags it TEKS.PENDING_SME_REVIEW; TEA's published label is 8.4(C)."
+      }
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.14",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 14,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.12(C)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 4,
+        "correctAnswerFromOfficialKey": "G",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.12(C)",
+      "bostonRelevance": "Names New England shipbuilding and excellent harbors in the stimulus, which is the economic base Boston's port missions rest on.",
+      "stimulus": {
+        "type": "DIAGRAM",
+        "title": "Cause-and-effect diagram",
+        "text": "New England During the Colonial Period\n• Depended on shipbuilding\n• Had excellent harbors\n→ (1)\n\nThe Mid-Atlantic During the Colonial Period\n• Depended on farming\n• Had rich, fertile soil\n→ (2)",
+        "attribution": null,
+        "imageDependent": false,
+        "note": "Rendered as a two-row cause-and-effect diagram. Cell text captured verbatim; visual arrangement approximated."
+      },
+      "stem": "Which effects correctly replace the numbers in this cause-and-effect diagram?",
+      "options": [
+        { "optionId": "F", "text": "(1) Used slave labor (2) Used Chinese laborers" },
+        { "optionId": "G", "text": "(1) Exported dried fish (2) Exported agricultural goods" },
+        { "optionId": "H", "text": "(1) Established plantations (2) Established textile factories" },
+        { "optionId": "J", "text": "(1) Imported lumber (2) Imported cattle" }
+      ],
+      "optionTranscriptionNote": "RECONSTRUCTED PAIRING, not a contiguous verbatim string. This is the only item in the dataset where that is true. TEA lays the four options out in two columns, so the PDF text layer interleaves them: line 1 is 'F (1) Used slave labor H (1) Established plantations', line 2 is '(2) Used Chinese laborers (2) Established textile factories', and so on. All eight fragments are individually verbatim from the source, and the column pairing is unambiguous (F and G occupy the left column, H and J the right), but each option's two halves were rejoined during transcription rather than copied as one run of text.",
+      "correctOptionId": "G",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.18",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 18,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.15(C)",
+        "processStudentExpectationAsPublished": "8.29(A)",
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "F",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.15(C)",
+      "era": "1776",
+      "bostonRelevance": "The grievance quoted is the standing-army-over-civil-power grievance, which is exactly what Boston's Act 2 quartering and Watch content dramatizes.",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "text": "He has affected to render the Military independent of and superior to the Civil power.",
+        "attribution": "—Declaration of Independence",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "How was this grievance addressed by the Founding Fathers?",
+      "options": [
+        { "optionId": "F", "text": "By making the president the commander in chief of the armed forces" },
+        { "optionId": "G", "text": "By requiring the president and members of Congress to take the oath of office" },
+        { "optionId": "H", "text": "By giving the president and Congress the power to make treaties" },
+        { "optionId": "J", "text": "By giving Congress the power to draft civilians into the armed forces" }
+      ],
+      "correctOptionId": "F",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q18.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (F). The repo tags it TEKS.PENDING_SME_REVIEW; TEA's published label is 8.15(C)."
+      }
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.21",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 21,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.22(B)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "A",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.22(B)",
+      "isBostonSE": false,
+      "captureReason": "Not one of the 23 Boston SEs. Captured only because the repo carries a paraphrase of it (BANK.BOSTON.USER.Q21.v1) and the retagging pass needs its true provenance.",
+      "era": "1776-1783",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Why is John Paul Jones remembered as the “Father of the American Navy”?",
+      "options": [
+        { "optionId": "A", "text": "He won naval victories against the British during the Revolutionary War." },
+        { "optionId": "B", "text": "He led the naval assault against the Barbary States." },
+        { "optionId": "C", "text": "He commanded the first steam-powered warship in the U.S. Navy." },
+        { "optionId": "D", "text": "He served as the first Secretary of the Navy." }
+      ],
+      "correctOptionId": "A",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q21.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (A). The repo tags it TEKS.PENDING_SME_REVIEW; TEA's published label is 8.22(B), which is NOT one of Boston's 23 SEs."
+      }
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.23",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 23,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.21(A)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "C",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.21(A)",
+      "era": "1848-1860",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Which statement describes BOTH the Free-Soil Party and the Republican Party in the mid-1800s?",
+      "options": [
+        { "optionId": "A", "text": "They supported actions to stop escaped slaves from entering the North." },
+        { "optionId": "B", "text": "They supported enacting safety regulations to protect factory workers." },
+        { "optionId": "C", "text": "They were against the expansion of slavery into the western territories." },
+        { "optionId": "D", "text": "They were against the establishment of American Indian reservations." }
+      ],
+      "correctOptionId": "C",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE for Boston's 8.21(A) (points of view of parties and interest groups), but about 1850s parties. Boston uses 8.21(A) for Patriot versus Loyalist viewpoints; no released item does that. The 'describes BOTH X and Y' comparison frame is a usable authoring template."
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.27",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 27,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.10(C)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 2,
+        "correctAnswerFromOfficialKey": "B",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.10(C)",
+      "era": "1803",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Why did President Thomas Jefferson approve the negotiations that led to the Louisiana Purchase?",
+      "options": [
+        { "optionId": "A", "text": "He wanted to settle boundary disputes with Great Britain." },
+        { "optionId": "B", "text": "He wanted to take control of the Mississippi River." },
+        { "optionId": "C", "text": "He wanted to obtain land to limit Russian colonization." },
+        { "optionId": "D", "text": "He wanted to take control of the Appalachian Mountains." }
+      ],
+      "correctOptionId": "B",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE, waterway reasoning, but 1803 and not Boston. Boston uses 8.10(C) for the harbor and the committees of correspondence."
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.29",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 29,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.15(E)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "C",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.15(E)",
+      "bostonRelevance": "The ONLY released item found for 8.15(E) in seven administrations. Boston mission M4 targets 8.15(E) (Locke and Montesquieu); this released item covers the Thomas Hooker branch of the same SE.",
+      "era": "1639",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Thomas Hooker’s Fundamental Orders of Connecticut is important in U.S. political history because it was an early colonial document that —",
+      "options": [
+        { "optionId": "A", "text": "outlawed protected tariffs" },
+        { "optionId": "B", "text": "extended suffrage to women" },
+        { "optionId": "C", "text": "provided for the election of representatives" },
+        { "optionId": "D", "text": "proposed the creation of an independent country" }
+      ],
+      "correctOptionId": "C",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.31",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 31,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.19(A)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "C",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.19(A)",
+      "era": "1776",
+      "bostonRelevance": "8.19(A) unalienable rights is a Boston Act 3 dual-delivered pattern (town meeting, broadsides).",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Which description is an example of an unalienable right from the Declaration of Independence?",
+      "options": [
+        { "optionId": "A", "text": "Equality — People’s education should be equal in every state." },
+        { "optionId": "B", "text": "Wealth — People’s salaries should be dependent on their skills." },
+        { "optionId": "C", "text": "Happiness — People can do lawful things that they enjoy." },
+        { "optionId": "D", "text": "Patriotism — People can choose to join any of the armed forces." }
+      ],
+      "correctOptionId": "C",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q31.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (C). The repo tags it TEKS.PENDING_SME_REVIEW; TEA's published label is 8.19(A)."
+      }
+    },
+    {
+      "itemId": "STAAR.2021MAY.G8SS.38",
+      "itemVersion": "tea.released.1",
+      "priority": "MISSION_ONE_ADJACENT",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2021 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2021",
+        "itemNumberAsPublished": 38,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.4(A)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "H",
+        "sourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/2021-staar-gr-8-social-studies-test-tagged.pdf",
+        "keySourceUrl": "https://tea.texas.gov/data-reports/staar/released-test-questions/staar-expectation-tested-2021-may-grade-8-social-studies.csv"
+      },
+      "studentExpectation": "8.4(A)",
+      "teksClause": "the Intolerable Acts",
+      "bostonConcept": "Boston Act 4 gated fact: Intolerable / Coercive Acts, including the Port Act closing the harbor",
+      "era": "1774",
+      "stimulus": {
+        "type": "HEADLINES",
+        "title": "The Daily Star (four mock headlines)",
+        "text": "Great Britain Orders Closure of Boston Harbor Until Money Lost from Tea Is Repaid\nGreat Britain Dissolves Massachusetts Legislature\nGreat Britain Allows British Officials in America Charged with Crimes to Go to England for Trial\nGreat Britain Authorizes Colonial Governors to Quarter British Soldiers in Unoccupied Buildings",
+        "attribution": null,
+        "imageDependent": false,
+        "note": "Rendered as four mock newspaper mastheads. Headline text captured verbatim; the layout is not reproduced. The headlines are TEA-authored, not quotations from a real 1774 newspaper."
+      },
+      "stem": "How did the American colonists IMMEDIATELY respond to the 1774 laws described in these headlines?",
+      "options": [
+        { "optionId": "F", "text": "The First Continental Congress declared war on Great Britain." },
+        { "optionId": "G", "text": "The colonists adopted the Articles of Confederation." },
+        { "optionId": "H", "text": "The First Continental Congress sent a list of grievances to King George III." },
+        { "optionId": "J", "text": "The colonists adopted the Bill of Rights." }
+      ],
+      "correctOptionId": "H",
+      "usableAsIs": true,
+      "bostonNote": "Directly names the closure of Boston Harbor, the dissolved Massachusetts legislature, and quartering. This is the single best released item for Boston mission M11 (The Port Is Shut, 8.4(A) Intolerable Acts).",
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q38.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (H). The repo's tag 8.4(A):INTOLERABLE_ACTS agrees with TEA's published label."
+      }
+    }
+  ]
+}

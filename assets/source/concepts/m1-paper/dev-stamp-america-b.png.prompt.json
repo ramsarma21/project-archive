@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Centred on a perfectly plain flat pure white background, filling most of the frame, straight on and flat. No paper texture, no parchment, no aging, no border, no frame, no drop shadow, no vignette, no background detail of any kind: white, and the subject. An 18th century British revenue stamp die impression, circular, filling the frame: a crown over a rose and thistle, a beaded ring inside the rim, and around the rim in small clean roman capitals the word AMERICA above and ONE PENNY below, spelled correctly. Struck in dull red-brown ink, the lines fine and engraved rather than drawn, edges slightly ragged where the ink took unevenly. No lettering anywhere except AMERICA and ONE PENNY. Nothing else in the frame.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T15:25:09.397Z",
+  "files": [
+    "dev-stamp-america-b.png"
+  ]
+}

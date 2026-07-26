@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Centred on a perfectly plain flat pure white background, filling most of the frame, straight on and flat. No paper texture, no parchment, no aging, no border, no frame, no drop shadow, no vignette, no background detail of any kind: white, and the subject. An 18th century printer's woodcut of a crowned royal cipher: a large ornate letter G and letter R side by side beneath a heavy royal crown, cut in bold black lines with hatched shading, worn and a little chipped as a much-used block is. The only letters in the image are G and R. Solid black ink, no colour, no grey, nothing else in the frame.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T15:25:09.974Z",
+  "files": [
+    "cut-royal-arms-b.png"
+  ]
+}

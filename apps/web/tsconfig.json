@@ -5,11 +5,18 @@
     "types": ["vite/client"],
     "noEmit": true,
     "paths": {
-      "@pa/chapter-boston": ["../../packages/chapter-boston/src/index.ts"],
-      "@pa/chapter-boston-world": ["../../packages/chapter-boston-world/src/index.ts"],
+      "@pa/beat": ["../../packages/beat/src/index.ts"],
       "@pa/contracts": ["../../packages/contracts/src/index.ts"],
       "@pa/engine-world": ["../../packages/engine-world/src/index.ts"],
-      "@pa/runtime": ["../../packages/runtime/src/index.ts"]
+      "@pa/duel": ["../../packages/duel/src/index.ts"],
+      "@pa/mission-m1": ["../../packages/mission-m1/src/index.ts"],
+      "@pa/engine-world/collision": ["../../packages/engine-world/src/collision.ts"],
+      "@pa/engine-world/playerMotion": ["../../packages/engine-world/src/playerMotion.ts"],
+      "@pa/engine-world/playerInput": ["../../packages/engine-world/src/playerInput.ts"],
+      "@pa/engine-world/fieldSimulation": ["../../packages/engine-world/src/fieldSimulation.ts"],
+      "@pa/engine-world/parkour": ["../../packages/engine-world/src/parkour/index.ts"],
+      "@pa/engine-world/stealth": ["../../packages/engine-world/src/stealth/index.ts"],
+      "@pa/engine-world/traversalClassifier": ["../../packages/engine-world/src/traversalClassifier.ts"]
     }
   },
   "include": ["src/**/*"],

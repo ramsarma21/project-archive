@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-archive.local/content/m1/schema/duel-item.schema.json",
+  "title": "Duel question bank",
+  "description": "One mission's free-response bank, its pools, its round schedule, and the grading policy the classifier runs under. Field names align with packages/duel/src/verdict.ts (itemId, itemVersion) and packages/contracts/src/openResponse.ts (rubricId, question, referenceAnswer) so adopting this is a retag rather than a rewrite. Note what is absent everywhere: a bullet count. Bullets are derived from the verdict by the reducer and no authored content may carry one.",
+  "type": "object",
+  "required": ["contentId", "reviewStatus", "gradingPolicy", "pools", "items"],
+  "additionalProperties": true,
+  "properties": {
+    "contentId": { "type": "string", "minLength": 1 },
+    "reviewStatus": { "enum": ["AUTHOR_DRAFT", "HISTORICAL_REVIEW_PENDING", "SME_APPROVED"] },
+    "gradingPolicy": {
+      "type": "object",
+      "description": "The whole specification the classifier works from, other than the item itself. Written once here rather than repeated per item, so the classifier prompt is policy plus one item.",
+      "required": ["policyId", "verdictSpace", "decisionProcedure", "alwaysIgnore", "neverSufficient"],
+      "additionalProperties": true,
+      "properties": {
+        "policyId": { "type": "string", "minLength": 1 },
+        "verdictSpace": {
+          "description": "Exactly two values, forever. packages/duel/src/verdict.ts rejects a third by name at the wire boundary.",
+          "type": "array",
+          "items": { "enum": ["CORRECT", "WRONG"] },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "decisionProcedure": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "alwaysIgnore": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "neverSufficient": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    },
+    "pools": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["poolId", "conceptId", "sourceCueId", "authoredDepth"],
+        "additionalProperties": true,
+        "properties": {
+          "poolId": { "type": "string", "minLength": 1 },
+          "conceptId": { "type": "string", "pattern": "^[A-Z]{3}\\.CONCEPT\\.[A-Z][A-Z0-9_]*\\.v\\d+$" },
+          "legacyConceptId": { "type": "string", "minLength": 1 },
+          "sourceCueId": { "type": "string", "minLength": 1 },
+          "authoredDepth": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/item" } }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": ["itemId", "itemVersion", "poolId", "conceptId", "codexCardIds", "answerableFrom", "question", "referenceAnswer", "rubric"],
+      "additionalProperties": false,
+      "properties": {
+        "itemId": { "type": "string", "pattern": "^[A-Za-z0-9._:-]+$" },
+        "itemVersion": { "type": "string", "minLength": 1 },
+        "poolId": { "type": "string", "minLength": 1 },
+        "conceptId": { "type": "string", "pattern": "^[A-Z]{3}\\.CONCEPT\\.[A-Z][A-Z0-9_]*\\.v\\d+$" },
+        "codexCardIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "answerableFrom": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Module cue ids that teach everything this item needs. An item with a cue the deck does not raise is a defect in one of the two, and Mission-Slate §4.7 says one of them has to change.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "question": { "type": "string", "minLength": 1, "maxLength": 900 },
+        "referenceAnswer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The full correct answer, for teacher review and for the classifier's reference. Never shown to a student before they answer and never a phrase list they must reproduce."
+        },
+        "rubric": { "$ref": "#/$defs/rubric" }
+      }
+    },
+    "rubric": {
+      "type": "object",
+      "description": "The whole specification for one item's verdict. `requiredCore` is the single proposition; `line` is where the author drew the binary boundary and why; the example arrays illustrate the range rather than enumerate it.",
+      "required": ["rubricId", "requiredCore", "line", "acceptExamples", "rejectExamples"],
+      "additionalProperties": false,
+      "properties": {
+        "rubricId": { "type": "string", "pattern": "^[A-Za-z0-9._:-]+$" },
+        "requiredCore": { "type": "string", "minLength": 1 },
+        "line": { "type": "string", "minLength": 1 },
+        "acceptExamples": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/example" } },
+        "rejectExamples": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/example" } },
+        "ignoreForThisItem": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "authoringNote": { "type": "string", "minLength": 1 }
+      }
+    },
+    "example": {
+      "type": "object",
+      "required": ["text", "why"],
+      "additionalProperties": false,
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "why": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

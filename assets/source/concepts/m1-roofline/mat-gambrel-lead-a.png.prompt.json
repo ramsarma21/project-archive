@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Old sheet lead roof covering seen from directly overhead, colonial New England flat roof. Dull mid-grey lead gone chalky white and pale blue-grey with oxide bloom, faint hammer dressing marks, shallow ripples and creases where the sheet was worked by hand over boards. Dark grey-green moss and dirt collected in the low lines and along the seams. Occasional pale water-run streaks and a few rust stains bleeding from iron fixings. Soft matte, absolutely not shiny, not metallic silver, not modern zinc. Perfectly overhead orthographic seamless square albedo texture, filling the frame edge to edge. No perspective, no object edges, no background, no border, no cast shadows, no lighting gradient, no vignette. Opposite edges tile invisibly. Flat even illumination. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:20:17.820Z",
+  "files": [
+    "mat-gambrel-lead-a.png"
+  ]
+}

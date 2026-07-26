@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Photographed dead flat and perfectly straight on, no perspective, no tilt. FULL BLEED: the sheet of paper is LARGER than this picture and is cropped by all four edges of it, so every single pixel of the image is paper or printing ink. No desk, no table, no wall, no surface, no drop shadow, no vignette, no background of any kind is visible anywhere. The printed type block occupies only the middle three quarters of the width, leaving wide clear paper margins down the left and right edges, and the type block is taller than it is wide. A small 1765 Boston liberty handbill. Cheap laid rag paper in warm cream, chain lines visible, two tack holes at the top. Rough letterpress: a heavy blackletter headline over roman body type, ink unevenly bitten, one line visibly crooked on the page as if the forme was locked up in a hurry. Wide uneven margins. Blackletter headline reads \"Liberty, Property, and No Stamps.\" Under it a printed rule, then roman text reading \"BOSTON, August 14. 1765.\" Then a paragraph reading \"This Morning the STAMP-MASTER of this Province is found hanging in the great Elm at the South End, with a Boot and a Devil beside him.\" Then a spaced capital line: \"COME AND SEE HIM.\" At the foot small italic: \"Printed by EDES and GILL, Queen-Street. Unstamped.\" The long s is used throughout. No royal arms, no crown, no revenue stamp device anywhere. Slight foxing, a smear of press ink at one edge. No em dash characters anywhere. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:22:46.343Z",
+  "files": [
+    "handbill-unstamped-b.png"
+  ]
+}

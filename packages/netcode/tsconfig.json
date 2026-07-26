@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2022"],
+    // The server half of this package runs in Node and `loop.ts` owns the only
+    // timer in it. No DOM: the client half is a pure value and must stay one.
+    "types": ["node"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["src/__tests__/**"]
+}

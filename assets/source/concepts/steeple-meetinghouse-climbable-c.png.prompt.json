@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Architectural elevation reference plate: the isolated TOWER AND STEEPLE of a Boston meeting house of the 1720s, in the manner of Old South Meeting House and Old North Church — a square brick tower carrying a white timber steeple that rises in diminishing stages. Single object only, no meeting-house body, no roof, no adjoining walls, no ground, no other buildings, no people, no text or watermark. Centered, the whole tower from base to finial inside the frame with clear margin all round, flat straight-on architectural ELEVATION, plain light gray background, flat even lighting, no perspective distortion, no cast shadow.\n\nProportions: a slender vertical object about five times as tall as it is wide, filling the frame from top to bottom.\n\nThe single most important quality of the image is that the tower READS AS FOUR STACKED STAGES that a person could climb: each stage is visibly narrower than the one below it, and each junction is marked by a BOLD PROJECTING MOULDED CORNICE LEDGE running right round the tower, deep enough to stand on, with a clear shadow under it.\n\nStage by stage from the ground:\n1. Square deep-red-brick shaft, Flemish bond, plain, moulded water table at its foot, one small round-headed opening. This is the tallest stage.\n2. Square white-painted clapboard BELFRY stage, set back, with tall arched louvred openings on each face over a heavy moulded sill.\n3. Square white stage with an open BALUSTRADED GALLERY, turned balusters, corner pedestals with urns.\n4. White OCTAGONAL LANTERN with slender corner columns and louvred arches, under its own projecting cornice, capped by a short tapered spire, a gilt ball and an iron weathervane.\n\nWhite lead paint over timber, weathered red brick, fine mouldings and dentils. Realistic materials, muted colours, photogrammetry reference plate style, evenly lit for 3D reconstruction.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:16:43.107Z",
+  "files": [
+    "steeple-meetinghouse-climbable-c.png"
+  ]
+}

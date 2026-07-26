@@ -1,0 +1,124 @@
+{
+  "datasetId": "BOS.MD01.EVAL.DUEL_ANSWERS.v1",
+  "title": "Author-labelled answers for the eighteen M1 duel items",
+  "reviewStatus": "AUTHOR_DRAFT",
+
+  "whyThisExists": "The build plan requires the grading service to ship behind an eval set stocked with correct-but-unusually-worded answers, because a false negative costs a student a gunfight they earned. The rubrics in duel-items.json already carry accept and reject examples, and a classifier that only reproduces those has been tested on its own answer key. Every answer in this file is deliberately absent from the rubric it tests, so passing it means the rubric generalised.",
+
+  "calibratedAgainst": {
+    "dataset": "content/staar/eval/scr-8.4A-2023-scored-student-responses.json",
+    "why": "Twelve real Texas eighth-grade responses to a real released STAAR short constructed response on 8.4(A) — the exact standard all three M1 concepts sit under — each carrying the score a trained TEA scorer gave and that scorer's written reason. It is the only external evidence in the repository about where a human authority draws this line, and the four rules below are read off it rather than invented.",
+    "rulesRead": [
+      "Naming an issue and explaining nothing scores zero, even when two issues are named correctly.",
+      "Vague affect scores zero however long and fluent the answer is. TEA's zero-mark exemplars are the best-written responses in the set.",
+      "The substantive core in a student's own rough words scores full credit at eleven words with two misspellings.",
+      "Incidental slips are not the disqualifier: TEA credited a response dated 'Proclamation of 1863' and a full-mark response that blamed 'The British Monarchy' for Parliament's act."
+    ],
+    "readOnly": "content/staar belongs to another pass. Nothing here modifies it."
+  },
+
+  "howToRun": {
+    "input": "gradingPolicy from duel-items.json, plus the one item's question, referenceAnswer and rubric, plus the answer string.",
+    "compare": "predicted verdict against `expected`.",
+    "report": "false-negative rate separately from false-positive rate, and never as one accuracy number. A grader at 95% overall that misses every CORRECT-unusual case is worse for this game than one at 90% that misses none.",
+    "gate": "Zero false negatives on the CORRECT rows is the shipping condition. False positives on the WRONG rows are a tuning target, not a blocker.",
+    "sampleSize": "75 rows across 18 items is a smoke test that catches a grader scoring style, spelling or keyword overlap. It is not enough to certify one, and it contains no responses from real students — that gap can only be closed by playtest transcripts."
+  },
+
+  "counts": { "total": 75, "CORRECT": 39, "WRONG": 36 },
+
+  "answers": [
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1", "answer": "they just got done fighting a huge war and it emptied their pockets so now they want ours", "expected": "CORRECT", "why": "Debt and payer, no vocabulary." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1", "answer": "money. the war with france left them owing a fortune and we are the ones getting billed", "expected": "CORRECT", "why": "The whole chain in twelve words." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1", "answer": "because boston keeps causing trouble so parliament wants to make us pay for it", "expected": "WRONG", "why": "Punishment motive. Plausible for a student who has met 1774 and wrong for 1765." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1", "answer": "because parliament decided it was time we started acting like proper subjects", "expected": "WRONG", "why": "Authority motive with no money problem in it." },
+
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "bills they couldnt pay", "expected": "CORRECT", "why": "Four words, financial, correct." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "britian ended up in the hole after beating france", "expected": "CORRECT", "why": "Idiom for debt, misspelled proper noun. Both ignored." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "it left them with canada and all the land they took from france", "expected": "WRONG", "why": "True and not financial. The question asks what Parliament is solving." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "it left the colonists angry about being taxed", "expected": "WRONG", "why": "An effect further down the chain, and generic affect." },
+
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "we do, over here", "expected": "CORRECT", "why": "In character, correct, four words." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "the thirteen colonies", "expected": "CORRECT", "why": "Names the payer." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "the soldiers who fought in the war", "expected": "WRONG", "why": "Wrong payer." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "the people in london who voted to start it", "expected": "WRONG", "why": "A payer inside Britain, and a reasonable-sounding one." },
+
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1", "answer": "debt. the tax is them trying to fix it", "expected": "CORRECT", "why": "Order and cause, nine words." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1", "answer": "the money they owed was there first, the stamp came later", "expected": "CORRECT", "why": "Order without either noun the question used." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1", "answer": "the stamp act, and then they got into debt paying for all the stamps", "expected": "WRONG", "why": "Reversed, with an invented mechanism that makes the reversal explicit." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1", "answer": "you cant really tell which one came first", "expected": "WRONG", "why": "Refuses the ordering the concept is." },
+
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1", "answer": "france war ends, britian broke, parliament says colonies pay, stamp act. thats not nowhere", "expected": "CORRECT", "why": "Telegraphic chain with both required links." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1", "answer": "it started when the fighting stopped and they counted what it cost them, then they came for us", "expected": "CORRECT", "why": "Both links, no dates, no proper nouns." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1", "answer": "the war with the french ended in 1863 and left them in debt so they taxed us", "expected": "CORRECT", "why": "A hundred-year date error on a date the item does not require. TEA credited exactly this slip." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1", "answer": "it started because the printers kept printing things the king didnt like", "expected": "WRONG", "why": "A press-freedom chain. Coherent, and not the revenue chain." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1", "answer": "1763", "expected": "WRONG", "why": "The date on its own. Naming without explaining." },
+
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1", "answer": "every stamp we buy is a little piece of what they owe", "expected": "CORRECT", "why": "The join, stated as an image." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1", "answer": "the tax collected here goes over there to what they borrowed", "expected": "CORRECT", "why": "The join, plainly." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1", "answer": "because london makes the rules and boston follows them", "expected": "WRONG", "why": "Authority, no money. The question asked what joins a debt to a payment." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1", "answer": "because the harbor is where all their money comes through", "expected": "WRONG", "why": "Economic-sounding and unrelated to the debt." },
+
+    { "itemId": "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1", "answer": "the deed. thats an official paper and those are the ones that need stamping", "expected": "CORRECT", "why": "Pick plus the legal half." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1", "answer": "deed, cloth is just goods", "expected": "CORRECT", "why": "Pick plus the goods half, five words." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1", "answer": "the cloth, because it came over from england on a ship", "expected": "WRONG", "why": "Wrong object, reasoned about import duties." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1", "answer": "whichever one is worth more money", "expected": "WRONG", "why": "Value, and no pick." },
+
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "11/1", "expected": "CORRECT", "why": "The date in the format a Chromebook generation writes it." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "the 1st of nov", "expected": "CORRECT", "why": "Abbreviated and correct." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "november the first, 1764", "expected": "CORRECT", "why": "Right date, wrong year. The year is not asked." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "august 14", "expected": "WRONG", "why": "Today's date in the mission. A very available wrong answer." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "sometime next year", "expected": "WRONG", "why": "No date, and wrong." },
+
+    { "itemId": "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1", "answer": "because paper is what comes out of a print shop and paper is the taxed thing", "expected": "CORRECT", "why": "The product-to-category link." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1", "answer": "a cooper can still sell a barrel without a stamp. we cant sell a sheet", "expected": "CORRECT", "why": "The link built as a comparison, using the question's own trades." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1", "answer": "because we are the ones fighting back so they came after our shop", "expected": "WRONG", "why": "Politics rather than scope, and the most likely wrong answer here." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1", "answer": "because printing already costs a fortune to do", "expected": "WRONG", "why": "Cost of business, not the taxed category." },
+
+    { "itemId": "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1", "answer": "tell him to read the act. its documents and printed paper, not the market stalls", "expected": "CORRECT", "why": "Names the category and excludes goods." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1", "answer": "bread doesnt get stamped. deeds do", "expected": "CORRECT", "why": "The boundary as two examples, six words." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1", "answer": "hes basically right, they end up taxing us on everything sooner or later", "expected": "WRONG", "why": "Agrees, with a hedge that sounds like nuance." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1", "answer": "no its only the stuff that comes off the ships", "expected": "WRONG", "why": "A different and wrong boundary." },
+
+    { "itemId": "BOS.MD01.DUEL.STAMP.NAME_TWO.v1", "answer": "an almanac and a marriage licence", "expected": "CORRECT", "why": "Two instances the module never names, both inside the categories." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.NAME_TWO.v1", "answer": "the newspaper and a bill of sale", "expected": "CORRECT", "why": "One printed, one legal." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.NAME_TWO.v1", "answer": "bread and cloth", "expected": "WRONG", "why": "Two ordinary goods." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.NAME_TWO.v1", "answer": "two newspapers", "expected": "WRONG", "why": "One kind of thing, counted twice." },
+
+    { "itemId": "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1", "answer": "no. she wrote it herself, no press touched it, and its not legal business", "expected": "CORRECT", "why": "Both halves of the boundary." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1", "answer": "no, its not printed and its not official", "expected": "CORRECT", "why": "Both halves, eight words." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1", "answer": "yes, all paper needs the stamp now", "expected": "WRONG", "why": "The over-generalisation the item is built to catch." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1", "answer": "no because the constable is never going to see it", "expected": "WRONG", "why": "Enforcement dodge rather than scope." },
+
+    { "itemId": "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1", "answer": "the right not to be taxed by people we didnt elect", "expected": "CORRECT", "why": "The claim in a student's own words." },
+    { "itemId": "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1", "answer": "that they cant take our money unless we agreed to it through somebody we voted for", "expected": "CORRECT", "why": "Consent unpacked without the slogan." },
+    { "itemId": "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1", "answer": "the king cant just take our money without asking the people he takes it from", "expected": "CORRECT", "why": "King for Parliament. The policy ignores that slip and TEA credited the same one." },
+    { "itemId": "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1", "answer": "the right to keep the money we earn", "expected": "WRONG", "why": "A property claim against taxation as such, which the sheet does not make." },
+    { "itemId": "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1", "answer": "the right to break off and run ourselves", "expected": "WRONG", "why": "Independence in 1765." },
+
+    { "itemId": "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1", "answer": "our own town meeting and the assembly. but neither of them made this tax, parliament did, and we have zero votes there", "expected": "CORRECT", "why": "Both halves, with the contrast made explicit." },
+    { "itemId": "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1", "answer": "we elect people for massachusetts. nobody for westminster", "expected": "CORRECT", "why": "Both halves in eight words, using a synonym for Parliament." },
+    { "itemId": "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1", "answer": "we elect a town meeting so we do have representation", "expected": "WRONG", "why": "Concedes the constable's point, which is the trap the question sets." },
+    { "itemId": "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1", "answer": "we elect people but the king overrules them whenever he wants", "expected": "WRONG", "why": "Replaces the missing-from-Parliament claim with a general grievance." },
+
+    { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "the price isnt the point. we could find three pence. we cant accept being taxed by men we never chose", "expected": "CORRECT", "why": "The move, with the cost explicitly set aside." },
+    { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "its who wrote the law, not what it charges", "expected": "CORRECT", "why": "Eight words, ground moved." },
+    { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "three pence a sheet is a lot when you print all day long", "expected": "WRONG", "why": "Stays on cost, and argues it well." },
+    { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "its both really", "expected": "WRONG", "why": "A hedge that names nothing. The rubric accepts a hedge that still names authority; this one does not." },
+
+    { "itemId": "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1", "answer": "by men this town sent", "expected": "CORRECT", "why": "Chosen-by-the-taxed, five words." },
+    { "itemId": "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1", "answer": "by our own elected representatives", "expected": "CORRECT", "why": "The principle." },
+    { "itemId": "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1", "answer": "by whoever has the lawful authority to do it", "expected": "WRONG", "why": "Circular: who holds the authority is the dispute." },
+    { "itemId": "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1", "answer": "by the side with the most guns", "expected": "WRONG", "why": "Not the claim, and the sheet is an argument rather than a threat." },
+
+    { "itemId": "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1", "answer": "then let him show me the ballot boston put his name on", "expected": "CORRECT", "why": "Not-chosen-by-us, as a challenge." },
+    { "itemId": "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1", "answer": "he doesnt speak for us because we never chose him to", "expected": "CORRECT", "why": "The rebuttal, plainly." },
+    { "itemId": "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1", "answer": "he cant speak for us, hes never even seen this town", "expected": "WRONG", "why": "Distance. The deliberate rejection in this item, and the answer most students reach for first." },
+    { "itemId": "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1", "answer": "then he should come here and live in it for a year", "expected": "WRONG", "why": "Same argument, and it concedes representation in principle." },
+
+    { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "the statute is real. our consent isnt in it, because nobody in that room was ours", "expected": "CORRECT", "why": "Concedes lawfulness and separates consent." },
+    { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "it can be a proper law and still not one we ever agreed to", "expected": "CORRECT", "why": "The distinction, twelve words." },
+    { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "then the law itself is illegal and doesnt count anywhere", "expected": "WRONG", "why": "Over-claims past Boston's own 1765 argument." },
+    { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "because paper shouldnt be taxed in the first place", "expected": "WRONG", "why": "Objects to the tax's object rather than its authority." }
+  ]
+}

@@ -19,7 +19,10 @@
 # roughness 0.82-0.92, brick 0.9), keeps materials front-side EXCEPT thin
 # partitions, pivots per the contract above, scales textures to budget, and
 # re-exports GLB (Y-up, image format AUTO so normal maps stay lossless PNG and
-# are NEVER re-encoded to JPEG, with tangents for correct normal mapping).
+# are NEVER re-encoded to JPEG, with tangents for correct normal mapping), then
+# applies the published-texture policy so the BASE-COLOUR bake ships as JPEG q95
+# while those normal maps keep their lossless PNG (see enforce_texture_policy in
+# transcode_static_textures.py, and the export step below).
 # It writes a validation report (opt/validation.json) covering duplicate faces,
 # non-manifold edges, normals/tangents, pivots/axes, embedded-floor detection,
 # floor top y=0, materials, texture encoding, bounds/proportions, and
@@ -32,6 +35,10 @@ import bmesh
 import os
 import json
 import re
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from transcode_static_textures import enforce_texture_policy  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .../assets
 SRC = os.path.join(ROOT, "build", "world-v3-structures")
@@ -451,6 +458,16 @@ def process(key, tri_budget, tex_budget):
         export_tangents=True,
         export_animations=False,
     )
+    # AUTO keeps every image in the format it arrived in, which is right for the
+    # Non-Color normal maps and wrong for the base-colour bakes: the generated
+    # interior surface textures are PNG, so each shell shipped a 1.3-1.9MB
+    # lossless albedo. Across the ten shells and floors that was 23MB of the ~32MB
+    # of PNG the published tree was carrying. The policy pass re-encodes only the
+    # base-colour images (JPEG q95, measured at 42.0-45.2dB on these textures) and
+    # leaves anything wired to a normal/metallicRoughness/occlusion slot alone,
+    # because JPEG below q100 subsamples the very channels a normal map encodes
+    # direction in. It also forces alphaMode OPAQUE where nothing is transparent.
+    texture_policy = enforce_texture_policy(dst, quality=95, skip_normals=True)
 
     min_x, max_x, min_y, max_y, min_z, max_z = world_bounds(obj)
     # Runtime axes after Y-up export: glY = Blender Z, glZ = -Blender Y.
@@ -485,6 +502,8 @@ def process(key, tri_budget, tex_budget):
         "targetAnisotropy": round(target_anisotropy, 3),
         "horizontalFitAnisotropy": round(fit_anisotropy, 3),
         **texture_report,
+        "albedoJpeg": len(texture_policy["reencoded"]),
+        "alphaModeRelaxed": len(texture_policy["relaxed"]),
         "flags": [],
     }
     if out_tris > tri_budget + 500:

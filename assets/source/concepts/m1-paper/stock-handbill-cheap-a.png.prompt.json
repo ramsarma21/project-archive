@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A photograph of a sheet of blank unprinted paper, lit flat and evenly, straight on with no perspective. FULL BLEED: the sheet is LARGER than this picture and is cropped away by all four edges, so every single pixel is paper. No desk, no table, no wall, no surface, no drop shadow, no vignette, no background. ABSOLUTELY NOTHING IS PRINTED OR WRITTEN ON THIS PAPER: no letters, no words, no numbers, no type, no handwriting, no lines of text, no border, no watermark device, no seal, no ornament, no picture. It is a blank sheet and nothing but a blank sheet. Cheap coarse 18th century laid rag paper, the sort a jobbing printer kept for handbills. Warm oatmeal off-white gone a little brown and uneven, definitely not white and definitely not yellow. Visible laid lines and widely spaced chain lines pressed into the sheet by the mould. Coarse pulp with flecks and specks of darker fibre and a few linen threads beaten into it. Light scattered brown foxing spots, one soft crease, one grubby thumbed corner, a faint grey smudge of printing ink at one edge. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T15:24:53.030Z",
+  "files": [
+    "stock-handbill-cheap-a.png"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "A TALL PORTRAIT image, three units wide by four units tall, clearly and obviously taller than it is wide. A photograph of a sheet of blank unprinted paper, lit flat and evenly, straight on with no perspective. FULL BLEED: the sheet is LARGER than this picture and is cropped away by all four edges, so every single pixel is paper. No desk, no table, no wall, no surface, no drop shadow, no vignette, no background. ABSOLUTELY NOTHING IS PRINTED OR WRITTEN ON THIS PAPER: no letters, no words, no numbers, no type, no handwriting, no lines of text, no border, no watermark device, no seal, no ornament, no picture. It is a blank sheet and nothing but a blank sheet. Cheap coarse 18th century laid rag paper, one sheet of a jobbing printer's cheapest stock, FRESH and NEW and still faintly damp from the press. Warm oatmeal off-white, clean, no age spots and no foxing at all. Laid lines and widely spaced chain lines pressed in by the mould. Coarse pulp with dark fibre flecks and beaten-in linen threads. Very slightly cockled and wavy where the damping water is still in it, a shade darker and cooler down one edge where it is wettest. One corner grubby from a hand that has just held it, and a faint grey thumb-smear of printing ink. Nothing printed on it. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T15:27:03.920Z",
+  "files": [
+    "stock-handbill-fresh-a.png"
+  ]
+}

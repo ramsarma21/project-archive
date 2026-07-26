@@ -1,0 +1,14 @@
+Architectural reference photograph of the TOWER AND STEEPLE ONLY of the Old South Meeting House, Boston (built 1729, still standing on Washington Street), as it stood in 1765. The tower is isolated and detached from its meeting house — no brick body, no roof, no neighbouring buildings, no street, no people, no text or watermark. Single object, centered, the entire tower from its base to its finial inside the frame with clear margin, straight-on flat ELEVATION view, plain light gray studio background, soft flat even daylight, no cast shadow on the ground.
+
+Very tall and very narrow: the tower is nearly five times as tall as it is wide, a slender vertical object filling the frame top to bottom.
+
+Documented features, all of which must be present and clearly readable:
+- A square lower shaft of deep red brick laid in Flemish bond, plain, with a single small round-headed window, rising for about two thirds of the total height.
+- Above the brick, the white-painted timber steeple rises in FOUR CLEARLY SEPARATE DIMINISHING STAGES, each stage stepped back from the one below and divided from it by a BOLD PROJECTING MOULDED CORNICE LEDGE that runs right round the tower and is deep enough to walk on. The stage setbacks and the projecting ledges are the most important feature of the image.
+- Stage one above the brick: a square white clapboard stage with tall arched LOUVRED BELFRY OPENINGS on each face and a heavy moulded sill course beneath them.
+- Stage two: a smaller square stage with an open BALUSTRADED GALLERY round it, turned balusters, and corner pedestals.
+- Stage three: a white OCTAGONAL LANTERN stage with slender columns at the angles and louvred arched openings between them, under its own projecting cornice.
+- Stage four: a short tapered white spire with corner pinnacles, capped by a small square platform, a gilt ball and an iron WEATHERVANE.
+- White lead paint over close-jointed timber, weathered, with fine mouldings and dentils picked out in shadow.
+
+Realistic painted timber and brick materials, muted colours, photogrammetry reference plate style, evenly lit for 3D reconstruction, sharp and undistorted.

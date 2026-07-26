@@ -1,0 +1,1028 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import {
+  LEARNING_MODULE_SECONDS,
+  isMissionPermanentlySpent,
+  reportedFirstAttemptMeasure,
+  type CampaignProgression,
+  type ChapterAbilityUnlock,
+  type ChapterAssessmentAttempt,
+  type ChapterAssessmentResponse,
+  type ChapterProgression,
+  type CodexCardState,
+  type ConceptMastery,
+  type LearningModuleCompletion,
+  type MissionAttempt,
+  type MissionProgress,
+  type ProgressionLedgerEntry,
+  type ProgressionSnapshot,
+  type PvpAbilityUnlock,
+} from "@pa/contracts";
+import { ProgressionService } from "../src/progression/service.js";
+import type {
+  OpenResponseGrade,
+  ProgressionContent,
+} from "../src/progression/content.js";
+import { serialisedForm } from "../src/progression/store.js";
+import type {
+  ConceptMasteryDisclosure,
+  ProgressionStore,
+  ProgressionTx,
+} from "../src/progression/store.js";
+
+const PROFILE = "33333333-3333-4333-8333-333333333333";
+const SEED = "b".repeat(64);
+const CHAPTER = "CH.ONE";
+const MISSION = "M1";
+const MODULE = "MOD.M1";
+const ASSESSMENT = "ASSESS.CH.ONE";
+const ASSESSMENT_MODULE = "MOD.ASSESS";
+const CONCEPTS = ["C.A", "C.B"] as const;
+const DECK = ["CUE.1", "CUE.2", "CUE.3"] as const;
+
+// In-memory store. The service holds all the derivation logic, so a plain map
+// is enough to exercise every authority rule without PostgreSQL.
+class MemoryStore implements ProgressionStore {
+  campaigns = new Map<string, CampaignProgression>();
+  chapters = new Map<string, ChapterProgression>();
+  missions = new Map<string, MissionProgress>();
+  missionAttempts = new Map<string, MissionAttempt>();
+  modules = new Map<string, LearningModuleCompletion>();
+  mastery = new Map<string, ConceptMastery>();
+  /**
+   * The evidence-quality columns migration 008 added, which are deliberately not
+   * on `ConceptMastery`: they are educator-facing and nothing on a student's
+   * screen has a use for them.
+   */
+  masteryDisclosure = new Map<string, ConceptMasteryDisclosure>();
+  /** `chapter_assessment_responses.verdict_needs_review`, per response. */
+  responseReview = new Map<string, boolean>();
+  codex = new Map<string, CodexCardState>();
+  chapterAbilities = new Map<string, ChapterAbilityUnlock>();
+  pvpAbilities = new Map<string, PvpAbilityUnlock>();
+  assessmentAttempts = new Map<string, ChapterAssessmentAttempt>();
+  assessmentResponses = new Map<string, ChapterAssessmentResponse>();
+  /** The duel's commit log, per attempt. Written by the terminal write only. */
+  commitLogs = new Map<string, readonly unknown[]>();
+  exposures: {
+    chapterId: string;
+    assessmentId: string;
+    conceptId: string;
+    itemId: string;
+  }[] = [];
+  ledger: ProgressionLedgerEntry[] = [];
+
+  private tx(profileId: string): ProgressionTx {
+    const clone = <T>(value: T | undefined): T | null =>
+      value === undefined ? null : structuredClone(value);
+    return {
+      campaign: async () => clone(this.campaigns.get(profileId)),
+      chapter: async (chapterId) => clone(this.chapters.get(`${profileId}:${chapterId}`)),
+      // Every mission/module/concept key includes the chapter: mission ids are
+      // chapter-local slugs, so chapter two mints its own M1.
+      mission: async (chapterId, missionId) =>
+        clone(this.missions.get(`${profileId}:${chapterId}:${missionId}`)),
+      liveMissionAttempt: async (chapterId, missionId) =>
+        clone(
+          [...this.missionAttempts.values()].find(
+            (attempt) =>
+              attempt.profileId === profileId &&
+              attempt.chapterId === chapterId &&
+              attempt.missionId === missionId &&
+              attempt.status === "IN_PROGRESS",
+          ),
+        ),
+      missionAttempt: async (attemptId) => clone(this.missionAttempts.get(attemptId)),
+      moduleCompletion: async (chapterId, gatesKind, gatesId, gatesOrdinal) =>
+        clone(
+          this.modules.get(
+            `${profileId}:${chapterId}:${gatesKind}:${gatesId}:${gatesOrdinal}`,
+          ),
+        ),
+      conceptMastery: async (chapterId) =>
+        [...this.mastery.values()].filter(
+          (row) => row.profileId === profileId && row.chapterId === chapterId,
+        ),
+      codexCard: async (cardId) => clone(this.codex.get(`${profileId}:${cardId}`)),
+      assessmentAttempt: async (attemptId) => clone(this.assessmentAttempts.get(attemptId)),
+      liveAssessmentAttempt: async (chapterId, assessmentId) =>
+        clone(
+          [...this.assessmentAttempts.values()].find(
+            (attempt) =>
+              attempt.profileId === profileId &&
+              attempt.chapterId === chapterId &&
+              attempt.assessmentId === assessmentId &&
+              attempt.status === "IN_PROGRESS",
+          ),
+        ),
+      assessmentAttemptCount: async (chapterId, assessmentId) =>
+        [...this.assessmentAttempts.values()].filter(
+          (attempt) =>
+            attempt.profileId === profileId &&
+            attempt.chapterId === chapterId &&
+            attempt.assessmentId === assessmentId,
+        ).length,
+      assessmentResponses: async (attemptId) =>
+        [...this.assessmentResponses.values()].filter(
+          (response) => response.attemptId === attemptId,
+        ),
+      servedItemIds: async (chapterId, assessmentId, conceptId) =>
+        this.exposures
+          .filter(
+            (entry) =>
+              entry.chapterId === chapterId &&
+              entry.assessmentId === assessmentId &&
+              entry.conceptId === conceptId,
+          )
+          .map((entry) => entry.itemId),
+
+      putCampaign: async (campaign) => {
+        this.campaigns.set(profileId, structuredClone(campaign));
+      },
+      putChapter: async (chapter) => {
+        this.chapters.set(`${profileId}:${chapter.chapterId}`, structuredClone(chapter));
+      },
+      putMission: async (mission) => {
+        this.missions.set(
+          `${profileId}:${mission.chapterId}:${mission.missionId}`,
+          structuredClone(mission),
+        );
+      },
+      putModuleCompletion: async (completion) => {
+        this.modules.set(
+          `${profileId}:${completion.chapterId}:${completion.gatesKind}:${completion.gatesId}:${completion.gatesOrdinal}`,
+          structuredClone(completion),
+        );
+      },
+      insertMissionAttempt: async (attempt) => {
+        if (this.missionAttempts.has(attempt.attemptId)) throw new Error("duplicate attempt");
+        this.missionAttempts.set(attempt.attemptId, structuredClone(attempt));
+      },
+      putMissionAttempt: async (attempt, committedEvents) => {
+        this.missionAttempts.set(attempt.attemptId, structuredClone(attempt));
+        this.commitLogs.set(attempt.attemptId, structuredClone(committedEvents));
+      },
+      putConceptMastery: async (row, disclosure) => {
+        const key = `${profileId}:${row.chapterId}:${row.conceptId}`;
+        const previous = this.mastery.get(key);
+        this.mastery.set(key, {
+          ...structuredClone(row),
+          masteredAt: previous?.masteredAt ?? row.masteredAt,
+        });
+        // First write wins, exactly as the Postgres store's `coalesce` does: the
+        // attempt that achieved mastery and the freshness of ITS form are facts
+        // about one moment and a later retry must not restate them.
+        const held = this.masteryDisclosure.get(key);
+        this.masteryDisclosure.set(key, {
+          masteredOnAttempt:
+            held?.masteredOnAttempt ?? disclosure.masteredOnAttempt,
+          masteredWithRecycledItems:
+            held?.masteredWithRecycledItems ??
+            disclosure.masteredWithRecycledItems,
+        });
+      },
+      learnCodexCard: async (card) => {
+        const key = `${profileId}:${card.cardId}`;
+        if (this.codex.has(key)) return;
+        this.codex.set(key, {
+          ...structuredClone(card),
+          pvpLegalAt: null,
+          updatedAt: card.learnedAt,
+        });
+      },
+      markCodexCardsPvpLegal: async ({ conceptId, at }) => {
+        const minted: string[] = [];
+        for (const [key, card] of this.codex) {
+          if (!key.startsWith(`${profileId}:`)) continue;
+          if (card.conceptId !== conceptId || card.pvpLegalAt) continue;
+          this.codex.set(key, { ...card, pvpLegalAt: at, updatedAt: at });
+          minted.push(card.cardId);
+        }
+        return minted;
+      },
+      unlockChapterAbility: async (unlock) => {
+        this.chapterAbilities.set(
+          `${profileId}:${unlock.chapterId}:${unlock.abilityId}`,
+          structuredClone(unlock),
+        );
+      },
+      unlockPvpAbility: async (unlock) => {
+        const key = `${profileId}:${unlock.abilityId}`;
+        if (this.pvpAbilities.has(key)) return;
+        this.pvpAbilities.set(key, structuredClone(unlock));
+      },
+      insertAssessmentAttempt: async (attempt, formDisclosure) => {
+        // Stored through the same projection the Postgres store uses, so the two
+        // cannot answer `formConceptFreshness` differently.
+        this.assessmentAttempts.set(attempt.attemptId, {
+          ...structuredClone(attempt),
+          form: serialisedForm(
+            attempt.form,
+            formDisclosure,
+          ) as ChapterAssessmentAttempt["form"],
+        });
+      },
+      putAssessmentAttempt: async (attempt) => {
+        const held = this.assessmentAttempts.get(attempt.attemptId);
+        this.assessmentAttempts.set(attempt.attemptId, {
+          ...structuredClone(attempt),
+          // The terminal write does not rewrite the served form.
+          form: held?.form ?? structuredClone(attempt.form),
+        });
+      },
+      putAssessmentResponse: async (response, review) => {
+        this.assessmentResponses.set(
+          `${response.attemptId}:${response.itemId}`,
+          structuredClone(response),
+        );
+        this.responseReview.set(
+          `${response.attemptId}:${response.itemId}`,
+          review.verdictNeedsReview,
+        );
+      },
+      recordItemExposures: async ({ chapterId, assessmentId, conceptId, itemIds }) => {
+        for (const itemId of itemIds) {
+          this.exposures.push({ chapterId, assessmentId, conceptId, itemId });
+        }
+      },
+      appendLedger: async (entries) => {
+        this.ledger.push(...structuredClone(entries as ProgressionLedgerEntry[]));
+      },
+    };
+  }
+
+  async transact<T>(profileId: string, fn: (tx: ProgressionTx) => Promise<T>): Promise<T> {
+    return fn(this.tx(profileId));
+  }
+
+  async snapshot(profileId: string): Promise<ProgressionSnapshot | null> {
+    const campaign = this.campaigns.get(profileId);
+    if (!campaign) return null;
+    const activeChapter = this.chapters.get(`${profileId}:${campaign.activeChapterId}`);
+    if (!activeChapter) return null;
+    return {
+      campaign,
+      activeChapter,
+      derived: {
+        rank: campaign.rank,
+        cumulativeLevels: campaign.cumulativeLevels,
+        levelsToNextRank: 1,
+        level: activeChapter.level,
+        xp: activeChapter.xp,
+        xpToNextLevel: null,
+      },
+      missions: [...this.missions.values()],
+      openAttempt:
+        [...this.missionAttempts.values()].find(
+          (attempt) => attempt.status === "IN_PROGRESS",
+        ) ?? null,
+      codex: [...this.codex.values()],
+      chapterAbilities: [...this.chapterAbilities.values()],
+      pvpAbilities: [...this.pvpAbilities.values()],
+      conceptMastery: [...this.mastery.values()],
+    };
+  }
+}
+
+// Six items per concept, matching the assessment reserve the slate calls for.
+const RESERVE: Record<string, string[]> = {
+  "C.A": ["A1", "A2", "A3", "A4", "A5", "A6"],
+  "C.B": ["B1", "B2", "B3", "B4", "B5", "B6"],
+};
+const CARDS: Record<string, string[]> = {
+  "C.A": ["CARD.A"],
+  "C.B": ["CARD.B"],
+};
+/** Open-ended items in the reserve. The capstone mixes formats on one form. */
+const OPEN_ITEMS = new Set(["B2", "B4"]);
+/**
+ * Stands in for the grading service: a graded verdict per response handle.
+ *
+ * `needsReview` travels with `correct` because only the grader knows it — a
+ * generous fallback grant, or a low-confidence classification — and it is recorded
+ * on the response row so an educator report can name the verdicts wanting a human.
+ */
+const OPEN_VERDICTS = new Map<string, OpenResponseGrade>();
+
+function content(overrides: Partial<ProgressionContent> = {}): ProgressionContent {
+  return {
+    initialChapterId: () => CHAPTER,
+    xpCurve: () => ({
+      curveId: "TEST.CURVE",
+      version: "1",
+      levelThresholds: Array.from({ length: 40 }, (_, i) => (i + 1) * 100),
+    }),
+    // The same chapter-local slug exists in both chapters, which is the point.
+    missionReward: (chapterId, missionId) =>
+      missionId === MISSION
+        ? {
+            missionId: MISSION,
+            chapterId,
+            baseXp: 900,
+            moduleId: MODULE,
+            conceptIds: [...CONCEPTS],
+          }
+        : null,
+    abilityMilestones: () => [{ abilityId: "A.VAULT", chapterId: CHAPTER, level: 5 }],
+    chapterConceptIds: () => [...CONCEPTS],
+    assessmentId: () => ASSESSMENT,
+    assessmentModuleId: () => ASSESSMENT_MODULE,
+    itemReserve: (_assessmentId, conceptId) => RESERVE[conceptId] ?? [],
+    itemConcept: (itemId) => (itemId.startsWith("A") ? "C.A" : "C.B"),
+    // The capstone mixes formats: B-items ending in an even digit are open-ended.
+    itemFormat: (itemId) => (OPEN_ITEMS.has(itemId) ? "OPEN_RESPONSE" : "SELECTED_RESPONSE"),
+    // The key: "OPT.RIGHT" is correct, everything else is not.
+    isCorrectOption: (_itemId, optionId) => optionId === "OPT.RIGHT",
+    moduleDeckCueIds: () => [...DECK],
+    codexCardsForModule: () => ["CARD.A", "CARD.B"],
+    codexCardsForConcept: (conceptId) => CARDS[conceptId] ?? [],
+    conceptForCard: (cardId) => (cardId === "CARD.A" ? "C.A" : "C.B"),
+    ...overrides,
+  };
+}
+
+function harness(overrides: Partial<ProgressionContent> = {}) {
+  const store = new MemoryStore();
+  let ids = 0;
+  let clock = Date.parse("2026-07-25T00:00:00.000Z");
+  OPEN_VERDICTS.clear();
+  const service = new ProgressionService(
+    store,
+    content(overrides),
+    () => new Date((clock += 1000)),
+    () => {
+      ids += 1;
+      return `00000000-0000-4000-8000-${String(ids).padStart(12, "0")}`;
+    },
+    {
+      // The engine only ever sees a handle; the prose stays with the service.
+      verdict: async ({ responseRef }) =>
+        structuredClone(OPEN_VERDICTS.get(responseRef)) ?? null,
+    },
+  );
+  return { store, service };
+}
+
+/** Answer a selected-response item. */
+async function answer(
+  service: ProgressionService,
+  attemptId: string,
+  itemId: string,
+  optionId: string | null,
+) {
+  return service.answerAssessmentItem(PROFILE, {
+    attemptId,
+    itemId,
+    itemFormat: "SELECTED_RESPONSE",
+    selectedOptionId: optionId,
+  });
+}
+
+/** Answer an open-ended item: submit prose elsewhere, hand over the handle. */
+async function answerOpen(
+  service: ProgressionService,
+  attemptId: string,
+  itemId: string,
+  verdict: boolean,
+  needsReview = false,
+) {
+  const responseRef = `resp-${itemId}`;
+  OPEN_VERDICTS.set(responseRef, { correct: verdict, needsReview });
+  return service.answerAssessmentItem(PROFILE, {
+    attemptId,
+    itemId,
+    itemFormat: "OPEN_RESPONSE",
+    responseRef,
+  });
+}
+
+async function runModule(
+  service: ProgressionService,
+  gatesKind: "MISSION_ATTEMPT" | "ASSESSMENT_ATTEMPT" = "MISSION_ATTEMPT",
+) {
+  return service.completeLearningModule(PROFILE, {
+    chapterId: CHAPTER,
+    moduleId: gatesKind === "MISSION_ATTEMPT" ? MODULE : ASSESSMENT_MODULE,
+    gatesKind,
+    gatesId: gatesKind === "MISSION_ATTEMPT" ? MISSION : ASSESSMENT,
+    acknowledgedCueIds: [...DECK],
+    observedSeconds: LEARNING_MODULE_SECONDS,
+  });
+}
+
+async function playAttempt(
+  service: ProgressionService,
+  outcome: "CLEARED" | "FAILED",
+) {
+  const module = await runModule(service);
+  assert.equal(module.ok, true);
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.equal(opened.ok, true);
+  if (!opened.ok) throw new Error("attempt did not open");
+  const committed = await service.commitMissionOutcome(PROFILE, {
+    attemptId: opened.value.attemptId,
+    outcome,
+    committedEvents: [],
+    baseRevision: 0,
+  });
+  return { opened: opened.value, committed };
+}
+
+// ---------------------------------------------------------------------------
+
+test("a brand-new profile starts Level 0, 0 XP, Rank 1", async () => {
+  const { service } = harness();
+  const snapshot = await service.snapshot(PROFILE);
+  assert.equal(snapshot.campaign.rank, 1);
+  assert.equal(snapshot.campaign.cumulativeLevels, 0);
+  assert.equal(snapshot.activeChapter.level, 0);
+  assert.equal(snapshot.activeChapter.xp, 0);
+  assert.equal(snapshot.activeChapter.chapterId, CHAPTER);
+  assert.deepEqual(snapshot.missions, []);
+  assert.deepEqual(snapshot.pvpAbilities, []);
+  assert.equal(snapshot.derived.levelsToNextRank, 10);
+});
+
+test("an unfinished deck does not open the gate, and no attempt starts without one", async () => {
+  const { service } = harness();
+  const partial = await service.completeLearningModule(PROFILE, {
+    chapterId: CHAPTER,
+    moduleId: MODULE,
+    gatesKind: "MISSION_ATTEMPT",
+    gatesId: MISSION,
+    acknowledgedCueIds: ["CUE.1"],
+    observedSeconds: LEARNING_MODULE_SECONDS,
+  });
+  assert.deepEqual(partial, { ok: false, error: "MODULE_REQUIRED" });
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.deepEqual(opened, { ok: false, error: "MODULE_REQUIRED" });
+});
+
+test("a fast reader who covered the deck is finished; elapsed time never gates", async () => {
+  const { service, store } = harness();
+  const quick = await service.completeLearningModule(PROFILE, {
+    chapterId: CHAPTER,
+    moduleId: MODULE,
+    gatesKind: "MISSION_ATTEMPT",
+    gatesId: MISSION,
+    acknowledgedCueIds: [...DECK],
+    observedSeconds: 42,
+  });
+  assert.equal(quick.ok, true);
+  if (!quick.ok) return;
+  assert.equal(quick.value.gatesOrdinal, 1);
+  // The authored target is recorded next to what actually happened.
+  assert.equal(quick.value.requiredSeconds, LEARNING_MODULE_SECONDS);
+  assert.equal(quick.value.observedSeconds, 42);
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.equal(opened.ok, true);
+  assert.ok(
+    store.ledger.some(
+      (entry) => entry.kind === "MODULE_COMPLETED" && entry.detail.deckVerified === true,
+    ),
+  );
+});
+
+test("the server assigns the ordinal and stamps the XP fraction at open time", async () => {
+  const { service } = harness();
+  await runModule(service);
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.equal(opened.ok, true);
+  if (!opened.ok) return;
+  assert.equal(opened.value.attemptOrdinal, 1);
+  assert.deepEqual(opened.value.xpFraction, { numerator: 3, denominator: 3 });
+  assert.match(opened.value.attemptSeedHex, /^[0-9a-f]{32}$/);
+
+  const again = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.deepEqual(again, { ok: false, error: "ATTEMPT_ALREADY_OPEN" });
+});
+
+test("a first-attempt clear pays full XP and derives Level, Rank and the ability unlock", async () => {
+  const { service, store } = harness();
+  const { committed } = await playAttempt(service, "CLEARED");
+  assert.equal(committed.ok, true);
+  if (!committed.ok) return;
+  assert.equal(committed.value.awardedXp, 900);
+  assert.equal(committed.value.chapter.level, 9);
+  assert.equal(committed.value.campaign.cumulativeLevels, 9);
+  assert.equal(committed.value.campaign.rank, 1);
+  assert.deepEqual(committed.value.unlockedAbilityIds, ["A.VAULT"]);
+  assert.equal(committed.value.mission.outcome, "CLEARED");
+  // Chapter-scoped in PvE and permanent in the PvP loadout: both recorded.
+  assert.equal(store.chapterAbilities.size, 1);
+  assert.equal(store.pvpAbilities.size, 1);
+  assert.ok(store.ledger.some((entry) => entry.kind === "MISSION_XP_AWARDED"));
+  assert.ok(store.ledger.some((entry) => entry.kind === "ABILITY_UNLOCKED"));
+});
+
+test("a retry is a distinct ordinal with a distinct seed and two-thirds XP", async () => {
+  const { service } = harness();
+  const first = await playAttempt(service, "FAILED");
+  assert.equal(first.committed.ok, true);
+  if (!first.committed.ok) return;
+  assert.equal(first.committed.value.awardedXp, 0);
+
+  const second = await playAttempt(service, "CLEARED");
+  assert.equal(second.opened.attemptOrdinal, 2);
+  assert.deepEqual(second.opened.xpFraction, { numerator: 2, denominator: 3 });
+  // The retry seed must differ from attempt 1's: the retired helper accepted an
+  // attemptStartSequence it never stored, so retries replayed attempt zero.
+  assert.notEqual(second.opened.attemptSeedHex, first.opened.attemptSeedHex);
+  assert.equal(second.committed.ok, true);
+  if (!second.committed.ok) return;
+  assert.equal(second.committed.value.awardedXp, 600);
+  assert.equal(second.committed.value.chapter.xp, 600);
+});
+
+test("the duel's commit log is stored, and changes nothing that is derived", async () => {
+  // It was accepted by the request guard and then dropped: the insert wrote an
+  // empty array and nothing ever updated it, so the record deterministic replay
+  // depends on was silently discarded on every clear. The store now takes it as a
+  // required argument of the terminal write.
+  const { service, store } = harness();
+  const module = await runModule(service);
+  assert.equal(module.ok, true);
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  if (!opened.ok) throw new Error("attempt did not open");
+  const log = [
+    { type: "QUESTION_OPENED", round: 1, item: { itemId: "i1", itemVersion: "r1-a" } },
+    {
+      type: "VERDICT_COMMITTED",
+      round: 1,
+      side: "A",
+      verdict: { kind: "WRONG", itemId: "i1", itemVersion: "r1-a", source: "CLASSIFIER" },
+    },
+    { type: "DUEL_RESOLVED", outcome: { winner: "A" } },
+  ];
+  const committed = await service.commitMissionOutcome(PROFILE, {
+    attemptId: opened.value.attemptId,
+    outcome: "CLEARED",
+    committedEvents: log,
+    baseRevision: 0,
+  });
+  assert.equal(committed.ok, true);
+  if (!committed.ok) return;
+  assert.deepEqual(store.commitLogs.get(opened.value.attemptId), log);
+  // Telemetry, not input. A log full of WRONG verdicts pays the same full first
+  // attempt as an empty one, because the award comes from the stored ordinal.
+  assert.equal(committed.value.awardedXp, 900);
+});
+
+test("committing the same attempt twice cannot pay twice", async () => {
+  const { service } = harness();
+  const { opened, committed } = await playAttempt(service, "CLEARED");
+  assert.equal(committed.ok, true);
+  const replay = await service.commitMissionOutcome(PROFILE, {
+    attemptId: opened.attemptId,
+    outcome: "CLEARED",
+    committedEvents: [],
+    baseRevision: 0,
+  });
+  assert.deepEqual(replay, { ok: false, error: "ATTEMPT_CLOSED" });
+  const snapshot = await service.snapshot(PROFILE);
+  assert.equal(snapshot.activeChapter.xp, 900);
+});
+
+test("a cleared mission cannot be replayed for more XP", async () => {
+  const { service } = harness();
+  await playAttempt(service, "CLEARED");
+  const module = await runModule(service);
+  assert.deepEqual(module, { ok: false, error: "MISSION_SPENT" });
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.deepEqual(opened, { ok: false, error: "MISSION_SPENT" });
+});
+
+test("three failures spend the mission permanently and it pays zero forever", async () => {
+  const { service, store } = harness();
+  for (const expected of [1, 2, 3]) {
+    const { opened, committed } = await playAttempt(service, "FAILED");
+    assert.equal(opened.attemptOrdinal, expected);
+    assert.equal(committed.ok, true);
+    if (!committed.ok) return;
+    assert.equal(committed.value.awardedXp, 0);
+  }
+  const mission = store.missions.get(`${PROFILE}:${CHAPTER}:${MISSION}`)!;
+  assert.equal(mission.outcome, "FAILED_PERMANENT");
+  assert.equal(mission.attemptsUsed, 3);
+  assert.equal(mission.awardedXp, 0);
+  const fourth = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.deepEqual(fourth, { ok: false, error: "MISSION_SPENT" });
+  const snapshot = await service.snapshot(PROFILE);
+  assert.equal(snapshot.activeChapter.xp, 0);
+  assert.equal(snapshot.campaign.rank, 1);
+});
+
+test("a module teaches Codex cards that are learned but not PvP-legal", async () => {
+  const { service, store } = harness();
+  await runModule(service);
+  const cards = [...store.codex.values()];
+  assert.equal(cards.length, 2);
+  for (const card of cards) {
+    assert.ok(card.learnedAt);
+    assert.equal(card.pvpLegalAt, null);
+  }
+});
+
+test("only 100% concept mastery mints a PvP-legal card, and a retry draws fresh items", async () => {
+  const { service, store } = harness();
+  await runModule(service);
+
+  const first = await service.openChapterAssessment(PROFILE, {
+    chapterId: CHAPTER,
+    assessmentId: ASSESSMENT,
+  });
+  assert.equal(first.ok, true);
+  if (!first.ok) return;
+  assert.equal(first.value.attemptOrdinal, 1);
+  assert.equal(first.value.isReportedMeasure, true);
+  assert.deepEqual(first.value.scopedConceptIds, [...CONCEPTS]);
+  assert.deepEqual(
+    first.value.form.map((entry) => entry.itemIds),
+    [["A1", "A2"], ["B1", "B2"]],
+  );
+
+  // C.A perfect, C.B one wrong: 100% per concept, so only C.A is mastered.
+  // B2 is the open-ended item, graded by handle rather than by option.
+  for (const [itemId, optionId] of [
+    ["A1", "OPT.RIGHT"],
+    ["A2", "OPT.RIGHT"],
+    ["B1", "OPT.RIGHT"],
+  ] as const) {
+    assert.equal((await answer(service, first.value.attemptId, itemId, optionId)).ok, true);
+  }
+  assert.equal((await answerOpen(service, first.value.attemptId, "B2", false)).ok, true);
+  const submitted = await service.submitChapterAssessment(PROFILE, first.value.attemptId);
+  assert.equal(submitted.ok, true);
+  if (!submitted.ok) return;
+  assert.equal(submitted.value.passed, false);
+  assert.deepEqual(submitted.value.masteredConceptIds, ["C.A"]);
+  assert.deepEqual(submitted.value.newlyPvpLegalCardIds, ["CARD.A"]);
+  assert.equal(submitted.value.scoreNumerator, 3);
+  assert.equal(submitted.value.scoreDenominator, 4);
+  assert.equal(submitted.value.awardedXp, 0);
+  assert.equal(store.codex.get(`${PROFILE}:CARD.A`)!.pvpLegalAt !== null, true);
+  assert.equal(store.codex.get(`${PROFILE}:CARD.B`)!.pvpLegalAt, null);
+  assert.equal(store.chapters.get(`${PROFILE}:${CHAPTER}`)!.assessmentPassedAt, null);
+
+  // The retry needs its own module and narrows to the unmastered concept only.
+  const ungated = await service.openChapterAssessment(PROFILE, {
+    chapterId: CHAPTER,
+    assessmentId: ASSESSMENT,
+  });
+  assert.deepEqual(ungated, { ok: false, error: "MODULE_REQUIRED" });
+  await runModule(service, "ASSESSMENT_ATTEMPT");
+  const retry = await service.openChapterAssessment(PROFILE, {
+    chapterId: CHAPTER,
+    assessmentId: ASSESSMENT,
+  });
+  assert.equal(retry.ok, true);
+  if (!retry.ok) return;
+  assert.deepEqual(retry.value.scopedConceptIds, ["C.B"]);
+  assert.equal(retry.value.isReportedMeasure, false);
+  // Fresh items: B1 and B2 were already served.
+  assert.deepEqual(retry.value.form, [{ conceptId: "C.B", itemIds: ["B3", "B4"] }]);
+
+  await answer(service, retry.value.attemptId, "B3", "OPT.RIGHT");
+  await answerOpen(service, retry.value.attemptId, "B4", true);
+  const passed = await service.submitChapterAssessment(PROFILE, retry.value.attemptId);
+  assert.equal(passed.ok, true);
+  if (!passed.ok) return;
+  assert.equal(passed.value.passed, true);
+  assert.deepEqual(passed.value.newlyPvpLegalCardIds, ["CARD.B"]);
+  assert.ok(store.chapters.get(`${PROFILE}:${CHAPTER}`)!.assessmentPassedAt);
+
+  // The reported measure is attempt 1's, not the retry's.
+  const masteryB = store.mastery.get(`${PROFILE}:${CHAPTER}:C.B`)!;
+  assert.equal(masteryB.firstAttemptServed, 2);
+  assert.equal(masteryB.firstAttemptCorrect, 1);
+  assert.ok(masteryB.masteredAt);
+
+  // The assessment pays no XP and moves neither Level nor Rank.
+  const snapshot = await service.snapshot(PROFILE);
+  assert.equal(snapshot.activeChapter.xp, 0);
+  assert.equal(snapshot.activeChapter.level, 0);
+  assert.equal(snapshot.campaign.rank, 1);
+  assert.equal(snapshot.campaign.cumulativeLevels, 0);
+});
+
+test("the record says which attempt mastered a concept and how good the evidence was", async () => {
+  // WHAT WAS UNRECOVERABLE. @pa/reporting rebuilds its report from these
+  // projections, and three disclosures had nowhere to live: which attempt reached
+  // mastery, whether that form repeated a question the student had already seen,
+  // and whether a verdict wants a human. It reported them as `null` rather than a
+  // reassuring `false`, which is honest and useless to a district. Migration 008
+  // gives them columns; this asserts the API actually writes them.
+  const { service, store } = harness();
+  await runModule(service);
+  const first = await service.openChapterAssessment(PROFILE, {
+    chapterId: CHAPTER,
+    assessmentId: ASSESSMENT,
+  });
+  assert.equal(first.ok, true);
+  if (!first.ok) return;
+
+  // The SERVED form records its own freshness and which items were prose. FRESH is
+  // a recorded fact, not an assumption: `selectFreshItems` reporting exhaustion
+  // fails the open outright, so nothing this server writes can be a recycled form.
+  assert.deepEqual(store.assessmentAttempts.get(first.value.attemptId)!.form, [
+    { conceptId: "C.A", itemIds: ["A1", "A2"], freshness: "FRESH", openResponseItemIds: [] },
+    {
+      conceptId: "C.B",
+      itemIds: ["B1", "B2"],
+      freshness: "FRESH",
+      // B2 is the open-ended item. Committed rather than looked up, so "was this
+      // form passable by guessing" is answerable from the record alone.
+      openResponseItemIds: ["B2"],
+    },
+  ] as unknown as ChapterAssessmentAttempt["form"]);
+
+  for (const [itemId, optionId] of [
+    ["A1", "OPT.RIGHT"],
+    ["A2", "OPT.RIGHT"],
+    ["B1", "OPT.RIGHT"],
+  ] as const) {
+    await answer(service, first.value.attemptId, itemId, optionId);
+  }
+  // Wrong, and flagged by the grader for a human: a granted fallback or a
+  // low-confidence read. It still counts as wrong; it is merely also disclosed.
+  await answerOpen(service, first.value.attemptId, "B2", false, true);
+  await service.submitChapterAssessment(PROFILE, first.value.attemptId);
+
+  assert.equal(store.responseReview.get(`${first.value.attemptId}:B2`), true);
+  // A key-graded answer cannot want a human, and `false` there is recorded rather
+  // than assumed: only the classifier raises the flag.
+  assert.equal(store.responseReview.get(`${first.value.attemptId}:A1`), false);
+
+  assert.deepEqual(store.masteryDisclosure.get(`${PROFILE}:${CHAPTER}:C.A`), {
+    masteredOnAttempt: 1,
+    masteredWithRecycledItems: false,
+  });
+  // Not mastered, so there is no mastering form to describe. Nulls, not zeroes.
+  assert.deepEqual(store.masteryDisclosure.get(`${PROFILE}:${CHAPTER}:C.B`), {
+    masteredOnAttempt: null,
+    masteredWithRecycledItems: null,
+  });
+
+  await runModule(service, "ASSESSMENT_ATTEMPT");
+  const retry = await service.openChapterAssessment(PROFILE, {
+    chapterId: CHAPTER,
+    assessmentId: ASSESSMENT,
+  });
+  assert.equal(retry.ok, true);
+  if (!retry.ok) return;
+  await answer(service, retry.value.attemptId, "B3", "OPT.RIGHT");
+  await answerOpen(service, retry.value.attemptId, "B4", true);
+  await service.submitChapterAssessment(PROFILE, retry.value.attemptId);
+
+  // C.B was mastered on the retry, and the retry's form was fresh too.
+  assert.deepEqual(store.masteryDisclosure.get(`${PROFILE}:${CHAPTER}:C.B`), {
+    masteredOnAttempt: 2,
+    masteredWithRecycledItems: false,
+  });
+  // And attempt 1's answer for C.A is not restated by the later write. The
+  // mastering attempt is a fact about one moment.
+  assert.equal(
+    store.masteryDisclosure.get(`${PROFILE}:${CHAPTER}:C.A`)!.masteredOnAttempt,
+    1,
+  );
+});
+
+test("a new chapter resets Level and XP but keeps Rank, Codex and the PvP loadout", async () => {
+  const { service, store } = harness();
+  await playAttempt(service, "CLEARED");
+  const blocked = await service.advanceChapter(PROFILE, "CH.TWO");
+  assert.deepEqual(blocked, { ok: false, error: "ASSESSMENT_LOCKED" });
+
+  const chapter = store.chapters.get(`${PROFILE}:${CHAPTER}`)!;
+  store.chapters.set(`${PROFILE}:${CHAPTER}`, {
+    ...chapter,
+    assessmentPassedAt: "2026-07-25T00:10:00.000Z",
+  });
+  const advanced = await service.advanceChapter(PROFILE, "CH.TWO");
+  assert.equal(advanced.ok, true);
+  if (!advanced.ok) return;
+  assert.equal(advanced.value.chapter.level, 0);
+  assert.equal(advanced.value.chapter.xp, 0);
+  assert.equal(advanced.value.chapter.levelsAtChapterStart, 9);
+  assert.equal(advanced.value.campaign.cumulativeLevels, 9);
+  assert.equal(advanced.value.campaign.rank, 1);
+  assert.equal(advanced.value.campaign.activeChapterId, "CH.TWO");
+  // Chapter-scoped PvE abilities do not follow; the PvP loadout does.
+  assert.equal(store.pvpAbilities.size, 1);
+  assert.equal(
+    [...store.chapterAbilities.values()].filter((a) => a.chapterId === "CH.TWO").length,
+    0,
+  );
+  assert.equal(store.codex.size, 2);
+});
+
+test("an open-ended answer stores its handle and the service's verdict, never prose", async () => {
+  const { service, store } = harness();
+  await runModule(service);
+  const opened = await service.openChapterAssessment(PROFILE, {
+    chapterId: CHAPTER,
+    assessmentId: ASSESSMENT,
+  });
+  assert.equal(opened.ok, true);
+  if (!opened.ok) return;
+
+  assert.equal((await answerOpen(service, opened.value.attemptId, "B2", true)).ok, true);
+  const row = store.assessmentResponses.get(`${opened.value.attemptId}:B2`)!;
+  assert.equal(row.itemFormat, "OPEN_RESPONSE");
+  assert.equal(row.responseRef, "resp-B2");
+  assert.equal(row.selectedOptionId, null, "an open item has no option to select");
+  assert.equal(row.correct, true, "the verdict came from the grading service");
+  assert.equal(
+    JSON.stringify(row).includes("resp-B2"),
+    true,
+    "the handle is stored; the prose never reaches this row",
+  );
+
+  // An ungraded handle is refused rather than silently scored wrong.
+  const ungraded = await service.answerAssessmentItem(PROFILE, {
+    attemptId: opened.value.attemptId,
+    itemId: "B4",
+    itemFormat: "OPEN_RESPONSE",
+    responseRef: "resp-never-graded",
+  });
+  assert.deepEqual(ungraded, { ok: false, error: "VERDICT_UNAVAILABLE" });
+
+  // The client cannot relabel a selected-response item as open-ended.
+  const mislabelled = await service.answerAssessmentItem(PROFILE, {
+    attemptId: opened.value.attemptId,
+    itemId: "B1",
+    itemFormat: "OPEN_RESPONSE",
+    responseRef: null,
+  });
+  assert.deepEqual(mislabelled, { ok: false, error: "BAD_REQUEST" });
+});
+
+test("a blank is stored as a blank, and a blank is never correct", async () => {
+  const { service, store } = harness();
+  await runModule(service);
+  const opened = await service.openChapterAssessment(PROFILE, {
+    chapterId: CHAPTER,
+    assessmentId: ASSESSMENT,
+  });
+  assert.equal(opened.ok, true);
+  if (!opened.ok) return;
+
+  assert.equal((await answer(service, opened.value.attemptId, "A1", null)).ok, true);
+  const blank = store.assessmentResponses.get(`${opened.value.attemptId}:A1`)!;
+  assert.equal(blank.itemFormat, "SELECTED_RESPONSE");
+  assert.equal(blank.selectedOptionId, null, "not a sentinel option id");
+  assert.equal(blank.responseRef, null);
+  assert.equal(blank.correct, false);
+  // The row still exists, so the table can answer "what was this student asked".
+  assert.equal(store.assessmentResponses.size, 1);
+});
+
+test("abandoning attempt 1 does not promote attempt 2 into the reported measure", async () => {
+  const { service, store } = harness();
+  await runModule(service);
+  const first = await service.openChapterAssessment(PROFILE, {
+    chapterId: CHAPTER,
+    assessmentId: ASSESSMENT,
+  });
+  assert.equal(first.ok, true);
+  if (!first.ok) return;
+  await answer(service, first.value.attemptId, "A1", "OPT.RIGHT");
+
+  const abandoned = await service.abandonChapterAssessment(PROFILE, {
+    attemptId: first.value.attemptId,
+    reason: "WALKED_AWAY",
+  });
+  assert.equal(abandoned.ok, true);
+  if (!abandoned.ok) return;
+  assert.equal(abandoned.value.status, "ABANDONED");
+  assert.equal(abandoned.value.scoreNumerator, null);
+  assert.equal(abandoned.value.passed, false);
+  assert.equal(abandoned.value.isReportedMeasure, true, "ordinal 1 still owns it");
+  assert.ok(
+    store.ledger.some((entry) => entry.kind === "ASSESSMENT_ATTEMPT_ABANDONED"),
+  );
+
+  // A second attempt is a retry, not a promotion. Its items are fresh, because
+  // the abandoned attempt still spent the ones it served.
+  await runModule(service, "ASSESSMENT_ATTEMPT");
+  const second = await service.openChapterAssessment(PROFILE, {
+    chapterId: CHAPTER,
+    assessmentId: ASSESSMENT,
+  });
+  assert.equal(second.ok, true);
+  if (!second.ok) return;
+  assert.equal(second.value.attemptOrdinal, 2);
+  assert.equal(second.value.isReportedMeasure, false);
+  assert.deepEqual(
+    second.value.form.map((entry) => entry.itemIds),
+    [["A3", "A4"], ["B3", "B4"]],
+  );
+  for (const [itemId, optionId] of [
+    ["A3", "OPT.RIGHT"],
+    ["A4", "OPT.RIGHT"],
+    ["B3", "OPT.RIGHT"],
+  ] as const) {
+    await answer(service, second.value.attemptId, itemId, optionId);
+  }
+  await answerOpen(service, second.value.attemptId, "B4", true);
+  const submitted = await service.submitChapterAssessment(PROFILE, second.value.attemptId);
+  assert.equal(submitted.ok, true);
+  if (!submitted.ok) return;
+  assert.equal(submitted.value.passed, true);
+
+  // A perfect retry, and still no reported score: attempt 1 was walked out of.
+  const attempts = [...store.assessmentAttempts.values()];
+  const measure = reportedFirstAttemptMeasure(attempts);
+  assert.equal(measure?.attempt.attemptOrdinal, 1);
+  assert.equal(measure?.score, null, "the retry never becomes the reported score");
+});
+
+test("chapter two's M1 is a different mission from chapter one's", async () => {
+  const { service, store } = harness();
+  // Spend chapter one's M1 completely.
+  await playAttempt(service, "CLEARED");
+  assert.equal(
+    isMissionPermanentlySpent(store.missions.get(`${PROFILE}:${CHAPTER}:${MISSION}`)!),
+    true,
+  );
+
+  const chapter = store.chapters.get(`${PROFILE}:${CHAPTER}`)!;
+  store.chapters.set(`${PROFILE}:${CHAPTER}`, {
+    ...chapter,
+    assessmentPassedAt: "2026-07-25T00:10:00.000Z",
+  });
+  assert.equal((await service.advanceChapter(PROFILE, "CH.TWO")).ok, true);
+
+  // The same slug in the new chapter is untouched: three fresh attempts, and
+  // the first one pays in full.
+  const module = await service.completeLearningModule(PROFILE, {
+    chapterId: "CH.TWO",
+    moduleId: MODULE,
+    gatesKind: "MISSION_ATTEMPT",
+    gatesId: MISSION,
+    acknowledgedCueIds: [...DECK],
+    observedSeconds: 200,
+  });
+  assert.equal(module.ok, true);
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: "CH.TWO", missionId: MISSION },
+    SEED,
+  );
+  assert.equal(opened.ok, true);
+  if (!opened.ok) return;
+  assert.equal(opened.value.attemptOrdinal, 1, "not chapter one's spent counter");
+  assert.deepEqual(opened.value.xpFraction, { numerator: 3, denominator: 3 });
+  assert.notEqual(
+    opened.value.attemptSeedHex,
+    store.missionAttempts.get("00000000-0000-4000-8000-000000000001")?.attemptSeedHex,
+    "and it is a different run from chapter one's M1",
+  );
+});
+
+test("mutations refuse content that does not exist rather than inventing a payout", async () => {
+  const { service } = harness({ missionReward: () => null, xpCurve: () => null });
+  const module = await runModule(service);
+  assert.deepEqual(module, { ok: false, error: "PACKAGE_MISSING" });
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.deepEqual(opened, { ok: false, error: "PACKAGE_MISSING" });
+  // Reads still work: a new runner is still Level 0, 0 XP, Rank 1.
+  const snapshot = await service.snapshot(PROFILE);
+  assert.equal(snapshot.campaign.rank, 1);
+});

@@ -1,0 +1,177 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same ref supersedes an in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The API runs on Node 24 in production (see apps/api/Dockerfile), so CI
+  # verifies against 24 rather than against whatever is newest. Local machines
+  # are ahead of this on purpose; that difference is the point.
+  NODE_VERSION: "24"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # The gate that has to stay green: everything that runs without a database or
+  # a browser. One job rather than three so the workspace is installed once;
+  # every step still runs even when an earlier one fails, so a red run shows all
+  # of what is broken instead of only the first failure.
+  # ---------------------------------------------------------------------------
+  verify:
+    name: verify (lint, typecheck, test, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # No version input: pnpm/action-setup reads `packageManager` from
+      # package.json, so this cannot drift from what developers run.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      # --no-frozen-lockfile is deliberate and temporary. pnpm-lock.yaml is
+      # currently behind the workspace (packages added this week are not in it
+      # yet), and a frozen install fails outright on that, which would block
+      # every unrelated change. The `lockfile` job reports the drift on its own.
+      # Switch this to --frozen-lockfile once that job is green; until then CI
+      # can resolve versions the lockfile does not pin.
+      - name: Install workspace
+        run: pnpm install --no-frozen-lockfile
+
+      # Engine/protocol packages must not import chapter content. Cheap, and it
+      # is the invariant most easily broken by a hurried import.
+      - name: Boundary lint
+        if: ${{ !cancelled() }}
+        run: pnpm lint
+
+      - name: Typecheck
+        if: ${{ !cancelled() }}
+        run: pnpm typecheck
+
+      # Includes apps/api's in-memory suite, which re-hashes every file in
+      # apps/api/src/migrations against checksums.json: a rewritten migration
+      # fails here without needing a database.
+      - name: Test
+        if: ${{ !cancelled() }}
+        run: pnpm test
+
+      # The asset pipeline is scripts rather than a workspace package, so it has
+      # no package.json and `pnpm test` cannot reach it. Its unit tests were
+      # therefore run only when somebody remembered to — which is how the
+      # placement instruments accumulated four defects that each reported a
+      # confident wrong number instead of failing. `placement_lib.test.mjs` states
+      # the invariants that catch all four.
+      - name: Asset pipeline unit tests
+        if: ${{ !cancelled() }}
+        run: node --test 'assets/pipeline/*.test.mjs'
+
+      - name: Build packages
+        if: ${{ !cancelled() }}
+        run: pnpm build
+
+      - name: Build web bundle
+        if: ${{ !cancelled() }}
+        run: pnpm --filter @pa/web build
+
+  # ---------------------------------------------------------------------------
+  # The persistence suite, which until now only ran on a machine with Docker
+  # running locally. It applies every migration to a real Postgres, twice, and
+  # asserts each one is applied exactly once at its recorded checksum - so
+  # migration drift and non-idempotent migrations fail here.
+  # ---------------------------------------------------------------------------
+  api-postgres:
+    name: api persistence (postgres)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine # matches docker-compose.yml
+        env:
+          POSTGRES_USER: project_archive
+          POSTGRES_PASSWORD: project_archive
+          POSTGRES_DB: project_archive
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U project_archive -d project_archive"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # The suite sets its own grading/CSRF test values; it only needs a reachable
+      # database. Credentials here are the throwaway ones the service starts with.
+      DATABASE_URL: postgres://project_archive:project_archive@localhost:5432/project_archive
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install workspace
+        run: pnpm install --no-frozen-lockfile
+      - name: API persistence suite
+        run: pnpm --filter @pa/api test:postgres
+
+  # ---------------------------------------------------------------------------
+  # Advisory: expected to fail right now.
+  #
+  # pnpm-lock.yaml describes fewer projects than the workspace contains, so no
+  # frozen install can succeed until it is regenerated. That single fact is also
+  # what makes the `api-image` job below fail, and what forces the two jobs
+  # above onto --no-frozen-lockfile. It is reported here rather than papered
+  # over, and it is advisory so it does not block work that did not cause it.
+  #
+  # Once `pnpm install` has been run on a quiet tree and the lockfile committed:
+  # delete continue-on-error here, and switch the installs above to
+  # --frozen-lockfile. That is what makes CI reproducible.
+  # ---------------------------------------------------------------------------
+  lockfile:
+    name: lockfile in sync (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Frozen install
+        run: pnpm install --frozen-lockfile
+
+  # ---------------------------------------------------------------------------
+  # Advisory for the same reason: the image installs with --frozen-lockfile on
+  # purpose, because a production image that resolves different dependency
+  # versions than CI is not a reproducible artifact. Everything else about the
+  # image is verified here - that it builds at all is what nobody was checking
+  # when it silently stopped being able to.
+  # ---------------------------------------------------------------------------
+  api-image:
+    name: api image builds (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Lint Dockerfile
+        run: docker buildx build --check -f apps/api/Dockerfile .
+      # Built for the runner's native linux/amd64 rather than the linux/arm64
+      # that CDK deploys. The Dockerfile is architecture-neutral, and
+      # cross-building arm64 under emulation costs several times as long for no
+      # additional signal.
+      - name: Build API image
+        run: docker buildx build -f apps/api/Dockerfile -t pa-api:ci .

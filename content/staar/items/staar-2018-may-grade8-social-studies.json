@@ -1,0 +1,389 @@
+{
+  "$schema": "../schema/staar-released-item.schema.json",
+  "administration": {
+    "administrationId": "2018",
+    "label": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+    "grade": 8,
+    "subject": "Social Studies",
+    "language": "English",
+    "formItemCount": 44,
+    "allItemsMultipleChoice": true,
+    "teksAlignmentVintage": "Pre-2019 Grade 8 Social Studies TEKS. Nine SE codes used on the 2018 and 2019 forms are no longer listed in TEA's current assessed curriculum (8.4(E), 8.6(D), 8.11(C), 8.12(D), 8.19(D), 8.19(E), 8.20(C), 8.26(C), 8.27(D)), and at least one surviving code (8.4(C)) covers different content today. TEA's label is recorded verbatim in teksAsPublished; see labelNote on affected items.",
+    "sourceDocuments": {
+      "form": "2018-staar-8-social-studies-test",
+      "answerKey": "2018-staar-8-social-studies-key",
+      "studentExpectationsTested": "2018-staar-8-social-studies-exptested",
+      "itemRationale": "2018-staar-8-social-studies-rationale"
+    }
+  },
+  "capture": {
+    "capturedAt": "2026-07-26T02:25Z",
+    "capturedBy": "content/staar sourcing pass",
+    "scope": "Items whose TEA-published content student expectation is one of the 23 Boston chapter SEs, plus item 39 (Boston Tea Party content under the now-retired 8.20(C) label) because the repo already carries a paraphrase of it.",
+    "method": "Item text transcribed from TEA's released form PDF text layer. Correct answers taken from TEA's official answer key / student-expectations-tested table, never inferred from the item.",
+    "verbatim": true,
+    "itemsCapturedFromThisForm": 10,
+    "itemsOnForm": 44
+  },
+  "items": [
+    {
+      "itemId": "STAAR.2018MAY.G8SS.02",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 2,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.10(A)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 2,
+        "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.10(A)",
+      "stimulus": {
+        "type": "MAP",
+        "title": "Contiguous United States",
+        "text": null,
+        "attribution": null,
+        "imageDependent": true,
+        "note": "The stimulus is a map of the contiguous United States with four numbered states. The map cannot be reproduced from the PDF text layer, and the item is unanswerable without it."
+      },
+      "stem": "Which numbered state did the United States acquire from Spain in 1819?",
+      "options": [
+        { "optionId": "F", "text": "1" },
+        { "optionId": "G", "text": "2" },
+        { "optionId": "H", "text": "3" },
+        { "optionId": "J", "text": "4" }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": false,
+      "usabilityNote": "Map-dependent. Cannot be used without recreating or licensing the map stimulus."
+    },
+    {
+      "itemId": "STAAR.2018MAY.G8SS.04",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 4,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.4(C)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "G",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.4(C)",
+      "labelNote": "TEA labelled this item 8.4(C) in 2018. The current assessed curriculum defines 8.4(C) as 'explain the issues surrounding important events of the American Revolution, including declaring independence; fighting the battles of Lexington and Concord, Saratoga, and Yorktown; enduring the winter at Valley Forge; and signing the Treaty of Paris of 1783', which does not cover the Articles of Confederation. This item's content maps to today's 8.15(B) 'summarize the strengths and weaknesses of the Articles of Confederation'. That remapping is OUR READING, not a TEA statement, and must be confirmed by a reviewer before the item is used against a current standard.",
+      "stimulus": {
+        "type": "LIST",
+        "title": "Articles of Confederation",
+        "text": "• Did not grant a federal power to tax or regulate commerce\n• Did not establish a common currency\n• Did not establish an executive or judicial branch",
+        "attribution": null,
+        "imageDependent": false
+      },
+      "stem": "What does this list suggest about the drafters of the Articles of Confederation?",
+      "options": [
+        { "optionId": "F", "text": "They did not want a judicial system based upon that of Great Britain." },
+        { "optionId": "G", "text": "They feared that a strong central government would abuse its power." },
+        { "optionId": "H", "text": "They were uncertain that democracy would continue to be the best type of government." },
+        { "optionId": "J", "text": "They did not think that state governments could provide for the general welfare." }
+      ],
+      "correctOptionId": "G",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2018MAY.G8SS.05",
+      "itemVersion": "tea.released.1",
+      "priority": "MISSION_ONE",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 5,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.4(A)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "C",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.4(A)",
+      "teksClause": "British economic policies following the French and Indian War",
+      "bostonConcept": "RCC.DEBT_POLICY_INTRO",
+      "era": "1764-1767",
+      "stimulus": {
+        "type": "LIST",
+        "title": null,
+        "text": "1764 Sugar Act\n1765 Stamp Act\n1767 Townshend Acts",
+        "attribution": null,
+        "imageDependent": false
+      },
+      "stem": "What was the primary reason Parliament passed these acts?",
+      "options": [
+        { "optionId": "A", "text": "To promote the growth of cottage industries in the colonies" },
+        { "optionId": "B", "text": "To encourage foreign trade with the colonies" },
+        { "optionId": "C", "text": "To recover the cost of defending the colonies" },
+        { "optionId": "D", "text": "To fund the establishment of new colonies" }
+      ],
+      "correctOptionId": "C",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q05.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (C). See owner-item-provenance-map.json."
+      }
+    },
+    {
+      "itemId": "STAAR.2018MAY.G8SS.08",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 8,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.11(A)",
+        "processStudentExpectationAsPublished": null,
+        "reportingCategory": 2,
+        "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.11(A)",
+      "contentNote": "TEA tagged this to the geography SE 8.11(A), but the subject matter is the Proclamation of 1763, which is a named clause of 8.4(A). Useful for Boston Act 2, where the Proclamation is a gated fact. The dual relevance is our observation; TEA's single published label is 8.11(A).",
+      "era": "1763",
+      "stimulus": {
+        "type": "NONE",
+        "text": null,
+        "attribution": null,
+        "imageDependent": false
+      },
+      "stem": "The British government issued the Proclamation of 1763 to limit the area British colonists were allowed to settle. Which geographic feature did the British use as the boundary of approved settlement?",
+      "options": [
+        { "optionId": "F", "text": "Lake Michigan" },
+        { "optionId": "G", "text": "Gulf of Mexico" },
+        { "optionId": "H", "text": "Mississippi River" },
+        { "optionId": "J", "text": "Appalachian Mountains" }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2018MAY.G8SS.14",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 14,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.3(A)",
+        "processStudentExpectationAsPublished": null,
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "F",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.3(A)",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "The Virginia Company authorized a general assembly in Virginia so that colonists could —",
+      "options": [
+        { "optionId": "F", "text": "self-govern on a local level" },
+        { "optionId": "G", "text": "vote in the British Parliament" },
+        { "optionId": "H", "text": "participate in a free-market economy" },
+        { "optionId": "J", "text": "express dissatisfaction with British rule" }
+      ],
+      "correctOptionId": "F",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2018MAY.G8SS.16",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 16,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.10(C)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 2,
+        "correctAnswerFromOfficialKey": "F",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.10(C)",
+      "stimulus": {
+        "type": "TABLE",
+        "title": "Population of Selected U.S. Cities, 1840–1870",
+        "text": "Urban Area | 1840 | 1850 | 1860 | 1870\nNew York, NY | 312,710 | 515,547 | 813,669 | 942,292\nBaltimore, MD | 102,313 | 169,054 | 212,418 | 267,354\nNew Orleans, LA | 102,193 | 116,375 | 168,675 | 191,418\nPhiladelphia, PA | 93,665 | 121,376 | 565,529 | 674,022\nBoston, MA | 93,383 | 136,881 | 177,840 | 250,526",
+        "attribution": "Source: U.S. Census Bureau",
+        "attributionParty": "THIRD_PARTY_US_FEDERAL",
+        "imageDependent": false
+      },
+      "stem": "The statistics in this table illustrate population changes associated with —",
+      "options": [
+        { "optionId": "F", "text": "the rise of industrialism in the United States" },
+        { "optionId": "G", "text": "the establishment of a federal income tax" },
+        { "optionId": "H", "text": "a prolonged food shortage in the United States" },
+        { "optionId": "J", "text": "a lengthy war over disputed territory" }
+      ],
+      "correctOptionId": "F",
+      "usableAsIs": true,
+      "usabilityNote": "Era is 1840-1870, outside the Boston chapter's 1765-1775 window. Tagged to a Boston SE but not era-appropriate for Boston selection."
+    },
+    {
+      "itemId": "STAAR.2018MAY.G8SS.22",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 22,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.12(A)",
+        "processStudentExpectationAsPublished": null,
+        "reportingCategory": 4,
+        "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.12(A)",
+      "bostonRelevance": "Directly names Massachusetts and its shipbuilding/fishing economy. Fits Boston mission M2 (Landed Weight, 8.11(A) + 8.12(A)).",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "Which American colony’s economy was based primarily on shipbuilding and fishing?",
+      "options": [
+        { "optionId": "F", "text": "Virginia" },
+        { "optionId": "G", "text": "Maryland" },
+        { "optionId": "H", "text": "Georgia" },
+        { "optionId": "J", "text": "Massachusetts" }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": true
+    },
+    {
+      "itemId": "STAAR.2018MAY.G8SS.23",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 23,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.1(A)",
+        "processStudentExpectationAsPublished": "8.29(C)",
+        "reportingCategory": 1,
+        "correctAnswerFromOfficialKey": "A",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.1(A)",
+      "stimulus": {
+        "type": "POLITICAL_CARTOON",
+        "title": null,
+        "text": null,
+        "attribution": "Source: Library of Congress, Prints and Photographs Division",
+        "attributionParty": "THIRD_PARTY_US_FEDERAL",
+        "imageDependent": true,
+        "note": "The stimulus is a political cartoon image. It cannot be reproduced from the PDF text layer and the item is unanswerable without it."
+      },
+      "stem": "This political cartoon comments on events that occurred during the —",
+      "options": [
+        { "optionId": "A", "text": "Reconstruction era" },
+        { "optionId": "B", "text": "Age of Jackson" },
+        { "optionId": "C", "text": "Second Great Awakening" },
+        { "optionId": "D", "text": "War of 1812" }
+      ],
+      "correctOptionId": "A",
+      "usableAsIs": false,
+      "usabilityNote": "Image-dependent, and the era is outside the Boston chapter window."
+    },
+    {
+      "itemId": "STAAR.2018MAY.G8SS.36",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 36,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.23(E)",
+        "processStudentExpectationAsPublished": null,
+        "reportingCategory": 2,
+        "correctAnswerFromOfficialKey": "J",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.23(E)",
+      "stimulus": { "type": "NONE", "text": null, "attribution": null, "imageDependent": false },
+      "stem": "The reform efforts of Dorothea Dix during the mid-nineteenth century led to —",
+      "options": [
+        { "optionId": "F", "text": "improved education for immigrant children" },
+        { "optionId": "G", "text": "the creation of worker safety regulations" },
+        { "optionId": "H", "text": "the expansion of suffrage for women" },
+        { "optionId": "J", "text": "improved facilities for the mentally ill and disabled" }
+      ],
+      "correctOptionId": "J",
+      "usableAsIs": true,
+      "usabilityNote": "Correct SE for Boston's 8.23(E) (women's contributions), but the content is 19th-century reform, not the Daughters of Liberty boycott thread Boston uses. Every released 8.23(E) item found is 19th-century reform; see the gap list."
+    },
+    {
+      "itemId": "STAAR.2018MAY.G8SS.39",
+      "itemVersion": "tea.released.1",
+      "provenance": {
+        "publisher": "Texas Education Agency",
+        "administration": "2018 May",
+        "testForm": "STAAR Grade 8 Social Studies, Administered May 2018, RELEASED",
+        "itemNumberAsPublished": 39,
+        "itemType": "Multiple Choice",
+        "maxPoints": 1,
+        "teksAsPublished": "8.20(C)",
+        "processStudentExpectationAsPublished": "8.29(B)",
+        "reportingCategory": 3,
+        "correctAnswerFromOfficialKey": "B",
+        "sourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-test.pdf",
+        "keySourceUrl": "https://tea.texas.gov/student-assessment/staar/released-test-questions/2018-staar-8-social-studies-exptested.csv"
+      },
+      "studentExpectation": "8.20(C)",
+      "studentExpectationStatus": "RETIRED",
+      "labelNote": "8.20(C) is not in TEA's current assessed curriculum, which lists only 8.20(A) and 8.20(B). This item's content (the Boston Tea Party as protest against taxation) sits under today's 8.20(B) 'analyze reasons for and the impact of selected examples of civil disobedience in U.S. history such as the Boston Tea Party'. That remapping is OUR READING, not a TEA statement.",
+      "era": "1773",
+      "stimulus": {
+        "type": "PRIMARY_SOURCE_EXCERPT",
+        "title": null,
+        "text": "A number of brave & resolute men, determined to do all in their power to save their country from the ruin which their enemies had plotted, in less than four hours, emptied every chest of tea on board the three ships commanded by the captains Hall, Bruce, and Coffin, amounting to 342 chests, into the sea!! without the least damage done to the ships or any other property. The matters and owners are well pleas’d that their ships are thus clear’d; and the people are almost universally congratulating each other on this happy event.",
+        "attribution": "—Boston Gazette, 1773",
+        "attributionParty": "PUBLIC_DOMAIN_PERIOD_SOURCE",
+        "imageDependent": false
+      },
+      "stem": "The actions described in this excerpt were carried out in order to —",
+      "options": [
+        { "optionId": "A", "text": "encourage the outbreak of war between England and France" },
+        { "optionId": "B", "text": "protest British taxation policies" },
+        { "optionId": "C", "text": "end trade disagreements between colonists and French traders" },
+        { "optionId": "D", "text": "protest a ban on selling beverages in the colonies" }
+      ],
+      "correctOptionId": "B",
+      "usableAsIs": true,
+      "repoLinkage": {
+        "existingItemId": "BANK.BOSTON.USER.Q39.v1",
+        "relationship": "The repo item is a condensed paraphrase of this released item and carries the same key (B). The repo tags it 8.4(A):NO_REPRESENTATION; TEA's published label is 8.20(C)."
+      }
+    }
+  ]
+}

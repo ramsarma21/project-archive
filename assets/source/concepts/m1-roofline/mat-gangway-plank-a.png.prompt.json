@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Weathered rough-sawn colonial softwood scaffold planks laid side by side, running top to bottom of the frame. Eastern white pine, silver-grey from years of weather with warm brown showing where it has split. Straight parallel saw kerf marks across the grain from an up-and-down sawmill. Raised grain, shakes and checks along the length, a few dark knots, one board cupped and one board split at the end. Narrow dark gaps between boards. Hand-forged iron rose-head nails driven in pairs, each with a rust bloom staining the wood around it. Lichen and grey-green weathering in the joints, no moss on the wear line. Perfectly overhead orthographic seamless square albedo texture, filling the frame edge to edge. No perspective, no object edges, no background, no border, no cast shadows, no lighting gradient, no vignette. Opposite edges tile invisibly. Flat even illumination. Boston, Massachusetts, 1765. Muted, weathered, working-town palette; nothing new, nothing bright, nothing modern. No modern materials, no plastic, no paint, no machine-perfect repetition.",
+  "size": "1024x1024",
+  "edit": null,
+  "generatedAt": "2026-07-26T12:20:18.071Z",
+  "files": [
+    "mat-gangway-plank-a.png"
+  ]
+}

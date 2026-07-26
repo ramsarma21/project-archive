@@ -69,6 +69,7 @@ if (!allow || !manifest || !sources || !rubricsDoc || !feedbackDoc || !classifie
 
 const macroSet = new Set(allow.macroConceptIds);
 const microSet = new Set(allow.microConceptIds);
+const missionDaySet = new Set(allow.missionDayIds ?? []);
 const opSet = new Set(allow.reasoningOperations);
 const criterionLabelSet = new Set(Object.keys(allow.rubricCriterionLabels));
 const forbiddenCriteria = new Set(allow.forbiddenRubricCriteria);
@@ -207,6 +208,25 @@ function sweepApproval(obj, where) {
 sweepApproval(manifest, "manifest");
 sweepApproval(itemsDoc, "items");
 sweepApproval(sources, "sources");
+
+// ---- Package identity ----
+//
+// The manifest's chapter and mission-day ids were the only fields in it nothing
+// read, and `chapterId` had gone wrong the way unread identity metadata does: it
+// said `PA.SEA01.CH02.BOSTON.v1`, a fourth spelling of a chapter that the
+// registry, the API, the client and every stored row all spell `boston-1765`.
+// The pinned values live in allowlists.json for the reason its own note gives —
+// this package validates without importing runtime code, so writing the other
+// side's value down is the only way a divergence is catchable at all.
+if (manifest.chapterId !== allow.chapterId) {
+  fail(
+    `manifest chapterId ${JSON.stringify(manifest.chapterId)} is not the ` +
+      `registry's chapter ${JSON.stringify(allow.chapterId)}`,
+  );
+}
+if (!missionDaySet.has(manifest.missionDayId)) {
+  fail(`manifest missionDayId ${JSON.stringify(manifest.missionDayId)} names no known mission day`);
+}
 
 // ---- Items ----
 const items = itemsDoc.items;

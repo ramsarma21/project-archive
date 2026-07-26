@@ -1,0 +1,15 @@
+Architectural reference photograph of the Old State House, Boston — the 1713 Town House, Washington Street — in August 1765, isolated as a single free-standing object for 3D scanning. Centered, the complete building from the pavement to the tip of the weathervane inside the frame with clear margin all round, THREE-QUARTER VIEW from the north-east at a low camera height so the arcaded ground storey is fully visible, plain light gray studio background, soft even daylight, no cast shadow, no other buildings, no people, no text or watermark.
+
+The building stood in the middle of the roadway with the traffic passing round it, so every face is finished and there is no blank party wall.
+
+Documented features, all of which must be present and clearly readable:
+- Deep red brick in Flemish bond, darker glazed headers visible.
+- OPEN ARCADED GROUND STOREY: heavy square brick piers carrying tall round-headed arches on all four faces, open right through the building beneath the upper storeys — the merchants' exchange and the market beneath. Deep shadow inside the arcade. No shopfronts, no glass at ground level.
+- Gilded LION AND UNICORN statues standing on the cornice of the stepped-and-scrolled east gable, facing outward.
+- White-framed circular CLOCK DIAL on the east gable, and the white-painted projecting BALCONY with a turned balustrade at first-floor level below it.
+- A NORTH BALCONY as well: a long white-painted wooden gallery with a turned balustrade running along the north front at first-floor level, with a small pedimented hood over its centre bay.
+- Two upper storeys of twelve-over-twelve sash windows with white trim, a moulded brick string course, and a deep white modillioned cornice under the eaves.
+- Grey slate GAMBREL ROOF with a flat leaded roof walk on top.
+- Three-stage square brick TOWER rising from the roof walk, each stage set back, carrying a white-painted OCTAGONAL CUPOLA with louvred arched openings, a lead dome and an iron WEATHERVANE.
+
+Compact square footprint, about one and a half times as tall as it is wide including the tower. Weathered brick, white painted joinery, grey slate and lead. Realistic materials, muted colours, photogrammetry reference plate style, evenly lit for 3D reconstruction.

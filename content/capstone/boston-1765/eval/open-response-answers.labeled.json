@@ -1,0 +1,59 @@
+{
+  "datasetId": "BOS.CAPSTONE.EVAL.OPEN_RESPONSE.v1",
+  "title": "Author-labelled answers for the nine capstone open-response items",
+  "reviewStatus": "AUTHOR_DRAFT",
+
+  "whyThisExists": "The capstone is where a false negative is most expensive: two items decide a concept at 100%, a concept decides the chapter unlock, and the concept mints the Codex cards that make a student PvP-legal. Every answer here is deliberately absent from the rubric it tests, so a grader that passes has generalised rather than matched its own key.",
+
+  "calibration": {
+    "sameAs": "content/m1/eval/duel-answers.labeled.json, read off the twelve TEA-scored responses in content/staar/eval",
+    "difference": "The correct rows here are pushed further from the reference wording than the duel set's, because the accept lists are wider on this surface and a grader tuned on duel rubrics will be too tight for this one."
+  },
+
+  "gate": {
+    "shipping": "Zero false negatives on the CORRECT rows. On this surface that is not a target, it is the condition — a miss costs a chapter unlock and a permanent PvP card, not one round's ammunition.",
+    "reporting": "False negatives and false positives separately, and per item rather than pooled. The three items marked HIGH false-negative risk in the rubric file are the ones whose CORRECT rows matter most.",
+    "sampleSize": "27 author-written rows across nine items. A smoke test that catches a grader scoring style or keyword overlap, and nothing like enough to certify one. No real student writing is in it, and only playtest transcripts can close that."
+  },
+
+  "counts": { "total": 27, "CORRECT": 18, "WRONG": 9 },
+  "countsNote": "Two correct rows to one wrong row, per item, on purpose. The shipping condition is zero false negatives, so the correct rows are the measurement and the wrong rows are the guard against a grader that has simply learned to say CORRECT.",
+
+  "answers": [
+    { "itemId": "BOS.CAP.POSTWAR.CORRECTION.v1", "answer": "other way round. the debt was there before anyone thought of a stamp", "expected": "CORRECT", "why": "The reversal in the student's own phrasing." },
+    { "itemId": "BOS.CAP.POSTWAR.CORRECTION.v1", "answer": "nope. war, then owing money, then the tax to fix it", "expected": "CORRECT", "why": "Three-step chain, no punctuation, correct order." },
+    { "itemId": "BOS.CAP.POSTWAR.CORRECTION.v1", "answer": "he's got a point, the stamps did cost money to collect", "expected": "WRONG", "why": "Concedes the merchant's ordering while sounding thoughtful." },
+
+    { "itemId": "BOS.CAP.POSTWAR.DISCRIMINATION.v1", "answer": "explanation two. the war bill is what changed, not how much control they wanted", "expected": "CORRECT", "why": "Choice and ground, with the other explanation set aside on the right axis." },
+    { "itemId": "BOS.CAP.POSTWAR.DISCRIMINATION.v1", "answer": "the debt one. they had been in charge of us for a hundred years already so control cant be whats new", "expected": "CORRECT", "why": "Chooses correctly and refutes the alternative with an argument the module never gave it — more than the item asked for." },
+    { "itemId": "BOS.CAP.POSTWAR.DISCRIMINATION.v1", "answer": "one, because after the war they wanted to run the colonies more closely", "expected": "WRONG", "why": "The control explanation, argued rather than guessed." },
+
+    { "itemId": "BOS.CAP.POSTWAR.APPLICATION.v1", "answer": "no. in 1755 the war was costing them money, it hadnt left them a debt to collect yet", "expected": "CORRECT", "why": "The distinction between spending and owing, which is the sharpest form of this answer." },
+    { "itemId": "BOS.CAP.POSTWAR.APPLICATION.v1", "answer": "i dont think so, the whole reason for the tax comes after 1763", "expected": "CORRECT", "why": "Hedged, no proper nouns, and the causal reason is there." },
+    { "itemId": "BOS.CAP.POSTWAR.APPLICATION.v1", "answer": "no, parliament was busy with the war and wouldnt have had time", "expected": "WRONG", "why": "A reason, and not the debt. Plausible and empty." },
+
+    { "itemId": "BOS.CAP.STAMP.CORRECTION.v1", "answer": "he needs to read it. paper and documents, thats the list", "expected": "CORRECT", "why": "Category named, boundary held." },
+    { "itemId": "BOS.CAP.STAMP.CORRECTION.v1", "answer": "wrong, his mothers bread isnt stamped. the deeds and the newspapers are", "expected": "CORRECT", "why": "The boundary as two examples, one either side." },
+    { "itemId": "BOS.CAP.STAMP.CORRECTION.v1", "answer": "he's close, it was most things people bought", "expected": "WRONG", "why": "A hedge that keeps the error." },
+
+    { "itemId": "BOS.CAP.STAMP.DISCRIMINATION.v1", "answer": "printer, easily. a stamp on every sheet is a stamp on his whole trade", "expected": "CORRECT", "why": "Choice and the link, compressed." },
+    { "itemId": "BOS.CAP.STAMP.DISCRIMINATION.v1", "answer": "the blacksmith is fine. the act never touches iron. its the printer", "expected": "CORRECT", "why": "The link argued from the blacksmith's side first, which is the same reasoning arriving backwards." },
+    { "itemId": "BOS.CAP.STAMP.DISCRIMINATION.v1", "answer": "the printer because he will lose customers when prices go up", "expected": "WRONG", "why": "Right trade, and a market mechanism rather than the Act's category. The reason is the item." },
+
+    { "itemId": "BOS.CAP.STAMP.APPLICATION.v1", "answer": "her letter is fine, the handbill isnt. one came off a press and one didnt", "expected": "CORRECT", "why": "Both decisions in reverse order with the reason. The order the student names them in is not evidence." },
+    { "itemId": "BOS.CAP.STAMP.APPLICATION.v1", "answer": "only the handbill", "expected": "CORRECT", "why": "Both decisions carried by an exclusive — 'only' says the letter is out. Terse and complete." },
+    { "itemId": "BOS.CAP.STAMP.APPLICATION.v1", "answer": "both, anything on paper got the stamp in the end", "expected": "WRONG", "why": "The over-generalisation, stated with a hedge that makes it sound informed." },
+
+    { "itemId": "BOS.CAP.REP.CORRECTION.v1", "answer": "money had nothing to do with it. they were being taxed by a parliament they had no vote in", "expected": "CORRECT", "why": "The move and the ground." },
+    { "itemId": "BOS.CAP.REP.CORRECTION.v1", "answer": "thats not it. even a cheap tax from london would have been wrong because london isnt ours to be taxed by", "expected": "CORRECT", "why": "The counterfactual plus the consent ground, in a thirteen-year-old's syntax." },
+    { "itemId": "BOS.CAP.REP.CORRECTION.v1", "answer": "she is wrong, the real reason is that the money left the colonies and never came back", "expected": "WRONG", "why": "Corrects the error and lands on an economic ground rather than a consent one. This is the most plausible wrong correction in the pool." },
+
+    { "itemId": "BOS.CAP.REP.ORDERING.v1", "answer": "1. nobody from boston sits in parliament. 2. parliament taxed boston anyway. 3. so the tax was put on people who never agreed to it", "expected": "CORRECT", "why": "Numbered, ordered, both links." },
+    { "itemId": "BOS.CAP.REP.ORDERING.v1", "answer": "we didnt elect them, so they cant speak for us, so the tax isnt something we consented to", "expected": "CORRECT", "why": "One sentence, three steps, in order." },
+    { "itemId": "BOS.CAP.REP.ORDERING.v1", "answer": "parliament taxed boston, boston got angry, boston protested at the liberty tree", "expected": "WRONG", "why": "A narrative of events rather than the argument, and no representation step. This is the shape a student produces who knows the story and not the claim." },
+
+    { "itemId": "BOS.CAP.REP.APPLICATION.v1", "answer": "one lot of taxes they voted for themselves and the other lot they didnt", "expected": "CORRECT", "why": "The distinction with no proper nouns at all." },
+    { "itemId": "BOS.CAP.REP.APPLICATION.v1", "answer": "if you dont like what the assembly does you can vote them out next time. you cant do that to parliament", "expected": "CORRECT", "why": "Consent expressed as accountability. A different and arguably better statement of the same principle, and a grader reading for the word 'elected' will miss it." },
+    { "itemId": "BOS.CAP.REP.APPLICATION.v1", "answer": "because the assembly only took a little and parliament kept adding more and more", "expected": "WRONG", "why": "Amount and frequency. The cost axis, in the place it is hardest to spot." }
+  ]
+}

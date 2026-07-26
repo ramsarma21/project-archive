@@ -1,0 +1,509 @@
+/* ===========================================================================
+   The visor — the System's held moment at the mission's spawn.
+
+   Extends the hub's holographic language rather than inventing one: the same
+   cyan-white on dark glass, the same tracked uppercase kickers, the same corner
+   brackets and scanline wash. The player has met this object before, in the hub,
+   and it has to read as that object rather than as a tutorial layer.
+
+   The one departure from the hub is the LAYOUT. Hub panels sit in columns because
+   the hub is a screen you operate. The visor is a thing you look THROUGH, so
+   nothing here takes the middle: every panel hugs a corner, the centre of the
+   frame is 1765 Boston, and there is no scrim to dismiss. That is the whole
+   difference between an overlay and a modal.
+
+   Motion policy matches the hub's. Every entrance is an animation on
+   `--visor-delay`, and `.visor.is-reduced` removes all of them — nothing here is
+   information gated behind a transition, so removing the transition removes
+   nothing.
+   =========================================================================== */
+
+.visor {
+  --v-cyan: #9fdcff;
+  --v-cyan-dim: rgba(94, 200, 255, 0.42);
+  --v-cyan-faint: rgba(94, 200, 255, 0.14);
+  --v-ink: #eaf8ff;
+  --v-ink-dim: #9dc3dd;
+  --v-teal: #7ee3d8;
+  --v-rose: #ffb0a0;
+  --v-amber: #f0cd94;
+
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #05080d;
+  color: var(--v-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.visor-canvas {
+  display: block;
+}
+
+/* Spans the whole frame: a look may start anywhere the world is visible. The
+   chrome above claims its own hit tests, and only the release button opts in. */
+.visor-look-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: grab;
+  touch-action: none;
+}
+.visor-look-surface:active {
+  cursor: grabbing;
+}
+
+.visor-chrome {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 240ms ease-out;
+}
+.visor-chrome.is-releasing {
+  opacity: 0;
+}
+
+/* ---- the aperture ------------------------------------------------------- */
+
+.visor-aperture {
+  position: absolute;
+  inset: 14px;
+  pointer-events: none;
+}
+.visor-corner {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  opacity: 0.72;
+  animation: visor-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.visor-corner.is-tl {
+  top: 0;
+  left: 0;
+  border-top: 1.5px solid var(--v-cyan);
+  border-left: 1.5px solid var(--v-cyan);
+}
+.visor-corner.is-tr {
+  top: 0;
+  right: 0;
+  border-top: 1.5px solid var(--v-cyan);
+  border-right: 1.5px solid var(--v-cyan);
+}
+.visor-corner.is-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom: 1.5px solid var(--v-cyan);
+  border-left: 1.5px solid var(--v-cyan);
+}
+.visor-corner.is-br {
+  bottom: 0;
+  right: 0;
+  border-bottom: 1.5px solid var(--v-cyan);
+  border-right: 1.5px solid var(--v-cyan);
+}
+
+/* Edge falloff plus the hub's scanline wash, so the chrome and the world are one
+   projected image instead of DOM sitting on a photograph. */
+.visor-wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(150, 220, 255, 0.02) 0 1px,
+      transparent 1px 3px
+    ),
+    radial-gradient(126% 100% at 50% 48%, transparent 54%, rgba(2, 6, 12, 0.5) 96%);
+}
+
+/* ---- ident ------------------------------------------------------------- */
+
+.visor-ident {
+  position: absolute;
+  top: 30px;
+  left: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: visor-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) var(--visor-delay, 0s) both;
+}
+.visor-sigil {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  color: #dff4ff;
+  font: 900 11px/1 ui-monospace, monospace;
+  border: 1.5px solid rgba(150, 224, 255, 0.85);
+  border-radius: 3px;
+  background: rgba(24, 78, 128, 0.5);
+  text-shadow: 0 0 10px var(--v-cyan);
+  animation: visor-pulse 2.4s ease-in-out infinite;
+}
+.visor-ident-text {
+  display: grid;
+  gap: 2px;
+}
+.visor-wordmark {
+  color: #cfeeff;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 4.4px;
+  text-shadow: 0 0 16px rgba(120, 205, 255, 0.7);
+}
+.visor-ident-mode {
+  color: rgba(157, 195, 221, 0.72);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* ---- panels ------------------------------------------------------------ */
+
+/* Not a window. A bar of light down one edge with the glass fading away from it:
+   the hub's `.holo-tasks` signature, which is what makes a set of these read as
+   one instrument rather than a pile of tooltips. */
+.visor-panel {
+  position: absolute;
+  padding: 11px 20px 12px 13px;
+  border-left: 2px solid rgba(126, 205, 255, 0.8);
+  background: linear-gradient(
+    90deg,
+    rgba(7, 26, 42, 0.8),
+    rgba(6, 18, 30, 0.46) 68%,
+    transparent
+  );
+  box-shadow: -8px 0 26px rgba(65, 170, 255, 0.09),
+    inset 16px 0 28px rgba(126, 205, 255, 0.03);
+  backdrop-filter: blur(3px);
+}
+
+.visor-panel-brief {
+  top: 74px;
+  left: 34px;
+  width: min(400px, 34vw);
+}
+.visor-panel-plan {
+  top: 30px;
+  right: 34px;
+  width: min(352px, 32vw);
+  display: grid;
+  gap: 9px;
+}
+.visor-panel-threat {
+  top: 190px;
+  right: 34px;
+  width: min(352px, 32vw);
+  display: grid;
+  gap: 9px;
+  border-left-color: rgba(255, 176, 160, 0.75);
+  background: linear-gradient(
+    90deg,
+    rgba(40, 20, 18, 0.72),
+    rgba(20, 12, 14, 0.42) 68%,
+    transparent
+  );
+  box-shadow: -8px 0 26px rgba(255, 130, 110, 0.07);
+}
+
+.visor-where,
+.visor-voice {
+  margin: 0;
+  animation: visor-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) var(--visor-delay, 0s) both;
+}
+.visor-where {
+  color: var(--v-ink);
+  font-size: 13.5px;
+  font-weight: 750;
+  line-height: 1.35;
+  letter-spacing: 0.2px;
+  text-shadow: 0 0 14px rgba(90, 170, 240, 0.4);
+}
+.visor-voice {
+  margin-top: 8px;
+  color: #b9d5e8;
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 1.5;
+}
+
+.visor-row {
+  display: grid;
+  gap: 3px;
+  animation: visor-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) var(--visor-delay, 0s) both;
+}
+.visor-row-kicker {
+  color: #6f9dc4;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+}
+.visor-row-body {
+  display: grid;
+  gap: 2px;
+}
+.visor-strong {
+  color: var(--v-ink);
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.25;
+  text-shadow: 0 0 13px rgba(120, 205, 255, 0.45);
+}
+.visor-strong.is-warn {
+  color: #ffd2c6;
+  text-shadow: 0 0 13px rgba(255, 150, 130, 0.4);
+}
+.visor-metric {
+  color: #8fb4d0;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.9px;
+}
+
+.visor-list {
+  margin: 1px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  counter-reset: visor-objective;
+}
+.visor-list li {
+  position: relative;
+  padding-left: 17px;
+  color: #d6e9f6;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.35;
+  counter-increment: visor-objective;
+}
+.visor-list li::before {
+  content: counter(visor-objective);
+  position: absolute;
+  left: 0;
+  top: 0.5px;
+  color: var(--v-cyan);
+  font: 800 9px/1.5 ui-monospace, monospace;
+}
+
+.visor-lines {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+.visor-lines li {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+}
+.visor-line-tag {
+  padding: 2px 0 2px 6px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.7px;
+  border-left: 2px solid currentColor;
+}
+.visor-lines li.is-safe .visor-line-tag {
+  color: var(--v-cyan);
+}
+.visor-lines li.is-fast .visor-line-tag {
+  color: var(--v-teal);
+}
+.visor-lines li.is-expert .visor-line-tag {
+  color: #c3b4ff;
+}
+/* The ground rows take the hues the street takes: teal is a tool the floor
+   grants, amber is light you can be seen in. Same assignment as visorPalette. */
+.visor-lines li.is-dark .visor-line-tag,
+.visor-lines li.is-crowd .visor-line-tag {
+  color: var(--v-teal);
+}
+.visor-lines li.is-lit .visor-line-tag {
+  color: var(--v-amber);
+}
+.visor-line-promise {
+  color: #a9c6da;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+/* ---- the control legend ------------------------------------------------ */
+
+.visor-legend {
+  position: absolute;
+  bottom: 34px;
+  left: 34px;
+  width: min(620px, 52vw);
+}
+.visor-legend-kicker {
+  display: block;
+  margin-bottom: 7px;
+  padding-left: 2px;
+  color: #6f9dc4;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+}
+.visor-legend-keys {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 18px;
+}
+.visor-legend-keys li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  animation: visor-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) var(--visor-delay, 0s) both;
+}
+.visor-legend-keys kbd {
+  min-width: 34px;
+  padding: 3px 6px;
+  color: #cfeeff;
+  font: 800 9.5px/1.25 ui-monospace, monospace;
+  letter-spacing: 0.8px;
+  text-align: center;
+  border: 1px solid rgba(126, 205, 255, 0.5);
+  border-radius: 2px;
+  background: rgba(10, 32, 54, 0.68);
+  box-shadow: 0 0 10px rgba(84, 178, 255, 0.16);
+}
+.visor-legend-verb {
+  color: #dcecf8;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.visor-legend-clause {
+  display: block;
+  grid-column: 2;
+  color: #7fa3bd;
+  font-size: 10.5px;
+  font-weight: 450;
+  line-height: 1.3;
+}
+
+/* ---- the release ------------------------------------------------------- */
+
+.visor-release {
+  position: absolute;
+  right: 34px;
+  bottom: 34px;
+  display: grid;
+  justify-items: end;
+  gap: 9px;
+  pointer-events: none;
+}
+.visor-look-hint {
+  color: rgba(143, 180, 208, 0.7);
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: visor-in 0.5s ease-out 1.4s both;
+}
+.visor-release-button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 16px;
+  pointer-events: auto;
+  text-align: left;
+  color: #eaf8ff;
+  border: 1px solid rgba(150, 224, 255, 0.6);
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    rgba(28, 84, 134, 0.62),
+    rgba(10, 34, 60, 0.78)
+  );
+  box-shadow: 0 0 22px rgba(84, 178, 255, 0.24),
+    inset 0 0 16px rgba(120, 205, 255, 0.1);
+  backdrop-filter: blur(5px);
+  cursor: pointer;
+  animation: visor-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+.visor-release-button:hover,
+.visor-release-button:focus-visible {
+  border-color: #cfeeff;
+  box-shadow: 0 0 30px rgba(120, 205, 255, 0.45),
+    inset 0 0 20px rgba(140, 218, 255, 0.16);
+  outline: none;
+}
+.visor-release-button kbd {
+  padding: 4px 8px;
+  color: #cfeeff;
+  font: 850 10px/1.2 ui-monospace, monospace;
+  letter-spacing: 1.2px;
+  border: 1px solid rgba(150, 224, 255, 0.6);
+  border-radius: 2px;
+  background: rgba(6, 22, 38, 0.8);
+}
+.visor-release-button span {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.visor-release-button em {
+  color: rgba(143, 180, 208, 0.86);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: 1.1px;
+  text-transform: none;
+}
+
+/* ---- motion ----------------------------------------------------------- */
+
+@keyframes visor-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes visor-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(120, 205, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(120, 205, 255, 0.55);
+  }
+}
+
+.visor.is-reduced .visor-chrome *,
+.visor.is-reduced .visor-chrome {
+  animation: none !important;
+  transition: none !important;
+}
+
+@media (max-width: 1180px) {
+  .visor-panel-brief {
+    width: min(320px, 40vw);
+  }
+  .visor-legend {
+    width: min(460px, 46vw);
+  }
+  .visor-legend-keys {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

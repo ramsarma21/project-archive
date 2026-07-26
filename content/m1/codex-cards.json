@@ -1,0 +1,147 @@
+{
+  "$schema": "./schema/codex-card.schema.json",
+  "contentId": "BOS.MD01.CONTENT.CODEX.v1",
+  "reviewStatus": "AUTHOR_DRAFT",
+
+  "namespace": {
+    "pattern": "BOS.MD01.CARD.<SLUG>.v<N>",
+    "decision": "CONSUMED, NOT MINTED",
+    "why": "This repository already holds at least eight incompatible curriculum naming schemes and the last thing it needs is a ninth. Two surfaces built concurrently already spell the M1 Codex cards this way: `codexCardIds` in packages/curriculum/src/conceptRegistry.ts, and `codexCardIds` on every card of the module deck in apps/web/src/module/m1Module.ts. Both took the spelling from Mission-Slate §4.9. This file adopts it unchanged and supplies the one thing neither of them has — what each card actually says.",
+    "structuralNote": "The mission segment `MD01` is inherited from §4.9 and is a known wart. packages/curriculum/src/types.ts deliberately dropped the mission segment from CONCEPT ids because a spiral concept cannot belong to mission day one, and the same argument applies to a card: CONSENT_GROUND recurs under 8.15(E) and 8.19(A) later in the chapter. Renaming the cards to `BOS.CARD.*` is the right end state and is a three-file change (this file, the concept registry, the module deck). It is not done here because a rename that lands in one of three files is worse than the wart.",
+    "conceptIdsUsed": "Canonical, from packages/curriculum. Each card carries the legacy learner id too, so a consumer that has not adopted the registry yet still resolves."
+  },
+
+  "lifecycle": {
+    "stateShape": "packages/contracts/src/progression.ts · CodexCardStateSchema",
+    "learnedAt": "Set when the student completes the module that sources the card. Every card below is sourced by exactly one module card, so 'learned' is a fact about the deck rather than a judgement about the student.",
+    "pvpLegalAt": "Minted only at 100% mastery of the card's concept on the chapter capstone. No duel result and no mission clear may set it. A student can hold all nine of these cards as learned, clear M1 on the first attempt, and still have none of them PvP-legal.",
+    "whatTheCodexIsFor": "Mission-Slate §1.7: the Codex is the index of what a player can be asked. Facing a question whose card you do not hold means you probably miss it, fight that round on the wrong-answer grant, and go learn it. Cards are never played as a deck.",
+    "mintedByThisMission": "Nothing. §4.10 is explicit that M1 mints no cards and that duel performance is evidence rather than a granting event."
+  },
+
+  "cards": [
+    {
+      "cardId": "BOS.MD01.CARD.WAR_DEBT.v1",
+      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.POSTWAR_REVENUE.v1",
+      "title": "The war's bill",
+      "proposition": "Britain's war with France ended in 1763, and Britain came out of it owing more money than it had ever owed before, with an army still to pay for in America.",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
+      "askedBy": [
+        "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
+        "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
+        "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1",
+        "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1"
+      ],
+      "alsoKnownAs": ["the French and Indian War", "the Seven Years' War", "the war with France"],
+      "note": "Three names, one war. Every rubric that touches this card treats them as identical, which is the correct-but-unusually-worded case §1.7 requires the evaluation set to cover."
+    },
+    {
+      "cardId": "BOS.MD01.CARD.COLONIAL_REVENUE.v1",
+      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.POSTWAR_REVENUE.v1",
+      "title": "Who Parliament turned to",
+      "proposition": "Parliament decided the colonies should pay a share of that debt. That decision is why a tax is reaching into Boston now.",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
+      "askedBy": [
+        "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
+        "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
+        "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
+        "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1"
+      ]
+    },
+    {
+      "cardId": "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1",
+      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.POSTWAR_REVENUE.v1",
+      "title": "The order of it",
+      "proposition": "Debt produced a policy of raising money in America, the policy produced the stamp, and the stamp landed on a town with no voice in it. The debt came first; the tax is the answer to it, not the cause of it.",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1",
+      "askedBy": [
+        "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1",
+        "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
+        "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1"
+      ],
+      "note": "The only card that spans all three concepts in what it asserts, which is why the synthesis card is its source rather than any one concept card."
+    },
+    {
+      "cardId": "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1",
+      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.STAMP_SCOPE.v1",
+      "title": "What the stamp falls on",
+      "proposition": "The Act taxes printed paper and legal paper — newspapers, handbills, deeds, court papers, licences, playing cards. Ordinary goods and private handwriting are outside it.",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_STAMP.v1",
+      "askedBy": [
+        "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1",
+        "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1",
+        "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1",
+        "BOS.MD01.DUEL.STAMP.NAME_TWO.v1",
+        "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1"
+      ],
+      "note": "The exemplars are part of the proposition rather than illustration. Five of the six stamp-scope items turn on a boundary, and a boundary with no instances on either side of it is not teachable in forty seconds."
+    },
+    {
+      "cardId": "BOS.MD01.CARD.STAMP_DATE.v1",
+      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.STAMP_SCOPE.v1",
+      "title": "From the first of November",
+      "proposition": "The stamp must be paid from 1 November 1765. The Act passed in March; the duty begins in November, which is why there is still time to argue about it in August.",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_STAMP.v1",
+      "askedBy": ["BOS.MD01.DUEL.STAMP.FROM_WHEN.v1"]
+    },
+    {
+      "cardId": "BOS.MD01.CARD.PRINTER_IMPACT.v1",
+      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.STAMP_SCOPE.v1",
+      "title": "Why a printer",
+      "proposition": "A printer's entire trade is printed paper, so the one thing the Act taxes is the one thing the shop sells. That is what makes a printing shop the point of impact rather than a cooper's or a ropemaker's.",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_STAMP.v1",
+      "askedBy": ["BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1"]
+    },
+    {
+      "cardId": "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1",
+      "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.REPRESENTATION.v1",
+      "title": "Elected here, not there",
+      "proposition": "Boston elects its own town meeting and its own representatives in the Massachusetts assembly. It elects no member of Parliament, and Parliament is the body that laid this tax.",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
+      "askedBy": [
+        "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1",
+        "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
+        "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1",
+        "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1"
+      ]
+    },
+    {
+      "cardId": "BOS.MD01.CARD.CONSENT_GROUND.v1",
+      "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.REPRESENTATION.v1",
+      "title": "Who may lay a tax",
+      "proposition": "A tax may be laid only by a body the taxed people chose. The objection is to who laid it and not to what it costs — the town would say the same if the stamp cost a farthing.",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
+      "askedBy": [
+        "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1",
+        "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1",
+        "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1",
+        "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1",
+        "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1"
+      ],
+      "note": "The most load-bearing card in the mission and the one most often half-held: students reliably reach the objection and land it on the price."
+    },
+    {
+      "cardId": "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1",
+      "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.REPRESENTATION.v1",
+      "title": "Lawful is not consented",
+      "proposition": "London's answer is that Parliament speaks for every subject, voted for or not. Boston's reply is that it chose none of them: a lawful vote taken by men a town never picked is still not that town's consent.",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
+      "askedBy": [
+        "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1",
+        "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1"
+      ],
+      "new": true,
+      "whyNew": "Mission-Slate §4.9 authored SPEAKS_FOR_ALL and LAWFUL_BUT_UNJUST against eight cards, none of which carried the claim either item answers. Two items in the bank therefore rested on a proposition the module never taught, which §4.7 itself says must be fixed on one side or the other. It is fixed here, on the module side, and this card is that proposition. It is the ninth card, and the concept registry's REPRESENTATION entry lists only two — that entry needs this id appended.",
+      "followUp": "packages/curriculum/src/conceptRegistry.ts · REPRESENTATION.cards — add BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1. Owned by the registry agent, not by this content pass."
+    }
+  ]
+}

@@ -8,6 +8,7 @@
     "synth": "cdk synth",
     "bootstrap": "cdk bootstrap",
     "deploy": "node scripts/deploy.mjs",
+    "check-secrets": "node --import tsx scripts/check-secrets.ts",
     "sync-google-secret": "node scripts/sync-google-secret.mjs"
   },
   "dependencies": {

@@ -29,7 +29,11 @@ export interface ConceptMeta {
   class: ConceptClass;
   recurrence: ConceptRecurrence;
   seIds: string[]; // STAAR SE codes, e.g. ["8.4A"]
-  chapterOwner: string; // "BOSTON" | "PHILADELPHIA" | ...
+  // A canonical chapter id from @pa/curriculum's registry — the spelling stored
+  // in `concept_mastery.chapter_id`, not a chapter's authoring name. The example
+  // that used to sit here named the superseded spelling, which is how a second
+  // one gets authored.
+  chapterOwner: string;
   archiveSafetyNet?: boolean; // dual-delivered high-STAAR pattern → R5 bridge allowed
 }
 

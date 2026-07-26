@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  thread-stream: 4.1.0
+
 importers:
 
   .:
@@ -11,6 +14,9 @@ importers:
       concurrently:
         specifier: 9.1.2
         version: 9.1.2
+      playwright:
+        specifier: 1.61.1
+        version: 1.61.1
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -26,12 +32,21 @@ importers:
       '@fastify/cors':
         specifier: ^10.0.2
         version: 10.1.0
-      '@pa/chapter-boston':
+      '@pa/abilities':
         specifier: workspace:*
-        version: link:../../packages/chapter-boston
+        version: link:../../packages/abilities
       '@pa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@pa/grading':
+        specifier: workspace:*
+        version: link:../../packages/grading
+      '@pa/pvp':
+        specifier: workspace:*
+        version: link:../../packages/pvp
+      '@pa/reporting':
+        specifier: workspace:*
+        version: link:../../packages/reporting
       '@pa/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
@@ -66,21 +81,21 @@ importers:
 
   apps/web:
     dependencies:
-      '@pa/chapter-boston':
+      '@pa/beat':
         specifier: workspace:*
-        version: link:../../packages/chapter-boston
-      '@pa/chapter-boston-world':
-        specifier: workspace:*
-        version: link:../../packages/chapter-boston-world
+        version: link:../../packages/beat
       '@pa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@pa/duel':
+        specifier: workspace:*
+        version: link:../../packages/duel
       '@pa/engine-world':
         specifier: workspace:*
         version: link:../../packages/engine-world
-      '@pa/runtime':
+      '@pa/mission-m1':
         specifier: workspace:*
-        version: link:../../packages/runtime
+        version: link:../../packages/mission-m1
       '@react-three/drei':
         specifier: ^9.122.0
         version: 9.122.0(@react-three/fiber@8.18.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1))(@types/react@18.3.31)(@types/three@0.185.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1)(use-sync-external-store@1.6.0(react@18.3.1))
@@ -153,17 +168,17 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
-  packages/chapter-boston:
+  packages/abilities:
     dependencies:
       '@pa/contracts':
         specifier: workspace:*
         version: link:../contracts
-      '@pa/runtime':
+      '@pa/duel':
         specifier: workspace:*
-        version: link:../runtime
-      zod:
-        specifier: ^3.24.1
-        version: 3.25.76
+        version: link:../duel
+      '@pa/engine-world':
+        specifier: workspace:*
+        version: link:../engine-world
     devDependencies:
       '@types/node':
         specifier: ^22.10.5
@@ -175,45 +190,40 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
-  packages/chapter-boston-world:
+  packages/assessment:
     dependencies:
-      '@pa/chapter-boston':
-        specifier: workspace:*
-        version: link:../chapter-boston
       '@pa/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@pa/curriculum':
+        specifier: workspace:*
+        version: link:../curriculum
       '@pa/engine-world':
         specifier: workspace:*
         version: link:../engine-world
-      '@pa/runtime':
+    devDependencies:
+      '@pa/grading':
         specifier: workspace:*
-        version: link:../runtime
-      '@react-three/drei':
-        specifier: ^9.122.0
-        version: 9.122.0(@react-three/fiber@8.18.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1))(@types/react@18.3.31)(@types/three@0.185.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1)(use-sync-external-store@1.6.0(react@18.3.1))
-      '@react-three/fiber':
-        specifier: ^8.18.0
-        version: 8.18.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1)
-      '@react-three/rapier':
-        specifier: ^1.5.0
-        version: 1.5.0(@react-three/fiber@8.18.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.185.1))(react@18.3.1)(three@0.185.1)
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      three:
-        specifier: ^0.185.1
-        version: 0.185.1
+        version: link:../grading
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/beat:
+    dependencies:
+      '@pa/engine-world':
+        specifier: workspace:*
+        version: link:../engine-world
     devDependencies:
       '@types/node':
         specifier: ^22.10.5
         version: 22.20.1
-      '@types/react':
-        specifier: ^18.3.12
-        version: 18.3.31
-      '@types/three':
-        specifier: ^0.185.1
-        version: 0.185.1
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -226,6 +236,34 @@ importers:
       zod:
         specifier: ^3.24.1
         version: 3.25.76
+
+  packages/curriculum:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/duel:
+    dependencies:
+      '@pa/engine-world':
+        specifier: workspace:*
+        version: link:../engine-world
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
 
   packages/engine-world:
     dependencies:
@@ -261,14 +299,115 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  packages/grading:
+    dependencies:
+      '@pa/duel':
+        specifier: workspace:*
+        version: link:../duel
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/mission-m1:
+    dependencies:
+      '@pa/beat':
+        specifier: workspace:*
+        version: link:../beat
+      '@pa/engine-world':
+        specifier: workspace:*
+        version: link:../engine-world
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/netcode:
+    dependencies:
+      '@pa/duel':
+        specifier: workspace:*
+        version: link:../duel
+      '@pa/engine-world':
+        specifier: workspace:*
+        version: link:../engine-world
+      '@pa/pvp':
+        specifier: workspace:*
+        version: link:../pvp
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/pvp:
+    dependencies:
+      '@pa/abilities':
+        specifier: workspace:*
+        version: link:../abilities
+      '@pa/assessment':
+        specifier: workspace:*
+        version: link:../assessment
+      '@pa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@pa/duel':
+        specifier: workspace:*
+        version: link:../duel
+      '@pa/grading':
+        specifier: workspace:*
+        version: link:../grading
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/reporting:
+    dependencies:
+      '@pa/assessment':
+        specifier: workspace:*
+        version: link:../assessment
+      '@pa/curriculum':
+        specifier: workspace:*
+        version: link:../curriculum
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.20.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
   packages/runtime:
     dependencies:
       '@pa/contracts':
         specifier: workspace:*
         version: link:../contracts
-      zod:
-        specifier: ^3.24.1
-        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.10.5
@@ -1330,6 +1469,11 @@ packages:
     resolution: {integrity: sha512-Zf4Xve4RymLl7NgaavNebZ01joJ8MfVerOG43wy7SHLO+r+K0C6d/SE0BiR7AV5V1VOCFlOP7ecdo+I4qmiHrQ==}
     engines: {node: '>=20'}
 
+  fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -1553,6 +1697,16 @@ packages:
     resolution: {integrity: sha512-r34yH/GlQpKZbU1BvFFqOjhISRo1MNx1tWYsYvmj6KIRHSPMT2+yHOEb1SG6NMvRoHRF0a07kCOox/9yakl1vg==}
     hasBin: true
 
+  playwright-core@1.61.1:
+    resolution: {integrity: sha512-h7Qlt6m4REp25qvIdvbDtVmD4LqVXfpRxhORv9L0jzETM05p4fuPJ3dKyuSXQxDSbXnmS79HAgi9589lGSpLkg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.61.1:
+    resolution: {integrity: sha512-DWnY5o3YbLWK4GovuAVwpqL+1VwGNdUGrRr++8j8PtQQzvAVZUIMjKQ90fY689sEJZJBbZVw1rXaOKSTitkzPQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   postcss@8.5.19:
     resolution: {integrity: sha512-Mz8SaolMd8nB+G13WkORcxQKHZ/NE4xXevtkJHVuG+guo9/wYKlIMTKAqGdEmYOXR2ijPjTYNHssizdaVSUNdQ==}
     engines: {node: ^10 || ^12 || >=14}
@@ -1749,8 +1903,8 @@ packages:
     peerDependencies:
       react: '>=17.0'
 
-  thread-stream@4.2.0:
-    resolution: {integrity: sha512-e2zZ96wSChazBsbENf/Pcm/4swHt2cEKQ92rhUjkL9GCKiTDJIaTBenjE/m9DXi0QBmTMDkFDdOomUy20A1tDQ==}
+  thread-stream@4.1.0:
+    resolution: {integrity: sha512-Bw6h2iBDt16v6iHLChBIoVYU8CBo9GPsW8TG7h1hRVhqKhIkH6N8qkxNSmiOZTKsCLPbtWG4ViWLkU6KeKXpig==}
     engines: {node: '>=20'}
 
   three-mesh-bvh@0.7.8:
@@ -2990,6 +3144,9 @@ snapshots:
       fast-querystring: 1.1.2
       safe-regex2: 5.1.1
 
+  fsevents@2.3.2:
+    optional: true
+
   fsevents@2.3.3:
     optional: true
 
@@ -3212,7 +3369,15 @@ snapshots:
       real-require: 0.2.0
       safe-stable-stringify: 2.5.0
       sonic-boom: 4.2.1
-      thread-stream: 4.2.0
+      thread-stream: 4.1.0
+
+  playwright-core@1.61.1: {}
+
+  playwright@1.61.1:
+    dependencies:
+      playwright-core: 1.61.1
+    optionalDependencies:
+      fsevents: 2.3.2
 
   postcss@8.5.19:
     dependencies:
@@ -3400,7 +3565,7 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  thread-stream@4.2.0:
+  thread-stream@4.1.0:
     dependencies:
       real-require: 1.0.0
 

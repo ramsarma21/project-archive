@@ -5,16 +5,19 @@ alwaysApply: true
 
 # Multitask Subagent Router
 
-Assumes the root session runs GPT-5.6 Sol (a repo rule cannot force/switch the root model). The orchestrator decides the tier silently and starts work; the user never picks a tier. Default downward to the cheapest/fastest safe tier — multi-file scope alone does not justify Sol.
+Assumes the root session runs GPT-5.6 Sol (a repo rule cannot force/switch the root model). The orchestrator decides the tier silently and starts work; the user never picks a tier.
+
+**Owner intent: ~99% of code is written by Opus. Sol orchestrates — it triages, diagnoses, and writes the brief — but does NOT write code except in a proven Tier-3 case.** Default downward to the cheapest/fastest safe tier; when in doubt between "Sol codes" and "Opus codes," choose Opus codes.
 
 ## Tiers
 - **Trivial** (zero/one quick-tool request): parent handles directly, no subagent.
-- **Tier 1 — Opus end-to-end**: localized, well-understood, low-risk changes (routine game/UI/asset hookups, styling, isolated fixes, mechanical edits). Launch ONE coherent background worker with model `claude-opus-4-8-thinking-high` to investigate, implement, and run focused verification.
-- **Tier 2 — Sol diagnoses, Opus implements**: ambiguous/medium work. Sol determines root cause/approach, exact constraints/files, acceptance criteria, and verification, then hands ONE background Opus worker a precise bounded brief. Sol reviews only as needed.
-- **Tier 3 — Sol end-to-end**: architecture, broad runtime/game-flow invariants, hard cross-system debugging, migrations/data integrity, concurrency/determinism, security, or tightly coupled high-risk changes where handoff is unsafe. Sol may delegate independent mechanical subtasks to Opus.
+- **Tier 1 — Opus end-to-end**: localized, well-understood, low-risk changes (routine game/UI/asset hookups, styling, isolated fixes, mechanical edits). Launch ONE coherent background worker with model `claude-opus-4-8-thinking-high` to investigate, implement, and run focused verification. This is the default for most work.
+- **Tier 2 — Sol diagnoses, Opus implements**: ambiguous/medium work, or any non-obvious bug. Sol reproduces/determines root cause/approach, exact constraints/files, acceptance criteria, and verification, then hands ONE background Opus worker (`claude-opus-4-8-thinking-high`) a precise bounded brief. **Sol still does not write the code** — it reviews Opus's result against the gate. This is the default whenever a task is tricky.
+- **Tier 3 — Sol end-to-end (rare)**: reserved for genuinely coupled work where diagnosis and implementation cannot be separated safely (deep cross-system determinism/data-integrity/security failures). **Do not open at Tier 3.** Escalate a task to "Sol codes" only after an Opus attempt AND a Sol diagnosis brief have both failed to land it. Even then, Sol delegates every independent mechanical subtask to Opus.
 
 ## Policy
 - In Multitask mode, use background subagents for non-trivial work; do not duplicate delegated investigation/implementation in the foreground.
+- Sol's foreground contribution is orchestration/diagnosis/brief-writing/review, not code edits. Route implementation to Opus.
 - Prefer one coherent worker; use sibling agents only for genuinely independent workstreams.
-- Escalate a Tier 1 task if Opus finds ambiguity, architectural impact, repeated failure, or safety risk.
+- Escalate a Tier 1 task to Tier 2 (Sol diagnoses, Opus still codes) if Opus finds ambiguity, architectural impact, repeated failure, or safety risk — not straight to Sol-codes.
 - Preserve user-owned uncommitted changes and verify proportional to risk.

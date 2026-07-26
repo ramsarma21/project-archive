@@ -43,7 +43,11 @@ page.on("response", (response) => {
   if (response.status() >= 400) {
     httpErrors.push(`${response.url()} ${response.status()}`);
   }
-  if (response.url().includes("playerboy-rigged.glb?v=production-cast-6")) {
+  // Match the rig regardless of the cache-bust token. Pinning the token here
+  // means the next bump silently stops this observer from ever firing, and the
+  // check below then passes because it never saw a response rather than because
+  // the rig loaded.
+  if (/playerboy-rigged\.glb(\?|$)/.test(response.url())) {
     v5Response = { url: response.url(), status: response.status() };
   }
 });

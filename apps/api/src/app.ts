@@ -5,19 +5,8 @@ import Fastify, {
 } from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
-import {
-  OnboardingPreferencesSchema,
-  PutSaveRequestSchema,
-  type MasteryReport,
-  type PresenterEvent,
-} from "@pa/contracts";
-import {
-  buildMasteryReport,
-  createChapterSession,
-  type ChapterDefinition,
-} from "@pa/runtime";
-import { CHAPTERS } from "./chapters.js";
-import { migrate, query, transaction } from "./db.js";
+import { OnboardingPreferencesSchema } from "@pa/contracts";
+import { migrate, query } from "./db.js";
 import {
   buildGoogleAuthUrl,
   cleanupExpiredAuthData,
@@ -29,14 +18,40 @@ import {
   resolveProfile,
   revokeSession,
 } from "./auth.js";
-import {
-  expireRetainedResponses,
-  registerAssessmentRoutes,
-} from "./routes/assessments.js";
+import { reportingService } from "@pa/reporting";
+import { registerDuelRoutes } from "./routes/duels.js";
+import { registerProgressionRoutes } from "./routes/progression.js";
+import { registerPvpRoutes } from "./routes/pvp.js";
+import { registerReportingRoutes } from "./routes/reporting.js";
+import { createDuelGrading } from "./duels/grading.js";
+import { createPvpGrading } from "./pvp/grading.js";
+import { bostonProgressionContent } from "./progression/content.js";
+import { postgresProgressionStore } from "./progression/postgresStore.js";
+import { ProgressionService } from "./progression/service.js";
 
 const SESSION_COOKIE = "pa_session";
 const WEB_ORIGIN = process.env.WEB_ORIGIN ?? "http://localhost:5173";
 const COOKIE_SECURE = process.env.COOKIE_SECURE === "true";
+
+/**
+ * Response headers a cross-origin browser is allowed to read.
+ *
+ * `fetch` cannot see a response header that is not listed here, and until it was
+ * listed the duel's verdict receipt was unreadable from any origin but the API's
+ * own. Development goes through Vite's same-origin proxy, which is why nobody
+ * noticed: the header was there, the client could read it, and a deployment that
+ * serves the API from an API Gateway domain could not. The receipt is what proves
+ * the server minted a verdict, so a client that cannot read it cannot carry it to
+ * the commit and the signature stays decoration.
+ *
+ * The other two are diagnostics: which path graded the round and how long it took.
+ * Neither can influence a bullet count — the duel derives that from `kind` alone.
+ */
+const EXPOSED_HEADERS = [
+  "x-pa-verdict-receipt",
+  "x-pa-grading-path",
+  "x-pa-grading-latency-ms",
+];
 
 function setSessionCookie(reply: FastifyReply, sessionId: string): void {
   reply.setCookie(SESSION_COOKIE, sessionId, {
@@ -55,42 +70,6 @@ async function requireOwner(req: FastifyRequest, profileId: string) {
   return { user };
 }
 
-// Server-side replay validation through the chapter registry: rebuild the
-// session from seed + committed events for the SAVE'S chapter and derive the
-// authoritative mastery report from it.
-function masteryFromEvents(
-  chapter: ChapterDefinition,
-  profileId: string,
-  variationRootSeedHex: string,
-  events: PresenterEvent[],
-): { report: MasteryReport; done: boolean } {
-  const session = createChapterSession(chapter, {
-    variationRootSeedHex,
-    priorEvents: events,
-    assessmentMode: "PRODUCTION",
-  });
-  if (session.committedEvents.length !== events.length) {
-    throw new Error("SAVE_INVALID: events continue after completion");
-  }
-  return {
-    done: session.isDone,
-    report: buildMasteryReport(
-      session.ctx.learner,
-      {
-        profileId,
-        packageId: chapter.packageId,
-        chapterId: chapter.chapterId,
-        variationRootSeedHex,
-        committedEventCount: events.length,
-        generatedAt: new Date().toISOString(),
-      },
-      session.ctx.checkpoint,
-      undefined,
-      chapter.report,
-    ),
-  };
-}
-
 export async function buildApp(options: { runMigrations?: boolean } = {}): Promise<FastifyInstance> {
   if (options.runMigrations !== false) await migrate();
 
@@ -100,7 +79,11 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
     bodyLimit: 2 * 1024 * 1024,
   });
   await app.register(cookie);
-  await app.register(cors, { origin: WEB_ORIGIN, credentials: true });
+  await app.register(cors, {
+    origin: WEB_ORIGIN,
+    credentials: true,
+    exposedHeaders: EXPOSED_HEADERS,
+  });
   app.addHook("onSend", async (_request, reply, payload) => {
     reply.header("x-content-type-options", "nosniff");
     reply.header("referrer-policy", "no-referrer");
@@ -114,25 +97,94 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
     }
     return payload;
   });
-  await registerAssessmentRoutes(app);
+  // Boston's authored pack: the XP curve, the mission award ramp and the
+  // ability unlock schedule all come from @pa/abilities, and the module decks
+  // gate every attempt. The capstone's item bank is still unauthored, so an
+  // assessment mutation continues to report PACKAGE_MISSING.
+  const progression = new ProgressionService(
+    postgresProgressionStore(),
+    bostonProgressionContent(),
+  );
+  // The boss duel's grading authority. Without it the client's 1.5-second cap
+  // fires on every round and grants the maximum, which looks exactly like
+  // working grading.
+  //
+  // Built here rather than inside the duel routes because two route tables need
+  // it: the duel MINTS a verdict receipt and progression VERIFIES one at the
+  // commit, and the two must be holding the same signing key for the check to
+  // mean anything. Sharing the instance is what makes that true by construction
+  // instead of by two files agreeing about an environment variable.
+  const duelGrading = createDuelGrading(app.log);
+  await registerProgressionRoutes(app, progression, {
+    verifyVerdictReceipt: duelGrading.verifyReceipt,
+  });
+  await registerDuelRoutes(app, { grading: duelGrading });
+  // PvP holds its lobbies and live matches in memory, so a restart loses a code and
+  // at most one fight. Standing is durable in pvp_standing (migration 007): a
+  // leaderboard that evaporates is the one loss a playtest cannot absorb.
+  await registerPvpRoutes(app, {
+    ...createPvpGrading(app.log),
+    // The capstone-sharing guard's one input. A profile whose progression cannot
+    // be read is treated as having mastered nothing, which WITHHOLDS the shared
+    // capstone items rather than leaking a gate question into a duel — the pool
+    // clears the round ceiling without them, so failing closed costs nothing.
+    masteredConcepts: async (profileId) => {
+      try {
+        const snapshot = await progression.snapshot(profileId);
+        return snapshot.conceptMastery
+          .filter((concept) => concept.masteredAt !== null)
+          .map((concept) => concept.conceptId);
+      } catch (cause) {
+        app.log.warn({ cause, profileId }, "pvp: mastery unreadable; withholding capstone items");
+        return [];
+      }
+    },
+  });
+  // The educator surface: three reads, no writes.
+  //
+  // MOUNTED ONLY BECAUSE `report_access_audit` NOW EXISTS. Two of the three serve
+  // a minor's academic record to somebody who is not that minor, and until
+  // migration 008 there was no table to record that in — so registering them
+  // earlier would have opened an unaudited read path over children's grades whose
+  // only trace was a log line. `migrate()` above has already run, so the table is
+  // there before the first request can arrive, and the route refuses an authorised
+  // read it cannot audit rather than serving it unrecorded.
+  //
+  // This is also the one line where `reportingService()` is checked against the
+  // route's `ReportingPort`, which is the point of the port being structural.
+  await registerReportingRoutes(app, reportingService());
 
   const cleanupTimer = setInterval(() => {
-    void Promise.all([
-      cleanupExpiredAuthData(),
-      expireRetainedResponses(),
-    ]).catch(() => {
+    void cleanupExpiredAuthData().catch(() => {
       app.log.error("scheduled retention cleanup failed");
     });
   }, 15 * 60 * 1000);
   cleanupTimer.unref();
   app.addHook("onClose", async () => clearInterval(cleanupTimer));
 
+  // GRADING STATE IS REPORTED HERE AND NEVER CHANGES THE STATUS CODE.
+  //
+  // The ECS task health check and the load balancer both read this endpoint, so a
+  // 503 on a grading outage would kill the task and end the lesson — over a
+  // condition the design deliberately degrades gracefully by granting the maximum.
+  // Grading being down must never take the API down.
+  //
+  // But "the API is up" was the ONLY thing this said, and that is how an
+  // unreachable classifier became indistinguishable from a class of geniuses: 200
+  // OK, every answer correct, a full magazine each, and one line in a review log
+  // nobody reads during a lesson. So the rate rides along in the body, where a
+  // person or an uptime check can watch it without a session and without being
+  // able to take the service down by looking. `status` is the one word:
+  // OK / DEGRADED / UNGRADED.
   app.get("/v1/health", async (_req, reply) => {
+    const grading = duelGrading.signal.snapshot();
     try {
       await query("select 1");
-      return { ok: true, google: googleConfigured(), database: true };
+      return { ok: true, google: googleConfigured(), database: true, grading };
     } catch {
-      return reply.code(503).send({ ok: false, google: googleConfigured(), database: false });
+      return reply
+        .code(503)
+        .send({ ok: false, google: googleConfigured(), database: false, grading });
     }
   });
 
@@ -222,201 +274,6 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
         req.params.profileId,
       ]);
       return { ok: true, onboarding: preferences.data };
-    },
-  );
-
-  app.get<{ Params: { profileId: string } }>(
-    "/v1/profiles/:profileId/save",
-    async (req, reply) => {
-      const guard = await requireOwner(req, req.params.profileId);
-      if ("error" in guard) {
-        return reply
-          .code(guard.error === "AUTH_REQUIRED" ? 401 : 403)
-          .send({ error: guard.error });
-      }
-      const rows = await query<{
-        profile_id: string;
-        chapter_id: string;
-        package_id: string;
-        variation_root_seed_hex: string;
-        flow_version: number;
-        committed_events: PresenterEvent[];
-        revision: number;
-        status: "IN_PROGRESS" | "COMPLETE";
-        updated_at: string;
-        presenter_spatial: unknown | null;
-      }>("select * from saves where profile_id=$1", [req.params.profileId]);
-      const save = rows.rows[0];
-      return {
-        save: save
-          ? {
-              profileId: save.profile_id,
-              chapterId: save.chapter_id,
-              packageId: save.package_id,
-              variationRootSeedHex: save.variation_root_seed_hex,
-              flowVersion: save.flow_version,
-              committedEvents: save.committed_events,
-              revision: save.revision,
-              status: save.status,
-              updatedAt: save.updated_at,
-              presenterSpatial: save.presenter_spatial ?? undefined,
-            }
-          : null,
-      };
-    },
-  );
-
-  app.get<{ Params: { profileId: string } }>(
-    "/v1/profiles/:profileId/mastery",
-    async (req, reply) => {
-      const guard = await requireOwner(req, req.params.profileId);
-      if ("error" in guard) {
-        return reply
-          .code(guard.error === "AUTH_REQUIRED" ? 401 : 403)
-          .send({ error: guard.error });
-      }
-      const rows = await query<{ report: MasteryReport; save_revision: number }>(
-        "select report, save_revision from mastery_reports where profile_id=$1",
-        [req.params.profileId],
-      );
-      const row = rows.rows[0];
-      return { mastery: row?.report ?? null, saveRevision: row?.save_revision ?? null };
-    },
-  );
-
-  app.put<{ Params: { profileId: string } }>(
-    "/v1/profiles/:profileId/save",
-    async (req, reply) => {
-      const guard = await requireOwner(req, req.params.profileId);
-      if ("error" in guard) {
-        return reply
-          .code(guard.error === "AUTH_REQUIRED" ? 401 : 403)
-          .send({ error: guard.error });
-      }
-      const parsed = PutSaveRequestSchema.safeParse(req.body);
-      if (!parsed.success) return reply.code(400).send({ error: "SAVE_INVALID" });
-      const { baseRevision, record } = parsed.data;
-      // Chapter registry lookup by the save's own chapterId. An unknown
-      // chapter is a clean 400 — the API refuses what it cannot replay.
-      const chapter = CHAPTERS.get(record.chapterId);
-      if (!chapter) {
-        return reply.code(400).send({
-          error: "SAVE_INVALID",
-          message: `unknown chapterId ${record.chapterId}`,
-        });
-      }
-      if (
-        record.profileId !== req.params.profileId ||
-        record.saveId !== req.params.profileId ||
-        record.packageId !== chapter.packageId ||
-        record.revision !== record.committedEvents.length
-      ) {
-        return reply.code(400).send({ error: "SAVE_INVALID" });
-      }
-
-      try {
-        const result = await transaction(async (client) => {
-          const profiles = await client.query<{ variation_root_seed_hex: string }>(
-            "select variation_root_seed_hex from profiles where id=$1 for update",
-            [req.params.profileId],
-          );
-          const seed = profiles.rows[0]?.variation_root_seed_hex;
-          if (!seed || seed !== record.variationRootSeedHex) {
-            return { kind: "invalid" as const };
-          }
-          const existing = await client.query<{ revision: number }>(
-            "select revision from saves where profile_id=$1",
-            [req.params.profileId],
-          );
-          const current = existing.rows[0]?.revision ?? 0;
-          if (baseRevision !== current || record.revision <= current) {
-            return { kind: "conflict" as const };
-          }
-
-          const { report, done } = masteryFromEvents(
-            chapter,
-            req.params.profileId,
-            seed,
-            record.committedEvents as PresenterEvent[],
-          );
-          if ((record.status === "COMPLETE") !== done) {
-            return { kind: "invalid" as const };
-          }
-          const saved = await client.query<{ updated_at: string }>(
-            `insert into saves(
-               profile_id, chapter_id, package_id, variation_root_seed_hex,
-               flow_version, committed_events, revision, status, updated_at,
-               presenter_spatial
-             ) values ($1,$2,$3,$4,$5,$6,$7,$8,now(),$9)
-             on conflict (profile_id) do update set
-               chapter_id=excluded.chapter_id,
-               package_id=excluded.package_id,
-               variation_root_seed_hex=excluded.variation_root_seed_hex,
-               flow_version=excluded.flow_version,
-               committed_events=excluded.committed_events,
-               revision=excluded.revision,
-               status=excluded.status,
-               updated_at=now(),
-               presenter_spatial=excluded.presenter_spatial
-             returning updated_at`,
-            [
-              req.params.profileId,
-              record.chapterId,
-              record.packageId,
-              seed,
-              record.flowVersion ?? 1,
-              JSON.stringify(record.committedEvents),
-              record.revision,
-              record.status,
-              record.presenterSpatial
-                ? JSON.stringify(record.presenterSpatial)
-                : null,
-            ],
-          );
-          await client.query(
-            `insert into mastery_reports(
-               profile_id, chapter_id, package_id, save_revision, report, generated_at, updated_at
-             ) values ($1,$2,$3,$4,$5,$6,now())
-             on conflict (profile_id) do update set
-               chapter_id=excluded.chapter_id,
-               package_id=excluded.package_id,
-               save_revision=excluded.save_revision,
-               report=excluded.report,
-               generated_at=excluded.generated_at,
-               updated_at=now()`,
-            [
-              req.params.profileId,
-              record.chapterId,
-              record.packageId,
-              record.revision,
-              JSON.stringify(report),
-              report.generatedAt,
-            ],
-          );
-          return {
-            kind: "ok" as const,
-            revision: record.revision,
-            updatedAt: saved.rows[0]!.updated_at,
-            mastery: report,
-          };
-        });
-
-        if (result.kind === "conflict") {
-          return reply.code(409).send({ error: "SAVE_CONFLICT" });
-        }
-        if (result.kind === "invalid") {
-          return reply.code(400).send({ error: "SAVE_INVALID" });
-        }
-        return {
-          ok: true,
-          revision: result.revision,
-          updatedAt: result.updatedAt,
-          mastery: result.mastery,
-        };
-      } catch (cause) {
-        req.log.warn(cause, "save replay validation failed");
-        return reply.code(400).send({ error: "SAVE_INVALID" });
-      }
     },
   );
 
