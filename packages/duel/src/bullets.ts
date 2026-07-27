@@ -48,6 +48,29 @@ export function bulletsForVerdict(verdict: VerdictKind): number {
   return verdict === "CORRECT" ? BULLETS_FOR_CORRECT : BULLETS_FOR_WRONG;
 }
 
+/**
+ * M1'S SYMMETRIC-COMPLEMENT BOSS AWARD — the same 14/7 table, read from the other
+ * end.
+ *
+ * The player earns `bulletsForVerdict`: 14 for a correct answer, 7 for a wrong
+ * one. M1's boss earns the MIRROR of that award off the same graded round, so the
+ * two magazines always sum to `BULLETS_FOR_CORRECT + BULLETS_FOR_WRONG` and the
+ * round's firepower advantage is decided entirely by the answer:
+ *
+ *   player correct  ->  player 14, boss 7   (knowledge arms the player)
+ *   player wrong    ->  player 7,  boss 14  (a wrong answer arms the boss)
+ *
+ * It is deliberately the complement of `bulletsForVerdict` rather than a second
+ * table, so a change to the economy cannot arm the two sides inconsistently, and
+ * it is derived from the committed verdict — never a live number, never something
+ * the client can express. This is the whole of M1's boss ammo policy; a
+ * later-level boss with authored abilities is a different function, not a flag on
+ * this one.
+ */
+export function complementaryBossBullets(verdict: VerdictKind): number {
+  return verdict === "CORRECT" ? BULLETS_FOR_WRONG : BULLETS_FOR_CORRECT;
+}
+
 export function bulletsForSource(source: AmmoSource): number {
   return source.kind === "VERDICT"
     ? bulletsForVerdict(source.verdict)

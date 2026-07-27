@@ -28,6 +28,7 @@
 import type { FastifyBaseLogger } from "fastify";
 import {
   DEFAULT_JUDGING_POLICY,
+  FALLBACK_DIAGNOSIS_ADVICE,
   GRADING_TIMEOUT_MS,
   GradingService,
   ItemBank,
@@ -71,6 +72,35 @@ import { GradingSignal } from "./gradingSignal.js";
  */
 const CLIENT_ROUND_TRIP_ALLOWANCE_MS = 250;
 
+/**
+ * Combine the prose verdict with the evidence gate, explicitly and in one place so
+ * PvE and PvP agree.
+ *
+ * The rule: a CORRECT the CLASSIFIER minted becomes WRONG when the evidence does not
+ * satisfy the policy. Two guards keep it honest:
+ *
+ *   * `evidenceSatisfied === false` only — `undefined` means the caller ran no gate
+ *     (an encounter, a legacy path) and leaves the verdict untouched.
+ *   * `source === "CLASSIFIER"` only — a generous grant (GRADING_TIMEOUT, ABSTAINED)
+ *     is the infrastructure fallback, and a student is never punished for it. It
+ *     keeps the maximum whatever cards were placed.
+ *
+ * A WRONG stays WRONG; the gate can only ever downgrade, never upgrade.
+ */
+export function combineWithEvidence(
+  envelope: VerdictEnvelope,
+  evidenceSatisfied: boolean | undefined,
+): VerdictEnvelope {
+  if (
+    evidenceSatisfied === false &&
+    envelope.kind === "CORRECT" &&
+    envelope.source === "CLASSIFIER"
+  ) {
+    return { ...envelope, kind: "WRONG" };
+  }
+  return envelope;
+}
+
 export const DUEL_GRADING_BUDGET_MS =
   GRADING_TIMEOUT_MS - CLIENT_ROUND_TRIP_ALLOWANCE_MS;
 
@@ -107,6 +137,18 @@ export interface DuelGrading {
     readonly roundIndex: number;
     readonly itemId: string;
     readonly answer: string;
+    /**
+     * The evidence gate's result for this round, when the route runs one.
+     *
+     * A duel answer is prose AND placed cards, combined explicitly: the verdict is
+     * CORRECT only when the classifier grades the prose CORRECT *and* the evidence
+     * satisfies the authored policy. `false` here downgrades a CLASSIFIER-graded
+     * CORRECT to WRONG *before* the envelope is minted, so the receipt signs the
+     * combined verdict. `true` or omitted leaves grading exactly as it was — and a
+     * GENEROUS GRANT (source ≠ CLASSIFIER) is never downgraded, because a student is
+     * never punished for infrastructure.
+     */
+    readonly evidenceSatisfied?: boolean;
   }): Promise<DuelRoundGrade>;
   /**
    * @pa/grading's `verifyVerdictReceipt`, bound to the server's secret.
@@ -158,11 +200,21 @@ export function createDuelGrading(
   const authored = m1GradingPolicy();
   const configured = providerConfigured();
   if (!configured) {
-    // Said once at boot rather than once per round. Every answer will be granted
-    // the maximum and logged for review, which is loud enough on its own.
+    // Said once at boot rather than once per round.
     logger.warn(
       "duel grading: no classifier credential; every duel round will grant the generous fallback",
     );
+    // AND SAID AGAIN WHERE A DEVELOPER WILL SEE IT. `app.ts` builds Fastify with
+    // `logger: NODE_ENV === "production"`, so the line above goes nowhere on a
+    // laptop — it has been unreachable in development since it was written, which
+    // is not a small thing for the one message that says grading is off.
+    if (process.env.NODE_ENV !== "production") {
+      console.error(
+        `\n  DUEL GRADING IS OFF: ${FALLBACK_DIAGNOSIS_ADVICE.NO_CREDENTIAL}\n` +
+          "  Every duel round will grant the maximum, so a wrong answer pays the " +
+          "same 14 bullets as a right one.\n",
+      );
+    }
   }
   const budgetMs = options.budgetMs ?? DUEL_GRADING_BUDGET_MS;
   const reviewLog: ReviewLog = new MultiReviewLog([
@@ -235,7 +287,10 @@ export function createDuelGrading(
         // would be worse than saying null.
         responseRef: null,
       });
-      const envelope = verdictEnvelope(verdict);
+      const envelope = combineWithEvidence(
+        verdictEnvelope(verdict),
+        input.evidenceSatisfied,
+      );
       const receipt = mintVerdictReceipt(
         envelope,
         binding,
@@ -260,6 +315,8 @@ export function createDuelGrading(
         path: verdict.provenance.path,
         latencyMs: verdict.provenance.latencyMs,
         fallbackReason: verdict.provenance.fallbackReason,
+        fallbackDiagnosis: verdict.provenance.fallbackDiagnosis,
+        fallbackStatus: verdict.provenance.fallbackStatus,
       });
       return { envelope, receipt, provenance: verdict.provenance };
     },

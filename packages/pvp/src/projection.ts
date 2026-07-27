@@ -25,6 +25,7 @@
 // cannot leak by omission, because omission is the default here.
 
 import {
+  FIELD_TICK_HZ,
   hasLineOfSight,
   type CollisionWorld,
   type CombatState,
@@ -40,6 +41,12 @@ export interface SelfView {
   readonly side: DuelSide;
   readonly position: Vec3;
   readonly velocity: Vec3;
+  /**
+   * AIM yaw, not motion yaw. The self body points where the player is aiming, which
+   * is what the client's own look owns; deriving it from `motion.yaw` (the direction
+   * of travel) fed a lagged body facing back into a camera that followed it. See
+   * @pa/engine-world's `playerLook` for why look is an input, never a follow.
+   */
   readonly yaw: number;
   readonly capsuleHeight: number;
   readonly health: number;
@@ -50,13 +57,26 @@ export interface SelfView {
   readonly abilityUsesRemaining: Readonly<Record<string, number>>;
 }
 
-/** What a client is told about the other fighter. Deliberately partial. */
+/**
+ * What a client is told about the other fighter. Deliberately partial, and every
+ * pose detail is GATED ON THE SAME LINE OF SIGHT the position is: aim, velocity and
+ * dash are refreshed only while the server can legitimately see them, and freeze
+ * TOGETHER with the position the instant cover breaks — so a client cannot infer a
+ * facing, a heading or a roll the server did not sanction, and the frozen values are
+ * the last legitimately-seen ones, not a live leak.
+ */
 export interface OpponentView {
   readonly side: DuelSide;
   readonly handle: string;
   readonly rank: number;
   /** Last position the server could see. Stale while `visible` is false. */
   readonly position: Vec3;
+  /** Ground velocity, m/s. Frozen with the position when `visible` is false. */
+  readonly velocity: { readonly x: number; readonly z: number };
+  /** Aim yaw — snapshot-backed so a client never infers facing. Frozen when unseen. */
+  readonly aimYaw: number;
+  /** Whether they are mid-dash. Snapshot-backed; frozen when unseen. */
+  readonly dashing: boolean;
   readonly capsuleHeight: number;
   /** Health is public: it is the scoreboard of the fight. */
   readonly health: number;
@@ -87,40 +107,90 @@ export interface MatchSnapshot {
   readonly self: SelfView;
   readonly opponent: OpponentView;
   readonly projectiles: readonly ProjectileView[];
+  /**
+   * The authoritative post-answer countdown, in WHOLE display seconds, or null.
+   *
+   * Non-null ONLY during BULLETS_GRANTED — the 3-second window @pa/duel opens once
+   * both verdicts have landed and before the fighters may engage again. It is the
+   * duel core's own `resumesAtTick` minus the current tick, divided by the fixed
+   * rate, so it is 3 then 2 then 1 and is never a second timer this layer runs. In
+   * every other phase it is null: a client shows a countdown exactly when the server
+   * is counting down, and never while a side still owes an answer.
+   */
+  readonly resumeCountdownSeconds: number | null;
 }
 
-/** Per-side memory of where the opponent was last legitimately visible. */
-export interface LastKnownPosition {
+/**
+ * The authoritative resume countdown as whole display seconds, or null outside
+ * BULLETS_GRANTED.
+ *
+ * Derived only from `resumesAtTick - clock.tick`, the duel core's own values, so it
+ * cannot disagree with the simulation. `ceil` gives a clean 3 → 2 → 1: the first
+ * whole second shows 3 (180..121 ticks left), the next 2, the last 1, and it reaches
+ * 0 at the tick the machine itself resumes into ENGAGEMENT_LIVE — where the phase is
+ * no longer BULLETS_GRANTED and this returns null. It only ever decreases as the tick
+ * advances, so a presentation that clamps to it can never count up.
+ */
+export function resumeCountdownSecondsFor(state: DuelState): number | null {
+  if (state.phase !== "BULLETS_GRANTED") return null;
+  const remainingTicks = state.resumesAtTick - state.clock.tick;
+  return Math.max(0, Math.ceil(remainingTicks / FIELD_TICK_HZ));
+}
+
+/**
+ * Per-side memory of the opponent AS LAST LEGITIMATELY SEEN — the whole pose, not
+ * just where they stood. Position, velocity, aim and dash are remembered together and
+ * handed out together while the sight line is broken, so nothing about the opponent's
+ * body updates behind cover.
+ */
+export interface LastKnownPose {
   readonly position: Vec3;
+  readonly velocity: { readonly x: number; readonly z: number };
+  readonly aimYaw: number;
+  readonly dashing: boolean;
+  readonly capsuleHeight: number;
   readonly tick: number;
 }
 
 export type LastKnownBySide = {
-  readonly A: LastKnownPosition;
-  readonly B: LastKnownPosition;
+  readonly A: LastKnownPose;
+  readonly B: LastKnownPose;
 };
+
+function poseOf(fighter: CombatState["fighters"]["A"], tick: number): LastKnownPose {
+  return {
+    position: { ...fighter.motion.pos },
+    velocity: { x: fighter.motion.vel.x, z: fighter.motion.vel.z },
+    aimYaw: Math.atan2(fighter.aimX, fighter.aimZ),
+    dashing: fighter.motion.dash !== null,
+    capsuleHeight: fighter.motion.capsuleHeight,
+    tick,
+  };
+}
 
 export function initialLastKnown(combat: CombatState): LastKnownBySide {
   return {
-    A: { position: { ...combat.fighters.B.motion.pos }, tick: 0 },
-    B: { position: { ...combat.fighters.A.motion.pos }, tick: 0 },
+    A: poseOf(combat.fighters.B, 0),
+    B: poseOf(combat.fighters.A, 0),
   };
 }
 
 /**
  * Refresh each side's last-known record. Called once per authoritative tick, before
- * projecting, so a snapshot never reveals a position the viewer could not see.
+ * projecting, so a snapshot never reveals a pose the viewer could not see. On a broken
+ * sight line the previous record is kept WHOLE — position, velocity, aim and dash all
+ * freeze at the same instant.
  */
 export function updateLastKnown(
   world: CollisionWorld,
   combat: CombatState,
   previous: LastKnownBySide,
 ): LastKnownBySide {
-  const forSide = (viewer: DuelSide): LastKnownPosition => {
+  const forSide = (viewer: DuelSide): LastKnownPose => {
     const self = combat.fighters[viewer];
     const target = combat.fighters[otherSide(viewer)];
     if (!hasLineOfSight(world, self, target)) return previous[viewer];
-    return { position: { ...target.motion.pos }, tick: combat.tick };
+    return poseOf(target, combat.tick);
   };
   return { A: forSide("A"), B: forSide("B") };
 }
@@ -161,7 +231,8 @@ export function projectSnapshotFor(
       side: viewer,
       position: { ...self.motion.pos },
       velocity: { ...self.motion.vel },
-      yaw: self.motion.yaw,
+      // Aim, not travel: the body points where the player is aiming.
+      yaw: Math.atan2(self.aimX, self.aimZ),
       capsuleHeight: self.motion.capsuleHeight,
       health: self.health,
       ammo: self.ammo,
@@ -174,8 +245,16 @@ export function projectSnapshotFor(
       side: opponentSide,
       handle: input.handles[opponentSide],
       rank: input.ranks[opponentSide],
+      // Position, velocity, aim and dash all come from the live body while visible,
+      // and ALL from the frozen last-known record while not — never a mix, so nothing
+      // about the opponent updates behind cover.
       position: visible ? { ...opponent.motion.pos } : { ...remembered.position },
-      capsuleHeight: opponent.motion.capsuleHeight,
+      velocity: visible
+        ? { x: opponent.motion.vel.x, z: opponent.motion.vel.z }
+        : { ...remembered.velocity },
+      aimYaw: visible ? Math.atan2(opponent.aimX, opponent.aimZ) : remembered.aimYaw,
+      dashing: visible ? opponent.motion.dash !== null : remembered.dashing,
+      capsuleHeight: visible ? opponent.motion.capsuleHeight : remembered.capsuleHeight,
       health: opponent.health,
       ammo: opponent.ammo,
       visible,
@@ -193,6 +272,9 @@ export function projectSnapshotFor(
       vz: projectile.vz,
       shooter: projectile.shooter,
     })),
+    // Server-authoritative, derived from the same clock the fight runs on. Null in
+    // every phase but BULLETS_GRANTED — see `resumeCountdownSecondsFor`.
+    resumeCountdownSeconds: resumeCountdownSecondsFor(input.state),
   };
 }
 

@@ -139,6 +139,15 @@ export interface ProgressionTx {
     chapterId: string,
     missionId: string,
   ): Promise<MissionAttempt | null>;
+  /**
+   * The profile's ONE open mission attempt, whatever chapter or mission it is on.
+   *
+   * There is exactly one live attempt per profile, not one per mission: a reload
+   * must not be able to open a second run just because it is on a different
+   * route. Read inside the per-profile advisory-locked transaction, so two opens
+   * racing on two mission ids still converge on a single open attempt.
+   */
+  liveMissionAttemptForProfile(): Promise<MissionAttempt | null>;
   missionAttempt(attemptId: string): Promise<MissionAttempt | null>;
   moduleCompletion(
     chapterId: string,

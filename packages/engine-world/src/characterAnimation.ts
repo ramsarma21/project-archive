@@ -3,6 +3,10 @@ import {
   Quaternion,
   QuaternionKeyframeTrack,
 } from "three";
+import {
+  PARKOUR_CLIP_FALLBACKS,
+  PARKOUR_CLIP_TARGET_MS,
+} from "./parkour/clips.js";
 
 // ---------------------------------------------------------------------------
 // Clip selection for imported rigs.
@@ -18,6 +22,18 @@ export interface CharacterClipSpec {
   fallback: string;
   /** Every clip the rig should carry; anything missing warns once. */
   expected: readonly string[];
+  /**
+   * Per-clip substitutes, tried before `fallback`.
+   *
+   * `fallback` alone is a single answer for every miss, and for a rig with a
+   * movement contract that answer is nearly always wrong: an absent `dash`
+   * resolved to the rig-wide `idle` plants a standing pose on a body crossing
+   * the ground at sprint speed. The clip contract already names what each
+   * performance should degrade to — a dash reads as a `run`, a curb absorb
+   * reads as a `run` — and this is what makes those authored answers reach the
+   * mixer instead of only the unit test that checks the table exists.
+   */
+  fallbacks?: Readonly<Record<string, string>>;
 }
 
 const clipSpecs = new Map<string, CharacterClipSpec>();
@@ -38,11 +54,19 @@ export function hasCharacterClips(glbKey: string): boolean {
 /**
  * Every clip baked onto playerboy-rigged as of the 2026-07-26 traversal rebake.
  *
- * That rebake changed two of the 37 and left the other 35 bit-identical:
- * `dropRoll` stopped being an alias of `dodge` and took Mixamo's "Falling To
- * Roll", so a landing roll and a combat evade are no longer the same 1.2s
- * performance; and `leapOfFaith` stopped being frozen 2.39m downrange, which
- * had been detaching the body from the capsule for the whole descent.
+ * TWO OF THESE NAMES ARE STILL ALIASES, WHATEVER THE REBAKE INTENDED. The note
+ * that used to sit here said `dropRoll` had stopped being an alias of `dodge`
+ * and taken Mixamo's "Falling To Roll". It has not: in the shipped GLB the two
+ * animations reference the identical 99 channels and the identical sampler
+ * accessors, so a landing roll and a combat evade are the same 1200ms
+ * performance, and `land`/`landHard` are the same 2033ms one. Both pairs are
+ * checkable from the glTF JSON in a few lines and neither is a judgement call.
+ *
+ * That mattered beyond tidiness: CLIP_AUTHORED_MS recorded `dropRoll` at the
+ * 1830ms the rebake was expected to produce, so every drop-roll was fitted as
+ * though it were half a second longer than it is and played 53% too fast.
+ * `leapOfFaith` did stop being frozen 2.39m downrange, which had been detaching
+ * the body from the capsule for the whole descent.
  *
  * `dash` is in the parkour contract but is NOT baked here, and deliberately so:
  * Mixamo carries no dash performance. Its nearest neighbours are all rolls,
@@ -101,58 +125,244 @@ export const PLAYER_ACTION_CLIPS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Authored clip length in ms, measured off the baked rig.
+ * Authored clip length in ms — the whole file, measured off the baked rig by
+ * `assets/pipeline/measure_clip_rates.mjs`.
  *
- * Mixamo performances are uniformly slower than the parkour contract's
- * `targetMs`, so a clip played at timeScale 1 will feel sluggish. Divide the
- * measured value by the target to get the timeScale that hits the authored
- * intent: `mantle` needs ~8.6x, `landRun` ~5.6x, `climbOver` ~6.1x.
+ * THIS IS THE FILE LENGTH AND IT IS NOT THE RIGHT DIVISOR FOR A PLAYBACK RATE.
+ * Use `verbTimeScale`, which divides the CONTENT length below instead. This
+ * table survives because the duel reads it as "how long is this clip", which is
+ * a fair question with this as its answer.
  *
- * Two of these should NOT simply be scaled to target. `leapOfFaith` loops, so it
- * plays for as long as the fall lasts. `leapOfFaithLand` at 8.37s against an
- * 800ms target would need 10.5x, which makes the get-up frantic; it is the
- * payoff beat, and roughly 1.5-2s (4-5x) reads far better.
+ * `dropRoll` was 1830 here and is 1200 on the rig. The 2026-07-26 rebake note
+ * says it stopped being an alias of `dodge` and took Mixamo's "Falling To
+ * Roll"; whatever landed in the shipped GLB, the two clips are still the same
+ * 1200ms performance, byte-identical in length and in pose profile. The 1830
+ * was the length the rebake was expected to produce, written down before it was
+ * measured, and it made every drop-roll play 53% faster than intended.
  */
 export const CLIP_AUTHORED_MS: Readonly<Record<string, number>> = {
-  mantle: 3870,
-  slide: 1570,
-  climbOver: 3170,
+  mantle: 3867,
+  slide: 1567,
+  climbOver: 3167,
   landRun: 1400,
   hangDrop: 1700,
+  vault: 3567,
+  climbUp: 3000,
+  climbDown: 2033,
   // The dive is the only timed beat of the three. leapOfFaith is a held pose
-  // looped for the descent, so its 130ms is a loop period, not a target.
-  leapOfFaithDive: 730,
-  leapOfFaith: 130,
-  leapOfFaithLand: 8370,
-  throwLight: 2230,
-  blendWalk: 1070,
-  land: 2030,
-  landHard: 2030,
+  // looped for the descent, so its 133ms is a loop period, not a target.
+  leapOfFaithDive: 733,
+  leapOfFaith: 133,
+  leapOfFaithLand: 8367,
+  throwLight: 2233,
+  blendWalk: 1067,
+  land: 2033,
+  landHard: 2033,
   dodge: 1200,
-  // Its own performance since the 2026-07-26 rebake, no longer dodge under a
-  // second name, so it is a third longer and needs ~3.1x rather than ~2x.
-  dropRoll: 1830,
-  draw: 7130,
+  dropRoll: 1200,
+  draw: 7133,
 };
 
 /**
- * Cycle speed each locomotion clip was authored at, in m/s, measured from the
- * planted foot's backward sweep (assets/pipeline/verify_clip_contacts.py).
+ * How much of each clip is actually a performance, in ms, and where it starts.
+ *
+ * A Mixamo download is a take, not a beat: it opens on a held pose while the
+ * actor settles and closes on another while they stop. `leapOfFaithLand` is the
+ * extreme — 2.50s lying motionless, 3.67s of getting up, 2.20s standing
+ * motionless — and it is 56% dead air. Every rate in this system used to be
+ * `fileLength / window`, so 56% of that clip's screen time was spent playing
+ * stillness fast.
+ *
+ * Dividing the CONTENT by the window instead is the whole fix, and it is why a
+ * clip can now be given a slower rate and still show more of itself.
+ *
+ * Measured by `assets/pipeline/measure_clip_rates.mjs`, which gates on 8% of
+ * each clip's own peak pose speed. Only the one-shot performances are listed;
+ * a locomotion cycle has no dead air by construction and is stride-matched
+ * rather than fitted.
+ */
+export const CLIP_CONTENT_MS: Readonly<Record<string, number>> = {
+  vault: 3000,
+  mantle: 3729,
+  climbOver: 2567,
+  hangDrop: 1633,
+  slide: 1529,
+  landRun: 1362,
+  dropRoll: 1163,
+  landHard: 1633,
+  land: 1633,
+  leapOfFaithLand: 3667,
+  leapOfFaithDive: 696,
+  throwLight: 1667,
+  dodge: 1163,
+};
+
+/**
+ * Where the performance starts inside the file, in ms. Handed to the mixer as a
+ * start time so the window opens on the beat instead of on the dead air.
+ *
+ * Only clips with a lead worth skipping are listed. Almost every clip in this
+ * cast opens with a single held frame (33ms), which is not worth seeking past
+ * and would cost the run/walk cycle its phase continuity if it were applied
+ * indiscriminately. `leapOfFaithLand` is the one clip where the lead is
+ * material: without this, three tenths of the payoff beat is a corpse.
+ */
+export const CLIP_CONTENT_START_MS: Readonly<Record<string, number>> = {
+  leapOfFaithLand: 2500,
+};
+
+/**
+ * Fraction of a clip's total bone rotation that happens above the hips.
+ *
+ * THIS IS THE TEST FOR "CAN THIS CLIP BE AN ADDITIVE LAYER", and it is here
+ * because two clips in the contract claim to be one and only one of them is.
+ *
+ * An additive layer adds its rotation to whatever the base clip is doing. That
+ * is a good deal for a performance that lives in the arms and a bad one for a
+ * performance that drives the legs, because added to a run the legs scissor.
+ *
+ *   * `throwLight` is the real candidate. 76% above the hips, and only 834
+ *     degrees of leg rotation in the whole clip — 93 per leg bone, half what
+ *     the run itself uses. Layering it would deliver the contract's "the player
+ *     never stops to throw" and remove the plant that MissionStage currently
+ *     documents as a known compromise.
+ *   * `landRun` is NOT, despite its contract note reading "upper-body-weighted
+ *     so it can blend over run". It is 52/48, with 2572 degrees of leg rotation
+ *     across nine bones — 286 per bone, MORE per bone than the run. Whatever
+ *     was asked for, what was baked is a full-body landing. Layering it would
+ *     add a second pair of legs' worth of rotation to a running pair, which is
+ *     worse than the replacement it does today, so the residual oddness in the
+ *     landing is not something an additive layer would fix. It needs a re-bake
+ *     as a genuine upper-body clip first, and then the layer is worth building.
+ *
+ * Measured by `assets/pipeline/measure_clip_rates.mjs`.
+ */
+export const CLIP_UPPER_BODY_SHARE: Readonly<Record<string, number>> = {
+  throwLight: 0.76,
+  landRun: 0.52,
+  landHard: 0.61,
+  dropRoll: 0.60,
+  run: 0.45,
+};
+
+/** Above this an overlay is arms-and-torso enough to be added to locomotion. */
+export const ADDITIVE_UPPER_BODY_THRESHOLD = 0.7;
+
+/**
+ * Cyclic clips that must not be fitted to a mechanical window at all.
+ *
+ * `climbUp` is a LOOPING ladder-climb: four reach-and-pull cycles of ~750ms in
+ * a 3.0s file, not one 3.0s pull. Fitting it to the 900ms CLIMB_UP window would
+ * run four cycles in nine tenths of a second — the arms would blur — when
+ * playing it unscaled gives exactly the one-and-a-bit cycles a 900ms climb
+ * wants. Its rate is 1 for the same reason a run's is not fitted: the clip is
+ * already the right length per repetition, and the window just takes as many
+ * repetitions as it takes.
+ */
+export const CYCLIC_VERB_CLIPS: ReadonlySet<string> = new Set([
+  "climbUp",
+  "climbDown",
+  "leapOfFaith",
+]);
+
+/**
+ * Ceiling on any derived playback rate.
+ *
+ * A mechanical window is a physics decision and a clip length is an animation
+ * decision, and dividing one by the other lets the physics silently overrule
+ * the animation as far as it likes. It went a long way: `mantle` was fitted at
+ * 8.3x, `vault` would have been 7.9x, `leapOfFaithLand` was 10.5x.
+ *
+ * THE NUMBER IS THE ONE AUTHORING JUDGEMENT THIS REPOSITORY HAS RECORDED ABOUT
+ * A RATE BEING TOO FAST. `leapOfFaithLand` carried a note that 10.5x makes the
+ * get-up frantic and that 4-5x reads; 4 is the conservative end of the only
+ * calibration anybody has written down. Nothing else here is better evidence,
+ * and inventing a second opinion beside it would be worse than reusing it.
+ *
+ * When this binds, the clip overruns its mechanical window and is faded out
+ * mid-performance rather than compressed further. THAT OVERRUN IS A REPORT, NOT
+ * A FIX: it means the window and the performance disagree, and the disagreement
+ * belongs to whoever owns the window. It currently binds on vault, mantle,
+ * climbOver, landRun and leapOfFaithLand.
+ */
+export const MAX_VERB_TIME_SCALE = 4;
+
+/**
+ * Mixer timeScale for a one-shot performance covering a mechanical window.
+ *
+ * Three claims, and the rate is the slowest of them:
+ *
+ *   1. THE WINDOW. The clip should not be cut to a sliver by a window shorter
+ *      than the performance.
+ *   2. THE CONTRACT. `PARKOUR_CLIP_TARGET_MS` is how long the beat was asked to
+ *      read for. Where it is longer than the window, it wins, and the tail is
+ *      blended out rather than snapped.
+ *   3. THE CEILING. `MAX_VERB_TIME_SCALE`, above.
+ *
+ * Returns null for a clip with no measured performance — a locomotion cycle, a
+ * cyclic verb, or a name this rig answers with a substitute — so the caller can
+ * fall through to `strideTimeScale` rather than being handed a 1 it cannot tell
+ * apart from a real answer.
+ */
+export function verbTimeScale(clip: string, windowMs: number): number | null {
+  if (CYCLIC_VERB_CLIPS.has(clip)) return 1;
+  const content = CLIP_CONTENT_MS[clip];
+  if (!content) return null;
+  const target = Math.max(windowMs, PARKOUR_CLIP_TARGET_MS[clip] ?? 0);
+  if (target <= 0) return null;
+  return Math.min(MAX_VERB_TIME_SCALE, content / target);
+}
+
+/** Mixer start time for a clip, in seconds. Skips a measured dead lead. */
+export function clipStartSeconds(clip: string): number {
+  return (CLIP_CONTENT_START_MS[clip] ?? 0) / 1000;
+}
+
+/**
+ * Cycle speed each locomotion clip was authored at, in m/s.
  *
  * Divide the speed the motion code is driving by this to get the mixer
- * timeScale that removes foot sliding. Without it `run` skates ~64% at
- * RUN_SPEED, which is the single most visible locomotion artifact on this rig.
+ * timeScale that removes foot sliding — that is `strideTimeScale`.
+ *
+ * MEASURED AT THE SCALE THE RENDERER DRAWS, BY THE STANCE SLOPE, using
+ * `assets/pipeline/measure_clip_rates.mjs`. Both halves of that sentence are
+ * corrections, and between them they had `run` playing at 1.64x when it wanted
+ * 0.79x — a run cycle at 295 steps per minute under a body covering ground at
+ * 143, which is the "running animation looks too fast for how fast u are going"
+ * the owner reported.
+ *
+ *   * THE DENOMINATOR. The previous numbers came from
+ *     `verify_clip_contacts.py`, which measures the planted foot's backward
+ *     sweep correctly and then divides it by HALF THE CYCLE. Those agree only
+ *     for a gait with no flight phase. This run is airborne for 78% of its
+ *     cycle, so the divisor was three and a half times too large. The foot only
+ *     slides while it is DOWN, so the sweep must be divided by the time it was
+ *     down, which is a measurement with no gait assumption in it.
+ *   * THE SCALE. It measured the source rig. This cast is authored at 1.80m and
+ *     every loader fits it to STAND_HEIGHT, so a stride measured on the file is
+ *     16% longer than the one on screen.
+ *
+ * Cross-checked against the thing the constant exists to prevent: simulating a
+ * body driven at each speed and integrating how far a planted foot slides
+ * across the ground per cycle puts the minimum at exactly `speed / authored`
+ * for all four cases in play (walk 1.47x, run 0.79x, crouchWalk 0.90x, and the
+ * burst's 1.15x). At the old `run` figure the same integral is 0.91m of slide
+ * per cycle against 0.34m at this one.
+ *
+ * The 0.34m that remains is the clip disagreeing with itself: its planted foot
+ * sweeps at 5.1 m/s early in the stance and 6.6 m/s at toe-off, and no single
+ * rate can satisfy both. That is a bake problem, not a tuning one.
  */
 export const CLIP_AUTHORED_SPEED_MPS: Readonly<Record<string, number>> = {
-  walk: 1.55,
-  run: 2.81,
-  sprint: 3.01,
-  crouchWalk: 1.70,
-  aimWalk: 2.30,
-  aimRun: 2.55,
-  // Counter-intuitively brisker than `walk` (longer stride, slower cadence), so
-  // an unhurried crowd-blend pace needs timeScale BELOW 1, not above it.
-  blendWalk: 1.73,
+  walk: 1.57,
+  run: 5.80,
+  sprint: 5.64,
+  crouchWalk: 1.28,
+  aimWalk: 2.53,
+  aimRun: 3.20,
+  // Still counter-intuitively brisker than `walk` (longer stride, slower
+  // cadence), so an unhurried crowd-blend pace needs timeScale below 1.
+  blendWalk: 1.80,
 };
 
 /** Mixer timeScale that matches a clip's stride to the driven ground speed. */
@@ -197,7 +407,44 @@ export const OFFICER_CLIP_SPEC: CharacterClipSpec = {
 export const PLAYER_CLIP_SPEC: CharacterClipSpec = {
   fallback: "idle",
   expected: PLAYER_CLIPS,
+  // The two clips this rig does not carry are `dash` and `stepUp`, and the
+  // contract answers both with `run`. Without this line they answered `idle`
+  // instead: a burst and a curb absorb both dropped the body into a standing
+  // pose while it was still crossing ground at speed. The manifest above has
+  // claimed "dash takes its authored run fallback" since the rebake; this is
+  // the wiring that makes the claim true.
+  fallbacks: PARKOUR_CLIP_FALLBACKS,
 };
+
+const PLAYER_CLIP_SET: ReadonlySet<string> = new Set<string>(PLAYER_CLIPS);
+
+/**
+ * The clip the player rig will actually play when asked for `requested`.
+ *
+ * `chooseAvailableClip` already does this, inside the renderer, against the
+ * clips the loaded GLB turned out to carry. This is the same walk of the same
+ * table against the rig's declared manifest, and it exists because THE
+ * PRESENTATION LAYER HAS TO KNOW WHICH CLIP IT IS TIMING.
+ *
+ * A `dash` resolves to `run`. Ask "how fast should dash play" and there is no
+ * answer, so the rate came out 1 — and a run cycle authored for 5.8 m/s played
+ * at 1.0 under a body bursting at 6.7 skates every time the player dashes.
+ * Ask "how fast should the clip that dash resolves to play" and the answer is
+ * the stride match, 1.15x, which is the correct rate for the burst and the
+ * closest thing to a dash animation this rig can offer. `stepUp` is the same
+ * story at running speed.
+ */
+export function playerClipFor(requested: string): string {
+  if (PLAYER_CLIP_SET.has(requested)) return requested;
+  const visited = new Set<string>([requested]);
+  let candidate: string | undefined = PARKOUR_CLIP_FALLBACKS[requested];
+  while (candidate && !visited.has(candidate)) {
+    if (PLAYER_CLIP_SET.has(candidate)) return candidate;
+    visited.add(candidate);
+    candidate = PARKOUR_CLIP_FALLBACKS[candidate];
+  }
+  return PLAYER_CLIP_SPEC.fallback;
+}
 
 export const AIRBORNE_VISUAL_TUNING = {
   standingTimeScale: 2.25,
@@ -259,6 +506,12 @@ export function compactPlayerAirborneClips(
 
 const warned = new Set<string>();
 
+function warnOnce(key: string, message: string): void {
+  if (warned.has(key)) return;
+  warned.add(key);
+  console.warn(message);
+}
+
 export function chooseAvailableClip(
   glbKey: string,
   requested: string,
@@ -267,21 +520,42 @@ export function chooseAvailableClip(
   const spec = clipSpecs.get(glbKey);
   if (spec) {
     const missing = spec.expected.filter((name) => !availableNames.includes(name));
-    const manifestWarning = `${glbKey}:manifest:${missing.join(",")}`;
-    if (missing.length > 0 && !warned.has(manifestWarning)) {
-      warned.add(manifestWarning);
-      console.warn(`[animation] ${glbKey} is missing expected clips: ${missing.join(", ")}.`);
+    if (missing.length > 0) {
+      warnOnce(
+        `${glbKey}:manifest:${missing.join(",")}`,
+        `[animation] ${glbKey} is missing expected clips: ${missing.join(", ")}.`,
+      );
     }
   }
   if (availableNames.includes(requested)) return requested;
+
+  // Follow the authored substitutions as far as they go before giving up on
+  // the rig-wide fallback. The chain is real rather than theoretical —
+  // `landHard` degrades to `dropRoll`, which degrades to `runJump` — and the
+  // visited set is what keeps a table that ever gains a cycle from hanging the
+  // render loop rather than dropping one pose.
+  const substitutes = spec?.fallbacks;
+  if (substitutes) {
+    const visited = new Set<string>([requested]);
+    let candidate = substitutes[requested];
+    while (candidate && !visited.has(candidate)) {
+      if (availableNames.includes(candidate)) {
+        warnOnce(
+          `${glbKey}:${requested}:${candidate}`,
+          `[animation] ${glbKey} has no "${requested}" clip; using its authored fallback "${candidate}".`,
+        );
+        return candidate;
+      }
+      visited.add(candidate);
+      candidate = substitutes[candidate];
+    }
+  }
+
   const fallbackName = spec?.fallback ?? "idle";
   const fallback = availableNames.includes(fallbackName) ? fallbackName : availableNames[0] ?? null;
-  const warningKey = `${glbKey}:${requested}:${fallback ?? "none"}`;
-  if (!warned.has(warningKey)) {
-    warned.add(warningKey);
-    console.warn(
-      `[animation] ${glbKey} has no "${requested}" clip; using ${fallback ? `"${fallback}"` : "a static pose"}.`,
-    );
-  }
+  warnOnce(
+    `${glbKey}:${requested}:${fallback ?? "none"}`,
+    `[animation] ${glbKey} has no "${requested}" clip; using ${fallback ? `"${fallback}"` : "a static pose"}.`,
+  );
   return fallback;
 }

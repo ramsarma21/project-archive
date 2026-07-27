@@ -9,6 +9,7 @@ import {
   moduleCodexCardIds,
   moduleConceptIds,
   moduleDefinitionDefects,
+  moduleRequiredCheckIds,
   moduleTargetSeconds,
 } from "../src/module/moduleFormat.js";
 import {
@@ -51,6 +52,11 @@ function readWholeDeck(): string[] {
   return M1_MODULE.cards.map((card) => card.cueId);
 }
 
+/** Masters every gate check, the way a learner who answers correctly does. */
+function masterEveryCheck(): string[] {
+  return moduleRequiredCheckIds(M1_MODULE);
+}
+
 function clearTheModule(
   ledger: ModuleGateLedger,
   attemptOrdinal: number,
@@ -60,6 +66,7 @@ function clearTheModule(
     definition: M1_MODULE,
     attemptOrdinal,
     acknowledgedCueIds: readWholeDeck(),
+    acknowledgedCheckIds: masterEveryCheck(),
     observedSeconds,
     at: AT,
   });
@@ -215,6 +222,7 @@ test("a module pays zero XP however long it took", () => {
       definition: M1_MODULE,
       attemptOrdinal: 1,
       acknowledgedCueIds: readWholeDeck(),
+      acknowledgedCheckIds: masterEveryCheck(),
       observedSeconds,
       at: AT,
     });

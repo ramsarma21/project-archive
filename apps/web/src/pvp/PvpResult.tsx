@@ -17,9 +17,14 @@ export function PvpResult(props: PvpResultProps) {
   const yours = side === "A" ? result.healthA : result.healthB;
   const theirs = side === "A" ? result.healthB : result.healthA;
 
+  // Ranked vs practice, said plainly. A result moves the board only when standing
+  // applied; anything else (a true draw, a result flagged for review) is shown as
+  // practice so a student is never left guessing whether it counted.
+  const ranked = result.standingApplies;
+
   return (
     <div className="pvp-result">
-      <div className="pvp-kicker">Duel resolved</div>
+      <div className="pvp-kicker">{ranked ? "Ranked duel" : "Practice duel"}</div>
       <h1>{outcomeLine(result.winner, side, result.reason)}</h1>
       <p className="pvp-muted">
         {Math.round(yours)} health left against {Math.round(theirs)}.{" "}

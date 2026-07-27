@@ -45,7 +45,6 @@ const IDLE: MissionInputFrame = {
   sprintHeld: false,
   crouchHeld: false,
   jumpBuffered: false,
-  throwBuffered: false,
   reducedMotion: false,
   flowEnabled: true,
 };

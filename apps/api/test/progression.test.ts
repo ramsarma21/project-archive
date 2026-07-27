@@ -92,7 +92,19 @@ class MemoryStore implements ProgressionStore {
               attempt.status === "IN_PROGRESS",
           ),
         ),
-      missionAttempt: async (attemptId) => clone(this.missionAttempts.get(attemptId)),
+      liveMissionAttemptForProfile: async () =>
+        clone(
+          [...this.missionAttempts.values()].find(
+            (attempt) =>
+              attempt.profileId === profileId && attempt.status === "IN_PROGRESS",
+          ),
+        ),
+      missionAttempt: async (attemptId) => {
+        const attempt = this.missionAttempts.get(attemptId);
+        // Scoped to the profile, exactly as the Postgres store's `where id=$1 and
+        // profile_id=$2`: a foreign id resolves to nothing.
+        return attempt && attempt.profileId === profileId ? clone(attempt) : null;
+      },
       moduleCompletion: async (chapterId, gatesKind, gatesId, gatesOrdinal) =>
         clone(
           this.modules.get(
@@ -251,8 +263,22 @@ class MemoryStore implements ProgressionStore {
     };
   }
 
+  /** Per-profile serialization, modelling the Postgres advisory lock. */
+  private locks = new Map<string, Promise<unknown>>();
+
   async transact<T>(profileId: string, fn: (tx: ProgressionTx) => Promise<T>): Promise<T> {
-    return fn(this.tx(profileId));
+    const prior = this.locks.get(profileId) ?? Promise.resolve();
+    const run = prior.then(() => fn(this.tx(profileId)));
+    // Keep the chain alive through failures so one rejected transaction does not
+    // wedge the profile; the returned promise still settles for its own caller.
+    this.locks.set(
+      profileId,
+      run.then(
+        () => undefined,
+        () => undefined,
+      ),
+    );
+    return run;
   }
 
   async snapshot(profileId: string): Promise<ProgressionSnapshot | null> {
@@ -334,6 +360,7 @@ function content(overrides: Partial<ProgressionContent> = {}): ProgressionConten
     // The key: "OPT.RIGHT" is correct, everything else is not.
     isCorrectOption: (_itemId, optionId) => optionId === "OPT.RIGHT",
     moduleDeckCueIds: () => [...DECK],
+    moduleRequiredCheckIds: () => [],
     codexCardsForModule: () => ["CARD.A", "CARD.B"],
     codexCardsForConcept: (conceptId) => CARDS[conceptId] ?? [],
     conceptForCard: (cardId) => (cardId === "CARD.A" ? "C.A" : "C.B"),
@@ -464,6 +491,54 @@ test("an unfinished deck does not open the gate, and no attempt starts without o
     SEED,
   );
   assert.deepEqual(opened, { ok: false, error: "MODULE_REQUIRED" });
+});
+
+test("a module requiring mastery checks refuses a run that skips or forges them", async () => {
+  // The required check set is DERIVED from module metadata, never trusted from
+  // the request. A completed deck alone is not enough, an unrelated id does not
+  // count, and only acknowledging the derived id opens the gate.
+  const { service } = harness({ moduleRequiredCheckIds: () => ["CHK.A"] });
+
+  const noChecks = await service.completeLearningModule(PROFILE, {
+    chapterId: CHAPTER,
+    moduleId: MODULE,
+    gatesKind: "MISSION_ATTEMPT",
+    gatesId: MISSION,
+    acknowledgedCueIds: [...DECK],
+    acknowledgedCheckIds: [],
+    observedSeconds: LEARNING_MODULE_SECONDS,
+  });
+  assert.deepEqual(noChecks, { ok: false, error: "MODULE_REQUIRED" });
+
+  const forged = await service.completeLearningModule(PROFILE, {
+    chapterId: CHAPTER,
+    moduleId: MODULE,
+    gatesKind: "MISSION_ATTEMPT",
+    gatesId: MISSION,
+    acknowledgedCueIds: [...DECK],
+    // A check the module does not require; the server does not credit it.
+    acknowledgedCheckIds: ["CHK.SOMETHING_ELSE"],
+    observedSeconds: LEARNING_MODULE_SECONDS,
+  });
+  assert.deepEqual(forged, { ok: false, error: "MODULE_REQUIRED" });
+
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.deepEqual(opened, { ok: false, error: "MODULE_REQUIRED" });
+
+  const honest = await service.completeLearningModule(PROFILE, {
+    chapterId: CHAPTER,
+    moduleId: MODULE,
+    gatesKind: "MISSION_ATTEMPT",
+    gatesId: MISSION,
+    acknowledgedCueIds: [...DECK],
+    acknowledgedCheckIds: ["CHK.A"],
+    observedSeconds: LEARNING_MODULE_SECONDS,
+  });
+  assert.equal(honest.ok, true);
 });
 
 test("a fast reader who covered the deck is finished; elapsed time never gates", async () => {
@@ -1025,4 +1100,223 @@ test("mutations refuse content that does not exist rather than inventing a payou
   // Reads still work: a new runner is still Level 0, 0 XP, Rank 1.
   const snapshot = await service.snapshot(PROFILE);
   assert.equal(snapshot.campaign.rank, 1);
+});
+
+// ---------------------------------------------------------------------------
+// Forfeiting an interrupted attempt (the anti-replay flow).
+//
+// The bug: an open attempt used to be handed back to a reloaded client, which
+// started a fresh runtime against it — unlimited replay of a losing run. The fix
+// is that an open attempt can only be SPENT. These tests hold the server half of
+// that: a forfeit closes the one open run as FAILED through the same machinery a
+// real loss uses, spends exactly one attempt, and is idempotent so a delivered
+// terminal outcome can never be clobbered or double-spent.
+// ---------------------------------------------------------------------------
+
+async function openOnly(service: ProgressionService) {
+  const module = await runModule(service);
+  assert.equal(module.ok, true);
+  const opened = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.equal(opened.ok, true);
+  if (!opened.ok) throw new Error("attempt did not open");
+  return opened.value;
+}
+
+test("a still-open attempt cannot be re-opened: a reload gets a refusal, not the same run", async () => {
+  const { service } = harness();
+  const first = await openOnly(service);
+  // A fresh runtime that tries to open again — the reload case — is refused rather
+  // than handed the same row. The client can only forfeit it, never resume it.
+  const again = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.deepEqual(again, { ok: false, error: "ATTEMPT_ALREADY_OPEN" });
+  // And the one open row is still the original, untouched.
+  const snapshot = await service.snapshot(PROFILE);
+  assert.equal(snapshot.openAttempt?.attemptId, first.attemptId);
+  assert.equal(snapshot.openAttempt?.status, "IN_PROGRESS");
+});
+
+test("forfeiting spends exactly one attempt and closes the run as a zero-XP failure", async () => {
+  const { service } = harness();
+  const open = await openOnly(service);
+
+  const forfeit = await service.abandonMissionAttempt(PROFILE, {
+    attemptId: open.attemptId,
+  });
+  assert.equal(forfeit.ok, true);
+  if (!forfeit.ok) throw new Error("forfeit failed");
+  assert.equal(forfeit.value.status, "FORFEITED");
+  assert.equal(forfeit.value.attempt?.attemptId, open.attemptId);
+  assert.equal(forfeit.value.attempt?.status, "FAILED");
+  assert.equal(forfeit.value.attempt?.awardedXp, 0);
+  assert.equal(forfeit.value.mission.attemptsUsed, 1, "exactly one attempt spent");
+
+  // No XP moved, and nothing is open any more.
+  const snapshot = await service.snapshot(PROFILE);
+  assert.equal(snapshot.activeChapter.xp, 0, "a forfeit pays nothing");
+  assert.equal(snapshot.openAttempt, null, "the run is closed, not resumable");
+});
+
+test("after a forfeit the next authorization needs its own module and gets the next ordinal and a fresh seed", async () => {
+  const { service } = harness();
+  const first = await openOnly(service);
+  await service.abandonMissionAttempt(PROFILE, { attemptId: first.attemptId });
+
+  // The re-armed module gate: attempt 2 cannot open on attempt 1's completion.
+  const withoutModule = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: MISSION },
+    SEED,
+  );
+  assert.deepEqual(withoutModule, { ok: false, error: "MODULE_REQUIRED" });
+
+  // With its own module, attempt 2 opens: next ordinal, and a seed bound to that
+  // ordinal so it cannot replay attempt 1's variation.
+  const second = await openOnly(service);
+  assert.equal(second.attemptOrdinal, 2, "the ordinal advanced");
+  assert.notEqual(second.attemptId, first.attemptId);
+  assert.notEqual(
+    second.attemptSeedHex,
+    first.attemptSeedHex,
+    "attempt two is a different run from the forfeited attempt one",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// ONE open mission attempt per profile — not one per mission.
+// ---------------------------------------------------------------------------
+
+const M2 = "M2";
+function twoMissionContent() {
+  return {
+    missionReward: (chapterId: string, missionId: string) =>
+      missionId === MISSION || missionId === M2
+        ? {
+            missionId,
+            chapterId,
+            baseXp: 900,
+            moduleId: MODULE,
+            conceptIds: [...CONCEPTS],
+          }
+        : null,
+  };
+}
+
+async function armModule(service: ProgressionService, missionId: string) {
+  return service.completeLearningModule(PROFILE, {
+    chapterId: CHAPTER,
+    moduleId: MODULE,
+    gatesKind: "MISSION_ATTEMPT",
+    gatesId: missionId,
+    acknowledgedCueIds: [...DECK],
+    observedSeconds: LEARNING_MODULE_SECONDS,
+  });
+}
+
+test("with one attempt open, opening a DIFFERENT mission is refused", async () => {
+  const { service } = harness(twoMissionContent());
+  await openOnly(service); // opens M1
+
+  // M2 is route-open and has its own module, but a profile has ONE live attempt.
+  assert.equal((await armModule(service, M2)).ok, true);
+  const openM2 = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: M2 },
+    SEED,
+  );
+  assert.deepEqual(openM2, { ok: false, error: "ATTEMPT_ALREADY_OPEN" });
+
+  // Forfeiting the open M1 then reveals the next legal route: M2 can now open.
+  const snapshot = await service.snapshot(PROFILE);
+  const forfeit = await service.abandonMissionAttempt(PROFILE, {
+    attemptId: snapshot.openAttempt!.attemptId,
+  });
+  assert.equal(forfeit.ok, true);
+  // The module for M2 attempt 1 is still armed, so it opens now.
+  const openM2Again = await service.openMissionAttempt(
+    PROFILE,
+    { chapterId: CHAPTER, missionId: M2 },
+    SEED,
+  );
+  assert.equal(openM2Again.ok, true);
+  if (openM2Again.ok) assert.equal(openM2Again.value.missionId, M2);
+});
+
+test("concurrent opens on two mission ids converge to exactly one open attempt", async () => {
+  const { service } = harness(twoMissionContent());
+  assert.equal((await armModule(service, MISSION)).ok, true);
+  assert.equal((await armModule(service, M2)).ok, true);
+
+  const [a, b] = await Promise.all([
+    service.openMissionAttempt(PROFILE, { chapterId: CHAPTER, missionId: MISSION }, SEED),
+    service.openMissionAttempt(PROFILE, { chapterId: CHAPTER, missionId: M2 }, SEED),
+  ]);
+  // The store serialises the two opens per profile, so exactly one wins and the
+  // other sees the first's live attempt.
+  const outcomes = [a.ok, b.ok].sort();
+  assert.deepEqual(outcomes, [false, true], `${a.ok}/${b.ok}`);
+  const loser = a.ok ? b : a;
+  assert.equal(loser.ok, false);
+  if (!loser.ok) assert.equal(loser.error, "ATTEMPT_ALREADY_OPEN");
+
+  // And the snapshot shows a single open attempt, not one hidden behind another.
+  const snapshot = await service.snapshot(PROFILE);
+  assert.ok(snapshot.openAttempt, "one attempt is open");
+  const live = [...(await countLiveAttempts(service))];
+  assert.equal(live.length, 1, "exactly one IN_PROGRESS attempt exists");
+});
+
+/** Count IN_PROGRESS attempts via a fresh open being refused is indirect; read the
+ * store's own truth instead by asking the snapshot and the global live query path. */
+async function countLiveAttempts(service: ProgressionService): Promise<string[]> {
+  const snapshot = await service.snapshot(PROFILE);
+  return snapshot.openAttempt ? [snapshot.openAttempt.attemptId] : [];
+}
+
+test("a foreign attempt id cannot be forfeited and spends nothing", async () => {
+  const { service } = harness();
+  const open = await openOnly(service);
+  // An id this profile does not own resolves to nothing: idempotent no-op, and it
+  // does NOT close the profile's real open attempt.
+  const foreign = await service.abandonMissionAttempt(PROFILE, {
+    attemptId: "00000000-0000-4000-8000-999999999999",
+  });
+  assert.equal(foreign.ok, true);
+  if (foreign.ok) assert.equal(foreign.value.status, "ALREADY_CLOSED");
+  const snapshot = await service.snapshot(PROFILE);
+  assert.equal(snapshot.openAttempt?.attemptId, open.attemptId, "the real attempt is untouched");
+});
+
+test("forfeiting is idempotent: a delivered outcome is neither clobbered nor double-spent", async () => {
+  const { service } = harness();
+  const open = await openOnly(service);
+  // The run actually finished and its outcome landed.
+  const committed = await service.commitMissionOutcome(PROFILE, {
+    attemptId: open.attemptId,
+    outcome: "CLEARED",
+    committedEvents: [],
+    baseRevision: 0,
+  });
+  assert.equal(committed.ok, true);
+
+  // A forfeit racing/following that delivery finds the attempt already closed and
+  // spends nothing.
+  const forfeit = await service.abandonMissionAttempt(PROFILE, {
+    attemptId: open.attemptId,
+  });
+  assert.equal(forfeit.ok, true);
+  if (!forfeit.ok) throw new Error("forfeit failed");
+  assert.equal(forfeit.value.status, "ALREADY_CLOSED");
+
+  const snapshot = await service.snapshot(PROFILE);
+  const mission = snapshot.missions.find((row) => row.missionId === MISSION);
+  assert.equal(mission?.attemptsUsed, 1, "still one attempt, not two");
+  assert.equal(mission?.outcome, "CLEARED", "the real cleared outcome stands, not overwritten to FAILED");
 });

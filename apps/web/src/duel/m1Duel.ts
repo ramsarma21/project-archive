@@ -12,7 +12,7 @@
 // Level 0 and has unlocked no abilities at all, so the loadout is empty and the duel
 // is decided entirely by knowledge and movement.
 
-import { bossProfileForTier, projectFieldSeed, type BossTier } from "@pa/duel";
+import { bossProfileForTier, M1_BOSS_TACTICS, projectFieldSeed, type BossTier } from "@pa/duel";
 import { yardArena } from "./arenaSpec.js";
 import { m1QuestionBank } from "./duelItems.js";
 import type { DuelDescriptor } from "./DuelScreen.js";
@@ -41,7 +41,19 @@ export function m1DuelDescriptor(options: M1DuelOptions = {}): DuelDescriptor {
     arena,
     opponent: {
       kind: "BOSS",
-      profile: bossProfileForTier(options.tier ?? 1, M1_BOSS_ID),
+      // M1's officer is the symmetric-complement boss: a correct answer arms him
+      // with 7 balls and a wrong one with 14, the mirror of the player's own
+      // award (BossAmmoPolicy / complementaryBossBullets in @pa/duel). He also
+      // physically breaks off behind yard cover and crouches before each question,
+      // rather than freezing in the open while the overlay opens — and he now
+      // fights to an ammo-aware tactical plan (M1_BOSS_TACTICS): armed he trades in
+      // the open, low he peeks from cover, and out of ammo he ducks behind imported
+      // cover and holds instead of standing exposed. See @pa/duel bossAi.ts.
+      profile: bossProfileForTier(options.tier ?? 1, M1_BOSS_ID, {
+        ammoPolicy: "SYMMETRIC_COMPLEMENT",
+        takesCoverBeforeQuestion: true,
+        tactical: M1_BOSS_TACTICS,
+      }),
     },
     questionBank: m1QuestionBank(),
     playerLoadout: [],

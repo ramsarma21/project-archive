@@ -25,7 +25,11 @@
 // once at import time, exactly as it does for the mission registry.
 
 import type { ComponentType } from "react";
+import type { OpponentSighting } from "./arenaFeed.js";
 import type { MatchSnapshot } from "./protocol.js";
+
+/** The presented sighting state a renderer reports up for the HUD to read. */
+export type PresentedSighting = OpponentSighting["kind"];
 
 export interface PvpArenaViewProps {
   /** The most recent authoritative snapshot. The only source of truth to draw. */
@@ -39,6 +43,18 @@ export interface PvpArenaViewProps {
   readonly onAim: (x: number, z: number) => void;
   /** Camera yaw, so movement stays camera-relative like every other mode. */
   readonly onCameraYaw: (yaw: number) => void;
+  /**
+   * Bind gameplay pointer input to the canvas the renderer owns. The renderer is the
+   * only layer that has the canvas element, so the session hands the binding down and
+   * the renderer wires it to `gl.domElement`. Returns the detach.
+   */
+  readonly bindInput: (canvas: HTMLElement) => () => void;
+  /**
+   * The PRESENTED opponent sighting, reported up when it changes. The HUD's "lost sight"
+   * warning must read this — the delayed sample the body is drawn from — not the newest
+   * raw snapshot, or the banner flips a render delay before the body it describes moves.
+   */
+  readonly onOpponentSighting?: (kind: PresentedSighting) => void;
 }
 
 export type PvpArenaView = ComponentType<PvpArenaViewProps>;

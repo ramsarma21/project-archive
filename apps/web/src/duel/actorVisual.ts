@@ -10,6 +10,7 @@ import { FIELD_TICK_HZ } from "@pa/duel";
 import type { DuelPhase } from "@pa/duel";
 import {
   AIM_RUN_THRESHOLD_MPS,
+  DUEL_ONE_SHOT_ROLES,
   FIRE_RECOIL_SECONDS,
   HIT_FLINCH_SECONDS,
   drawStartsAtSecond,
@@ -102,4 +103,106 @@ export function selectActorVisual(input: ActorVisualInput): ActorVisual {
 
 function withinTicks(tick: number, since: number, window: number): boolean {
   return since >= 0 && tick - since < window && tick >= since;
+}
+
+// ---- animation-state stabilization -----------------------------------------
+//
+// `selectActorVisual` is a PURE snapshot: given a speed and a stance it names a role.
+// Fed raw per-frame numbers that is exactly right for the truth of the state, and
+// exactly wrong for what the body should LOOK like, because two adjacent frames whose
+// speed straddles a threshold pick different roles and the mixer crossfades every one.
+// For a remote opponent the speed is a discrete per-snapshot velocity that steps ~20
+// times a second, and for a boss it can dither around the walk/run line — either way
+// the body flickers between aim, aimWalk and aimRun even while it slides smoothly.
+//
+// The stabilizer is the small amount of PRESENTATION STATE that fixes this without
+// touching what is drawn WHERE (position and yaw are still the authoritative,
+// interpolated transform). It does two things: it smooths the speed the animation
+// reads, so the walk/run choice and the playback rate follow real motion rather than
+// raw velocity; and it debounces role changes AMONG the steady locomotion/stance
+// states with a short dwell, so a momentary threshold cross does not commit. Event
+// roles — a shot, a hit, a roll, a death, the draw — are never debounced: they must
+// read on the frame they happen.
+
+/** Roles chosen from continuous speed/stance, and therefore able to flicker. */
+const STEADY_ROLES: ReadonlySet<DuelClipRole> = new Set<DuelClipRole>([
+  "aim",
+  "aimWalk",
+  "aimRun",
+  "crouchIdle",
+  "crouchWalk",
+]);
+
+/** Time constant for the speed the animation reads, seconds. Short: a fifth of a stride. */
+export const VISUAL_SPEED_SMOOTH_TAU_S = 0.09;
+/** How long a new steady-state role must persist before it commits, seconds. */
+export const VISUAL_ROLE_DWELL_S = 0.12;
+
+export interface VisualStabilizer {
+  smoothedSpeed: number;
+  role: DuelClipRole | null;
+  candidate: DuelClipRole | null;
+  candidateForS: number;
+  primed: boolean;
+}
+
+export function createVisualStabilizer(): VisualStabilizer {
+  return { smoothedSpeed: 0, role: null, candidate: null, candidateForS: 0, primed: false };
+}
+
+/**
+ * Stabilize a body's visual across frames: smooth the animation-read speed and debounce
+ * steady-state role churn. Mutates `state` and returns the role to draw this frame. The
+ * returned `speedMps` is the SMOOTHED value the mixer should time itself against, so a
+ * stride does not stutter when the raw velocity steps.
+ */
+export function stabilizeActorVisual(
+  state: VisualStabilizer,
+  input: ActorVisualInput,
+  dtS: number,
+): ActorVisual {
+  const dt = Math.max(0, dtS);
+  if (!state.primed) {
+    state.smoothedSpeed = input.speedMps;
+  } else {
+    const k = dt > 0 ? Math.min(1, dt / VISUAL_SPEED_SMOOTH_TAU_S) : 0;
+    state.smoothedSpeed += (input.speedMps - state.smoothedSpeed) * k;
+  }
+
+  const candidate = selectActorVisual({ ...input, speedMps: state.smoothedSpeed });
+
+  // Debounce only when moving BETWEEN two steady states; an event role, or leaving one
+  // for locomotion, commits immediately.
+  const debounce =
+    state.primed &&
+    state.role !== null &&
+    STEADY_ROLES.has(state.role) &&
+    STEADY_ROLES.has(candidate.role);
+
+  if (!state.primed || !debounce || candidate.role === state.role) {
+    state.role = candidate.role;
+    state.candidate = null;
+    state.candidateForS = 0;
+    state.primed = true;
+  } else if (state.candidate === candidate.role) {
+    state.candidateForS += dt;
+    if (state.candidateForS >= VISUAL_ROLE_DWELL_S) {
+      state.role = candidate.role;
+      state.candidate = null;
+      state.candidateForS = 0;
+    }
+  } else {
+    state.candidate = candidate.role;
+    state.candidateForS = 0;
+  }
+
+  // Non-null after the block: the first-ever call takes the `!state.primed` branch,
+  // which always commits a role; the fallback keeps the type honest regardless.
+  const role = state.role ?? candidate.role;
+  return {
+    role,
+    loopOnce: DUEL_ONE_SHOT_ROLES.has(role),
+    speedMps: state.smoothedSpeed,
+    backpedalling: candidate.backpedalling,
+  };
 }

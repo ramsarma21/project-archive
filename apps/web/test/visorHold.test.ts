@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { FIELD_DT } from "@pa/engine-world";
+import { FIELD_DT, FIELD_TICK_HZ } from "@pa/engine-world";
+import { precisionBeatSpec } from "@pa/mission-m1";
 import { M1_MISSION_ID, m1Instance } from "../src/chapter/m1Mission.js";
 import { initialMissionSession, reduceMission } from "../src/mission/session.js";
 import {
@@ -261,4 +262,126 @@ test("the destination is named inside the frame the hold is anchored to", () => 
     elevationDeg > 0 && elevationDeg < 20,
     `the name sits ${elevationDeg.toFixed(1)}° above the player's own footing, which is outside the frame`,
   );
+});
+
+// ---------------------------------------------------------------------------
+// The harness must not be a different product from the game.
+//
+// This is written against a real and expensive failure. `floor.html` mounted the
+// canvas directly, with no BRIEFING phase and no visor, and because the API has
+// been down it is the surface the mission has actually been played on. So the
+// one build everybody was judging onboarding by was the one build that had none,
+// and "the game never tells you anything" was a true report about a false thing.
+//
+// A dev harness is allowed to skip the module gate, the attempt ledger and the
+// account service. It is not allowed to skip the first thing a player sees.
+// ---------------------------------------------------------------------------
+
+test("the floor harness opens on the visor, the way the container does", () => {
+  const harness = readFileSync(
+    new URL("../src/mission/devEntry.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    harness,
+    /<VisorHold\b/,
+    "the harness must hold the visor before the run, or it is testing a game nobody ships",
+  );
+  // And the run must not exist behind it: a runtime built during the hold is a
+  // mission clock already counting while the player reads their briefing.
+  assert.match(
+    harness,
+    /held \? null : createMissionRuntime/,
+    "the runtime is built on release, so the three minutes cannot start early",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// The stroke count the player is told is the count the runtime judges.
+//
+// The beat was retuned from a five/six-stroke chart to thirteen judged strokes
+// over three rising bars, and two player-facing surfaces kept the old figure:
+// the visor briefing said "Six strokes, in rhythm" and the HUD read-line said
+// "Six strokes. Off the beat is loud." Both are a lie about the one mechanical
+// skill the mission has. The chart is authoritative, so the briefing reads its
+// count off `precisionBeatSpec().chart` and the generic HUD carries no count at
+// all — the live figure is the kicker's, and the kicker is the runtime's.
+// ---------------------------------------------------------------------------
+
+test("the elm briefing derives every figure from the chart, distinguishing total from judged", () => {
+  const chart = precisionBeatSpec().chart;
+  const bars = chart.phases.reduce((total, phase) => total + phase.bars, 0);
+  const durationS = chart.spanTicks / FIELD_TICK_HZ;
+  // The retune's own numbers, so a chart edit that did not update the briefing is
+  // caught rather than shipped as a confident wrong figure.
+  assert.equal(chart.strikes, 14, "fourteen strikes total");
+  assert.equal(chart.judgedBeats, 13, "thirteen of them judged; the opening starts the chart");
+  assert.notEqual(chart.strikes, chart.judgedBeats, "total and judged are different numbers");
+
+  const detail = m1VisorSource().destination.detail;
+  // Behavioural, not a source scan: the copy the function RETURNS must carry the
+  // values the chart computes, so a hard-coded string would fail the moment the
+  // chart's numbers and the briefing's disagreed.
+  assert.match(
+    detail,
+    new RegExp(`\\b${chart.strikes}\\b`),
+    `the briefing must state the ${chart.strikes} strikes total; got "${detail}"`,
+  );
+  assert.match(
+    detail,
+    new RegExp(`\\b${chart.judgedBeats}\\b`),
+    `and the ${chart.judgedBeats} that are judged; got "${detail}"`,
+  );
+  assert.match(
+    detail,
+    new RegExp(`\\b${bars}\\b`),
+    `and the ${bars} bars of the phrase; got "${detail}"`,
+  );
+  assert.match(
+    detail,
+    new RegExp(durationS.toFixed(1).replace(".", "\\.")),
+    `and the ~${durationS.toFixed(1)}s the chart runs; got "${detail}"`,
+  );
+  // The two words that make the distinction explicit rather than leaving the
+  // player to guess which of 14 and 13 is which.
+  assert.match(detail, /total/i, `the briefing must name the total explicitly; got "${detail}"`);
+  assert.match(detail, /judged/i, `and the judged count explicitly; got "${detail}"`);
+  assert.doesNotMatch(
+    detail,
+    /\bsix\b/i,
+    `the briefing still carries the retired six-stroke figure: "${detail}"`,
+  );
+});
+
+test("the generic beat HUD states no mission-specific stroke count of its own", () => {
+  // MissionHud hosts whatever beat a level authors, so a hard-coded count in it
+  // is wrong for every mission but the one it was typed for. The live count is
+  // the kicker's `struck of struck+remaining`, which is the runtime's; the
+  // read-line must not restate a constant that can go stale — as "Six strokes"
+  // did after the chart grew to thirteen.
+  const hud = readFileSync(
+    new URL("../src/mission/MissionHud.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(
+    hud,
+    /Six strokes/,
+    "the HUD still carries the retired six-stroke read-line",
+  );
+  assert.match(
+    hud,
+    /beat\.struck \+ beat\.remaining/,
+    "the only stroke count the HUD prints must come from the runtime presentation",
+  );
+});
+
+test("the container and the harness ask the same question about who gets taught", () => {
+  // One policy for "does this attempt teach", asked rather than duplicated.
+  const container = readFileSync(
+    new URL("../src/mission/MissionRun.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(container, /visorHoldsBriefing\(/);
+  assert.equal(visorHoldsBriefing(1), true, "a first attempt is held");
+  assert.equal(visorHoldsBriefing(2), false, "a retry is not shown the map again");
 });

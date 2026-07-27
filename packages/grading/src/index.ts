@@ -31,6 +31,11 @@ export {
 } from "./items/m1.js";
 export { toAuthoredPools, type ContentBank } from "./items/port.js";
 export {
+  m1EncounterBank,
+  resetM1EncounterBankCache,
+  M1_ENCOUNTER_POOLS,
+} from "./items/encounters.js";
+export {
   buildEvalSet,
   authoredCases,
   runEval,

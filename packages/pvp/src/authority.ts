@@ -19,6 +19,7 @@
 // result can be recomputed by anyone, including an auditor who trusts neither client.
 
 import {
+  DUEL_ROUND_CEILING,
   answeringSides,
   createDuel,
   duelOutcome,
@@ -118,6 +119,24 @@ export interface PvpAuthority {
    */
   readonly heldIntents: BySide<CombatIntent>;
   readonly lastIntentAtMs: BySide<number>;
+  /**
+   * The last moment each side was PRESENT — proved by ANY authenticated contact
+   * with the match, not only by an intent frame. A poll that reads a snapshot, an
+   * answer POST and an intent batch all count; a side is "connected" whenever it is
+   * making requests, whatever phase it is in.
+   *
+   * THIS EXISTS BECAUSE LIVENESS AND INPUT ARE DIFFERENT QUESTIONS. `lastIntentAtMs`
+   * only advances when a frame is accepted, and a client sends no frames while it is
+   * answering an untimed question (movement is suspended) or while it waits on the
+   * opponent. So a fully-connected client that is polling the whole time goes "silent"
+   * on intents alone the moment a question outlasts the grace window — and when combat
+   * resumes, the side that started moving again refreshes its intent clock while the
+   * side still reading does not, which is exactly one silent side and a spurious
+   * DISCONNECTED forfeit of a player who never left. `silentSides` measures presence,
+   * so a client that is talking to the server at all is never forfeited as gone; a
+   * client that has genuinely stopped making requests still is.
+   */
+  readonly lastSeenAtMs: BySide<number>;
   readonly forfeit: { readonly side: DuelSide; readonly reason: ForfeitReason } | null;
   /** Audit trail: which rounds each side has had a verdict committed for. */
   readonly verdictRounds: BySide<readonly number[]>;
@@ -126,6 +145,21 @@ export interface PvpAuthority {
 
 /** How long a side may go silent before the server may forfeit it. */
 export const DISCONNECT_GRACE_MS = 12_000;
+
+/**
+ * How long a side may go silent before its held intent stops repeating.
+ *
+ * The authority holds the last accepted intent per side and replays it every tick,
+ * so ONE dropped packet keeps a player moving rather than freezing them dead — the
+ * kinder failure. But a side quiet for seconds is not dropping a packet, it is gone,
+ * and replaying "sprint north into a wall" (or holding fire) until the disconnect
+ * grace elapses spends its last seconds doing something the player never asked for,
+ * and hands the opponent a target that is still walking. So the held intent DECAYS to
+ * idle well before the grace window forfeits: the body stops, and if the silence
+ * continues the forfeit follows as before. Shorter than DISCONNECT_GRACE_MS on
+ * purpose — decay first, forfeit later.
+ */
+export const INTENT_DECAY_MS = 2_000;
 
 export interface CreatePvpMatchInput {
   readonly identity: MatchIdentity;
@@ -156,6 +190,24 @@ export type CreateMatchResult =
  * cannot carry more than single-player does.
  */
 export function createPvpMatch(input: CreatePvpMatchInput): CreateMatchResult {
+  // A round OVERRIDE must never invalidate the protocol/presentation bounds derived from
+  // DUEL_ROUND_CEILING (the feed's cue capacity, the wire's tick range). Reject a ceiling
+  // above the authoritative one, and reject a malformed count outright rather than letting
+  // createDuel coerce it — a silent clamp would let a caller quietly move the ceiling the
+  // rest of the system trusts. The live default (no override) is untouched: createDuel is
+  // handed nothing and uses DUEL_ROUND_CEILING itself.
+  if (input.rounds !== undefined) {
+    if (!Number.isInteger(input.rounds) || input.rounds <= 0) {
+      return { ok: false, reason: `rounds must be a positive integer, got ${input.rounds}` };
+    }
+    if (input.rounds > DUEL_ROUND_CEILING) {
+      return {
+        ok: false,
+        reason: `rounds ${input.rounds} exceeds the duel round ceiling of ${DUEL_ROUND_CEILING}`,
+      };
+    }
+  }
+
   const rounds = input.rounds ?? input.questions.length;
   if (input.questions.length < rounds) {
     return {
@@ -211,6 +263,7 @@ export function createPvpMatch(input: CreatePvpMatchInput): CreateMatchResult {
       intentWindows: { A: EMPTY_INTENT_WINDOW, B: EMPTY_INTENT_WINDOW },
       heldIntents: { A: IDLE_INTENT, B: IDLE_INTENT },
       lastIntentAtMs: { A: input.identity.startedAtMs, B: input.identity.startedAtMs },
+      lastSeenAtMs: { A: input.identity.startedAtMs, B: input.identity.startedAtMs },
       forfeit: null,
       verdictRounds: { A: [], B: [] },
       log: created.events,
@@ -265,8 +318,57 @@ export function ingestIntent(
       heldIntents: withSide(authority.heldIntents, side, acceptance.intent),
       // Any accepted frame is proof of life, which is what the grace window measures.
       lastIntentAtMs: withSide(authority.lastIntentAtMs, side, nowMs),
+      // An intent is also contact, so it refreshes presence — this keeps a
+      // purely-intent-driven consumer (netcode's session) alive under `silentSides`
+      // without having to call `markSeen` separately.
+      lastSeenAtMs: withSide(authority.lastSeenAtMs, side, nowMs),
     },
   };
+}
+
+/**
+ * Record that a side is PRESENT right now, from any authenticated contact with the
+ * match — a snapshot poll, an answer, an intent batch. This is the liveness signal
+ * `silentSides` measures, kept separate from `lastIntentAtMs` (which is input, and
+ * legitimately goes quiet during an untimed question). A resolved match is left
+ * untouched: presence only matters while there is a fight to forfeit.
+ */
+export function markSeen(
+  authority: PvpAuthority,
+  side: DuelSide,
+  nowMs: number,
+): PvpAuthority {
+  if (authority.phase !== "LIVE") return authority;
+  if (nowMs <= authority.lastSeenAtMs[side]) return authority;
+  return { ...authority, lastSeenAtMs: withSide(authority.lastSeenAtMs, side, nowMs) };
+}
+
+/**
+ * Idle any side that has gone silent past `decayMs`.
+ *
+ * Pure, and meant to be called once per pump before advancing. A side answering an
+ * untimed question is not silent — the same guard `silentSides` applies — so a player
+ * thinking about a question never has their movement zeroed out from under them. A
+ * side already idle is left untouched, so this is a no-op on a healthy match.
+ */
+export function decayHeldIntents(
+  authority: PvpAuthority,
+  nowMs: number,
+  decayMs = INTENT_DECAY_MS,
+): PvpAuthority {
+  if (authority.phase !== "LIVE") return authority;
+  if (isAwaitingVerdict(authority.state)) return authority;
+  let heldIntents = authority.heldIntents;
+  for (const side of ["A", "B"] as const) {
+    if (
+      heldIntents[side] !== IDLE_INTENT &&
+      nowMs - authority.lastIntentAtMs[side] > decayMs
+    ) {
+      heldIntents = withSide(heldIntents, side, IDLE_INTENT);
+    }
+  }
+  if (heldIntents === authority.heldIntents) return authority;
+  return { ...authority, heldIntents };
 }
 
 // ---- verdicts --------------------------------------------------------------
@@ -465,8 +567,17 @@ export function silentSides(
   // A player thinking about an untimed question is not silent, they are answering, so
   // the grace window does not run while the machine is waiting on verdicts.
   if (isAwaitingVerdict(authority.state)) return [];
+  // Silence is measured on PRESENCE, not on input. A side that is polling the match —
+  // reading snapshots through an untimed question, then still reading while combat
+  // resumes — is connected even though it has sent no intent frame, and forfeiting it
+  // as DISCONNECTED is the bug this guards against. `lastIntentAtMs` legitimately goes
+  // quiet during a question; the last of it and `lastSeenAtMs` is the true "last heard
+  // from this side", and only a side that has sent NOTHING at all past the grace is
+  // gone. `ingestIntent` refreshes both, so an intent-only consumer is covered too.
   return (["A", "B"] as const).filter(
-    (side) => nowMs - authority.lastIntentAtMs[side] > graceMs,
+    (side) =>
+      nowMs - Math.max(authority.lastIntentAtMs[side], authority.lastSeenAtMs[side]) >
+      graceMs,
   );
 }
 

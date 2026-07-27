@@ -8,6 +8,7 @@ import {
   attachMissionInput,
   createMissionInputState,
 } from "../mission/missionInput.js";
+import { createMissionLookState } from "../mission/missionLook.js";
 import {
   createMissionRuntime,
   disposeMissionRuntime,
@@ -81,6 +82,13 @@ function Harness() {
     return () => disposeMissionRuntime(runtime);
   }, [runtime]);
 
+  // Aimed the way the level spawns the player, so the frame after the visor
+  // lifts is the frame the hold was composed against.
+  const lookState = useMemo(
+    () => createMissionLookState(instance.spawn.yaw),
+    [instance],
+  );
+
   useEffect(() => {
     if (!released) return undefined;
     return attachMissionInput(input);
@@ -125,6 +133,7 @@ function Harness() {
       <MissionStage
         runtime={runtime}
         input={input}
+        lookState={lookState}
         reducedMotion={reducedMotion}
         paused={outcome !== null}
         onResolved={setOutcome}

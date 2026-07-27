@@ -35,7 +35,7 @@ import { MemoryVerdictCache } from "../cache.js";
 import type { ClassifierProvider, ProviderResult } from "../provider.js";
 
 const bank = m1ItemBank();
-// A single-core item, which is seventeen of the eighteen in the production bank.
+// A single-core item, which is twelve of the eighteen in the production bank.
 const ITEM = "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1";
 const CARRIED = { ideas: { i1: true }, answers: true, confidence: "HIGH" };
 const MISSED = { ideas: { i1: false }, answers: true, confidence: "HIGH" };

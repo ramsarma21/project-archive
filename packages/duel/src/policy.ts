@@ -30,6 +30,7 @@ import {
   fieldRandom,
 } from "./engine.js";
 import type { BossProfile } from "./boss.js";
+import type { CoverPoint } from "./cover.js";
 import { BULLET_SPEED_MPS } from "./tuning.js";
 
 // ---- ballistics ------------------------------------------------------------
@@ -217,6 +218,42 @@ export function oracleIntent(
   });
 }
 
+// ---- the boss breaking off to cover -----------------------------------------
+
+/** Close enough to a cover point that crouching there breaks the sightline. */
+export const COVER_ARRIVE_RADIUS_M = 0.4;
+
+/**
+ * One tick of "get behind that crate and get down", for the between-round break.
+ *
+ * It is not `bossIntent` with the fire filed off: the boss is deliberately
+ * DISENGAGING to reload out of sight, so it never fires here, and it crouches the
+ * moment it arrives because the crouch is what actually occludes the sightline
+ * (see cover.ts). It keeps facing the player so the retreat reads as a fighting
+ * withdrawal and the exit lean is already aimed the right way. Pure and
+ * deterministic: the only inputs are the view and the chosen point.
+ */
+export function coverApproachIntent(
+  view: CombatView,
+  target: CoverPoint,
+): CombatIntent {
+  const face = towards(view.self, view.opponent);
+  const dx = target.x - view.self.motion.pos.x;
+  const dz = target.z - view.self.motion.pos.z;
+  const distance = Math.hypot(dx, dz);
+  if (distance <= COVER_ARRIVE_RADIUS_M) {
+    // Arrived: drop into cover and hold. No fire — this is the reload break.
+    return intent({ moveX: 0, moveZ: 0, crouch: true, aimX: face.x, aimZ: face.z });
+  }
+  return intent({
+    moveX: dx / distance,
+    moveZ: dz / distance,
+    sprint: true,
+    aimX: face.x,
+    aimZ: face.z,
+  });
+}
+
 // ---- the boss ---------------------------------------------------------------
 
 const SALT_AIM = 101;
@@ -232,7 +269,23 @@ export function bossIntent(
   profile: BossProfile,
   view: CombatView,
   seed: number,
+  /**
+   * The line-of-sight value the boss's MOVEMENT decision should use, when the
+   * caller has a debounced one. Defaults to the raw per-tick `view.hasLineOfSight`,
+   * so a stateless call is identical to before; `bossAi.ts` passes a
+   * hysteresis-filtered value so a player bobbing crouch behind cover cannot flap
+   * the boss's movement branch (charge-vs-strafe) every tick — the visible-jitter
+   * half of the LOS-flap symptom.
+   *
+   * IT DELIBERATELY DOES NOT MOVE THE FIRING DECISION. `canShoot` below stays on
+   * the RAW line of sight, so the boss still never feeds a wall a ball and still
+   * fires the instant the true line is open. That keeps shot outcomes — and so the
+   * measured winnability — byte-identical to before; only the boss's PATH is
+   * steadied.
+   */
+  losForMovement?: boolean,
 ): CombatIntent {
+  const moveLos = losForMovement ?? view.hasLineOfSight;
   const perfect =
     solveInterceptDirection(
       view.self.motion.pos,
@@ -261,6 +314,12 @@ export function bossIntent(
   // The roll is keyed on the ball, not the tick, so `dodgeChance` is genuinely
   // "the fraction of shots this boss slips". Rolling per tick would compound into
   // near-certainty over a ball's flight and make high tiers unhittable.
+  //
+  // A dodge is the ONE branch that legitimately drops fire while the boss still
+  // holds ammo, and it is bounded twice over — the engine refuses fire mid-dodge
+  // anyway (FIRE_WHILE_DODGING is false), and the burst plus its cooldown put a
+  // finite, seeded ceiling on how long it lasts. Every other branch below keeps
+  // firing whenever it can.
   if (
     threat &&
     canDodge &&
@@ -276,18 +335,42 @@ export function bossIntent(
     });
   }
 
+  // THE FIRING INVARIANT. With ammo in the pistol, a clear line to the target and
+  // a live target, the boss fires THIS TICK — and this flag is carried onto every
+  // movement branch below, defensive ones included. So the boss never stands with a
+  // loaded pistol and an open shot, which is exactly the "randomly stops shooting"
+  // the symmetric-complement boss is forbidden to do. The only states in which it
+  // does not fire are ones where firing would be a lie or a waste: out of ammo (it
+  // has spent its awarded magazine and truthfully awaits the next round's grant),
+  // no line of sight (the ball would only feed a wall), or mid-dodge (handled
+  // above, and bounded). It never idles indefinitely while alive, in combat, with
+  // ammo and a target — the cadence is `fireIntervalTicks`, enforced in
+  // `resolveFiring`, so "bounded cadence" is the engine's, not a second clock here.
+  // The firing gate is the RAW line of sight, always: fire ends up equivalent to
+  // "ammo, a true clear line, and not mid-dodge" in every branch below, exactly as
+  // it was before movement gained hysteresis.
+  const canShoot = view.self.ammo > 0 && view.hasLineOfSight;
+
   const healthFraction = view.self.health / profile.maxHealth;
   const wantsCover =
     view.self.ammo === 0 || healthFraction < profile.coverSeekHealthFraction;
   if (wantsCover) {
     const cover = directionToCover(view);
     if (cover) {
-      return intent({ moveX: cover.x, moveZ: cover.z, sprint: true, aimX, aimZ });
+      // Cover discipline is DEFENSIVE MOVEMENT, not a firing halt: a wounded boss
+      // backs toward cover while still trading shots whenever the line is open. It
+      // stops firing only once cover actually breaks the line (`canShoot` is false
+      // without LOS) or the magazine is empty, both of which are honest reasons.
+      return intent({ moveX: cover.x, moveZ: cover.z, sprint: true, fire: canShoot, aimX, aimZ });
     }
   }
 
-  if (!view.hasLineOfSight) {
-    return intent({ moveX: direct.x, moveZ: direct.z, sprint: true, aimX, aimZ });
+  if (!moveLos) {
+    // No (steady) line: close the distance to reopen it rather than stand in the
+    // open. `fire: canShoot` is carried so that if the RAW line is momentarily open
+    // during the approach the boss still takes the shot — firing tracks the true
+    // line, only the movement branch is debounced.
+    return intent({ moveX: direct.x, moveZ: direct.z, sprint: true, fire: canShoot, aimX, aimZ });
   }
 
   const phase = Math.floor(view.tick / profile.strafePeriodTicks);
@@ -298,7 +381,7 @@ export function bossIntent(
   return intent({
     moveX: strafeX + direct.x * closing,
     moveZ: strafeZ + direct.z * closing,
-    fire: view.self.ammo > 0,
+    fire: canShoot,
     aimX,
     aimZ,
   });

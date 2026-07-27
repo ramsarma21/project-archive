@@ -46,6 +46,7 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getSessionUser } from "../auth.js";
+import { effectiveSessionId } from "../devSession.js";
 import { validAssessmentMutationRequest } from "../assessment/requestPolicy.js";
 import type { VerdictEnvelope } from "@pa/grading";
 import {
@@ -55,8 +56,41 @@ import {
 } from "../duels/grading.js";
 import { parseDuelRound, parseDuelVerdictRequest } from "../duels/request.js";
 import { receiptEnforcement } from "../duels/commitReceipts.js";
+import type { DuelVerdictStore } from "../duels/verdictStore.js";
+import { evaluateEvidence, m1EvidencePolicyFor } from "../duels/evidence.js";
+import { M1_CODEX_CARD_IDS } from "@pa/mission-m1";
 
 const SESSION_COOKIE = "pa_session";
+
+/**
+ * The open progression attempt a duel is bound to, as the route needs it.
+ *
+ * Resolved from the authenticated profile's own progression, never from the
+ * request: the duel id, the round's item and the receipt binding are all derived
+ * from THIS, so a client cannot name a different attempt to be graded against.
+ */
+export interface DuelAttempt {
+  readonly attemptId: string;
+  readonly attemptOrdinal: number;
+  readonly attemptSeedHex: string;
+  readonly missionId: string;
+  readonly chapterId: string;
+}
+
+export type DuelAttemptResolver = (
+  profileId: string,
+) => Promise<DuelAttempt | null>;
+
+/**
+ * The server's own answer to "which duel is this attempt, and what does round N
+ * ask". Both are computed from the stored attempt seed and ordinal by the same
+ * algorithm the client runs (see @pa/mission-m1), so the server can grade the item
+ * the round actually asks and refuse a duel id that is not the attempt's own.
+ */
+export interface DuelQuestionAuthority {
+  duelId(attempt: DuelAttempt): string;
+  expectedItemId(attempt: DuelAttempt, round: number): string;
+}
 
 /** A duel id is an HMAC input and a log field. Bounded like every other id. */
 const MAX_DUEL_ID_CHARS = 200;
@@ -85,18 +119,44 @@ export function duelVerdictBody(
 export interface DuelRouteOptions extends DuelGradingOptions {
   /** Prebuilt grading, for tests and for sharing one service across routes. */
   readonly grading?: DuelGrading;
+  /** The authenticated profile's current open progression attempt. */
+  readonly resolveAttempt?: DuelAttemptResolver;
+  /** The server's canonical duel id and per-round item for that attempt. */
+  readonly questionAuthority?: DuelQuestionAuthority;
+  /** The first-answer ledger. A key grades once and is returned verbatim after. */
+  readonly verdictStore?: DuelVerdictStore;
+  /**
+   * The Codex cards the boss-duel player is entitled to place as evidence. Defaults
+   * to the full nine-card M1 deck: the boss is the mission capstone, so a player who
+   * has reached it holds them all, and the offered hand is drawn from exactly this
+   * deck. Injected so a test can restrict it and exercise the UNAUTHORIZED path.
+   */
+  readonly evidenceAuthorizedCardIds?: readonly string[];
+  /**
+   * The session resolver. Defaults to the real cookie-backed one; injected by
+   * route tests so the attempt/verdict authority can be exercised without a DB —
+   * exactly as the PvP routes take an `authenticate`.
+   */
+  readonly authenticate?: (
+    sessionId: string | undefined,
+  ) => Promise<{ profileId: string } | null>;
 }
 
-async function requireOwner(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<{ profileId: string } | null> {
-  const user = await getSessionUser(request.cookies[SESSION_COOKIE]);
-  if (!user) {
-    await reply.code(401).send({ error: "AUTH_REQUIRED" });
-    return null;
-  }
-  return { profileId: user.profileId };
+function makeRequireOwner(
+  authenticate: NonNullable<DuelRouteOptions["authenticate"]>,
+) {
+  return async function requireOwner(
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<{ profileId: string } | null> {
+    // Non-production: the tab's dev-session header outranks the shared cookie.
+    const user = await authenticate(effectiveSessionId(request));
+    if (!user) {
+      await reply.code(401).send({ error: "AUTH_REQUIRED" });
+      return null;
+    }
+    return { profileId: user.profileId };
+  };
 }
 
 /** The session cookie plus the CSRF header, exactly as its sibling routes do it. */
@@ -104,7 +164,7 @@ function csrfOk(request: FastifyRequest, reply: FastifyReply): boolean {
   const token = request.headers["x-pa-csrf-token"];
   if (
     !validAssessmentMutationRequest({
-      sessionId: request.cookies[SESSION_COOKIE],
+      sessionId: effectiveSessionId(request),
       csrfToken: typeof token === "string" ? token : undefined,
       origin: request.headers.origin,
       allowedOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
@@ -121,6 +181,15 @@ export async function registerDuelRoutes(
   options: DuelRouteOptions = {},
 ): Promise<void> {
   const grading = options.grading ?? createDuelGrading(app.log, options);
+  const authenticate =
+    options.authenticate ??
+    (async (sessionId) => {
+      const user = await getSessionUser(sessionId);
+      return user ? { profileId: user.profileId } : null;
+    });
+  const requireOwner = makeRequireOwner(authenticate);
+  const { resolveAttempt, questionAuthority, verdictStore } = options;
+  const evidenceAuthorized = options.evidenceAuthorizedCardIds ?? M1_CODEX_CARD_IDS;
 
   app.post<{ Params: { duelId: string; round: string } }>(
     "/v1/duels/:duelId/rounds/:round/verdict",
@@ -135,10 +204,6 @@ export async function registerDuelRoutes(
       }
       const round = parseDuelRound(request.params.round);
       if (!round.ok) {
-        // Not a round any duel can reach. Named separately from a bad body so the
-        // one failure mode this route already had — a bound copied instead of
-        // imported, refusing every long duel's later rounds — is visible if it
-        // ever comes back.
         request.log.warn(
           { profileId: owner.profileId, duelId, round: request.params.round },
           "duel grading: refused a round outside the duel's structure",
@@ -151,7 +216,6 @@ export async function registerDuelRoutes(
       const parsed = parseDuelVerdictRequest(request.body);
       if (!parsed.ok) {
         if (parsed.code === "VERDICT_NOT_ACCEPTED") {
-          // A client trying to grade itself. Counted separately from a typo.
           request.log.warn(
             { profileId: owner.profileId, duelId, field: parsed.detail },
             "duel grading: rejected a client-supplied verdict field",
@@ -170,79 +234,149 @@ export async function registerDuelRoutes(
       }
       const submission = parsed.value;
 
-      const item = grading.bank.get(submission.itemId);
-      if (item === undefined) {
-        // The bank and the client's question source have drifted. Loud, because
-        // the student is about to be handed a free magazine for a question nobody
-        // can grade, and because it means a mission is serving unauthored content.
+      if (!resolveAttempt || !questionAuthority || !verdictStore) {
+        // A misconfigured server, never a request the client can cause. Refused
+        // rather than graded, because grading without an attempt to bind to would
+        // mint an unbindable verdict — exactly what this route now exists to stop.
         request.log.error(
-          { profileId: owner.profileId, duelId, itemId: submission.itemId },
-          "duel grading: asked to grade an item that is not in the bank",
+          { profileId: owner.profileId, duelId },
+          "duel grading: attempt/verdict authority not wired; refusing",
+        );
+        return reply.code(400).send({ error: "DUEL_AUTHORITY_UNAVAILABLE" });
+      }
+
+      // THE ATTEMPT IS THE SERVER'S, NOT THE REQUEST'S. Everything authoritative —
+      // which duel this is, what the round asks, who the receipt is for — comes
+      // from the profile's own open progression attempt. A request that names a
+      // duel the profile is not in gets a refusal it cannot turn into a usable,
+      // attempt-bound verdict.
+      const attempt = await resolveAttempt(owner.profileId);
+      if (!attempt) {
+        request.log.warn(
+          { profileId: owner.profileId, duelId },
+          "duel grading: no open attempt for this profile; refusing",
+        );
+        return reply.code(409).send({ error: "NO_OPEN_ATTEMPT" });
+      }
+
+      const canonicalDuelId = questionAuthority.duelId(attempt);
+      if (duelId !== canonicalDuelId) {
+        // The posted duel id is not this attempt's own. Refused, not graded: a
+        // verdict here would bind to a duel the profile is not playing.
+        request.log.warn(
+          {
+            profileId: owner.profileId,
+            postedDuelId: duelId,
+            attemptOrdinal: attempt.attemptOrdinal,
+          },
+          "duel grading: refused a duel id that is not the open attempt's own",
+        );
+        return reply.code(409).send({ error: "DUEL_NOT_CANONICAL" });
+      }
+
+      // The item the round ACTUALLY asks, computed by the server from the stored
+      // attempt. The client's itemId/itemVersion/conceptId are claims and are used
+      // for nothing but a diagnostic — choosing a different (easier) bank item
+      // cannot change what is graded.
+      const expectedItemId = questionAuthority.expectedItemId(attempt, round.round);
+      const item = grading.bank.get(expectedItemId);
+      if (item === undefined) {
+        request.log.error(
+          { profileId: owner.profileId, duelId: canonicalDuelId, expectedItemId },
+          "duel grading: the server-selected item is not in the bank (content drift)",
         );
         return reply.code(404).send({ error: "ITEM_NOT_FOUND" });
       }
-      if (
-        submission.itemVersion !== item.rubricVersion ||
-        submission.conceptId !== item.conceptId
-      ) {
-        // Overridden, not refused. The compiled bank derives a rubric version from
-        // the content hash and the client carries a placeholder, so this fires on
-        // every round today; it is logged at debug because the day it means
-        // something is the day the client starts sending a real version.
-        request.log.debug(
+      if (submission.itemId !== expectedItemId) {
+        // A forged or stale claim. Logged and ignored: the server grades the item
+        // the round asks, so this can never move a verdict.
+        request.log.warn(
           {
-            itemId: item.itemId,
-            claimedVersion: submission.itemVersion,
-            serverVersion: item.rubricVersion,
-            claimedConcept: submission.conceptId,
-            serverConcept: item.conceptId,
+            profileId: owner.profileId,
+            duelId: canonicalDuelId,
+            round: round.round,
+            claimedItemId: submission.itemId,
+            expectedItemId,
           },
-          "duel grading: client item metadata disagrees with the bank; using the bank's",
+          "duel grading: client claimed a different item than the round asks; grading the server's",
         );
       }
 
-      const graded = await grading.grade({
-        profileId: owner.profileId,
-        duelId,
-        roundIndex: round.round,
-        itemId: item.itemId,
-        answer: submission.answer,
-      });
-      const { provenance } = graded;
+      // THE EVIDENCE GATE, against the server's own hand for the server's own item.
+      // The policy is re-derived from the round's expected item id — never from the
+      // client — so the offered hand and which cards are relevant are the server's.
+      // An illegal or insufficient selection is graded as UNSATISFIED (folded into a
+      // WRONG below), never refused: a 4xx on this wire pays the client the full
+      // magazine. The feedback code is a misconception class, never the answer.
+      const evidencePolicy = m1EvidencePolicyFor(item.itemId);
+      const evidence = evaluateEvidence(
+        evidencePolicy,
+        submission.selectedCardIds,
+        evidenceAuthorized,
+      );
 
-      // The grant-maximum path is counted rather than merely logged, and it is
-      // counted inside `grading.grade` — one line per round, whatever the
-      // outcome, because a fallback COUNT without a round count cannot become a
-      // RATE and a rate is the only form of this an operator can act on. See
-      // ../duels/gradingSignal.ts: the numbers reach /v1/health, a CloudWatch
-      // alarm, and an error-level escalation once a minute while it lasts. The
-      // warning that used to live here said the same thing once per round and
-      // nothing added it up.
+      // FIRST ANSWER IS FINAL. The store grades this key exactly once; a repeat
+      // submission — a changed answer, a reload, a double-fire, or a concurrent
+      // racer — returns the first stored envelope, receipt and evidence and never
+      // re-grades, so a second submission cannot change the cards either.
+      const { record } = await verdictStore.resolve(
+        {
+          profileId: owner.profileId,
+          duelId: canonicalDuelId,
+          round: round.round,
+        },
+        async () => {
+          const graded = await grading.grade({
+            profileId: owner.profileId,
+            // Bound to the attempt's own canonical duel id, so the receipt the
+            // commit path verifies is for this fight and no other.
+            duelId: canonicalDuelId,
+            roundIndex: round.round,
+            // The server-selected item, never the client's claim.
+            itemId: item.itemId,
+            answer: submission.answer,
+            // Prose AND evidence: a CLASSIFIER CORRECT with unsatisfied evidence is
+            // minted as WRONG. A generous grant is untouched — grading owns that.
+            evidenceSatisfied: evidence.satisfied,
+          });
+          return {
+            envelope: graded.envelope,
+            receipt: graded.receipt,
+            gradingPath: graded.provenance.path,
+            gradingLatencyMs: graded.provenance.latencyMs,
+            fallbackDiagnosis: graded.provenance.fallbackDiagnosis,
+            // The cards the first answer actually placed, as graded. Final with the
+            // verdict — a replay or a second submission returns exactly these.
+            selectedCardIds: evidence.selected,
+          };
+        },
+      );
 
-      // Headers, because the body cannot carry a sixth key.
-      //
-      // The receipt is the one that matters: the verdict travels through a browser
-      // to reach the duel's reducer, and whoever commits the attempt's verdicts has
-      // to be able to prove the server minted this one for THIS player, THIS duel
-      // and THIS round. Nothing on the client reads it yet — the commit path is
-      // another file's — and it is emitted now so that when it does, the value it
-      // needs was already on the wire rather than needing a second round trip.
-      // `app.ts` now lists `x-pa-verdict-receipt` in the CORS `exposedHeaders`, so
-      // `fetch` can read it cross-origin as well as through Vite's same-origin
-      // proxy — the proxy is why nobody noticed it could not. What remains is the
-      // client half: `apps/web/src/duel/duelGrading.ts` has to read the header and
-      // carry it onto the round's `VERDICT_COMMITTED` entry, and
-      // ../duels/commitReceipts.ts verifies it at the commit. Until it does, every
-      // verdict commits as `unsigned` and the commit response says so.
-      reply.header("x-pa-verdict-receipt", graded.receipt);
-      reply.header("x-pa-grading-path", provenance.path);
-      reply.header("x-pa-grading-latency-ms", String(Math.round(provenance.latencyMs)));
-      // A verdict is per-request and per-player. Nothing between here and the
-      // browser may keep one.
+      // Headers carry the receipt and the provenance; the body carries exactly the
+      // five envelope keys the duel's parser accepts and nothing else. A repeat
+      // submission emits the SAME receipt the first mint did, because the store
+      // handed back the stored record rather than grading again.
+      reply.header("x-pa-verdict-receipt", record.receipt);
+      reply.header("x-pa-grading-path", record.gradingPath);
+      reply.header(
+        "x-pa-grading-latency-ms",
+        String(Math.round(record.gradingLatencyMs)),
+      );
+      if (record.fallbackDiagnosis !== null) {
+        reply.header("x-pa-grading-fallback", record.fallbackDiagnosis);
+      }
+      // The evidence feedback for the answering player, derived from the STORED
+      // selection so a repeat submission reports the same class as the first. A
+      // misconception class only (TOO_FEW, INCOMPATIBLE, …) — never which cards were
+      // relevant, so it cannot become the answer before the verdict is shown.
+      reply.header(
+        "x-pa-evidence",
+        evaluateEvidence(evidencePolicy, record.selectedCardIds, evidenceAuthorized)
+          .feedback,
+      );
       reply.header("cache-control", "no-store");
 
-      // Exactly the five keys @pa/duel's `parseVerdictEnvelope` accepts.
-      return duelVerdictBody(graded.envelope);
+      return duelVerdictBody(record.envelope);
     },
   );
 

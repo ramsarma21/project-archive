@@ -197,6 +197,82 @@ export function desiredCamera(input: CameraInput): CameraPose {
   };
 }
 
+// ---- engagement yaw, damped and loop-free ---------------------------------
+//
+// THE WILD-SPIN ROOT CAUSE, and why the cure is a direction of flow rather than a
+// constant. The engagement camera used to orbit behind the player's AIM yaw, and the
+// aim is the screen pointer cast onto the ground plane THROUGH THIS CAMERA. So a held,
+// off-centre pointer fed a loop with gain: the camera turned to sit behind the aim,
+// which moved where screen-centre pointed, which pushed the aim further the same way,
+// which turned the camera again — a constant angular velocity for as long as the mouse
+// sat off-centre, i.e. the frame spinning "wildly". No damping constant fixes an
+// integrator with positive feedback; it only slows the runaway.
+//
+// The fix is to anchor the orbit to a value the pointer cannot write back into: the
+// authoritative player->opponent axis. The camera is allowed a BOUNDED lean toward the
+// aim (`engagementCameraYaw`), and a bounded function of the aim saturates instead of
+// integrating — hold the pointer anywhere and the camera settles at the lean limit
+// rather than spinning past it. On top of that the yaw is closed with a frame-rate
+// independent exponential approach AND a hard max slew rate, so even a fast axis change
+// (crossing past the opponent) reads as a controlled swing. Nothing here touches the
+// aim vector, the raycast or authority — only which yaw the camera is placed from.
+
+/** Largest angle the engagement camera may lean off the opponent axis toward the aim. */
+export const ENGAGEMENT_MAX_LEAN_RAD = 0.62; // ~35 degrees
+/** Exponential closing rate for the engagement yaw (per second). */
+export const ENGAGEMENT_YAW_RATE = 3.6;
+/** Hard cap on how fast the camera yaw may slew, radians per second (~170 deg/s). */
+export const ENGAGEMENT_MAX_YAW_RATE = 3.0;
+
+function wrapAngle(radians: number): number {
+  let value = radians;
+  while (value > Math.PI) value -= Math.PI * 2;
+  while (value < -Math.PI) value += Math.PI * 2;
+  return value;
+}
+
+/**
+ * The yaw the engagement camera should orbit behind: the opponent axis, plus a lean
+ * toward the aim CLAMPED to `maxLean`. Pure, and the anchor of the anti-spin fix — the
+ * lean is a bounded function of the aim, so it can never accumulate into a spin.
+ */
+export function engagementCameraYaw(
+  axisYaw: number,
+  aimYaw: number,
+  maxLean: number = ENGAGEMENT_MAX_LEAN_RAD,
+): number {
+  const lean = wrapAngle(aimYaw - axisYaw);
+  const clamped = Math.max(-maxLean, Math.min(maxLean, lean));
+  return axisYaw + clamped;
+}
+
+/**
+ * Damp an angle toward a goal, FRAME-RATE INDEPENDENT and slew-clamped.
+ *
+ * The exponential term `1 - e^(-rate*dt)` closes the same fraction of the remaining
+ * angle per unit time regardless of how the frame is subdivided, so 60fps and 120fps
+ * reach the same place after the same wall time. The slew clamp then bounds the
+ * per-second angular velocity, which is the hard guarantee that no input or target jump
+ * can whip the frame around. Always takes the shortest way round, so ±pi is never a
+ * long turn.
+ */
+export function dampAngle(
+  current: number,
+  goal: number,
+  rate: number,
+  maxRatePerSec: number,
+  dt: number,
+): number {
+  const step = Math.max(0, dt);
+  const delta = wrapAngle(goal - current);
+  const alpha = 1 - Math.exp(-Math.max(0, rate) * step);
+  let move = delta * alpha;
+  const cap = Math.max(0, maxRatePerSec) * step;
+  if (move > cap) move = cap;
+  else if (move < -cap) move = -cap;
+  return current + move;
+}
+
 /** How fast the camera closes on its target pose, per phase. */
 export function cameraFollowRate(phase: DuelPhase): number {
   switch (phase) {

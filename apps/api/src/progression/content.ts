@@ -47,6 +47,13 @@ export interface ProgressionContent {
    * completion is checked against.
    */
   moduleDeckCueIds(moduleId: string): readonly string[] | null;
+  /**
+   * The mastery-check ids a module requires, or an empty list when it has none.
+   * A completed run must have acknowledged all of these — the check analogue of
+   * deck coverage — so a client cannot open a mission by skipping a check the
+   * concept card gates behind.
+   */
+  moduleRequiredCheckIds(moduleId: string): readonly string[];
   /** Cards a learning module teaches (learned in single-player). */
   codexCardsForModule(moduleId: string): readonly string[];
   /** Cards a concept mints as PvP-legal once it reaches 100% mastery. */
@@ -112,6 +119,7 @@ export function emptyProgressionContent(initialChapterId: string): ProgressionCo
     itemFormat: () => null,
     isCorrectOption: () => false,
     moduleDeckCueIds: () => null,
+    moduleRequiredCheckIds: () => [],
     codexCardsForModule: () => [],
     codexCardsForConcept: () => [],
     conceptForCard: () => null,
@@ -173,7 +181,7 @@ interface MissionContentRow {
   readonly conceptIds: readonly string[];
 }
 
-const M1_MODULE_ID = "BOS.MD01.MODULE.BRIEF.v1";
+export const M1_MODULE_ID = "BOS.MD01.MODULE.BRIEF.v1";
 
 const MISSION_CONTENT: ReadonlyMap<string, MissionContentRow> = new Map([
   [
@@ -208,6 +216,27 @@ const MODULE_DECKS: ReadonlyMap<string, readonly string[]> = new Map([
       "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
       "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1",
       "BOS.MD01.CUE.BRIEF_INSERT.v1",
+    ],
+  ],
+]);
+
+/**
+ * The mastery checks a module requires, in card order.
+ *
+ * This is the check analogue of MODULE_DECKS and it is the SERVER's copy of the
+ * gate: `completeLearningModule` derives the required set from here and refuses
+ * a completion missing any, so a client that forges a body without a check
+ * cannot open the mission behind it. Transcribed from content/m1/module.json's
+ * authored `check.id`s, which the API cannot import — the container image ships
+ * apps/api and packages and no content directory.
+ */
+const MODULE_CHECKS: ReadonlyMap<string, readonly string[]> = new Map([
+  [
+    M1_MODULE_ID,
+    [
+      "BOS.MD01.CHECK.POSTWAR_REVENUE.v1",
+      "BOS.MD01.CHECK.STAMP_SCOPE.v1",
+      "BOS.MD01.CHECK.REPRESENTATION.v1",
     ],
   ],
 ]);
@@ -336,6 +365,7 @@ export function bostonProgressionContent(): ProgressionContent {
     itemFormat: () => null,
     isCorrectOption: () => false,
     moduleDeckCueIds: (moduleId) => MODULE_DECKS.get(moduleId) ?? null,
+    moduleRequiredCheckIds: (moduleId) => MODULE_CHECKS.get(moduleId) ?? [],
     codexCardsForModule: (moduleId) =>
       (CODEX_CARDS.get(moduleId) ?? []).map((entry) => entry.card),
     codexCardsForConcept: (conceptId) => CARDS_BY_CONCEPT.get(conceptId) ?? [],

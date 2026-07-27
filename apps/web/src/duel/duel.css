@@ -240,7 +240,27 @@
   pointer-events: none;
 }
 
-.duel-question { width: min(720px, 100%); animation: duel-rise 0.32s ease-out both; }
+.duel-question {
+  width: min(720px, 100%);
+  animation: duel-rise 0.32s ease-out both;
+  /* Bottom-anchored, so a tall panel would grow off the TOP and clip the officer's
+     question. Cap it to the viewport and lay it out as a column: the prompt stays at
+     the top, the answer box and submit stay at the bottom, and the offered evidence
+     hand — the one part that can be long — scrolls between them. */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: calc(100dvh - 52px);
+}
+/* The evidence hand/tray is the flexible middle; it stays compact because the hand
+   scrolls HORIZONTALLY inside itself, so the panel never grows with the deck and the
+   answer box and submit below it stay put. A very short viewport lets the evidence
+   area shrink and scroll vertically before anything else does. */
+.duel-question .ev-tray-root {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
 .duel-panel-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
 .duel-speaker {
   margin: 0 0 2px;
@@ -250,9 +270,9 @@
   color: var(--duel-ink-dim);
 }
 .duel-prompt {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   font-size: 19px;
-  line-height: 1.45;
+  line-height: 1.4;
   color: var(--duel-ink);
 }
 .duel-answer {
@@ -274,12 +294,52 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 11px;
+  margin-top: 9px;
+}
+.duel-submit-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* The compact gating reason beside the primary control: a short "n / m cards"
+   counter, never a sentence. Not colour-only — it is words. */
+.duel-gate {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--duel-ball);
+  font-variant-numeric: tabular-nums;
 }
 .duel-stake { font-size: 12.5px; color: var(--duel-ink-dim); }
 .duel-stake strong { color: var(--duel-ball); }
 /* Recycled items are disclosed, never hidden: the core marks them and so do we. */
 .duel-again { color: var(--duel-ball); }
+
+/* Codex provenance: which learned cards this question draws on. Titles only. */
+.duel-cards {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin: 0 0 12px;
+}
+.duel-cards-label {
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--duel-ink-dim);
+  opacity: 0.8;
+}
+.duel-cards-list { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.duel-card-chip {
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--duel-cyan);
+  color: var(--duel-cyan);
+  background: rgba(24, 78, 128, 0.28);
+  white-space: nowrap;
+}
 
 .duel-submit {
   font: inherit;
@@ -380,13 +440,18 @@
   animation: duel-drift 0.7s ease-out both;
 }
 
+/* Centred along the bottom so it clears the hero panel (bottom-left) and the player
+   card (bottom-right) of the combat HUD. Only shown on the first engagement. */
 .duel-controls {
   position: absolute;
-  left: 26px;
-  bottom: 22px;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
   z-index: 3;
-  display: grid;
-  gap: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
   font-size: 11px;
   letter-spacing: 0.4px;
   color: var(--duel-ink-dim);

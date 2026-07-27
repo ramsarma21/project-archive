@@ -24,7 +24,6 @@ const SPRINT_FORWARD: MissionInputFrame = {
   sprintHeld: true,
   crouchHeld: false,
   jumpBuffered: false,
-  throwBuffered: false,
   reducedMotion: false,
   flowEnabled: true,
 };

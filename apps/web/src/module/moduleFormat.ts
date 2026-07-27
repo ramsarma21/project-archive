@@ -44,6 +44,185 @@ export interface ModuleSourceExcerpt {
   lines: readonly string[];
 }
 
+// ---------------------------------------------------------------------------
+// Cinematic layer.
+//
+// Everything below is OPTIONAL on the authored format and additive to the
+// rules above. A card with no `scene` renders as the flat card it always did;
+// a deck with no `presenter` shows no hologram. The gate, the zero-XP rule, the
+// 180-second target and the manual pacing are untouched — the cinematic data
+// decorates a card, it never becomes a second thing a student has to clear.
+//
+// One exception is load-bearing: a card's `check` is a mastery gate. It does
+// not pay XP and it is not timed, but a concept card that carries one cannot be
+// advanced past until its correct option is chosen. That is enforced in the
+// player and, so a forged client cannot skip it, re-derived on the server from
+// module metadata rather than trusted from the request. See moduleGate's
+// `moduleRequiredCheckIds` and the server's completeLearningModule.
+// ---------------------------------------------------------------------------
+
+/**
+ * How a visual relates to the history it depicts. The distinction is the whole
+ * point: a 1770 painting of a 1759 death is not documentary evidence, and a
+ * project reconstruction is not a period artefact. The player captions each
+ * class differently and the loader refuses a PROJECT_RECONSTRUCTION that calls
+ * itself 'actual'.
+ */
+export const MODULE_VISUAL_CLASSIFICATIONS = [
+  "PRIMARY_SOURCE",
+  "PERIOD_ART",
+  "LATER_DEPICTION",
+  "PROJECT_RECONSTRUCTION",
+] as const;
+export type ModuleVisualClassification =
+  (typeof MODULE_VISUAL_CLASSIFICATIONS)[number];
+
+/**
+ * One floating document/image panel with its full provenance. `src` is a local
+ * imported asset path (never a runtime hotlink); the remaining fields are the
+ * caption and the record of where the image came from and under what rights.
+ */
+export interface ModuleVisual {
+  id: string;
+  /** Local asset path, e.g. /historical/m1/wolfe.jpg. Never an external URL. */
+  src: string;
+  alt: string;
+  title: string;
+  caption: string;
+  /** The creator or holding collection. */
+  attribution: string;
+  /** Where the source record lives. Provenance, not a runtime fetch target. */
+  sourceUrl: string;
+  date: string;
+  rights: string;
+  classification: ModuleVisualClassification;
+}
+
+/**
+ * A future external-audio cue. Present so the authored beat can name the audio
+ * that will eventually replace browser speech; the default provider ignores it.
+ * No URL or key is authored now — only the shape that will carry one.
+ */
+export interface ModuleBeatAudio {
+  cueId: string;
+  /** Absent until an external provider is wired. Never a runtime dependency. */
+  src?: string;
+  startMs?: number;
+  durationMs?: number;
+}
+
+/** One narration/subtitle beat. The text is both spoken and shown as a subtitle. */
+export interface ModuleNarrationBeat {
+  id: string;
+  /** Spoken by the voiceover provider and shown as the subtitle, verbatim. */
+  text: string;
+  /** The visual shown during this beat, by id. Must resolve within the scene. */
+  visualId?: string;
+  audio?: ModuleBeatAudio;
+}
+
+/** A card's cinematic scene: an ordered slideshow of beats over a visual set. */
+export interface ModuleScene {
+  beats: readonly ModuleNarrationBeat[];
+  visuals: readonly ModuleVisual[];
+}
+
+/** One option of a mastery check. Every option carries its own feedback. */
+export interface ModuleCheckOption {
+  id: string;
+  text: string;
+  /**
+   * Whether this option belongs to the correct set. Truth is carried on the
+   * option itself, keyed by its stable `id`, rather than by a list of indices:
+   * an author may reorder the options — and must, so the answer is not always
+   * first — without any separate truth list drifting out of step. The set of
+   * correct ids is derived by `checkCorrectOptionIds`.
+   */
+  correct: boolean;
+  /** Misconception-specific for a wrong option; reinforcement for the right one. */
+  feedback: string;
+}
+
+/**
+ * How a check is answered.
+ *
+ *   "single"   — exactly one option is correct; a radio group. This is the
+ *                default, so a check authored before this field existed (and
+ *                every check that omits it) is a single-select, unchanged.
+ *
+ *   "multiple" — two or three options are correct and the learner must choose
+ *                the exact set: every correct one, no distractor. A checkbox
+ *                group with an explicit submit.
+ */
+export const MODULE_CHECK_SELECTIONS = ["single", "multiple"] as const;
+export type ModuleCheckSelection = (typeof MODULE_CHECK_SELECTIONS)[number];
+
+/**
+ * A short pre-authored mastery check, placed immediately after a concept card.
+ * The learner cannot advance past the concept until they choose the correct
+ * answer — exactly one option for a single-select, or the exact correct set for
+ * a multiple-select. It pays no XP and is not timed.
+ */
+export interface ModuleCheck {
+  id: string;
+  prompt: string;
+  options: readonly ModuleCheckOption[];
+  /**
+   * Single- or multiple-select. Optional: an absent value is "single", so
+   * existing content keeps its meaning without being rewritten.
+   */
+  selection?: ModuleCheckSelection;
+  /** The concept this check reinforces. Display/authoring evidence only. */
+  conceptId?: string;
+  /** Shown once, concisely, when the correct set is chosen. */
+  reinforcement: string;
+}
+
+/** A check's selection mode, defaulting to single for content that omits it. */
+export function checkSelection(check: ModuleCheck): ModuleCheckSelection {
+  return check.selection ?? "single";
+}
+
+/** The stable ids of a check's correct options, in authored order. */
+export function checkCorrectOptionIds(check: ModuleCheck): string[] {
+  return check.options.filter((option) => option.correct).map((option) => option.id);
+}
+
+/**
+ * Whether a chosen set of option ids is exactly the correct set: every correct
+ * option chosen, no distractor chosen, and nothing chosen that the check does
+ * not offer. This is the single gate both the UI and the tests judge an answer
+ * by, so a single-select (one correct) and a multiple-select (two or three)
+ * are decided by the same rule rather than two.
+ */
+export function isExactCheckSelection(
+  check: ModuleCheck,
+  chosenIds: Iterable<string>,
+): boolean {
+  const chosen = new Set(chosenIds);
+  const optionIds = new Set(check.options.map((option) => option.id));
+  for (const id of chosen) {
+    if (!optionIds.has(id)) return false;
+  }
+  const correct = checkCorrectOptionIds(check);
+  if (chosen.size !== correct.length) return false;
+  return correct.every((id) => chosen.has(id));
+}
+
+/**
+ * The embodied System presenter: an imported rigged GLB shown in a transparent
+ * hologram layer. `glbKey` resolves under /world/characters. Missing or loading
+ * renders no presenter and emits a dev QA error — never a primitive stand-in.
+ */
+export interface ModulePresenter {
+  glbKey: string;
+  displayName: string;
+  /** Clip played while narration is speaking, if the rig carries it. */
+  talkClip: string;
+  /** Clip played while paused/checking, if the rig carries it. */
+  idleClip: string;
+}
+
 /** One screen of instruction. */
 export interface ModuleCard {
   id: string;
@@ -79,6 +258,10 @@ export interface ModuleCard {
   codexCardIds: readonly string[];
   /** The authored label on the advance control. */
   advanceLabel: string;
+  /** The card's cinematic slideshow, if authored. Optional and decorative. */
+  scene?: ModuleScene;
+  /** A mastery check that gates advancing past this card, if authored. */
+  check?: ModuleCheck;
 }
 
 export interface LearningModuleDefinition {
@@ -90,6 +273,8 @@ export interface LearningModuleDefinition {
   /** The System's framing line, above the deck. */
   subtitle: string;
   cards: readonly ModuleCard[];
+  /** The embodied System presenter for the cinematic surface, if authored. */
+  presenter?: ModulePresenter;
 }
 
 /** A card with its derived presentation window. */
@@ -143,6 +328,48 @@ export function moduleCodexCardIds(definition: LearningModuleDefinition): string
   return [...seen];
 }
 
+/**
+ * Every mastery check the deck requires, in card order. These are the ids a
+ * completed run must have mastered before the gate opens — the check analogue
+ * of the cue set. The server re-derives the same list from module metadata, so
+ * a client cannot open a mission by claiming a check it never answered.
+ */
+export function moduleRequiredCheckIds(
+  definition: LearningModuleDefinition,
+): string[] {
+  const ids: string[] = [];
+  for (const card of definition.cards) {
+    if (card.check) ids.push(card.check.id);
+  }
+  return ids;
+}
+
+/**
+ * The visual to show for a beat: the one it names, or the scene's first visual
+ * as a default, or none. Kept pure so the slideshow's selection is testable
+ * without rendering the player.
+ */
+export function sceneBeatVisual(
+  scene: ModuleScene | undefined,
+  beatIndex: number,
+): ModuleVisual | undefined {
+  if (!scene) return undefined;
+  const beat = scene.beats[beatIndex];
+  if (beat?.visualId) {
+    const named = scene.visuals.find((visual) => visual.id === beat.visualId);
+    if (named) return named;
+  }
+  return scene.visuals[0];
+}
+
+/** The subtitle text for a beat index, or empty when the scene has none. */
+export function sceneBeatSubtitle(
+  scene: ModuleScene | undefined,
+  beatIndex: number,
+): string {
+  return scene?.beats[beatIndex]?.text ?? "";
+}
+
 /** m:ss, for a clock readout and for a window caption. */
 export function formatModuleClock(seconds: number): string {
   const whole = Math.max(0, Math.floor(seconds));
@@ -172,6 +399,7 @@ export function moduleDefinitionDefects(
 
   const ids = new Set<string>();
   const cueIds = new Set<string>();
+  const checkIds = new Set<string>();
   let previousThrough = 0;
 
   for (const card of cards) {
@@ -194,6 +422,15 @@ export function moduleDefinitionDefects(
     if (card.advanceLabel.trim() === "") {
       defects.push(`${card.id} has no advance label`);
     }
+
+    if (card.scene) defects.push(...sceneDefects(card.id, card.scene));
+    if (card.check) {
+      if (checkIds.has(card.check.id)) {
+        defects.push(`duplicate check id ${card.check.id}`);
+      }
+      checkIds.add(card.check.id);
+      defects.push(...checkDefects(card.id, card.check));
+    }
   }
 
   const total = moduleTargetSeconds(definition);
@@ -204,5 +441,132 @@ export function moduleDefinitionDefects(
     );
   }
 
+  return defects;
+}
+
+/** Reports 'actual' anywhere a reconstruction captions itself as evidence. */
+function claimsToBeActual(text: string): boolean {
+  return /\bactual\b/i.test(text);
+}
+
+/** Everything wrong with a card's scene, as sentences. */
+export function sceneDefects(cardId: string, scene: ModuleScene): string[] {
+  const defects: string[] = [];
+  if (scene.beats.length === 0) {
+    defects.push(`${cardId}: scene has no beats`);
+  }
+  const visualIds = new Set<string>();
+  for (const visual of scene.visuals) {
+    if (visualIds.has(visual.id)) {
+      defects.push(`${cardId}: duplicate visual id ${visual.id}`);
+    }
+    visualIds.add(visual.id);
+    const missing = (["src", "alt", "title", "caption", "attribution", "sourceUrl", "date", "rights"] as const).filter(
+      (key) => visual[key].trim() === "",
+    );
+    if (missing.length > 0) {
+      defects.push(`${cardId}: visual ${visual.id} is missing ${missing.join(", ")}`);
+    }
+    if (!MODULE_VISUAL_CLASSIFICATIONS.includes(visual.classification)) {
+      defects.push(
+        `${cardId}: visual ${visual.id} has unknown classification ${visual.classification}`,
+      );
+    }
+    // A reconstruction is not evidence. Refuse one that captions itself 'actual'.
+    if (
+      visual.classification === "PROJECT_RECONSTRUCTION" &&
+      (claimsToBeActual(visual.title) ||
+        claimsToBeActual(visual.caption) ||
+        claimsToBeActual(visual.alt))
+    ) {
+      defects.push(
+        `${cardId}: reconstruction ${visual.id} calls itself 'actual', which it is not`,
+      );
+    }
+  }
+  scene.beats.forEach((beat, at) => {
+    if (beat.id.trim() === "") defects.push(`${cardId}: beat ${at} has no id`);
+    if (beat.text.trim() === "") defects.push(`${cardId}: beat ${beat.id || at} has no text`);
+    if (beat.visualId && !visualIds.has(beat.visualId)) {
+      defects.push(
+        `${cardId}: beat ${beat.id || at} names visual ${beat.visualId}, which the scene does not carry`,
+      );
+    }
+  });
+  return defects;
+}
+
+/** Everything wrong with a mastery check, as sentences. */
+export function checkDefects(cardId: string, check: ModuleCheck): string[] {
+  const defects: string[] = [];
+  if (check.id.trim() === "") defects.push(`${cardId}: check has no id`);
+  if (check.prompt.trim() === "") defects.push(`${cardId}: check ${check.id} has no prompt`);
+  if (check.reinforcement.trim() === "") {
+    defects.push(`${cardId}: check ${check.id} has no reinforcement`);
+  }
+  if (
+    check.selection !== undefined &&
+    !MODULE_CHECK_SELECTIONS.includes(check.selection)
+  ) {
+    defects.push(
+      `${cardId}: check ${check.id} has unknown selection ${String(check.selection)}`,
+    );
+  }
+
+  const optionIds = new Set<string>();
+  let correct = 0;
+  for (const option of check.options) {
+    if (optionIds.has(option.id)) {
+      defects.push(`${cardId}: check ${check.id} has duplicate option id ${option.id}`);
+    }
+    optionIds.add(option.id);
+    if (option.id.trim() === "") defects.push(`${cardId}: check ${check.id} has an option with no id`);
+    if (option.text.trim() === "") defects.push(`${cardId}: check ${check.id} option ${option.id} has no text`);
+    // Feedback is required for EVERY option: a wrong one explains the
+    // misconception, the right one reinforces. A missing one is a defect.
+    if (option.feedback.trim() === "") {
+      defects.push(`${cardId}: check ${check.id} option ${option.id} has no feedback`);
+    }
+    if (option.correct) correct += 1;
+  }
+
+  // Single- and multiple-select carry different shape rules. A single-select is
+  // a radio group with one right answer; a multiple-select must have a genuine
+  // set to assemble — two or three correct, and at least two distractors so the
+  // exact-set gate is not trivially "check everything".
+  const selection = checkSelection(check);
+  if (selection === "single") {
+    if (check.options.length < 3 || check.options.length > 4) {
+      defects.push(
+        `${cardId}: check ${check.id} has ${check.options.length} options; a ` +
+          `single-select check authors 3 or 4`,
+      );
+    }
+    if (correct !== 1) {
+      defects.push(
+        `${cardId}: check ${check.id} marks ${correct} options correct; a ` +
+          `single-select check must mark exactly one`,
+      );
+    }
+  } else {
+    if (check.options.length < 4 || check.options.length > 5) {
+      defects.push(
+        `${cardId}: check ${check.id} has ${check.options.length} options; a ` +
+          `multiple-select check authors 4 or 5`,
+      );
+    }
+    if (correct < 2 || correct > 3) {
+      defects.push(
+        `${cardId}: check ${check.id} marks ${correct} options correct; a ` +
+          `multiple-select check must mark two or three`,
+      );
+    }
+    if (check.options.length - correct < 2) {
+      defects.push(
+        `${cardId}: check ${check.id} has ${check.options.length - correct} ` +
+          `distractors; a multiple-select check needs at least two`,
+      );
+    }
+  }
   return defects;
 }

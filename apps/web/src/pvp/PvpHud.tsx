@@ -1,4 +1,9 @@
+// Explicit React runtime import. PvpHud is the one arena HUD component rendered directly
+// by the behavioral parity tests (outside the R3F canvas), so the JSX it emits must have
+// React in scope under the test/runtime JSX configuration, not only the automatic runtime.
+import React from "react";
 import { convergence, type MatchProgress } from "./progress.js";
+import type { PresentedSighting } from "./arenaPort.js";
 import type { MatchSnapshot } from "./protocol.js";
 
 // The answer to "is this fight going anywhere".
@@ -55,12 +60,20 @@ function Swing(props: { readonly advantage: number }) {
 export interface PvpHudProps {
   readonly snapshot: MatchSnapshot;
   readonly progress: MatchProgress;
+  /**
+   * The PRESENTED opponent sighting, from the same delayed `ArenaSample` the body is
+   * drawn from. The "lost sight" warning reads THIS so it agrees with the arena; when
+   * absent (no registered arena view) it falls back to the raw snapshot's flag.
+   */
+  readonly sighting?: PresentedSighting;
 }
 
 export function PvpHud(props: PvpHudProps) {
   const { snapshot, progress } = props;
   const reading = convergence(progress);
   const opponent = snapshot.opponent;
+  // Presented sighting when the arena is reporting it, raw only as the telemetry fallback.
+  const outOfSight = props.sighting ? props.sighting !== "IN_SIGHT" : !opponent.visible;
 
   return (
     <div className="pvp-panel">
@@ -145,7 +158,7 @@ export function PvpHud(props: PvpHudProps) {
         </div>
       )}
 
-      {!opponent.visible && (
+      {outOfSight && (
         <div className="pvp-waiting pvp-muted">
           You have lost sight of {opponent.handle}. Their marker is where they were
           last seen, not where they are.

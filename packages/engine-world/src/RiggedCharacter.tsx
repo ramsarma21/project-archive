@@ -14,7 +14,7 @@ import {
 // the whole URL, so the loading path and the retry eviction must build it the
 // same way — hence one function rather than two literals.
 function characterUrl(glbKey: string): string {
-  return `/world/characters/${glbKey}.glb?v=production-cast-8`;
+  return `/world/characters/${glbKey}.glb?v=production-cast-10`;
 }
 
 // Soft radial contact shadow that grounds characters against the street.
@@ -222,6 +222,18 @@ function RiggedInner(props: {
     if (!clip) return;
     const next = mixer.clipAction(clip);
     const prev = actionRef.current;
+    // The requested name changed but the rig answers both names with the SAME
+    // performance — `dash` and `stepUp` both resolve to `run`. There is nothing
+    // to blend to and nothing to restart, and `reset()` below would snap the
+    // cycle back to its first frame: a visible hitch in the stride at the start
+    // of every burst and every curb, and another one on the way out. Only the
+    // timeScale is actually changing, and the caller writes that per frame.
+    //
+    // Guarded on the loop mode too, so a degraded rig that answers both a
+    // looping role and a one-shot one with the same substitute still gets the
+    // one-shot restarted and clamped.
+    const loop = props.loopOnce ? THREE.LoopOnce : THREE.LoopRepeat;
+    if (prev === next && next.isRunning() && next.loop === loop) return;
     let locomotionPhase: number | null = null;
     if (prev && prev !== next) {
       const prevClip = prev.getClip();

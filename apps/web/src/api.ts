@@ -14,6 +14,11 @@ import {
   type SubmitChapterAssessmentRequest,
 } from "@pa/contracts";
 import { snapshotBelongsTo } from "./progression/identity.js";
+import {
+  clearDevSessionHandle,
+  setDevSessionHandle,
+  withDevSessionHeader,
+} from "./devSession.js";
 
 // Same-origin: Vite proxies /v1 -> API so session cookies are first-party.
 const BASE = "";
@@ -34,7 +39,12 @@ export async function apiStatus(): Promise<{ up: boolean; google: boolean }> {
 
 export async function getSession(): Promise<SessionResponse | null> {
   try {
-    const r = await fetch(`${BASE}/v1/session`, { credentials: "include" });
+    // The dev-session header, when this tab holds one, makes /v1/session report
+    // THIS tab's local profile instead of whatever the shared cookie points at.
+    const r = await fetch(`${BASE}/v1/session`, {
+      credentials: "include",
+      headers: withDevSessionHeader(),
+    });
     if (!r.ok) return null;
     return (await r.json()) as SessionResponse;
   } catch {
@@ -46,12 +56,65 @@ export function googleLoginUrl(): string {
   return `${BASE}/v1/auth/google/start`;
 }
 
+/**
+ * Open a real server session for a LOCAL development profile.
+ *
+ * A local profile used to be browser-only, so the game ran signed out — unranked,
+ * unlimited, and with the boss duel granting the full magazine on every answer.
+ * This establishes the same session cookie a Google sign-in produces, keyed on the
+ * profile's own stable UUID, so `useProgression`, M1 grading, progression and PvP
+ * all see one durable profile. The endpoint is non-production only (404 in prod).
+ *
+ * Returns a plain ok/reason so App can surface a clear error rather than silently
+ * dropping the player into an unlimited practice run.
+ */
+export async function establishLocalSession(input: {
+  profileId: string;
+  displayName: string;
+  seedHex: string;
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
+  try {
+    const r = await fetch(`${BASE}/v1/auth/local-session`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!r.ok) return { ok: false, reason: `HTTP_${r.status}` };
+    // Bind this local profile to THIS tab: store the server's dev-session handle so
+    // every authenticated call from this tab carries it, independent of the shared
+    // cookie. A server without the handle (older build) still works single-tab via
+    // the cookie the same response set.
+    try {
+      const body = (await r.json()) as { devSession?: unknown };
+      if (typeof body.devSession === "string" && body.devSession.length > 0) {
+        setDevSessionHandle(body.devSession);
+      }
+    } catch {
+      /* a handle-less response is fine: the cookie still authenticates one tab */
+    }
+    return { ok: true };
+  } catch (cause) {
+    return { ok: false, reason: cause instanceof Error ? cause.message : String(cause) };
+  }
+}
+
 export async function logout(): Promise<void> {
   try {
-    await fetch(`${BASE}/v1/logout`, { method: "POST", credentials: "include" });
+    // Carry the handle so the server drops THIS tab's dev-session mapping too. The
+    // shared cookie session is still revoked server-side (browser-wide, the honest
+    // semantics for a Google sign-out).
+    await fetch(`${BASE}/v1/logout`, {
+      method: "POST",
+      credentials: "include",
+      headers: withDevSessionHeader(),
+    });
   } catch {
     /* offline logout is local-only */
   }
+  // Always drop this tab's local identity, so a sign-out here does not leave a
+  // stale handle behind. Other tabs keep their own sessionStorage handles.
+  clearDevSessionHandle();
 }
 
 export async function saveOnboardingPreferences(
@@ -62,7 +125,7 @@ export async function saveOnboardingPreferences(
     const r = await fetch(`${BASE}/v1/profiles/${profileId}/preferences`, {
       method: "PUT",
       credentials: "include",
-      headers: { "content-type": "application/json" },
+      headers: withDevSessionHeader({ "content-type": "application/json" }),
       body: JSON.stringify(preferences),
     });
     return r.ok;
@@ -133,10 +196,10 @@ async function postProgression<T>(
       {
         method: "POST",
         credentials: "include",
-        headers: {
+        headers: withDevSessionHeader({
           "content-type": "application/json",
           "x-pa-csrf-token": csrfToken,
-        },
+        }),
         body: JSON.stringify(body),
       },
     );
@@ -174,6 +237,7 @@ export async function pullProgression(
   try {
     const response = await fetch(`${BASE}/v1/profiles/${profileId}/progression`, {
       credentials: "include",
+      headers: withDevSessionHeader(),
     });
     if (response.status >= 500) {
       return { status: "UNREACHABLE", detail: `HTTP_${response.status}` };
@@ -242,6 +306,24 @@ export function postMissionOutcome(
   csrfToken: string,
 ): Promise<ProgressionCallResult<unknown>> {
   return postProgression(profileId, "mission-outcomes", body, csrfToken);
+}
+
+/**
+ * Forfeit an interrupted mission attempt.
+ *
+ * The body names the attempt id (the server-projected open attempt); the server
+ * closes exactly that owned row as FAILED with zero XP through the same machinery a
+ * real loss uses. It is the client's ONLY way past a still-open attempt, because
+ * the runtime is no longer allowed to resume one — resuming a losing run into a
+ * fresh runtime was the unlimited-replay bug. Idempotent server-side: a forfeit of
+ * an already-closed or foreign id spends no attempt.
+ */
+export function postAbandonMissionAttempt(
+  profileId: string,
+  body: { attemptId: string },
+  csrfToken: string,
+): Promise<ProgressionCallResult<unknown>> {
+  return postProgression(profileId, "mission-abandonments", body, csrfToken);
 }
 
 export function postOpenChapterAssessment(

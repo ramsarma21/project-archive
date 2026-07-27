@@ -355,9 +355,21 @@ export class ProjectArchiveStack extends Stack {
         // one who is.
         GRADING_FALLBACK_ALERT_PERCENT: "25",
         // AUDIT counts unsigned duel verdicts at the commit and lets them
-        // through; REQUIRE refuses them. It stays AUDIT until the web client
-        // carries `x-pa-verdict-receipt` into the commit log, because refusing
-        // first would cost every student their mission clear.
+        // through; REQUIRE refuses them. An INVALID receipt is refused under both.
+        //
+        // THE OLD REASON FOR AUDIT — "until the web client carries
+        // x-pa-verdict-receipt" — IS SATISFIED AND IT IS STILL NOT ENOUGH.
+        // `apps/web/src/duel/duelGrading.ts` reads the header and sends the duel
+        // id, and a graded round commits `verified`. The blocker is now a
+        // different one, and flipping this without it costs students their mission
+        // clears: enforcement cannot distinguish a STRIPPED receipt from an
+        // HONESTLY UNGRADED round. The client's 1.5-second cap, an unreachable
+        // API and the stand-in authority all produce a verdict no server minted,
+        // the design grants the maximum for all three so infrastructure never
+        // costs a student anything, and the only field that would tell a tampered
+        // commit from one of those is supplied by the client itself. Until a
+        // server-side record of what it minted exists, REQUIRE returns 409 on a
+        // round that was legitimately never graded.
         DUEL_RECEIPT_ENFORCEMENT: "AUDIT",
       },
       secrets: {
@@ -466,8 +478,13 @@ export class ProjectArchiveStack extends Stack {
     // IAM policy, and means the number and the log entry can never disagree.
     const roundsMetric = new logs.MetricFilter(this, "GradedRoundsFilter", {
       logGroup,
-      // One line per graded round, whatever the outcome. This is the
-      // denominator, and without it a fallback COUNT cannot become a RATE.
+      // The denominator, and without it a fallback COUNT cannot become a RATE.
+      // `$.graded` is 1 for a round that needed the classifier and 0 for a
+      // deterministic pre-check, so this sum is the GRADEABLE count — the same
+      // denominator /v1/health divides by (`gradeableInWindow`). A pre-check
+      // still writes a line, but contributes 0; counting it here would make this
+      // alarm read a lower rate than the endpoint for the identical event, which
+      // is exactly the disagreement that let a fully ungraded duel read 86%.
       filterPattern: logs.FilterPattern.stringValue(
         "$.paMetric",
         "=",

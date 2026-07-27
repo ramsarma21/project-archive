@@ -5,7 +5,10 @@ import {
   nextAttemptOrdinal,
   type MissionOutcome,
 } from "@pa/contracts";
-import type { LearningModuleDefinition } from "./moduleFormat.js";
+import {
+  moduleRequiredCheckIds,
+  type LearningModuleDefinition,
+} from "./moduleFormat.js";
 
 // ---------------------------------------------------------------------------
 // The module gate.
@@ -61,6 +64,13 @@ export interface ModuleRunCompletion {
   attemptOrdinal: number;
   /** Cue ids acknowledged. Every card in the deck must appear. */
   acknowledgedCueIds: readonly string[];
+  /**
+   * Mastery-check ids the learner answered correctly. Every check the deck
+   * requires must appear, or the run does not complete. The server re-derives
+   * the required set from module metadata rather than trusting these, so this
+   * is evidence the client offers, not a claim the server accepts on faith.
+   */
+  acknowledgedCheckIds: readonly string[];
   observedSeconds: number;
   completedAt: string;
   awardedXp: 0;
@@ -107,6 +117,28 @@ export function unacknowledgedCueIds(
 }
 
 /**
+ * Whether a run mastered every check the deck requires. Order-independent, the
+ * same as deck coverage: a student who went back and re-read a concept keeps
+ * the check they already cleared. A deck with no checks is satisfied trivially.
+ */
+export function moduleRunChecksMastered(
+  definition: LearningModuleDefinition,
+  acknowledgedCheckIds: readonly string[],
+): boolean {
+  const mastered = new Set(acknowledgedCheckIds);
+  return moduleRequiredCheckIds(definition).every((id) => mastered.has(id));
+}
+
+/** Required check ids the run has not mastered yet. */
+export function unmasteredCheckIds(
+  definition: LearningModuleDefinition,
+  acknowledgedCheckIds: readonly string[],
+): string[] {
+  const mastered = new Set(acknowledgedCheckIds);
+  return moduleRequiredCheckIds(definition).filter((id) => !mastered.has(id));
+}
+
+/**
  * A completion for a finished run, or null if the deck is not covered. The
  * player cannot mint one by asserting it finished; it has to pass the cue set.
  */
@@ -114,16 +146,26 @@ export function completeModuleRun(input: {
   definition: LearningModuleDefinition;
   attemptOrdinal: number;
   acknowledgedCueIds: readonly string[];
+  /** Checks the run mastered. Omitted defaults to none, which fails a deck
+   * that requires any check — the honest degradation for a caller that has not
+   * been updated to carry check evidence. */
+  acknowledgedCheckIds?: readonly string[];
   observedSeconds: number;
   at: string;
 }): ModuleRunCompletion | null {
   if (!moduleRunIsComplete(input.definition, input.acknowledgedCueIds)) return null;
+  const acknowledgedCheckIds = input.acknowledgedCheckIds ?? [];
+  // Completion requires all cues acknowledged AND all required checks mastered.
+  // A deck with no checks passes this trivially, so the flat-module path is
+  // unchanged.
+  if (!moduleRunChecksMastered(input.definition, acknowledgedCheckIds)) return null;
   if (!Number.isInteger(input.attemptOrdinal) || input.attemptOrdinal < 1) return null;
   return {
     moduleId: input.definition.moduleId,
     missionId: input.definition.missionId,
     attemptOrdinal: input.attemptOrdinal,
     acknowledgedCueIds: [...input.acknowledgedCueIds],
+    acknowledgedCheckIds: [...acknowledgedCheckIds],
     observedSeconds: Math.max(0, Math.floor(input.observedSeconds)),
     completedAt: input.at,
     awardedXp: 0,

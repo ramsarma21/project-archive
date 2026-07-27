@@ -14,28 +14,60 @@ import {
   createFieldClock,
   createFlowState,
   createGroundedState,
+  createPursuitState,
   createStealthFieldState,
   flowPresentation,
   freeMoveSpeed,
+  groundedSupport,
   isCrouched,
   projectFieldSeed,
   scaledFrameDt,
   stealthPresentation,
   stepFlow,
+  motionPenetration,
   stepStealthField,
+  stepWatcherPursuit,
   throwFieldDiversion,
+  previewThrow,
+  STAND_HEIGHT,
+  STEALTH_TUNING,
   toggleFreeCrouch,
+  NO_SUPPRESSION,
+  posesWithoutSuppressed,
+  suppressWatchers,
+  suppressionTicks,
+  investigateWatchers,
+  calmWatchers,
   type CrowdCluster,
+  type DiversionActor,
   type DiversionObject,
+  type PerceptionSuppression,
+  type ThrowPreview,
+  type ThrowRefusal,
   type FieldClock,
   type FlowPresentation,
   type FlowState,
   type MotionState,
   type PlayerStealthRead,
+  type PursuitEvent,
   type StealthFieldState,
   type StealthPresentation,
+  type TraversalVerb,
   type Vec3,
+  type WatcherPose,
+  type WatcherPursuit,
 } from "@pa/engine-world";
+import {
+  createEncounterInstance,
+  encounterClientView,
+  encounterResolved,
+  stepEncounter,
+  type EncounterClientView,
+  type EncounterInstance,
+  type EncounterPhase,
+  type EncounterResolution,
+  type EncounterVerdictKind,
+} from "@pa/mission-m1";
 import {
   dawnLightLevel,
   dawnRead,
@@ -46,6 +78,7 @@ import type {
   MissionCivilian,
   MissionFieldRead,
   MissionInstance,
+  MissionObjective,
   MissionPlayerRead,
 } from "./levelPort.js";
 import type {
@@ -98,6 +131,63 @@ import type {
 // Nothing here is React state; the discrete facts live in session.ts.
 // ---------------------------------------------------------------------------
 
+/**
+ * Dev/test builds only. Vite defines `import.meta.env.DEV`; a bare test process
+ * (node --test) has no such object, so the access is guarded and defaults off
+ * — the fuzzer asserts the same invariant directly, so nothing is lost there.
+ */
+function penetrationChecksEnabled(): boolean {
+  try {
+    return Boolean((import.meta as { env?: { DEV?: boolean } }).env?.DEV);
+  } catch {
+    return false;
+  }
+}
+
+const PENETRATION_CHECKS = penetrationChecksEnabled();
+/** One report per offending collider, so a wedged body does not flood the log. */
+const reportedPenetrations = new Set<string>();
+
+/**
+ * The always-on non-penetration invariant, asserted every fixed tick in dev.
+ *
+ * `motionPenetration` is the single shared predicate (see playerMotion.ts): it
+ * returns the solid blockers the capsule ended the tick inside and any deck
+ * cutting its torso, with the solver's own legitimate ignores excluded. A
+ * violation is the "glitch through objects" defect, so it is logged with the
+ * collider, the exact position and the verb that produced it.
+ */
+function assertNonPenetration(
+  world: MissionInstance["world"],
+  motion: MotionState,
+  verb: TraversalVerb,
+  tick: number,
+): void {
+  if (!PENETRATION_CHECKS) return;
+  const { embeds, deckId } = motionPenetration(world, motion);
+  if (embeds.length === 0 && deckId === null) return;
+  const at = `(${motion.pos.x.toFixed(2)}, ${motion.pos.y.toFixed(2)}, ${motion.pos.z.toFixed(2)})`;
+  for (const embed of embeds) {
+    const key = `embed:${embed.id}`;
+    if (reportedPenetrations.has(key)) continue;
+    reportedPenetrations.add(key);
+    console.error(
+      `[mission] non-penetration violated: capsule ${embed.depthM.toFixed(3)}m inside ` +
+        `solid ${embed.id} at ${at}, verb=${verb}, phase=${motion.phase}, tick=${tick}`,
+    );
+  }
+  if (deckId !== null) {
+    const key = `deck:${deckId}`;
+    if (!reportedPenetrations.has(key)) {
+      reportedPenetrations.add(key);
+      console.error(
+        `[mission] non-penetration violated: deck ${deckId} through the torso at ` +
+          `${at}, verb=${verb}, phase=${motion.phase}, tick=${tick}`,
+      );
+    }
+  }
+}
+
 /** A semantic boundary worth reporting. Not a tick log: see the cap below. */
 export interface MissionRuntimeEvent {
   readonly tick: number;
@@ -109,7 +199,11 @@ export interface MissionRuntimeEvent {
     | "HARD_LANDING"
     | "FLOW_REACHED"
     | "THROW_STRUCK_BODY"
-    | "BEAT_RESOLVED";
+    | "BEAT_RESOLVED"
+    /** A watcher left his post and started walking. */
+    | "WATCH_MOVED"
+    /** A perspective encounter reached a verdict. */
+    | "ENCOUNTER_RESOLVED";
   readonly detail: string;
 }
 
@@ -129,13 +223,101 @@ const NO_CIVILIANS: readonly MissionCivilian[] = [];
 /** Shared so a tick with no beat, or no stroke, allocates nothing. */
 const NO_BEAT_NOISE: readonly NoiseEvent[] = [];
 
+/** Shared so a suspended tick, which steps nobody, allocates nothing. */
+const NO_PURSUIT_EVENTS: readonly PursuitEvent[] = [];
+
+/**
+ * How far above the feet the committed waypoint must sit for the reader to treat
+ * an incidental climb face as guidance-sanctioned ascent it may take off Shift
+ * alone. Below this, the guidance is a same-height or lower run and an inferred
+ * MANTLE/CLIMB_UP needs an explicit Space. It sits above minor deck undulation
+ * and a same-deck run (the cornice marker C_CORNICE_S is the same height as the
+ * body, ~0m) yet below every ascent the guidance actually asks for — the crate
+ * top to the first canopy is 0.65m, the ground to the crate 1.9m, the tower and
+ * scaffold climbs metres. A kerb is a STEP_UP, which is never gated regardless.
+ */
+const ASCENT_GUIDANCE_MIN_M = 0.4;
+
+// ---------------------------------------------------------------------------
+// Perspective encounters, in the runtime.
+//
+// The encounter machines live on the runtime like the pursuit state does — one
+// per authored stop, fresh per attempt — and are stepped inside the same fixed
+// step. That is what makes the runtime the single source of truth: the same
+// machine positions become the field's watcher poses, the rendered watcher
+// poses, and the overlay's projection, so the constable the player is talking to
+// is the constable whose cone can see them and the body on screen, all at once.
+// ---------------------------------------------------------------------------
+
+/** The overlay's live read of the active encounter. Client-safe only. */
+export interface ActiveEncounterView {
+  readonly encounterId: string;
+  readonly phase: EncounterPhase;
+  /** Prompt, speaker, loyalty, priorities, hint. Never a rubric. */
+  readonly view: EncounterClientView;
+  /** Set once the verdict is in; drives the result copy. */
+  readonly verdictKind: EncounterVerdictKind | null;
+  /** Reprieve window, seconds, for the correct-answer consequence copy. */
+  readonly reprieveWorldSeconds: number;
+}
+
+/** One resolved stop, for the HUD and the result. Never carries an answer. */
+export interface EncounterSummary {
+  readonly encounterId: string;
+  readonly itemId: string;
+  readonly verdictKind: EncounterVerdictKind;
+  /** True when the answer bought a reprieve (correct/granted), false on wrong. */
+  readonly reprieve: boolean;
+}
+
 export interface MissionRuntime {
   readonly instance: MissionInstance;
   readonly seed: number;
   clock: FieldClock;
   motion: MotionState;
+  /**
+   * The pose at the END of the previous fixed step.
+   *
+   * The simulation runs at a fixed 60Hz and the render does not, so the two
+   * disagree about where "now" is by up to a whole step. Drawing the latest
+   * tick's position on every frame means a 144Hz display shows the same
+   * position for two or three frames and then jumps two steps' worth, which is
+   * judder the player reads as the movement being loose. Keeping the previous
+   * pose lets the renderer interpolate; see `missionRenderPose`.
+   *
+   * Held as a reference to the previous MotionState's `pos`, which is safe
+   * because motion states are replaced rather than mutated, and costs no
+   * allocation per tick.
+   */
+  prevPos: Vec3;
+  prevYaw: number;
   flow: FlowState;
   stealth: StealthFieldState;
+  /**
+   * The watchers' legs: where each of them has actually walked to.
+   *
+   * Separate from `stealth`, and it has to be. The stealth field owns what a
+   * watcher KNOWS and refuses on purpose to own where he is standing — patrol
+   * routes belong to the level — so this is the layer between the two, and its
+   * absence is why being seen used to change nothing about the world. See
+   * stealth/pursuit.ts.
+   */
+  pursuit: WatcherPursuit[];
+  /**
+   * The poses the field was actually given this tick, after pursuit displaced
+   * them. The renderer draws exactly these, so the constable on screen is the
+   * constable the simulation resolved sight lines from and not a second opinion.
+   */
+  watcherPoses: readonly WatcherPose[];
+  /**
+   * Which way each watcher is looking, straight off the field.
+   *
+   * The cone's yaw, not the body's travel direction: a man walking north with
+   * his head turned east is looking east, and the eye is the thing the player is
+   * playing against. Drawing the body on the travel yaw while the cone pointed
+   * somewhere else would be a tell that lies.
+   */
+  watcherFacings: readonly { id: string; yaw: number }[];
   /** Fixed steps executed. The mission clock, counted in ticks and never in ms. */
   ticks: number;
   /** Objective ids met, latched, in the order they were met. */
@@ -184,6 +366,31 @@ export interface MissionRuntime {
   /** Throws that struck a body instead of reaching their aim point. */
   throwsStruckBody: number;
   /**
+   * Tick the throw performance stops playing, or 0.
+   *
+   * A throw was previously invisible from the player's side: the object leaves,
+   * the field hears it land and a constable turns, but the body that threw it
+   * never moved and the object itself has no GLB to draw. Pressing Q therefore
+   * looked exactly like pressing an unbound key, which is what the owner
+   * reported. This is the window the arm swing occupies, and it is the one
+   * confirmation the verb can currently give.
+   */
+  throwHeldUntilTick: number;
+  /**
+   * The complete launch state latched on the last aiming frame — ORIGIN and
+   * target — so a release throws from exactly what the player was shown, not from
+   * a position they may have walked half a metre past by the time the key came
+   * up. Null when not aiming.
+   */
+  throwLatched: { origin: Vec3; aim: Vec3; preview: ThrowPreview } | null;
+  /** The live aim cue while aiming, or null. Read by the canvas, written by the step. */
+  throwAim: MissionThrowAim | null;
+  /**
+   * A release-time refusal, held visible for a deterministic window so a throw
+   * that never left the hand does not vanish in the frame the key came up.
+   */
+  throwRefusal: { cue: MissionThrowAim; untilTick: number } | null;
+  /**
    * The HUD's projection, refreshed by the step that produced it.
    *
    * Held rather than derived on read because `stealthPresentation` needs the
@@ -195,6 +402,63 @@ export interface MissionRuntime {
   recentEvents: MissionRuntimeEvent[];
   /** Fixed steps the catch-up bound discarded. Surfaced rather than absorbed. */
   droppedSteps: number;
+  /**
+   * Distinct traversal verbs the body has actually performed this run.
+   *
+   * The affordance cue fades against this, so it is a record of what the player
+   * has been TAUGHT rather than of what they have been offered. Counted from
+   * `verbCommitted` for exactly that reason: running past a vault you never took
+   * teaches nothing, and a cue that dimmed for it would be dimming on the
+   * player's behalf. See mission/affordance.ts.
+   */
+  verbsUsed: Set<TraversalVerb>;
+  /**
+   * A traversal that FINISHED on the current fixed step — an authored climb or
+   * vault completing, a landing, a received dive — or null on a tick nothing
+   * finished. Captured inside the step and read once by `advanceWayfinding`, so
+   * the guidance can credit the completion to a directed route link and rejoin
+   * the route at the proven node rather than guessing from position alone.
+   */
+  completion: { verb: TraversalVerb; landingId: string | null } | null;
+
+  // ---- perspective encounters ----
+  /** One machine per authored stop, fresh for this attempt. */
+  encounters: EncounterInstance[];
+  /** Watcher-scoped perception reprieves. Applied to the field's watcher input. */
+  suppression: PerceptionSuppression;
+  /** The encounter the overlay should submit this frame, or null. Overlay-written. */
+  encounterSubmit: string | null;
+  /** The encounter the overlay dismissed this frame, or null. Overlay-written. */
+  encounterDismiss: string | null;
+  /** Verdicts the overlay has fetched, awaiting the step that consumes them. */
+  encounterVerdictInbox: Map<string, EncounterVerdictKind>;
+  /** The live overlay projection, or null when no stop is active. */
+  encounterView: ActiveEncounterView | null;
+  /** True while a stop locks locomotion (APPROACH/QUESTION/SUBMITTING). */
+  encounterLocked: boolean;
+  /** True while a stop owns input and gameplay time is frozen. */
+  encounterOwnsInput: boolean;
+  /**
+   * The encounter-notice meter, 0..1. NOT a cosmetic random: it is a pure
+   * function of the live encounter phase, eased per tick. It shoots up the moment
+   * a stop arms (the "you were spotted" surge right after the drop), holds while
+   * the question is up, and eases back down once the stop releases. The HUD draws
+   * it on the same suspicion meter (taking the max with the field's own value),
+   * so the bar the player already reads is what surges — bound to real encounter
+   * state, never a fake value the simulation does not act on.
+   */
+  encounterNotice01: number;
+  /**
+   * True once the cinematic conversation shot has eased in far enough AND the
+   * speaker is at conversational separation — i.e. the moment the question is
+   * allowed to become answerable. Written by the chase camera (the only place
+   * that knows the blend weight) and read by the overlay so the answer dock can
+   * never enable while the officer is far or the shot is still forming. Presentation
+   * only; the deterministic machine never reads it.
+   */
+  encounterShotReady: boolean;
+  /** Resolved-stop summaries, by encounter id. For the HUD and the result. */
+  encounterSummaries: Map<string, EncounterSummary>;
 }
 
 export interface MissionInputFrame {
@@ -271,8 +535,15 @@ export function createMissionRuntime(input: {
     seed: input.seed,
     clock: createFieldClock(input.seed),
     motion: createGroundedState(instance.spawn.pos, instance.spawn.yaw),
+    prevPos: instance.spawn.pos,
+    prevYaw: instance.spawn.yaw,
     flow: createFlowState(),
     stealth,
+    pursuit: createPursuitState(instance.watcherIds),
+    // The authored poses at tick 0, so a surface that samples before the first
+    // step draws the watchers on their marks rather than nowhere.
+    watcherPoses: instance.watcherPosesAtTick(0, input.seed),
+    watcherFacings: [],
     ticks: 0,
     satisfied: [],
     detections: 0,
@@ -289,6 +560,10 @@ export function createMissionRuntime(input: {
     crowdClusters: [],
     countedFrom: null,
     throwsStruckBody: 0,
+    throwHeldUntilTick: 0,
+    throwLatched: null,
+    throwAim: null,
+    throwRefusal: null,
     stealthView: {
       ...CALM_STEALTH_VIEW,
       reflexCharges: stealth.reflex.charges,
@@ -297,7 +572,66 @@ export function createMissionRuntime(input: {
     outcome: null,
     recentEvents: [],
     droppedSteps: 0,
+    verbsUsed: new Set<TraversalVerb>(),
+    completion: null,
+    // Fresh machines per attempt, so nothing a prior run resolved can leak in.
+    encounters: (instance.encounters ?? []).map((mount) =>
+      createEncounterInstance(mount.def, mount.variant),
+    ),
+    suppression: NO_SUPPRESSION,
+    encounterSubmit: null,
+    encounterDismiss: null,
+    encounterVerdictInbox: new Map(),
+    encounterView: null,
+    encounterLocked: false,
+    encounterOwnsInput: false,
+    encounterNotice01: 0,
+    encounterShotReady: false,
+    encounterSummaries: new Map(),
   };
+}
+
+/**
+ * The notice meter's target for a phase, and how fast it eases there per tick.
+ *
+ * The surge is deliberately quick (a hard rise the tick a stop arms) and the
+ * decay gentle (it lingers a moment after the stop releases). Bound to the
+ * machine's phase, so it is a read of real encounter state rather than a value
+ * the HUD invents.
+ */
+const NOTICE_RISE_PER_TICK = 0.09;
+const NOTICE_FALL_PER_TICK = 0.03;
+
+function noticeTargetFor(phase: EncounterPhase | null): number {
+  switch (phase) {
+    case "APPROACH":
+    case "QUESTION":
+    case "SUBMITTING":
+      return 1;
+    case "RESOLVED":
+      return 0.5;
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Ease the encounter-notice meter toward its phase target. Pure ramp on the
+ * fixed clock, so it is deterministic and replay-stable. Reduced motion does not
+ * change the value (a meter is state, not motion); the HUD chooses whether to
+ * flash it.
+ */
+function stepEncounterNotice(runtime: MissionRuntime, phase: EncounterPhase | null): void {
+  const target = noticeTargetFor(phase);
+  const current = runtime.encounterNotice01;
+  if (Math.abs(target - current) < 1e-4) {
+    runtime.encounterNotice01 = target;
+    return;
+  }
+  const rate = target > current ? NOTICE_RISE_PER_TICK : NOTICE_FALL_PER_TICK;
+  const next = current + Math.sign(target - current) * rate;
+  runtime.encounterNotice01 =
+    target > current ? Math.min(target, next) : Math.max(target, next);
 }
 
 function note(
@@ -338,7 +672,9 @@ function stealthRead(
     sprinting,
     traversing,
     exposure: instance.exposureAt?.(read) ?? "EXPOSED",
-    covered: instance.coveredAt?.(read) ?? false,
+    // Against the poses the pursuit produced for THIS tick, which is why this
+    // is read after `stepWatcherPursuit` and not before it.
+    covered: instance.coveredAt?.(read, runtime.watcherPoses) ?? false,
     // The level says where it is dark; dawn says how much that is still worth.
     // Applied here rather than inside the level so the mission clock stays the
     // container's business and a level author never has to remember to age their
@@ -448,16 +784,212 @@ function civiliansForTick(
 export function throwMissionDiversion(
   runtime: MissionRuntime,
   aim: Vec3,
+  origin: Vec3 = runtime.motion.pos,
 ): boolean {
   if (runtime.outcome) return false;
   const result = throwFieldDiversion(
     runtime.instance.world,
     runtime.stealth,
-    runtime.motion.pos,
+    origin,
     aim,
   );
   runtime.stealth = result.state;
+  // Only a throw that actually left the hand gets a performance. A refusal —
+  // out of charges, out of range, released into geometry — must look different
+  // from a throw, or the player learns nothing from the difference.
+  if (result.thrown) {
+    runtime.throwHeldUntilTick = runtime.ticks + THROW_CLIP_TICKS;
+  }
   return result.thrown;
+}
+
+/**
+ * Where THIS throw would land, resolved without spending a charge. Read-only.
+ *
+ * The aiming half of the verb. `previewThrow` runs the same `stepDiversion` the
+ * live object will, on a copy AND against the SAME actors, so the arc, the
+ * landing ring and the trajectory samples the canvas draws are where the object
+ * actually comes to rest — short of a wall, or stopped at a body — and the
+ * `refusal` is why a throw from here would be declined. Nothing is written to
+ * the runtime and no charge is spent; it is safe to call every aiming frame.
+ *
+ * PARITY WITH THE LIVE THROW is the whole point, and it has to be the WHOLE actor
+ * set. `stepStealthField` hands `stepDiversion` the watchers AND the civilians —
+ * built exactly as below, watcher poses mapped to bodies and the crowd appended —
+ * so the preview builds the identical list, same ids, same poses, same heights.
+ * A preview that ran only the civilians would promise a clear lane straight
+ * through a constable the live throw then hit.
+ */
+export function previewMissionThrow(
+  runtime: MissionRuntime,
+  aim: Vec3,
+  origin: Vec3 = runtime.motion.pos,
+): ThrowPreview {
+  const actors: DiversionActor[] = [
+    ...runtime.watcherPoses.map((pose) => ({
+      id: pose.id,
+      pos: pose.position,
+      capsuleHeight: pose.capsuleHeight ?? STAND_HEIGHT,
+    })),
+    ...runtime.civilians,
+  ];
+  return previewThrow(
+    runtime.instance.world,
+    runtime.stealth.diversions,
+    origin,
+    aim,
+    FIELD_DT,
+    STEALTH_TUNING,
+    actors,
+  );
+}
+
+/** The aim cue the canvas draws: a trajectory, a landing, and a refusal reason. */
+export interface MissionThrowAim {
+  readonly from: Vec3;
+  readonly aim: Vec3;
+  readonly ok: boolean;
+  readonly restsAt: Vec3 | null;
+  readonly radiusM: number;
+  readonly refusal: ThrowRefusal;
+  /** The object's position each simulated tick — the arc the canvas draws. */
+  readonly samples: readonly Vec3[];
+}
+
+/**
+ * Fixed ticks a release-time refusal stays on screen. ~0.75s at 60Hz, and it is
+ * deterministic on purpose: a refusal that flickered for the one frame between
+ * keyup and the aim clearing is one the player never reads.
+ */
+export const THROW_REFUSAL_TICKS = 45;
+
+function throwAimCue(
+  origin: Vec3,
+  aim: Vec3,
+  preview: ThrowPreview,
+): MissionThrowAim {
+  return {
+    from: { ...origin },
+    aim: { ...aim },
+    ok: preview.ok,
+    restsAt: preview.restsAt ? { ...preview.restsAt } : null,
+    radiusM: preview.radiusM,
+    refusal: preview.refusal,
+    samples: preview.samples,
+  };
+}
+
+/**
+ * The one place the throw's aim state is advanced. Sole owner, in the fixed step.
+ *
+ * Three behaviours, and each is a fix the audit asked for:
+ *
+ *   * WHEN UI OWNS INPUT — an abandon modal, focus in an editable control, a
+ *     blurred window — aiming and any pending release are dropped and NO charge
+ *     is spent. A throw begun before the modal opened cannot fire when it
+ *     closes.
+ *   * WHILE AIMING, the preview is solved (against the crowd's own bodies) and
+ *     the aim is LATCHED, so a release consumes exactly the target the player
+ *     was shown rather than one recomputed after the cue cleared.
+ *   * ON RELEASE, the latched target is thrown; a refusal is held visible for
+ *     `THROW_REFUSAL_TICKS` so it does not vanish in the frame the key came up.
+ *
+ * `input` is mutated: `throwReleased` is consumed here, and both flags are
+ * cleared when UI owns input.
+ */
+export function stepMissionThrowAim(
+  runtime: MissionRuntime,
+  input: { throwAiming: boolean; throwReleased: boolean },
+  aim: Vec3,
+  options: { uiOwnsInput: boolean },
+): void {
+  if (options.uiOwnsInput) {
+    input.throwAiming = false;
+    input.throwReleased = false;
+    runtime.throwLatched = null;
+    runtime.throwAim = null;
+    runtime.throwRefusal = null;
+    return;
+  }
+
+  if (input.throwAiming) {
+    // Latch the WHOLE launch state — origin and target — from this frame, and
+    // preview from that same origin, so the displayed arc and a later release
+    // are the identical throw even if the player is still moving.
+    const origin = { ...runtime.motion.pos };
+    const preview = previewMissionThrow(runtime, aim, origin);
+    runtime.throwLatched = { origin, aim: { ...aim }, preview };
+    runtime.throwAim = throwAimCue(origin, aim, preview);
+    return;
+  }
+
+  runtime.throwAim = null;
+
+  if (input.throwReleased) {
+    input.throwReleased = false;
+    const latched = runtime.throwLatched;
+    runtime.throwLatched = null;
+    if (latched) {
+      // The LATCHED origin AND target, never a recompute from where the player
+      // has since moved to.
+      const thrown = throwMissionDiversion(runtime, latched.aim, latched.origin);
+      if (thrown) {
+        runtime.throwRefusal = null;
+      } else {
+        // Re-solve only to read WHY it was refused, at the same latched launch
+        // state, so the held cue names the reason without moving the throw.
+        const reason = previewMissionThrow(runtime, latched.aim, latched.origin);
+        runtime.throwRefusal = {
+          cue: throwAimCue(latched.origin, latched.aim, reason),
+          untilTick: runtime.ticks + THROW_REFUSAL_TICKS,
+        };
+      }
+    }
+    return;
+  }
+
+  // Not aiming and not releasing: drop a latch left by a blur mid-aim.
+  runtime.throwLatched = null;
+}
+
+/**
+ * The aim cue to draw right now: the live aim while aiming, else a release-time
+ * refusal still inside its window, else nothing. A pure read for the canvas.
+ */
+export function missionThrowCue(runtime: MissionRuntime): MissionThrowAim | null {
+  if (runtime.throwAim) return runtime.throwAim;
+  const refusal = runtime.throwRefusal;
+  if (refusal && runtime.ticks < refusal.untilTick) return refusal.cue;
+  return null;
+}
+
+/**
+ * Why a throw was declined, as a line a player can read, or null when it would
+ * be accepted. The one player-facing surface for a refused throw.
+ */
+export function throwRefusalMessage(refusal: ThrowRefusal): string | null {
+  switch (refusal) {
+    case "NO_CHARGES":
+      return "Nothing left to throw";
+    case "OUT_OF_RANGE":
+      return "Too far — aim closer";
+    case "NO_ROOM_TO_THROW":
+      return "No room to throw from here";
+    case "NONE":
+      return null;
+  }
+}
+
+/**
+ * Fixed steps the throw performance occupies: the 450ms `throwLight` was
+ * authored for. Exported so the mixer's timeScale is computed against the same
+ * window rather than a second copy of it.
+ */
+export const THROW_CLIP_TICKS = 27;
+
+/** Is the throw performance playing this tick? */
+export function missionThrowing(runtime: MissionRuntime): boolean {
+  return runtime.ticks < runtime.throwHeldUntilTick;
 }
 
 /**
@@ -515,6 +1047,263 @@ function stepBeatForTick(
   return stepped.noise;
 }
 
+/** An actor pose the encounter machine is overriding this tick. */
+interface EncounterActorOverride {
+  readonly id: string;
+  readonly pos: Vec3;
+  readonly yaw: number;
+}
+
+const NO_OVERRIDES: readonly EncounterActorOverride[] = [];
+
+/** What the encounter step decided for this tick, for the rest of the step. */
+interface EncounterStepAggregate {
+  readonly locked: boolean;
+  readonly ownsInput: boolean;
+  readonly overrides: readonly EncounterActorOverride[];
+}
+
+/**
+ * Apply a resolved stop's consequence to the live systems.
+ *
+ * The suppression ledger and the alert states are the two the encounter must
+ * touch, and it touches them ONLY through named APIs: `suppressWatchers` +
+ * `calmWatchers` for a reprieve, `investigateWatchers` for a pursuit. No private
+ * field of the field state is mutated here.
+ */
+function applyEncounterResolution(
+  runtime: MissionRuntime,
+  resolution: EncounterResolution,
+): void {
+  runtime.encounterSummaries.set(resolution.encounterId, {
+    encounterId: resolution.encounterId,
+    itemId: resolution.itemId,
+    verdictKind: resolution.verdictKind,
+    reprieve: resolution.suppress !== null,
+  });
+  note(
+    runtime,
+    "ENCOUNTER_RESOLVED",
+    `${resolution.encounterId}:${resolution.verdictKind}`,
+  );
+  if (resolution.suppress) {
+    runtime.suppression = suppressWatchers(
+      runtime.suppression,
+      resolution.suppress.ids,
+      runtime.clock.tick,
+      resolution.suppress.durationTicks,
+    );
+    // The talked-down guards drop out of any contact and head back to patrol;
+    // the suppression above is what keeps them from re-detecting meanwhile.
+    runtime.stealth = {
+      ...runtime.stealth,
+      watchers: calmWatchers(runtime.stealth.watchers, resolution.suppress.ids),
+    };
+  }
+  if (resolution.pursue) {
+    runtime.stealth = {
+      ...runtime.stealth,
+      watchers: investigateWatchers(
+        runtime.stealth.watchers,
+        resolution.pursue.ids,
+        resolution.pursue.toward,
+      ),
+    };
+  }
+}
+
+/**
+ * Step every encounter machine one fixed tick, from the settled player pose.
+ *
+ * Returns what the rest of the step needs: whether locomotion is locked, whether
+ * an overlay owns input (which freezes pursuit and detection), and the actor
+ * poses the machines are overriding. It also writes the live overlay projection
+ * and consumes the one-shot control the overlay set. Stepped BEFORE motion so a
+ * lock can zero this tick's movement, using last tick's poses to seed an
+ * approach — the same one-tick lag the pursuit runs on.
+ */
+function stepEncounters(runtime: MissionRuntime): EncounterStepAggregate {
+  if (runtime.encounters.length === 0) {
+    runtime.encounterLocked = false;
+    runtime.encounterOwnsInput = false;
+    runtime.encounterView = null;
+    return { locked: false, ownsInput: false, overrides: NO_OVERRIDES };
+  }
+  const world = runtime.instance.world;
+  const tick = runtime.clock.tick;
+  const player = { pos: runtime.motion.pos, grounded: runtime.motion.grounded };
+  let locked = false;
+  let ownsInput = false;
+  let view: ActiveEncounterView | null = null;
+  const overrides: EncounterActorOverride[] = [];
+
+  // The machine seeds an approach from the actor's real sim pose, so hand it the
+  // watcher positions in its own shape. The cone facing is the body's start yaw.
+  const facingById = new Map(runtime.watcherFacings.map((f) => [f.id, f.yaw]));
+  const actorPoses = runtime.watcherPoses.map((pose) => ({
+    id: pose.id,
+    pos: pose.position,
+    yaw: facingById.get(pose.id) ?? pose.baseYaw,
+  }));
+
+  for (const enc of runtime.encounters) {
+    const id = enc.def.id;
+    const result = stepEncounter(enc, {
+      world,
+      tick,
+      player,
+      actorPoses,
+      dt: FIELD_DT,
+      submit: runtime.encounterSubmit === id,
+      verdict: runtime.encounterVerdictInbox.get(id) ?? null,
+      dismiss: runtime.encounterDismiss === id,
+    });
+    if (result.locksLocomotion) locked = true;
+    if (result.ownsInput) ownsInput = true;
+    for (const pose of result.actorPoses) {
+      overrides.push({ id: pose.id, pos: pose.pos, yaw: pose.yaw });
+    }
+    if (result.resolution) {
+      applyEncounterResolution(runtime, result.resolution);
+      // The verdict has been taken into RESOLVED; it must not be re-applied.
+      runtime.encounterVerdictInbox.delete(id);
+    }
+    if (
+      result.phase === "APPROACH" ||
+      result.phase === "QUESTION" ||
+      result.phase === "SUBMITTING" ||
+      result.phase === "RESOLVED"
+    ) {
+      view = {
+        encounterId: id,
+        phase: result.phase,
+        view: encounterClientView(enc.def, enc.variant),
+        verdictKind: enc.verdictKind,
+        reprieveWorldSeconds: enc.def.reprieveWorldSeconds,
+      };
+    }
+  }
+
+  // The submit and dismiss are one-shot edges: cleared every tick whether or not
+  // an encounter took them, so a held key or a slow frame cannot fire twice.
+  runtime.encounterSubmit = null;
+  runtime.encounterDismiss = null;
+  runtime.encounterLocked = locked;
+  runtime.encounterOwnsInput = ownsInput;
+  runtime.encounterView = view;
+  // Ease the notice meter toward the controlling phase's target. Bound to real
+  // encounter state, so the "you were spotted" surge is the stop arming, not a
+  // cosmetic value the world does not act on.
+  stepEncounterNotice(runtime, view?.phase ?? null);
+  return { locked, ownsInput, overrides };
+}
+
+/** Whether every authored encounter has reached a verdict. The traversal gate. */
+function encountersParticipated(runtime: MissionRuntime): boolean {
+  return runtime.encounters.every((enc) => encounterResolved(enc));
+}
+
+/**
+ * The active stop, for the CINEMATIC layer to frame — or null when no stop is
+ * running. Pure read of the single source of truth.
+ *
+ * It carries only what the presentation needs and cannot influence a verdict:
+ * the phase, the (server-authoritative) verdict once it lands, and the ids of
+ * the speaker and any secondary so the stage can look up their live poses in
+ * `watcherPoses`. The camera and the actor performance are procedural
+ * presentation on top of the deterministic machine; this is the seam between
+ * the two. Returns the first controlling machine — there is only ever one stop
+ * active at a time on the M1 route.
+ */
+export interface EncounterCinematicRead {
+  readonly encounterId: string;
+  readonly phase: EncounterPhase;
+  readonly verdictKind: EncounterVerdictKind | null;
+  readonly speakerId: string;
+  readonly secondaryId: string | null;
+  /**
+   * Live capsule-to-capsule separation of the speaker from the player, metres.
+   * The authoritative distance the shot-readiness gate and the QA telemetry read;
+   * the machine has already refused to open the question above ~2.2m, so this is
+   * the number that proves it.
+   */
+  readonly speakerSeparationM: number;
+}
+
+export function encounterCinematicRead(
+  runtime: MissionRuntime,
+): EncounterCinematicRead | null {
+  for (const enc of runtime.encounters) {
+    if (
+      enc.phase === "APPROACH" ||
+      enc.phase === "QUESTION" ||
+      enc.phase === "SUBMITTING" ||
+      enc.phase === "RESOLVED"
+    ) {
+      const speakerPose = runtime.watcherPoses.find(
+        (w) => w.id === enc.def.speaker.watcherId,
+      );
+      const separation = speakerPose
+        ? Math.hypot(
+            speakerPose.position.x - runtime.motion.pos.x,
+            speakerPose.position.z - runtime.motion.pos.z,
+          )
+        : Number.POSITIVE_INFINITY;
+      return {
+        encounterId: enc.def.id,
+        phase: enc.phase,
+        verdictKind: enc.verdictKind,
+        speakerId: enc.def.speaker.watcherId,
+        secondaryId: enc.def.speaker.secondaryWatcherId,
+        speakerSeparationM: separation,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Overlay the encounter machines' actor poses onto a watcher-pose list.
+ *
+ * One source of truth: the field, the renderer and the overlay all read the
+ * result of this, so the constable talking to the player stands, looks and
+ * detects from exactly where the machine put him.
+ */
+function applyOverrides(
+  poses: readonly WatcherPose[],
+  overrides: readonly EncounterActorOverride[],
+): readonly WatcherPose[] {
+  if (overrides.length === 0) return poses;
+  const byId = new Map(overrides.map((o) => [o.id, o]));
+  return poses.map((pose) => {
+    const o = byId.get(pose.id);
+    return o ? { ...pose, position: o.pos } : pose;
+  });
+}
+
+/**
+ * Merge the field's per-watcher facing with the encounter overrides' yaws.
+ *
+ * Upsert rather than map, because an overridden actor may have been dropped from
+ * the field's input this tick (suppressed, or the whole field frozen), so his id
+ * need not be present in `facings` — and he still has to face the player.
+ */
+function mergeFacings(
+  facings: readonly { id: string; yaw: number }[],
+  overrides: readonly EncounterActorOverride[],
+): { id: string; yaw: number }[] {
+  if (overrides.length === 0) return [...facings];
+  const yawById = new Map(overrides.map((o) => [o.id, o.yaw]));
+  const out = facings.map((f) =>
+    yawById.has(f.id) ? { id: f.id, yaw: yawById.get(f.id)! } : f,
+  );
+  const present = new Set(out.map((f) => f.id));
+  for (const o of overrides) {
+    if (!present.has(o.id)) out.push({ id: o.id, yaw: o.yaw });
+  }
+  return out;
+}
+
 /** One fixed step. Pure with respect to the clock: dt is always FIELD_DT. */
 function stepOnce(
   runtime: MissionRuntime,
@@ -524,6 +1313,33 @@ function stepOnce(
   const { instance } = runtime;
   const world = instance.world;
   const tick = runtime.clock.tick;
+
+  // The pose this step starts from, kept so the renderer can interpolate across
+  // the gap between fixed steps and render frames. Recorded per step rather
+  // than per frame because a long frame runs several steps, and the renderer
+  // needs the one immediately before the last — not the one before the batch.
+  runtime.prevPos = runtime.motion.pos;
+  runtime.prevYaw = runtime.motion.yaw;
+
+  // Perspective encounters step first, from last tick's settled pose, so a lock
+  // this tick can zero movement and a freeze can suspend pursuit and detection.
+  // Skipped entirely while an external surface (the abandon modal) owns time.
+  const enc: EncounterStepAggregate = frame.flowEnabled
+    ? stepEncounters(runtime)
+    : {
+        locked: runtime.encounterLocked,
+        ownsInput: runtime.encounterOwnsInput,
+        overrides: NO_OVERRIDES,
+      };
+  // While a stop holds the player, one-shot presses are dropped rather than
+  // buffered, so nothing fires on release. The overlay clears the browser-side
+  // latches too; this is the belt inside the sim.
+  if (enc.locked) {
+    latched.jump = false;
+    latched.dash = false;
+    latched.strike = false;
+  }
+  const frozen = enc.ownsInput;
 
   // Held crouch, resolved into the motion stance before anything reads it.
   // `stepFlow` consults `crouchHeld` only to decide whether a slide is wanted; the
@@ -536,35 +1352,103 @@ function stepOnce(
 
   const crouched = isCrouched(runtime.motion.capsuleHeight);
   const actionActive = runtime.motion.action !== null;
-  const moving = Math.hypot(frame.moveX, frame.moveZ) > 1e-3;
-  const speed = freeMoveSpeed({
-    shiftHeld: frame.sprintHeld,
+  // A locked player does not move: the encounter has hold of them and only the
+  // scripted actor approach continues. Motion still integrates (gravity, settle)
+  // so a locked player standing is not frozen mid-fall.
+  const moving = !enc.locked && Math.hypot(frame.moveX, frame.moveZ) > 1e-3;
+  let speed = freeMoveSpeed({
+    shiftHeld: frame.sprintHeld && !enc.locked,
     moving,
     crouched,
     actionActive,
   });
+  const guidanceMark = standingObjective(runtime)?.objective.mark ?? null;
+  // The active SAFE leg's authored pace caps free movement, even with Shift held.
+  // The ropewalk tie beam is 1.6m wide and authored at 2.3 m/s; a sprint entry
+  // off the hatch overshoots it into the dark, and telling the player only after
+  // the reader has already braked them at the lip is not landing the beam. The
+  // cap is authored per-leg — most legs have none and run at full pace — and the
+  // wayfinder exposes it for the committed leg. Never raised, only lowered.
+  const legCap = guidanceMark?.speedCapMps?.(runtime.motion.pos) ?? null;
+  if (legCap !== null && !actionActive) speed = Math.min(speed, legCap);
   const length = moving ? Math.hypot(frame.moveX, frame.moveZ) : 1;
   const targetVelX = moving ? (frame.moveX / length) * speed : 0;
   const targetVelZ = moving ? (frame.moveZ / length) * speed : 0;
+
+  // Whether the reader may climb an incidental face off Shift alone. It may when
+  // the committed guidance points UP — the active waypoint sits meaningfully
+  // above the feet, as at the Shambles crates or the Town House safe tower — and
+  // must not when guidance is a same-height/lower run past a climb face, which is
+  // the Town House cornice: the marker calls for the same-height C_CORNICE_S and
+  // a held sprint used to be read as consent to climb the 2.2m east face off its
+  // route. Measured height against the committed waypoint, no node ids; a
+  // buffered Space still climbs, and with no waypoint the reader keeps its
+  // default. See flow.ts `inferredAscentAllowed`.
+  const guidanceWaypoint = guidanceMark?.waypoint?.(runtime.motion.pos) ?? null;
+  const inferredAscentAllowed = guidanceWaypoint
+    ? guidanceWaypoint.pos.y - runtime.motion.pos.y > ASCENT_GUIDANCE_MIN_M
+    : true;
+
+  // The committed guidance may be holding a directed action gateway — a vault,
+  // climb or leap it will not retire until the body performs it. When it is, hand
+  // the reader the authored axis and the verb family so it probes the action's
+  // own line (not a live slide a few degrees off it) and can only commit that
+  // family. flow.ts still requires the player to be pushing along the axis, and
+  // still runs the full plan/commit/preflight — this steers the read, it does not
+  // force the action. A lock suppresses it, like every other committed verb.
+  const gatewaySignal =
+    frame.flowEnabled && !enc.locked ? (guidanceMark?.gateway?.() ?? null) : null;
 
   const flowResult = stepFlow(world, runtime.motion, runtime.flow, {
     dt: FIELD_DT,
     targetVelX,
     targetVelZ,
-    sprintHeld: frame.sprintHeld,
+    sprintHeld: frame.sprintHeld && !enc.locked,
     crouchHeld: frame.crouchHeld,
     jumpBuffered: latched.jump,
     dashBuffered: latched.dash,
-    flowEnabled: frame.flowEnabled,
+    // A lock stops the flow reader committing verbs, the same way an external
+    // pause does; the body still integrates.
+    flowEnabled: frame.flowEnabled && !enc.locked,
     reducedMotion: frame.reducedMotion,
     receivingTargets: instance.receivingTargets,
+    inferredAscentAllowed,
+    guidedAxisX: gatewaySignal?.axisX,
+    guidedAxisZ: gatewaySignal?.axisZ,
+    guidedVerbs: gatewaySignal?.allowedVerbs,
   });
   runtime.motion = flowResult.motion;
   runtime.flow = flowResult.flow;
 
+  // ALWAYS-ON NON-PENETRATION INVARIANT (dev/test only). Every tick, assert the
+  // player capsule did not end inside a solid collider or with a deck plane
+  // through its torso — and if it did, report the offending collider, position
+  // and verb. This is the check the traversal fuzzer gates on, so a regression
+  // that slips past the seeded harness still announces itself the instant it
+  // happens in a real session. Throttled to one line per collider so a wedged
+  // body does not flood the console, and stripped from production builds.
+  assertNonPenetration(world, runtime.motion, runtime.flow.verb, runtime.ticks);
+
+  // A traversal that finished this tick, captured once for the guidance to credit
+  // to a directed link. The landing surface is what the feet are on now.
+  runtime.completion = null;
   for (const event of flowResult.events) {
     if (event.type === "landed" && event.landing === "HARD") {
       note(runtime, "HARD_LANDING", `${event.dropM?.toFixed(1) ?? "?"}m`);
+    }
+    // The body did the thing, so the player has now seen what the thing is. A
+    // Set rather than a count: the cue teaches a vocabulary, and vaulting the
+    // same crate six times is one word learned, not six.
+    if (event.type === "verbCommitted") runtime.verbsUsed.add(event.verb);
+    if (
+      event.type === "verbCompleted" ||
+      event.type === "landed" ||
+      event.type === "leapReceived"
+    ) {
+      runtime.completion = {
+        verb: event.verb,
+        landingId: groundedSupport(world, runtime.motion.pos)?.id ?? null,
+      };
     }
   }
   if (runtime.flow.inFlow && runtime.flow.chain === 3) {
@@ -593,11 +1477,59 @@ function stepOnce(
     instance.civiliansAtTick?.(tick, runtime.seed) ?? NO_CIVILIANS,
   );
 
+  // The watchers' legs, stepped BEFORE the field and against LAST tick's alert
+  // states. This is the call that was missing: the field resolves cones from
+  // poses, so the poses have to exist first, and the level's
+  // `watcherPosesAtTick` is a pure function of the clock that no amount of
+  // escalation could ever reach. Handing the field `pursuit.poses` rather than
+  // the authored anchors is the whole of the wiring — pass the anchors and every
+  // watcher goes back to being unable to take a step. See stealth/pursuit.ts.
+  //
+  // Suspended ticks step nobody, for the same reason they do not burn the hunt's
+  // clock: a UI surface owns time, and a constable who walks across the square
+  // behind a pause menu is a constable the player never saw coming.
+  // A frozen tick — an open question owns time — steps no watcher's legs, the
+  // same rule the external pause follows: a constable who closed on the player
+  // while they were reading a question is a constable they never saw coming.
+  const anchors = instance.watcherPosesAtTick(tick, runtime.seed);
+  const pursuit =
+    frame.flowEnabled && !frozen
+      ? stepWatcherPursuit(world, runtime.pursuit, {
+          dt: FIELD_DT,
+          anchors,
+          alerts: runtime.stealth.watchers,
+        })
+      : { states: runtime.pursuit, poses: runtime.watcherPoses, events: NO_PURSUIT_EVENTS };
+  // The encounter machines own their actors' poses while a stop runs. Overlaying
+  // here is what makes the runtime one source of truth: the field below, the
+  // renderer, and the overlay all read these exact poses, and the pursuit state
+  // is kept in step so releasing an actor does not snap him back.
+  runtime.pursuit = pursuit.states;
+  runtime.watcherPoses = applyOverrides(
+    pursuit.poses.length > 0 ? pursuit.poses : anchors,
+    enc.overrides,
+  );
+  if (enc.overrides.length > 0) {
+    const overrideById = new Map(enc.overrides.map((o) => [o.id, o]));
+    runtime.pursuit = runtime.pursuit.map((state) => {
+      const o = overrideById.get(state.id);
+      return o ? { ...state, position: { ...o.pos }, yaw: o.yaw } : state;
+    });
+  }
+  for (const event of pursuit.events) {
+    if (event.type === "leftPost") note(runtime, "WATCH_MOVED", event.watcherId);
+  }
+
   const fieldResult = stepStealthField(world, runtime.stealth, {
     dt: FIELD_DT,
     tick,
     seed: runtime.seed,
-    watchers: instance.watcherPosesAtTick(tick, runtime.seed),
+    // Suppressed watchers are dropped from the field's input, so their cones
+    // accrue nothing — while they stay in `runtime.watcherPoses` and are drawn
+    // the whole time. Scoped by id and bounded by an expiry tick; see
+    // stealth/suppression.ts. An answered stop buys the player a reprieve from
+    // exactly the guards it involved, and no others, for exactly its window.
+    watchers: posesWithoutSuppressed(runtime.watcherPoses, runtime.suppression, tick),
     player: stealthRead(runtime, read, traversing, frame.sprintHeld),
     clusters: crowdClustersFor(runtime, runtime.civilians),
     // Civilians are absent from the CollisionWorld by design — they must not
@@ -609,9 +1541,16 @@ function stepOnce(
     // that hears a hard landing, and it points the hearer at the tree.
     noise: [...flowResult.noise, ...beatNoise],
     reflexDisabled: frame.reducedMotion,
-    suspendAccrual: !frame.flowEnabled,
+    // A frozen question suspends accrual and the hunt, so detection cannot climb
+    // and the search clock does not run while the player is reading.
+    suspendAccrual: !frame.flowEnabled || frozen,
   });
   runtime.stealth = fieldResult.state;
+  // The overridden actors face the player (the machine's yaw), not the cone's,
+  // while a stop runs; every other watcher keeps the field's facing. Upserted so
+  // an actor dropped from the field input (suppressed, or frozen tick) still
+  // gets the machine's facing.
+  runtime.watcherFacings = mergeFacings(fieldResult.facings, enc.overrides);
   // The one time dilation in the game, and it is applied to the NEXT frame's
   // delta rather than to this tick: a fixed step is always FIELD_DT.
   runtime.timeScale = fieldResult.timeScale;
@@ -667,7 +1606,12 @@ function stepOnce(
     return;
   }
 
-  if (requiredObjectivesMet(runtime)) {
+  // The participation gate. The route cannot resolve to the duel until every
+  // authored encounter has reached a verdict — a WRONG one counts, so a model
+  // outage or a bad answer cannot soft-lock the run, but a player cannot skip a
+  // stop by running past it either. With no encounters this is vacuously true
+  // and traversal is unchanged.
+  if (requiredObjectivesMet(runtime) && encountersParticipated(runtime)) {
     runtime.outcome = { kind: "REACHED_DUEL", ...missionObservation(runtime) };
     return;
   }
@@ -751,6 +1695,11 @@ export function stepMissionRuntime(
     // per step rather than left at the end of the frame's run of steps.
     runtime.clock = { ...runtime.clock, tick };
     stepOnce(runtime, frame, latched);
+    // The one place the standing objective's waypoint is advanced. Driven from
+    // the authoritative post-step position, once per fixed tick, so the guidance
+    // is a pure function of the ticks the run played and no drawing surface can
+    // move it. See `advanceWayfinding` and levelPort's mark `advance`/`waypoint`.
+    advanceWayfinding(runtime);
     for (const action of ["jump", "dash", "strike"] as const) {
       if (!latched[action]) continue;
       latched[action] = false;
@@ -768,11 +1717,195 @@ export function stepMissionRuntime(
   };
 }
 
+/**
+ * Anything further than this in one fixed step is a teleport, not motion.
+ *
+ * The fastest thing the body does is a burst at `dashSpeed(RUN_SPEED)`, about
+ * 6.7 m/s, which is 0.11 m per step; a running jump is slower still. So a metre
+ * in one step can only be an authored action snapping to a validated endpoint
+ * or a dive being received, and smearing the render across one of those would
+ * draw the player passing through the geometry the snap existed to avoid.
+ */
+const TELEPORT_M = 1;
+
+/**
+ * Where to DRAW the player this frame.
+ *
+ * Between the last completed fixed step and the next one, the clock is holding
+ * unspent time in its accumulator. That fraction is exactly how far past the
+ * last tick the current frame is, so it is exactly the blend between the two
+ * poses the simulation actually produced. Nothing here is fed back into the
+ * simulation — the simulation's position remains the tick's, and this is a
+ * presentation value the renderer alone reads.
+ */
+export function missionRenderPose(runtime: MissionRuntime): {
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+} {
+  const { motion, prevPos, prevYaw } = runtime;
+  const alpha = Math.min(1, Math.max(0, runtime.clock.accumulatorS / FIELD_DT));
+  const dx = motion.pos.x - prevPos.x;
+  const dy = motion.pos.y - prevPos.y;
+  const dz = motion.pos.z - prevPos.z;
+  if (Math.hypot(dx, dy, dz) > TELEPORT_M) {
+    return { x: motion.pos.x, y: motion.pos.y, z: motion.pos.z, yaw: motion.yaw };
+  }
+  let dYaw = motion.yaw - prevYaw;
+  while (dYaw > Math.PI) dYaw -= Math.PI * 2;
+  while (dYaw < -Math.PI) dYaw += Math.PI * 2;
+  return {
+    x: prevPos.x + dx * alpha,
+    y: prevPos.y + dy * alpha,
+    z: prevPos.z + dz * alpha,
+    yaw: prevYaw + dYaw * alpha,
+  };
+}
+
 export interface MissionObjectiveReadout {
   readonly id: string;
   readonly label: string;
   readonly required: boolean;
   readonly met: boolean;
+}
+
+/**
+ * The one objective the run is on, and how far off it is.
+ *
+ * There is exactly one of these at a time and it is derived rather than
+ * authored: the first required objective the run has not latched. A mission is
+ * a sequence of required steps and a player mid-run can hold one of them in
+ * their head, so the surfaces that report to them are given one — the list of
+ * six the HUD used to print is a thing to read, and nobody reads at a sprint.
+ *
+ * Optional objectives are counted here and never named. They are challenges,
+ * not instructions, and a player who is being told four extra things to do has
+ * not been told the one thing they have to.
+ */
+export interface MissionStandingRead {
+  readonly id: string;
+  readonly label: string;
+  /** 1-based place in the required sequence. */
+  readonly step: number;
+  readonly steps: number;
+  /** The required step after this one, so the run has a shape and not just a next. */
+  readonly thenLabel: string | null;
+  /** Where it is, for an objective that is a place. Null for a condition. */
+  readonly mark: MissionMarkRead | null;
+  readonly optionalMet: number;
+  readonly optionalTotal: number;
+}
+
+export interface MissionMarkRead {
+  readonly pos: Vec3;
+  readonly title: string;
+  readonly detail: string | null;
+  /** Metres still to travel: along the route where the level can walk it. */
+  readonly rangeM: number;
+  /** False when the range is the straight line because the route could not answer. */
+  readonly viaRoute: boolean;
+  /** How far the objective sits above the player's feet. Negative is below. */
+  readonly riseM: number;
+  /**
+   * The authored pace of the current committed leg when it is capped below a
+   * run, else null. The HUD reads it to post a walk cue before the roof lip.
+   */
+  readonly speedCapMps: number | null;
+}
+
+/**
+ * The first required objective still unmet, or null once they all are.
+ *
+ * Read by the HUD's sample and by the mark inside the canvas, so the plate in
+ * the street and the line in the corner cannot name two different things — a
+ * marker pointing at the yard while the HUD still asks for the handbill is
+ * worse than either surface alone.
+ */
+export function standingObjective(runtime: MissionRuntime): {
+  readonly objective: MissionObjective;
+  readonly step: number;
+  readonly steps: number;
+  readonly next: MissionObjective | null;
+} | null {
+  const required = runtime.instance.objectives.filter(
+    (objective) => objective.required,
+  );
+  const met = new Set(runtime.satisfied);
+  const index = required.findIndex((objective) => !met.has(objective.id));
+  if (index < 0) return null;
+  return {
+    objective: required[index]!,
+    step: index + 1,
+    steps: required.length,
+    next: required[index + 1] ?? null,
+  };
+}
+
+/**
+ * The mark's live read against a position, or null when there is nothing to
+ * point at.
+ *
+ * THE NAME AND THE DISTANCE ARE THE OBJECTIVE'S; THE PLACE IS THE NEXT ONE ON
+ * THE WAY. When the level can walk its own route it says where to head for
+ * next, and that — not the objective's own coordinate — is what the ring lands
+ * on and the arrow points at. The plate still reads "The Liberty Elm, 94 m",
+ * because that is what the player is doing; it just no longer aims them through
+ * a building on the strength of a straight line.
+ *
+ * The rise follows the place for the same reason. "Three metres up" about the
+ * scaffold in front of you is a thing you can act on; "nine metres up" about a
+ * tree you cannot see is trivia.
+ */
+/**
+ * Advance the standing objective's waypoint one step. THE SOLE MUTATION OWNER
+ * of wayfinding guidance.
+ *
+ * Called once per fixed tick by `stepMissionRuntime`, from the authoritative
+ * post-integration position, and by nothing else in production. Every surface
+ * that draws the mark — the HUD's periodic sample and the in-canvas
+ * `VisorRunMark` — reads it back through `markRead`, which peeks and never
+ * advances, so two consumers rendering at two different rates cannot each drive
+ * the waypoint and walk it in a loop. A standing objective that is a condition
+ * rather than a place carries no `advance` hook, and this does nothing.
+ *
+ * Exported so a test can advance guidance deterministically at a chosen
+ * position without integrating a physics step.
+ */
+export function advanceWayfinding(runtime: MissionRuntime): void {
+  const mark = standingObjective(runtime)?.objective.mark;
+  if (!mark?.advance) return;
+  const pos = runtime.motion.pos;
+  mark.advance({
+    pos,
+    grounded: runtime.motion.grounded,
+    supportId: runtime.motion.grounded
+      ? groundedSupport(runtime.instance.world, pos)?.id ?? null
+      : null,
+    verb: runtime.flow.verb,
+    completed: runtime.completion,
+  });
+}
+
+export function markRead(
+  objective: MissionObjective,
+  from: Vec3,
+): MissionMarkRead | null {
+  const mark = objective.mark;
+  if (!mark) return null;
+  const walked = mark.rangeM?.(from) ?? null;
+  const waypoint = mark.waypoint?.(from) ?? null;
+  const pos = waypoint?.pos ?? mark.pos;
+  return {
+    pos,
+    title: mark.title,
+    detail: waypoint ? `by way of ${waypoint.via}` : (mark.detail ?? null),
+    rangeM:
+      walked?.metres ?? Math.hypot(mark.pos.x - from.x, mark.pos.z - from.z),
+    viaRoute: walked?.viaRoute ?? false,
+    riseM: pos.y - from.y,
+    speedCapMps: mark.speedCapMps?.(from) ?? null,
+  };
 }
 
 /** Everything the stage and the HUD read. Nothing that would let them drive it. */
@@ -792,6 +1925,14 @@ export interface MissionPresentation {
   readonly timeScale: number;
   readonly detections: number;
   readonly objectives: readonly MissionObjectiveReadout[];
+  /**
+   * The one thing to be doing now, or null once every required step is done.
+   *
+   * Null is a real state and not an error: the run has cleared and the
+   * container is about to resolve it, and a HUD that kept asking for the
+   * handbill in that window would be asking for something already up.
+   */
+  readonly standing: MissionStandingRead | null;
   readonly recentEvents: readonly MissionRuntimeEvent[];
   /**
    * The bodies to draw, and the identical array the field counted its crowd
@@ -813,11 +1954,29 @@ export interface MissionPresentation {
   readonly beat: BeatPresentation | null;
   /** True while the player is standing where the work is, facing it. */
   readonly inBeatStance: boolean;
+  /**
+   * The active perspective encounter, or null. The overlay reads the live
+   * `runtime.encounterView` directly for responsiveness; this is the throttled
+   * HUD copy. Client-safe: prompt and speaker only, never a rubric.
+   */
+  readonly encounter: ActiveEncounterView | null;
+  /**
+   * The encounter-notice meter, 0..1, driven by the live stop phase. The HUD
+   * draws the max of this and the field's own suspicion, so the exposure bar
+   * surges the instant a stop arms after the drop. Real state, not cosmetic.
+   */
+  readonly encounterNotice01: number;
+  /** Resolved-stop summaries, for the HUD. Verdict kind only, never an answer. */
+  readonly encounterSummaries: readonly EncounterSummary[];
 }
 
 export function missionPresentation(runtime: MissionRuntime): MissionPresentation {
   const met = new Set(runtime.satisfied);
   const mount = runtime.instance.beat;
+  const optional = runtime.instance.objectives.filter(
+    (objective) => !objective.required,
+  );
+  const standing = standingObjective(runtime);
   return {
     flow: flowPresentation(runtime.motion, runtime.flow),
     stealth: runtime.stealthView,
@@ -833,6 +1992,19 @@ export function missionPresentation(runtime: MissionRuntime): MissionPresentatio
       required: objective.required,
       met: met.has(objective.id),
     })),
+    standing: standing
+      ? {
+          id: standing.objective.id,
+          label: standing.objective.label,
+          step: standing.step,
+          steps: standing.steps,
+          thenLabel: standing.next?.label ?? null,
+          mark: markRead(standing.objective, runtime.motion.pos),
+          optionalMet: optional.filter((objective) => met.has(objective.id))
+            .length,
+          optionalTotal: optional.length,
+        }
+      : null,
     recentEvents: runtime.recentEvents,
     civilians: runtime.civilians,
     crowdClusters: runtime.crowdClusters,
@@ -847,6 +2019,9 @@ export function missionPresentation(runtime: MissionRuntime): MissionPresentatio
           yaw: runtime.motion.yaw,
         })
       : false,
+    encounter: runtime.encounterView,
+    encounterNotice01: runtime.encounterNotice01,
+    encounterSummaries: [...runtime.encounterSummaries.values()],
   };
 }
 
@@ -889,6 +2064,18 @@ export function missionCrowdParity(runtime: MissionRuntime): string[] {
 export function disposeMissionRuntime(runtime: MissionRuntime): void {
   runtime.recentEvents.length = 0;
   runtime.satisfied.length = 0;
+  runtime.verbsUsed.clear();
+  // Encounter machines, the suppression ledger, the summaries and any pending
+  // overlay control are all attempt-scoped, so a disposed runtime holding them
+  // is the slow leak this function exists to prevent. The next attempt builds
+  // fresh machines and an empty ledger in `createMissionRuntime`.
+  runtime.encounters.length = 0;
+  runtime.suppression = NO_SUPPRESSION;
+  runtime.encounterVerdictInbox.clear();
+  runtime.encounterSummaries.clear();
+  runtime.encounterView = null;
+  runtime.encounterSubmit = null;
+  runtime.encounterDismiss = null;
   // The beat run is deliberately left alone. It is bounded — one chart and at
   // most a stroke per beat — so it is not the kind of thing this function is
   // for, and clearing it would make a disposed runtime one that silently has no

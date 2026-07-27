@@ -238,6 +238,28 @@ export const ROPEWALK_LIGHT: LightVolume[] = [
     level: 0.7,
     note: "Lamplight through the open door. The exit is the one lit patch inside, so leaving is the exposed part.",
   },
+  {
+    id: "LIGHT_ROPEWALK_NIGHTMAN",
+    section: "D2_ROPEWALK",
+    rect: rect(70.9, 74.3, 21.9, 25.3),
+    level: 0.55,
+    // The night man's own lantern, which this section has always been written
+    // around and which no system could see. D2_BEAM_E is authored as "directly
+    // over the night man's lantern" and the 5.2m run-off is authored as landing
+    // "within arm's reach of the man with the lantern" — so the whole choice the
+    // interior offers is between a loud descent beside a light and a quiet one
+    // through the dark, and until now the second half of that sentence was the
+    // only half either the field or the renderer knew about.
+    //
+    // Deliberately small and deliberately short of both beam ends: 3.4m square,
+    // which reaches D2_FLOOR_MID at (72.0, 24.6) and stops well before
+    // D2_BALES_HIGH at x 63. The quiet line — west along the beam, down the hemp
+    // and out at D2_FLOOR_W — never leaves the 0.1 volume, so the section's safe
+    // route is worth exactly what it was worth before. What changed is that the
+    // loud route now costs light as well as noise, which is the trade the level's
+    // own notes describe.
+    note: "The night man's lantern on the laying floor. The loud way down lands in it; the walk west along the beam never touches it.",
+  },
 ];
 
 // Roof vents. The shed roof is twenty-two metres of surface the roof run had

@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { createLocalProfile, deleteAllLocalProfiles, type LocalProfile } from "../db.js";
 import { googleLoginUrl, logout } from "../api.js";
+import { beginGoogleSignIn, openPlayerTwoTab } from "../devSession.js";
 
 export function Home(props: {
   profiles: LocalProfile[];
   apiUp: boolean;
   googleReady: boolean;
   googleName: string | null;
+  /** THIS tab's resolved identity, so a tester can see which account it is playing. */
+  activeProfile: { displayName: string; source: LocalProfile["source"] } | null;
   onPlay: (p: LocalProfile) => void;
   onOpenHub: () => void;
   onChanged: () => Promise<void> | void;
 }) {
-  const { profiles, apiUp, googleReady, googleName } = props;
+  const { profiles, apiUp, googleReady, googleName, activeProfile } = props;
   const [name, setName] = useState("");
 
   async function addLocal() {
@@ -50,7 +53,7 @@ export function Home(props: {
           <button
             className="btn-primary"
             disabled={!apiUp || !googleReady}
-            onClick={() => { window.location.href = googleLoginUrl(); }}
+            onClick={() => { beginGoogleSignIn(googleLoginUrl()); }}
             title={googleReady ? "" : "Configure Google credentials in .env"}
           >
             Sign in with Google
@@ -89,6 +92,45 @@ export function Home(props: {
           <input className="grow" type="text" placeholder="Display name" value={name} onChange={(e) => setName(e.target.value)} />
           <button onClick={addLocal}>Create</button>
         </div>
+
+        {import.meta.env.DEV && (
+          <>
+            <div className="panel-title">Two-player testing</div>
+            <div className="obj" style={{ marginBottom: 8 }}>
+              <div className="row">
+                <span className={`dot ${activeProfile?.source === "GOOGLE" ? "gold" : activeProfile ? "blue" : ""}`} />
+                <div>
+                  <div className="small">
+                    This tab:{" "}
+                    <strong>{activeProfile ? activeProfile.displayName : "not signed in"}</strong>
+                  </div>
+                  <div className="small muted">
+                    {activeProfile
+                      ? activeProfile.source === "GOOGLE"
+                        ? "Google account · tab-scoped"
+                        : "local profile · tab-scoped"
+                      : "pick or create a profile below, or sign in with Google"}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button
+              className="btn-ghost"
+              style={{ width: "100%" }}
+              onClick={openPlayerTwoTab}
+            >
+              Open Player 2 tab
+            </button>
+            <p className="small muted" style={{ marginTop: 6 }}>
+              Opens this app in a fresh tab with NO inherited identity. In the new tab,
+              sign in with a different Google account or pick a local profile — each tab
+              keeps its own tab-scoped identity, so this tab is unaffected. Two Google
+              accounts, or one Google and one local, can now host and join each other
+              without hitting "your own lobby". Use this action (not Duplicate Tab) so
+              the second tab starts clean.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

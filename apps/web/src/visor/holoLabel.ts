@@ -92,6 +92,55 @@ function setFont(
   }
 }
 
+/**
+ * The arrow on a mark that has left the frame.
+ *
+ * Drawn pointing UP in its own texture, so whoever places it can turn it with a
+ * single sprite rotation rather than rebuilding it per heading. It is a
+ * chevron and not a filled triangle for the same reason the hub's chrome is
+ * hairlines: a solid arrowhead is the vocabulary of a form control, and this is
+ * the same instrument as the plate it sits beside.
+ */
+export function holoChevron(accent: string): HoloLabel {
+  const sizePx = 22;
+  const canvas = document.createElement("canvas");
+  canvas.width = sizePx * SS;
+  canvas.height = sizePx * SS;
+  const ctx = canvas.getContext("2d")!;
+  const S = sizePx * SS;
+
+  ctx.strokeStyle = rgba(accent, 1);
+  ctx.lineWidth = 2.4 * SS;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.shadowColor = rgba(accent, 0.8);
+  ctx.shadowBlur = 7 * SS;
+  ctx.beginPath();
+  ctx.moveTo(S * 0.17, S * 0.68);
+  ctx.lineTo(S * 0.5, S * 0.24);
+  ctx.lineTo(S * 0.83, S * 0.68);
+  ctx.stroke();
+  // A short bar under the point, which is what stops a lone chevron reading as
+  // a caret in a sentence and makes it read as an instrument's needle.
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 0.55;
+  ctx.beginPath();
+  ctx.moveTo(S * 0.3, S * 0.84);
+  ctx.lineTo(S * 0.7, S * 0.84);
+  ctx.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  return {
+    texture,
+    widthPx: sizePx,
+    heightPx: sizePx,
+    dispose: () => texture.dispose(),
+  };
+}
+
 export function holoLabel(spec: LabelSpec): HoloLabel {
   const tone = TONE_ALPHA[spec.tone ?? "NORMAL"];
   const title = spec.title.toUpperCase();

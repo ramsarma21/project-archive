@@ -20,12 +20,16 @@ import {
 } from "./Gunplay.js";
 import {
   AIM_PLANE_Y,
+  ENGAGEMENT_MAX_YAW_RATE,
+  ENGAGEMENT_YAW_RATE,
   approach,
   cameraFollowRate,
+  dampAngle,
   desiredCamera,
+  engagementCameraYaw,
   type InspectFraming,
 } from "./duelCamera.js";
-import { lerpPose, normaliseAngle, type DuelRuntime } from "./duelRuntime.js";
+import { lerpPose, type DuelRuntime } from "./duelRuntime.js";
 import type { DuelInputController } from "./duelInput.js";
 import type { CoverPlacement } from "./arenaSpec.js";
 
@@ -96,7 +100,7 @@ function DuelCamera(props: {
   const position = useRef(new THREE.Vector3(0, 3, -14));
   const target = useRef(new THREE.Vector3(0, 1.2, 0));
   const fov = useRef(40);
-  const aimYaw = useRef(0);
+  const camYaw = useRef(0);
   const started = useRef(false);
 
   useFrame(({ camera }, delta) => {
@@ -106,14 +110,30 @@ function DuelCamera(props: {
     const player = lerpPose(poses.prev.A, poses.next.A, poses.alpha);
     const opponent = lerpPose(poses.prev.B, poses.next.B, poses.alpha);
 
-    // The engagement camera sits behind the aim, smoothed so a flick of the pointer
-    // does not whip the whole frame.
-    const wantedYaw = Math.atan2(
-      state.combat.fighters.A.aimX,
-      state.combat.fighters.A.aimZ,
-    );
-    aimYaw.current += normaliseAngle(wantedYaw - aimYaw.current) * Math.min(1, delta * 7);
-    props.input.setCameraYaw(aimYaw.current);
+    // The engagement camera orbits behind the OPPONENT AXIS (authoritative, and one the
+    // pointer cannot write back into) with a bounded lean toward the aim, then damped
+    // and slew-clamped. That combination is the fix for the wild spin: see the note on
+    // `engagementCameraYaw` in duelCamera.ts. The aim vector and the raycast are
+    // untouched — only the yaw the camera is placed from changed.
+    const axisYaw = Math.atan2(opponent.x - player.x, opponent.z - player.z);
+    const aim = state.combat.fighters.A;
+    const aimYaw = Math.hypot(aim.aimX, aim.aimZ) > 1e-6
+      ? Math.atan2(aim.aimX, aim.aimZ)
+      : axisYaw;
+    const goalYaw = engagementCameraYaw(axisYaw, aimYaw);
+    if (!started.current) {
+      camYaw.current = goalYaw;
+    } else {
+      const yawRate = props.reducedMotion ? ENGAGEMENT_YAW_RATE * 1.4 : ENGAGEMENT_YAW_RATE;
+      camYaw.current = dampAngle(
+        camYaw.current,
+        goalYaw,
+        yawRate,
+        ENGAGEMENT_MAX_YAW_RATE,
+        delta,
+      );
+    }
+    props.input.setCameraYaw(camYaw.current);
 
     const wanted = desiredCamera({
       phase: state.phase,
@@ -123,7 +143,7 @@ function DuelCamera(props: {
           : 1,
       player,
       opponent,
-      aimYaw: aimYaw.current,
+      aimYaw: camYaw.current,
       playerDowned: state.combat.fighters.A.health <= 0,
       reducedMotion: props.reducedMotion,
       inspect: props.inspect ?? null,

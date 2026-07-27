@@ -31,13 +31,24 @@
 #
 # The two operations
 # -----------------
-#   flat-top   Raise the roof surface to the module's own ceiling across the plan,
-#              ramping back down to the eaves over a narrow apron at the plan edge.
-#              The pitch survives as that apron and everything below the eaves —
-#              posts, stall, boarding, hanging goods — is not touched at all, which
-#              is the same division `build_m1_flat_deck.py` made for the buildings:
-#              a flat top the route can use, and the period read kept where a
-#              period read is actually looked at, from below and from the side.
+#   flat-top   Compress the roof's PITCH towards the module's own ceiling, so the
+#              whole roof surface arrives within a boot's height of the plane
+#              instead of touching it along the ridge alone. Everything below the
+#              eaves — posts, stall, boarding, hanging goods — is not touched at
+#              all: a flat-enough top the route can use, and the period read kept
+#              where a period read is actually looked at, from below and the side.
+#
+#              COMPRESS, NOT COLLAPSE, and the difference is the whole of why this
+#              was rewritten. The first version of this mode snapped every vertex
+#              above the eaves to a single Z. That is monotonic, and it preserves
+#              the bounding box and the triangle count, and it scored 100% — and
+#              it is not injective. A canvas has two sides and a thickness, and
+#              sending its top face, its underside and every fold between them to
+#              one plane leaves thousands of coincident double-sided triangles.
+#              The market shipped as white shredded slabs z-fighting with
+#              themselves, which is what the owner saw. `--flatten` scales the
+#              pitch instead, so every distinct height stays distinct, no two
+#              faces become coplanar, and the awning keeps its section.
 #
 #   wide-deck  Remap the module's short plan axis so its WALKING surface spans the
 #              whole width and the rails are squeezed into a band at each edge. A
@@ -61,10 +72,13 @@
 #   blender --background --python assets/pipeline/build_m1_module_surface.py -- \
 #     in.glb out.glb --mode wide-deck --deckat 0.511 [--rail 0.08]
 #
-# --apron    where the flat stops, as a fraction of the half-plan measured in from
-#            each edge. `verify_m1_placements.mjs` samples a 5x5 grid over the deck
-#            rect, so its outermost ray lands a tenth of the full plan in — a fifth
-#            of the half-plan — and the flat has to reach it.
+# --flatten  what fraction of the roof's pitch survives. The residual fall has to
+#            stay inside `TOL_BELOW` (0.35m) at the DEEPEST-scaled draw of the
+#            module, because that draw multiplies the module's own fall the most:
+#            for `market-awning` that is LANE_PENTICE at 2.95x, so the awning's
+#            0.443 of local pitch may keep about a quarter of itself. 0.10 is used
+#            rather than that ceiling so the fall lands near 0.13m at the worst
+#            eave — a boot's height the player steps over, not a shin's.
 # --eaves    fraction of the module's height above which geometry is roof. 0 reads
 #            it off the top surface itself.
 # --deckat   fraction of the module's height at which the walking surface sits, the
@@ -83,7 +97,7 @@ argv = sys.argv[sys.argv.index("--") + 1 :]
 SRC_GLB = os.path.abspath(argv[0])
 OUT_GLB = os.path.abspath(argv[1])
 
-opts = {"mode": "flat-top", "apron": 0.14, "eaves": 0.0, "deckat": 0.0, "rail": 0.08}
+opts = {"mode": "flat-top", "flatten": 0.10, "eaves": 0.0, "deckat": 0.0, "rail": 0.08}
 rest = argv[2:]
 for index in range(0, len(rest) - 1, 2):
     name = rest[index].lstrip("-")
@@ -196,35 +210,50 @@ def field(grid, axis):
     )
 
 
-def field_dense(axis, samples=601):
+def field_dense(axis, samples=601, tol=None):
     """Plan extent of the carrying surface on one axis, measured finely.
 
     `field` reads a 17-cell grid, and a cell is six per cent of the module: it
     cannot tell a surface that reaches the box from one that stops twenty-four
     millimetres short of it, and twenty-four millimetres is exactly the size of the
     defect this measurement exists to close. So the run axis is scanned at
-    sub-millimetre resolution, along three lines across the surface so that one
-    board gap cannot answer for the whole width.
+    sub-millimetre resolution.
+
+    EVERY line across the surface has to reach, not any of them. Asking for one was
+    not enough by a whole grid column: the awning's roof plan is not a rectangle and
+    its middle reaches further along the length than its edges do, so a scan down
+    the centre reported a surface that met the box while the probe's own outer rows
+    still fell into the seam. Taking the extent where all the lines agree pushes the
+    short ones out with the long ones.
     """
     other = 1 - axis
-    tol = 0.03 * SIZE[2]
+    # How far under the ceiling a hit still counts as the carrying surface. The
+    # default suits a surface that is meant to be dead flat; a compressed pitch is
+    # deliberately not, and a mono-pitch reaches its full residual fall on the scan
+    # line furthest down the slope, so `flat-top` passes its own fall in. Left at
+    # 3% the lean-to's slope fell outside it and no x position carried the plane
+    # on all seven lines.
+    if tol is None:
+        tol = 0.03 * SIZE[2]
+    lines = [0.10, 0.20, 0.30, 0.50, 0.70, 0.80, 0.90]
     lo, hi = None, None
     for i in range(samples):
         value = LO[axis] + (i / (samples - 1)) * SIZE[axis]
-        found = False
-        for share in (0.35, 0.5, 0.65):
+        found = 0
+        for share in lines:
             point = [0.0, 0.0, HI[2] + SIZE[2]]
             point[axis] = value
             point[other] = LO[other] + share * SIZE[other]
             ok, location, _, _ = module.ray_cast(Vector(point), Vector((0.0, 0.0, -1.0)))
             if ok and abs(location.z - deck_z) <= tol:
-                found = True
-                break
-        if not found:
+                found += 1
+        if found < len(lines):
             continue
         lo = value if lo is None else lo
         hi = value
-    assert lo is not None, "the carrying surface was not found on any scan line"
+    assert lo is not None, (
+        f"no position on {'xyz'[axis]} carries the plane on all {len(lines)} scan lines"
+    )
     return lo, hi
 
 
@@ -288,38 +317,58 @@ if opts["mode"] == "flat-top":
         eaves_z = float(np.percentile(finite, 5.0))
     log(f"eaves at {(eaves_z - LO[2]) / SIZE[2]:.3f} of height ({eaves_z:.4f})")
 
-    apron = float(opts["apron"])
+    keep = float(opts["flatten"])
+    assert 0.0 < keep <= 1.0, "--flatten is the fraction of the pitch that survives"
     ceiling = HI[2]
-    # The apron is on the module's DEPTH only, never along its length, and that is
-    # not a taste decision. `moduleRunPlacements` divides a run into tiles that
-    # BUTT along the module's local X, so an apron on that axis is a valley at
-    # every seam: the shambles' pentice is two tiles and its middle sample column
-    # lands exactly on the joint, where two aprons meet and the surface is a metre
-    # below the plane. Along the run the roof therefore stays flat to both ends and
-    # the ends are the gable — which is where a pentice's ends really are, abutting
-    # the next shed or the wall it is nailed to. Across the run there is no seam and
-    # the eave is a real eave, so the apron lives there.
-    half_y = SIZE[1] / 2.0
-    mid_y = (LO[1] + HI[1]) / 2.0
 
-    def lift(co):
+    # Two affine pieces on Z, and the join between them is the whole point.
+    #
+    # The roof band [eaves_z, ceiling] is compressed onto [eaves, ceiling] where
+    # `eaves` is the eaves line lifted to just under the ridge. Everything BELOW
+    # is then stretched from [LO, eaves_z] onto [LO, eaves] so that it still
+    # arrives exactly where the roof now starts.
+    #
+    # That second piece is not tidiness, it is the bug. Leaving the body alone and
+    # only moving the roof makes the map DISCONTINUOUS at eaves_z: a vertex a
+    # tenth of a millimetre under the line stays, its neighbour a tenth over jumps
+    # four tenths of the module, and the mesh is torn along the eaves into a comb.
+    # That cliff — not the flattening — is what shredded the canvas, and it was in
+    # the collapse version too, which is why its own top-surface profile came back
+    # as a sawtooth along both edge rows. Continuous, monotonic, endpoints fixed:
+    # LO and the ceiling map to themselves, so the bounding box cannot move, and
+    # no two distinct heights are ever sent to one.
+    #
+    # What it looks like is a stall whose posts now reach its canvas: the body
+    # comes up by the same amount the roof came down, and the awning reads as
+    # taut sailcloth over a frame instead of a tent pitched under a plane.
+    fall_before = ceiling - eaves_z
+    eaves = ceiling - fall_before * keep
+    rise = (eaves - LO[2]) / max(eaves_z - LO[2], 1e-9)
+
+    def taut(co):
         if co.z <= eaves_z:
-            return co
-        t = 1.0 - abs(co.y - mid_y) / max(half_y, 1e-9)
-        if t >= apron:
-            return Vector((co.x, co.y, ceiling))
-        # Smoothstep, so the apron leaves the flat tangentially and reads as a
-        # bellcast eave rather than as a chamfer cut on a slab.
-        s = t / apron
-        blend = s * s * (3.0 - 2.0 * s)
-        return Vector((co.x, co.y, co.z + (ceiling - co.z) * blend))
+            return Vector((co.x, co.y, LO[2] + (co.z - LO[2]) * rise))
+        return Vector((co.x, co.y, ceiling - (ceiling - co.z) * keep))
 
-    lifted = sum(1 for v in module.data.vertices if v.co.z > eaves_z)
-    remap(lift)
-    log(f"raised {lifted} of {len(module.data.vertices)} vertices to the ceiling; "
-        f"apron {apron:.2f} of the half-depth, none along the run")
-    log("flat now reaches:")
-    spread(0, RUN_BAND, "length", extent=field_dense(0))
+    roof = sum(1 for v in module.data.vertices if v.co.z > eaves_z)
+    remap(taut)
+    log(f"pitch {fall_before:.4f} -> {fall_before * keep:.4f} of the module "
+        f"({fall_before * keep / SIZE[2]:.3f} of its height) over {roof} roof "
+        f"vertices; the {len(module.data.vertices) - roof} below the eaves rise "
+        f"by {rise:.4f}x to meet them, so the map is continuous at {eaves_z:.4f}")
+
+    # Along the run the surface has to reach the box or every tile joint is an
+    # open seam — but the spread that guarantees it compresses everything outside
+    # the surface's own extent into a band, and at RUN_BAND=0 that band is a
+    # plane. That is the same collapse again, applied to the gable ends. So it is
+    # asked for only when the surface actually falls short.
+    f0, f1 = field_dense(0, tol=max(0.03 * SIZE[2], 1.25 * fall_before * keep))
+    if (f0 - LO[0]) > 1e-3 or (HI[0] - f1) > 1e-3:
+        log("flat has to be pushed out to the run's ends:")
+        spread(0, RUN_BAND, "length", extent=(f0, f1))
+    else:
+        log(f"  length: surface already spans {f0:.4f}..{f1:.4f} of "
+            f"{LO[0]:.4f}..{HI[0]:.4f}; no spread, so the ends keep their section")
 
 # ---------------------------------------------------------------------------
 # 2b. wide-deck

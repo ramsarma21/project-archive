@@ -12,15 +12,13 @@ import {
   duelClipTimeScale,
   type DuelClipRole,
 } from "../duel/duelClips.js";
-import { selectActorVisual, type ActorVisualInput } from "../duel/actorVisual.js";
 import {
-  PALM_DROP_M,
-  SOCKET_OFFSET_M,
-  TRIM_EULER_DEG,
-  findHandBone,
-  gripQuaternion,
-  socketInverseScale,
-} from "../duel/weaponSocket.js";
+  createVisualStabilizer,
+  stabilizeActorVisual,
+  type ActorVisualInput,
+} from "../duel/actorVisual.js";
+import { levelAimArms } from "../duel/aimPose.js";
+import { findHandBone, seatWeaponInHand } from "../duel/weaponSocket.js";
 import type { ActorPose } from "../duel/duelRuntime.js";
 
 // A PvP fighter: the duel's rig, the duel's clip set, the duel's flintlock, in the
@@ -51,7 +49,7 @@ import type { ActorPose } from "../duel/duelRuntime.js";
  * a second copy of a rig that is already in the page when a hub mounts both a mission
  * and the duelling ground.
  */
-const CHARACTER_URL_TOKEN = "production-cast-8";
+const CHARACTER_URL_TOKEN = "production-cast-10";
 const PISTOL_URL = "/world/props/flintlock-pistol.glb";
 
 function characterUrl(glbKey: string): string {
@@ -139,9 +137,12 @@ function ActorRig(props: ArenaActorProps) {
 
   const mixer = useMemo(() => new THREE.AnimationMixer(rig.root), [rig]);
 
+  // Same aim levelling as the duel, so PvP shows the forward two-handed aim too.
+  const animations = useMemo(() => levelAimArms(gltf.animations), [gltf.animations]);
+
   const clipNames = useMemo(
-    () => gltf.animations.map((clip) => clip.name),
-    [gltf.animations],
+    () => animations.map((clip) => clip.name),
+    [animations],
   );
 
   const actions = useMemo(() => {
@@ -155,14 +156,14 @@ function ActorRig(props: ArenaActorProps) {
           clipNames,
         );
         const clip = name
-          ? gltf.animations.find((candidate) => candidate.name === name)
+          ? animations.find((candidate) => candidate.name === name)
           : undefined;
         const action = clip ? mixer.clipAction(clip) : null;
         resolved.set(role, action);
         return action;
       },
     };
-  }, [mixer, gltf.animations, clipNames, props.glbKey]);
+  }, [mixer, animations, clipNames, props.glbKey]);
 
   useEffect(
     () => () => {
@@ -184,26 +185,20 @@ function ActorRig(props: ArenaActorProps) {
       return undefined;
     }
     rig.root.updateMatrixWorld(true);
-    const boneScale = bone.getWorldScale(new THREE.Vector3()).x;
-
-    const socket = new THREE.Group();
-    socket.name = `pvp.socket.${props.label}`;
-    // Undo the bone's inherited scale so everything below is in metres.
-    socket.scale.setScalar(socketInverseScale(boneScale));
-
-    const hold = new THREE.Group();
-    hold.position.set(SOCKET_OFFSET_M[0], SOCKET_OFFSET_M[1], SOCKET_OFFSET_M[2]);
-    hold.quaternion.copy(gripQuaternion(TRIM_EULER_DEG));
 
     const weapon = pistol.scene.clone(true);
     weapon.traverse((node) => {
       node.castShadow = true;
       node.receiveShadow = false;
     });
-    weapon.position.set(0, PALM_DROP_M, 0);
 
-    hold.add(weapon);
-    socket.add(hold);
+    // Seated by the SAME shared mount the duel uses, so the pistol sits in the palm
+    // here exactly as it does in PvE.
+    const socket = seatWeaponInHand({
+      bone,
+      weapon,
+      name: `pvp.socket.${props.label}`,
+    });
     bone.add(socket);
     return () => {
       bone.remove(socket);
@@ -215,6 +210,7 @@ function ActorRig(props: ArenaActorProps) {
   const currentRole = useRef<DuelClipRole | null>(null);
   const currentAction = useRef<THREE.AnimationAction | null>(null);
   const opacity = useRef(1);
+  const stabilizer = useRef(createVisualStabilizer());
 
   useFrame((_, delta) => {
     const group = groupRef.current;
@@ -238,7 +234,11 @@ function ActorRig(props: ArenaActorProps) {
       }
     }
 
-    const visual = selectActorVisual(frame.visual);
+    // Debounced + speed-smoothed: the opponent's speed is a discrete per-snapshot
+    // velocity, so selecting the clip from it raw made the body twitch between
+    // aim/aimWalk/aimRun. The drawn position and yaw are still the feed's interpolated
+    // transform (set above); only the animation state is stabilized here.
+    const visual = stabilizeActorVisual(stabilizer.current, frame.visual, delta);
     if (visual.role !== currentRole.current) {
       const action = actions.get(visual.role);
       if (action) {

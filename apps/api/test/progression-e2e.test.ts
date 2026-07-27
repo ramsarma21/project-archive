@@ -40,6 +40,12 @@ const M1_DECK = [
   "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1",
   "BOS.MD01.CUE.BRIEF_INSERT.v1",
 ];
+/** The mastery checks the module now gates the three concept cards behind. */
+const M1_CHECKS = [
+  "BOS.MD01.CHECK.POSTWAR_REVENUE.v1",
+  "BOS.MD01.CHECK.STAMP_SCOPE.v1",
+  "BOS.MD01.CHECK.REPRESENTATION.v1",
+];
 
 /** @pa/duel's log, which names a verdict on every round the server minted. */
 const DUEL_LOG = [
@@ -118,6 +124,7 @@ async function authorize(
     gatesKind: "MISSION_ATTEMPT",
     gatesId: M1,
     acknowledgedCueIds: [...deck],
+    acknowledgedCheckIds: [...M1_CHECKS],
     observedSeconds: 174,
   });
   assert.equal(module.statusCode, 200, module.body);
@@ -296,6 +303,7 @@ test("a spent mission pays nothing more, however the client asks", async () => {
     gatesKind: "MISSION_ATTEMPT",
     gatesId: M1,
     acknowledgedCueIds: [...M1_DECK],
+    acknowledgedCheckIds: [...M1_CHECKS],
     observedSeconds: 174,
   });
   assert.equal(again.statusCode, 409);

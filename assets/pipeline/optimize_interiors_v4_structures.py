@@ -42,7 +42,10 @@ from transcode_static_textures import enforce_texture_policy  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .../assets
 SRC = os.path.join(ROOT, "build", "world-v3-structures")
-OUT = os.path.join(ROOT, "build", "world-v3-structures-opt")
+# world-v3-structures-opt is what sync_web.mjs publishes from, so a verification
+# run should not have to overwrite it. INTERIORS_V4_OUT redirects the whole batch
+# (GLBs, _normal_png, validation.json) into a scratch directory instead.
+OUT = os.environ.get("INTERIORS_V4_OUT") or os.path.join(ROOT, "build", "world-v3-structures-opt")
 SPEC_PATH = os.path.join(ROOT, "pipeline", "interior_structures_spec.json")
 CONCEPTS = os.path.join(ROOT, "source", "concepts", "interiors-structures")
 

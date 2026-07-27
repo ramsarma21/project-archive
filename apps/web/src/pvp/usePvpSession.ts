@@ -48,6 +48,8 @@ export interface PvpSession {
   readonly progress: MatchProgress;
   /** The verdict for the round this player last answered. Their own, never theirs. */
   readonly lastVerdict: "CORRECT" | "WRONG" | null;
+  /** Why this player's evidence fell short last round, if it did. A class, never the answer. */
+  readonly lastEvidence: string | null;
   readonly answering: boolean;
   readonly busy: boolean;
   /** A refusal the player needs to read: LOBBY_NOT_FOUND, CANNOT_DUEL_YOURSELF… */
@@ -60,11 +62,17 @@ export interface PvpSession {
   host(): Promise<void>;
   join(code: string): Promise<void>;
   cancel(): Promise<void>;
-  submitAnswer(text: string): Promise<void>;
+  submitAnswer(text: string, selectedCardIds: readonly string[]): Promise<void>;
   forfeit(): Promise<void>;
   reset(): void;
   setAim(x: number, z: number): void;
   setCameraYaw(yaw: number): void;
+  /**
+   * Bind gameplay pointer input to the arena canvas — the ONLY place PvP captures a
+   * pointer. Routed to ArenaStage, which calls it with the WebGL canvas. Returns the
+   * detach, so the canvas owns the listeners for exactly as long as it is mounted.
+   */
+  bindInput(canvas: HTMLElement): () => void;
 }
 
 /** Phases in which the authority is accepting movement and fire. */
@@ -88,13 +96,18 @@ export function usePvpSession(
   const [question, setQuestion] = useState<QuestionPayload | null>(null);
   const [progress, setProgress] = useState<MatchProgress>(EMPTY_PROGRESS);
   const [lastVerdict, setLastVerdict] = useState<"CORRECT" | "WRONG" | null>(null);
+  const [lastEvidence, setLastEvidence] = useState<string | null>(null);
   const [answering, setAnswering] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
   const [rejected, setRejected] = useState<readonly string[]>([]);
 
-  const input = useMemo(() => createDuelInput(), []);
+  // PvP mode: the canvas exclusively owns pointer gameplay, and edges are acked by
+  // receipt rather than cleared per frame. Attached to the canvas by `bindInput`
+  // (routed to ArenaStage), never to the window, so the HUD and the answer form never
+  // emit gameplay.
+  const input = useMemo(() => createDuelInput({ mode: "pvp" }), []);
   const seq = useRef(0);
   // The tick the last snapshot carried, when it arrived, and how long the round
   // trip is taking — all three are needed to stamp a frame the authority will
@@ -105,15 +118,29 @@ export function usePvpSession(
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
 
-  useEffect(() => input.attach(), [input]);
+  // A new match cancels any edges or held movement left from the last one, so a click
+  // made at the end of one duel cannot fire into the start of the next.
+  const activeMatchId =
+    phase.name === "MATCH" || phase.name === "RESULT" ? phase.matchId : null;
+  useEffect(() => {
+    if (activeMatchId) input.cancel();
+  }, [input, activeMatchId]);
 
   // Read once on mount. A window with no session is the normal state of the second
   // browser profile, and the lobby needs to offer a way in rather than a refusal.
+  //
+  // RELOAD RECOVERY. A browser refreshed mid-duel arrives on IDLE having forgotten the
+  // match it was in. Once the identity read confirms a session, ask the server what
+  // this profile is currently committed to and restore the phase: back into a live
+  // MATCH, onto the terminal RESULT screen, or onto the HOSTING screen for an open
+  // lobby. Only from IDLE, so a recovery in flight never clobbers an action the player
+  // took in the meantime, and only when authenticated, because an anonymous window has
+  // nothing to recover.
   useEffect(() => {
     let cancelled = false;
-    void transport.identity().then((call) => {
+    void transport.identity().then(async (call) => {
       if (cancelled) return;
-      setIdentity(
+      const resolved =
         call.status === "OK"
           ? call.value
           : {
@@ -121,8 +148,37 @@ export function usePvpSession(
               displayName: null,
               profileId: null,
               csrfToken: null,
-            },
-      );
+            };
+      setIdentity(resolved);
+      if (!resolved.authenticated) return;
+
+      const active = await transport.active();
+      if (cancelled || active.status !== "OK") return;
+      const state = active.value;
+      setPhase((current) => {
+        if (current.name !== "IDLE") return current;
+        if (state.kind === "MATCH" && state.matchId && state.side) {
+          seq.current = 0;
+          setProgress(EMPTY_PROGRESS);
+          return { name: "MATCH", matchId: state.matchId, side: state.side };
+        }
+        if (state.kind === "RESULT" && state.matchId && state.side && state.result) {
+          return {
+            name: "RESULT",
+            matchId: state.matchId,
+            side: state.side,
+            result: state.result,
+          };
+        }
+        if (state.kind === "LOBBY" && state.code) {
+          return {
+            name: "HOSTING",
+            code: state.code,
+            handle: state.handle ?? resolved.displayName ?? "",
+          };
+        }
+        return current;
+      });
     });
     return () => {
       cancelled = true;
@@ -165,18 +221,22 @@ export function usePvpSession(
    * window is only 133ms wide on the leading side and a single slow response should
    * not push the next frame past it.
    *
-   * PURE with respect to the latches: `peekIntent` leaves a click latched until
-   * `settle` is told what the authority did with it.
+   * PURE with respect to the edges: `sampleIntent` clears nothing; the receipt it
+   * returns is acknowledged only if the authority accepts the frame.
    */
-  const nextFrame = useCallback((): IntentFrame => {
+  const nextFrame = useCallback((): { frame: IntentFrame; receipt: readonly number[] } => {
     const { tick, atMs, rttMs } = clock.current;
     const aheadMs = Date.now() - atMs + rttMs;
     seq.current += 1;
-    return frameFrom(
-      input.peekIntent(),
-      seq.current,
-      Math.max(0, tick + Math.round((aheadMs / 1000) * FIELD_TICK_HZ)),
-    );
+    const sampled = input.sampleIntent();
+    return {
+      frame: frameFrom(
+        sampled.intent,
+        seq.current,
+        Math.max(0, tick + Math.round((aheadMs / 1000) * FIELD_TICK_HZ)),
+      ),
+      receipt: sampled.receipt,
+    };
   }, [input]);
 
   /** Smoothing factor for the round-trip estimate. Favours history over a spike. */
@@ -190,29 +250,6 @@ export function usePvpSession(
       rttMs: previous === 0 ? sample : previous * (1 - RTT_SMOOTHING) + sample * RTT_SMOOTHING,
     };
   }, []);
-
-  /**
-   * Tell the input controller what the AUTHORITY did with the press.
-   *
-   * The duel view runs this against a local clock, where "did a tick consume it"
-   * is simply how far the reducer advanced. Over HTTP there is a second way to
-   * lose a press and it is the one that bites harder: the frame can be REFUSED.
-   * A stale sequence number, a clock that drifted outside the acceptance window,
-   * a request that never arrived — in every one of those the press never reached
-   * the reducer at all, and reporting the ticks the snapshot happens to show would
-   * clear a click the server never saw.
-   *
-   * So a refusal settles as zero. The press stays latched, rides the next poll, and
-   * is bounded by the controller's own six-frame buffer rather than by luck.
-   * Re-sending it is safe: the authority holds one intent per side and gates a
-   * repeat on the fire interval, so a latched click cannot become two balls.
-   */
-  const settleInput = useCallback(
-    (accepted: boolean, tickBefore: number, tickAfter: number): void => {
-      input.settle(accepted ? Math.max(0, tickAfter - tickBefore) : 0);
-    },
-    [input],
-  );
 
   // ---- the loop ------------------------------------------------------------
 
@@ -248,15 +285,20 @@ export function usePvpSession(
         }
       } else if (current.name === "MATCH") {
         const live = playable(snapshotRef.current);
-        const tickBefore = snapshotRef.current?.tick ?? 0;
         // While the fight is live the intent post doubles as the read: it carries
         // this frame up and brings the snapshot back, so one round trip does both.
         // While a question is open there is no input to send and the read is the
         // only thing that carries the question text.
         const sentAt = Date.now();
-        const call = live
-          ? await transport.sendIntents(current.matchId, [nextFrame()])
-          : await transport.readMatch(current.matchId);
+        let sentReceipt: readonly number[] = [];
+        let call;
+        if (live) {
+          const next = nextFrame();
+          sentReceipt = next.receipt;
+          call = await transport.sendIntents(current.matchId, [next.frame]);
+        } else {
+          call = await transport.readMatch(current.matchId);
+        }
         if (cancelled) return;
         observeRoundTrip(sentAt);
         if (call.status === "OK") {
@@ -271,13 +313,15 @@ export function usePvpSession(
             if (refused.length > 0) {
               setRejected((prior) => [...prior, ...refused].slice(-8));
             }
-            settleInput(refused.length === 0, tickBefore, value.snapshot.tick);
+            // ACCEPTED clears exactly the ids this frame carried; a refusal preserves
+            // them so the press rides the next poll. A press made AFTER this frame was
+            // sampled is not in the receipt, so an ack can never clear a newer press.
+            if (refused.length === 0) input.acknowledge(sentReceipt);
           }
         } else if (call.status === "UNREACHABLE") {
-          // Says nothing about the match. Keep the last snapshot on screen and
-          // keep polling; the authority forfeits a genuinely silent side itself —
-          // and the press stays latched, because nothing consumed it.
-          if (live) settleInput(false, tickBefore, tickBefore);
+          // Says nothing about the match. Keep the last snapshot on screen and keep
+          // polling; the authority forfeits a genuinely silent side itself — and the
+          // press is preserved (never acknowledged), because nothing received it.
           setOffline(true);
         } else if (call.error === "MATCH_NOT_FOUND") {
           setError("MATCH_NOT_FOUND");
@@ -298,7 +342,7 @@ export function usePvpSession(
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [transport, ingest, nextFrame, settleInput, observeRoundTrip]);
+  }, [transport, ingest, nextFrame, input, observeRoundTrip]);
 
   // Movement is suspended while a question is open, so a player typing an answer
   // does not walk into the open. The authority would accept the frames; the design
@@ -360,15 +404,16 @@ export function usePvpSession(
   }, [transport]);
 
   const submitAnswer = useCallback(
-    async (text: string) => {
+    async (text: string, selectedCardIds: readonly string[]) => {
       const current = phaseRef.current;
       if (current.name !== "MATCH" || text.trim().length === 0) return;
       setAnswering(true);
       setError(null);
-      const sent = await transport.answer(current.matchId, text.trim());
+      const sent = await transport.answer(current.matchId, text.trim(), selectedCardIds);
       setAnswering(false);
       if (sent.status === "OK") {
         setLastVerdict(sent.value.verdict);
+        setLastEvidence(sent.value.evidence ?? null);
         setQuestion(null);
         ingest(sent.value.snapshot, null);
       } else if (sent.status === "REFUSED") {
@@ -401,10 +446,20 @@ export function usePvpSession(
     setQuestion(null);
     setProgress(EMPTY_PROGRESS);
     setLastVerdict(null);
+    setLastEvidence(null);
     setRejected([]);
     setError(null);
     seq.current = 0;
   }, []);
+
+  // STABLE across every snapshot/session render. `input` is created once, so this
+  // binder never changes identity — the canvas's attach effect (InputCapture) runs
+  // exactly once for the life of the canvas instead of detaching and reattaching on
+  // every poll, which would clear held movement and drop any edge queued between polls.
+  const bindInput = useCallback(
+    (canvas: HTMLElement) => input.attach(canvas),
+    [input],
+  );
 
   return {
     identity,
@@ -413,6 +468,7 @@ export function usePvpSession(
     question,
     progress,
     lastVerdict,
+    lastEvidence,
     answering,
     busy,
     error,
@@ -427,5 +483,6 @@ export function usePvpSession(
     reset,
     setAim: (x, z) => input.setAim(x, z),
     setCameraYaw: (yaw) => input.setCameraYaw(yaw),
+    bindInput,
   };
 }

@@ -54,6 +54,7 @@ export function moduleCompletionRequest(input: {
     gatesKind: "MISSION_ATTEMPT" as const,
     gatesId: input.completion.missionId,
     acknowledgedCueIds: [...input.completion.acknowledgedCueIds],
+    acknowledgedCheckIds: [...input.completion.acknowledgedCheckIds],
     observedSeconds: Math.max(0, Math.floor(input.completion.observedSeconds)),
   };
   const parsed = CompleteLearningModuleRequestSchema.safeParse(candidate);
@@ -72,19 +73,29 @@ export function moduleCompletionRequest(input: {
  * unforgeable rather than merely unforged.
  *
  * `committedEvents` is @pa/duel's serialised commit log, carried through
- * untouched. It has one problem today, and dropping it is the deliberate
- * answer: the log's `VERDICT_COMMITTED` entries carry a `verdict` key, and
- * `verdict` is one of the names the progression guard refuses anywhere in a
- * request body. The guard is right about requests in general and wrong about
- * this field in particular — the server stores the log verbatim and derives
- * nothing from it — but until the contract exempts it, a commit carrying the
- * log is rejected outright and the mission pays nothing.
+ * untouched, AND IT IS SENT WHOLE.
  *
- * So: try with the log, and if the guard refuses it, commit the outcome without
- * it and say so. Progression is the thing that must not be lost; the log is
- * evidence that can be re-attached the day the contract is fixed. Silently
- * losing a student's clear to preserve a telemetry payload would be the wrong
- * trade in the wrong direction.
+ * This used to try twice. The log's `VERDICT_COMMITTED` entries carry a
+ * `verdict` key, `verdict` is one of the names the progression guard refuses,
+ * and the guard walked the whole body — so a commit carrying the log was
+ * rejected outright and the mission paid nothing. Rather than lose a student's
+ * clear, this function retried with `committedEvents: []` and reported what it
+ * had sacrificed.
+ *
+ * `@pa/contracts` fixed the guard: `OPAQUE_TELEMETRY_FIELDS` exempts this one
+ * field's CONTENTS at depth zero, because the server stores the log verbatim and
+ * derives nothing from it — not the outcome, not the award, not a bullet count —
+ * and a `verdict` sitting BESIDE `committedEvents` is still refused, which is the
+ * case the guard exists for. A real commit carrying an intact duel log was
+ * watched through against a running API.
+ *
+ * The retry is gone rather than left as insurance, and that is the point of this
+ * note. Its remaining reachable path was a body invalid for some OTHER reason —
+ * a malformed attempt id, a log past the 4096-entry cap — where dropping every
+ * verdict receipt and succeeding is the worst available outcome: the commit path
+ * verifies those receipts, so a silent truncation is how a graded duel becomes
+ * an unsigned one with nothing logged. A body this function cannot build is now
+ * a refusal with a reason.
  */
 export function missionOutcomeRequest(input: {
   attemptId: string;
@@ -97,29 +108,17 @@ export function missionOutcomeRequest(input: {
     outcome: input.outcome,
     baseRevision: input.baseRevision,
   };
-  const withEvents = CommitMissionOutcomeRequestSchema.safeParse({
+  const parsed = CommitMissionOutcomeRequestSchema.safeParse({
     ...base,
     committedEvents: [...input.committedEvents],
   });
-  if (withEvents.success) return { ok: true, body: withEvents.data, note: null };
-
-  const withoutEvents = CommitMissionOutcomeRequestSchema.safeParse({
-    ...base,
-    committedEvents: [],
-  });
-  if (!withoutEvents.success) {
+  if (!parsed.success) {
     return {
       ok: false,
-      reason: withoutEvents.error.issues[0]?.message ?? "INVALID_OUTCOME_BODY",
+      reason: parsed.error.issues[0]?.message ?? "INVALID_OUTCOME_BODY",
     };
   }
-  return {
-    ok: true,
-    body: withoutEvents.data,
-    note:
-      "the duel commit log was refused by the progression request guard " +
-      "(it names a verdict) and the outcome was committed without it",
-  };
+  return { ok: true, body: parsed.data, note: null };
 }
 
 /**

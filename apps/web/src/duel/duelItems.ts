@@ -43,6 +43,13 @@
 // supplies the words and nothing else.
 
 import type { DuelQuestionRef } from "@pa/duel";
+import {
+  duelItemCodexCards,
+  evidenceHandProjection,
+  m1EvidencePolicy,
+  type DuelCodexCardRef,
+  type EvidenceHandProjection,
+} from "@pa/mission-m1";
 
 export interface DuelItemContent {
   readonly itemId: string;
@@ -51,6 +58,23 @@ export interface DuelItemContent {
   /** Short label for the round kicker, e.g. "postwar revenue". */
   readonly conceptLabel: string;
   readonly prompt: string;
+  /**
+   * The Codex cards this question draws on — id and title only, the safe projection
+   * from @pa/mission-m1. It is PROVENANCE, not a reward: it tells the player which of
+   * their learned cards the officer is testing, and is derived from the item id (the
+   * server-authoritative selection), never from anything the client chooses. The card
+   * PROPOSITION is deliberately absent, because it usually contains the answer.
+   */
+  readonly codexCards: readonly DuelCodexCardRef[];
+  /**
+   * The offered evidence hand for this item — the ids to deal, the minimum to place,
+   * and the most that may be placed. The SAFE PROJECTION only: which cards are
+   * relevant is never here, so nothing the client renders can reveal the answer before
+   * grading. Deterministic in the item id (the server-authoritative selection), so the
+   * hand the player is dealt is exactly the one the server validates the submission
+   * against.
+   */
+  readonly evidence: EvidenceHandProjection;
 }
 
 export interface DuelItemSource {
@@ -89,13 +113,13 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
     itemId: "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
     conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
     prompt:
-      "The war with France ended two years ago and Britain won it. So what problem did winning leave Britain holding — the one Parliament is trying to solve on my board?",
+      "The war with France ended two years ago and Britain won it. What problem did that victory leave Britain holding, and how is Parliament trying to solve it on my board?",
   },
   {
     itemId: "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
     conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
     prompt:
-      "Britain carries the debt. Say plainly who Parliament decided should help pay it down.",
+      "Say plainly who Parliament decided should help pay this down, and what that money is meant to clear.",
   },
   {
     itemId: "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1",
@@ -106,7 +130,7 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
     itemId: "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
     conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
     prompt:
-      "A printer told me this Act came out of nowhere — that Parliament woke one morning and invented it to spite you. Start at the end of the war and show me it did not.",
+      "A printer told me this Act came out of nowhere, that Parliament woke one morning and invented it to spite you. Start at the end of the war and show me it did not.",
   },
   {
     itemId: "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1",
@@ -118,7 +142,7 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
     itemId: "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1",
     conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
     prompt:
-      "Two things on this table: a deed drawn up in court, and a bolt of cloth off a ship. Come November one of them needs the Crown's paid stamp. Which — and what makes it the one?",
+      "Two things on this table: a deed drawn up in court, and a bolt of cloth off a ship. Come November one of them needs the Crown's paid stamp. Which is it, and what makes you sure?",
   },
   {
     itemId: "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1",
@@ -129,13 +153,13 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
     itemId: "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1",
     conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
     prompt:
-      "Of every trade in Boston — coopers, ropemakers, fishmongers — why does this Act fall hardest on the shop you run for?",
+      "Of every trade in Boston, the coopers, the ropemakers, the fishmongers, why does this Act fall hardest on the shop you run for?",
   },
   {
     itemId: "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1",
     conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
     prompt:
-      "My apprentice has it that this Act taxes everything Boston buys — bread, cloth, nails, the lot. Correct him.",
+      "My apprentice has it that this Act taxes everything Boston buys, bread, cloth, nails, the lot. Correct him.",
   },
   {
     itemId: "BOS.MD01.DUEL.STAMP.NAME_TWO.v1",
@@ -146,7 +170,7 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
     itemId: "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1",
     conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
     prompt:
-      "A woman writes to her sister in Salem, in her own hand, and seals it. Does the Act catch that letter? Tell me why — a bare yes or no earns you nothing.",
+      "A woman writes to her sister in Salem, in her own hand, and seals it. Does the Act catch that letter? Tell me why; a bare yes or no earns you nothing.",
   },
   {
     itemId: "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1",
@@ -158,19 +182,19 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
     itemId: "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
     conceptId: "BOS.CONCEPT.REPRESENTATION.v1",
     prompt:
-      "You write that this town elects nobody. That is false — Boston votes, I have watched it vote. So tell me what Boston does elect, and why that does not settle the matter.",
+      "You write that this town elects nobody. That is false. Boston votes; I have watched it vote. So tell me what Boston does elect, and why that does not settle the matter.",
   },
   {
     itemId: "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1",
     conceptId: "BOS.CONCEPT.REPRESENTATION.v1",
     prompt:
-      "Three pence on a sheet of paper. That is what all this noise is about — the price. Or is it something else? Say which, and be precise.",
+      "Three pence on a sheet of paper. Is this noise about the price, or something else? Name what the objection truly is, and say why this town has the standing to make it.",
   },
   {
     itemId: "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1",
     conceptId: "BOS.CONCEPT.REPRESENTATION.v1",
     prompt:
-      "Finish the claim your sheet makes. A tax on this town may lawfully be laid only by —",
+      "Finish the claim your sheet makes. A tax on this town may lawfully be laid only by whom?",
   },
   {
     itemId: "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1",
@@ -218,6 +242,12 @@ export const M1_ITEM_SOURCE: DuelItemSource = {
       conceptId: item.conceptId,
       conceptLabel: CONCEPT_LABELS[item.conceptId] ?? "this mission's concepts",
       prompt: item.prompt,
+      // Keyed by the item id the core selected, so the chips name exactly the cards
+      // the graded item draws on. Titles only — never the propositions.
+      codexCards: duelItemCodexCards(ref.itemId),
+      // The offered hand is derived from the same server-authoritative item id, by the
+      // same deterministic policy the server re-derives to grade. Safe projection only.
+      evidence: evidenceHandProjection(m1EvidencePolicy(ref.itemId)),
     };
   },
 };
@@ -234,6 +264,12 @@ export function missingItemContent(ref: DuelQuestionRef): DuelItemContent {
     conceptId: ref.conceptId,
     conceptLabel: CONCEPT_LABELS[ref.conceptId] ?? "unknown concept",
     prompt: `This round's authored item (${ref.itemId}) is not in the loaded bank.`,
+    // An unresolved item still has authored provenance keyed by its id; if even that
+    // is unknown this is simply empty, never fabricated.
+    codexCards: duelItemCodexCards(ref.itemId),
+    // An unknown item deals no hand — the policy resolves no relevant cards — which
+    // renders as an empty offer rather than a fabricated one.
+    evidence: evidenceHandProjection(m1EvidencePolicy(ref.itemId)),
   };
 }
 

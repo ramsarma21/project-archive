@@ -1,0 +1,103 @@
+{
+  "$note": "Provenance for the M1 learning module historical visuals. Originals are kept unmodified under originals/; web/ holds sRGB JPEGs optimized (long edge <=1600px, quality 82) for runtime, except small sources which are served as-is to avoid upscaling. Do not overwrite originals.",
+  "retrievedDate": "2026-07-27",
+  "userAgent": "project-archive-education/1.0 (M1 learning module historical assets)",
+  "assets": [
+    {
+      "id": "wolfe-death-of-general-wolfe-1770",
+      "webSrc": "/historical/m1/wolfe-death-of-general-wolfe-1770.jpg",
+      "creator": "Benjamin West (1738\u20131820)",
+      "title": "The Death of General Wolfe",
+      "date": "1770 (depicting an event of 13 September 1759)",
+      "rights": "Public domain",
+      "classification": "LATER_DEPICTION",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Benjamin_West_005.jpg",
+      "repository": "National Gallery of Canada (via Wikimedia Commons / The Yorck Project)",
+      "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Benjamin_West_005.jpg",
+      "original": {
+        "file": "originals/wolfe-death-of-general-wolfe-1770.jpg",
+        "bytes": 4405151,
+        "dimensions": "3456x2304",
+        "sha256": "194881d54e1f3ff77e202472cbe66319732569fb604a9e472908ee4d388789dc"
+      },
+      "web": {
+        "file": "apps/web/public/historical/m1/wolfe-death-of-general-wolfe-1770.jpg",
+        "bytes": 453780,
+        "dimensions": "1600x1066",
+        "sha256": "5baf87af2ee099075f6a8bd9a627f432890cf70632d990d2438af43f2126ef10"
+      }
+    },
+    {
+      "id": "stamp-act-1765",
+      "webSrc": "/historical/m1/stamp-act-1765.jpg",
+      "creator": "Parliament of Great Britain",
+      "title": "The Stamp Act, 1765 (printed Act)",
+      "date": "1765",
+      "rights": "Public domain",
+      "classification": "PRIMARY_SOURCE",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parliament_Stamp_Act1765.jpg",
+      "repository": "Library of Congress (via Wikimedia Commons)",
+      "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/4/40/Parliament_Stamp_Act1765.jpg",
+      "original": {
+        "file": "originals/stamp-act-1765.jpg",
+        "bytes": 393195,
+        "dimensions": "416x800",
+        "sha256": "f997daaf63a55d9c5b4eae43bd8d46aa1e34ffad7b5076d9ca0c49f311d319a1"
+      },
+      "web": {
+        "file": "apps/web/public/historical/m1/stamp-act-1765.jpg",
+        "bytes": 393195,
+        "dimensions": "416x800",
+        "sha256": "f997daaf63a55d9c5b4eae43bd8d46aa1e34ffad7b5076d9ca0c49f311d319a1"
+      }
+    },
+    {
+      "id": "repeal-funeral-miss-ame-stamp-1766",
+      "webSrc": "/historical/m1/repeal-funeral-miss-ame-stamp-1766.jpg",
+      "creator": "British Cartoon Prints Collection (attrib. Benjamin Wilson)",
+      "title": "The Repeal, or the Funeral of Miss Ame-Stamp",
+      "date": "1766",
+      "rights": "Public domain",
+      "classification": "PERIOD_ART",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_repeal,_or_the_funeral_of_Miss_Ame%3DStamp_LCCN2006678564.jpg",
+      "repository": "Library of Congress, Prints & Photographs Division (LCCN 2006678564)",
+      "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/55/The_repeal%2C_or_the_funeral_of_Miss_Ame%3DStamp_LCCN2006678564.jpg",
+      "original": {
+        "file": "originals/repeal-funeral-miss-ame-stamp-1766.jpg",
+        "bytes": 13852872,
+        "dimensions": "10733x8021",
+        "sha256": "ae8538774a4303c78406142f6a13560a6bc809ffac1cfe1c0fdb2999588c7983"
+      },
+      "web": {
+        "file": "apps/web/public/historical/m1/repeal-funeral-miss-ame-stamp-1766.jpg",
+        "bytes": 690662,
+        "dimensions": "1600x1195",
+        "sha256": "5de5d158a783cc8fd9e692454aa90f579d467645a92ea4bb846fb5b387106e5e"
+      }
+    },
+    {
+      "id": "boston-1768-landing-of-troops-revere",
+      "webSrc": "/historical/m1/boston-1768-landing-of-troops-revere.jpg",
+      "creator": "Paul Revere (1735\u20131818), engraver",
+      "title": "A Prospective View of the Town of Boston \u2026 and the Landing of Troops in the Year 1768",
+      "date": "engraved c. 1768\u20131770 (depicting 1 October 1768)",
+      "rights": "Public domain",
+      "classification": "PRIMARY_SOURCE",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_prospective_view_of_the_town_of_Boston,_the_capital_of_New-England_-_and_the_landing_of_--_troops_in_the_year_1768,_in_consequence_of_letters_from_Gov._Bernard,_the_commissioners,_etc._to_LCCN2004670036.jpg",
+      "repository": "Library of Congress, Prints & Photographs Division (LCCN 2004670036)",
+      "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9d/A_prospective_view_of_the_town_of_Boston%2C_the_capital_of_New-England_-_and_the_landing_of_--_troops_in_the_year_1768%2C_in_consequence_of_letters_from_Gov._Bernard%2C_the_commissioners%2C_etc._to_LCCN2004670036.jpg",
+      "original": {
+        "file": "originals/boston-1768-landing-of-troops-revere.jpg",
+        "bytes": 92351,
+        "dimensions": "640x368",
+        "sha256": "488dbe681ef204e12f6eecbb6ca831662a379da24796aa443e1883323c703251"
+      },
+      "web": {
+        "file": "apps/web/public/historical/m1/boston-1768-landing-of-troops-revere.jpg",
+        "bytes": 92351,
+        "dimensions": "640x368",
+        "sha256": "488dbe681ef204e12f6eecbb6ca831662a379da24796aa443e1883323c703251"
+      }
+    }
+  ]
+}

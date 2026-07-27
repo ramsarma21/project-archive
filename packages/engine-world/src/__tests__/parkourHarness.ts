@@ -10,6 +10,7 @@ import {
   platformFromRect,
   wallFromRect,
   type Blocker,
+  type ClimbVolume,
   type CollisionWorld,
   type Platform,
 } from "../collision.js";
@@ -22,8 +23,29 @@ export const ARENA_BOUNDS = { minX: -60, maxX: 60, minZ: -60, maxZ: 60 };
 export function world(
   blockers: Blocker[] = [],
   platforms: Platform[] = [],
+  climbVolumes: ClimbVolume[] = [],
 ): CollisionWorld {
-  return { blockers, platforms, bounds: { ...ARENA_BOUNDS } };
+  return { blockers, platforms, bounds: { ...ARENA_BOUNDS }, climbVolumes };
+}
+
+/** An authored vertical ascent: stand in here, and going up onto `onto` is legal. */
+export function ascent(
+  onto: string,
+  minZ: number,
+  maxZ: number,
+  standY: number,
+  width = 12,
+): ClimbVolume {
+  return {
+    id: `ascent-${onto}`,
+    toSurface: onto,
+    minX: -width / 2,
+    maxX: width / 2,
+    minZ,
+    maxZ,
+    minY: standY - 0.4,
+    maxY: standY + 0.4,
+  };
 }
 
 /** A solid box with a landable top, the common traversal obstacle. */

@@ -14,7 +14,12 @@ import {
 // whole askable bank and lets `askQuestion` choose each round, which is what the
 // production route does. The function is still exported and still tested directly
 // in policy.test.ts.
-import { askableItems, parseQuestionBank, type PvpQuestionBank } from "../questionPool.js";
+import {
+  allAskableCardIds,
+  askableItems,
+  parseQuestionBank,
+  type PvpQuestionBank,
+} from "../questionPool.js";
 import { createLobby, joinLobby, lobbySides, type LobbyMember } from "../lobby.js";
 import { DEFAULT_COSMETIC_LOADOUT } from "../cosmetics.js";
 import { generateHandle } from "../handles.js";
@@ -30,6 +35,13 @@ export function loadM1Bank(): PvpQuestionBank {
   return parsed.bank;
 }
 
+/**
+ * The M1 card set the PLAYTEST_ALL access policy grants both players. Derived from
+ * the authored bank, so the card gate — now LIVE in `OPEN_PLAYTEST_GATES` — passes
+ * with the real cards rather than being defeated by empty fixtures.
+ */
+export const M1_PVP_CARD_IDS: readonly string[] = allAskableCardIds(loadM1Bank());
+
 export function member(
   profileId: string,
   overrides: Partial<LobbyMember> = {},
@@ -40,7 +52,9 @@ export function member(
     rank: 1,
     unlockedAbilityIds: [],
     cosmetics: DEFAULT_COSMETIC_LOADOUT,
-    pvpLegalCardIds: [],
+    // The full M1 set: both playtest participants carry every card under
+    // PLAYTEST_ALL, which is what makes the whole eligible pool askable.
+    pvpLegalCardIds: [...M1_PVP_CARD_IDS],
     ...overrides,
   };
 }
@@ -107,7 +121,12 @@ export function liveMatch(): LiveFixture {
   if (!sides) throw new Error("no sides");
 
   const bank = loadM1Bank();
-  const questions = askableItems(bank, { A: [], B: [] });
+  // The card gate is live, so the draw uses the members' real cards (the full M1
+  // set) rather than empty fixtures — the intersection is the whole eligible pool.
+  const questions = askableItems(bank, {
+    A: sides.A.pvpLegalCardIds,
+    B: sides.B.pvpLegalCardIds,
+  });
   if (questions.length === 0) throw new Error("the bank produced no askable items");
 
   const arena = referenceArena();

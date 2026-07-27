@@ -1,0 +1,195 @@
+{
+  "asset": "system-presenter",
+  "role": "Cinematic System presenter (rendered later as a blue hologram; base model preserves facial/clothing detail, emissive NOT baked so runtime can shade it)",
+  "reference": {
+    "file": "assets/source/concepts/system-presenter/reference.png",
+    "origin": "user-supplied reference image",
+    "supplied_dimensions": [1024, 559],
+    "notes": "Adult woman, light skin, friendly symmetrical face + smile, long straight/wavy blonde hair parted near center, slim proportionate body, tailored modern blazer over blouse, fitted trousers, pointed heels. Supplied already stylized as a light-blue hologram on a large white field."
+  },
+  "prep": {
+    "script": "assets/pipeline/prep_character_reference.py",
+    "requires": "Pillow + numpy (throwaway venv; recreate with `python3 -m venv .venv && .venv/bin/pip install Pillow numpy`)",
+    "output": "assets/build/system-presenter/system-presenter-prepped.png",
+    "operation": "non-generative crop of near-white border + safe padding (full hair-crown-to-feet silhouette retained) + center on white square canvas + LANCZOS upscale + conservative unsharp mask (no recolour, no feature invention)",
+    "subject_bbox_in_source": [432, 32, 593, 547],
+    "canvas_side": 557,
+    "target": 1280,
+    "upscale_factor": 2.298
+  },
+  "generation": {
+    "api": "Meshy Image-to-3D (POST openapi/v1/image-to-3d)",
+    "script": "assets/pipeline/gen_character_from_image.mjs (adapted: optional targetPolycount arg)",
+    "settings": {
+      "ai_model": "latest",
+      "pose_mode": "t-pose",
+      "symmetry_mode": "on",
+      "should_texture": true,
+      "enable_pbr": false,
+      "should_remesh": true,
+      "topology": "triangle",
+      "target_polycount": 50000
+    },
+    "candidates": [
+      {
+        "id": "A",
+        "task_id": "019fa287-5cd2-7a83-a20b-fcd91154048d",
+        "file": "assets/build/system-presenter/system-presenter-base-a.glb",
+        "tris": 51244,
+        "verdict": "PASS - clean T-pose, symmetric friendly face with intact eyes/nose/lips + slight smile, long wavy center-parted hair, correct blazer/blouse/trousers/pointed-heels silhouette, slim proportions; no eye/mouth collapse, no helmet hair, limbs intact"
+      }
+    ],
+    "chosen": "A",
+    "retry_rationale": "No retry performed. Candidate A cleared the acceptance bar on first generation with no fatal face/body/outfit defects; per the credit-conservation guidance, an open retry loop was not warranted. A single reasoned retry crop/setting was held in reserve and not needed."
+  },
+  "rigging": {
+    "api": "Meshy Rigging (POST openapi/v1/rigging)",
+    "script": "assets/pipeline/rig_character.mjs",
+    "height_meters": 1.7,
+    "task_id": "019fa28a-5a2b-77aa-bafd-6a50f607f5bb",
+    "output": "assets/build/system-presenter/system-presenter-rigged-base.glb",
+    "validation": "effective (runtime-equivalent) height 1.7001m, feet at minY ~0, 1 skin / 24 joints, no NaN"
+  },
+  "optimize": {
+    "script": "assets/pipeline/optimize_system_presenter.py (targeted single-file; does NOT touch other characters)",
+    "intermediate": "assets/build/system-presenter/system-presenter-rigged-opt.glb",
+    "material_cleanup": "assets/pipeline/fix_rig_emissive.py (cleared whole-body-albedo-as-emissive miswire; set metallic 0 / roughness 0.5)",
+    "target_tris": 30000,
+    "max_texture": 1024,
+    "output": "apps/web/public/world/characters/system-presenter-rigged.glb"
+  },
+  "final_checks": {
+    "valid_glb": true,
+    "effective_height_m": 1.7001,
+    "min_y": -0.0,
+    "triangles": 28954,
+    "file_bytes": 1945396,
+    "materials": 1,
+    "images": 1,
+    "image_format": "image/jpeg",
+    "image_max_dim": 1024,
+    "skins": 1,
+    "joints": 24,
+    "armature_nodes": 1,
+    "animations": 0,
+    "nan_transforms": 0,
+    "emissive_baked": false,
+    "known_deviations": "KHR_materials_specular specularColorFactor [2,2,2] left as generated (light-dependent, harmless, runtime reshades); one orphaned duplicate texture entry (0 extra bytes)"
+  },
+  "qa": {
+    "renders_dir": "assets/build/system-presenter/qa",
+    "shots": ["full-front", "full-3q", "rest", "face-front", "face-3q"],
+    "candidate_renders_dir": "assets/build/system-presenter/qa-base-a",
+    "render_script": "assets/pipeline/render_character_qa_closeups.py",
+    "status": "PASS_WITH_LIMITATIONS",
+    "correspondence": "Recognizable match to reference in face shape, hair silhouette/center-part, smile/eyes, body proportions, and blazer/blouse/trouser/heel silhouette.",
+    "limitations": "Decimation to 29k softens the face slightly (minor nose-bridge faceting, a hair/face texture seam); hands are simplified/flat (typical Meshy); hair is a textured shell rather than strand geometry; base texture carries the blue hologram tint from the supplied reference (expected - runtime shades the hologram). Not an exact identity likeness (single-image reconstruction)."
+  },
+  "animation": {
+    "reason": "Cinematic presenter must not narrate in a static T-pose.",
+    "meshy_basic_animations_available": ["walking", "running"],
+    "meshy_basic_animations_used": false,
+    "meshy_basic_animations_note": "Meshy rig task 019fa28a-... basic_animations only contained walking/running (locomotion with root travel), which are unsuitable for a stationary hologram narrator and contain no idle/talk/conversational motion.",
+    "process": "Repository established scoped equivalent: assets/pipeline/bake_character_anims.py (Mixamo -> single Meshy-rigged character, rest-delta retarget so differing rest poses cannot collapse the mesh).",
+    "compatibility_evidence": "Target rig is Meshy's 24-joint skeleton (Hips, Spine/Spine01/Spine02, neck, Head, Left/Right Shoulder/Arm/ForeArm/Hand, Up/Leg/Foot/ToeBase, head_end, headfront) identical in name+count to the already-animated shipped abigail-rigged.glb. All 22 BONE_MAP targets present; head_end/headfront are unmapped leaf bones held at rest.",
+    "source_clips": {
+      "idle": "assets/source/mixamo/idle.fbx",
+      "talk": "assets/source/mixamo/talk.fbx",
+      "talk2": "assets/source/mixamo/talk2.fbx"
+    },
+    "clips": [
+      {"name": "idle", "duration_s": 16.667, "in_place": true},
+      {"name": "talk", "duration_s": 5.967, "in_place": true},
+      {"name": "talk2", "duration_s": 3.967, "in_place": true}
+    ],
+    "root_motion_cm": {
+      "idle": {"hips_X": 0.0, "hips_Y": 0.0, "hips_Z": 2.48, "foot_Z_lift_max": 0.42},
+      "talk": {"hips_X": 0.0, "hips_Y": 0.0, "hips_Z": 0.56, "foot_Z_lift_max": 0.76},
+      "talk2": {"hips_X": 0.0, "hips_Y": 0.0, "hips_Z": 0.98, "foot_Z_lift_max": 0.69}
+    },
+    "root_motion_note": "Hips horizontal frozen (in-place); only a sub-2.5cm vertical breathing bob remains (no root jump); feet planted (<1cm vertical lift). Small horizontal foot movement is natural weight-shift, not body translation.",
+    "build_artifact": "assets/build/system-presenter/system-presenter-anim.glb",
+    "bake_log": "assets/build/system-presenter/bake-anim.log",
+    "rollback_artifact": "assets/build/system-presenter/system-presenter-rigged-preanim.glb (pre-animation accepted output, byte-preserved for rollback)",
+    "qa_renders_dir": "assets/build/system-presenter/qa-anim",
+    "qa_render_script": "assets/pipeline/render_anim_qa.py",
+    "post_animation_checks": {
+      "effective_height_m": 1.7001,
+      "triangles": 28954,
+      "image_format": "image/jpeg",
+      "image_max_dim": 1024,
+      "materials": 1,
+      "emissive_baked": false,
+      "skins": 1,
+      "joints": 24,
+      "clips": ["idle", "talk", "talk2"]
+    },
+    "animation_qa": "PASS - non-T-pose idle/talk/talk2, natural conversational gestures, no shoulder/elbow/wrist collapse, no hand-through-face/body, no root slide, face/material/scale/triangle result preserved from the accepted static model.",
+    "tests": "packages/engine-world characterAnimation.test.ts 16/16 pass; scripts/check-world-scale.mjs OK (228 GLBs)."
+  },
+  "facial_rig": {
+    "reason": "The cinematic presenter must visibly move its mouth while narrating. The optimized head is a single closed skin (lips are a textured seam on a continuous surface, no mouth cavity, no teeth/tongue geometry), so an anatomically open mouth would tear the surface or expose a hole. The honest motion this topology supports is a restrained JAW DROP.",
+    "control": "one glTF morph target named `jawOpen` on the single mesh (a lower-lip/chin/jaw-underside rotation about a jaw hinge; nose, upper lip, cheeks, eyes, forehead and hair are untouched)",
+    "step_script": "assets/pipeline/add_presenter_face_rig.py (input system-presenter-anim.glb -> output published GLB; preserves skeleton, skin weights, materials, textures and the idle/talk/talk2 clips)",
+    "region_selection": "authored against the INSPECTED mesh, not guessed percentages. Landmarks (world metres, from .affordwork/inspect-presenter-profile.py on the shipped mesh): nose tip z=1.529 (MUST NOT MOVE), upper lip z~1.515 (zero influence), lips z~1.50-1.51, lower lip z~1.495, chin front z~1.472-1.490, chin underside z~1.451-1.462, neck z<1.44 (zero). Masked by height + front depth + lateral centre so hair at the sides never moves.",
+    "open_angle_at_full": "0.20 rad (~11.5 deg) at morph influence 1.0; runtime caps the driven influence at JAW_OPEN_MAX=0.6 and text-driven peaks land ~0.36 (subtle, believable).",
+    "intermediate": "assets/build/system-presenter/system-presenter-face.glb",
+    "rollback_artifact": "assets/build/system-presenter/system-presenter-anim.glb (pre-facial, byte-preserved)",
+    "verifier": "assets/pipeline/verify_presenter_face.py (asserts jawOpen exists and only moves the lower-front face, idle/talk/talk2 survive, 24 joints + skin intact, 1 material + texture present, height in the human band with feet on the ground, jaw does not change the silhouette). PASS.",
+    "qa_render_script": "assets/pipeline/render_presenter_face_morph_qa.py",
+    "qa_renders_dir": "assets/build/system-presenter/qa-face-morph (jaw at 0.0 / 0.5 / 1.0, front + 3/4)",
+    "browser_qa": "Real Chrome at 1024x692 and 1440x900 via .affordwork/qa-presenter-mouth.mjs and a live morph-influence probe (.affordwork/qa-presenter-morph-probe.mjs): speaking drives a varying, capped jaw influence (min 0.00, max ~0.36, ~19 distinct levels) that closes to 0 in silence; face readable, holographic (no cyan blowout), stable viewer-facing head/eye line, no console/page errors.",
+    "runtime": "apps/web/src/module/SystemPresenter.tsx discovers the jawOpen morph and drives it every frame from the deterministic apps/web/src/module/moduleLipSync.ts sampler (speechJawInfluence), with per-frame smoothing; silence/pause/reduced-motion close the mouth. Provider seam preserved for future ElevenLabs alignment.",
+    "honest_scope": "This is broad jaw/mouth motion, NOT phoneme-perfect viseme sync. The user only requires believable mouth motion.",
+    "post_facial_checks": {
+      "morph_targets": ["jawOpen"],
+      "clips": ["idle", "talk", "talk2"],
+      "joints": 24,
+      "skins": 1,
+      "materials": 1,
+      "images": 1,
+      "image_max_dim": 1024,
+      "bind_height_m": 1.677,
+      "feet_min_z_m": -0.0078
+    }
+  },
+  "appearance_refinement": {
+    "reason": "The first published head shipped at a uniform 30k decimation that shattered the curved face/hair into a sparse shell soup (angular nose facets, a mirror-seam ridge down the midline, and jagged hair/decolletage shards). The base 51k Meshy reconstruction does NOT have these; they were purely a decimation artifact, so the fix is to preserve the camera-facing geometry rather than to smooth the broken result (which only spread the shards).",
+    "diagnosis": "Inspected the shipped mesh: 2641 disconnected components (largest 140 verts, 1952 tiny fragments) held together only by baked custom split normals. Any vertex smoothing collapses the thin shells and any normal recompute shades the fragments as shards. The pre-decimation rigged base (51,324 tris) renders as a smooth, symmetric, camera-ready face under the same neutral light.",
+    "approach": "Re-ran the SAME pipeline from the rigged base with the camera-facing upper body protected from the decimator, so the head/hair/torso keep base density while the lower body still decimates to hold a reasonable budget. No hand-editing of the public GLB, no procedural primitives, no texture repaint.",
+    "optimize_change": "optimize_system_presenter.py extended with an optional protectFrac argument: verts whose world height is above (minZ + protectFrac*height) get zero decimate-collapse weight. Published build used targetTris=46000, maxTex=1024, protectFrac=0.60 (top 40% protected). Base texture was 2048 (clamped to 1024, unchanged from the 30k build).",
+    "pipeline_rerun": [
+      "optimize_system_presenter.py rigged-base -> system-presenter-rigged-opt-hi.glb (46,008 tris, protected 34,020 verts / decimated 7,593)",
+      "fix_rig_emissive.py -> system-presenter-rigged-opt-hi-fixed.glb (same body-albedo-as-emissive clear; BIN unchanged)",
+      "bake_character_anims.py idle,talk,talk2 -> system-presenter-anim-hi.glb (same Mixamo sources + retarget)",
+      "add_presenter_face_rig.py -> system-presenter-face-hi.glb (jawOpen morph re-derived from the inspected mesh; moved 1412 verts, max drop 0.0200 m)"
+    ],
+    "published": "apps/web/public/world/characters/system-presenter-rigged.glb (system-presenter-face-hi.glb)",
+    "rollback_artifact": "assets/build/system-presenter/system-presenter-face.glb (the 30k face build, byte-preserved)",
+    "published_checks": {
+      "triangles": 46008,
+      "file_bytes": 3314180,
+      "image_max_dim": 1024,
+      "materials": 1,
+      "emissive_baked": false,
+      "skins": 1,
+      "joints": 24,
+      "clips": ["idle", "talk", "talk2"],
+      "morph_targets": ["jawOpen"],
+      "bind_height_m": 1.6768,
+      "feet_min_z_m": -0.0076,
+      "verify_presenter_face": "PASS (jawOpen only moves the lower-front face, above_lip=0, silhouette drop 0.0; clips + 24 joints + skin + material + bounds intact)",
+      "world_scale": "OK (scripts/check-world-scale.mjs, 228 GLBs, no blocking defect)"
+    },
+    "qa": {
+      "neutral_light": "assets/build/system-presenter/qa-refine (before-*/after-* : full body, face front, 3/4 L/R, profile, speaking jaw mid-open). Before/after: nose faceting and midline seam largely resolved, face symmetric and smooth, eyes/lips defined (not doll-like), tidy hair, confident idle posture, full body/feet intact.",
+      "jaw_morph": "assets/build/system-presenter/qa-face-morph-hi (jaw 0.0/0.5/1.0, front + 3/4): natural lower-lip/chin drop, nose/eyes/upper face held.",
+      "browser": "Real Chrome via .affordwork/qa-presenter-mouth.mjs at 1024x692 and 1440x900 in the actual module cinematic: refined face loads and reads under the hologram, mouth/gaze work, PRESENTER_MEDIUM framing flattering and non-objectifying, no console/page/http errors.",
+      "presenter_tests": "apps/web systemPresenter/presenterGaze/presenterHologram tests 23/23 pass; web package typecheck clean."
+    },
+    "boundary_compliance": "Adult, conventionally attractive, school-appropriate. Appeal comes from cleaner facial geometry, symmetry, defined eyes/lips, tidy hair and confident posture. No anatomical enlargement, no cleavage, no revealing clothing; the professional blazer/open-collar blouse/trousers and full coverage are preserved from the reference.",
+    "limitations": "Still a single-image Meshy reconstruction: some mild faceting remains around the nose base/philtrum, and the hair-over-decolletage boundary still has residual thin-shell shards (inherent to the decimated hair; reduced but not eliminated, and mostly hidden under the hologram and outside medium/close framing). Eyes/lips/skin detail live in the baked albedo and were not repainted. Not an exact identity likeness."
+  },
+  "generated_date": "2026-07-27",
+  "qa_status": "PASS_WITH_LIMITATIONS (static + animation + facial jawOpen morph + appearance refinement)"
+}

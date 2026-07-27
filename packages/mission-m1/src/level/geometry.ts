@@ -164,16 +164,28 @@ masses.push(
   prop({
     id: "ALLEY_CRATES",
     section: "A_LEADS",
+    // Filled wall-to-wall across Dassett Alley (PRINTSHOP east at x=13, GAOL west
+    // at x=17), where it used to leave a 0.60m slot to the printshop and a 0.40m
+    // slot to the gaol — both narrower than the 0.70m capsule, so a body pushing
+    // along the alley clipped the wall it could not fit against. `crate-stack` is
+    // a BLOCK module (runtime.ts): the imported mesh FILLS the collider on every
+    // axis, so widening the box widens the drawn stack with it and leaves no
+    // misleading visible gap. The descent lands on the top (A_ALLEY_CRATES at
+    // x=15.1) and drops off the south face to A_ALLEY_FLOOR, neither of which the
+    // widening touches.
     asset: "crate-stack",
-    rect: rect(13.6, 16.6, -6.4, -4.4),
+    rect: rect(13.0, 17.0, -6.4, -4.4),
     topY: BAND.STACK,
     tags: ["crates"],
   }),
   prop({
     id: "ALLEY_OVERSHOOT_CRATES",
     section: "A_LEADS",
+    // East face flush to the gaol's west wall (x=17), closing the 0.40m
+    // sub-capsule slot it left against it. `crate-mound` is a BLOCK module, so
+    // the drawn mound fills the widened collider and there is no visible gap.
     asset: "crate-mound",
-    rect: rect(15.0, 16.6, -13.0, -10.6),
+    rect: rect(15.0, 17.0, -13.0, -10.6),
     topY: BAND.STACK,
     tags: ["crates", "catch"],
     note: "Catches a runner who sprints past the plank instead of onto it.",
@@ -199,7 +211,28 @@ decks.push(
     id: "SHAMBLES_PENTICE",
     section: "B_SHAMBLES",
     asset: "market-awning",
-    rect: rect(15.0, 22.4, 1.4, 3.2),
+    // East edge 18.3, not 22.4, and this is a COLLISION move rather than an art
+    // one — the only one in this pass, made on the owner's explicit authority.
+    //
+    // It ran to 22.4 and the stall row starts at 18.3, so this deck covered 3.92
+    // of STALL_0__CANOPY's 8.40 square metres — 47% of it — while sitting 0.55m
+    // higher, at 3.10 against the stall canopy's 2.55. Both are dressed with
+    // `market-awning`, so a player standing on stall 0 had this pentice's canvas
+    // drawn across their thighs. It is the first canopy the route climbs onto
+    // (B_CANOPY_FOOT -> B_CANOPY_0) and it is the burial the owner photographed.
+    //
+    // No art could have fixed it. Two decks 0.55m apart in the same plan are two
+    // solid surfaces in the same place, and whichever is drawn correctly the
+    // other one is through somebody's legs. A stall is pitched IN FRONT OF a
+    // shed's pentice, never under it, so the pentice now stops where the stall
+    // row begins and the two abut at 18.3 instead of overlapping.
+    //
+    // No route node moves: B_PENTICE is at x 16.6, 1.7m inside what is left, and
+    // B_CANOPY_0 at 19.7 is now under open sky. The pentice is 3.3m rather than
+    // 7.4m, which is one module tile rather than two — and that also retires the
+    // seam down its middle, where two tiles' worth of the old apron met and left
+    // it the worst-covered awning in the level.
+    rect: rect(15.0, 18.3, 1.4, 3.2),
     y: 3.1,
     carriedBy: ["MARKET_SHED"],
     tags: ["awning"],
@@ -247,14 +280,26 @@ stallXs.forEach((x, index) => {
   );
 });
 
+// The parked carts back onto the north-row wall (the GAOL runs x 17-30, the
+// SUGAR_HOUSE x 34-41, both with their south face at z=-3.2). Where a wall is
+// behind a cart the cart's back face is set flush to it (z=-3.2); left at -2.8 it
+// stood 0.40m proud of the wall, a slot narrower than the 0.70m capsule that a
+// body pushing north into it could neither enter nor clear. `hand-cart` is a
+// BLOCK module (runtime.ts) — its mesh FILLS the collider on every axis — so the
+// drawn cart deepens with the box and no misleading gap opens behind it. The
+// SOUTH face stays at -1.2, so the 1.6m street lane and the GAOL_BARRELS vault
+// gap in front of the carts are untouched. CART_2 (x 30.2-32.6) sits in the open
+// break between the gaol and the sugar house with no wall behind it, so its back
+// stays at -2.8.
 const cartXs = [19.6, 25.4, 30.2, 36.4];
+const cartBackZ = [-3.2, -3.2, -2.8, -3.2];
 cartXs.forEach((x, index) => {
   masses.push(
     prop({
       id: `CART_${index}`,
       section: "B_SHAMBLES",
       asset: "hand-cart",
-      rect: rect(x, x + 2.4, -2.8, -1.2),
+      rect: rect(x, x + 2.4, cartBackZ[index]!, -1.2),
       topY: BAND.CART,
       tags: ["cart", "street-line", "sight-break"],
     }),
@@ -266,10 +311,15 @@ masses.push(
     id: "GAOL_BARRELS",
     section: "B_SHAMBLES",
     asset: "barrel-group",
-    rect: rect(21.6, 22.7, -0.9, 0.2),
+    // Shifted 0.25m south (z centre -0.35 -> -0.60) off the earlier [-0.90, 0.20]
+    // footprint. The live vault's real obstacle-top arc used to clip the two
+    // flanking stall canopies to either side; the counterfactual that clears both
+    // without ignoring or shrinking them is this quarter-metre south. Depth (1.10)
+    // and height unchanged, so the barrels still sit inside the vault envelope.
+    rect: rect(21.6, 22.7, -1.15, -0.05),
     topY: BAND.BARREL,
     tags: ["vault"],
-    note: "1.10m tall, 1.20m deep: inside the vault envelope on every face.",
+    note: "1.10m tall, 1.10m deep: inside the vault envelope on every face.",
   }),
   prop({
     id: "SHAMBLES_CRATES_A",
@@ -283,8 +333,12 @@ masses.push(
   prop({
     id: "SHAMBLES_CRATES_B",
     section: "B_SHAMBLES",
+    // Back face flush to the sugar house's south wall (z=-3.2), closing the 0.40m
+    // sub-capsule slot behind it. `crate-mound` is a BLOCK module, so the drawn
+    // mound fills the deepened collider with no visible gap; the crossover top
+    // (B_CRATES_B at z=-2.0) is unaffected.
     asset: "crate-mound",
-    rect: rect(38.0, 40.4, -2.8, -1.2),
+    rect: rect(38.0, 40.4, -3.2, -1.2),
     topY: BAND.STACK,
     tags: ["climb", "crossover"],
   }),
@@ -292,7 +346,13 @@ masses.push(
     id: "PASSAGE_HOIST",
     section: "B_SHAMBLES",
     asset: "duck-beam-frame",
-    rect: rect(24.4, 27.4, -1.2, 0.2),
+    // 2.5m along the street, which is what B_STREET_MID's own note has always
+    // claimed — "just inside the 2.6m span the verb accepts". The mass was 3.0m,
+    // which is outside it, so the slide was refused every time and the only way
+    // through the SAFE line's duck was to hold crouch and walk. Nothing teaches
+    // that, and the measured result was a player pressed against the beam at
+    // (24.05, 0, -0.4) for fifteen seconds with the reader offering nothing.
+    rect: rect(24.4, 26.9, -1.2, 0.2),
     baseY: 1.2,
     thickness: 0.9,
     tags: ["duck"],
@@ -325,6 +385,10 @@ masses.push({
   baseY: BAND.LEADS,
   topY: 17.1,
   landable: false,
+  // The tower is the same building rising out of its own leads, drawn by the one
+  // townhouse mesh — not a separate mass set down on the roof — so it is carried
+  // by the body below rather than resting on a drawn floor at 12.4m.
+  carriedBy: ["TOWNHOUSE"],
   tags: ["structure", "tower"],
 });
 
@@ -816,7 +880,20 @@ decks.push(
   deck({
     id: "MEETING_RIDGE",
     section: "E_LEAP",
-    asset: "roof-ridge-walk",
+    // `roof-ridge-monitor`, not `roof-ridge-walk`, and the collision is
+    // untouched: only the asset the surface is dressed with changed, the same
+    // swap HOLLIS_MEETING made above and for a related reason.
+    //
+    // This plane is at 11.20m and the building carrying it is a single-entry
+    // cluster whose mass tops out at 8.20m, so `bldg-meeting-hollis` takes its
+    // draw box from its own collision and stops three metres under the walk.
+    // No roof art on the building can close that. `roof-ridge-walk` cannot
+    // either: it is 42mm of leaded flat and boards, so it drew the walk
+    // correctly ON the plane with nothing but sky between it and the roof.
+    //
+    // The monitor is 3.0m tall and standable at 3.0, which is what puts its
+    // base at 11.20 - 3.00 = 8.20 exactly. See assets.ts.
+    asset: "roof-ridge-monitor",
     rect: rect(75.3, 84.7, 7.6, 10.4),
     y: BAND.MEETING_RIDGE,
     carriedBy: ["HOLLIS_MEETING"],
@@ -856,6 +933,9 @@ masses.push(
     baseY: BAND.STEEPLE_GALLERY,
     topY: BAND.STEEPLE_VANE,
     landable: false,
+    // The lantern is the steeple continuing up out of its gallery, one mesh, so
+    // it is carried by the shaft below rather than standing on a drawn floor.
+    carriedBy: ["STEEPLE"],
     tags: ["structure", "steeple", "lantern"],
   },
   // The spire, declared so that it can exist.
@@ -873,6 +953,8 @@ masses.push(
     baseY: BAND.STEEPLE_VANE,
     topY: BAND.STEEPLE_FINIAL,
     landable: false,
+    // The spire is the steeple's own head above the vane balcony, one mesh.
+    carriedBy: ["STEEPLE_LANTERN"],
     tags: ["structure", "steeple", "spire"],
   },
 );
@@ -1054,6 +1136,7 @@ masses.push(
     baseY: 4.2,
     topY: 6.2,
     landable: false,
+    carriedBy: ["LIBERTY_ELM_TRUNK"],
     tags: ["dressing", "landmark"],
     note: "Hung before dawn on the 14th. The sheriff was ordered to cut it down and did not dare.",
   }),
@@ -1065,6 +1148,7 @@ masses.push(
     baseY: 4.8,
     topY: 5.8,
     landable: false,
+    carriedBy: ["LIBERTY_ELM_TRUNK"],
     tags: ["dressing"],
     note: "The jackboot with the devil climbing out of it: the pun on Lord Bute.",
   }),

@@ -25,10 +25,12 @@
 
 import {
   CAPSULE_RADIUS,
+  CONTACT_EPS,
   STAND_HEIGHT,
   type CollisionWorld,
   type Vec3,
   landingValid,
+  supportBelow,
 } from "../collision.js";
 import { FIELD_DT } from "../fieldSimulation.js";
 import {
@@ -92,10 +94,45 @@ export interface VerbChoice {
 
 export interface SelectContext {
   grounded: boolean;
-  /** Sprint is held. Speed-gated verbs require it. */
+  /**
+   * Sprint is held — which is also the parkour key, and that is one decision
+   * rather than two.
+   *
+   * THE WORLD ONLY CATCHES YOU WHILE YOU ARE ASKING IT TO. Every verb the
+   * geometry infers — the vault, the climb, the mantle, the slide, the dive —
+   * requires this, and nothing else does. It is the Assassin's Creed contract
+   * and it is here because the alternative was tried and does not work: read
+   * off geometry alone, the ladder pulls a player up the first ledge they run
+   * past, and "it automatically climbs and vaults you through everything" is
+   * what that feels like from the outside. There is no geometric rule that
+   * separates a staging you meant to climb from a clock ledge you meant to run
+   * past, because the difference is not in the geometry. It is intent, and
+   * intent has to be said out loud.
+   *
+   * Deliberately NOT gated on it: the edge brake, which is a safety and must
+   * hold a walking player at a lethal lip; walking off a small ledge, which is
+   * not a grab; and the named jump, which is the player being explicit by
+   * another means.
+   */
   sprintHeld: boolean;
   /** Jump is buffered this tick. Overrides the edge brake. */
   jumpBuffered: boolean;
+  /**
+   * The player is holding a direction into whatever is ahead of them.
+   *
+   * This is what makes the flow speed floor survivable. The floor exists so a
+   * player loitering next to a crate is not yanked over it, and it was doing
+   * that job by proxy: it asked whether the body was moving, on the assumption
+   * that a body which wants to cross something is a body in motion. Walking into
+   * a wall falsifies the assumption exactly when it matters — the contact takes
+   * the speed away, the read stops, and a two-metre ledge with a landing on top
+   * of it becomes permanently unclimbable to anyone who arrived at a walk.
+   * Asking about the input instead keeps the intent test and drops the accident.
+   *
+   * Optional so an existing caller keeps its behaviour: absent reads as false,
+   * which is the old rule.
+   */
+  pushing?: boolean;
   /** Crouch is held. Biases a low span toward a slide. */
   crouchHeld: boolean;
   /** Chaining, so exit speed is fully restored rather than bled. */
@@ -109,6 +146,82 @@ export interface SelectContext {
 // ---- stage 1: the ladder ---------------------------------------------------
 
 /**
+ * The obstacle half of the ladder, best first.
+ *
+ * Factored out because it is wanted twice: once by a player running at
+ * something, and once by a player standing against it. The thresholds are the
+ * same in both cases and there must be exactly one copy of them, or the answer
+ * to "can I get over this" depends on how fast I happened to arrive.
+ */
+function rankObstacle(
+  obstacle: NonNullable<ParkourProbe["obstacle"]>,
+  tuning: ParkourTuning,
+  slideAllowed: boolean,
+  ranked: TraversalVerb[],
+): void {
+  const { heightM, depthM, lowSpan, topStandable, farSide } = obstacle;
+
+  // Duck under before climbing over: a low span is never scaled.
+  if (
+    slideAllowed &&
+    lowSpan &&
+    lowSpan.headroomM >= tuning.slideMinHeadroomM &&
+    lowSpan.headroomM <= tuning.slideMaxHeadroomM &&
+    lowSpan.depthM <= tuning.slideMaxDepthM
+  ) {
+    ranked.push("SLIDE");
+  }
+
+  if (heightM > 0 && heightM <= tuning.stepUpMaxHeightM && topStandable) {
+    ranked.push("STEP_UP");
+  }
+
+  if (
+    heightM > 0 &&
+    heightM <= tuning.vaultMaxHeightM &&
+    depthM <= tuning.vaultMaxDepthM &&
+    farSide !== null &&
+    farSide.standable &&
+    farSide.dropM <= tuning.vaultMaxLandingDropM
+  ) {
+    ranked.push("VAULT");
+  }
+
+  if (
+    heightM > tuning.stepUpMaxHeightM &&
+    heightM <= tuning.mantleMaxHeightM &&
+    topStandable
+  ) {
+    ranked.push("MANTLE");
+  }
+
+  if (
+    heightM > tuning.vaultMaxHeightM &&
+    heightM <= tuning.climbOverMaxHeightM &&
+    !topStandable &&
+    depthM <= tuning.climbOverMaxDepthM &&
+    farSide !== null &&
+    farSide.standable &&
+    // A climb-over is a vault over a thin obstacle, and like a vault its far side
+    // may not drop into a fall: crossing a partition to a standable surface a
+    // body's height below is a climb-over; crossing it onto a five-metre drop is
+    // the reader pitching the player off a roof. Capped at the vault's own
+    // landing-drop ceiling so the two members of the family agree.
+    farSide.dropM <= tuning.vaultMaxLandingDropM
+  ) {
+    ranked.push("CLIMB_OVER");
+  }
+
+  if (
+    heightM > tuning.mantleMaxHeightM &&
+    heightM <= tuning.climbMaxHeightM &&
+    topStandable
+  ) {
+    ranked.push("CLIMB_UP");
+  }
+}
+
+/**
  * Every verb the geometry could support, best first. Pure arithmetic over the
  * probe — no world access, no validation. Ordering encodes the feel priority:
  * keep momentum, stay low, only stop when nothing else is possible.
@@ -120,32 +233,25 @@ export function rankVerbs(
 ): TraversalVerb[] {
   if (!ctx.grounded) return [];
 
-  // The safety brake is exempt from the flow speed floor. Braking removes the
-  // speed that would otherwise satisfy the floor, so a speed-gated brake latches
-  // for one tick, unlatches because the player is now slow, and lets held input
-  // re-accelerate — the player creeps off a fatal ledge at walking pace.
-  const brakeable =
-    !ctx.jumpBuffered &&
-    probe.obstacle === null &&
-    probe.edge !== null &&
-    probe.edge.contactDistanceM <= tuning.edgeBrakeDistanceM &&
-    (!Number.isFinite(probe.edge.dropM) ||
-      probe.edge.dropM > tuning.edgeBrakeMinDropM) &&
-    probe.edge.gapM === null;
+  // GROUND, NOT AN OBSTACLE.
+  //
+  // The mover walks up anything this low on its own, so the reader must not see
+  // it at all — and discarding it here rather than declining to rank it is the
+  // whole point. An unranked obstacle still owns the tick and falls through to
+  // BLOCKED, which is worse than the scripted vault it replaced: a 10cm kerb
+  // would read as a wall and brake the player at it. Gone entirely, the kerb
+  // stops suppressing the edge read behind it, stops outranking the drop beyond
+  // it, and the body simply steps over it without being told.
+  //
+  // A low span is exempt: its height is the top of a beam the player ducks
+  // under, which has nothing to do with what the feet can climb.
+  const obstacle =
+    probe.obstacle !== null &&
+    probe.obstacle.lowSpan === null &&
+    probe.obstacle.heightM <= tuning.freeStepUpM
+      ? null
+      : probe.obstacle;
 
-  // Below the flow floor there is no geometry read worth acting on, but a player
-  // standing still who presses jump must still jump. The brake outranks it: a
-  // buffered jump at an unsurvivable lip is handled by `brakeable` already
-  // refusing to latch, so reaching here with a brake means the player did not
-  // ask to leave the roof.
-  if (probe.speedMps < tuning.flowMinSpeedMps) {
-    if (brakeable) return ["EDGE_BRAKE"];
-    return ctx.jumpBuffered ? ["JUMP"] : [];
-  }
-  const sprinting =
-    ctx.sprintHeld && probe.speedMps >= tuning.sprintThresholdMps;
-  const ranked: TraversalVerb[] = [];
-  const obstacle = probe.obstacle;
   const edge = probe.edge;
 
   // An obstacle inside the probe window and nearer than any ledge owns the tick.
@@ -153,83 +259,186 @@ export function rankVerbs(
     obstacle !== null &&
     (edge === null || obstacle.faceDistanceM <= edge.contactDistanceM);
 
+  // The safety brake is exempt from the flow speed floor. Braking removes the
+  // speed that would otherwise satisfy the floor, so a speed-gated brake latches
+  // for one tick, unlatches because the player is now slow, and lets held input
+  // re-accelerate — the player creeps off a fatal ledge at walking pace.
+  //
+  // THE EXEMPTION HAS TO ASK THE SAME QUESTION THE MOVING PATH ASKS, and it was
+  // asking two narrower ones. Both reopened the hole it exists to close, by the
+  // same route: brake, speed falls under the floor, the standing branch declines
+  // to brake, the latch is dropped, held input walks the body a centimetre and a
+  // half, repeat ten times a second until the roof runs out.
+  //
+  //   * It required NO OBSTACLE AT ALL in the read, which is a much larger claim
+  //     than "something else owns this tick" — on a rooftop the player's own
+  //     building is usually somewhere in the read. Whether an obstacle beats a
+  //     ledge is a question about which is nearer and it already has an answer.
+  //     Measured on the Town House scaffold: braked twenty-two times over two
+  //     seconds and still went over the east lip, 5.60m onto the cobbles.
+  //
+  //   * It required NO GAP within reach. A gap is a reason to prefer a jump over
+  //     a brake, and the moving path expresses that by ranking JUMP_GAP above
+  //     it — which is the right way round, because ranking is a preference and
+  //     this was a veto. Below the flow floor there is no gap jump to prefer:
+  //     JUMP_GAP wants 3 m/s and this branch is under 0.9. Measured on the sugar
+  //     house: a far lip 3.84m away, unjumpable from a standstill, and a 12.40m
+  //     drop the player walked into anyway. A player who genuinely means to
+  //     cross from a standstill presses jump, and a buffered jump already turns
+  //     the brake off on the line above.
+  const brakeable =
+    !ctx.jumpBuffered &&
+    !obstacleFirst &&
+    edge !== null &&
+    edge.contactDistanceM <= tuning.edgeBrakeDistanceM &&
+    (!Number.isFinite(edge.dropM) || edge.dropM > tuning.edgeBrakeMinDropM);
+
+  // Below the flow floor there is no momentum read worth acting on, but two
+  // things still are. A player standing still who presses jump must still jump.
+  // And a player LEANING ON SOMETHING must still be able to get over it.
+  //
+  // That second case is the one the floor got wrong, and it got it wrong in the
+  // worst possible direction: pushing into a wall is what removes the speed the
+  // floor is testing for, so the read switched off at the exact moment the
+  // player was asking for it, and stayed off for as long as they kept asking.
+  // The way out was to reverse and run at it again, which nothing on screen says
+  // and no player infers. Only the verbs that need no run-up are offered here —
+  // a slide and a gap jump are momentum, and standing still is not a way to have
+  // any.
+  //
+  // The brake outranks all of it: a buffered jump at an unsurvivable lip is
+  // handled by `brakeable` already refusing to latch, so reaching here with a
+  // brake means the player did not ask to leave the roof.
+  if (probe.speedMps < tuning.flowMinSpeedMps) {
+    // A SOLVABLE DIVE OUTRANKS THE BRAKE AT A LETHAL LIP, at any speed.
+    //
+    // The moving branch already ranks LEAP_OF_FAITH above EDGE_BRAKE so a body
+    // sprinting off a killing lip toward a receiving target dives rather than
+    // braking. This is the same rule for a body under the flow floor, and it has
+    // to be, because the brake is what stops the body ever reaching the floor: at
+    // a dive-only lip — the steeple gallery into the Liberty Elm, where the crown
+    // target sits over a fatal street drop and the climb up the louvre tops the
+    // body out a stride from the rim, already decelerating — the body drops under
+    // the floor a stride short of the lip, this branch confirms EDGE_BRAKE, and
+    // the persisted hazard then kills every scrap of the approach speed the moving
+    // branch needs. A silent soft-lock at the objective's own doorstep. A dive's
+    // launch is SOLVED, not carried, so it needs no run-up; offering it here (auto,
+    // when the player is sprinting toward the target) above the brake means the
+    // brake is never confirmed at a lip a dive answers, and the body dives the
+    // moment it is within the leap's commit distance. planVerb's solveLeapOfFaith
+    // still rejects a target out of the offer cone, too shallow to read as a dive,
+    // or too far to reach — so a lethal lip with no dive answer still brakes exactly
+    // as before. LEAP_OF_FAITH is cooldown-exempt in flow.ts for the same reason
+    // the brake is, so the climb->dive chain survives the verb the climb just ran.
+    const diveReady =
+      ctx.sprintHeld &&
+      ctx.pushing &&
+      !ctx.reducedMotion &&
+      edge !== null &&
+      ctx.receivingTargets.length > 0;
+    if (brakeable && !diveReady) return ["EDGE_BRAKE"];
+    const standing: TraversalVerb[] = [];
+    if (diveReady) standing.push("LEAP_OF_FAITH");
+    if (brakeable) standing.push("EDGE_BRAKE");
+    if (
+      ctx.pushing &&
+      ctx.sprintHeld &&
+      obstacle !== null &&
+      obstacle.contactDistanceM <= tuning.commitDistanceM
+    ) {
+      // The duck is allowed from a standstill for the same reason the climb is,
+      // and it is the same street furniture: M1's hoist frame has 1.2m of
+      // headroom, so a standing capsule is stopped dead by it and a crouched one
+      // walks through. Requiring a sprint or a held crouch key to cross it means
+      // a player who simply walked up to it is held against a beam with no
+      // verb, no prompt and no reason to guess that a key they have never
+      // needed is the answer. Measured: fifteen seconds of holding forward at
+      // (24.0, 0, -0.4) with nothing happening at all.
+      rankObstacle(obstacle, tuning, true, standing);
+    }
+    if (ctx.jumpBuffered) standing.push("JUMP");
+    return standing;
+  }
+  const sprinting =
+    ctx.sprintHeld && probe.speedMps >= tuning.sprintThresholdMps;
+  const ranked: TraversalVerb[] = [];
+
   if (obstacleFirst && obstacle) {
-    const { heightM, depthM, lowSpan, topStandable, farSide } = obstacle;
-
-    // Duck under before climbing over: a low span is never scaled.
-    if (
-      lowSpan &&
-      lowSpan.headroomM >= tuning.slideMinHeadroomM &&
-      lowSpan.headroomM <= tuning.slideMaxHeadroomM &&
-      lowSpan.depthM <= tuning.slideMaxDepthM &&
+    const slideAllowed =
       (sprinting || ctx.crouchHeld) &&
-      probe.speedMps >= (ctx.crouchHeld ? tuning.flowMinSpeedMps : tuning.slideMinSpeedMps)
-    ) {
-      ranked.push("SLIDE");
-    }
-
-    if (heightM > 0 && heightM <= tuning.stepUpMaxHeightM && topStandable) {
-      ranked.push("STEP_UP");
-    }
-
-    if (
-      heightM > 0 &&
-      heightM <= tuning.vaultMaxHeightM &&
-      depthM <= tuning.vaultMaxDepthM &&
-      farSide !== null &&
-      farSide.standable &&
-      farSide.dropM <= tuning.vaultMaxLandingDropM
-    ) {
-      ranked.push("VAULT");
-    }
-
-    if (
-      heightM > tuning.stepUpMaxHeightM &&
-      heightM <= tuning.mantleMaxHeightM &&
-      topStandable
-    ) {
-      ranked.push("MANTLE");
-    }
-
-    if (
-      heightM > tuning.vaultMaxHeightM &&
-      heightM <= tuning.climbOverMaxHeightM &&
-      !topStandable &&
-      depthM <= tuning.climbOverMaxDepthM &&
-      farSide !== null &&
-      farSide.standable
-    ) {
-      ranked.push("CLIMB_OVER");
-    }
-
-    if (
-      heightM > tuning.mantleMaxHeightM &&
-      heightM <= tuning.climbMaxHeightM &&
-      topStandable
-    ) {
-      ranked.push("CLIMB_UP");
+      probe.speedMps >=
+        (ctx.crouchHeld ? tuning.flowMinSpeedMps : tuning.slideMinSpeedMps);
+    // Held key or nothing. See `SelectContext.sprintHeld`: a verb read off the
+    // geometry is the world reaching out and taking hold of the player, and it
+    // may only do that while they are asking. A crouched player at a low span
+    // is the one exception, because a duck is something you are already doing.
+    if (ctx.sprintHeld || ctx.crouchHeld) {
+      rankObstacle(obstacle, tuning, slideAllowed, ranked);
     }
 
     // Geometry the reader understands always beats the button: the player does
     // not press jump to vault a crate, and being asked to would undo the whole
     // point of reading. A jump is only offered here when the obstacle has no
     // answer at all, so pressing it at a wall is a hop rather than nothing.
-    if (ranked.length === 0 && ctx.jumpBuffered) ranked.push("JUMP");
-    if (ranked.length === 0) ranked.push("BLOCKED");
-    return ranked;
+    if (ranked.length > 0) return ranked;
+
+    // NO VERB FOR THIS OBSTACLE IS NOT A REASON TO IGNORE A DROP. `BLOCKED` says
+    // the geometry has no answer, and returning it here used to end the tick,
+    // which quietly made "cannot climb that" outrank "there is a lethal lip in
+    // front of you". Under the upper bough of the Liberty Elm the two are the
+    // same tick: a player without the parkour key is offered nothing for the
+    // bough overhead, and the crown they are standing on ends three strides
+    // ahead, eight metres three above the street. So when the obstacle has
+    // nothing, the ledge gets its say before the report does.
+    if (edge === null) {
+      if (ctx.jumpBuffered) ranked.push("JUMP");
+      ranked.push("BLOCKED");
+      return ranked;
+    }
+    // Otherwise fall through to the edge ladder below.
   }
 
   if (edge) {
     // A dive is offered before anything else, because the drop that makes it
     // possible would otherwise read as a wall the player must not walk off.
-    if (!ctx.reducedMotion && ctx.receivingTargets.length > 0) {
+    // Held key, like every other inferred verb, and this is the one where it
+    // matters most: an unasked-for swan dive off a steeple is the "it grabbed
+    // me" complaint at its largest possible scale. A player who is not asking
+    // gets the edge brake instead, which is the correct thing to give them.
+    if (ctx.sprintHeld && !ctx.reducedMotion && ctx.receivingTargets.length > 0) {
       ranked.push("LEAP_OF_FAITH");
     }
 
+    // A GAP JUMP CROSSES A VOID, NOT A SAFE DESCENT ONTO AN OBSTACLE BEYOND IT.
+    //
+    // `readEdge`'s gap finder walks PAST any surface below foot level to find the
+    // next one back near foot height, so a lip with a gentle safe drop straight
+    // down and a coplanar obstacle a stride beyond reads as "a gap to that
+    // obstacle" — the floor between them is skipped as a void it is not. Ranked
+    // above the run-off, the reader then launches the body up and over the
+    // surface it should simply have dropped to, landing it on the obstacle.
+    //
+    // Measured at the ropewalk hemp: the low bale top is 1.1m over the floor
+    // (a run-off) and the rope capstan a stride south stands at 1.05m, so a
+    // directed CHAIN_DROP onto the floor was hijacked into a JUMP_GAP that flung
+    // the body onto the capstan and oscillated there, never settling on the
+    // authored floor receiver. When the lip affords a safe descent straight down
+    // and the far target sits no lower than that descent, the target is an
+    // obstacle to mount and not a gap to cross — so descend, do not launch. A
+    // real gap (a canopy leap over the street, the published gap course) has a
+    // drop below deeper than a run-off and is untouched; a buffered Space still
+    // jumps outright on the rung below.
+    const safeDescentBelow =
+      edge.below !== null &&
+      Number.isFinite(edge.verticalDropM) &&
+      edge.verticalDropM <= tuning.runOffMaxDropM;
+    const gapTargetNotBelowDescent =
+      edge.far !== null && edge.far.dropM <= edge.verticalDropM;
     if (
       edge.gapM !== null &&
       edge.far !== null &&
-      probe.speedMps >= tuning.jumpGapMinSpeedMps
+      probe.speedMps >= tuning.jumpGapMinSpeedMps &&
+      !(safeDescentBelow && gapTargetNotBelowDescent)
     ) {
       ranked.push("JUMP_GAP");
     }
@@ -239,10 +448,39 @@ export function rankVerbs(
     // instead is the game overruling them at the one moment they were explicit.
     if (ctx.jumpBuffered) ranked.push("JUMP");
 
-    if (Number.isFinite(edge.dropM)) {
-      if (edge.dropM <= tuning.runOffMaxDropM) ranked.push("RUN_OFF");
-      else if (edge.dropM <= tuning.hangDropMaxDropM) ranked.push("HANG_DROP");
-      else if (edge.dropM <= tuning.rollMaxDropM) ranked.push("RUN_OFF");
+    // WALKING OFF AND CLIMBING DOWN ARE DIFFERENT QUESTIONS ABOUT THE SAME LIP,
+    // and they get different numbers because a body that lowers itself over an
+    // edge does not travel and a body that strolls off it does. `dropM` is what
+    // the stroll costs; `verticalDropM` is what is directly underneath.
+    //
+    // The order matters. A hang drop onto a narrow ledge is offered FIRST, so a
+    // roofline the level descends by pentice and awning still descends that way
+    // — the shed at the market is the case, 2.50m down onto the shambles pentice
+    // and 5.60m to the cobbles if you simply keep walking. If the ledge turns
+    // out to be too narrow for a standing body `beginAuthored` refuses and the
+    // ladder falls through to the brake, which is the right order of preference:
+    // climb down if you can, refuse to leave if you cannot.
+    //
+    // A hang drop is offered in two cases, and the second is the one the Liberty
+    // Elm crown needs. The classic case is a straight-down ledge deeper than a
+    // run-off but within reach (2.2–3.2m). The second is a straight-down ledge
+    // that is SHALLOWER than a run-off yet whose run-off is unsafe: the crown
+    // overhangs the low bough on every side, so a body that runs off its edge
+    // sails past the metre of exposed bough beneath and falls to the street,
+    // while a body that lowers itself straight down lands on the bough it can see
+    // under its feet. When `dropM` (the stroll) is unsurvivable but
+    // `verticalDropM` (the lower) is fine, lowering is the answer, not braking.
+    const hangReachable =
+      Number.isFinite(edge.verticalDropM) &&
+      edge.verticalDropM <= tuning.hangDropMaxDropM;
+    const runOffSafe =
+      Number.isFinite(edge.dropM) && edge.dropM <= tuning.rollMaxDropM;
+    if (hangReachable && (edge.verticalDropM > tuning.runOffMaxDropM || !runOffSafe)) {
+      ranked.push("HANG_DROP");
+    }
+
+    if (Number.isFinite(edge.dropM) && edge.dropM <= tuning.rollMaxDropM) {
+      ranked.push("RUN_OFF");
     }
 
     // Nothing safe ahead: brake rather than run off a killing drop. A buffered
@@ -464,7 +702,7 @@ export function planVerb(
           ignore: [],
           contactDistanceM: edge.contactDistanceM,
           commitDistanceM: edgeCommitDistanceM(probe, tuning),
-          reason: `hang drop ${edge.dropM.toFixed(2)}m`,
+          reason: `hang drop ${edge.verticalDropM.toFixed(2)}m`,
         },
       );
     }
@@ -486,6 +724,21 @@ export function planVerb(
       if (along(prediction.pos) < farLipAlong + tuning.jumpGapSafetyM) {
         return null;
       }
+      // THE FIRST LANDING MUST BE THE SURFACE THE GAP JUMP WAS FOR, AND SURVIVABLE.
+      // A ballistic solve that "lands" is not enough: an arc can clear the far lip
+      // and come down on something lower and further than the surface the reader
+      // selected, which is a fall the player never chose. So the predicted first
+      // landing has to be the intended far surface at its height, and the drop to
+      // it inside the run-off/roll envelope.
+      const farSurface = supportBelow(
+        world,
+        edge.far.point.x,
+        edge.far.point.z,
+        edge.far.point.y + CONTACT_EPS,
+      );
+      if (!farSurface || prediction.landingId !== farSurface.id) return null;
+      if (Math.abs(prediction.pos.y - edge.far.point.y) > 0.12) return null;
+      if (start.y - prediction.pos.y > tuning.rollMaxDropM) return null;
       return {
         verb,
         clip,

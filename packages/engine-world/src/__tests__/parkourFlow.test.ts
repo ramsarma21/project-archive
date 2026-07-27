@@ -29,8 +29,10 @@ import {
   flowInput,
   overhead,
   runningNorth,
+  wall,
   world,
 } from "./parkourHarness.js";
+import type { FlowInput } from "../parkour/flow.js";
 
 interface RunResult {
   motion: MotionState;
@@ -343,6 +345,341 @@ test("flow runs on the shared clock: 30, 60 and 120 fps agree exactly", () => {
 test("the fixed step the controller expects is the shared one", () => {
   assert.equal(FIELD_DT, 1 / 60);
   assert.equal(flowInput().dt, FIELD_DT);
+});
+
+// ---- inferred ascent consent ----------------------------------------------
+//
+// The route-independent reader used to climb any standable face the body ran
+// into off a HELD SPRINT alone. On a same-height run past an incidental face
+// that is a wrong turn taken without a keypress. The mission runtime derives an
+// `inferredAscentAllowed` flag from the committed guidance; when false, a
+// CLIMB_UP still previews (the affordance must teach the key) but does not
+// commit unless the player buffers a jump. Default true, so nothing else moves.
+
+function driveClimb(
+  collision: CollisionWorld,
+  options: { inferredAscentAllowed?: boolean; jumpBuffered?: boolean },
+): { commits: string[]; preview: string } {
+  let motion = runningNorth(1, RUN_SPEED, 0);
+  let flow = createFlowState();
+  const commits: string[] = [];
+  let preview = "NONE";
+  for (let tick = 0; tick < 120; tick++) {
+    // A player presses Space when the climb affordance is showing — at the face,
+    // not blindly on the first tick. Buffered consent must then commit the climb.
+    const jumpBuffered =
+      (options.jumpBuffered ?? false) &&
+      (flow.previewVerb === "CLIMB_UP" || flow.previewVerb === "MANTLE");
+    const result = stepFlow(
+      collision,
+      motion,
+      flow,
+      flowInput({ jumpBuffered, inferredAscentAllowed: options.inferredAscentAllowed }),
+    );
+    motion = result.motion;
+    flow = result.flow;
+    if (flow.previewVerb !== "NONE") preview = flow.previewVerb;
+    for (const event of result.events) {
+      if (event.type === "verbCommitted") commits.push(event.verb);
+    }
+  }
+  return { commits, preview };
+}
+
+test("a 2.2m face previews CLIMB_UP but does not commit when inferred ascent is refused", () => {
+  const collision = world([box("face", 3, 2.2, 1.4, { width: 12 })]);
+  const refused = driveClimb(collision, { inferredAscentAllowed: false });
+  assert.ok(
+    !refused.commits.includes("CLIMB_UP"),
+    `a held sprint climbed the face without consent: ${refused.commits.join(",") || "nothing"}`,
+  );
+  assert.equal(
+    refused.preview,
+    "CLIMB_UP",
+    "the affordance must still preview the climb so the key can be taught",
+  );
+});
+
+test("a buffered jump commits a climb inferred ascent had refused", () => {
+  const collision = world([box("face", 3, 2.2, 1.4, { width: 12 })]);
+  const consented = driveClimb(collision, {
+    inferredAscentAllowed: false,
+    jumpBuffered: true,
+  });
+  assert.ok(
+    consented.commits.includes("CLIMB_UP"),
+    "a buffered Space must explicitly authorise the climb",
+  );
+});
+
+test("a mantle-height obstacle previews MANTLE but does not commit when inferred ascent is refused", () => {
+  // The consent gate covers both inferred upward verbs, not just the tall climb:
+  // a held sprint must not mantle onto an incidental obstacle the route runs past
+  // any more than it climbs a face. The gaol-barrels VAULT (now shifted so it
+  // commits) is what freed this to be gated — the SAFE street line vaults its
+  // obstacle, it no longer relies on an inferred mantle onto it.
+  const collision = world([box("ledge", 3, 1.5, 1.4, { width: 12 })]);
+  const refused = driveClimb(collision, { inferredAscentAllowed: false });
+  assert.ok(
+    !refused.commits.includes("MANTLE"),
+    `a held sprint mantled the obstacle without consent: ${refused.commits.join(",") || "nothing"}`,
+  );
+  assert.equal(
+    refused.preview,
+    "MANTLE",
+    "the affordance must still preview the mantle so the key can be taught",
+  );
+  const consented = driveClimb(collision, {
+    inferredAscentAllowed: false,
+    jumpBuffered: true,
+  });
+  assert.ok(
+    consented.commits.includes("MANTLE"),
+    "a buffered Space must commit the mantle inferred ascent had refused",
+  );
+});
+
+test("inferred ascent is unchanged by default and when true", () => {
+  const collision = world([box("face", 3, 2.2, 1.4, { width: 12 })]);
+  assert.ok(
+    driveClimb(collision, {}).commits.includes("CLIMB_UP"),
+    "an unwired caller (flag unset) climbs off the sprint exactly as before",
+  );
+  assert.ok(
+    driveClimb(collision, { inferredAscentAllowed: true }).commits.includes("CLIMB_UP"),
+    "flag true climbs off the sprint exactly as before",
+  );
+});
+
+// ---- directed action gateway (guided input) --------------------------------
+//
+// A committed route may hand the reader an authored axis and a verb family. It
+// steers the READ onto the action's line and confines the COMMIT to that family
+// — but only while the player is pushing along the axis, and never past a plan,
+// a preflight, or a consent gate. See flow.ts FlowInput.guided* and wayfind.ts.
+
+/** Drive stepFlow with guided fields, optionally consenting at a climb preview. */
+function runGuided(
+  collision: CollisionWorld,
+  motion: MotionState,
+  ticks: number,
+  input: Partial<FlowInput>,
+  opts: { jumpAtClimbPreview?: boolean } = {},
+): RunResult {
+  let state = motion;
+  let flow = createFlowState();
+  const events: FlowEvent[] = [];
+  let noise = 0;
+  let jumpBuffered = input.jumpBuffered ?? false;
+  for (let tick = 0; tick < ticks; tick++) {
+    if (
+      opts.jumpAtClimbPreview &&
+      (flow.previewVerb === "MANTLE" || flow.previewVerb === "CLIMB_UP")
+    ) {
+      jumpBuffered = true;
+    }
+    const result = stepFlow(
+      collision,
+      state,
+      flow,
+      flowInput({ ...input, jumpBuffered }),
+    );
+    jumpBuffered = false;
+    state = result.motion;
+    flow = result.flow;
+    events.push(...result.events);
+    noise += result.noise.reduce((sum, entry) => sum + entry.intensity, 0);
+  }
+  return { motion: state, flow, events, noise, ticks };
+}
+
+test("a guided VAULT commits along the authored axis under oblique live velocity", () => {
+  const collision = world([box("crate", 3, 0.95, 0.8)]);
+  // Live velocity drifts +X off the line; the player's intent and the gateway
+  // axis both point straight up the +Z line at the clear crate.
+  const motion: MotionState = {
+    ...runningNorth(1),
+    vel: { x: RUN_SPEED * 0.5, y: 0, z: RUN_SPEED * 0.6 },
+  };
+  const result = runGuided(collision, motion, 90, {
+    targetVelX: 0,
+    targetVelZ: RUN_SPEED,
+    guidedAxisX: 0,
+    guidedAxisZ: 1,
+    guidedVerbs: ["VAULT"],
+  });
+  assert.ok(committed(result.events).includes("VAULT"), "the guided VAULT did not commit");
+  assert.ok(result.motion.pos.z > 3.4, `did not clear the crate: z=${result.motion.pos.z}`);
+});
+
+test("a guided VAULT still refuses when a real blocker fills the landing", () => {
+  // The vault runs the full preflight: a wall in the landing makes beginAuthored
+  // refuse it, guided axis or not. Nothing is forced across a real obstacle.
+  const collision = world([box("crate", 3, 0.95, 0.8), wall("backwall", 3.9, 1.4)]);
+  const result = runGuided(collision, runningNorth(1), 90, {
+    guidedAxisX: 0,
+    guidedAxisZ: 1,
+    guidedVerbs: ["VAULT"],
+  });
+  assert.ok(
+    !completed(result.events).includes("VAULT"),
+    "the vault completed into a blocked landing — preflight was bypassed",
+  );
+  assert.ok(
+    result.motion.pos.z < 3.4,
+    `the body cleared a crate whose landing is walled off: z=${result.motion.pos.z}`,
+  );
+});
+
+test("a guided verb family filters the commit, and disengages when intent leaves the axis", () => {
+  // A 1.5m ledge the reader would MANTLE. A VAULT-family gateway aligned with the
+  // player's intent confines the commit to VAULT — the MANTLE is filtered, and
+  // with nothing vaultable the body does not mount the deck.
+  const collision = world([box("ledge", 3, 1.5, 1.4)]);
+  const guided = runGuided(collision, runningNorth(1), 90, {
+    targetVelX: 0,
+    targetVelZ: RUN_SPEED,
+    guidedAxisX: 0,
+    guidedAxisZ: 1,
+    guidedVerbs: ["VAULT"],
+  });
+  assert.ok(
+    !committed(guided.events).includes("MANTLE"),
+    "the VAULT-family gateway did not filter the MANTLE",
+  );
+  // Now the gateway axis points SIDEWAYS (+X) while the player runs +Z at the
+  // ledge: intent disagrees with the axis, the guidance disengages, and the
+  // honest reader mantles the ledge as it always would. No hijack either way.
+  const offAxis = runGuided(collision, runningNorth(1), 90, {
+    targetVelX: 0,
+    targetVelZ: RUN_SPEED,
+    guidedAxisX: 1,
+    guidedAxisZ: 0,
+    guidedVerbs: ["VAULT"],
+  });
+  assert.ok(
+    committed(offAxis.events).includes("MANTLE"),
+    "intent off the gateway axis should leave the ordinary MANTLE untouched",
+  );
+});
+
+test("a guided drop family steps the body off the lip and filters an overshooting JUMP_GAP", () => {
+  // Two roofs across a gap at the published budget: the honest reader auto-commits
+  // a JUMP_GAP and launches UP off the lip. This is the ropewalk hatch in
+  // miniature — the very read that flings a Shift-held body past a narrow tie
+  // beam into the dark instead of stepping down onto it.
+  const gap = MOVEMENT_CAPABILITIES.levelDesignMaxFlatGapM;
+  const collision = world([
+    box("near", 0, 3, 8, { width: 12 }),
+    box("far", 4 + gap + 4, 3, 8, { width: 12 }),
+  ]);
+  // At the takeoff lip, the way the existing gap tests place the body.
+  const start = () =>
+    runningNorth(4 - MOVEMENT_CAPABILITIES.jumpTakeoffSetbackM, RUN_SPEED, 3);
+
+  // Baseline: no guidance, the reader jumps the gap and gains height off the lip.
+  const unguided = run(collision, start(), 60);
+  assert.ok(
+    committed(unguided.events).includes("JUMP_GAP"),
+    `expected an unguided JUMP_GAP; got ${committed(unguided.events).join(",") || "nothing"}`,
+  );
+  assert.ok(
+    Math.max(...jumpArc(collision, start())) > 3.05,
+    "the baseline JUMP_GAP did not launch upward off the lip",
+  );
+
+  // A directed drop gateway aligned with the run confines the commit to the
+  // controlled-descent family: the JUMP_GAP is filtered out and the body leaves
+  // the lip by a controlled descent (a run-off / hang drop) with no upward launch.
+  const guidedFields: Partial<FlowInput> = {
+    targetVelX: 0,
+    targetVelZ: RUN_SPEED,
+    guidedAxisX: 0,
+    guidedAxisZ: 1,
+    guidedVerbs: ["RUN_OFF", "HANG_DROP"],
+  };
+  const guided = runGuided(collision, start(), 60, guidedFields);
+  assert.ok(
+    !committed(guided.events).includes("JUMP_GAP"),
+    "the directed drop gateway did not filter the overshooting JUMP_GAP",
+  );
+  const descended =
+    committed(guided.events).some(
+      (verb) => verb === "RUN_OFF" || verb === "HANG_DROP",
+    ) ||
+    guided.events.some(
+      (event) =>
+        event.type === "landed" &&
+        (event.verb === "RUN_OFF" || event.verb === "HANG_DROP"),
+    );
+  assert.ok(
+    descended,
+    `no controlled descent under the drop gateway; committed ${committed(guided.events).join(",") || "nothing"}`,
+  );
+  assert.ok(
+    Math.max(...jumpArc(collision, start(), guidedFields)) <= 3.05,
+    "the guided drop gained height off the lip — it launched rather than stepped off",
+  );
+});
+
+/** The foot-height trace over a short guided/unguided run — an upward launch shows here. */
+function jumpArc(
+  collision: CollisionWorld,
+  motion: MotionState,
+  guided?: Partial<FlowInput>,
+): number[] {
+  let state = motion;
+  let flow = createFlowState();
+  const heights: number[] = [state.pos.y];
+  for (let tick = 0; tick < 60; tick++) {
+    const result = stepFlow(
+      collision,
+      state,
+      flow,
+      flowInput({ targetVelX: 0, targetVelZ: RUN_SPEED, ...(guided ?? {}) }),
+    );
+    state = result.motion;
+    flow = result.flow;
+    heights.push(state.pos.y);
+  }
+  return heights;
+}
+
+test("a guided ascent does not bypass ascent consent or the jump", () => {
+  const collision = world([box("ledge", 3, 1.5, 1.4)]);
+  // Guided CLIMB family, intent along the axis, but inferred ascent refused and no
+  // jump: the guided path still does not commit an unconsented upward MANTLE.
+  const refused = runGuided(collision, runningNorth(1), 90, {
+    targetVelX: 0,
+    targetVelZ: RUN_SPEED,
+    guidedAxisX: 0,
+    guidedAxisZ: 1,
+    guidedVerbs: ["MANTLE", "CLIMB_UP"],
+    inferredAscentAllowed: false,
+  });
+  assert.ok(
+    !committed(refused.events).some((v) => v === "MANTLE" || v === "CLIMB_UP"),
+    "the guided path committed an upward ascent the player never consented to",
+  );
+  // A buffered jump at the face IS consent: the same guided ascent now commits.
+  const consented = runGuided(
+    collision,
+    runningNorth(1),
+    90,
+    {
+      targetVelX: 0,
+      targetVelZ: RUN_SPEED,
+      guidedAxisX: 0,
+      guidedAxisZ: 1,
+      guidedVerbs: ["MANTLE", "CLIMB_UP"],
+      inferredAscentAllowed: false,
+    },
+    { jumpAtClimbPreview: true },
+  );
+  assert.ok(
+    committed(consented.events).some((v) => v === "MANTLE" || v === "CLIMB_UP"),
+    "a buffered jump did not consent to the guided ascent",
+  );
 });
 
 // ---- presentation ---------------------------------------------------------

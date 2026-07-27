@@ -35,6 +35,7 @@ import {
   clearFieldForBoundary,
   combatView,
   createCombatState,
+  hasLineOfSight,
   IDLE_INTENT,
   isDowned,
   loadMagazine,
@@ -49,8 +50,16 @@ import {
   bossFighterParams,
   type BossProfile,
 } from "./boss.js";
-import { bossIntent } from "./policy.js";
 import {
+  advanceBossCover,
+  advanceBossEngagement,
+  commitCover,
+  createBossAiMemory,
+  type BossAiMemory,
+} from "./bossAi.js";
+import { type CoverPoint } from "./cover.js";
+import {
+  complementaryBossBullets,
   grantRoundBullets,
   type AmmoSource,
   type BulletGrant,
@@ -68,6 +77,7 @@ import { DUEL_SIDES, otherSide, type BySide, type DuelSide } from "./sides.js";
 import {
   BULLET_CARRY_POLICY,
   DUEL_ROUND_CEILING,
+  COVER_APPROACH_MAX_TICKS,
   ENGAGEMENT_TICKS,
   FACE_OFF_SEPARATION_M,
   FACE_OFF_TICKS,
@@ -234,6 +244,12 @@ export interface EngagementLiveState extends DuelCore {
   readonly phase: "ENGAGEMENT_LIVE";
   readonly round: number;
   readonly endsAtTick: number;
+  /**
+   * The boss's navigation memory for this engagement: debounced line of sight and
+   * the stall/detour tracking that keep it from grinding on walls. Fresh each
+   * engagement, and inert for a PvP opponent (side B is a person there).
+   */
+  readonly bossAi: BossAiMemory;
 }
 
 export interface LineOfSightBreakState extends DuelCore {
@@ -241,6 +257,23 @@ export interface LineOfSightBreakState extends DuelCore {
   readonly round: number;
   readonly endsAtTick: number;
   readonly unspent: BySide<number>;
+  /**
+   * Whether this break is a boss physically retreating into cover
+   * (`takesCoverBeforeQuestion`) rather than the passive fixed-length reload
+   * break. When true the break steps live combat and ends when the boss's line of
+   * sight is blocked, not on a fixed timer.
+   */
+  readonly takingCover: boolean;
+  /** The cover point the boss is currently heading for, for the renderer/HUD. */
+  readonly coverTarget: CoverPoint | null;
+  /** True once the boss's line of sight to the player is actually blocked. */
+  readonly inCover: boolean;
+  /**
+   * The boss's navigation memory carried into the retreat: the committed cover
+   * point (kept with hysteresis so it does not thrash) plus the shared stall/detour
+   * tracking, so the walk into cover is as collision-aware as the engagement.
+   */
+  readonly bossAi: BossAiMemory;
 }
 
 export interface RoundResolvedState extends DuelCore {
@@ -440,7 +473,7 @@ function advance(
       current = stepped.state;
       events.push(...stepped.events);
     } else if (current.phase === "LINE_OF_SIGHT_BREAK") {
-      const stepped = stepLineOfSightBreak(current, tick);
+      const stepped = stepLineOfSightBreak(current, tick, intents);
       current = stepped.state;
       events.push(...stepped.events);
     }
@@ -570,8 +603,21 @@ function commitVerdict(
  * Where a round's bullets come from, per side.
  *
  * A side that owes a verdict gets VERDICT and nothing else — there is no branch
- * that could hand it an authored number. A side that owes no verdict (a boss) is
- * the only consumer of AUTHORED, and its number comes from the authored profile.
+ * that could hand it an authored number.
+ *
+ * A side that owes no verdict is a boss, and it is the only consumer of AUTHORED.
+ * How the boss's authored magazine is sourced is its `ammoPolicy`:
+ *
+ *   AUTHORED_FLAT — a fixed `magazinePerRound`, the legacy rule the per-tier
+ *     tuning is built on.
+ *   SYMMETRIC_COMPLEMENT — M1's boss. It earns the mirror of the player's award off
+ *     the same graded round (`complementaryBossBullets`): a correct answer arms the
+ *     boss with `BULLETS_FOR_WRONG`, a wrong answer with `BULLETS_FOR_CORRECT`. So a
+ *     wrong answer genuinely arms the enemy. The magazine is still AUTHORED — the
+ *     boss never answers and never earns a VERDICT — but the authored number is
+ *     derived deterministically from the round's committed player verdict. Under
+ *     this policy `magazinePerRound` is only the winnability projection baseline,
+ *     not the runtime magazine.
  */
 export function roundAmmoSources(
   config: DuelConfig,
@@ -587,7 +633,20 @@ export function roundAmmoSources(
       return { kind: "VERDICT", verdict: entry.verdict.kind };
     }
     if (config.opponent.kind === "BOSS") {
-      return { kind: "AUTHORED", bullets: config.opponent.profile.magazinePerRound };
+      const profile = config.opponent.profile;
+      if (profile.ammoPolicy === "SYMMETRIC_COMPLEMENT") {
+        // The boss mirrors the player's award. The player is the only answering
+        // side in a boss duel, so its verdict is the one to complement.
+        const playerVerdict = verdicts.find((candidate) => candidate.side === "A");
+        if (!playerVerdict) {
+          throw new Error("a boss round has no player verdict to complement");
+        }
+        return {
+          kind: "AUTHORED",
+          bullets: complementaryBossBullets(playerVerdict.verdict.kind),
+        };
+      }
+      return { kind: "AUTHORED", bullets: profile.magazinePerRound };
     }
     throw new Error(`side ${side} neither answers nor has an authored magazine`);
   };
@@ -646,6 +705,7 @@ function stepBulletsGranted(
     clock: { ...state.clock, tick },
     combat: state.combat,
     engagementTicks: state.engagementTicks,
+    bossAi: createBossAiMemory(),
   };
   return {
     state: next,
@@ -658,11 +718,11 @@ function stepEngagement(
   tick: number,
   intents: PartialIntents,
 ): Stepped<EngagementLiveState | LineOfSightBreakState | RoundResolvedState> {
-  const resolvedIntents = resolveIntents(state, intents);
+  const resolved = resolveIntents(state, intents);
   const stepped = stepCombat(
     state.config.world,
     state.combat,
-    resolvedIntents,
+    resolved.intents,
     state.params,
     state.round,
   );
@@ -671,6 +731,7 @@ function stepEngagement(
     clock: { ...state.clock, tick },
     combat: stepped.state,
     engagementTicks: state.engagementTicks + 1,
+    bossAi: resolved.bossAi,
   };
   const events = [...stepped.events];
 
@@ -684,16 +745,35 @@ function stepEngagement(
       A: stepped.state.fighters.A.ammo,
       B: stepped.state.fighters.B.ammo,
     };
+    // A cover-taking boss now physically retreats: the break steps live combat and
+    // ends when its sightline is actually blocked, bounded by COVER_APPROACH_MAX.
+    // Every other boss keeps the passive fixed-length reload break the tuning was
+    // measured against.
+    const takingCover =
+      base.config.opponent.kind === "BOSS" &&
+      base.config.opponent.profile.takesCoverBeforeQuestion &&
+      !isDowned(stepped.state.fighters.B);
+    // Commit an initial cover point (reachable, unoccupied, valid) so the retreat
+    // opens with a stable destination the renderer can read, rather than one that
+    // is reselected every tick.
+    const coverAi = takingCover
+      ? commitCover(combatView(base.config.world, base.combat, "B"), base.bossAi)
+      : base.bossAi;
+    const coverTarget = takingCover ? coverAi.committedCover : null;
     const next: LineOfSightBreakState = {
       phase: "LINE_OF_SIGHT_BREAK",
       round: state.round,
-      endsAtTick: tick + LINE_OF_SIGHT_BREAK_TICKS,
+      endsAtTick: tick + (takingCover ? COVER_APPROACH_MAX_TICKS : LINE_OF_SIGHT_BREAK_TICKS),
       unspent,
+      takingCover,
+      coverTarget,
+      inCover: false,
       config: base.config,
       params: base.params,
       clock: base.clock,
       combat: base.combat,
       engagementTicks: base.engagementTicks,
+      bossAi: coverAi,
     };
     events.push({
       type: "LINE_OF_SIGHT_BROKEN",
@@ -710,11 +790,81 @@ function stepEngagement(
 function stepLineOfSightBreak(
   state: LineOfSightBreakState,
   tick: number,
+  intents: PartialIntents,
 ): Stepped<LineOfSightBreakState | RoundResolvedState> {
-  if (tick < state.endsAtTick) {
-    return { state: withTick(state, tick), events: [] };
+  // The passive break: a fixed-length reload with no movement, exactly as before.
+  // Combat stays frozen and the round resolves when the timer runs out.
+  if (!state.takingCover) {
+    if (tick < state.endsAtTick) {
+      return { state: withTick(state, tick), events: [] };
+    }
+    return resolveRound(withTick(state, tick), tick);
   }
-  return resolveRound(withTick(state, tick), tick);
+
+  // The active break: the boss physically retreats into cover. Combat is LIVE — the
+  // player keeps control and can still land shots, and any projectile already in
+  // flight resolves normally rather than vanishing — so entering cover is a real
+  // race with an explicit, deterministic policy: if the boss is downed on the way
+  // in, the round resolves as a knockout; otherwise the round resolves the instant
+  // the boss's sightline is genuinely blocked; and the bounded maximum guarantees
+  // termination even against a player who body-blocks every cover point.
+  const driven = advanceBossCover(
+    combatView(state.config.world, state.combat, "B"),
+    state.config.seed,
+    state.bossAi,
+  );
+  const stepped = stepCombat(
+    state.config.world,
+    state.combat,
+    { A: intents.A ?? IDLE_INTENT, B: driven.intent },
+    state.params,
+    state.round,
+  );
+  const events: DuelEvent[] = [...stepped.events];
+  const advancedState: LineOfSightBreakState = {
+    ...state,
+    clock: { ...state.clock, tick },
+    combat: stepped.state,
+    coverTarget: driven.coverTarget,
+    engagementTicks: state.engagementTicks,
+    bossAi: driven.memory,
+  };
+
+  // Damage race: a boss put down while retreating resolves as a knockout, on the
+  // same rule the live engagement uses.
+  const downed = DUEL_SIDES.find((side) => isDowned(stepped.state.fighters[side]));
+  if (downed) {
+    const resolved = resolveRound(advancedState, tick);
+    return { state: resolved.state, events: [...events, ...resolved.events] };
+  }
+
+  // Reached cover: line of sight to the player is actually blocked. This is the
+  // authoritative signal the question overlay waits on — never a UI claim.
+  const blocked = !hasLineOfSight(
+    state.config.world,
+    stepped.state.fighters.A,
+    stepped.state.fighters.B,
+  );
+  if (blocked && !state.inCover) {
+    events.push({
+      type: "BOSS_TOOK_COVER",
+      round: state.round,
+      tick,
+      coverId: driven.coverTarget?.coverId ?? "UNKNOWN",
+    });
+    const resolved = resolveRound({ ...advancedState, inCover: true }, tick);
+    return { state: resolved.state, events: [...events, ...resolved.events] };
+  }
+
+  // Bounded maximum: terminate even if cover was never reached (a player actively
+  // denying every point). The round resolves and play continues; the HUD reads the
+  // real `inCover` state rather than pretending.
+  if (tick >= state.endsAtTick) {
+    const resolved = resolveRound(advancedState, tick);
+    return { state: resolved.state, events: [...events, ...resolved.events] };
+  }
+
+  return { state: advancedState, events };
 }
 
 function resolveRound(
@@ -864,16 +1014,22 @@ function breakTie(
 function resolveIntents(
   state: EngagementLiveState,
   intents: PartialIntents,
-): BySide<CombatIntent> {
+): { intents: BySide<CombatIntent>; bossAi: BossAiMemory } {
   const a = intents.A ?? IDLE_INTENT;
   if (state.config.opponent.kind === "REMOTE") {
-    return { A: a, B: intents.B ?? IDLE_INTENT };
+    return {
+      intents: { A: a, B: intents.B ?? IDLE_INTENT },
+      bossAi: state.bossAi,
+    };
   }
   const view = combatView(state.config.world, state.combat, "B");
-  return {
-    A: a,
-    B: bossIntent(state.config.opponent.profile, view, state.config.seed),
-  };
+  const driven = advanceBossEngagement(
+    state.config.opponent.profile,
+    view,
+    state.config.seed,
+    state.bossAi,
+  );
+  return { intents: { A: a, B: driven.intent }, bossAi: driven.memory };
 }
 
 function withTick<T extends DuelState>(state: T, tick: number): T {

@@ -1352,6 +1352,20 @@ add_louvred_arch(shaft, BRICK_TOP, SHAFT_TOP, LEAD_UV)
 # The lantern stages, octagonal, one per solid the level put above the shaft, cut
 # at every ring that crosses them so each stage sits under its own cornice.
 for solid in lanterns:
+    # A solid floor across the lantern's base. The octagon above stays open and
+    # louvred — that is the lantern's read — but the level put a solid blocker
+    # here that the run climbs PAST, and an open tube left its middle a hollow
+    # sleeve with nothing under the foot at the collision's own plane. The floor
+    # is the deck the lantern stage stands on, where a bell frame or the tower
+    # clock would sit, so it reads as a lit chamber on a platform. Square to the
+    # collision rect so the whole blocker footprint has stone, not just the
+    # octagon's inscribed disc; the louvred walls and angle columns go on above.
+    add_box(
+        solid.x0 + CORE_INSET, solid.x1 - CORE_INSET,
+        solid.y0 + CORE_INSET, solid.y1 - CORE_INSET,
+        solid.z0, solid.z0 + 0.20, PAINT_UV,
+    )
+    log(f"lantern floor {solid.id} at z={solid.z0:.2f}, square base under the octagon")
     cuts = [solid.z0] + [r for r in RINGS if solid.z0 + 0.1 < r < solid.z1 - 0.1] + [solid.z1]
     for index in range(len(cuts) - 1):
         z0, z1 = cuts[index], cuts[index + 1]

@@ -1,0 +1,438 @@
+/* ---------------------------------------------------------------------------
+   The mission result surface.
+
+   Self-contained under .mrp / .mrp-* so it neither depends on nor collides with
+   the shared mission.css (owned/edited elsewhere). Colour language follows the
+   System's: cold blue for the interface, warm amber for a caution, the era's
+   red-clay for a loss, and a quiet green for what held.
+
+   FAILED is prioritised: a failed attempt has to explain itself, so the layout,
+   the hierarchy and the copy all assume the loss case first and the clear reads
+   as the calmer variant of the same frame. Nothing here animates in a way that
+   distracts, and the one entrance fade is disabled under reduced motion.
+   --------------------------------------------------------------------------- */
+
+.mrp {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  padding: clamp(1.4rem, 5vh, 3.5rem) clamp(1.1rem, 7vw, 8rem);
+  color: #dceaf7;
+  background: radial-gradient(120% 85% at 50% 0%, rgba(22, 48, 74, 0.6), rgba(5, 8, 13, 0.98));
+  -webkit-overflow-scrolling: touch;
+}
+
+.mrp.is-failed {
+  background: radial-gradient(120% 85% at 50% 0%, rgba(64, 30, 26, 0.6), rgba(5, 8, 13, 0.98));
+}
+
+.mrp-scan {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.022) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.mrp > *:not(.mrp-scan) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- header ------------------------------------------------------------- */
+
+.mrp-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  animation: mrp-rise 260ms ease both;
+}
+
+.mrp-kicker {
+  margin: 0;
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+.mrp-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.mrp-status {
+  flex: none;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.mrp.is-failed .mrp-status {
+  color: #f0a595;
+  background: rgba(90, 32, 26, 0.5);
+}
+
+.mrp.is-cleared .mrp-status {
+  color: #9be6c1;
+  background: rgba(24, 66, 48, 0.5);
+}
+
+.mrp-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.4vw, 2.4rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.mrp-detail {
+  margin: 0;
+  max-width: 72ch;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #b0c7db;
+}
+
+/* ---- layout ------------------------------------------------------------- */
+
+.mrp-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.mrp-main,
+.mrp-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.mrp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(104, 164, 212, 0.22);
+  border-radius: 3px;
+  background: rgba(6, 14, 24, 0.72);
+}
+
+.mrp-card-title {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #86b3d8;
+}
+
+.mrp-card-sub {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #8fadc8;
+}
+
+/* ---- what happened ------------------------------------------------------ */
+
+.mrp-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.7rem 1.1rem;
+  margin: 0;
+}
+
+.mrp-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.mrp-fact dt {
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+.mrp-fact dd {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: #dceaf7;
+}
+
+.mrp-fact dd.is-good {
+  color: #8fe0bb;
+}
+
+.mrp-fact dd.is-warn {
+  color: #ecc78f;
+}
+
+.mrp-fact dd.is-bad {
+  color: #f0a595;
+}
+
+.mrp-pacing {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #a3bcd3;
+}
+
+.mrp-note {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-left: 2px solid rgba(236, 199, 143, 0.7);
+  background: rgba(48, 38, 18, 0.4);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #e6d1a6;
+}
+
+/* ---- guidance ----------------------------------------------------------- */
+
+.mrp-guidance {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.mrp-guidance li {
+  padding-left: 0.9rem;
+  border-left: 2px solid rgba(120, 186, 234, 0.55);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #cbdcec;
+}
+
+/* ---- duel rounds -------------------------------------------------------- */
+
+.mrp-rounds {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.35rem;
+}
+
+.mrp-round {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 2px solid rgba(226, 110, 96, 0.7);
+  background: rgba(6, 14, 24, 0.55);
+  font-size: 0.8rem;
+}
+
+.mrp-round.is-correct {
+  border-left-color: rgba(120, 214, 172, 0.85);
+}
+
+.mrp-round-no {
+  font-variant-numeric: tabular-nums;
+  color: #7fa5c6;
+}
+
+.mrp-round-concept {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #b7cee1;
+}
+
+.mrp-round-verdict {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: #e19a8d;
+}
+
+.mrp-round.is-correct .mrp-round-verdict {
+  color: #86d8b0;
+}
+
+.mrp-round-ammo {
+  font-variant-numeric: tabular-nums;
+  color: #cddced;
+}
+
+/* ---- attempt economy ---------------------------------------------------- */
+
+.mrp-economy {
+  position: sticky;
+  top: 0.5rem;
+}
+
+.mrp-xp {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.mrp-xp-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.mrp.is-failed .mrp-xp-value {
+  color: #cdd8e2;
+}
+
+.mrp.is-cleared .mrp-xp-value {
+  color: #9be6c1;
+}
+
+.mrp-xp-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6f9dc4;
+}
+
+.mrp-xp-note {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #90aec8;
+}
+
+.mrp-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding-top: 0.3rem;
+  border-top: 1px solid rgba(104, 164, 212, 0.16);
+}
+
+.mrp-ledger div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+}
+
+.mrp-ledger dt {
+  color: #7fa1bd;
+}
+
+.mrp-ledger dd {
+  margin: 0;
+  text-align: right;
+  color: #dceaf7;
+}
+
+.mrp-standing {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #9fb9d0;
+}
+
+/* ---- actions ------------------------------------------------------------ */
+
+.mrp-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 0.6rem;
+}
+
+.mrp-return {
+  padding: 0.65rem 1.4rem;
+  border: 1px solid rgba(120, 186, 234, 0.5);
+  border-radius: 2px;
+  background: rgba(18, 40, 62, 0.82);
+  color: #eaf3fb;
+  font: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.mrp-return:hover {
+  background: rgba(30, 66, 100, 0.92);
+  border-color: rgba(150, 214, 255, 0.75);
+}
+
+.mrp-return:focus-visible {
+  outline: 2px solid rgba(150, 214, 255, 0.85);
+  outline-offset: 2px;
+}
+
+/* ---- responsive --------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .mrp-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mrp-economy {
+    position: static;
+  }
+
+  .mrp-actions {
+    justify-content: stretch;
+  }
+
+  .mrp-return {
+    width: 100%;
+  }
+}
+
+/* ---- reduced motion ----------------------------------------------------- */
+
+@keyframes mrp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pa-reduced-motion .mrp-head,
+.pa-reduced-motion .mrp-return {
+  animation: none;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mrp-head {
+    animation: none;
+  }
+
+  .mrp-return {
+    transition: none;
+  }
+}

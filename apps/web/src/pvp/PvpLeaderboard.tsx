@@ -4,9 +4,11 @@ import { httpPvpTransport, type LeaderboardRow, type PvpTransport } from "./prot
 // The board. Handles, Ranks and points; no names, no classes, no profile ids —
 // the server's row type has no field for any of them.
 //
-// Points are in memory with the rest of PvP state, so a server restart clears the
-// board. That is said on the surface rather than left for somebody to discover
-// after a good run.
+// Standing is DURABLE: it is the one PvP object that survives a restart, held in
+// Postgres (migration 007), because a leaderboard that evaporates is the loss a
+// class cannot absorb. Lobbies and live matches are in memory and a restart costs
+// a code or a single fight — but the ranked board is not one of them. That is said
+// on the surface here so nobody is told the opposite by an out-of-date note.
 
 export interface PvpLeaderboardProps {
   readonly transport?: PvpTransport;
@@ -39,7 +41,7 @@ export function PvpLeaderboard(props: PvpLeaderboardProps) {
 
   return (
     <div className="pvp-panel">
-      <div className="pvp-panel-title">Standing</div>
+      <div className="pvp-panel-title">Ranked standing</div>
       {failed && <div className="pvp-waiting pvp-warn">The board could not be read.</div>}
       {rows && rows.length === 0 && (
         <div className="pvp-waiting pvp-muted">
@@ -76,8 +78,10 @@ export function PvpLeaderboard(props: PvpLeaderboardProps) {
         </table>
       )}
       <div className="pvp-waiting pvp-muted">
-        A win takes 20 points and a loss gives up 12, floored at zero. Standing lives
-        in memory for now, so restarting the API clears the board.
+        Ranked only. A win takes exactly the points the loser gives up — the board is
+        zero-sum, so trading wins back and forth nets to nothing — and no number goes
+        below zero. Standing is saved and survives a restart; practice results never
+        touch it.
       </div>
     </div>
   );

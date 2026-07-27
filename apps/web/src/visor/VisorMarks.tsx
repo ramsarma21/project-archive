@@ -109,6 +109,12 @@ function lineMaterial(
   });
 }
 
+// Shared with the standing mark, which is drawn outside the hold and outside
+// the reveal but has to be drawn by the same machine: additive, unoccluding and
+// out of the fog. A second copy of those four flags is how one mark ends up
+// behaving like weather while the rest do not.
+export { lineMaterial as holoLineMaterial };
+
 /** Drives one material's opacity off the shared reveal. */
 function useFade(
   material: THREE.Material | THREE.Material[] | null,

@@ -5,6 +5,7 @@
 // read-only projection. Everything else is exported for tuning, tests and level
 // tooling.
 
+export * from "./affordance.js";
 export * from "./clips.js";
 export * from "./flow.js";
 export * from "./leapOfFaith.js";

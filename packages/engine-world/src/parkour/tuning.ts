@@ -20,6 +20,7 @@ import {
   RUNNING_JUMP_VY,
   RUN_SPEED,
   STEP_DOWN,
+  STEP_UP,
   WALK_SPEED,
   dashSpeed,
 } from "../playerMotion.js";
@@ -116,6 +117,15 @@ export interface ParkourTuning {
   /** Bisection passes used to refine a marched contact distance. */
   probeRefineSteps: number;
 
+  /**
+   * Lip the mover walks up on its own, so the ladder offers nothing for it.
+   *
+   * The reader and the integrator have to agree about this or the player gets
+   * both answers: a 10cm kerb the body would have stepped over unnoticed was
+   * also ranking a 750ms scripted vault, and the verb won because it is read
+   * first. Below this height the geometry is not an obstacle, it is ground.
+   */
+  freeStepUpM: number;
   /** Lip absorbed at speed with no stop and no stance change. */
   stepUpMaxHeightM: number;
   /** Tallest obstacle crossed by a speed vault. */
@@ -225,6 +235,22 @@ export interface ParkourTuning {
   chainWindowTicks: number;
   /** Ticks after a verb completes before another verb may commit. */
   verbCooldownTicks: number;
+  /**
+   * Ticks a jump press stays live after it arrives.
+   *
+   * A press does not reach a tick that can act on it. It reaches whichever tick
+   * happens to be next, and that tick is very often one the jump cannot be taken
+   * on: still airborne with the ground a frame away, halfway through a vault,
+   * inside the verb cooldown. Without a window those presses are simply gone,
+   * and a movement verb that silently does nothing is indistinguishable from a
+   * dropped key — which is exactly what "half the time shift jumps don't work"
+   * describes.
+   *
+   * Matched to `FREE_INPUT_BUFFER_MS` in playerInput.ts, which is the tolerance
+   * this repo already set for a player with ordinary reflexes on a trackpad. A
+   * second verb is not a reason to set a second standard.
+   */
+  jumpBufferTicks: number;
   /** Fraction of pre-verb speed restored on exit while chaining. */
   chainExitSpeedFraction: number;
   /** Fraction restored on a cold (unchained) verb exit. */
@@ -278,6 +304,7 @@ export const PARKOUR_TUNING: ParkourTuning = {
   probeStepM: 0.16,
   probeRefineSteps: 7,
 
+  freeStepUpM: STEP_UP,
   stepUpMaxHeightM: 0.5,
   vaultMaxHeightM: 1.15,
   vaultMaxDepthM: 1.2,
@@ -326,17 +353,44 @@ export const PARKOUR_TUNING: ParkourTuning = {
   // the flow reward never actually pays out.
   chainWindowTicks: 90,
   verbCooldownTicks: 4,
+  // 7 ticks, ~117ms: the jump's own input buffer, rounded down to a whole step.
+  jumpBufferTicks: 7,
   chainExitSpeedFraction: 1,
   coldExitSpeedFraction: 0.82,
   chainFlowLength: 3,
 
+  // A WINDOW HAS TO BE LONG ENOUGH TO HOST A BODY, and two of these were not.
+  //
+  // The animation pass measured what each performance needs to read as a human
+  // at the 4.0x playback ceiling, and found the vault overrunning its window by
+  // 2.0x and the mantle by 2.1x. At those ratios the clip is faded out partway
+  // through the move: what the player saw of a vault was the body ducking and
+  // then arriving on the far side without a leg ever leaving the ground, which
+  // is the "interactions don't look smooth" complaint said precisely.
+  //
+  // The objection to lengthening them is the 180-second traversal budget, and
+  // it does not survive being measured. Asking the shipped ladder what verb it
+  // offers at every hold on the guaranteed line and adding up the windows: the
+  // fast line spends 15.7s of its ~40s inside verbs and these two changes cost
+  // it 4.1s, against 135 seconds of unspent clock. The long safe line spends
+  // 31.3s of ~74s and pays 8.5s. There was never a pacing problem here; there
+  // was an assumption that there might be.
+  //
+  // STEP_UP, SLIDE, CLIMB_OVER and CLIMB_UP are left alone: they overrun by 1.2x
+  // or less, or not at all, and 520-900ms is already a long commit. The two
+  // LANDING windows that also overrun are deliberately not touched — a landing
+  // window is recovery the player feels as sluggishness rather than a slot for a
+  // performance, so stretching it buys a nicer picture with a worse control
+  // feel. Those two want a shorter re-baked take instead; see the handoff.
   durationsMs: {
     NONE: 0,
     STEP_UP: 200,
     SLIDE: 550,
-    VAULT: 380,
+    // 45 fixed steps. The `vault` take is ~3.0s of content and needs 4.0x.
+    VAULT: 750,
     CLIMB_OVER: 520,
-    MANTLE: 450,
+    // 56 fixed steps. The `mantle` take is ~3.7s of content and needs 4.0x.
+    MANTLE: 933,
     CLIMB_UP: 900,
     // Ballistic and burst verbs are timed by the integrator, not authored.
     JUMP: 0,
@@ -520,6 +574,7 @@ export const MOVEMENT_CAPABILITIES = {
   maxClimbHeightM: PARKOUR_TUNING.climbMaxHeightM,
   /** Absorbed silently by grounded motion, no verb required. */
   freeStepDownM: STEP_DOWN,
+  freeStepUpM: STEP_UP,
 
   /** Drops. Nothing here is lethal; a fall costs noise and seconds. */
   maxRunOffDropM: PARKOUR_TUNING.runOffMaxDropM,

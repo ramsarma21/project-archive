@@ -301,6 +301,40 @@ for (const item of bank.items) {
 }
 
 // ---------------------------------------------------------------------------
+// 2a. Rendered question prose: the constable's voice, not a model's.
+//
+// The `question` field is the only prose a player reads verbatim. Two AI-cadence
+// tells are cheap to catch and worth catching: the em/en dash used as prose
+// punctuation, and prompts that balloon past a couple of spoken sentences. The
+// rubric prose (line, why) is authoring apparatus and is left alone; only what a
+// thirteen-year-old actually reads is held to this bar.
+// ---------------------------------------------------------------------------
+
+const QUESTION_WORD_CAP = 65;
+const renderedQuestions = [
+  ...bank.items.map((i) => ({ itemId: i.itemId, question: i.question })),
+  ...hardeningQuestionsForProseCheck(),
+];
+function hardeningQuestionsForProseCheck() {
+  return (bank.pvpHardening?.items ?? []).map((i) => ({
+    itemId: i.itemId,
+    question: i.question,
+  }));
+}
+for (const { itemId, question } of renderedQuestions) {
+  if (typeof question !== "string" || question.trim().length === 0) {
+    fail(`prose: ${itemId} has no question`);
+    continue;
+  }
+  if (/[\u2014\u2013]/.test(question)) {
+    fail(`prose: ${itemId} uses an em/en dash in the rendered question. Rewrite it as speech.`);
+  }
+  if (words(question) > QUESTION_WORD_CAP) {
+    fail(`prose: ${itemId} runs ${words(question)} words; keep a spoken prompt under ${QUESTION_WORD_CAP}.`);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 2b. The PvP-hardening items, which are deliberately NOT the eighteen.
 // ---------------------------------------------------------------------------
 

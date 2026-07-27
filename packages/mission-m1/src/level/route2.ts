@@ -219,8 +219,13 @@ export const LINKS_2: RouteLink[] = [
   // The beam is the fork, and both halves of it are a walk: nineteen metres of
   // 1.6m board in the dark, west to the hemp or east over the lantern. What is
   // risked is never the beam, it is how you get off it.
-  link("D2_BEAM_MID", "D2_BEAM_W", "RUN", "SAFE", "RUN"),
-  link("D2_BEAM_MID", "D2_BEAM_E", "RUN", "SAFE", "RUN"),
+  //
+  // 2.3 m/s is load-bearing here, not flavour: the board is 1.6m wide and a
+  // full-sprint entry off the hatch (near 4.6 m/s) overshoots it into the dark.
+  // The guidance exposes this authored target and the runtime caps free movement
+  // to it while the leg is live, so a player who holds Shift still lands the beam.
+  link("D2_BEAM_MID", "D2_BEAM_W", "RUN", "SAFE", "RUN", { speedMps: 2.3 }),
+  link("D2_BEAM_MID", "D2_BEAM_E", "RUN", "SAFE", "RUN", { speedMps: 2.3 }),
 
   // The quiet way down: three run-offs off the west end, none of them past the
   // 2.2m ceiling, so the descent out of the roof never actually stops.
@@ -273,6 +278,10 @@ export const LINKS_2: RouteLink[] = [
     ignore: ["HOLLIS_MEETING"],
   }),
   link("E_MEETING_S", "E_GAMBREL_S", "RUN", "SAFE", "RUN"),
+  // The west end of the same roof. It used to be reached by the Orange Street
+  // leg, which now lands on the ridge instead; without this the node and the
+  // climb authored at it would be content nothing can get to.
+  link("E_MEETING_S", "D_MEETING_ROOF", "RUN", "SAFE", "RUN"),
   link("E_GAMBREL_S", "E_RIDGE_W", "CLIMB", "SAFE", "CLIMB", {
     ignore: ["HOLLIS_MEETING"],
     note: "Sixth and last hold of the south-face climb. From the ropewalk floor to the steeple gallery is 15.8m of pure vertical in six moves, which is a different beat from every horizontal metre before it.",

@@ -5,13 +5,20 @@ import {
   duelView,
   type MissionDuelReport,
 } from "./duelPort.js";
+import { MissionEncounter } from "./MissionEncounter.js";
 import { MissionHud } from "./MissionHud.js";
 import { MissionResultPanel } from "./MissionResultPanel.js";
 import { MissionStage } from "./MissionStage.js";
 import {
+  encounterAuthorityFromQuery,
+  httpEncounterAuthority,
+  type EncounterAuthority,
+} from "./encounterAuthority.js";
+import {
   attachMissionInput,
   createMissionInputState,
 } from "./missionInput.js";
+import { createMissionLookState } from "./missionLook.js";
 import { missionDefinition } from "./missionFormat.js";
 import type { MissionPresentation } from "./traversal.js";
 import type { MissionSessionApi } from "./useMissionSession.js";
@@ -183,6 +190,18 @@ export function MissionRun(props: {
   const [confirming, setConfirming] = useState(false);
   const input = useMemo(createMissionInputState, []);
 
+  // The encounter authority: the real CSRF-authenticated HTTP route in
+  // production, or a deterministic dev stand-in when a `?encounterVerdict=` query
+  // asks for one. Resolved once; the route binds every verdict to the player's
+  // own open attempt, so the client cannot influence what is graded.
+  const encounterAuthority = useMemo<EncounterAuthority>(() => {
+    try {
+      return encounterAuthorityFromQuery(window.location.search) ?? httpEncounterAuthority;
+    } catch {
+      return httpEncounterAuthority;
+    }
+  }, []);
+
   const inTraversal = phase.phase === "TRAVERSAL";
 
   // Input is bound only while the player is actually moving. Nothing is listening
@@ -214,6 +233,14 @@ export function MissionRun(props: {
     if (hud !== null) setHud(null);
     if (confirming) setConfirming(false);
   }
+
+  // The camera's orientation, which is the player's and is mutated in place so
+  // a mouse move costs no render. Rebuilt per attempt so a retry starts facing
+  // the way the level spawns you rather than wherever the last run ended up
+  // looking; `lookAttempt` is what makes that "per attempt" rather than "per
+  // render", since the state has to survive every frame of the run.
+  const lookState = useRef(createMissionLookState(0));
+  const lookAttempt = useRef<string | null>(null);
 
   const missionId =
     "ticket" in phase ? phase.ticket.missionId : phase.phase === "RETURNING" ? phase.result.missionId : null;
@@ -290,11 +317,16 @@ export function MissionRun(props: {
         </div>
       );
     }
+    if (lookAttempt.current !== attemptId) {
+      lookAttempt.current = attemptId;
+      lookState.current = createMissionLookState(runtime.instance.spawn.yaw);
+    }
     return (
       <div className="msn">
         <MissionStage
           runtime={runtime}
           input={input}
+          lookState={lookState.current}
           reducedMotion={props.reducedMotion}
           paused={confirming}
           onResolved={session.resolveTraversal}
@@ -308,6 +340,11 @@ export function MissionRun(props: {
             onAbandon={() => setConfirming(true)}
           />
         )}
+        <MissionEncounter
+          runtime={runtime}
+          authority={encounterAuthority}
+          reducedMotion={props.reducedMotion}
+        />
         {confirming && (
           <AbandonConfirm
             attemptOrdinal={phase.ticket.attemptOrdinal}

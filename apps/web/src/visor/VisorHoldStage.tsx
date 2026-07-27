@@ -7,7 +7,7 @@ import {
   STAND_HEIGHT,
   registerCharacterClips,
 } from "@pa/engine-world";
-import { dawnSky } from "../mission/dawn.js";
+import { MISSION_EXPOSURE, dawnRead, dawnSky } from "../mission/dawn.js";
 import type { MissionCivilian, MissionInstance } from "../mission/levelPort.js";
 import { VisorAnnotation } from "./VisorAnnotation.js";
 import { VisorIntensity } from "./VisorMarks.js";
@@ -165,6 +165,19 @@ function VisorReveal(props: {
   return null;
 }
 
+/** See `ToneCurve` in MissionStage: R3F rewrites this on every reconfigure. */
+function HoldToneCurve() {
+  useFrame(({ gl }) => {
+    if (gl.toneMapping !== THREE.NeutralToneMapping) {
+      gl.toneMapping = THREE.NeutralToneMapping;
+    }
+    if (gl.toneMappingExposure !== MISSION_EXPOSURE) {
+      gl.toneMappingExposure = MISSION_EXPOSURE;
+    }
+  }, -1);
+  return null;
+}
+
 /** The night the hold is standing in, and the night the clock has not yet spent. */
 function HoldSky() {
   const sky = useMemo(() => dawnSky(0), []);
@@ -273,6 +286,14 @@ export function VisorHoldStage(props: {
     () => [spawn.pos.x, spawn.pos.y, spawn.pos.z] as const,
     [spawn.pos.x, spawn.pos.y, spawn.pos.z],
   );
+  // Nothing has been spent, because nothing has started: the hold is tick zero
+  // by definition, and the level's lamps are all still burning. This is the same
+  // read the run's first frame will produce, which is what makes the hold look
+  // like the thing it is holding.
+  const holdDawn = useMemo(
+    () => dawnRead(0, props.instance.traversalBudgetS),
+    [props.instance.traversalBudgetS],
+  );
 
   return (
     <Canvas
@@ -291,6 +312,11 @@ export function VisorHoldStage(props: {
       }}
       gl={{ antialias: true, powerPreference: "high-performance" }}
     >
+      {/* The same curve the run uses, and asserted the same way and for the
+          same reason — see `ToneCurve` in MissionStage. The hold is meant to be
+          the world the player is about to run, so a hold that tone-mapped
+          differently would be showing them a different world. */}
+      <HoldToneCurve />
       <HoldSky />
       <HoldCamera
         spawn={spawn}
@@ -313,7 +339,12 @@ export function VisorHoldStage(props: {
       </Suspense>
       {Scenery && (
         <Suspense fallback={null}>
-          <Scenery reducedMotion={props.reducedMotion} />
+          {/* Tick zero, always. The level's art now takes the clock so its
+              lamps can go out as the sky comes up, and the hold is the one
+              place in the mission where the clock has not started — there is
+              nothing to tick here, which is the whole meaning of "the world
+              holds". Same reading `HoldSky` is drawn from. */}
+          <Scenery reducedMotion={props.reducedMotion} dawn={holdDawn} />
         </Suspense>
       )}
 

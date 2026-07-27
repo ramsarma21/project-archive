@@ -13,14 +13,14 @@ import {
   duelClipTimeScale,
   type DuelClipRole,
 } from "./duelClips.js";
-import { selectActorVisual } from "./actorVisual.js";
+import { createVisualStabilizer, stabilizeActorVisual } from "./actorVisual.js";
+import { levelAimArms } from "./aimPose.js";
 import {
   PALM_DROP_M,
   SOCKET_OFFSET_M,
   TRIM_EULER_DEG,
   findHandBone,
-  gripQuaternion,
-  socketInverseScale,
+  seatWeaponInHand,
 } from "./weaponSocket.js";
 import { lerpPose, type DuelRuntime } from "./duelRuntime.js";
 import { FACE_OFF_TICKS } from "@pa/duel";
@@ -35,13 +35,19 @@ import { FACE_OFF_TICKS } from "@pa/duel";
 // height normalisation, same double-sided material fix, same `chooseAvailableClip`
 // fallback. When the engine grows a socket, this file collapses into a call to it.
 //
-// SCALE IS MEASURED, NEVER ASSUMED. The cast is mid-normalisation: the player rig
-// arrives at roughly real size and the officer arrives at 1/100 scale, 1.89cm tall.
-// Both are normalised by `height / measuredHeight`, and the weapon socket then
-// divides by whatever world scale the hand bone actually ended up with. No constant
-// anywhere in this file assumes a character arrives in metres.
+// SCALE IS MEASURED, NEVER ASSUMED. Every rig is normalised by
+// `height / measuredHeight`, and the weapon socket then divides by whatever world
+// scale the hand bone actually ended up with, so no constant in this file assumes a
+// character arrives in metres.
+//
+// That defensiveness is kept even though the cast is now uniformly human-scaled,
+// because it is also what HID the officer's defect for nine days: he shipped at
+// 1/100 scale, 1.9cm tall, and this normalisation silently multiplied him by 92 so
+// the duel looked correct on screen while the file was wrong. Measuring is still
+// right — a loader should not trust an asset — but it cannot be the only check.
+// scripts/check-world-scale.mjs is what refuses the bad file at publish time.
 
-const CHARACTER_URL_TOKEN = "production-cast-8";
+const CHARACTER_URL_TOKEN = "production-cast-10";
 const PISTOL_URL = "/world/props/flintlock-pistol.glb";
 
 function characterUrl(glbKey: string): string {
@@ -133,9 +139,10 @@ function ActorRig(props: {
     };
 
     const size = measure().getSize(new THREE.Vector3());
-    // The cast is not yet normalised to real units: one rig measures 1.7m and
-    // another 1.9cm. Both are legal input, so the epsilon only guards a genuinely
-    // degenerate mesh.
+    // The epsilon only guards a genuinely degenerate mesh; it is deliberately far
+    // below any plausible rig so that a mis-scaled one still normalises to a
+    // visible body rather than vanishing. Correct SCALE is enforced upstream by
+    // scripts/check-world-scale.mjs, not here.
     const scale = size.y > 1e-4 ? props.height / size.y : 1;
     root.scale.setScalar(scale);
     root.position.y -= measure().min.y;
@@ -144,9 +151,13 @@ function ActorRig(props: {
 
   const mixer = useMemo(() => new THREE.AnimationMixer(rig.root), [rig]);
 
+  // The aim-locomotion and fire clips get their arms levelled to the forward
+  // two-handed standoff aim; every other clip is returned untouched.
+  const animations = useMemo(() => levelAimArms(gltf.animations), [gltf.animations]);
+
   const clipNames = useMemo(
-    () => gltf.animations.map((clip) => clip.name),
-    [gltf.animations],
+    () => animations.map((clip) => clip.name),
+    [animations],
   );
 
   useEffect(() => {
@@ -165,14 +176,14 @@ function ActorRig(props: {
           clipNames,
         );
         const clip = name
-          ? gltf.animations.find((candidate) => candidate.name === name)
+          ? animations.find((candidate) => candidate.name === name)
           : undefined;
         const action = clip ? mixer.clipAction(clip) : null;
         resolved.set(role, action);
         return action;
       },
     };
-  }, [mixer, gltf.animations, clipNames, props.glbKey]);
+  }, [mixer, animations, clipNames, props.glbKey]);
 
   useEffect(() => () => {
     mixer.stopAllAction();
@@ -191,30 +202,22 @@ function ActorRig(props: {
       return undefined;
     }
     rig.root.updateMatrixWorld(true);
-    const boneScale = bone.getWorldScale(new THREE.Vector3()).x;
-
-    const socket = new THREE.Group();
-    socket.name = `duel.socket.${props.side}`;
-    // Undo the bone's inherited scale so everything below is in metres, whatever
-    // units the rig happens to be authored in this week.
-    socket.scale.setScalar(socketInverseScale(boneScale));
-
-    const hold = new THREE.Group();
-    hold.name = "duel.socket.hold";
-    hold.position.set(props.grip.offset[0], props.grip.offset[1], props.grip.offset[2]);
-    hold.quaternion.copy(gripQuaternion(props.grip.trimEulerDeg));
 
     const weapon = pistol.scene.clone(true);
     weapon.traverse((node) => {
       node.castShadow = true;
       node.receiveShadow = false;
     });
-    // In the weapon's own frame: slide it up its grip so the palm closes around the
-    // middle of the grip rather than its top.
-    weapon.position.set(0, props.grip.palmDrop, 0);
 
-    hold.add(weapon);
-    socket.add(hold);
+    // The socket is assembled by the shared mount, so PvE and PvP seat the pistol
+    // identically. It puts the asset's measured GRIP POINT in the palm — not the
+    // model origin, which sits near the barrel and left the gun floating.
+    const socket = seatWeaponInHand({
+      bone,
+      weapon,
+      grip: props.grip,
+      name: `duel.socket.${props.side}`,
+    });
     bone.add(socket);
     return () => {
       bone.remove(socket);
@@ -226,6 +229,7 @@ function ActorRig(props: {
   const currentRole = useRef<DuelClipRole | null>(null);
   const currentAction = useRef<THREE.AnimationAction | null>(null);
   const timeScale = useRef(1);
+  const stabilizer = useRef(createVisualStabilizer());
 
   useFrame((_, delta) => {
     const runtime = props.runtime;
@@ -241,21 +245,28 @@ function ActorRig(props: {
     }
 
     const cues = runtime.getCues()[props.side];
-    const visual = selectActorVisual({
-      phase: state.phase,
-      faceOffElapsedS:
-        state.phase === "FACE_OFF"
-          ? (FACE_OFF_TICKS - (state.endsAtTick - state.clock.tick)) / FIELD_TICK_HZ
-          : 0,
-      tick: state.combat.tick,
-      downed: fighter.health <= 0,
-      crouched: pose.crouched,
-      speedMps: pose.speedMps,
-      travelOffFacing: pose.travelOffFacing,
-      dashing: isDodging(fighter),
-      lastFireTick: cues.lastFireTick,
-      lastHitTick: cues.lastHitTick,
-    });
+    // Debounced + speed-smoothed so the boss (and the player) do not flicker between
+    // aim/aimWalk/aimRun as the interpolated speed grazes a threshold. Position and yaw
+    // above are untouched — they are still the core's own interpolated transform.
+    const visual = stabilizeActorVisual(
+      stabilizer.current,
+      {
+        phase: state.phase,
+        faceOffElapsedS:
+          state.phase === "FACE_OFF"
+            ? (FACE_OFF_TICKS - (state.endsAtTick - state.clock.tick)) / FIELD_TICK_HZ
+            : 0,
+        tick: state.combat.tick,
+        downed: fighter.health <= 0,
+        crouched: pose.crouched,
+        speedMps: pose.speedMps,
+        travelOffFacing: pose.travelOffFacing,
+        dashing: isDodging(fighter),
+        lastFireTick: cues.lastFireTick,
+        lastHitTick: cues.lastHitTick,
+      },
+      delta,
+    );
 
     if (visual.role !== currentRole.current) {
       const action = actions.get(visual.role);

@@ -1,5 +1,9 @@
 import { MAX_MISSION_ATTEMPTS } from "@pa/contracts";
-import { FIELD_TICK_HZ, STEALTH_TUNING } from "@pa/engine-world";
+import {
+  DETECTION_CAUSE_LABEL,
+  FIELD_TICK_HZ,
+  STEALTH_TUNING,
+} from "@pa/engine-world";
 import type { BeatPresentation } from "@pa/beat";
 import {
   crowdLabel,
@@ -9,7 +13,7 @@ import {
   type DawnRead,
 } from "./dawn.js";
 import { MISSION_BINDINGS, MISSION_LEGEND } from "./missionInput.js";
-import type { MissionPresentation } from "./traversal.js";
+import type { MissionPresentation, MissionStandingRead } from "./traversal.js";
 
 // ---------------------------------------------------------------------------
 // The mission HUD.
@@ -21,6 +25,14 @@ import type { MissionPresentation } from "./traversal.js";
 //
 // Everything drawn is a projection sampled from the simulation eight times a
 // second (see MissionStage). Nothing here can drive the run.
+//
+// It carries ONE objective at a time. The mission is a sequence of required
+// steps and a player mid-run can hold one of them; the six-row list this used
+// to print — two required steps and four optional challenges, all the same size
+// in the corner of a dark frame — is why a playtester came out of the mission
+// saying it had no objectives at all. Where that step IS is not drawn here: it
+// is a mark in the street, because a direction belongs in the world. See
+// `VisorRunMark`.
 //
 // The clock is the one thing on this overlay a player is meant to feel pressed
 // by, and it is drawn as dawn rather than as a countdown to failure — because
@@ -144,6 +156,72 @@ function CoverPanel(props: {
   );
 }
 
+/**
+ * The one thing to be doing, and the one after it.
+ *
+ * This replaced a six-row checklist, and the checklist was the reason the
+ * mission read as having no objectives at all. Every required step and every
+ * optional challenge was printed at once, in one column, in the same size — so
+ * the sentence a player needed at a sprint ("nail the handbill to the Liberty
+ * Tree") was the first of six lines of equal weight in the corner of a frame
+ * whose middle was a dark street. A list is a thing to read, and nobody reads
+ * at a sprint.
+ *
+ * So: the current step is the headline, the step after it is named once and
+ * dimly so the run has a shape rather than just a next, and the optional
+ * challenges are counted and not named. They are challenges, and a player who
+ * has been told four extra things to do has not been told the one thing they
+ * have to.
+ *
+ * The range comes from the same read the mark in the street is drawing, so the
+ * plate on the elm and the figure in the corner cannot disagree.
+ */
+function ObjectiveSpine(props: { standing: MissionStandingRead }) {
+  const { standing } = props;
+  const mark = standing.mark;
+
+  return (
+    <section className="msn-hud-card is-objective" aria-label="Objective">
+      <span className="msn-hud-card-kicker">
+        Objective · {standing.step} of {standing.steps}
+      </span>
+      <span className="msn-hud-objective-now">{standing.label}</span>
+
+      {mark && (
+        <span className="msn-hud-objective-range">
+          <span className="msn-hud-objective-metres">
+            {/* The tilde says the figure is the straight line because the route
+                graph could not walk it from here. Two different measurements
+                must not print identically. */}
+            {mark.viaRoute ? "" : "~"}
+            {Math.max(1, Math.round(mark.rangeM))} m
+          </span>
+          <span className="msn-hud-note is-quiet">{mark.title}</span>
+        </span>
+      )}
+
+      {/* The current SAFE leg is authored below a run — a narrow ledge or beam —
+          so a held sprint is capped to it. Said BEFORE the lip, not after the
+          reader has already braked the body, so a player knows to ease off. */}
+      {mark?.speedCapMps != null && (
+        <span className="msn-hud-walkcue" role="status" aria-label="Walk this leg">
+          SAFE · WALK
+        </span>
+      )}
+
+      {standing.thenLabel && (
+        <span className="msn-hud-objective-then">then {standing.thenLabel}</span>
+      )}
+
+      {standing.optionalTotal > 0 && (
+        <span className="msn-hud-note is-quiet">
+          {standing.optionalMet} of {standing.optionalTotal} challenges taken
+        </span>
+      )}
+    </section>
+  );
+}
+
 const ALERT_COPY: Readonly<Record<string, string>> = {
   UNAWARE: "Unnoticed",
   CURIOUS: "Something heard",
@@ -231,13 +309,61 @@ function BeatPanel(props: { beat: BeatPresentation; inStance: boolean }) {
       <span className={`msn-beat-read${beat.heard ? " is-heard" : ""}`}>
         {direction
           ? `${beat.lastJudgement} · ${direction}`
-          : "Six strokes. Off the beat is loud."}
+          : "Strike on the beat. Off it is loud."}
       </span>
       <span className="msn-beat-heard">
         {beat.heard ? "He heard that" : "Nothing heard"}
       </span>
     </section>
   );
+}
+
+/**
+ * One line under the suspicion bar: what being seen is currently costing.
+ *
+ * IT USED TO SAY "position lost" AND THAT WAS NOT TRUE. Nothing about the
+ * player's position changed when they were read: the line was a caption for a
+ * consequence the game did not have, printed over a world in which every
+ * watcher stayed on his mark. The consequence exists now — men walk onto the
+ * ground you were seen on — so the line's job is to say the one thing a player
+ * can act on, which `readout.hunt` has been computing all along and nothing has
+ * ever drawn: how much further they have to get before the search breaks.
+ *
+ * "Eleven metres to break away" is an instruction. "You were seen" is a
+ * notification, and a player who is being told only that has been told nothing.
+ */
+function huntNote(view: MissionPresentation): string {
+  const hunt = view.stealth.readout?.hunt;
+  if (!hunt?.active) {
+    return view.detections === 0
+      ? "Not yet read"
+      : `Read ${view.detections}× · clear for now`;
+  }
+  if (hunt.hold === "STILL_SEEN") return "They still have you. Break away";
+  const metres = Math.ceil(hunt.metresToClear);
+  return metres > 0
+    ? `Searched here · ${metres} m more to lose them`
+    : "Clear of it — keep going";
+}
+
+/**
+ * The one thing making the player visible right now, in their own words.
+ *
+ * This is what `stealth/readout.ts` exists for — its header names "being caught
+ * and not knowing why" as the worst failure a stealth game can have — and the
+ * `cause` it ranks every tick reached no surface. The whole ladder above it was
+ * drawn: the state as a word, the suspicion as a bar, the hunt as a distance.
+ * None of those says which of the eight things the player is doing is the one
+ * getting them read, and that is the only part of it they can act on.
+ *
+ * Null while nobody is resolving the player. `NO_CONTACT` is the readout's word
+ * for "nothing has you", which the line above already says better; printing
+ * "Nobody is looking at you" under a flat bar is a row that is never not true.
+ */
+function causeNote(view: MissionPresentation): string | null {
+  const cause = view.stealth.readout?.cause;
+  if (!cause || cause === "NO_CONTACT") return null;
+  return DETECTION_CAUSE_LABEL[cause];
 }
 
 export function MissionHud(props: {
@@ -247,8 +373,20 @@ export function MissionHud(props: {
   onAbandon: () => void;
 }) {
   const view = props.presentation;
-  const required = view.objectives.filter((objective) => objective.required);
-  const metCount = required.filter((objective) => objective.met).length;
+  const cause = causeNote(view);
+
+  // The exposure bar reads the LOUDER of the field's own suspicion and the
+  // encounter-notice surge, so a stop arming after the drop drives the same bar
+  // the player already watches. `noticed` is the encounter dominating — it puts
+  // the bar into its surge/flash treatment (calmed to a static fill under
+  // prefers-reduced-motion, in CSS) and renames the state to "Spotted".
+  const notice = view.encounterNotice01;
+  const fieldSuspicion = view.stealth.suspicion;
+  const exposure = Math.max(fieldSuspicion, notice);
+  const noticed = notice > 0.15 && notice >= fieldSuspicion;
+  const exposureLabel = noticed
+    ? "Spotted — hold"
+    : ALERT_COPY[view.stealth.squadState] ?? view.stealth.squadState;
 
   return (
     <div className="msn-hud">
@@ -272,42 +410,36 @@ export function MissionHud(props: {
       </header>
 
       <div className="msn-hud-left">
-        <section className="msn-hud-card" aria-label="Route">
-          <span className="msn-hud-card-kicker">
-            Route · {metCount} of {required.length}
-          </span>
-          <ul className="msn-hud-objectives">
-            {view.objectives.map((objective) => (
-              <li
-                key={objective.id}
-                className={`msn-hud-objective${objective.met ? " is-met" : ""}${
-                  objective.required ? "" : " is-optional"
-                }`}
-              >
-                <span className="msn-hud-objective-mark" aria-hidden="true">
-                  {objective.met ? "●" : "○"}
-                </span>
-                <span>{objective.label}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {/* Absent once every required step is met, which is the half-second
+            between the last objective latching and the container resolving the
+            run. A panel still asking for the handbill in that window would be
+            asking for something already nailed up. */}
+        {view.standing && <ObjectiveSpine standing={view.standing} />}
 
-        <section className="msn-hud-card" aria-label="Exposure">
-          <span className="msn-hud-card-kicker">
-            {ALERT_COPY[view.stealth.squadState] ?? view.stealth.squadState}
+        <section
+          className={`msn-hud-card${noticed ? " is-noticed" : ""}`}
+          aria-label="Exposure"
+        >
+          {/* aria-live so a screen reader announces "Spotted" as the meter
+              surges — the accessible half of the visible flash. */}
+          <span className="msn-hud-card-kicker" role="status" aria-live="polite">
+            {exposureLabel}
           </span>
-          <div className="msn-hud-meter" role="presentation">
+          <div
+            className={`msn-hud-meter${noticed ? " is-surge" : ""}`}
+            role="presentation"
+          >
             <span
               className="msn-hud-meter-fill"
-              style={{ width: `${Math.round(view.stealth.suspicion * 100)}%` }}
+              style={{ width: `${Math.round(exposure * 100)}%` }}
             />
           </div>
-          <span className="msn-hud-note">
-            {view.detections === 0
-              ? "Not yet read"
-              : `Read ${view.detections}×· position lost`}
-          </span>
+          <span className="msn-hud-note">{huntNote(view)}</span>
+          {cause && (
+            <span className="msn-hud-note is-quiet" aria-label="Why you are visible">
+              {cause}
+            </span>
+          )}
         </section>
 
         <CoverPanel dawn={view.dawn} clusters={view.crowdClusters} />

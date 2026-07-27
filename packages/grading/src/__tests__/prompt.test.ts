@@ -13,7 +13,8 @@ import { authoredCases, buildEvalSet, isContaminatedExample } from "../eval/harn
 
 const bank = m1ItemBank();
 
-/** A synthetic multi-idea item; the production bank has only single-core ones. */
+/** A synthetic multi-idea item, used where a controlled needs count is wanted; the
+ *  production bank now carries six two-part items alongside its single-core ones. */
 const synthetic = compilePool({
   poolId: "P",
   conceptId: "C",
@@ -94,7 +95,7 @@ describe("no eval case was shown to the model", () => {
 
 describe("the prompt states the line the code will apply", () => {
   it("asks for one core, without a count, on a single-core item", () => {
-    const item = bank.get("BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1")!;
+    const item = bank.get("BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1")!;
     assert.equal(item.ideas.length, 1);
     const prompt = buildSystemPrompt(item);
     assert.ok(prompt.includes("REQUIRED CORE."));
@@ -111,7 +112,7 @@ describe("the prompt states the line the code will apply", () => {
     assert.ok(buildSystemPrompt(item).includes("at least 2 of these 3"));
   });
 
-  it("says both halves are needed on the one two-part item", () => {
+  it("says both halves are needed on a two-part item", () => {
     const item = bank.get("BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1")!;
     const prompt = buildSystemPrompt(item);
     assert.ok(prompt.includes("all 2 of these"));

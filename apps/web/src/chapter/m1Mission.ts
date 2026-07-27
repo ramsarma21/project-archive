@@ -6,14 +6,21 @@ import {
   arenaWorld,
   civiliansAtTick,
   compileLevel,
+  coveredAtFor,
+  createWayfinder,
   crowdExtents,
   duelQuestionsForAttempt,
+  LIBERTY_CORNER,
+  m1DuelId,
+  M1_ENCOUNTERS,
+  selectEncounterVariant,
   lightLevelAt,
   precisionBeatSpec,
   receivingTargetsOf,
   releaseCivilians,
   watcherIdsOf,
   watcherPosesAtTick,
+  type Wayfinder,
 } from "@pa/mission-m1";
 import {
   M1_POST_OBJECTIVE_ID,
@@ -80,26 +87,128 @@ interface PostState {
   burstAtTheLip: boolean;
 }
 
-function objectives(spec: BeatSpec, post: PostState): MissionObjective[] {
+/**
+ * Where the two required steps ARE, for the mark the run keeps live.
+ *
+ * Not a coordinate in sight, and that is the same discipline the rest of this
+ * file holds to: the nail is the beat's own target and the gate is the route's
+ * own node, so a mark cannot end up pointing at a tree the level moved. The
+ * range is walked by the level's wayfinder rather than measured straight,
+ * because the elm is 78m away and about 115m of route away, and the second
+ * number is the one a player on a rooftop is actually spending.
+ *
+ * Titles name PLACES and details name the WORK. That split is deliberate: the
+ * HUD already carries the instruction in the objective's own label, so a plate
+ * eighty metres up the street repeating it would be the same sentence twice on
+ * one screen. What the plate is for is saying which of the things out there is
+ * the one — and the answer to that is a name.
+ */
+function marks(spec: BeatSpec, way: Wayfinder) {
+  const gate = nodePos("G_GATE");
+  const range = (toNodeId: string) => (from: MissionPlayerRead["pos"]) =>
+    way.rangeTo(from, toNodeId);
+  // The next place on the way, named by the section it is in. Section titles
+  // are already written the way a person would say them — "The Town House",
+  // "Dock Square", "The shambles" — so the leg names itself and no second list
+  // of place names has to be kept in step with the route.
+  const sectionTitle = new Map(
+    M1_EFFIGY_RUN.sections.map((section) => [section.id, section.title]),
+  );
+  // The mark reads the committed waypoint (peek) and never moves it; the runtime
+  // moves it once a tick through `advance`. Splitting the two is what makes the
+  // HUD and the in-canvas mark pure readers of one guidance state rather than
+  // two consumers fighting over it. See wayfind.ts and traversal's
+  // `advanceWayfinding`.
+  const peek = (toNodeId: string) => () => {
+    const next = way.peekWaypoint(toNodeId);
+    if (!next) return null;
+    return {
+      pos: { x: next.pos[0], y: next.pos[1], z: next.pos[2] },
+      via: sectionTitle.get(next.section) ?? "the route",
+    };
+  };
+  // The runtime hands the rich sample straight through; the wayfinder reads a
+  // completed traversal off it to rejoin the route at the proven node.
+  const advance =
+    (toNodeId: string) =>
+    (sample: Parameters<Wayfinder["advanceWaypoint"]>[0]) => {
+      way.advanceWaypoint(sample, toNodeId);
+    };
+  // The authored pace of the current committed leg, for the runtime's speed cap.
+  const speedCap =
+    (toNodeId: string) => (from: MissionPlayerRead["pos"]) =>
+      way.legSpeedCap(from, toNodeId);
+  // The safe signal of the committed waypoint's directed gateway, if any — the
+  // authored axis and the verb family, nothing more. Read off the committed
+  // waypoint (peek), so it never moves the guidance.
+  const gateway = (toNodeId: string) => () => {
+    const g = way.peekWaypoint(toNodeId)?.gateway;
+    if (!g) return null;
+    return {
+      axisX: g.axisX,
+      axisZ: g.axisZ,
+      phase: g.phase,
+      allowedVerbs: g.allowedVerbs,
+      riseM: g.riseM,
+    };
+  };
+  return {
+    post: {
+      pos: { x: spec.target.x, y: spec.target.y, z: spec.target.z },
+      title: "The Liberty Elm",
+      detail: "Nail the handbill",
+      rangeM: range(M1_EFFIGY_RUN.postNode),
+      waypoint: peek(M1_EFFIGY_RUN.postNode),
+      advance: advance(M1_EFFIGY_RUN.postNode),
+      speedCapMps: speedCap(M1_EFFIGY_RUN.postNode),
+      gateway: gateway(M1_EFFIGY_RUN.postNode),
+    },
+    yard: {
+      pos: gate,
+      title: "The rope-walk yard",
+      detail: "In through the gate",
+      rangeM: range(M1_EFFIGY_RUN.arenaNode),
+      waypoint: peek(M1_EFFIGY_RUN.arenaNode),
+      advance: advance(M1_EFFIGY_RUN.arenaNode),
+      speedCapMps: speedCap(M1_EFFIGY_RUN.arenaNode),
+      gateway: gateway(M1_EFFIGY_RUN.arenaNode),
+    },
+  };
+}
+
+function objectives(
+  spec: BeatSpec,
+  post: PostState,
+  way: Wayfinder,
+): MissionObjective[] {
   const hay = nodePos("A_HAY");
   const elliotLip = nodePos("E_ELLIOT_LIP");
   const ropewalkDoor = nodePos("D2_DOOR");
+  const mark = marks(spec, way);
   return [
     // Reaching the bough used to BE this objective: `within(read, post, 2, 1.2)`
     // meant the handbill was considered nailed up the moment the player arrived
     // at the tree, which made the mission's one skill expression optional
     // scenery. Now the sheet going up is what satisfies it, and the sheet going
     // up is the beat's outcome.
-    beatObjective({
-      id: M1_POST_OBJECTIVE_ID,
-      label: "Nail the handbill to the Liberty Tree",
-      spec,
-      posted: () => post.outcome?.posted === true,
-    }),
+    // Spread rather than passed in: `beatObjective` is @pa/beat's, and that
+    // package declares the objective shape structurally so it can stay
+    // importable from plain Node. Where a mark goes is the container's port and
+    // the beat has no business knowing about it.
+    {
+      ...beatObjective({
+        id: M1_POST_OBJECTIVE_ID,
+        label: "Nail the handbill to the Liberty Tree",
+        spec,
+        posted: () => post.outcome?.posted === true,
+      }),
+      mark: mark.post,
+    },
     {
       id: "reach-the-yard",
       label: "Get into the rope-walk yard",
       required: true,
+      mark: mark.yard,
       satisfiedBy: (read) =>
         read.pos.x >= YARD.minX &&
         read.pos.x <= YARD.maxX &&
@@ -153,17 +262,33 @@ function objectives(spec: BeatSpec, post: PostState): MissionObjective[] {
   ];
 }
 
-function duelBrief(seed: number, attemptOrdinal: number): MissionDuelBrief {
+// Exported so a test can bind to the PRODUCTION brief rather than hand-copying it.
+// The boss's ammo policy lives here, and a fixture that restates it instead of
+// importing it is how the SYMMETRIC_COMPLEMENT opt-in went missing from the real
+// mission path while a green suite reported the player's 7/14 either way.
+export function duelBrief(seed: number, attemptOrdinal: number): MissionDuelBrief {
   const placement = arenaPlacement();
   return {
-    duelId: `${M1_EFFIGY_RUN.id}#duel@${attemptOrdinal}`,
+    duelId: m1DuelId(attemptOrdinal),
     seed,
     rounds: ARENA.rounds,
     world: arenaWorld(),
     opponent: {
       kind: "BOSS",
       // Tier 1: M1 has one difficulty and it is the bottom of the curve.
-      profile: bossProfileForTier(1, "BOS.MD01.BOSS.CONSTABLE"),
+      //
+      // SYMMETRIC_COMPLEMENT, not the default flat magazine. M1's officer earns the
+      // MIRROR of the player's award off the same graded round: a correct answer
+      // arms him with 7 and a wrong one with 14 (complementaryBossBullets in
+      // @pa/duel). This is the mission's authoritative boss and it must match the
+      // stand-alone m1Duel.ts descriptor — which already opts in. Without it the
+      // real mission path fell back to AUTHORED_FLAT and the boss was armed with a
+      // flat 7 EVERY round, so a wrong answer never actually armed the enemy and
+      // the complement rule that landed in the core never reached the fight a
+      // player fights. See packages/duel/src/__tests__/pveComplement.test.ts.
+      profile: bossProfileForTier(1, "BOS.MD01.BOSS.CONSTABLE", {
+        ammoPolicy: "SYMMETRIC_COMPLEMENT",
+      }),
     },
     questions: duelQuestionsForAttempt(seed, attemptOrdinal),
     placement,
@@ -187,9 +312,21 @@ export function m1Instance(input: {
   missionId: string;
   attemptOrdinal: number;
   seed: number;
+  /**
+   * The attempt's durable 128-bit seed hex. The perspective-encounter variant is
+   * chosen from it (and the ordinal) by the same @pa/mission-m1 helper the server
+   * grades with, so the stop the player sees and the item the server grades are
+   * one selection. The floor harness has no durable hex and passes none; a stable
+   * string derived from the numeric seed keeps the harness deterministic.
+   */
+  attemptSeedHex?: string;
   Scenery: MissionInstance["Scenery"];
 }): MissionInstance {
+  const attemptSeedHex = input.attemptSeedHex ?? `floor-${input.seed >>> 0}`;
   const compiled = compileLevel(M1_EFFIGY_RUN);
+  // Bound once per attempt, because the patrol phase is drawn from the seed and
+  // the predicate closes over it. See `coveredAtFor`.
+  const covered = coveredAtFor(input.seed, compiled);
   const start = nodePos("A_START");
   const sheets = nodePos("A_SHEETS");
 
@@ -226,11 +363,35 @@ export function m1Instance(input: {
     // Untimed by design: §4.11 lists three ways to lose an attempt and running
     // out of clock is not one of them. The 180 seconds are a pacing budget.
     traversalTimeoutS: null,
-    objectives: objectives(beatSpec, post),
+    // First run is guided down the SAFE line only — the one whose promise is
+    // "always goes" — so a player who has been taught nothing is not aimed at a
+    // FAST or EXPERT shortcut that assumes reads they do not have yet. A retry
+    // has seen the run and gets the shortest guidance every authored line can
+    // find. The distance on the plate is measured over every line regardless;
+    // only which way the mark points narrows. See WayfinderOptions.
+    objectives: objectives(
+      beatSpec,
+      post,
+      createWayfinder(M1_EFFIGY_RUN, {
+        guidanceLines:
+          input.attemptOrdinal <= 1
+            ? ["SAFE"]
+            : ["SAFE", "FAST", "EXPERT"],
+      }),
+    ),
     beat,
     receivingTargets: receivingTargetsOf(M1_EFFIGY_RUN),
     watcherIds: watcherIdsOf(),
     watcherPosesAtTick: (tick, seed) => watcherPosesAtTick(tick, seed),
+    // The seven men, as bodies. The level has always authored a rig and a height
+    // per patrol and nothing was ever asked for them, so the mission ran with
+    // seven invisible cones sweeping an empty town.
+    watcherCast: M1_EFFIGY_RUN.patrols.map((patrol) => ({
+      id: patrol.id,
+      rigKey: patrol.asset,
+      capsuleHeight: patrol.capsuleHeightM,
+      role: patrol.role,
+    })),
     crowdClusters: crowdExtents(),
     civiliansAtTick: (tick, seed) =>
       civiliansAtTick(tick, seed, M1_EFFIGY_RUN, compiled),
@@ -242,6 +403,13 @@ export function m1Instance(input: {
       lightLevelAt(M1_EFFIGY_RUN, AMBIENT_LIGHT, read.pos.x, read.pos.z) < 0.15
         ? "PARTIAL"
         : "EXPOSED",
+    // Hard cover, against the men as they actually stand. `coverPredicate` and
+    // its whole suite have existed since the screens were authored and nothing
+    // called them, so the container read `?? false` and every cart, barrel and
+    // stall pier in the level was worth nothing to hide behind. It matters more
+    // now than it did: a watcher walking toward you is a thing you break sight
+    // with, and until this line there was nothing to break it behind.
+    coveredAt: (read, watchers) => covered(read, watchers),
     /**
      * The two authored fail points. §4.11 lists three ways to lose an attempt
      * and this level owns two of them: the final court in front of the post, and
@@ -264,7 +432,15 @@ export function m1Instance(input: {
         };
       }
 
-      const inFinalCourt = read.pos.x >= 74 && read.pos.x <= 88;
+      // Containment in the elm's own corner, in BOTH axes. An x-only band ran the
+      // whole width of the level at every z, so a body alerted on the ropewalk tie
+      // beam at z≈21 read as "in front of the post" and could be failed there. The
+      // corner is `LIBERTY_CORNER`; the y ceiling and the alert clock are unchanged.
+      const inFinalCourt =
+        read.pos.x >= LIBERTY_CORNER.minX &&
+        read.pos.x <= LIBERTY_CORNER.maxX &&
+        read.pos.z >= LIBERTY_CORNER.minZ &&
+        read.pos.z <= LIBERTY_CORNER.maxZ;
       const alreadyUpTheTree = read.pos.y >= 6;
       if (!inFinalCourt || alreadyUpTheTree) return null;
       if (field.squadState !== "ALERTED") return null;
@@ -277,6 +453,13 @@ export function m1Instance(input: {
           "Held in the open under the elm with the crowd watching, there was no way onto the tree. The handbill never went up.",
       };
     },
+    // The two forced perspective encounters, with THIS attempt's variant chosen
+    // deterministically from the durable seed and ordinal. The runtime builds a
+    // fresh machine per attempt; the server recomputes the same item id.
+    encounters: M1_ENCOUNTERS.map((def) => ({
+      def,
+      variant: selectEncounterVariant(def, attemptSeedHex, input.attemptOrdinal),
+    })),
     duel: duelBrief(input.seed, input.attemptOrdinal),
     Scenery: input.Scenery,
     dispose: () => {
@@ -306,6 +489,7 @@ export function m1MissionDefinition(): MissionDefinition {
         missionId: context.missionId,
         attemptOrdinal: context.attemptOrdinal,
         seed: context.seed,
+        attemptSeedHex: context.seedHex,
         Scenery: M1Scenery,
       });
     },

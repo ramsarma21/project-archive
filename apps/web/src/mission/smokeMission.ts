@@ -126,6 +126,8 @@ function smokeDuel(seed: number): MissionDuelBrief {
         shotDamage: 8,
         fireIntervalTicks: 96,
         magazinePerRound: 2,
+        ammoPolicy: "AUTHORED_FLAT",
+        takesCoverBeforeQuestion: false,
         aimErrorRad: 0.24,
         leadFraction: 0.3,
         dodgeReactionTicks: 30,

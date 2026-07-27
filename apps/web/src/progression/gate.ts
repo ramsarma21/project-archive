@@ -21,6 +21,19 @@ export type DeployStanding =
   | { readonly deployable: true; readonly reason: "OPEN"; readonly attemptsRemaining: number }
   /** The chapter route has not reached it. */
   | { readonly deployable: false; readonly reason: "LOCKED" }
+  /**
+   * An attempt is open somewhere for this profile. There is ONE live attempt per
+   * profile, so an open run blocks Deploy on EVERY mission — not just its own —
+   * until it is forfeited (spending the attempt) or its queued outcome delivers.
+   * It is never resumed into a fresh runtime.
+   */
+  | { readonly deployable: false; readonly reason: "INTERRUPTED" }
+  /**
+   * Nobody is signed in. Play requires a durable, server-backed attempt (there is
+   * no unlimited practice), so the explicit `?hub=1` / Open Hub preview can render
+   * the hub but cannot launch a mission. A real local or Google session lifts this.
+   */
+  | { readonly deployable: false; readonly reason: "SIGN_IN_REQUIRED" }
   /** Cleared, or three attempts burned. Pays zero forever, and cannot be replayed. */
   | { readonly deployable: false; readonly reason: "SPENT" }
   /**
@@ -48,9 +61,20 @@ export interface DeployStandingInput {
 }
 
 export function deployStanding(input: DeployStandingInput): DeployStanding {
+  // ONE open attempt per profile, so ANY open run blocks Deploy on EVERY mission —
+  // checked before the route, because an open attempt held on mission A must also
+  // close the door on route-open mission B rather than letting a second run start.
+  // The runtime restarts from the top on a reload while the durable attempt keeps
+  // its progress, so a fresh Deploy over an open attempt is exactly the replay this
+  // gate exists to refuse. The player forfeits it first.
+  if (input.view.openAttempt) {
+    return { deployable: false, reason: "INTERRUPTED" };
+  }
   if (!input.routeOpen) return { deployable: false, reason: "LOCKED" };
+  // Signed out. Play is ranked and durable only — there is no unlimited practice —
+  // so the preview hub renders but cannot deploy. Refused, not silently opened.
   if (input.unranked) {
-    return { deployable: true, reason: "OPEN", attemptsRemaining: 0 };
+    return { deployable: false, reason: "SIGN_IN_REQUIRED" };
   }
   if (!input.known) return { deployable: false, reason: "UNKNOWN" };
   const standing = standingFor(input.view, input.missionId);

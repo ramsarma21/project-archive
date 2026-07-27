@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
   AbandonChapterAssessmentRequestSchema,
   AnswerAssessmentItemRequestSchema,
@@ -10,6 +11,7 @@ import {
 } from "@pa/contracts";
 import type { ReceiptBinding, VerdictEnvelope } from "@pa/grading";
 import { getSessionUser } from "../auth.js";
+import { effectiveSessionId } from "../devSession.js";
 import { query } from "../db.js";
 import { validAssessmentMutationRequest } from "../assessment/requestPolicy.js";
 import {
@@ -25,6 +27,23 @@ import { ProgressionService } from "../progression/service.js";
 
 const SESSION_COOKIE = "pa_session";
 
+/**
+ * The forfeit request, and everything it is NOT allowed to carry.
+ *
+ * A forfeit names the attempt id (the server-projected open attempt) and nothing
+ * else. The ordinal, the reward, the chapter and the mission are all read from the
+ * stored row, which the service scopes to the owning profile — so this cannot close
+ * another profile's run and cannot spend a second attempt. Strict, so a client
+ * cannot smuggle an `attemptOrdinal` or an `awardedXp` in beside the id, the same
+ * discipline the commit schema enforces because a forfeit spends an attempt just as
+ * a commit does.
+ */
+const AbandonMissionAttemptRequestSchema = z
+  .object({
+    attemptId: z.string().uuid(),
+  })
+  .strict();
+
 // A progression mutation is refused for one of these reasons and never
 // silently downgraded, so a client cannot probe its way to a payout.
 const CONFLICT_ERRORS = new Set([
@@ -39,7 +58,9 @@ async function requireOwner(
   reply: FastifyReply,
   profileId: string,
 ): Promise<{ profileId: string } | null> {
-  const user = await getSessionUser(request.cookies[SESSION_COOKIE]);
+  // A tab's dev-session header outranks the shared cookie in non-production, so a
+  // second local tab writes its OWN progression rather than the first tab's.
+  const user = await getSessionUser(effectiveSessionId(request));
   if (!user) {
     await reply.code(401).send({ error: "AUTH_REQUIRED" });
     return null;
@@ -57,7 +78,9 @@ function csrfOk(request: FastifyRequest, reply: FastifyReply): boolean {
   const token = request.headers["x-pa-csrf-token"];
   if (
     !validAssessmentMutationRequest({
-      sessionId: request.cookies[SESSION_COOKIE],
+      // Validate against the tab's effective session — the one its CSRF token was
+      // minted for — so the dev-header path is not falsely rejected as forged.
+      sessionId: effectiveSessionId(request),
       csrfToken: typeof token === "string" ? token : undefined,
       origin: request.headers.origin,
       allowedOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
@@ -266,6 +289,24 @@ export async function registerProgressionRoutes(
           malformed: audit.malformed,
         },
       };
+    },
+  );
+
+  // Forfeit an interrupted mission attempt. Same auth and CSRF as every other
+  // progression write, because it spends an attempt: closing the profile's open
+  // run as FAILED is exactly as consequential as committing one.
+  app.post<{ Params: { profileId: string } }>(
+    "/v1/profiles/:profileId/progression/mission-abandonments",
+    async (request, reply) => {
+      const owner = await requireOwner(request, reply, request.params.profileId);
+      if (!owner) return reply;
+      if (!csrfOk(request, reply)) return reply;
+      const parsed = AbandonMissionAttemptRequestSchema.safeParse(request.body);
+      if (!parsed.success) return reply.code(400).send({ error: "BAD_REQUEST" });
+      return sendResult(
+        reply,
+        await service.abandonMissionAttempt(owner.profileId, parsed.data),
+      );
     },
   );
 

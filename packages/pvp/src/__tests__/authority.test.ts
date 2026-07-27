@@ -12,17 +12,22 @@ import {
   BULLETS_FOR_CORRECT,
   BULLETS_FOR_WRONG,
   FIELD_DT,
+  IDLE_INTENT,
   PLAYER_MAX_HEALTH,
   currentAmmo,
   currentHealth,
 } from "@pa/duel";
 import {
   advanceMatch,
+  awaitingVerdicts,
+  decayHeldIntents,
   ingestIntent,
+  markSeen,
   matchResult,
   silentSides,
   submitVerdict,
   DISCONNECT_GRACE_MS,
+  INTENT_DECAY_MS,
 } from "../authority.js";
 import {
   INTENT_FRAME_KEYS,
@@ -285,6 +290,140 @@ test("silence forfeits, but thinking about an untimed question does not", () => 
     ["A", "B"],
     "silence during live play is a disconnect",
   );
+});
+
+test("a wrong answer is a graded penalty, never a forfeit or a resolution", () => {
+  // The product invariant: a normal incorrect answer applies the configured penalty
+  // (the reduced magazine) and the match continues through the post-answer countdown.
+  // It is not a forfeit, and it does not resolve the match while both sides survive.
+  const fixture = liveMatch();
+  fixture.authority = advanceUntil(
+    fixture.authority,
+    (a) => a.state.phase === "QUESTION_PENDING",
+  );
+  const answered = answerRound(fixture, { A: "WRONG", B: "WRONG" });
+
+  // The match is still LIVE and has no result: a wrong answer decided nothing.
+  assert.equal(answered.phase, "LIVE", "a wrong answer never forfeits the match");
+  assert.equal(matchResult(answered), null, "and it does not resolve it");
+
+  // The reduced (wrong-answer) magazine is what a wrong answer costs — both sides.
+  const granted = advanceUntil(
+    answered,
+    (a) => a.state.phase === "BULLETS_GRANTED" || a.state.phase === "ENGAGEMENT_LIVE",
+  );
+  assert.deepEqual(currentAmmo(granted.state), {
+    A: BULLETS_FOR_WRONG,
+    B: BULLETS_FOR_WRONG,
+  });
+  assert.deepEqual(currentHealth(granted.state), {
+    A: PLAYER_MAX_HEALTH,
+    B: PLAYER_MAX_HEALTH,
+  });
+  assert.equal(matchResult(granted), null, "still no result: both players remain up");
+});
+
+test("presence, not input, decides a disconnect: a polling side is never forfeited", () => {
+  // The live bug in one assertion. After an untimed question both sides' intent
+  // clocks are stale (movement is suspended while answering). When combat resumes the
+  // side that starts MOVING refreshes its intent clock; a side that is only POLLING
+  // does not — so measured on intents alone it looks silent, one side, a spurious
+  // DISCONNECTED forfeit of a player who never left. `markSeen` records that a
+  // polling side is present, and `silentSides` measures presence.
+  const fixture = liveMatch();
+  fixture.authority = advanceUntil(
+    fixture.authority,
+    (a) => a.state.phase === "QUESTION_PENDING",
+  );
+  const answered = answerRound(fixture, { A: "WRONG", B: "WRONG" });
+  const fighting = advanceUntil(answered, (a) => a.state.phase === "ENGAGEMENT_LIVE");
+
+  const t = fighting.identity.startedAtMs + DISCONNECT_GRACE_MS + 1;
+  // Baseline (the guard we must preserve): with NO contact past the grace, both are
+  // silent — the disconnect detector still works.
+  assert.deepEqual([...silentSides(fighting, t)], ["A", "B"]);
+
+  // A moves (an intent frame); B only polls (markSeen). Neither is now disconnected.
+  const aMoved = ingestIntent(
+    fighting,
+    "A",
+    frame({ seq: 99, tick: fighting.state.combat.tick }),
+    t,
+  );
+  assert.equal(aMoved.ok, true);
+  if (!aMoved.ok) return;
+  const bPolled = markSeen(aMoved.authority, "B", t);
+  assert.deepEqual(
+    [...silentSides(bPolled, t)],
+    [],
+    "a side that is polling is present, not a disconnect",
+  );
+
+  // And a side that then genuinely stops — B keeps polling, A goes dark — is the one
+  // and only side forfeited, so the guard still bites exactly where it should.
+  const later = t + DISCONNECT_GRACE_MS + 1;
+  const bStillPolling = markSeen(bPolled, "B", later);
+  assert.deepEqual([...silentSides(bStillPolling, later)], ["A"]);
+});
+
+test("a held intent decays to idle after silence, before the forfeit", () => {
+  const fixture = liveMatch();
+  // A sends one instruction at t = 1000, then goes quiet. A fresh match is already
+  // in a live, pre-question phase, so nothing is awaiting a verdict.
+  const moving = ingestIntent(fixture.authority, "A", frame({ seq: 1, moveZ: 1 }), 1_000);
+  assert.equal(moving.ok, true);
+  if (!moving.ok) return;
+  assert.notEqual(moving.authority.heldIntents.A, IDLE_INTENT, "the instruction is held");
+
+  // Still inside the decay window: the instruction keeps repeating, which is what
+  // carries a player through one dropped packet.
+  const held = decayHeldIntents(moving.authority, 1_000 + INTENT_DECAY_MS - 1);
+  assert.notEqual(held.heldIntents.A, IDLE_INTENT);
+
+  // Past it: the body stops rather than sprinting into a wall for the whole grace
+  // window, and B — which never moved — is untouched.
+  const decayed = decayHeldIntents(moving.authority, 1_000 + INTENT_DECAY_MS + 1);
+  assert.equal(decayed.heldIntents.A, IDLE_INTENT, "a silent side stops");
+  assert.equal(decayed.heldIntents.B, moving.authority.heldIntents.B);
+  // And it decays before the disconnect grace forfeits, which is the ordering.
+  assert.ok(INTENT_DECAY_MS < DISCONNECT_GRACE_MS);
+});
+
+test("thinking about an untimed question never zeroes a player's movement", () => {
+  const fixture = liveMatch();
+  const moving = ingestIntent(fixture.authority, "A", frame({ seq: 1, moveZ: 1 }), 1_000);
+  assert.equal(moving.ok, true);
+  if (!moving.ok) return;
+  const asking = advanceUntil(moving.authority, (a) => a.state.phase === "QUESTION_PENDING");
+  // Long past the decay window, but the machine is awaiting a verdict, so nobody is
+  // "silent" — they are answering. The held intent is left alone.
+  const unchanged = decayHeldIntents(asking, 1_000 + INTENT_DECAY_MS * 100);
+  assert.equal(unchanged, asking, "no decay while a verdict is owed");
+});
+
+test("once a side answers, it no longer owes a verdict this round", () => {
+  // The mechanism the read route uses to omit the question from the side that has
+  // already answered: `awaitingVerdicts` shrinks to just the side still owing one.
+  const fixture = liveMatch();
+  fixture.authority = advanceUntil(
+    fixture.authority,
+    (a) => a.state.phase === "QUESTION_PENDING",
+  );
+  assert.deepEqual([...awaitingVerdicts(fixture.authority)], ["A", "B"]);
+
+  const envelope = askedEnvelope(fixture.authority, "CORRECT");
+  const receipt = expectedReceipt(envelope, {
+    profileId: fixture.authority.participants.A.profileId,
+    attemptId: fixture.authority.identity.matchId,
+    roundIndex: fixture.authority.state.round,
+  });
+  const committed = submitVerdict(fixture.authority, "A", envelope, receipt, fixture.verify);
+  assert.equal(committed.ok, true);
+  if (!committed.ok) return;
+
+  const owed = awaitingVerdicts(committed.authority);
+  assert.equal(owed.includes("A"), false, "the answered side is no longer handed the question");
+  assert.equal(owed.includes("B"), true, "the opponent still owes one");
 });
 
 test("the result is the server's, and there is no client path to it", () => {

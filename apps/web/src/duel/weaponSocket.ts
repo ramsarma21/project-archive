@@ -25,7 +25,7 @@
 //      fixes the mapping below. TRIM_EULER_DEG is the only by-eye part, and it is
 //      small because the base mapping is right.
 
-import { Euler, Matrix4, Quaternion, Vector3, type Object3D } from "three";
+import { Euler, Group, Matrix4, Quaternion, Vector3, type Object3D } from "three";
 
 /** Real length of the flintlock asset along its own +X, in metres. */
 export const PISTOL_LENGTH_M = 0.4;
@@ -77,22 +77,45 @@ export function findHandBone(root: Object3D): Object3D | null {
 
 // ---- orientation -----------------------------------------------------------
 
+// DERIVED, NOT GUESSED — and the derivation starts from the asset's TRUE axes,
+// measured off the GLB's own POSITION data (.affordwork/inspect-flintlock-muzzle.mjs
+// slabs the mesh along X and reports each slab's cross-section):
+//
+//   * The barrel is the long X axis. The MUZZLE is the -X end — a thin ~27mm bore
+//     ring — and the breech, lock and grip block are at +X. This is the whole fix:
+//     an earlier revision asserted +X was the muzzle, which seated the gun with the
+//     barrel pointing back at the shooter (the "gun is backward" defect). The bore
+//     ring is unambiguous in the mesh; the barrel points -X.
+//   * The grip descends toward -Y; the top of the frame is +Y.
+//   * Z is the thin flank.
+//
+// The hand bone's convention (measured off the bind pose of both production rigs,
+// and the same on each): local +Y runs wrist-to-knuckles and lines up with the aim
+// in an aim pose, +X is the thumb side (up when aiming), +Z is the palm normal.
+//
+// The seating rotation is therefore the one rotation that carries each of the gun's
+// own axes onto the hand axis it belongs on: the MUZZLE onto the aim, the top of the
+// frame onto the thumb side (so the grip hangs down into the palm, never inverted),
+// and the flank onto the palm normal. It is built as that basis-to-basis map below,
+// so the GLB-axis -> bone-axis correspondence is stated once and explicitly rather
+// than as an opaque quaternion.
+
 /**
- * Where each of the pistol's own axes has to end up in hand-bone space.
- *
- * The asset's convention: +X is the muzzle, +Y is up out of the frame, and the
- * grip descends towards -Y. The hand bone's convention (measured off the bind
- * pose of both production rigs, and the same on each): +Y wrist-to-knuckles, +X
- * thumb side, +Z palm normal.
+ * The flintlock's own axes, in its local space. Right-handed triad
+ * (muzzle x top = flank), so the derived map is a rotation and never a reflection.
  */
-export const GRIP_AXIS_MAP = {
-  /** The barrel continues the line of the hand. */
-  muzzle: new Vector3(0, 1, 0),
-  /** Up the grip towards the frame is the thumb side; the butt hangs the other way. */
-  gripUp: new Vector3(1, 0, 0),
-  /** Right flank of the weapon faces away from the palm. */
-  flank: new Vector3(0, 0, -1),
-} as const;
+export const ASSET_MUZZLE_AXIS = new Vector3(-1, 0, 0);
+export const ASSET_TOP_AXIS = new Vector3(0, 1, 0);
+/** -Z completes the right-handed triad; the physical right flank is +Z. */
+export const ASSET_FLANK_AXIS = new Vector3(0, 0, -1);
+
+/**
+ * The hand bone's axes in an aim pose. Same right-handed triad
+ * (aim x thumb = the third), for the same reason.
+ */
+export const BONE_AIM_AXIS = new Vector3(0, 1, 0);
+export const BONE_THUMB_AXIS = new Vector3(1, 0, 0);
+export const BONE_THIRD_AXIS = new Vector3(0, 0, -1);
 
 /**
  * Small by-eye correction on top of the derived mapping.
@@ -105,36 +128,80 @@ export const GRIP_AXIS_MAP = {
 export const TRIM_EULER_DEG: readonly [number, number, number] = [0, 0, -14];
 
 /**
- * How far to slide the weapon up its own grip so the palm closes around the grip's
- * middle instead of its top.
+ * The grip point in the asset's own space, in metres: where a hand actually closes
+ * around the stock. MEASURED off the GLB's POSITION data
+ * (.affordwork/probe-flintlock-grip.mjs), not guessed.
  *
- * The asset's origin sits on the grip at its top: the butt is 0.123m below it, so
- * the middle of the grip — where a palm actually closes — is about 6cm down. The
- * weapon is therefore lifted by that much along its own +Y.
+ * This is the fix for the "gun is not in the hand" defect. The flintlock's model
+ * ORIGIN is not on the grip at all — it sits near the breech end of the barrel, at
+ * asset X≈0 — while the grip block runs out toward +X and descends in -Y. An earlier
+ * revision seated the weapon by that origin (sliding it only a few centimetres in
+ * +Y), which left the hand closing on empty space beside the barrel and the whole
+ * gun floating ~0.29m off the palm. Seating by the grip point instead is what puts
+ * the stock in the fingers.
+ *
+ *   grip column   X ≈ 0.287  (out toward the butt/lock end)
+ *   grip middle   Y ≈ -0.087 (the frame underside is ~-0.052, the butt ~-0.123)
+ *   centred       Z ≈ 0
  */
-export const PALM_DROP_M = 0.06;
+export const GRIP_POINT_M: readonly [number, number, number] = [0.287, -0.087, 0];
 
 /**
- * Final seating of the socket in the hand bone's own frame, in metres. Pushes the
- * weapon a little out of the wrist and towards the fingers so the grip sits in the
- * palm rather than inside it.
+ * A small slide along the grip, in metres, on top of the measured grip point. Zero
+ * seats the palm at the grip's measured middle; positive slides the hand toward the
+ * butt, negative toward the frame. It is a by-eye fine-tune, which is why it is a
+ * knob rather than being folded into GRIP_POINT_M.
+ */
+export const PALM_DROP_M = 0;
+
+/**
+ * The weapon's local position inside the hold group: the negated grip point, so the
+ * grip lands at the hold origin (the hand), with the palm-drop slide applied along
+ * the grip's own +Y axis. The hold group carries the seating rotation, so this
+ * translation is expressed in the asset's own axes and never rotates the barrel.
+ */
+export function weaponLocalOffset(
+  palmDrop: number = PALM_DROP_M,
+): [number, number, number] {
+  return [-GRIP_POINT_M[0], -GRIP_POINT_M[1] + palmDrop, -GRIP_POINT_M[2]];
+}
+
+/**
+ * Final seating of the socket in the hand bone's own frame, in metres. A small push
+ * out of the wrist and towards the fingers so the grip sits in the palm rather than
+ * inside the joint.
  */
 export const SOCKET_OFFSET_M: readonly [number, number, number] = [0.012, 0.02, 0.006];
 
-const scratchMatrix = new Matrix4();
 const scratchEuler = new Euler();
 const scratchTrim = new Quaternion();
+
+/**
+ * The basis-to-basis rotation carrying the gun's own axes onto the hand's, computed
+ * once. `assetBasis` has the gun's axes as its columns and `boneBasis` the hand's,
+ * so `boneBasis * assetBasis⁻¹` is the rotation `R` with `R·muzzle = aim`,
+ * `R·top = thumb`, `R·flank = palm`. Both triads are right-handed, so `R` is a
+ * proper rotation.
+ */
+const SEATING_BASIS = (() => {
+  const assetBasis = new Matrix4().makeBasis(
+    ASSET_MUZZLE_AXIS,
+    ASSET_TOP_AXIS,
+    ASSET_FLANK_AXIS,
+  );
+  const boneBasis = new Matrix4().makeBasis(
+    BONE_AIM_AXIS,
+    BONE_THUMB_AXIS,
+    BONE_THIRD_AXIS,
+  );
+  return boneBasis.multiply(assetBasis.invert());
+})();
 
 /** The rotation that seats the weapon in the hand, derived basis plus trim. */
 export function gripQuaternion(
   trimEulerDeg: readonly [number, number, number] = TRIM_EULER_DEG,
 ): Quaternion {
-  scratchMatrix.makeBasis(
-    GRIP_AXIS_MAP.muzzle,
-    GRIP_AXIS_MAP.gripUp,
-    GRIP_AXIS_MAP.flank,
-  );
-  const base = new Quaternion().setFromRotationMatrix(scratchMatrix);
+  const base = new Quaternion().setFromRotationMatrix(SEATING_BASIS);
   const toRad = Math.PI / 180;
   scratchEuler.set(
     trimEulerDeg[0] * toRad,
@@ -154,4 +221,70 @@ export function gripQuaternion(
 export function socketInverseScale(boneWorldScale: number): number {
   if (!Number.isFinite(boneWorldScale) || Math.abs(boneWorldScale) < 1e-9) return 1;
   return 1 / boneWorldScale;
+}
+
+// ---- the mount -------------------------------------------------------------
+
+/**
+ * How a weapon is placed in the hand: the fine bone-frame offset, the by-eye trim
+ * on the seating rotation, and the palm-drop slide along the grip. Structurally the
+ * same shape `DuelActor` exposes as `GripTuning`, so an actor can pass its tuning
+ * straight through.
+ */
+export interface GripPlacement {
+  readonly offset: readonly [number, number, number];
+  readonly trimEulerDeg: readonly [number, number, number];
+  readonly palmDrop: number;
+}
+
+/** The seating both fighters get unless an actor overrides part of it. */
+export const DEFAULT_GRIP_PLACEMENT: GripPlacement = {
+  offset: SOCKET_OFFSET_M,
+  trimEulerDeg: TRIM_EULER_DEG,
+  palmDrop: PALM_DROP_M,
+};
+
+/**
+ * Build the socket that seats `weapon` in `bone`, and return it ready to be added to
+ * the bone. THE ONE PLACE the hand mount is assembled, so PvE `DuelActor` and PvP
+ * `ArenaActor` cannot drift apart.
+ *
+ * The transform chain, outermost first:
+ *
+ *   bone → socket (undoes the bone's inherited world scale, so children are metres)
+ *        → hold   (the bone-frame offset, and the seating rotation that carries the
+ *                   asset's muzzle onto the aim)
+ *        → weapon (translated by `weaponLocalOffset` so its measured GRIP POINT — not
+ *                   its arbitrary model origin — lands at the hold origin, i.e. the
+ *                   hand)
+ *
+ * `bone.getWorldScale` reads the bone's current world matrix, so the caller must
+ * have run `updateMatrixWorld` on the rig first (both actors do).
+ */
+export function seatWeaponInHand(params: {
+  readonly bone: Object3D;
+  readonly weapon: Object3D;
+  readonly grip?: GripPlacement;
+  readonly name?: string;
+}): Group {
+  const grip = params.grip ?? DEFAULT_GRIP_PLACEMENT;
+  const boneScale = params.bone.getWorldScale(new Vector3()).x;
+
+  const socket = new Group();
+  if (params.name) socket.name = params.name;
+  // Undo the bone's inherited scale so everything below is in metres, whatever units
+  // the rig happens to be authored in this week.
+  socket.scale.setScalar(socketInverseScale(boneScale));
+
+  const hold = new Group();
+  hold.name = "weapon.hold";
+  hold.position.set(grip.offset[0], grip.offset[1], grip.offset[2]);
+  hold.quaternion.copy(gripQuaternion(grip.trimEulerDeg));
+
+  const [wx, wy, wz] = weaponLocalOffset(grip.palmDrop);
+  params.weapon.position.set(wx, wy, wz);
+
+  hold.add(params.weapon);
+  socket.add(hold);
+  return socket;
 }

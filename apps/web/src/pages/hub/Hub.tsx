@@ -17,8 +17,31 @@ import {
   missionUnlocked,
 } from "../../chapter/bostonChapter.js";
 import { MissionDeck, useMissionSession } from "../../mission/index.js";
-import { useProgression } from "../../progression/index.js";
+import { useProgression, type DeployStanding } from "../../progression/index.js";
+import { CodexOverlay } from "../../codex/CodexOverlay.js";
 import "./hub.css";
+
+/**
+ * The Deploy button's word when it cannot open the operation. Threaded from the
+ * server-backed standing so the button is actually disabled and states why —
+ * "Sign in to deploy" for the preview, "Attempt open" while a run is unfinished —
+ * rather than looking enabled and having `requestDeploy` quietly refuse.
+ */
+function deployButtonLabel(standing: DeployStanding | null): string {
+  if (!standing || standing.deployable) return "Deploy";
+  switch (standing.reason) {
+    case "LOCKED":
+      return "Locked";
+    case "SPENT":
+      return "Spent";
+    case "SIGN_IN_REQUIRED":
+      return "Sign in to deploy";
+    case "INTERRUPTED":
+      return "Attempt open";
+    case "UNKNOWN":
+      return "Reconnecting…";
+  }
+}
 
 /**
  * The hub: where the player is quantified and where operations are launched.
@@ -35,7 +58,12 @@ import "./hub.css";
  * server rather than by this browser. The hub hands Deploy to the session and
  * hides its own chrome while the session holds the foreground.
  */
-export function Hub(props: { reducedMotion: boolean; onExit: () => void }) {
+export function Hub(props: {
+  reducedMotion: boolean;
+  onExit: () => void;
+  /** Opens the duelling ground. PvP owns its own lobby and authentication. */
+  onEnterDuellingGround: () => void;
+}) {
   const progression = useProgression({
     chapterId: BOSTON_CHAPTER_ID,
     isRouteOpen: missionUnlocked,
@@ -48,6 +76,11 @@ export function Hub(props: { reducedMotion: boolean; onExit: () => void }) {
   // One render, on the first real drag, to retire the affordance. The spin
   // itself never touches state — see turntable.ts.
   const [hasDragged, setHasDragged] = useState(false);
+  // A forfeit is a round trip; the button says so and cannot be double-fired.
+  const [forfeiting, setForfeiting] = useState(false);
+  // The Codex overlay, opened from the top bar. UI only; it never opens a mission.
+  const [codexOpen, setCodexOpen] = useState(false);
+  const openAttempt = progression.view.openAttempt;
   const onFirstDrag = useCallback(() => setHasDragged(true), []);
   const turntable = useTurntable({ onFirstDrag });
 
@@ -72,6 +105,10 @@ export function Hub(props: { reducedMotion: boolean; onExit: () => void }) {
   // Hover/focus previews the assessment without moving the committed selection.
   const [previewId, setPreviewId] = useState<string | null>(null);
   const shown = nodeById(nodes, previewId ?? selectedId);
+  // The server-backed standing for whatever the panel is showing. This is what
+  // decides whether Deploy is live — a signed-out preview or an open attempt
+  // disables it — rather than the map node's cosmetic status.
+  const shownStanding = shown ? progression.standing(shown.id) : null;
 
   const session = useMissionSession({
     chapterId: BOSTON_CHAPTER_ID,
@@ -117,9 +154,31 @@ export function Hub(props: { reducedMotion: boolean; onExit: () => void }) {
       {!session.isForeground && (
         <>
           <header className="hub-topbar">
-            <button type="button" className="hub-back" onClick={props.onExit}>
-              <span aria-hidden="true">←</span> Leave hub
-            </button>
+            <div className="hub-topbar-actions">
+              <button type="button" className="hub-back" onClick={props.onExit}>
+                <span aria-hidden="true">←</span> Leave hub
+              </button>
+              {/* The one door to PvP from the game itself: a real button, so it is
+                  reachable by keyboard and screen reader. The duelling ground owns
+                  its own lobby and authentication, so this only opens the screen. */}
+              {/* Opens the Codex — the index of every card a duel can ask. A real
+                  button beside the duelling-ground entry, so it is reachable by
+                  keyboard and screen reader. It opens a UI overlay only. */}
+              <button
+                type="button"
+                className="hub-back hub-codex-open"
+                onClick={() => setCodexOpen(true)}
+              >
+                <span aria-hidden="true">◇</span> Codex
+              </button>
+              <button
+                type="button"
+                className="hub-back hub-duelling-ground"
+                onClick={props.onEnterDuellingGround}
+              >
+                Duelling ground <span aria-hidden="true">→</span>
+              </button>
+            </div>
             <div className="hub-topbar-title">
               <span className="hub-sigil" aria-hidden="true">◈</span>
               <span className="hub-wordmark">THE SYSTEM</span>
@@ -135,6 +194,37 @@ export function Hub(props: { reducedMotion: boolean; onExit: () => void }) {
               })}
             </span>
           </header>
+
+          {/* An attempt the server still holds open. It is NOT resumed — the
+              runtime restarts from the top while the durable attempt keeps its
+              progress, which is the unlimited-replay bug this state exists to
+              close. The one way forward is to forfeit it, which spends the
+              attempt honestly; Deploy on that mission stays closed until then. */}
+          {openAttempt && (
+            <div className="hub-interrupted" role="alert">
+              <div className="hub-interrupted-copy">
+                <strong>An attempt is still open.</strong> A run you left
+                unfinished is still counted. It cannot be resumed — retrying starts
+                a fresh run — so forfeit it to continue. Forfeiting spends the
+                attempt.
+              </div>
+              <button
+                type="button"
+                className="hub-back hub-interrupted-forfeit"
+                disabled={forfeiting}
+                onClick={() => {
+                  setForfeiting(true);
+                  void progression
+                    .forfeitInterruptedAttempt()
+                    .finally(() => setForfeiting(false));
+                }}
+              >
+                {forfeiting
+                  ? "Forfeiting…"
+                  : "Forfeit interrupted attempt and retry"}
+              </button>
+            </div>
+          )}
 
           <div className="hub-layout">
             <div className="hub-col hub-col-left">
@@ -162,6 +252,8 @@ export function Hub(props: { reducedMotion: boolean; onExit: () => void }) {
                 preview={previewId !== null && previewId !== selectedId}
                 delay={0.22}
                 reducedMotion={props.reducedMotion}
+                canDeploy={shownStanding?.deployable ?? false}
+                deployLabel={deployButtonLabel(shownStanding)}
                 onDeploy={session.requestDeploy}
               />
             </div>
@@ -185,6 +277,16 @@ export function Hub(props: { reducedMotion: boolean; onExit: () => void }) {
           is deliberate: the deck decides its own visibility from the session
           phase, so there is exactly one route into a mission. */}
       <MissionDeck session={session} reducedMotion={props.reducedMotion} />
+
+      {/* The Codex overlay floats above the hub. It reads the server-backed codex
+          standing and mutates nothing — a signed-out preview holds no cards, so it
+          shows definitions without ever claiming one was learned. */}
+      <CodexOverlay
+        open={codexOpen}
+        onClose={() => setCodexOpen(false)}
+        codex={progression.view.codex}
+        reducedMotion={props.reducedMotion}
+      />
     </div>
   );
 }

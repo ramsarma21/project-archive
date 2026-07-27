@@ -156,6 +156,23 @@ export function askableItems(
   );
 }
 
+/**
+ * Every Codex card any item in the bank draws on, sorted and de-duplicated.
+ *
+ * This is the full M1 card set — derived from the authored items that reference the
+ * cards rather than hand-listed anywhere, so it cannot drift from the bank. It is
+ * what the PLAYTEST_ALL access policy grants a caller, and what the route's default
+ * card resolver hands both participants so `askableItems` keeps the whole eligible
+ * pool. Capstone items carry no cards and contribute nothing here.
+ */
+export function allAskableCardIds(bank: PvpQuestionBank): readonly string[] {
+  const cards = new Set<string>();
+  for (const item of bank.items) {
+    for (const card of item.codexCardIds) cards.add(card);
+  }
+  return [...cards].sort();
+}
+
 export type SelectionResult =
   | { readonly ok: true; readonly questions: readonly PvpQuestionItem[] }
   | { readonly ok: false; readonly reason: string };

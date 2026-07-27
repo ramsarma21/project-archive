@@ -5,6 +5,7 @@
 // affordance, distance over speed for a run), so "how long does this route
 // take" is not a separate guess living beside the geometry.
 
+import { RUN_SPEED } from "@pa/engine-world/playerMotion";
 import type { LinkVerdict } from "./traversal.js";
 import type { MissionLevel, RouteLink, SectionId } from "./types.js";
 
@@ -35,6 +36,61 @@ export function routeGraph(
       seconds: verdict?.durationS ?? 0,
       metres: verdict?.distanceM ?? 0,
       ok: verdict?.ok ?? false,
+    };
+    const list = edges.get(link.from);
+    if (list) list.push(edge);
+    else edges.set(link.from, [edge]);
+    byId.set(link.id, edge);
+  }
+  return {
+    edges,
+    byId,
+    sectionOf: new Map(level.nodes.map((n) => [n.id, n.section])),
+  };
+}
+
+/**
+ * The same connectivity, costed from the geometry alone.
+ *
+ * `routeGraph` above wants verdicts, because "how long does this route take" is
+ * a question about the physics and the verifier is the only thing that has run
+ * it. That is the right answer for tooling and the wrong one for a player: the
+ * verifier simulates every ballistic arc in the level, which is seconds of work
+ * to answer a question a HUD asks eight times a second.
+ *
+ * So this is the cheap graph. Every edge costs the straight-line distance
+ * between the two nodes it joins, in three dimensions, and the seconds are that
+ * distance at a run — an estimate, and named as one. It is enough to answer
+ * "how much of the route is left", which is the only thing that reads it.
+ *
+ * EVERY EDGE IS MARKED UNVERIFIED, and that is not a formality. Nothing here
+ * asked whether the jump lands, so claiming otherwise would let a caller
+ * default their way into treating an estimate as a proof. `cheapestPath` must
+ * therefore be called with `requireVerified: false`, which `wayfind.ts` does
+ * once so that no caller has to remember it.
+ *
+ * The seconds are priced at a flat `RUN_SPEED` — the engine's own, imported
+ * rather than restated — which makes them a uniform scaling of the metres. So
+ * the cheapest path on this graph is the SHORTEST one, and calling it quickest
+ * would be a claim the geometry cannot support.
+ */
+export function routeDistanceGraph(level: MissionLevel): RouteGraph {
+  const posOf = new Map(level.nodes.map((node) => [node.id, node.pos]));
+  const edges = new Map<string, GraphEdge[]>();
+  const byId = new Map<string, GraphEdge>();
+  for (const link of level.links) {
+    const from = posOf.get(link.from);
+    const to = posOf.get(link.to);
+    // A link naming a node that does not exist is a defect the route tests
+    // catch. Wayfinding drops it rather than pricing it at zero, which would
+    // make the missing node the cheapest way anywhere.
+    if (!from || !to) continue;
+    const metres = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
+    const edge: GraphEdge = {
+      link,
+      seconds: metres / RUN_SPEED,
+      metres,
+      ok: false,
     };
     const list = edges.get(link.from);
     if (list) list.push(edge);

@@ -262,6 +262,7 @@ test("the module completion cannot name the attempt it opens", () => {
     missionId: M1,
     attemptOrdinal: 3,
     acknowledgedCueIds: ["cue.a", "cue.b"],
+    acknowledgedCheckIds: [],
     observedSeconds: 184,
     completedAt: AT,
     awardedXp: 0,
@@ -361,7 +362,10 @@ test("wiping local state yields an EMPTY view, which is refused rather than open
   );
 });
 
-test("signed out, the route alone decides and nothing is durable", () => {
+test("signed out, Deploy is refused: play is ranked and durable only", () => {
+  // Product rule change: there is no unlimited practice. A signed-out hub (the
+  // explicit ?hub=1 / Open Hub preview) may render, but it cannot launch a mission
+  // — a real local or Google session is required first.
   const view = projectProgression(snapshot());
   const standing = deployStanding({
     view,
@@ -370,8 +374,8 @@ test("signed out, the route alone decides and nothing is durable", () => {
     known: true,
     unranked: true,
   });
-  assert.equal(standing.deployable, true);
-  assert.equal(standing.reason, "OPEN");
+  assert.equal(standing.deployable, false);
+  assert.equal(standing.reason, "SIGN_IN_REQUIRED");
 });
 
 // ---------------------------------------------------------------------------

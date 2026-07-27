@@ -113,6 +113,8 @@ export { selectActorVisual, type ActorVisual, type ActorVisualInput } from "./ac
 export { grantSummary, magazineRowSize } from "./RoundHud.js";
 
 export {
+  DEFAULT_GRIP_PLACEMENT,
+  GRIP_POINT_M,
   HAND_BONE_CANDIDATES,
   PALM_DROP_M,
   SOCKET_OFFSET_M,
@@ -120,7 +122,10 @@ export {
   findHandBone,
   gripQuaternion,
   resolveHandBoneName,
+  seatWeaponInHand,
   socketInverseScale,
+  weaponLocalOffset,
+  type GripPlacement,
 } from "./weaponSocket.js";
 
 export {

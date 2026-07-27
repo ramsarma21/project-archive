@@ -217,6 +217,14 @@ function tx(client: pg.PoolClient, profileId: string): ProgressionTx {
         [profileId, chapterId, missionId],
         toAttempt,
       ),
+    liveMissionAttemptForProfile: () =>
+      one(
+        `select * from mission_attempts
+         where profile_id=$1 and status='IN_PROGRESS'
+         order by started_at asc limit 1`,
+        [profileId],
+        toAttempt,
+      ),
     missionAttempt: (attemptId) =>
       one(
         "select * from mission_attempts where id=$1 and profile_id=$2",

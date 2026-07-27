@@ -66,7 +66,7 @@ import {
   supportPlane,
   supportsFrom,
 } from "./placement_lib.mjs";
-import { placeInto, sceneSource, surveyNearPlane } from "./placement_probe.mjs";
+import { EDGE_NUDGE_M, footprintSamples, placeInto, sceneSource, surveyFirstHit, surveyNearPlane } from "./placement_probe.mjs";
 import { selfTestGate } from "./placement_selftest.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -108,6 +108,24 @@ const SUPPORT_MIN = 0.9;
 /** A part this far inside the box drawn for it is inside it. */
 const REACH_MIN = 0.995;
 const GRID = 5;
+/**
+ * How far a declared carrier may stand off a suspended mass in plan, and how
+ * far its drawn span may fall short of the mass, and still count as carrying it.
+ * A pediment butts its wall, an effigy hangs a stride out from the bole, a tie
+ * beam is guyed to the awning beside it: a metre covers all three and is small
+ * enough that an unrelated object across the lane does not qualify.
+ */
+const CONNECT_REACH = 1.0;
+/**
+ * A suspended DRESSING — an effigy hung from a bough — is a narrow figure, not a
+ * slab, so it fills only a fraction of the box the collision draws round the
+ * space it swings in. Its presence check is therefore a floor, not a fill: some
+ * of its own art must actually cast under a ray in the volume so the thing is
+ * really THERE. The substantive assertion for a hung dressing is the CARRIER
+ * connection below — that it is drawn hanging from the bole named for it — not
+ * how much of its swing box a jackboot happens to occupy.
+ */
+const HUNG_PRESENCE_MIN = 0.15;
 
 let failures = 0;
 const fail = (message) => {
@@ -130,6 +148,7 @@ for (const mass of M1_EFFIGY_RUN.masses) {
     id: mass.id, kind: "MASS", rect: mass.rect, baseY: mass.baseY,
     topY: Number.isFinite(mass.topY) ? mass.topY : mass.baseY + 12,
     yaw: mass.yaw ?? 0, round: mass.round,
+    tags: mass.tags ?? [], carriedBy: mass.carriedBy ?? [],
   });
 }
 for (const deck of M1_EFFIGY_RUN.decks) {
@@ -277,8 +296,102 @@ const wanted = [...parts.values()].filter(
   (p) => routeSurfaces.has(p.id) || (p.kind === "MASS" && p.baseY > 0.01),
 );
 const placedCache = new Map();
+const placeOverlapping = async (footprint) => {
+  const targets = [];
+  for (const p of placements) {
+    if (intersectionArea(footprint, placementFootprint(p)) <= 0) continue;
+    if (!placedCache.has(p.id)) placedCache.set(p.id, await place(p));
+    const t = placedCache.get(p.id);
+    if (t) targets.push(...t);
+  }
+  return targets;
+};
+const inflatedFootprint = (part, by) =>
+  partFootprint({
+    ...part,
+    rect: {
+      minX: part.rect.minX - by, maxX: part.rect.maxX + by,
+      minZ: part.rect.minZ - by, maxZ: part.rect.maxZ + by,
+    },
+    round: part.round ? { radius: part.round.radius + by } : undefined,
+  });
+
+// A suspended mass rests on nothing at its base BY DESIGN — a soffit slab the
+// player ducks under, a pediment hood over a balcony, an effigy hung from the
+// elm — so asking for a drawn floor beneath it is the wrong question and is what
+// made all seven read as failures. The right question is the one true of a thing
+// that hangs: is its imported art actually IN the collision volume, and is the
+// body it hangs from drawn reaching it. Neither loosens the floor check for an
+// ordinary raised mass below — a chimney with nothing under it still fails there.
+const suspended = [...parts.values()].filter(
+  (p) => p.kind === "MASS" && ((p.carriedBy?.length ?? 0) > 0 || (p.tags ?? []).includes("soffit")),
+);
+const suspendedIds = new Set(suspended.map((p) => p.id));
+console.log(`\n--- suspended soffits and hung dressings occupy their volume and reach a carrier ---`);
+console.log(`  ${suspended.length} suspended masses`);
+for (const part of suspended) {
+  const footprint = partFootprint(part);
+  // Occupancy is measured against the object's OWN draw, not everything that
+  // overlaps it: an effigy hangs under the elm's canopy, and casting through the
+  // canopy would measure the leaves rather than the effigy. Its own asset is the
+  // one that has to be present in the collision the player sees.
+  const ownTargets = [];
+  for (const p of placements) {
+    if (!(p.id === part.id || p.parts.includes(part.id))) continue;
+    if (!placedCache.has(p.id)) placedCache.set(p.id, await place(p));
+    const t = placedCache.get(p.id);
+    if (t) ownTargets.push(...t);
+  }
+  // Occupancy: ANY drawn face within the collision volume, not just the first a
+  // downward ray meets — a tower has its own gallery deck drawn above it, and a
+  // first-hit test would see that and call the tower beneath it empty. Probed at
+  // the volume's mid height with a tolerance that reaches both faces.
+  const occ = surveyNearPlane(THREE, ownTargets, part, (part.baseY + part.topY) / 2, {
+    grid: GRID,
+    tol: (part.topY - part.baseY) / 2 + SUPPORT_TOL,
+  });
+  const fraction = occ.fraction;
+  // A soffit slab and a structural continuation (a tower out of a roof, a lantern
+  // and spire out of a steeple shaft) are both solid and must FILL the volume
+  // they stand for; a hung dressing is a figure and need only be present in it.
+  const isSlab = (part.tags ?? []).includes("soffit") || (part.tags ?? []).includes("structure");
+  const occMin = isSlab ? SUPPORT_MIN : HUNG_PRESENCE_MIN;
+  // Connection: a declared carrier drawn reaching the volume, standing off by no
+  // more than CONNECT_REACH in plan and in height.
+  const carriers = part.carriedBy ?? [];
+  const reach = inflatedFootprint(part, CONNECT_REACH);
+  const carrier = carriers.length === 0 ? null : placements.find((p) =>
+    (carriers.includes(p.id) || p.parts.some((id) => carriers.includes(id))) &&
+    intersectionArea(reach, placementFootprint(p)) > 0 &&
+    p.pos[1] + p.size[1] >= part.baseY - CONNECT_REACH &&
+    p.pos[1] <= part.topY + CONNECT_REACH,
+  );
+  const occOk = fraction >= occMin;
+  const connOk = carriers.length === 0 ? true : carrier !== undefined;
+  console.log(
+    `  ${occOk && connOk ? "ok  " : "FAIL"} ${part.id.padEnd(20)} ${isSlab ? "SOFFIT" : "HUNG  "} ` +
+      `occupies ${(fraction * 100).toFixed(0)}% of [${part.baseY.toFixed(2)}, ${part.topY.toFixed(2)}]m ` +
+      `(wants ${(occMin * 100).toFixed(0)}%)` +
+      (carriers.length ? `  carrier ${connOk ? carrier.asset : `${carriers.join("/")} NOT drawn reaching it`}` : ""),
+  );
+  if (!occOk) {
+    fail(
+      `${part.id} is a ${isSlab ? "soffit" : "hung dressing"} at [${part.baseY.toFixed(2)}, ${part.topY.toFixed(2)}]m ` +
+        `and its imported art occupies only ${(fraction * 100).toFixed(0)}% of that volume (wants ${(occMin * 100).toFixed(0)}%). ` +
+        `The mesh must fill the collision the player ${isSlab ? "ducks under" : "sees hung"}, not merely exist somewhere near it.`,
+    );
+  }
+  if (!connOk) {
+    fail(
+      `${part.id} declares it is carried by ${carriers.join(", ")}, but none of those is drawn overlapping it ` +
+        `within ${CONNECT_REACH.toFixed(1)}m and reaching its height. A suspended mass must visibly hang from its carrier.`,
+    );
+  }
+}
+
 const rows = [];
 for (const part of wanted) {
+  if (suspendedIds.has(part.id)) continue;
   // Two different questions, and they are asked at two different heights. Where
   // the route stands ON a mass, the surface that matters is its TOP — probing its
   // base asks whether a hay wain rests on the ground, which is not in doubt.
@@ -305,9 +418,40 @@ for (const part of wanted) {
     const t = placedCache.get(p.id);
     if (t) targets.push(...t);
   }
-  const survey = surveyNearPlane(THREE, targets, part, plane, { grid: GRID, tol: SUPPORT_TOL });
+  // A walked surface is not standing on air where a DRAWN solid rises up THROUGH
+  // its plane: you cannot fall through a tower. The tower plinth is a 7m ring
+  // round a 4m shaft and the shaft's own stone fills the middle of the ring, so a
+  // sample inside a solid mass the plane runs through the middle of — base well
+  // below it, top above it, and not this part itself — is carried by that stone
+  // exactly as a sample with a drawn face at the plane is. This is not a floating
+  // exemption: a mass merely resting ON the plane (base at it) or capped AT it
+  // does not qualify, only one that is solid on both sides of the foot.
+  const throughSolids = M1_EFFIGY_RUN.masses.filter((m) => {
+    if (!m.asset || m.id === part.id) return false;
+    const top = Number.isFinite(m.topY) ? m.topY : m.baseY + 12;
+    return m.baseY < plane - 0.3 && top > plane + 0.02;
+  });
+  const inSolid = (x, z) =>
+    throughSolids.some(
+      (m) => x > m.rect.minX && x < m.rect.maxX && z > m.rect.minZ && z < m.rect.maxZ,
+    );
+  const rayFor = new THREE.Raycaster();
+  rayFor.far = 120;
+  const straightDown = new THREE.Vector3(0, -1, 0);
+  const atPlane = (x, z) => {
+    rayFor.set(new THREE.Vector3(x, plane + 3, z), straightDown);
+    return rayFor.intersectObjects(targets, false).some((h) => Math.abs(h.point.y - plane) < SUPPORT_TOL);
+  };
+  const samples = footprintSamples(part, GRID);
+  let hit = 0;
+  for (const [x, z] of samples) {
+    if (atPlane(x, z) || atPlane(x + EDGE_NUDGE_M, z) || atPlane(x, z + EDGE_NUDGE_M) || inSolid(x, z)) {
+      hit++;
+    }
+  }
+  const fraction = samples.length ? hit / samples.length : 1;
   rows.push({
-    part, plane, fraction: survey.fraction, assets: [...new Set(near.map((p) => p.asset))],
+    part, plane, fraction, assets: [...new Set(near.map((p) => p.asset))],
   });
 }
 rows.sort((a, b) => a.fraction - b.fraction);

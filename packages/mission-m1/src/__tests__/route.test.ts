@@ -339,3 +339,97 @@ test("every section that has a patrol also has somewhere to lose them", () => {
     );
   }
 });
+
+// ---------------------------------------------------------------------------
+// The climb volumes are the only place in this level where authoring overrides
+// a physics judgement, so they are held to the route rather than trusted. Each
+// one names the link it exists for; if the link moves, is retimed onto another
+// surface, or is deleted, these fail rather than leaving a volume granting a
+// climb into thin air — or worse, granting one somewhere the route no longer
+// goes, which is precisely the "it climbs you up through everything" the
+// reachability bound was added to stop.
+// ---------------------------------------------------------------------------
+
+test("every climb volume stands a body at the foot of the link it serves", () => {
+  const linkById = new Map(level.links.map((l) => [l.id, l]));
+  for (const volume of level.climbs) {
+    const link = linkById.get(volume.serves);
+    assert.ok(link, `${volume.id} serves ${volume.serves}, which is not a link`);
+    assert.equal(
+      link!.kind,
+      "CLIMB",
+      `${volume.id} serves ${link!.id}, which is a ${link!.kind} and not an ascent`,
+    );
+
+    const from = nodeById.get(link!.from)!;
+    const to = nodeById.get(link!.to)!;
+    assert.equal(
+      to.surface,
+      volume.onto,
+      `${volume.id} grants a rise onto ${volume.onto} but ${link!.id} arrives on ${to.surface}`,
+    );
+
+    const { rect } = volume;
+    assert.ok(
+      from.pos[0] >= rect.minX &&
+        from.pos[0] <= rect.maxX &&
+        from.pos[2] >= rect.minZ &&
+        from.pos[2] <= rect.maxZ,
+      `${volume.id} does not contain ${from.id}, the spot the climb is made from`,
+    );
+    assert.ok(
+      from.pos[1] >= volume.standMinY && from.pos[1] <= volume.standMaxY,
+      `${volume.id} stands feet at ${volume.standMinY}..${volume.standMaxY} but ${from.id} is at ${from.pos[1]}`,
+    );
+
+    const rise = to.pos[1] - from.pos[1];
+    assert.ok(
+      rise > 0,
+      `${volume.id} serves ${link!.id}, which descends ${(-rise).toFixed(2)}m`,
+    );
+  }
+});
+
+test("a climb volume is the size of a standing spot, not of the floor above it", () => {
+  // The whole value of declaring these is that they say WHERE. A volume as wide
+  // as its own deck would put the reader back where it started, offering the
+  // climb from anywhere underneath.
+  for (const volume of level.climbs) {
+    const area =
+      (volume.rect.maxX - volume.rect.minX) * (volume.rect.maxZ - volume.rect.minZ);
+    assert.ok(
+      area <= 9,
+      `${volume.id} covers ${area.toFixed(1)}m^2, which is a room and not a foothold`,
+    );
+    const deck = compiled.deckById.get(volume.onto);
+    if (!deck) continue;
+    const deckArea =
+      (deck.rect.maxX - deck.rect.minX) * (deck.rect.maxZ - deck.rect.minZ);
+    assert.ok(
+      area <= deckArea * 0.5,
+      `${volume.id} covers half of ${volume.onto}, so it authorises the deck and not a spot on it`,
+    );
+  }
+});
+
+test("no two climb volumes offer the same body two ways up", () => {
+  // Overlapping volumes onto different surfaces would make which climb you get
+  // depend on authoring order, which is not a thing a player can learn.
+  for (let i = 0; i < level.climbs.length; i++) {
+    for (let j = i + 1; j < level.climbs.length; j++) {
+      const a = level.climbs[i]!;
+      const b = level.climbs[j]!;
+      if (a.onto === b.onto) continue;
+      const overlapsXZ =
+        a.rect.minX < b.rect.maxX &&
+        b.rect.minX < a.rect.maxX &&
+        a.rect.minZ < b.rect.maxZ &&
+        b.rect.minZ < a.rect.maxZ;
+      const overlapsY = a.standMinY < b.standMaxY && b.standMinY < a.standMaxY;
+      assert.ok(
+        !(overlapsXZ && overlapsY),
+        `${a.id} and ${b.id} both claim the same standing spot`,
+      );
+    }
+  }
+});

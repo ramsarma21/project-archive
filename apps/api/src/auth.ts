@@ -159,7 +159,7 @@ export async function resolveProfile(identity: GoogleIdentity): Promise<ProfileR
   return transaction(async (client) => {
     await client.query(
       "select pg_advisory_xact_lock(hashtext($1))",
-      [`${identity.issuer}\u0000${identity.subject}`],
+      [`${identity.issuer}\u001f${identity.subject}`],
     );
     const existing = await client.query<{ account_id: string }>(
       "select account_id from external_identities where issuer=$1 and subject=$2",
@@ -190,6 +190,91 @@ export async function resolveProfile(identity: GoogleIdentity): Promise<ProfileR
     const created = await client.query<ProfileRow>(
       "insert into profiles(account_id, display_name, variation_root_seed_hex) values ($1,$2,$3) returning *",
       [accountId, identity.name ?? identity.email ?? "Runner", randomSeedHex()],
+    );
+    return created.rows[0]!;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Local development profiles, as REAL server accounts.
+//
+// WHAT WAS BROKEN. A LOCAL profile lived only in the browser's IndexedDB. It had no
+// session cookie, so `useProgression` saw a signed-out runner: M1 was unranked and
+// unlimited, and the boss duel's grading route answered 401 and the client fell
+// back to granting the full magazine on every answer. A whole class of the game was
+// effectively untestable on a local build.
+//
+// THE FIX, WITHOUT A PRODUCTION BYPASS. A local profile is resolved to a durable
+// account through a DEDICATED external identity — issuer `local-dev`, subject the
+// browser's own profile UUID — exactly the way a Google identity resolves through
+// (issuer, subject). It is the same advisory-locked, first-write-wins path, so the
+// FIRST login persists the submitted name and seed and every later login returns
+// the stored authority rather than letting a client replace a seed. The route that
+// calls this is mounted only outside production (see routes/localSession.ts), so
+// production has no anonymous door to a session.
+// ---------------------------------------------------------------------------
+
+/** The issuer every local-dev identity resolves under. Never a real OIDC issuer. */
+export const LOCAL_DEV_ISSUER = "local-dev";
+
+export interface LocalDevProfileInput {
+  /** The browser's stable local profile UUID. Used as the identity subject. */
+  readonly localProfileId: string;
+  /** Persisted only on first creation; ignored on relogin. */
+  readonly displayName: string;
+  /** 64 lowercase hex. Persisted only on first creation; ignored on relogin. */
+  readonly seedHex: string;
+}
+
+/**
+ * Find or create the durable account+profile for a local-dev identity.
+ *
+ * Mirrors `resolveProfile` field for field, and deliberately so: same advisory
+ * lock on (issuer, subject), same "one profile per account", same first-write-wins.
+ * A relogin returns the stored profile and NEVER writes the submitted name or seed
+ * over it — the stored seed is the authority, so a client cannot rotate its own
+ * variation by re-posting a different one.
+ */
+export async function resolveLocalDevProfile(
+  input: LocalDevProfileInput,
+): Promise<ProfileRow> {
+  return transaction(async (client) => {
+    const subject = input.localProfileId;
+    await client.query("select pg_advisory_xact_lock(hashtext($1))", [
+      `${LOCAL_DEV_ISSUER}\u001f${subject}`,
+    ]);
+    const existing = await client.query<{ account_id: string }>(
+      "select account_id from external_identities where issuer=$1 and subject=$2",
+      [LOCAL_DEV_ISSUER, subject],
+    );
+    let accountId: string;
+    if (existing.rows[0]) {
+      accountId = existing.rows[0].account_id;
+    } else {
+      const acc = await client.query<{ id: string }>(
+        "insert into accounts default values returning id",
+      );
+      accountId = acc.rows[0]!.id;
+      await client.query(
+        "insert into external_identities(account_id, issuer, subject, email) values ($1,$2,$3,$4)",
+        [accountId, LOCAL_DEV_ISSUER, subject, null],
+      );
+    }
+    const prof = await client.query<ProfileRow>(
+      "select * from profiles where account_id=$1",
+      [accountId],
+    );
+    // Stored authority: a profile that already exists is returned as-is. The
+    // submitted name and seed are used ONLY to mint a profile that has never
+    // existed, exactly like the Google name on first sign-in.
+    if (prof.rows[0]) return prof.rows[0];
+    // The durable profile takes the browser's own UUID as its id. That keeps ONE
+    // identity across the seam: `getSession` returns the same profile id the
+    // IndexedDB row already holds, so a reload mirrors the profile in place and
+    // preserves its LOCAL source rather than minting a second, server-keyed row.
+    const created = await client.query<ProfileRow>(
+      "insert into profiles(id, account_id, display_name, variation_root_seed_hex) values ($1,$2,$3,$4) returning *",
+      [subject, accountId, input.displayName, input.seedHex],
     );
     return created.rows[0]!;
   });
@@ -252,4 +337,24 @@ export async function revokeSession(sessionId: string | undefined): Promise<void
 export async function cleanupExpiredAuthData(): Promise<void> {
   await query("delete from oauth_login_attempts where created_at < now() - interval '15 minutes'");
   await query("delete from access_sessions where expires_at <= now()");
+}
+
+/**
+ * A stable, NON-SECRET reason code for a failed Google sign-in, safe to put in a
+ * development redirect (`?auth=failed&reason=…`) and a development log.
+ *
+ * It names only which STAGE failed — and, for a token exchange, the HTTP status —
+ * never a token, an authorization code, a cookie, an id_token or the client secret.
+ * `completeGoogleCallback` throws stage-tagged messages; anything unrecognised (a DB
+ * error, a network error) collapses to `server_error` so nothing internal leaks even
+ * in development. Pure, so the mapping is unit-testable without a live callback.
+ */
+export function googleCallbackErrorReason(cause: unknown): string {
+  const message = cause instanceof Error ? cause.message : String(cause);
+  if (message.includes("unknown state")) return "oauth_state_missing";
+  const exchange = message.match(/token exchange (\d{3})/);
+  if (exchange) return `token_exchange_${exchange[1]}`;
+  if (message.includes("no id_token")) return "no_id_token";
+  if (message.includes("bad verified payload")) return "id_token_invalid";
+  return "server_error";
 }

@@ -15,7 +15,9 @@ import {
   receivingTargetsOf,
   standableSpanM,
   verifyLevel,
+  verifyLink,
 } from "../traversal.js";
+import type { Vec3Tuple } from "../types.js";
 import { gapBudgetM, resolveDrop } from "../envelope.js";
 
 const level = M1_EFFIGY_RUN;
@@ -33,6 +35,66 @@ test("every route node stands where it says it does", () => {
     ([id, problems]) => `${id}: ${problems.join("; ")}`,
   );
   assert.deepEqual(failures, []);
+});
+
+test("the GAOL vault is verified against the runtime's own arc, not a lower static one", () => {
+  // PROVEN ROOT: the live vault flies an OBSTACLE-TOP arc that, at the earlier
+  // GAOL line, drove the capsule up through the stall canopy over its landing —
+  // so the runtime refused the VAULT and silently fell back to MANTLE, while the
+  // old static verifier flew a lower endpoint arc and passed it. The verifier now
+  // asks the runtime's exact question (probe -> planVerb -> beginAuthored), so the
+  // two can no longer disagree. Never by ignoring a canopy.
+  const spec = level.links.find(
+    (l) => l.from === "B_VAULT_IN" && l.to === "B_VAULT_OUT",
+  )!;
+  assert.deepEqual(
+    spec.ignore,
+    ["GAOL_BARRELS"],
+    "the vault ignores only the barrels it clears — never a canopy",
+  );
+
+  // The shipped, shifted line verifies.
+  const shipped = verifyLink(compiled, nodeById, spec, []);
+  assert.ok(shipped.ok, `the shipped GAOL vault must verify: ${shipped.problems.join("; ")}`);
+
+  // The earlier line, reconstructed: barrels at z[-0.90, 0.20], vault nodes at
+  // z=-0.35. Its runtime arc clips the canopy, so the verifier now refuses it too.
+  const withOldGaol = (dropDecks: readonly string[] = []) => ({
+    ...level,
+    masses: level.masses.map((m) =>
+      m.id === "GAOL_BARRELS"
+        ? { ...m, rect: { ...m.rect, minZ: -0.9, maxZ: 0.2 } }
+        : m,
+    ),
+    decks: level.decks.filter((d) => !dropDecks.includes(d.id)),
+    nodes: level.nodes.map((n) =>
+      n.id === "B_VAULT_IN" || n.id === "B_VAULT_OUT"
+        ? { ...n, pos: [n.pos[0], n.pos[1], -0.35] as Vec3Tuple }
+        : n,
+    ),
+  });
+  const verifyOld = (lvl: ReturnType<typeof withOldGaol>) => {
+    const c = compileLevel(lvl);
+    const nodes = new Map(lvl.nodes.map((n) => [n.id, n]));
+    return verifyLink(c, nodes, spec, []);
+  };
+
+  const oldVerdict = verifyOld(withOldGaol());
+  assert.equal(
+    oldVerdict.ok,
+    false,
+    "the old GAOL line must be refused by the runtime-faithful verifier",
+  );
+
+  // And it is the canopy, specifically. The stall canopy over the landing
+  // (STALL_1__CANOPY; the Sol brief named the flank STALL_0) is the binding one:
+  // lift it off the old line and the same vault verifies, proving the refusal is
+  // the arc clipping it — not the barrels, which are ignored, nor the endpoints.
+  const clear = verifyOld(withOldGaol(["STALL_1__CANOPY"]));
+  assert.ok(
+    clear.ok,
+    "removing the flanking canopy clears the old vault: the canopy is the blocker",
+  );
 });
 
 test("every authored link is performed by the shipped physics", () => {

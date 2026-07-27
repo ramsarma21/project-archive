@@ -38,37 +38,49 @@ import {
   newStandingRecord,
   standingDelta,
   STANDING_FLOOR,
+  STANDING_STARTING_POINTS,
 } from "../standing.js";
 import { advanceMatch, createPvpMatch, type PvpMatchResult } from "../authority.js";
 import { referenceArena } from "@pa/duel";
-import { loadM1Bank, member } from "./harness.js";
+import { M1_PVP_CARD_IDS, loadM1Bank, member } from "./harness.js";
 
 // ---- gates -----------------------------------------------------------------
 
-test("today's configuration is open, and it is one value", () => {
+test("today's configuration is one value, and the card gate is now live", () => {
   assert.deepEqual(PVP_GATES, OPEN_PLAYTEST_GATES);
+  // Chapter-complete and rank stay off — nobody has completed a chapter or earned a
+  // Rank — but the PvP-legal card gate is ON, so cards are load-bearing now.
   assert.equal(PVP_GATES.requireChapterComplete, false);
-  assert.equal(PVP_GATES.requirePvpLegalCards, false);
+  assert.equal(PVP_GATES.requirePvpLegalCards, true);
   assert.equal(PVP_GATES.enforceRankBrackets, false);
 });
 
-test("a player who has completed nothing can play today and cannot when it ships", () => {
+test("with the card gate live, a caller with no cards cannot enter and one with M1 cards can", () => {
+  // The card gate now bites in the active config: no cards, no entry.
   const fresh = {
     profileId: "profile-new",
     completedChapterIds: [] as string[],
     pvpLegalCardIds: [] as string[],
   };
-  assert.equal(assertPvpEligible(fresh, OPEN_PLAYTEST_GATES).ok, true);
-  const shipped = assertPvpEligible(fresh, SHIPPING_GATES);
+  const refusedToday = assertPvpEligible(fresh, OPEN_PLAYTEST_GATES);
+  assert.equal(refusedToday.ok, false);
+  if (!refusedToday.ok) assert.equal(refusedToday.reason, "NO_PVP_LEGAL_CARDS");
+
+  // A caller carrying the M1 cards the access policy grants passes today's gate.
+  const carrying = {
+    profileId: "profile-carrying",
+    completedChapterIds: [] as string[],
+    pvpLegalCardIds: [...M1_PVP_CARD_IDS],
+  };
+  assert.equal(assertPvpEligible(carrying, OPEN_PLAYTEST_GATES).ok, true);
+
+  // Shipping additionally requires a completed chapter, so cards alone are not enough.
+  const shipped = assertPvpEligible(carrying, SHIPPING_GATES);
   assert.equal(shipped.ok, false);
   if (!shipped.ok) assert.equal(shipped.reason, "CHAPTER_NOT_COMPLETE");
 
   const graduated = {
     profileId: "profile-done",
-    // The chapter id a completed profile actually carries. `assertPvpEligible`
-    // only counts the list today, so this literal was free to be wrong and was —
-    // and it is the fixture somebody will copy when the gate starts naming which
-    // chapter was completed.
     completedChapterIds: [BOSTON_CHAPTER_ID],
     pvpLegalCardIds: ["BOS.MD01.CARD.WAR_DEBT.v1"],
   };
@@ -194,7 +206,7 @@ test("opposite cosmetic loadouts simulate byte-identically", () => {
       bank,
       seed: 4242,
       rounds: 6,
-      askable: askableItems(bank, { A: [], B: [] }),
+      askable: askableItems(bank, { A: M1_PVP_CARD_IDS, B: M1_PVP_CARD_IDS }),
     });
     if (!drawn.ok) throw new Error(drawn.reason);
     const created = createPvpMatch({
@@ -245,7 +257,7 @@ test("a draw follows the authored concept order and never repeats an item", () =
     bank,
     seed: 99,
     rounds: 6,
-    askable: askableItems(bank, { A: [], B: [] }),
+    askable: askableItems(bank, { A: M1_PVP_CARD_IDS, B: M1_PVP_CARD_IDS }),
   });
   assert.equal(drawn.ok, true);
   if (!drawn.ok) return;
@@ -261,39 +273,99 @@ test("a draw follows the authored concept order and never repeats an item", () =
     bank,
     seed: 99,
     rounds: 6,
-    askable: askableItems(bank, { A: [], B: [] }),
+    askable: askableItems(bank, { A: M1_PVP_CARD_IDS, B: M1_PVP_CARD_IDS }),
   });
   assert.deepEqual(again, drawn);
 });
 
-test("the PvP-legal card gate is built, and it bites when switched on", () => {
+test("the PvP-legal card gate is live, and it bites: no cards, nothing askable", () => {
   const bank = loadM1Bank();
-  // Open: everything is askable even with no cards minted, which is today.
-  assert.equal(askableItems(bank, { A: [], B: [] }, OPEN_PLAYTEST_GATES).length, 18);
-  // Shipping: nothing is askable without mastery, which is why it is off today.
+  // The gate is ON in the active config now: with no cards held, nothing is askable.
+  assert.equal(askableItems(bank, { A: [], B: [] }, OPEN_PLAYTEST_GATES).length, 0);
   assert.equal(askableItems(bank, { A: [], B: [] }, SHIPPING_GATES).length, 0);
+  // With both sides carrying the full M1 set — PLAYTEST_ALL — the whole PvE bank is
+  // askable again, which is what makes the playtest playable with the gate on.
+  assert.equal(
+    askableItems(bank, { A: M1_PVP_CARD_IDS, B: M1_PVP_CARD_IDS }, OPEN_PLAYTEST_GATES).length,
+    18,
+  );
 
-  // Shipping, with one shared card: only items that need exactly that card.
+  // With one shared card: only items that need exactly that card.
   const shared = bank.items[0]!.codexCardIds;
-  const askable = askableItems(bank, { A: shared, B: shared }, SHIPPING_GATES);
+  const askable = askableItems(bank, { A: shared, B: shared }, OPEN_PLAYTEST_GATES);
   assert.ok(askable.length >= 1);
   for (const item of askable) {
     for (const card of item.codexCardIds) assert.ok(shared.includes(card));
   }
-  // And one-sided mastery asks nothing: the intersection, not the union.
-  assert.equal(askableItems(bank, { A: shared, B: [] }, SHIPPING_GATES).length, 0);
+  // And a one-sided holding asks nothing: the intersection, not the union.
+  assert.equal(askableItems(bank, { A: shared, B: [] }, OPEN_PLAYTEST_GATES).length, 0);
 });
 
 // ---- standing --------------------------------------------------------------
 
-test("standing is zero-sum-ish, floored, and pays for an upset", () => {
+test("standing is strictly zero-sum, and pays for an upset", () => {
+  // Symmetric by construction: the winner gains exactly what the loser gives up.
   const even = standingDelta(3, 3);
   assert.equal(even.winner, 20);
-  assert.equal(even.loser, 12);
+  assert.equal(even.loser, even.winner, "the move is the same on both sides");
   const upset = standingDelta(2, 4);
   assert.ok(upset.winner > even.winner, "beating up the ladder pays more");
-  const favourite = standingDelta(4, 2);
-  assert.ok(favourite.loser < even.loser, "losing up the ladder costs less");
+  assert.equal(upset.loser, upset.winner, "and the loser gives up exactly that more");
+});
+
+test("the board cannot be farmed by trading wins back and forth", () => {
+  // The farm this defends against: two students alternating wins (or immediate
+  // forfeits) to inflate both numbers. Zero-sum makes it net to nothing.
+  let a = newStandingRecord("pa", "QuietLantern-1234", 3);
+  let b = newStandingRecord("pb", "SwiftKestrel-5678", 3);
+  const totalBefore = a.points + b.points;
+  const win = (winner: "A" | "B"): PvpMatchResult => ({
+    matchId: "m",
+    winner,
+    loser: winner === "A" ? "B" : "A",
+    reason: "FORFEIT",
+    tiebreak: "NONE",
+    healthA: winner === "A" ? 40 : 0,
+    healthB: winner === "B" ? 40 : 0,
+    standingApplies: true,
+    needsReview: false,
+  });
+  for (let round = 0; round < 8; round += 1) {
+    const update = applyMatchResult(win(round % 2 === 0 ? "A" : "B"), { A: a, B: b });
+    a = update.records.find((record) => record.profileId === "pa")!;
+    b = update.records.find((record) => record.profileId === "pb")!;
+    // Conserved after every single match, not just on average.
+    assert.equal(a.points + b.points, totalBefore, `total drifted after round ${round}`);
+  }
+  // Eight alternating wins leaves both exactly where they started.
+  assert.equal(a.points, STANDING_STARTING_POINTS);
+  assert.equal(b.points, STANDING_STARTING_POINTS);
+});
+
+test("a win at the floor cannot mint points from nothing", () => {
+  // A loser with almost nothing gives up almost nothing, and the winner is paid
+  // exactly that — not the full nominal, which is where the farm would live.
+  const winner = { ...newStandingRecord("pw", "QuietLantern-1234", 3), points: 100 };
+  const loser = { ...newStandingRecord("pl", "SwiftKestrel-5678", 3), points: 3 };
+  const update = applyMatchResult(
+    {
+      matchId: "m",
+      winner: "A",
+      loser: "B",
+      reason: "KNOCKOUT",
+      tiebreak: "NONE",
+      healthA: 40,
+      healthB: 0,
+      standingApplies: true,
+      needsReview: false,
+    },
+    { A: winner, B: loser },
+  );
+  const updatedWinner = update.records.find((record) => record.profileId === "pw")!;
+  const updatedLoser = update.records.find((record) => record.profileId === "pl")!;
+  assert.equal(updatedLoser.points, STANDING_FLOOR);
+  assert.equal(updatedWinner.points, 103, "the winner gains only the 3 the loser had");
+  assert.equal(update.delta?.winner, 3);
 });
 
 test("a loss cannot put a child's public number below zero", () => {

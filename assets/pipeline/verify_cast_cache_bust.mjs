@@ -19,8 +19,14 @@ import { join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const BASE = process.argv[2] ?? "http://127.0.0.1:5399";
-const OLD_TOKEN = process.argv[3] ?? "production-cast-7";
-const NEW_TOKEN = process.argv[4] ?? "production-cast-8";
+// The token the app currently ships (packages/engine-world/src/RiggedCharacter.tsx,
+// apps/web/src/duel/DuelActor.tsx, apps/web/src/pvp/ArenaActor.tsx all read
+// production-cast-10), and the one immediately before it. A default that lags the
+// shipped token verifies a bump that already happened and passes trivially, which
+// is the silent no-op this whole script exists to refuse — so the default NEW
+// token must be the one the client actually builds.
+const OLD_TOKEN = process.argv[3] ?? "production-cast-9";
+const NEW_TOKEN = process.argv[4] ?? "production-cast-10";
 
 // rig -> the v1 file the owner's cache would be holding.
 const PREVIOUS = {

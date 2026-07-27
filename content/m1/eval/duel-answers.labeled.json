@@ -22,10 +22,10 @@
     "compare": "predicted verdict against `expected`.",
     "report": "false-negative rate separately from false-positive rate, and never as one accuracy number. A grader at 95% overall that misses every CORRECT-unusual case is worse for this game than one at 90% that misses none.",
     "gate": "Zero false negatives on the CORRECT rows is the shipping condition. False positives on the WRONG rows are a tuning target, not a blocker.",
-    "sampleSize": "75 rows across 18 items is a smoke test that catches a grader scoring style, spelling or keyword overlap. It is not enough to certify one, and it contains no responses from real students — that gap can only be closed by playtest transcripts."
+    "sampleSize": "81 rows across 18 items is a smoke test that catches a grader scoring style, spelling or keyword overlap. It is not enough to certify one, and it contains no responses from real students; that gap can only be closed by playtest transcripts. Six items now carry two-part cores, so several rows that give only one half are labelled WRONG with the missing half named."
   },
 
-  "counts": { "total": 75, "CORRECT": 39, "WRONG": 36 },
+  "counts": { "total": 81, "CORRECT": 39, "WRONG": 42 },
 
   "answers": [
     { "itemId": "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1", "answer": "they just got done fighting a huge war and it emptied their pockets so now they want ours", "expected": "CORRECT", "why": "Debt and payer, no vocabulary." },
@@ -33,13 +33,17 @@
     { "itemId": "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1", "answer": "because boston keeps causing trouble so parliament wants to make us pay for it", "expected": "WRONG", "why": "Punishment motive. Plausible for a student who has met 1774 and wrong for 1765." },
     { "itemId": "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1", "answer": "because parliament decided it was time we started acting like proper subjects", "expected": "WRONG", "why": "Authority motive with no money problem in it." },
 
-    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "bills they couldnt pay", "expected": "CORRECT", "why": "Four words, financial, correct." },
-    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "britian ended up in the hole after beating france", "expected": "CORRECT", "why": "Idiom for debt, misspelled proper noun. Both ignored." },
-    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "it left them with canada and all the land they took from france", "expected": "WRONG", "why": "True and not financial. The question asks what Parliament is solving." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "bills they couldnt pay", "expected": "WRONG", "why": "Only the money problem. It does not say how Parliament solves it, by raising the money from the colonies." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "britian ended up in the hole after beating france", "expected": "WRONG", "why": "Names the debt but not Parliament's fix, that the colonies pay part of it." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "they were drowning in war debt so they turned round and taxed us to dig out", "expected": "CORRECT", "why": "Both halves: the war debt and the colonial fix." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "the war put them in the red, and their answer is to make the colonies chip in", "expected": "CORRECT", "why": "Money problem plus the fix, in the student's own words." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "it left them with canada and all the land they took from france", "expected": "WRONG", "why": "True and not financial, and neither half the question asked." },
     { "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1", "answer": "it left the colonists angry about being taxed", "expected": "WRONG", "why": "An effect further down the chain, and generic affect." },
 
-    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "we do, over here", "expected": "CORRECT", "why": "In character, correct, four words." },
-    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "the thirteen colonies", "expected": "CORRECT", "why": "Names the payer." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "we do, over here", "expected": "WRONG", "why": "Names the payer but not what the money clears, the war debt." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "the thirteen colonies", "expected": "WRONG", "why": "The payer alone; it does not say the money clears Britain's war debt." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "us colonists, and the money settles what france cost them", "expected": "CORRECT", "why": "Payer plus the war debt it clears." },
+    { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "the people here pay it, to knock down britains war debt", "expected": "CORRECT", "why": "Both halves, own words." },
     { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "the soldiers who fought in the war", "expected": "WRONG", "why": "Wrong payer." },
     { "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1", "answer": "the people in london who voted to start it", "expected": "WRONG", "why": "A payer inside Britain, and a reasonable-sounding one." },
 
@@ -101,8 +105,9 @@
     { "itemId": "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1", "answer": "we elect a town meeting so we do have representation", "expected": "WRONG", "why": "Concedes the constable's point, which is the trap the question sets." },
     { "itemId": "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1", "answer": "we elect people but the king overrules them whenever he wants", "expected": "WRONG", "why": "Replaces the missing-from-Parliament claim with a general grievance." },
 
-    { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "the price isnt the point. we could find three pence. we cant accept being taxed by men we never chose", "expected": "CORRECT", "why": "The move, with the cost explicitly set aside." },
-    { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "its who wrote the law, not what it charges", "expected": "CORRECT", "why": "Eight words, ground moved." },
+    { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "the price isnt the point. we could find three pence. we cant accept being taxed by men we never chose", "expected": "CORRECT", "why": "Cost set aside, and the standing given: taxed by men we never chose." },
+    { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "its who wrote the law, not what it charges", "expected": "WRONG", "why": "Moves off cost but gives no standing: it does not say the town elected none of the men who laid the tax." },
+    { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "its not the three pence, its parliament taxing a town that elected none of them", "expected": "CORRECT", "why": "Who laid it, and the town's standing to object." },
     { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "three pence a sheet is a lot when you print all day long", "expected": "WRONG", "why": "Stays on cost, and argues it well." },
     { "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1", "answer": "its both really", "expected": "WRONG", "why": "A hedge that names nothing. The rubric accepts a hedge that still names authority; this one does not." },
 
@@ -116,8 +121,9 @@
     { "itemId": "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1", "answer": "he cant speak for us, hes never even seen this town", "expected": "WRONG", "why": "Distance. The deliberate rejection in this item, and the answer most students reach for first." },
     { "itemId": "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1", "answer": "then he should come here and live in it for a year", "expected": "WRONG", "why": "Same argument, and it concedes representation in principle." },
 
-    { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "the statute is real. our consent isnt in it, because nobody in that room was ours", "expected": "CORRECT", "why": "Concedes lawfulness and separates consent." },
-    { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "it can be a proper law and still not one we ever agreed to", "expected": "CORRECT", "why": "The distinction, twelve words." },
+    { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "the statute is real. our consent isnt in it, because nobody in that room was ours", "expected": "CORRECT", "why": "Concedes lawfulness, and gives the ground: nobody in that room was ours." },
+    { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "it can be a proper law and still not one we ever agreed to", "expected": "WRONG", "why": "Separates lawful from consent but never gives the ground, that Boston elected none of the men who voted it." },
+    { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "sure its lawful for them, but not one of those voters was chosen by boston, so it isnt our consent", "expected": "CORRECT", "why": "Lawful conceded, plus the electoral ground." },
     { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "then the law itself is illegal and doesnt count anywhere", "expected": "WRONG", "why": "Over-claims past Boston's own 1765 argument." },
     { "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1", "answer": "because paper shouldnt be taxed in the first place", "expected": "WRONG", "why": "Objects to the tax's object rather than its authority." }
   ]

@@ -9,7 +9,7 @@
   "scripts": {
     "build": "pnpm -r --filter \"./packages/*\" build",
     "typecheck": "pnpm -r --no-bail typecheck",
-    "lint": "node scripts/check-boundaries.mjs && node scripts/check-dangling-imports.mjs && node scripts/check-world-textures.mjs --selftest && node scripts/check-world-textures.mjs",
+    "lint": "node scripts/check-boundaries.mjs && node scripts/check-dangling-imports.mjs && node scripts/check-world-textures.mjs --selftest && node scripts/check-world-textures.mjs && node scripts/check-world-scale.mjs --selftest && node scripts/check-world-scale.mjs",
     "db:up": "docker compose up -d",
     "db:migrate": "pnpm --filter @pa/api migrate",
     "dev": "concurrently -n api,web -c blue,green \"pnpm --filter @pa/api dev\" \"pnpm --filter @pa/web dev\"",
@@ -18,7 +18,8 @@
     "aws:synth": "pnpm --filter @pa/infra synth",
     "aws:bootstrap": "pnpm --filter @pa/infra bootstrap",
     "aws:deploy": "pnpm --filter @pa/infra run deploy",
-    "test": "pnpm -r test",
+    "test": "node scripts/run-tests.mjs",
+    "assets:verify:placement": "node --import tsx assets/pipeline/verify_m1_placements.mjs",
     "playwright:install": "playwright install chromium"
   },
   "devDependencies": {

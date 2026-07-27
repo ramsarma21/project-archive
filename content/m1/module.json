@@ -32,7 +32,20 @@
         ],
         "conceptIds": [],
         "codexCardIds": [],
-        "advanceLabel": "Open the brief"
+        "advanceLabel": "Open the brief",
+        "scene": {
+          "beats": [
+            {
+              "id": "BOS.MD01.BEAT.IDENTITY_1.v1",
+              "text": "Boston, the fourteenth of August, 1765. You run printed sheets through this town for Mercer's Press, and nobody looks at you twice."
+            },
+            {
+              "id": "BOS.MD01.BEAT.IDENTITY_2.v1",
+              "text": "Today one sheet matters. Read it before you carry it. Everything the constable can ask you is in the next three minutes."
+            }
+          ],
+          "visuals": []
+        }
       },
       {
         "id": "BOS.MD01.MODULE.CARD.POSTWAR.v1",
@@ -49,7 +62,71 @@
           "BOS.MD01.CARD.WAR_DEBT.v1",
           "BOS.MD01.CARD.COLONIAL_REVENUE.v1"
         ],
-        "advanceLabel": "Trace the cause"
+        "advanceLabel": "Trace the cause",
+        "scene": {
+          "beats": [
+            {
+              "id": "BOS.MD01.BEAT.POSTWAR_1.v1",
+              "text": "Britain's war with France ended in 1763. Britain won it. But the war left it owing more than ever before. And there was still an army to pay for here in America.",
+              "visualId": "m1-wolfe"
+            },
+            {
+              "id": "BOS.MD01.BEAT.POSTWAR_2.v1",
+              "text": "Parliament looked across the Atlantic and decided the colonies should pay a share of that debt. That decision is why a tax is suddenly reaching into Boston.",
+              "visualId": "m1-wolfe"
+            },
+            {
+              "id": "BOS.MD01.BEAT.POSTWAR_3.v1",
+              "text": "Keep the order straight. The debt came first. The tax is Parliament's answer to it, not the other way round."
+            }
+          ],
+          "visuals": [
+            {
+              "id": "m1-wolfe",
+              "src": "/historical/m1/wolfe-death-of-general-wolfe-1770.jpg",
+              "alt": "Oil painting of the dying General Wolfe surrounded by officers on the battlefield at Quebec.",
+              "title": "The Death of General Wolfe",
+              "caption": "A later depiction: Benjamin West painted this in 1770 of an event of 1759. It is history painting, not documentary evidence — the war it recalls is the war that left Britain in debt.",
+              "attribution": "Benjamin West (1738–1820)",
+              "sourceUrl": "https://commons.wikimedia.org/wiki/File:Benjamin_West_005.jpg",
+              "date": "1770 (event of 13 September 1759)",
+              "rights": "Public domain",
+              "classification": "LATER_DEPICTION"
+            }
+          ]
+        },
+        "check": {
+          "id": "BOS.MD01.CHECK.POSTWAR_REVENUE.v1",
+          "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+          "prompt": "After 1763, why did Parliament decide to raise revenue from the colonies?",
+          "reinforcement": "The war left the debt; an army still had to be paid for in America; Parliament decided the colonies should share that cost.",
+          "options": [
+            {
+              "id": "OPT.TAX_MADE_THE_DEBT",
+              "text": "The new tax on the colonies was itself what had put Britain into debt.",
+              "correct": false,
+              "feedback": "That reverses the order. The debt came first, from the war, and the tax is Parliament trying to pay it down, not its cause."
+            },
+            {
+              "id": "OPT.PUNISH_SMUGGLERS",
+              "text": "Parliament wanted to punish Boston's merchants for smuggling goods during the war.",
+              "correct": false,
+              "feedback": "No. The Act was about raising money, not punishment. The brief traced it to war debt and an army still to pay for, not to smuggling."
+            },
+            {
+              "id": "OPT.WAR_DEBT_AND_ARMY",
+              "text": "The war left Britain deep in debt, with an army still to pay for in America, and Parliament decided the colonies should share that cost.",
+              "correct": true,
+              "feedback": "Right. Debt and defence came first, and the tax is Parliament's answer to the bill."
+            },
+            {
+              "id": "OPT.OVERDUE_TAXES",
+              "text": "The colonies had fallen behind on taxes they already owed, and this was meant to collect what was overdue.",
+              "correct": false,
+              "feedback": "No. There were no such earlier taxes to fall behind on. The money was for war debt and the cost of the army, as the brief traced."
+            }
+          ]
+        }
       },
       {
         "id": "BOS.MD01.MODULE.CARD.STAMP.v1",
@@ -67,7 +144,78 @@
           "BOS.MD01.CARD.STAMP_DATE.v1",
           "BOS.MD01.CARD.PRINTER_IMPACT.v1"
         ],
-        "advanceLabel": "Compare the papers"
+        "advanceLabel": "Compare the papers",
+        "scene": {
+          "beats": [
+            {
+              "id": "BOS.MD01.BEAT.STAMP_1.v1",
+              "text": "The tax has a shape, and that shape is the thing to learn. From the first of November, printed paper and legal paper must carry a stamp that someone has paid for.",
+              "visualId": "m1-stamp-act"
+            },
+            {
+              "id": "BOS.MD01.BEAT.STAMP_2.v1",
+              "text": "It falls on newspapers, handbills, deeds, court papers, licences, even playing cards. It leaves out the ordinary things. A bolt of cloth, a barrel of nails, a letter in your own hand.",
+              "visualId": "m1-stamp-act"
+            },
+            {
+              "id": "BOS.MD01.BEAT.STAMP_3.v1",
+              "text": "Which is why the shop you run for is where this lands hardest. A printer's whole trade is the one thing being taxed."
+            }
+          ],
+          "visuals": [
+            {
+              "id": "m1-stamp-act",
+              "src": "/historical/m1/stamp-act-1765.jpg",
+              "alt": "Printed page of the 1765 Stamp Act with the Act's title and opening clauses set in period type.",
+              "title": "The Stamp Act, 1765",
+              "caption": "A primary source: a printed page of the Act itself, passed 22 March 1765. This is the law the sheet in your hand is fighting.",
+              "attribution": "Parliament of Great Britain",
+              "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parliament_Stamp_Act1765.jpg",
+              "date": "1765",
+              "rights": "Public domain",
+              "classification": "PRIMARY_SOURCE"
+            }
+          ]
+        },
+        "check": {
+          "id": "BOS.MD01.CHECK.STAMP_SCOPE.v1",
+          "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
+          "selection": "multiple",
+          "prompt": "Which of these are true about the Stamp Act's reach and why it fell so hard on a printer's shop?",
+          "reinforcement": "The stamp falls on printed and legal paper, from the first of November, and it lands hardest on a printer whose whole trade is that paper. It never touches ordinary goods or a letter written by hand.",
+          "options": [
+            {
+              "id": "OPT.PRINTED_AND_LEGAL_PAPER",
+              "text": "It taxes printed and legal paper, from newspapers and court papers to licences and even playing cards.",
+              "correct": true,
+              "feedback": "Yes. The line is drawn around printed and legal paper, and the Act's own page named these documents one by one."
+            },
+            {
+              "id": "OPT.EVERYDAY_GOODS",
+              "text": "It taxes everyday goods in the shops, such as a bolt of cloth or a barrel of nails.",
+              "correct": false,
+              "feedback": "Not this one. Ordinary goods stay outside the Act. Being sold in a shop does not put a thing inside it; being printed or legal paper does."
+            },
+            {
+              "id": "OPT.STAMP_BEFORE_USE",
+              "text": "From the first of November, that paper had to carry a stamp someone had already paid for before it could be used.",
+              "correct": true,
+              "feedback": "Yes. The date is the first of November, 1765, and the stamp had to be bought before the paper was lawful to use."
+            },
+            {
+              "id": "OPT.PRINTERS_WHOLE_TRADE",
+              "text": "It fell hardest on printers, whose whole trade is the printed paper the tax lands on.",
+              "correct": true,
+              "feedback": "Yes. A printer sells the one thing being taxed, so the Act reaches the whole shop rather than a corner of it."
+            },
+            {
+              "id": "OPT.HANDWRITTEN_LETTER",
+              "text": "A private letter written out by hand would need a stamp, because it too is on paper.",
+              "correct": false,
+              "feedback": "Not this one. Being paper is not the test. A letter in your own hand stays outside the Act, while a printed sheet sits inside it."
+            }
+          ]
+        }
       },
       {
         "id": "BOS.MD01.MODULE.CARD.REPRESENTATION.v1",
@@ -86,7 +234,75 @@
           "BOS.MD01.CARD.CONSENT_GROUND.v1",
           "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1"
         ],
-        "advanceLabel": "Name the missing voice"
+        "advanceLabel": "Name the missing voice",
+        "scene": {
+          "beats": [
+            {
+              "id": "BOS.MD01.BEAT.REPRESENTATION_1.v1",
+              "text": "Boston does elect people. It has its own town meeting, and its own members in the Massachusetts assembly. Those men could tax this town tomorrow.",
+              "visualId": "m1-boston-1768"
+            },
+            {
+              "id": "BOS.MD01.BEAT.REPRESENTATION_2.v1",
+              "text": "But Boston elects nobody in Parliament. Not one member. And Parliament is the body that laid this tax.",
+              "visualId": "m1-boston-1768"
+            },
+            {
+              "id": "BOS.MD01.BEAT.REPRESENTATION_3.v1",
+              "text": "The claim under your sheet is simple. A tax may be laid only by a body the taxed people chose. So the quarrel is not really the price. The town would say the same if the stamp cost a farthing. What it objects to is who laid it."
+            },
+            {
+              "id": "BOS.MD01.BEAT.REPRESENTATION_4.v1",
+              "text": "London answers that Parliament speaks for every subject, chosen or not. Boston's reply is short. We chose none of you. A lawful vote by men we never picked is still not consent."
+            }
+          ],
+          "visuals": [
+            {
+              "id": "m1-boston-1768",
+              "src": "/historical/m1/boston-1768-landing-of-troops-revere.jpg",
+              "alt": "Engraved harbour view of Boston with British warships and lines of troops landing at the Long Wharf.",
+              "title": "A View of Part of the Town of Boston, and the Landing of Troops, 1768",
+              "caption": "A primary source: Paul Revere's engraving of British troops landing at Boston on 1 October 1768. It shows the town whose consent is in dispute — and what force behind a law without it looks like. Note the engraving postdates the 1765 module date.",
+              "attribution": "Paul Revere (1735–1818), engraver",
+              "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_prospective_view_of_the_town_of_Boston,_the_capital_of_New-England_-_and_the_landing_of_--_troops_in_the_year_1768,_in_consequence_of_letters_from_Gov._Bernard,_the_commissioners,_etc._to_LCCN2004670036.jpg",
+              "date": "engraved c. 1768–1770 (event of 1 October 1768)",
+              "rights": "Public domain",
+              "classification": "PRIMARY_SOURCE"
+            }
+          ]
+        },
+        "check": {
+          "id": "BOS.MD01.CHECK.REPRESENTATION.v1",
+          "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
+          "prompt": "What is Boston's actual objection to the Stamp Act?",
+          "reinforcement": "Boston elects local bodies but no members of Parliament; it objects that a Parliament it never chose has no consent to tax it. The quarrel is over consent, not price.",
+          "options": [
+            {
+              "id": "OPT.PRICE_TOO_HIGH",
+              "text": "The stamp simply costs too much, and Boston would accept it at a lower price.",
+              "correct": false,
+              "feedback": "No. Boston says it would object even if the stamp cost a farthing. The complaint is who laid the tax, not what it costs."
+            },
+            {
+              "id": "OPT.NO_VOICE_IN_PARLIAMENT",
+              "text": "Boston elects its own town bodies but has no members in Parliament, so it denies that a body it never chose may tax it. The objection is about consent, not the amount.",
+              "correct": true,
+              "feedback": "Right. The issue is who laid the tax, and whether the taxed people chose them, not what it costs."
+            },
+            {
+              "id": "OPT.KING_NOT_PARLIAMENT",
+              "text": "Boston would accept the same tax from the king, and objects only because Parliament laid it instead.",
+              "correct": false,
+              "feedback": "No. The objection is consent, not which office in London acts. A tax needs the agreement of people Boston elected, and it chose the king's officers no more than it chose Parliament."
+            },
+            {
+              "id": "OPT.NO_GOVERNMENT_AT_ALL",
+              "text": "Boston has no elected government of any kind and is demanding that one be created.",
+              "correct": false,
+              "feedback": "No. Boston elects a town meeting and assembly members already. What it lacks is a voice in Parliament, the body that laid this tax."
+            }
+          ]
+        }
       },
       {
         "id": "BOS.MD01.MODULE.CARD.SYNTHESIS.v1",
@@ -111,7 +327,35 @@
           "BOS.CONCEPT.REPRESENTATION.v1"
         ],
         "codexCardIds": ["BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"],
-        "advanceLabel": "Take the sheet"
+        "advanceLabel": "Take the sheet",
+        "scene": {
+          "beats": [
+            {
+              "id": "BOS.MD01.BEAT.SYNTHESIS_1.v1",
+              "text": "Three facts, one chain. A war left a debt. The debt produced a policy of raising money in America. And that policy produced the stamp.",
+              "visualId": "m1-repeal"
+            },
+            {
+              "id": "BOS.MD01.BEAT.SYNTHESIS_2.v1",
+              "text": "Parliament wrote that much into the Act itself. It called it just and necessary that provision be made for raising a further revenue in America.",
+              "visualId": "m1-repeal"
+            }
+          ],
+          "visuals": [
+            {
+              "id": "m1-repeal",
+              "src": "/historical/m1/repeal-funeral-miss-ame-stamp-1766.jpg",
+              "alt": "Satirical engraving of a mock funeral procession carrying a small coffin labelled for the repealed Stamp Act along a wharf lined with bales of goods.",
+              "title": "The Repeal, or the Funeral of Miss Ame-Stamp",
+              "caption": "Period art: a 1766 London satirical print marking the Act's repeal — the argument in your hand, one year on. Contemporary comment, not documentary record.",
+              "attribution": "British Cartoon Prints Collection (attrib. Benjamin Wilson)",
+              "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_repeal,_or_the_funeral_of_Miss_Ame%3DStamp_LCCN2006678564.jpg",
+              "date": "1766",
+              "rights": "Public domain",
+              "classification": "PERIOD_ART"
+            }
+          ]
+        }
       },
       {
         "id": "BOS.MD01.MODULE.CARD.INSERT.v1",
@@ -124,9 +368,42 @@
         ],
         "conceptIds": [],
         "codexCardIds": [],
-        "advanceLabel": "Enter Boston"
+        "advanceLabel": "Enter Boston",
+        "scene": {
+          "beats": [
+            {
+              "id": "BOS.MD01.BEAT.INSERT_1.v1",
+              "text": "Nail your sheet beside the Crown's notice at the public pump, before the constable papers over the board.",
+              "visualId": "m1-notice-reconstruction"
+            },
+            {
+              "id": "BOS.MD01.BEAT.INSERT_2.v1",
+              "text": "He will be standing there when you finish. And he will ask you what you think you know."
+            }
+          ],
+          "visuals": [
+            {
+              "id": "m1-notice-reconstruction",
+              "src": "/world/posters/notice-stamp-act.png",
+              "alt": "Stylised in-game notice board texture showing a Crown stamp notice.",
+              "title": "Crown stamp notice (mission reconstruction)",
+              "caption": "Project reconstruction: the notice as it appears in the mission world. A modern game texture built for the level, not a period document.",
+              "attribution": "Project Archive art",
+              "sourceUrl": "internal:world/posters/notice-stamp-act.png",
+              "date": "reconstruction",
+              "rights": "Project asset (in-game reconstruction)",
+              "classification": "PROJECT_RECONSTRUCTION"
+            }
+          ]
+        }
       }
-    ]
+    ],
+    "presenter": {
+      "glbKey": "system-presenter-rigged",
+      "displayName": "The System",
+      "talkClip": "talk",
+      "idleClip": "idle"
+    }
   },
   "budget": {
     "targetSeconds": 180,

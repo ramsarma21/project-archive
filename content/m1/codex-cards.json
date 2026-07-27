@@ -30,8 +30,10 @@
       "askedBy": [
         "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
         "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
+        "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
         "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1",
-        "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1"
+        "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
+        "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1"
       ],
       "alsoKnownAs": ["the French and Indian War", "the Seven Years' War", "the war with France"],
       "note": "Three names, one war. Every rubric that touches this card treats them as identical, which is the correct-but-unusually-worded case §1.7 requires the evaluation set to cover."
@@ -45,6 +47,7 @@
       "sourceCueId": "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
       "askedBy": [
         "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
+        "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
         "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
         "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
         "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1"
@@ -108,8 +111,10 @@
       "askedBy": [
         "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1",
         "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
+        "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1",
         "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1",
-        "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1"
+        "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1",
+        "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1"
       ]
     },
     {
@@ -121,6 +126,7 @@
       "sourceCueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
       "askedBy": [
         "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1",
+        "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
         "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1",
         "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1",
         "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1",

@@ -1,6 +1,8 @@
 import { memo, useMemo } from "react";
 import { FittedGlb, GroundSurfaces, ImportedStructure } from "@pa/engine-world";
 import { groundPlacements, sceneryPlacements } from "@pa/mission-m1";
+import type { DawnRead } from "../mission/dawn.js";
+import { M1Lanterns } from "./M1Lanterns.js";
 
 // ---------------------------------------------------------------------------
 // M1's visible world.
@@ -78,12 +80,16 @@ function SceneryProps() {
  */
 export const M1Scenery = memo(function M1Scenery(props: {
   readonly reducedMotion: boolean;
+  readonly dawn: DawnRead;
 }) {
   void props.reducedMotion;
   return (
     <>
       <SceneryGround />
       <SceneryProps />
+      {/* The lamps are the level's art too, and they are the only thing in the
+          mission that makes the authored light field visible. See M1Lanterns. */}
+      <M1Lanterns dawn={props.dawn} />
     </>
   );
 });

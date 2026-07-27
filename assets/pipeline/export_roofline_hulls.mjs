@@ -88,13 +88,26 @@ const { ASSETS } = await import(
   pathToFileURL(join(repoRoot, "packages", "mission-m1", "src", "assets.ts"))
 );
 
-/** The keys this pipeline owns. The Town House and the steeple are not ours. */
+/**
+ * The keys this pipeline owns. The Town House and the steeple are not ours.
+ *
+ * `roof-ridge-walk` is still here with nothing drawing it. That is not an
+ * oversight: MEETING_RIDGE was re-keyed to `roof-ridge-monitor` because 42mm of
+ * leaded walk cannot also be the three metres of building underneath it, and the
+ * walk's own 0.042/0.042 contract is worth keeping intact and buildable rather
+ * than being quietly redefined to serve a draw it no longer has. A key with no
+ * draws reports `fitBox: null` and the build skips it.
+ */
 const KEYS = [
   "roof-plank-gantry",
   "roof-ridge-walk",
+  "roof-ridge-monitor",
   "roof-chimney-stack",
   "service-wall-end",
   "int-shell-ropewalk-a",
+  "printshop-sign-hood",
+  "bldg-scaffold-run",
+  "yard-kerb-stone",
 ];
 
 const declared = new Map(ASSETS.map((asset) => [asset.key, asset]));

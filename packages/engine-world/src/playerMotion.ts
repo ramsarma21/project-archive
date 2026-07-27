@@ -14,17 +14,28 @@
 import {
   type CollisionWorld,
   type Vec3,
+  type Platform,
   sweepXZ,
   slideVelocityXZ,
   supportBelow,
   headClearance,
   canStand,
   landingValid,
+  resolveOverlapXZ,
+  capsuleEmbeddedIn,
+  rideOutOfEmbed,
+  lowStepIds,
+  supportAhead,
+  deckThroughBody,
+  sweptCapsuleCrossesPlatform,
+  platformCeilingAt,
   PHYSICS_SUBSTEP,
   CAPSULE_RADIUS,
   STAND_HEIGHT,
   CROUCH_HEIGHT,
   CONTACT_EPS,
+  SUPPORT_SNAP_UP,
+  type CapsulePenetration,
 } from "./collision.js";
 
 // ---- tuning constants ------------------------------------------------------
@@ -37,11 +48,42 @@ export const RUN_JUMP_FORWARD_DOT = 0.6; // body-forward alignment for running j
 export const MAX_STANDING_DRIFT = 0.05; // <5cm horizontal drift budget
 export const COYOTE_MS = 100; // grace after walking off a ledge
 export const STEP_DOWN = 0.35; // max ledge stepped down without falling
+/**
+ * Max lip walked up without a verb, and deliberately the same as STEP_DOWN.
+ *
+ * A body that can drop off a 35cm kerb without breaking stride and cannot get
+ * back onto it is telling the player something untrue about itself, and the
+ * asymmetry is the kind that gets learned as "the physics isn't consistent".
+ * The number is also inside the range every shipped controller uses — Unity
+ * 0.30, Unreal and Source 0.45 — and safely under `stepUpMaxHeightM` (0.50), so
+ * the STEP_UP verb still owns the band a player can see themselves climbing.
+ *
+ * Honest about the size of the win: M1 has exactly two masses under half a
+ * metre, both 0.34m, so this changes almost nothing about whether the mission
+ * can be finished. It changes how it feels to run down a street, and it will
+ * matter much more as street furniture lands.
+ */
+export const STEP_UP = 0.35;
+/**
+ * Horizontal speed below which a grounded body embedded in a sliver is treated
+ * as genuinely WEDGED and held on the landable mass its footprint overlaps,
+ * rather than dropped back into the embed. A wedged body is stationary (the
+ * walls kill its velocity); anything moving faster is walking or falling off a
+ * mass edge under its own power and must be left to do so. Small on purpose:
+ * well below a walk, so only a body that truly cannot move is held.
+ */
+export const WEDGE_HOLD_MAX_SPEED = 0.5;
 export const WALK_SPEED = 2.3;
 export const RUN_SPEED = 4.6;
 export const CROUCH_SPEED = 1.15;
 const ACCEL = 9;
-const DECEL = 14;
+/**
+ * Deceleration when the player asks for no movement (or the brake has removed
+ * their over-lip target). Exported because the edge brake sizes its stopping
+ * distance against the deceleration the body will actually achieve — the two
+ * must be the same number or the brake mis-times the stop.
+ */
+export const DECEL = 14;
 const MAX_DT = 0.05;
 
 // ---- burst tuning ----------------------------------------------------------
@@ -309,6 +351,52 @@ export interface MotionResult {
 
 // ---- constructors ----------------------------------------------------------
 
+/**
+ * A fully independent deep copy of a motion state — every nested object, the
+ * action's anchor array and its ignore set included.
+ *
+ * EXPLICIT, NOT `structuredClone`, on purpose. This clone is on the prediction
+ * hot path and must run on every browser the game targets and be trivially
+ * auditable for what it copies; hand-copying every field also documents the
+ * complete shape of a motion state in one place. The whole point of the copy is
+ * mutation isolation: the walk-off prediction steps this forward, and nothing it
+ * does may reach back and disturb the live body it was cloned from.
+ */
+export function cloneMotionState(state: MotionState): MotionState {
+  return {
+    phase: state.phase,
+    pos: { x: state.pos.x, y: state.pos.y, z: state.pos.z },
+    vel: { x: state.vel.x, y: state.vel.y, z: state.vel.z },
+    yaw: state.yaw,
+    capsuleHeight: state.capsuleHeight,
+    grounded: state.grounded,
+    airtimeMs: state.airtimeMs,
+    action: state.action ? cloneAuthoredAction(state.action) : null,
+    dash: state.dash ? { ...state.dash } : null,
+    stagger: state.stagger ? { ...state.stagger } : null,
+  };
+}
+
+function cloneAuthoredAction(action: AuthoredAction): AuthoredAction {
+  return {
+    kind: action.kind,
+    anchors: action.anchors.map((anchor) =>
+      anchor.yaw === undefined
+        ? { x: anchor.x, y: anchor.y, z: anchor.z }
+        : { x: anchor.x, y: anchor.y, z: anchor.z, yaw: anchor.yaw },
+    ),
+    durationMs: action.durationMs,
+    elapsedMs: action.elapsedMs,
+    ignore: new Set(action.ignore),
+    arcHeight: action.arcHeight,
+    faceObstacle: action.faceObstacle,
+    startPos: { x: action.startPos.x, y: action.startPos.y, z: action.startPos.z },
+    startYaw: action.startYaw,
+    endPos: { x: action.endPos.x, y: action.endPos.y, z: action.endPos.z },
+    endYaw: action.endYaw,
+  };
+}
+
 export function createGroundedState(pos: Vec3, yaw: number): MotionState {
   return {
     phase: "GROUNDED",
@@ -322,6 +410,116 @@ export function createGroundedState(pos: Vec3, yaw: number): MotionState {
     dash: null,
     stagger: null,
   };
+}
+
+// ---- non-penetration invariant ---------------------------------------------
+
+export interface MotionPenetration {
+  /** Solid blockers the capsule ended the tick embedded in, beyond skin. */
+  embeds: CapsulePenetration[];
+  /** A deck plane cutting the torso at the body's centre, or null. */
+  deckId: string | null;
+}
+
+/**
+ * The non-penetration invariant for a live body, in one call.
+ *
+ * Returns the solid blockers the capsule is embedded in and any deck plane
+ * cutting its torso, with the solver's OWN legitimate ignores already excluded:
+ * the low kerbs the grounded step walks through, and the obstacle an authored
+ * verb is mid-crossing. Empty embeds and a null deck mean the body ended the
+ * tick clear of every solid — the property the whole motion system is supposed
+ * to hold at any speed, any frame delta, through any verb.
+ *
+ * This is the single check the dev/test runtime asserts every tick and the
+ * traversal fuzzer gates on, so the assertion in the browser and the evidence
+ * in the harness are literally the same predicate rather than two that drift.
+ */
+export function motionPenetration(
+  world: CollisionWorld,
+  motion: MotionState,
+): MotionPenetration {
+  const ignore = new Set<string>();
+  const low = lowStepIds(
+    world,
+    motion.pos.x,
+    motion.pos.z,
+    CAPSULE_RADIUS,
+    motion.pos.y,
+    STEP_UP,
+  );
+  if (low) for (const id of low) ignore.add(id);
+  if (motion.action) for (const id of motion.action.ignore) ignore.add(id);
+  const embeds = capsuleEmbeddedIn(
+    world,
+    motion.pos,
+    CAPSULE_RADIUS,
+    motion.capsuleHeight,
+    ignore,
+  );
+  const deck = deckThroughBody(
+    world,
+    motion.pos.x,
+    motion.pos.z,
+    motion.pos.y,
+    motion.capsuleHeight,
+  );
+  const deckId = deck && !ignore.has(deck.id) ? deck.id : null;
+  return { embeds, deckId };
+}
+
+// ---- airborne deck-side collision ------------------------------------------
+
+/**
+ * How far the centre (x,z) is INSIDE a deck's footprint: the least distance to
+ * any edge when inside (positive), or how far outside when clear (<= 0). Uses
+ * the deck's bounding rect, which is exact for the rect decks M1 authors and a
+ * safe conservative bound for a polygon one.
+ */
+function deckInteriorDepth(
+  deck: { minX: number; maxX: number; minZ: number; maxZ: number },
+  x: number,
+  z: number,
+): number {
+  return Math.min(x - deck.minX, deck.maxX - x, z - deck.minZ, deck.maxZ - z);
+}
+
+/**
+ * The deck a horizontal step (x0,z0)->(x1,z1) at foot `footY` carried the CENTRE
+ * INTO — the one-way deck-edge the ballistic sweep is otherwise blind to (see the
+ * call sites in stepGrounded / stepBallistic / simulateBallistic) — or null.
+ *
+ * A deck is a floor from above and open from below, but its SIDE is solid: a body
+ * must not push its torso through the edge of a roof/canopy. This returns a deck
+ * only when the move takes the centre to a state where a non-ignored deck plane
+ * is strictly through the torso AND the body is entering or going DEEPER into that
+ * deck than it already was. A body ESCAPING a deck it is already inside (moving to
+ * a shallower depth) returns null, so a body that became airborne right at a deck
+ * edge is never wedged against it. Leaving a deck (foot at the plane, centre
+ * carried past the lip) and landing from above (foot over the plane) both return
+ * null — neither is a torso cut with the plane above the foot.
+ *
+ * The caller decides what to do with it: a GROUNDED body exempts a deck within a
+ * step of the foot (it climbs onto a stair/ledge), and an AIRBORNE body exempts a
+ * deck its feet can still rise to (a leap ONTO a ledge legitimately clips its
+ * edge on the way up). See the call sites.
+ */
+function deckSideBlocker(
+  world: CollisionWorld,
+  x0: number,
+  z0: number,
+  x1: number,
+  z1: number,
+  footY: number,
+  height: number,
+  ignore: ReadonlySet<string> | undefined,
+): Platform | null {
+  const after = deckThroughBody(world, x1, z1, footY, height);
+  if (!after || ignore?.has(after.id)) return null;
+  const before = deckThroughBody(world, x0, z0, footY, height);
+  const depthBefore =
+    before && before.id === after.id ? deckInteriorDepth(before, x0, z0) : -Infinity;
+  return deckInteriorDepth(after, x1, z1) > depthBefore ? after : null;
 }
 
 // ---- vector helpers --------------------------------------------------------
@@ -624,6 +822,19 @@ export function beginAuthored(
   const endValid = landingValid(world, end.x, end.z, CAPSULE_RADIUS, end.y, capsule, ignore);
   if (!endValid) return null;
 
+  // The surfaces the move LEAVES and LANDS ON are not ones it crosses. Topping
+  // out onto a deck passes the head through that deck's plane, and leaving a deck
+  // downward passes the feet through the deck just left — both are standing on /
+  // stepping off, not piercing a floor. So the start and destination surfaces are
+  // added to the ignore set the swept deck-crossing test consults; every OTHER
+  // deck the path meets, on the way up, across, or down, is still a wall. The
+  // verb ladder already ignores these in play; this makes a bare `beginAuthored`
+  // agree with it.
+  const destSurface = supportBelow(world, end.x, end.z, end.y + CONTACT_EPS);
+  if (destSurface && destSurface.id !== "GROUND") ignore.add(destSurface.id);
+  const startSurface = supportBelow(world, start.x, start.z, start.y + CONTACT_EPS);
+  if (startSurface && startSurface.id !== "GROUND") ignore.add(startSurface.id);
+
   const normal = outwardNormal(start, end, spec.kind);
   const faceObstacle = spec.kind === "CLIMB_DOWN";
   const action: AuthoredAction = {
@@ -872,9 +1083,22 @@ function stepGrounded(world: CollisionWorld, state: MotionState, dt: number, inp
   const pos = { ...state.pos };
   const speed = Math.hypot(vel.x, vel.z);
   let yaw = state.yaw;
+
+  // A lip low enough to walk up is not a wall to a body on its feet, and the
+  // same set has to be invisible to the sweep and to depenetration or the body
+  // is stopped by what it is standing on. See lowStepIds.
+  const lowSteps = lowStepIds(
+    world,
+    pos.x,
+    pos.z,
+    CAPSULE_RADIUS,
+    pos.y,
+    STEP_UP,
+  );
+
   if (speed > 0.02) {
     const to = { x: pos.x + vel.x * dt, z: pos.z + vel.z * dt };
-    const sweep = sweepXZ(world, pos, to, CAPSULE_RADIUS, state.capsuleHeight);
+    const sweep = sweepXZ(world, pos, to, CAPSULE_RADIUS, state.capsuleHeight, lowSteps);
     if (sweep.hitNormals.length > 0) {
       const slid = slideVelocityXZ(vel, sweep.hitNormals);
       vel.x = slid.x;
@@ -884,15 +1108,89 @@ function stepGrounded(world: CollisionWorld, state: MotionState, dt: number, inp
     if (sweep.blockedZ && sweep.hitNormals.length === 0) vel.z = 0;
     pos.x = sweep.x;
     pos.z = sweep.z;
+    // A DECK IS SOLID FROM THE SIDE to a grounded body too. `sweepXZ` sees only
+    // blockers, so a body on a raised surface (a canopy, a crate top) could walk
+    // its head through the edge of a HIGHER deck abutting it — and then step off
+    // into the air already grazing it. The one-way-deck-side rule from the
+    // ballistic step applies unchanged; it can fire only when the feet are high
+    // enough for a deck plane to lie in the torso, and every M1 deck is at 2.55m
+    // or more, so ground-level travel under a pentice or awning is never touched.
+    const groundedSideDeck = deckSideBlocker(
+      world,
+      state.pos.x,
+      state.pos.z,
+      pos.x,
+      pos.z,
+      pos.y,
+      state.capsuleHeight,
+      undefined,
+    );
+    // A deck within a step of the foot is one the body climbs ONTO, not through:
+    // the support snap owns it (a ramp strip, a flush ledge). Only a deck higher
+    // than a step is an edge a grounded torso must not walk through.
+    if (groundedSideDeck && groundedSideDeck.y - pos.y > STEP_UP + CONTACT_EPS) {
+      pos.x = state.pos.x;
+      pos.z = state.pos.z;
+      vel.x = 0;
+      vel.z = 0;
+    }
     const desired = Math.atan2(vel.x, vel.z);
     yaw += shortestAngle(yaw, desired) * (1 - Math.exp(-(6 + speed * 1.6) * dt));
   }
 
+  // Push out of anything the body is standing inside, whether or not it moved.
+  // The sweep keeps a body from entering a blocker and has nothing to say about
+  // one that is already in — a door that closed on the player, a route swap, a
+  // verb whose world changed underneath it. Unconditional because standing
+  // still is exactly when a body has no other way out. See resolveOverlapXZ.
+  const freed = resolveOverlapXZ(world, pos, CAPSULE_RADIUS, state.capsuleHeight, lowSteps);
+  pos.x = freed.x;
+  pos.z = freed.z;
+
   // Support: snap onto the surface under the feet, or drop off a ledge. A
   // small step-down is absorbed; anything lower is a ledge and the player
   // falls (after the coyote grace).
-  const support = supportBelow(world, pos.x, pos.z, pos.y);
-  if (support && support.y >= pos.y - STEP_DOWN && support.y <= pos.y + 0.06) {
+  //
+  // `rideOutOfEmbed` guards the one case the point support gets wrong: a body
+  // standing ON a landable mass in a sliver too narrow for it (its feet on the
+  // cart top, its centre out over the floor of the slot) reads as unsupported
+  // and would fall straight back into the embed it was just lifted out of.
+  //
+  // It is applied to the grounded support ONLY while the body is nearly
+  // stationary. A body genuinely WEDGED in a sliver cannot move — the walls kill
+  // its velocity — so holding it there is right; but a body walking or falling
+  // OFF a mass edge (a RUN_OFF down the hemp stacks, a step off a ledge) is
+  // moving, and holding it would cancel the drop. The `stepBallistic` descent
+  // uses a different, geometric gate (the foot must descend onto the top from
+  // strictly above), so a body that FELL into the sliver still lands on the mass;
+  // this only stops the grounded snap from re-lifting a moving body afterwards.
+  const baseSupport = supportAhead(world, pos.x, pos.z, vel.x, vel.z, CAPSULE_RADIUS, pos.y, STEP_UP);
+  // The ACTUAL distance travelled this tick, after the sweep and depenetration —
+  // not the requested velocity. A wedged body asks to move (into the wall) but
+  // the sweep zeros that, so its real displacement is ~0; a body walking off a
+  // mass edge actually moves. Gating on the realised motion is what tells the
+  // two apart.
+  const movedThisTick = Math.hypot(pos.x - state.pos.x, pos.z - state.pos.z);
+  const support =
+    movedThisTick < WEDGE_HOLD_MAX_SPEED * dt
+      ? rideOutOfEmbed(world, pos.x, pos.z, baseSupport, CAPSULE_RADIUS, state.capsuleHeight, lowSteps)
+      : baseSupport;
+  const rise = support ? support.y - pos.y : 0;
+  // Anything above the old flush-ledge tolerance is a genuine step, and a step
+  // has to fit: rising into a soffit or through an awning is not a step, it is
+  // the body being pushed somewhere it cannot be.
+  const stepFits =
+    !support ||
+    rise <= SUPPORT_SNAP_UP ||
+    (headClearance(world, pos.x, pos.z, CAPSULE_RADIUS, support.y) >=
+      state.capsuleHeight - 0.05 &&
+      !deckThroughBody(world, pos.x, pos.z, support.y, state.capsuleHeight));
+  if (
+    support &&
+    stepFits &&
+    support.y >= pos.y - STEP_DOWN &&
+    support.y <= pos.y + STEP_UP
+  ) {
     pos.y = support.y;
     return {
       state: {
@@ -940,6 +1238,8 @@ function stepBallistic(world: CollisionWorld, state: MotionState, dt: number): M
     vel.y -= GRAVITY * h;
 
     // Horizontal sweep against every obstacle (no collider bypass).
+    const x0 = pos.x;
+    const z0 = pos.z;
     const to = { x: pos.x + vel.x * h, z: pos.z + vel.z * h };
     const sweep = sweepXZ(world, pos, to, CAPSULE_RADIUS, state.capsuleHeight, ignore);
     const slid = slideVelocityXZ(vel, sweep.hitNormals);
@@ -948,27 +1248,117 @@ function stepBallistic(world: CollisionWorld, state: MotionState, dt: number): M
     pos.x = sweep.x;
     pos.z = sweep.z;
 
+    // A DECK IS SOLID FROM THE SIDE TOO. The horizontal sweep sees only blockers,
+    // so an airborne body could drive its CENTRE in under a deck it does not fit
+    // beneath — head above the boards, feet below — carrying its torso through the
+    // deck's edge between ticks. That is the residual one-way-deck graze: rare,
+    // and invisible to `platformCeilingAt` (which guards a RISING head) and to the
+    // support test (which catches a foot landing from ABOVE). `deckThroughBody` is
+    // the same centre test the non-penetration invariant asserts, so refusing the
+    // horizontal step that first creates a torso cut closes the graze with the
+    // exact predicate the harness measures. The body stops against the deck's edge
+    // and slides down it on the following substeps, its fall unaffected.
+    //
+    // Deliberately narrow, so nothing legitimate is caught: it fires only when the
+    // move went from clear to cut at the SAME foot height (an horizontal crossing,
+    // not the vertical descent), which excludes a body LEAVING a deck (its foot at
+    // the plane, its centre carried out past the lip — centre outside the boards,
+    // no cut) and a body LANDING from above (its foot over the plane, the plane
+    // below the foot, no cut). A body genuinely dropping PAST a lip keeps its
+    // centre beyond the boards and is likewise never cut.
+    const sideDeck = deckSideBlocker(
+      world,
+      x0,
+      z0,
+      pos.x,
+      pos.z,
+      pos.y,
+      state.capsuleHeight,
+      ignore,
+    );
+    if (sideDeck) {
+      // Block only when the feet CANNOT reach the deck plane. A leap ONTO a
+      // higher ledge legitimately clips the edge while rising to land on top — its
+      // peak foot clears the plane — and must be let through; a graze into a
+      // roof/canopy side never will, so it is stopped at the edge and slides down
+      // it. This is the physical "will your feet make it onto the roof" test, and
+      // it is what tells a mantling leap from a torso driven through the fascia.
+      const peakFoot = pos.y + (vel.y > 0 ? (vel.y * vel.y) / (2 * GRAVITY) : 0);
+      if (peakFoot < sideDeck.y - CONTACT_EPS) {
+        pos.x = x0;
+        pos.z = z0;
+        vel.x = 0;
+        vel.z = 0;
+      }
+    }
+
     if (vel.y > 0) {
       const clearance = headClearance(world, pos.x, pos.z, CAPSULE_RADIUS, pos.y, ignore);
       const headroom = clearance - state.capsuleHeight;
       const rise = vel.y * h;
-      if (rise > headroom) {
-        pos.y += Math.max(0, headroom);
+      // A DECK IS A CEILING FROM BELOW. `headClearance` sees only blockers, so a
+      // rising arc would pass its head straight up through a scaffold staging or
+      // an awning — the "platform planes are crossable by ballistic paths" hole.
+      // The whole crown is checked against the expanded deck footprint, so a jump
+      // under a deck stops at the boards instead of teleporting the body on top.
+      const ceiling = platformCeilingAt(
+        world,
+        pos.x,
+        pos.z,
+        CAPSULE_RADIUS,
+        pos.y,
+        state.capsuleHeight,
+        ignore,
+      );
+      const deckHeadroom =
+        ceiling === Infinity
+          ? Infinity
+          : Math.max(0, ceiling - (pos.y + state.capsuleHeight));
+      const limit = Math.min(headroom, deckHeadroom);
+      if (rise > limit) {
+        pos.y += Math.max(0, limit);
         vel.y = 0;
       } else {
         pos.y += rise;
       }
     } else {
-      const support = supportBelow(world, pos.x, pos.z, pos.y, CONTACT_EPS);
+      // Land on the surface the foot reaches. `rideOutOfEmbed` returns the honest
+      // support UNLESS that leaves the capsule embedded in the sliver beside a
+      // landable mass, in which case it returns that mass's top — so a body
+      // falling into the gap between a cart/crate top and the wall behind it
+      // rests ON the mass the instant its foot crosses that top, BEFORE the
+      // per-tick horizontal depenetration can wedge the straight-dropping body
+      // deeper against the wall.
+      const honest = supportBelow(world, pos.x, pos.z, pos.y, CONTACT_EPS);
+      const rest = rideOutOfEmbed(world, pos.x, pos.z, honest, CAPSULE_RADIUS, state.capsuleHeight, ignore);
+      // A RIDE (rest above the honest floor) is taken only when the foot is
+      // STRICTLY ABOVE that top this substep — i.e. it is coming down through the
+      // top from higher, a genuine fall into the sliver. An authored drop starts
+      // on a ledge with its foot AT the mass top and carries off it, so its foot
+      // is never strictly above the top it is leaving; catching it there would
+      // cancel the drop. That single test — did the foot descend through this top
+      // — separates the two with no speed heuristic and leaves every authored
+      // drop on its intended arc.
+      const isRide = !!honest && !!rest && rest.y > honest.y + CONTACT_EPS;
+      const target = isRide && !(pos.y > rest!.y + CONTACT_EPS) ? honest : rest;
       const newFoot = pos.y + vel.y * h;
-      if (support && newFoot <= support.y + CONTACT_EPS) {
-        pos.y = support.y; // <=1cm support snap
+      if (target && newFoot <= target.y + CONTACT_EPS) {
+        pos.y = target.y; // <=1cm support snap, or rest on the mass a slot dropped it onto
         landed = true;
       } else {
         pos.y = newFoot;
       }
     }
   }
+
+  // Once at the end of the step rather than per substep: a body in flight is
+  // being placed by the sweep too, and the same argument applies, but there is
+  // no reason to pay four passes eight times a frame for a case that is rare in
+  // the air. The action's ignore set is honoured — a vault deliberately treats
+  // the thing it is crossing as air, and depenetration must not argue with it.
+  const freed = resolveOverlapXZ(world, pos, CAPSULE_RADIUS, state.capsuleHeight, ignore);
+  pos.x = freed.x;
+  pos.z = freed.z;
 
   if (landed) {
     events.push("landed");
@@ -1015,10 +1405,46 @@ function stepAuthored(world: CollisionWorld, state: MotionState, dt: number, red
       sample.y,
       action.ignore,
     );
+    // The step must also not carry the feet through a deck. `sweepXZ` and
+    // `headClearance` are both blind to platforms, so without this a move whose
+    // world grew a deck under it mid-flight would drive the body straight
+    // through the boards rather than cancelling. See sweptCapsuleCrossesPlatform.
+    const crossedDeck = crossesPlatform(
+      world,
+      state.pos,
+      sample,
+      state.capsuleHeight,
+      action.ignore,
+    );
     if (
       sweep.blockedX ||
       sweep.blockedZ ||
-      clearance < state.capsuleHeight - 0.05
+      clearance < state.capsuleHeight - 0.05 ||
+      crossedDeck
+    ) {
+      return cancelAction(world, state);
+    }
+  }
+
+  // REDUCED MOTION STILL OBEYS THE WORLD. A reduced-motion action skips the
+  // per-tick sweep above and snaps to its endpoint in one step, so the only
+  // thing standing between it and a teleport through changed geometry is this
+  // re-validation of the whole authored path and its destination. In an
+  // unchanged world it re-passes exactly the check `beginAuthored` already made;
+  // when a deck, door or route swap has arrived under the move it cancels to the
+  // nearest validated endpoint instead of completing through the obstruction.
+  if (reducedMotion && t >= 1) {
+    if (
+      !authoredTrajectoryClear(world, action, state.capsuleHeight) ||
+      !landingValid(
+        world,
+        action.endPos.x,
+        action.endPos.z,
+        CAPSULE_RADIUS,
+        action.endPos.y,
+        state.capsuleHeight,
+        action.ignore,
+      )
     ) {
       return cancelAction(world, state);
     }
@@ -1134,9 +1560,48 @@ function authoredTrajectoryClear(
         action.ignore,
       ) < capsuleHeight - 0.05
     ) return false;
+    // AND IT MUST NOT GO THROUGH A FLOOR. Every check above this line asks
+    // about blockers, because a blocker is the only thing with a solid span to
+    // sweep against — but half the surfaces in this game are platforms, which
+    // have no span at all and are therefore invisible to a sweep. Support
+    // queries catch a body descending onto one, so they behave like floors in
+    // every situation except the one an authored move creates: a climb or a
+    // vault that walks its capsule along an anchored path can rise straight
+    // through a deck, and the player watches themselves pass through a solid
+    // staging. The surfaces the move is FOR are in `ignore`; everything else is
+    // a floor and a floor is not something a body goes through.
+    if (crossesPlatform(world, previous, sample, capsuleHeight, action.ignore)) {
+      return false;
+    }
     previous = { x: sample.x, y: sample.y, z: sample.z };
   }
   return true;
+}
+
+/**
+ * Does the segment from `from` to `to` pass through the plane of a platform,
+ * inside that platform's footprint? A thin wrapper over the engine's one shared
+ * swept-capsule/platform-plane test, so authored preflight, authored runtime,
+ * reduced-motion completion and the ballistic ceiling all agree about which deck
+ * a body may not pass through.
+ */
+function crossesPlatform(
+  world: CollisionWorld,
+  from: Vec3,
+  to: { x: number; y: number; z: number },
+  capsuleHeight: number,
+  ignore: ReadonlySet<string>,
+): boolean {
+  return (
+    sweptCapsuleCrossesPlatform(
+      world,
+      from,
+      { x: to.x, y: to.y, z: to.z },
+      CAPSULE_RADIUS,
+      capsuleHeight,
+      ignore,
+    ) !== null
+  );
 }
 
 // ---- preflight simulation --------------------------------------------------
@@ -1165,6 +1630,8 @@ export function simulateBallistic(
     const h = PHYSICS_SUBSTEP;
     elapsed += h * 1000;
     v.y -= GRAVITY * h;
+    const x0 = pos.x;
+    const z0 = pos.z;
     const to = { x: pos.x + v.x * h, z: pos.z + v.z * h };
     const sweep = sweepXZ(world, pos, to, CAPSULE_RADIUS, STAND_HEIGHT, ignore);
     const slid = slideVelocityXZ(v, sweep.hitNormals);
@@ -1172,25 +1639,158 @@ export function simulateBallistic(
     v.z = slid.z;
     pos.x = sweep.x;
     pos.z = sweep.z;
+    // The same deck-as-side wall the live ballistic step enforces, so a preflight
+    // arc predicts exactly the landing the body will take (see stepBallistic).
+    const sideDeck = deckSideBlocker(world, x0, z0, pos.x, pos.z, pos.y, STAND_HEIGHT, ignore);
+    if (sideDeck) {
+      const peakFoot = pos.y + (v.y > 0 ? (v.y * v.y) / (2 * GRAVITY) : 0);
+      if (peakFoot < sideDeck.y - CONTACT_EPS) {
+        pos.x = x0;
+        pos.z = z0;
+        v.x = 0;
+        v.z = 0;
+      }
+    }
     if (v.y > 0) {
       const headroom = headClearance(world, pos.x, pos.z, CAPSULE_RADIUS, pos.y, ignore) - STAND_HEIGHT;
-      if (v.y * h > headroom) {
-        pos.y += Math.max(0, headroom);
+      const rise = v.y * h;
+      // The same deck-as-ceiling the live ballistic step enforces, so a
+      // preflight arc predicts exactly the landing the body will take.
+      const ceiling = platformCeilingAt(
+        world,
+        pos.x,
+        pos.z,
+        CAPSULE_RADIUS,
+        pos.y,
+        STAND_HEIGHT,
+        ignore,
+      );
+      const deckHeadroom =
+        ceiling === Infinity
+          ? Infinity
+          : Math.max(0, ceiling - (pos.y + STAND_HEIGHT));
+      const limit = Math.min(headroom, deckHeadroom);
+      if (rise > limit) {
+        pos.y += Math.max(0, limit);
         v.y = 0;
       } else {
-        pos.y += v.y * h;
+        pos.y += rise;
       }
     } else {
-      const support = supportBelow(world, pos.x, pos.z, pos.y, CONTACT_EPS);
+      // Matches the live ballistic descent exactly (see stepBallistic): rest on
+      // the honest support, or ride onto the mass a sliver dropped the body onto
+      // only when the foot is STRICTLY ABOVE that top this substep (it descended
+      // through it), which leaves an authored drop — foot starting at the top it
+      // leaves — on its intended arc.
+      const honest = supportBelow(world, pos.x, pos.z, pos.y, CONTACT_EPS);
+      const rest = rideOutOfEmbed(world, pos.x, pos.z, honest, CAPSULE_RADIUS, STAND_HEIGHT, ignore);
+      const isRide = !!honest && !!rest && rest.y > honest.y + CONTACT_EPS;
+      const target = isRide && !(pos.y > rest!.y + CONTACT_EPS) ? honest : rest;
       const newFoot = pos.y + v.y * h;
-      if (support && newFoot <= support.y + CONTACT_EPS) {
-        pos.y = support.y;
-        const valid = landingValid(world, pos.x, pos.z, CAPSULE_RADIUS, support.y, STAND_HEIGHT, ignore);
-        return { landed: true, valid, pos, landingId: support.id };
+      if (target && newFoot <= target.y + CONTACT_EPS) {
+        pos.y = target.y;
+        const valid = landingValid(world, pos.x, pos.z, CAPSULE_RADIUS, target.y, STAND_HEIGHT, ignore);
+        return { landed: true, valid, pos, landingId: target.id };
       }
       pos.y = newFoot;
     }
     if (pos.y < -50) break; // fell into the void
   }
   return { landed: false, valid: false, pos, landingId: null };
+}
+
+export interface WalkOffPrediction {
+  /** True when the trajectory left the ground and came down again. */
+  fell: boolean;
+  /** Depth of the FIRST fall the body takes, or 0 if it never leaves the ground. */
+  dropM: number;
+  /** True when that fall ended on a support within the simulated window. */
+  landed: boolean;
+  /** The surface the first fall landed on, when it landed. */
+  landingId: string | null;
+  /**
+   * Where the body came down (foot centre). Present whether or not it landed on a
+   * support — a directed-drop controller reads this to check the predicted capsule
+   * footprint against a narrow receiver's safe inset before committing the fall.
+   */
+  landingPos: Vec3;
+}
+
+/**
+ * The ONE exact trajectory a body takes if the player keeps doing what they are
+ * doing — run through the production integrator itself.
+ *
+ * This is the honest answer to "will this walk off a lip into a killing fall",
+ * and it is honest precisely because it is not a heuristic or a range of guesses
+ * but `stepMotion` fed forward: the body's actual current velocity, the raw
+ * target it is being pushed toward, the real acceleration blend, the coyote grace
+ * REMAINING (carried in `state.airtimeMs`, not a fresh window), the fixed step,
+ * and the same swept collision and support the frame loop uses. Whatever the live
+ * body would do, this does, one to one — a walk that settles onto a near shelf, a
+ * run that clears it and comes down on the street beyond, a fast arc that just
+ * reaches a far roof across a gap a slower body drops into. There is nothing to
+ * reconcile with production because it IS production.
+ *
+ * It returns the depth of the FIRST leave-the-ground to touch-the-ground fall.
+ * A body that never leaves the ground (walks along, or the target steers it away
+ * from the lip) fell nothing. The window is bounded: past the brake ceiling the
+ * verb is EDGE_BRAKE whatever is below, so there is no reason to fall the body to
+ * the floor of the void.
+ */
+export function simulateWalkOff(
+  world: CollisionWorld,
+  state: MotionState,
+  targetVelX: number,
+  targetVelZ: number,
+  opts: { dt?: number; maxMs?: number; maxFallM?: number } = {},
+): WalkOffPrediction {
+  const dt = opts.dt ?? 1 / 60;
+  const maxMs = opts.maxMs ?? 2500;
+  const maxFallM = opts.maxFallM ?? Infinity;
+  let s = state;
+  let elapsed = 0;
+  let leftFromY: number | null = null;
+  while (elapsed < maxMs) {
+    const wasGrounded = s.grounded;
+    const wasY = s.pos.y;
+    const result = stepMotion(world, s, {
+      dt,
+      targetVelX,
+      targetVelZ,
+      reducedMotion: false,
+    });
+    s = result.state;
+    elapsed += dt * 1000;
+    if (wasGrounded && !s.grounded) leftFromY = wasY;
+    if (leftFromY !== null) {
+      const fallenSoFar = leftFromY - s.pos.y;
+      if (!s.grounded && fallenSoFar > maxFallM) {
+        return {
+          fell: true,
+          dropM: fallenSoFar,
+          landed: false,
+          landingId: null,
+          landingPos: { ...s.pos },
+        };
+      }
+      if (!wasGrounded && s.grounded) {
+        const support = supportBelow(world, s.pos.x, s.pos.z, s.pos.y, CONTACT_EPS);
+        return {
+          fell: true,
+          dropM: leftFromY - s.pos.y,
+          landed: true,
+          landingId: support?.id ?? null,
+          landingPos: { ...s.pos },
+        };
+      }
+    }
+    if (s.pos.y < -50) break;
+  }
+  return {
+    fell: leftFromY !== null,
+    dropM: leftFromY !== null ? leftFromY - s.pos.y : 0,
+    landed: false,
+    landingId: null,
+    landingPos: { ...s.pos },
+  };
 }

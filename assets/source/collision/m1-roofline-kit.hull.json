@@ -58,11 +58,7 @@
   },
   "roof-ridge-walk": {
     "buildInputs": {
-      "fitBox": [
-        9.4,
-        0.042,
-        2.8
-      ],
+      "fitBox": null,
       "fitBoxByTag": {}
     },
     "key": "roof-ridge-walk",
@@ -72,6 +68,27 @@
       2.8
     ],
     "declaredPath": "world/props/roof-ridge-walk.glb",
+    "draws": [],
+    "distinctBoxes": [],
+    "masses": [],
+    "decks": []
+  },
+  "roof-ridge-monitor": {
+    "buildInputs": {
+      "fitBox": [
+        9.4,
+        3,
+        2.8
+      ],
+      "fitBoxByTag": {}
+    },
+    "key": "roof-ridge-monitor",
+    "declaredSizeM": [
+      9.4,
+      3,
+      2.8
+    ],
+    "declaredPath": "world/props/roof-ridge-monitor.glb",
     "draws": [
       {
         "id": "MEETING_RIDGE",
@@ -79,12 +96,12 @@
         "fit": "PROP",
         "pos": [
           80,
-          11.158,
+          8.2,
           9
         ],
         "size": [
           9.4,
-          0.042,
+          3,
           2.8
         ],
         "parts": [
@@ -93,7 +110,7 @@
       }
     ],
     "distinctBoxes": [
-      "9.4x0.042x2.8"
+      "9.4x3x2.8"
     ],
     "masses": [],
     "decks": [
@@ -738,5 +755,202 @@
         ]
       }
     ]
+  },
+  "printshop-sign-hood": {
+    "buildInputs": {
+      "fitBox": [
+        3.2,
+        0.05,
+        1.4
+      ],
+      "fitBoxByTag": {}
+    },
+    "key": "printshop-sign-hood",
+    "declaredSizeM": [
+      3.2,
+      0.05,
+      1.4
+    ],
+    "declaredPath": "world/props/printshop-sign-hood.glb",
+    "draws": [
+      {
+        "id": "PRINTSHOP_SIGN",
+        "kind": "DECK",
+        "fit": "PROP",
+        "pos": [
+          11,
+          6.15,
+          -1.9
+        ],
+        "size": [
+          3.2,
+          0.05,
+          1.4
+        ],
+        "parts": [
+          "PRINTSHOP_SIGN"
+        ]
+      }
+    ],
+    "distinctBoxes": [
+      "3.2x0.05x1.4"
+    ],
+    "masses": [],
+    "decks": [
+      {
+        "id": "PRINTSHOP_SIGN",
+        "rect": {
+          "minX": 9.4,
+          "maxX": 12.6,
+          "minZ": -2.6,
+          "maxZ": -1.2
+        },
+        "y": 6.2,
+        "tags": [
+          "ledge",
+          "catch"
+        ]
+      }
+    ]
+  },
+  "bldg-scaffold-run": {
+    "buildInputs": {
+      "fitBox": [
+        2.5,
+        5.6,
+        11.3
+      ],
+      "fitBoxByTag": {}
+    },
+    "key": "bldg-scaffold-run",
+    "declaredSizeM": [
+      2.5,
+      5.6,
+      11.3
+    ],
+    "declaredPath": "world/props/bldg-scaffold-run.glb",
+    "draws": [
+      {
+        "id": "SCAFFOLD_D1",
+        "kind": "DECK",
+        "fit": "PROP",
+        "pos": [
+          44.85,
+          0,
+          -2.05
+        ],
+        "size": [
+          2.5,
+          5.6,
+          11.3
+        ],
+        "parts": [
+          "SCAFFOLD_D1",
+          "SCAFFOLD_D2"
+        ]
+      }
+    ],
+    "distinctBoxes": [
+      "2.5x5.6x11.3"
+    ],
+    "masses": [],
+    "decks": [
+      {
+        "id": "SCAFFOLD_D1",
+        "rect": {
+          "minX": 43.6,
+          "maxX": 46.1,
+          "minZ": -7.7,
+          "maxZ": 3.6
+        },
+        "y": 2.9,
+        "tags": [
+          "scaffold"
+        ]
+      },
+      {
+        "id": "SCAFFOLD_D2",
+        "rect": {
+          "minX": 43.6,
+          "maxX": 46.1,
+          "minZ": -7.7,
+          "maxZ": 3.6
+        },
+        "y": 5.6,
+        "tags": [
+          "scaffold"
+        ]
+      }
+    ]
+  },
+  "yard-kerb-stone": {
+    "buildInputs": {
+      "fitBox": [
+        5.6,
+        0.34,
+        1.2
+      ],
+      "fitBoxByTag": {
+        "prop": [
+          5.6,
+          0.34,
+          1.2
+        ],
+        "step-up": [
+          5.6,
+          0.34,
+          1.2
+        ]
+      }
+    },
+    "key": "yard-kerb-stone",
+    "declaredSizeM": [
+      5.6,
+      0.34,
+      1.2
+    ],
+    "declaredPath": "world/props/yard-kerb-stone.glb",
+    "draws": [
+      {
+        "id": "PUMP_KERB",
+        "kind": "MASS",
+        "fit": "PROP",
+        "pos": [
+          29.6,
+          0,
+          7.8
+        ],
+        "size": [
+          5.6,
+          0.34,
+          1.2
+        ],
+        "parts": [
+          "PUMP_KERB"
+        ]
+      }
+    ],
+    "distinctBoxes": [
+      "5.6x0.34x1.2"
+    ],
+    "masses": [
+      {
+        "id": "PUMP_KERB",
+        "rect": {
+          "minX": 26.8,
+          "maxX": 32.4,
+          "minZ": 7.2,
+          "maxZ": 8.4
+        },
+        "baseY": 0,
+        "topY": 0.34,
+        "landable": true,
+        "tags": [
+          "prop",
+          "step-up"
+        ]
+      }
+    ],
+    "decks": []
   }
 }

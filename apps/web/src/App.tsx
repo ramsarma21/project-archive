@@ -7,8 +7,10 @@ import {
   standardizedPreferences,
 } from "./pages/preferences.js";
 import { AppErrorBoundary } from "./AppErrorBoundary.js";
-import { getSession, apiStatus, saveOnboardingPreferences } from "./api.js";
+import { PvpScreen } from "./pvp/index.js";
+import { establishLocalSession, getSession, apiStatus, saveOnboardingPreferences } from "./api.js";
 import { listProfiles, upsertProfile, type LocalProfile } from "./db.js";
+import { googleSignInUi, mirroredProfileSource } from "./sessionIdentity.js";
 
 // The pre-game calibration interview is deleted (design1 kill list, product
 // decision): profile -> straight into the hub with standardized preferences.
@@ -16,7 +18,12 @@ import { listProfiles, upsertProfile, type LocalProfile } from "./db.js";
 // all deployed from it.
 type View =
   | { name: "home" }
-  | { name: "hub"; profile: LocalProfile | null };
+  | { name: "hub"; profile: LocalProfile | null }
+  // The duelling ground, reached from the hub. It carries the hub's profile so
+  // leaving PvP returns to the same hub the player opened it from, with their
+  // display preferences intact. PvP holds its own authentication and lobby, so
+  // this view mounts the screen and nothing else — no simulation lives here.
+  | { name: "pvp"; profile: LocalProfile | null };
 
 /**
  * `?hub=1` opens the hub directly on the fresh-runner state. The hub is a
@@ -41,6 +48,13 @@ export function App() {
   const [googleReady, setGoogleReady] = useState(false);
   const [googleName, setGoogleName] = useState<string | null>(null);
   const [activeGoogleProfileId, setActiveGoogleProfileId] = useState<string | null>(null);
+  // THIS TAB's resolved identity (via the per-tab dev header, when it holds one), so
+  // the two-player testing UI can show which account/profile this tab is actually
+  // playing as — the fix's visible proof that two tabs are distinct.
+  const [activeProfile, setActiveProfile] = useState<{
+    displayName: string;
+    source: LocalProfile["source"];
+  } | null>(null);
   const [loading, setLoading] = useState(() => !hubBypassRequested());
   const [startupError, setStartupError] = useState<string | null>(null);
 
@@ -63,13 +77,16 @@ export function App() {
         if (!variationRootSeedHex || !/^[0-9a-f]{64}$/.test(variationRootSeedHex)) {
           throw new Error("The API profile response is out of date.");
         }
+        // Infer the source FIRST: a profile this device already knows keeps its
+        // source, and only a never-seen one is a fresh Google sign-in.
+        const source = mirroredProfileSource(existing);
         const mirrored: LocalProfile = {
           ...existing,
           profileId: s.profile.profileId,
           accountId: s.profile.accountId,
           displayName: s.profile.displayName,
           variationRootSeedHex,
-          source: "GOOGLE",
+          source,
           createdAt: s.profile.createdAt,
           onboarding: existing?.onboarding ?? s.profile.onboarding ?? undefined,
         };
@@ -78,15 +95,25 @@ export function App() {
           void saveOnboardingPreferences(mirrored.profileId, existing.onboarding);
         }
         signedInProfile = mirrored;
-        setGoogleName(s.profile.displayName);
-        setActiveGoogleProfileId(s.profile.profileId);
+        // The Google sign-in UI is set ONLY for a GOOGLE session. A local-dev
+        // session is authenticated too, but Home must not claim it signed in with
+        // Google.
+        const googleUi = googleSignInUi(source, {
+          profileId: s.profile.profileId,
+          displayName: s.profile.displayName,
+        });
+        setGoogleName(googleUi.googleName);
+        setActiveGoogleProfileId(googleUi.activeGoogleProfileId);
+        setActiveProfile({ displayName: s.profile.displayName, source });
       } else {
         setGoogleName(null);
         setActiveGoogleProfileId(null);
+        setActiveProfile(null);
       }
     } else {
       setGoogleName(null);
       setActiveGoogleProfileId(null);
+      setActiveProfile(null);
     }
     const refreshedProfiles = await listProfiles();
     // Local test profiles remain available offline. Google profiles are only
@@ -108,6 +135,7 @@ export function App() {
       setApiUp(false);
       setGoogleName(null);
       setActiveGoogleProfileId(null);
+      setActiveProfile(null);
       const localProfiles = await listProfiles().catch(() => []);
       setProfiles(localProfiles.filter((profile) => profile.source === "LOCAL"));
       setStartupError("The account service changed while this page was open. Restart the API, then retry.");
@@ -140,6 +168,37 @@ export function App() {
     setView({ name: "hub", profile: withDefaults });
   }
 
+  // The one entry into play. A LOCAL profile must have a real server session
+  // before it enters the hub: without one it is signed out, which is unranked,
+  // unlimited, and grades every duel answer as a free magazine. Google already has
+  // (or is completing) its own session, so it enters directly. If the account
+  // service is down or the local session cannot be opened, we surface a clear error
+  // and DO NOT drop the player into an unlimited practice run.
+  async function beginPlay(profile: LocalProfile): Promise<void> {
+    if (profile.source === "GOOGLE") {
+      await enterPlay(profile);
+      return;
+    }
+    if (!apiUp) {
+      setStartupError(
+        "This profile needs the account service to play, so the run is ranked and graded rather than an unlimited practice mission. Start the API and try again.",
+      );
+      return;
+    }
+    const established = await establishLocalSession({
+      profileId: profile.profileId,
+      displayName: profile.displayName,
+      seedHex: profile.variationRootSeedHex,
+    });
+    if (!established.ok) {
+      setStartupError(
+        "Could not open a session for this local profile. Restart the API, then try again — a local run must be ranked, not unlimited.",
+      );
+      return;
+    }
+    await enterPlay(profile);
+  }
+
   // True while the hub bypass has deferred startup, so leaving the hub knows it
   // still owes Home a profile load.
   const startupDeferred = useRef(hubBypassRequested());
@@ -160,7 +219,7 @@ export function App() {
     });
   }, []);
 
-  const viewProfile = view.name === "hub" ? view.profile : null;
+  const viewProfile = view.name === "home" ? null : view.profile;
   // Uncalibrated (standardized-default) profiles follow the OS
   // prefers-reduced-motion query LIVE; explicit choices always win.
   const [osReduced, setOsReduced] = useState(() => osPrefersReducedMotion());
@@ -196,6 +255,7 @@ export function App() {
       <AppErrorBoundary onReset={() => setView({ name: "home" })}>
         <Hub
           reducedMotion={osReduced}
+          onEnterDuellingGround={() => setView({ name: "pvp", profile: view.profile })}
           onExit={() => {
             const url = new URL(window.location.href);
             if (url.searchParams.has("hub")) {
@@ -209,6 +269,21 @@ export function App() {
             }
             setView({ name: "home" });
           }}
+        />
+      </AppErrorBoundary>
+    );
+  }
+
+  // The duelling ground. PvP is server-authoritative — the screen owns its own
+  // lobby, authentication and errors — so App only mounts it, hands it the
+  // player's reduced-motion preference, and gives it a way back to the hub. There
+  // is no client-side simulation here and none is started.
+  if (view.name === "pvp") {
+    return (
+      <AppErrorBoundary onReset={() => setView({ name: "hub", profile: view.profile })}>
+        <PvpScreen
+          reducedMotion={effectiveReducedMotion(view.profile?.onboarding, osReduced)}
+          onExit={() => setView({ name: "hub", profile: view.profile })}
         />
       </AppErrorBoundary>
     );
@@ -240,9 +315,10 @@ export function App() {
       apiUp={apiUp}
       googleReady={googleReady}
       googleName={googleName}
+      activeProfile={activeProfile}
       onPlay={(p) => {
         if (p.source === "GOOGLE" && p.profileId !== activeGoogleProfileId) return;
-        void enterPlay(p);
+        void beginPlay(p);
       }}
       onOpenHub={() => setView({ name: "hub", profile: null })}
       onChanged={() => refresh().then(() => undefined)}

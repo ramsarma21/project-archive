@@ -63,6 +63,118 @@ export type BossTier = 1 | 2 | 3 | 4 | 5;
 
 export const BOSS_TIERS: readonly BossTier[] = [1, 2, 3, 4, 5];
 
+/**
+ * How a boss's per-round magazine is sourced. This is the "future-boss extension
+ * point" for ammo: a boss never answers a history question, so its magazine is
+ * always AUTHORED, but there is more than one authored rule.
+ *
+ * AUTHORED_FLAT — a fixed `magazinePerRound` every round, independent of the
+ *   player's answer. The legacy rule, and the one the exchange model in this file
+ *   and the per-tier tuning in tuning.ts are built on: it is why the wrong-answer
+ *   margin cancels (the boss's magazine IS `BULLETS_FOR_WRONG`). Kept as the
+ *   default so every shipped tier's winnability stays exactly as measured.
+ *
+ * SYMMETRIC_COMPLEMENT — M1's boss. The boss earns the MIRROR of the player's
+ *   award off the same graded round (`complementaryBossBullets`): a correct answer
+ *   arms the boss with `BULLETS_FOR_WRONG`, a wrong answer arms it with
+ *   `BULLETS_FOR_CORRECT`. A wrong answer therefore genuinely arms the enemy. This
+ *   changes the wrong-answer balance — the boss brings a full 14 on the wrong path
+ *   — so it is opt-in per boss rather than the tier default, and its winnability is
+ *   proven by simulation (winnability.test.ts) rather than by the flat exchange
+ *   model, exactly as this file's header says the model is only a coarse gate.
+ */
+export type BossAmmoPolicy = "AUTHORED_FLAT" | "SYMMETRIC_COMPLEMENT";
+
+export const BOSS_AMMO_POLICIES: readonly BossAmmoPolicy[] = [
+  "AUTHORED_FLAT",
+  "SYMMETRIC_COMPLEMENT",
+];
+
+/**
+ * The ammo-aware TACTICAL layer, opt-in per boss and OFF for every shipped tier.
+ *
+ * WHY THIS IS A PROFILE FIELD AND NOT A GLOBAL. The per-tier winnability tuning in
+ * `winnability.test.ts` is measured against the memoryless `bossIntent` behaviour,
+ * where an empty boss simply sprints toward a probe direction and stays roughly
+ * exposed. Making an out-of-ammo boss genuinely disappear behind imported cover
+ * changes how much damage the player lands each round, which is a difficulty change
+ * — so it is authored per boss (M1 opts in via `M1_BOSS_TACTICS`) and left null
+ * everywhere else, and `advanceBossEngagement` is byte-identical to before when it
+ * is null. A later, harder mission raises these numbers on its OWN profile without
+ * touching M1.
+ *
+ * The three states this drives, and what each is for:
+ *
+ *   ARMED  (ammo > lowAmmoThreshold) — unchanged: strafe, hold range, close/back,
+ *          dodge, and fire on the raw line of sight, with the existing wall
+ *          avoidance and line-of-sight hysteresis.
+ *   LOW    (0 < ammo <= lowAmmoThreshold) — fight from cover on a finite
+ *          peek->aim->shot->return cycle rather than dumping the last rounds in the
+ *          open. Firing is gated by the real crouch/stand cover mechanic: tucked
+ *          behind chest-high cover the sightline is blocked and the boss holds fire;
+ *          standing to peek reopens it and it takes a shot.
+ *   EMPTY  (ammo === 0) — retreat to a reachable, line-of-sight-blocking imported
+ *          cover point, crouch behind it and hold, dodging an incoming ball if one
+ *          is imminent and relocating (deterministically, once) only when the player
+ *          closes inside `pressDistanceM` or the point stops occluding.
+ */
+export interface BossTacticalProfile {
+  /**
+   * At or below this many balls (but above zero) the boss switches from open
+   * trading to peek-from-cover fire. Kept small so most of an armed round is still
+   * fought in the open; it only governs the last rounds of a magazine.
+   */
+  readonly lowAmmoThreshold: number;
+  /**
+   * Bounded reaction delay, in ticks, before a newly-detected ammo state is acted
+   * on, AND the aim-acquisition delay after peeking before the boss will fire. This
+   * is what stops the boss reacting on the exact frame the state changes or firing
+   * the instant it clears cover — it is not an aim-bot.
+   */
+  readonly reactionDelayTicks: number;
+  /** Ticks the boss stays exposed to take a shot, per peek. Finite and readable. */
+  readonly peekAimTicks: number;
+  /** Ticks the boss stays tucked (crouched, occluded) between peeks. */
+  readonly peekCooldownTicks: number;
+  /**
+   * If the player closes inside this distance (metres) while the boss is holding
+   * empty cover, the boss relocates to a different valid cover or performs one
+   * bounded evasive dodge, rather than sitting still to be walked down.
+   */
+  readonly pressDistanceM: number;
+  /**
+   * Minimum ticks between forced relocations, so a player pressing continuously
+   * gets one deterministic response rather than a jittering boss.
+   */
+  readonly relocateGuardTicks: number;
+}
+
+/**
+ * M1's officer tactics — the numbers the owner can tune to make the King's officer
+ * feel like a boss fight without touching any other mission. Expressed in seconds
+ * against the field tick so a reader sees the intent, not a tick count.
+ *
+ * These are deliberately fair for a Level-0, ability-less first-mission player:
+ * the boss only peeks in the last few rounds of a magazine, holds a full-second
+ * peek window (long enough to be shot back at), and needs a fifth of a second to
+ * acquire after clearing cover. Later tiers can shorten every one of these on their
+ * own tactical profile.
+ */
+export const M1_BOSS_TACTICS: BossTacticalProfile = {
+  lowAmmoThreshold: 3,
+  // A fifth of a second: enough that the boss never snaps a shot on the frame it
+  // rises, short enough that the peek still lands its rounds.
+  reactionDelayTicks: Math.round(FIELD_TICK_HZ * 0.15),
+  // The peek window is long relative to the tuck, so the low-ammo boss is fighting
+  // from cover rather than cowering: it spends most of the cycle exposed and firing
+  // and only dips behind cover briefly to reset. Being in cover makes it HARDER to
+  // trade with, not less dangerous.
+  peekAimTicks: Math.round(FIELD_TICK_HZ * 1.2),
+  peekCooldownTicks: Math.round(FIELD_TICK_HZ * 0.4),
+  pressDistanceM: 4.5,
+  relocateGuardTicks: Math.round(FIELD_TICK_HZ * 0.8),
+};
+
 export interface BossProfile {
   readonly bossId: string;
   readonly tier: BossTier;
@@ -76,6 +188,29 @@ export interface BossProfile {
    * rule intact while still letting the boss shoot.
    */
   readonly magazinePerRound: number;
+  /**
+   * How `magazinePerRound` is spent at runtime. See `BossAmmoPolicy`. For an
+   * AUTHORED_FLAT boss the runtime magazine IS `magazinePerRound`; for a
+   * SYMMETRIC_COMPLEMENT boss `magazinePerRound` is only the winnability
+   * projection baseline and the runtime magazine is the complement of the
+   * player's award. `roundAmmoSources` in machine.ts is the one reader.
+   */
+  readonly ammoPolicy: BossAmmoPolicy;
+  /**
+   * Whether the boss physically retreats behind arena cover and crouches before
+   * each question opens, rather than passively waiting out a fixed break. When
+   * true, `LINE_OF_SIGHT_BREAK` drives the boss into a real, LOS-blocking cover
+   * position (machine.ts / cover.ts) and the question overlay is gated on that
+   * position being reached. Off by default so the per-tier winnability tuning,
+   * which is measured against the passive break, is untouched; M1's boss opts in.
+   */
+  readonly takesCoverBeforeQuestion: boolean;
+  /**
+   * The ammo-aware tactical layer, or null for the legacy memoryless engagement.
+   * Null on every shipped tier so their measured winnability is untouched; M1's
+   * officer sets `M1_BOSS_TACTICS`. See `BossTacticalProfile` and `bossAi.ts`.
+   */
+  readonly tactical: BossTacticalProfile | null;
   /** Maximum aim deviation, radians. Seeded per shot, never live-random. */
   readonly aimErrorRad: number;
   /** 0 shoots where you are, 1 shoots where you will be. */
@@ -185,14 +320,30 @@ const MOVE_SPEED_PER_TIER = 0.045;
 const BASE_FIRE_INTERVAL_SCALE = 1.6;
 const FIRE_INTERVAL_SCALE_PER_TIER = -0.14;
 
+/**
+ * Per-boss opt-ins layered over the tier curve. Both default off/flat so every
+ * shipped tier keeps exactly the tuning `winnability.test.ts` measured; M1's
+ * officer sets both. These are the "future-boss extension points" — a later boss
+ * chooses its ammo rule and whether it takes cover without touching the curve.
+ */
+export interface BossProfileOverrides {
+  readonly ammoPolicy?: BossAmmoPolicy;
+  readonly takesCoverBeforeQuestion?: boolean;
+  readonly tactical?: BossTacticalProfile | null;
+}
+
 export function bossProfileForTier(
   tier: BossTier,
   bossId = `BOSS.TIER_${tier}`,
+  overrides: BossProfileOverrides = {},
 ): BossProfile {
   const step = tier - 1;
   return {
     bossId,
     tier,
+    ammoPolicy: overrides.ammoPolicy ?? "AUTHORED_FLAT",
+    takesCoverBeforeQuestion: overrides.takesCoverBeforeQuestion ?? false,
+    tactical: overrides.tactical ?? null,
     maxHealth: BOSS_BASE_HEALTH + BOSS_HEALTH_PER_TIER * step,
     shotDamage: BASE_SHOT_DAMAGE + SHOT_DAMAGE_PER_TIER * tier,
     fireIntervalTicks: Math.max(
@@ -451,6 +602,9 @@ export function validateBossProfile(profile: BossProfile): readonly string[] {
     problems.push("dodgeChance must be within 0..1");
   }
   if (profile.aimErrorRad < 0) problems.push("aimErrorRad must be >= 0");
+  if (!BOSS_AMMO_POLICIES.includes(profile.ammoPolicy)) {
+    problems.push(`ammoPolicy must be one of ${BOSS_AMMO_POLICIES.join(", ")}`);
+  }
   const projection = projectExchange(profile, BULLETS_FOR_WRONG);
   if (projection.margin < REQUIRED_WRONG_PATH_MARGIN) {
     problems.push(

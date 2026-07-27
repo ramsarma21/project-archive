@@ -43,10 +43,18 @@ export interface PvpGates {
   readonly enforceRankBrackets: boolean;
 }
 
-/** What runs tomorrow: open, M1 only, anyone can match anyone. */
+/**
+ * What runs during the playtest: open on chapter completion and rank, but the
+ * PvP-legal card gate is now LIVE. Both participants carry the M1 Codex cards a
+ * server-side access policy grants them (see the API's `M1_PVP_CARD_ACCESS`), and
+ * `askableItems` enforces the intersection — so a question can only be asked if
+ * both players hold every card it draws on. Chapter-complete and rank-bracket stay
+ * off because nobody has completed a chapter or earned a Rank yet, and a gate
+ * nobody can pass is indistinguishable from a broken button.
+ */
 export const OPEN_PLAYTEST_GATES: PvpGates = {
   requireChapterComplete: false,
-  requirePvpLegalCards: false,
+  requirePvpLegalCards: true,
   enforceRankBrackets: false,
 };
 

@@ -1,0 +1,604 @@
+/* ===========================================================================
+   The Overwatch-style combat HUD — shared by the boss duel and the live arena.
+
+   System language: cyan-blue holographic glass, sharp corner accents, wide-tracked
+   uppercase kickers, gold reserved for ammunition. Scoped under .cbt so it cannot
+   reach anything another surface owns. Non-interactive (pointer-events: none): it
+   reports, it never eats a click meant for the yard.
+
+   Every element carries its own scrim/shadow so it survives over a bright daylit sky
+   as well as a dark scene — this HUD sits over live gameplay, not a fixed backdrop.
+   Reduced motion strips animation at the foot of the file while keeping every state
+   readable without it.
+   =========================================================================== */
+
+.cbt {
+  --cbt-cyan: #9fdcff;
+  --cbt-cyan-dim: rgba(94, 200, 255, 0.42);
+  --cbt-ink: #eaf8ff;
+  --cbt-ink-dim: #b7d4e8;
+  --cbt-gold: #ffcf5a;
+  --cbt-amber: #ffb057;
+  --cbt-blood: #ff6b6b;
+  --cbt-glass: linear-gradient(180deg, rgba(7, 24, 40, 0.9), rgba(4, 12, 22, 0.94));
+  --cbt-shadow: 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 3px rgba(0, 0, 0, 0.9);
+
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  color: var(--cbt-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.cbt.is-withdrawn .cbt-top,
+.cbt.is-withdrawn .cbt-bottom,
+.cbt.is-withdrawn .cbt-reticle,
+.cbt.is-withdrawn .cbt-legend {
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+}
+.cbt-top,
+.cbt-bottom,
+.cbt-legend {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.cbt-name {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  text-shadow: var(--cbt-shadow);
+}
+
+.cbt-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Shared corner accents. */
+.cbt-brackets::before,
+.cbt-brackets::after {
+  content: "";
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border: 1px solid var(--cbt-cyan);
+  opacity: 0.72;
+}
+.cbt-brackets::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.cbt-brackets::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+/* ---- top-left: the controls legend, hold-Tab ---------------------------- */
+
+.cbt-legend {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  display: grid;
+  gap: 8px;
+  max-width: 260px;
+}
+.cbt-legend-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  padding: 4px 9px;
+  border: 1px solid var(--cbt-cyan-dim);
+  border-radius: 3px;
+  background: rgba(5, 14, 24, 0.72);
+  backdrop-filter: blur(3px);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cbt-ink-dim);
+  text-shadow: var(--cbt-shadow);
+}
+.cbt-legend.is-open .cbt-legend-hint {
+  color: var(--cbt-cyan);
+  border-color: var(--cbt-cyan);
+}
+.cbt-legend-list {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid var(--cbt-cyan-dim);
+  border-radius: 3px;
+  background: var(--cbt-glass);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  animation: cbt-legend-in 0.14s ease both;
+}
+.cbt-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--cbt-ink);
+}
+.cbt-legend kbd {
+  min-width: 20px;
+  padding: 1px 6px;
+  font: inherit;
+  font-size: 10px;
+  text-align: center;
+  border: 1px solid var(--cbt-cyan-dim);
+  border-radius: 2px;
+  color: var(--cbt-ink);
+  background: rgba(10, 22, 34, 0.8);
+}
+
+/* ---- top-centre: the enemy pool, on a scrim ----------------------------- */
+
+.cbt-top {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, 62vw);
+  max-width: 560px;
+}
+
+/* The scrim is the legibility fix: a dark translucent plate under the round, timer,
+   name and bar so all four read over a bright sky as well as a dark scene. */
+.cbt-enemy {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 9px 16px 11px;
+  border: 1px solid var(--cbt-cyan-dim);
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(5, 16, 28, 0.82), rgba(4, 11, 20, 0.72));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), inset 0 0 22px rgba(60, 160, 220, 0.05);
+  backdrop-filter: blur(4px);
+}
+.cbt-enemy::before,
+.cbt-enemy::after {
+  content: "";
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border: 1px solid var(--cbt-cyan);
+  opacity: 0.72;
+}
+.cbt-enemy::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.cbt-enemy::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+.cbt-clock {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+}
+.cbt-clock-round {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cbt-ink);
+  text-shadow: var(--cbt-shadow);
+}
+.cbt-clock-time {
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--cbt-ink);
+  text-shadow: 0 0 14px rgba(120, 210, 255, 0.4), var(--cbt-shadow);
+}
+.cbt-clock-time.is-urgent { color: var(--cbt-blood); text-shadow: 0 0 16px rgba(255, 107, 107, 0.5); }
+.cbt-clock-unit { font-size: 12px; color: var(--cbt-ink-dim); margin-left: 1px; }
+
+.cbt-enemy-head { display: flex; align-items: baseline; gap: 10px; }
+.cbt-enemy-name {
+  font-size: 14.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  text-shadow: var(--cbt-shadow);
+}
+.cbt-enemy-role {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cbt-ink-dim);
+  text-shadow: var(--cbt-shadow);
+}
+.cbt-enemy-read {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 15px;
+  text-shadow: var(--cbt-shadow);
+}
+.cbt-enemy-now { font-weight: 700; }
+.cbt-enemy-max { font-size: 12px; color: var(--cbt-ink-dim); }
+.cbt-enemy-state {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+
+.cbt-enemy-track {
+  position: relative;
+  height: 18px;
+  border: 1px solid var(--cbt-cyan-dim);
+  background: rgba(2, 8, 15, 0.85);
+  overflow: hidden;
+}
+.cbt-enemy-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  overflow: hidden;
+  /* Layered: a warm gradient, a top energy highlight, and fine segmentation ticks. */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 42%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 9px),
+    linear-gradient(90deg, #ff8f6b, #d8452f);
+  /* Main fill snaps quickly to the authoritative value; the chip carries the trail. */
+  transition: width 0.14s cubic-bezier(0.3, 0, 0.2, 1);
+}
+.cbt-enemy-chip {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255, 244, 214, 0.95), rgba(255, 178, 128, 0.7));
+  box-shadow: 0 0 12px rgba(255, 224, 168, 0.65);
+}
+.cbt-enemy-damaged .cbt-enemy-fill { background: linear-gradient(180deg, rgba(255,255,255,0.28), transparent 42%), repeating-linear-gradient(90deg, rgba(0,0,0,0.16) 0 1px, transparent 1px 9px), linear-gradient(90deg, #ffcf6b, #f2932f); }
+.cbt-enemy-critical .cbt-enemy-fill { background: linear-gradient(180deg, rgba(255,255,255,0.3), transparent 42%), repeating-linear-gradient(90deg, rgba(0,0,0,0.2) 0 1px, transparent 1px 9px), linear-gradient(90deg, #ff7a7a, #d31f1f); }
+.cbt-enemy-critical .cbt-enemy-read { color: var(--cbt-blood); }
+.cbt-enemy-critical .cbt-enemy-track { border-color: rgba(255, 107, 107, 0.8); animation: cbt-crit-pulse 1.6s ease-in-out infinite; }
+.cbt-enemy-down .cbt-enemy-fill { background: #3a4654; }
+.cbt-enemy-down .cbt-enemy-read { color: var(--cbt-ink-dim); }
+
+/* ---- centre: the reticle and hit marker --------------------------------- */
+
+.cbt-reticle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+}
+.cbt-reticle-dot {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(159, 220, 255, 0.55);
+  box-shadow: 0 0 6px rgba(159, 220, 255, 0.5);
+}
+.cbt-hitmark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #ffffff;
+  animation: cbt-hit-pop 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.9));
+}
+.cbt-hitmark-arm {
+  position: absolute;
+  width: 22px;
+  height: 5px;
+  border-radius: 1px;
+  background: currentColor;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 3px rgba(0, 0, 0, 0.8);
+}
+/* Four arms angled into a bold X, clearly offset from the centre dot. */
+.cbt-hitmark-tl { left: -26px; top: -26px; transform: rotate(45deg); }
+.cbt-hitmark-tr { left: 6px; top: -26px; transform: rotate(-45deg); }
+.cbt-hitmark-bl { left: -26px; top: 22px; transform: rotate(-45deg); }
+.cbt-hitmark-br { left: 6px; top: 22px; transform: rotate(45deg); }
+.cbt-hitmark-normal { color: #ffffff; }
+.cbt-hitmark-critical { color: var(--cbt-gold); }
+.cbt-hitmark-fatal { color: var(--cbt-blood); animation: cbt-hit-kill 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.cbt-hitmark-fatal .cbt-hitmark-arm { width: 30px; height: 6px; }
+.cbt-hitmark-fatal .cbt-hitmark-tl { left: -34px; top: -34px; }
+.cbt-hitmark-fatal .cbt-hitmark-tr { left: 8px; top: -34px; }
+.cbt-hitmark-fatal .cbt-hitmark-bl { left: -34px; top: 28px; }
+.cbt-hitmark-fatal .cbt-hitmark-br { left: 8px; top: 28px; }
+.cbt-hitmark.is-reduced { animation: cbt-hit-hold 0.42s ease both; }
+.cbt-hitmark-fatal.is-reduced { animation: cbt-hit-hold 0.9s ease both; }
+
+/* ---- bottom corners: hero panel and ammo cluster ------------------------ */
+
+.cbt-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 22px;
+}
+
+/* Hero: a shaped, bevelled frame (cut top-right corner), not a plain rectangle. */
+.cbt-hero {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px 20px 12px 12px;
+  border: 1px solid var(--cbt-cyan-dim);
+  background: var(--cbt-glass);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.6), inset 0 0 24px rgba(60, 160, 220, 0.07);
+  backdrop-filter: blur(4px);
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+/* A bright leading edge on the shaped side, so the bevel reads as a HUD cut. */
+.cbt-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--cbt-cyan), rgba(94, 200, 255, 0.15));
+  box-shadow: 0 0 10px rgba(94, 200, 255, 0.5);
+}
+.cbt-hero-critical::after { background: linear-gradient(180deg, var(--cbt-blood), rgba(255, 107, 107, 0.2)); }
+
+.cbt-portrait {
+  width: 116px;
+  height: 150px;
+  flex: none;
+  border: 1px solid rgba(94, 200, 255, 0.35);
+  border-radius: 2px;
+  /* A soft vignette that seats the bust in the panel rather than a hard box-in-box. */
+  background: radial-gradient(120% 96% at 50% 24%, rgba(52, 130, 188, 0.55), rgba(3, 10, 18, 0.96));
+  box-shadow: inset 0 0 22px rgba(3, 10, 18, 0.85), inset 0 1px 0 rgba(180, 235, 255, 0.25);
+  overflow: hidden;
+}
+.cbt-portrait-canvas { display: block; width: 100% !important; height: 100% !important; }
+
+.cbt-hero-body { display: grid; align-content: center; gap: 10px; min-width: 214px; }
+.cbt-hero-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.cbt-weapon {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cbt-gold);
+  text-shadow: var(--cbt-shadow);
+}
+
+.cbt-health { display: grid; gap: 6px; }
+.cbt-health-track {
+  position: relative;
+  height: 20px;
+  border: 1px solid var(--cbt-cyan-dim);
+  background: rgba(2, 8, 15, 0.8);
+  overflow: hidden;
+  box-shadow: inset 0 0 14px rgba(60, 160, 220, 0.1);
+}
+.cbt-health-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  overflow: hidden;
+  /* Layered energy fill: top highlight, fine segmentation, cyan body. */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent 46%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 10px),
+    linear-gradient(90deg, #7ce6ff, #3f9fe0);
+  box-shadow: inset 0 0 12px rgba(120, 210, 255, 0.4);
+  /* The main fill snaps quickly to the authoritative value; the chip carries the trail. */
+  transition: width 0.14s cubic-bezier(0.3, 0, 0.2, 1);
+}
+.cbt-health-chip {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255, 244, 214, 0.9), rgba(255, 150, 150, 0.7));
+  box-shadow: 0 0 12px rgba(255, 200, 160, 0.6);
+}
+.cbt-hero-damaged .cbt-health-fill,
+.cbt-health-damaged .cbt-health-fill { background: linear-gradient(180deg, rgba(255,255,255,0.3), transparent 46%), repeating-linear-gradient(90deg, rgba(0,0,0,0.14) 0 1px, transparent 1px 10px), linear-gradient(90deg, #ffcf6b, #f2932f); }
+.cbt-hero-critical .cbt-health-fill,
+.cbt-health-critical .cbt-health-fill { background: linear-gradient(180deg, rgba(255,255,255,0.32), transparent 46%), repeating-linear-gradient(90deg, rgba(0,0,0,0.18) 0 1px, transparent 1px 10px), linear-gradient(90deg, #ff7a7a, #d31f1f); }
+.cbt-hero-down .cbt-health-fill,
+.cbt-health-down .cbt-health-fill { background: #3a4654; }
+.cbt-hero-critical .cbt-health-track,
+.cbt-health-critical .cbt-health-track { border-color: rgba(255, 107, 107, 0.8); animation: cbt-crit-pulse 1.6s ease-in-out infinite; }
+
+.cbt-health-read { display: flex; align-items: baseline; gap: 7px; }
+.cbt-health-now { font-size: 30px; line-height: 1; font-weight: 800; text-shadow: var(--cbt-shadow); }
+.cbt-hero-critical .cbt-health-now { color: var(--cbt-blood); }
+.cbt-health-max { font-size: 13px; color: var(--cbt-ink-dim); }
+.cbt-health-state {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  color: var(--cbt-amber);
+}
+.cbt-hero-critical .cbt-health-state { color: var(--cbt-blood); }
+
+/* Ammo: the mirror bevel (cut top-left corner) so left and right read as one language. */
+.cbt-ammo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px 10px 22px;
+  border: 1px solid var(--cbt-cyan-dim);
+  background: var(--cbt-glass);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.6), inset 0 0 24px rgba(60, 160, 220, 0.07);
+  backdrop-filter: blur(4px);
+  clip-path: polygon(16px 0, 100% 0, 100% 100%, 0 100%, 0 16px);
+}
+.cbt-ammo::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--cbt-gold), rgba(255, 207, 90, 0.15));
+  box-shadow: 0 0 10px rgba(255, 207, 90, 0.5);
+}
+.cbt-ammo-empty::after { background: linear-gradient(180deg, var(--cbt-blood), rgba(255, 107, 107, 0.2)); }
+
+.cbt-ammo-read { display: flex; align-items: baseline; gap: 4px; }
+.cbt-ammo-now {
+  font-size: 44px;
+  line-height: 0.9;
+  font-weight: 800;
+  color: var(--cbt-gold);
+  text-shadow: 0 0 18px rgba(255, 207, 90, 0.45), var(--cbt-shadow);
+}
+.cbt-ammo-total { font-size: 20px; font-weight: 600; color: var(--cbt-ink-dim); }
+.cbt-ammo-low .cbt-ammo-now { color: var(--cbt-amber); }
+.cbt-ammo-empty .cbt-ammo-now { color: var(--cbt-blood); }
+
+.cbt-weapon-view { width: 128px; height: 66px; flex: none; }
+.cbt-weapon-canvas { display: block; width: 100% !important; height: 100% !important; }
+
+/* ---- bar effects, shared by the player and enemy bars ------------------- */
+
+/* A slow holographic sheen sweeping across the fill: depth without noise. */
+.cbt-health-sheen,
+.cbt-enemy-sheen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 42%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  animation: cbt-sheen 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+/* A top energy highlight line across the whole track — the bevel/edge read. */
+.cbt-health-edge,
+.cbt-enemy-edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(180, 235, 255, 0.7), transparent);
+  pointer-events: none;
+}
+/* The restrained impact flash on damage, keyed so it retriggers per hit. */
+.cbt-health-impact,
+.cbt-enemy-impact {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 140% at 100% 50%, rgba(255, 255, 255, 0.9), rgba(255, 220, 200, 0.35) 60%, transparent);
+  animation: cbt-bar-impact 0.34s ease-out forwards;
+  pointer-events: none;
+}
+/* A distinct, non-damage heal flash (cool green), if healing ever lands. */
+.cbt-health-heal,
+.cbt-enemy-heal {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 140% at 0% 50%, rgba(140, 255, 190, 0.7), transparent 65%);
+  animation: cbt-bar-impact 0.42s ease-out forwards;
+  pointer-events: none;
+}
+
+/* ---- motion ------------------------------------------------------------- */
+
+@keyframes cbt-sheen {
+  0% { left: -45%; }
+  55%, 100% { left: 115%; }
+}
+@keyframes cbt-bar-impact {
+  from { opacity: 0.95; }
+  to { opacity: 0; }
+}
+@keyframes cbt-hit-pop {
+  0% { opacity: 0; transform: scale(2.1) rotate(-8deg); }
+  35% { opacity: 1; transform: scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: scale(0.92) rotate(0deg); }
+}
+@keyframes cbt-hit-kill {
+  0% { opacity: 0; transform: scale(2.6) rotate(-12deg); }
+  30% { opacity: 1; transform: scale(1.1) rotate(0deg); }
+  100% { opacity: 0; transform: scale(1) rotate(0deg); }
+}
+@keyframes cbt-hit-hold { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes cbt-crit-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 107, 107, 0); }
+  50% { box-shadow: 0 0 16px rgba(255, 107, 107, 0.5); }
+}
+@keyframes cbt-legend-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+/* Reduced motion: no sweeps, no flashes, no pulses — every STATE stays readable
+   (colour + label + border), only the movement is removed. */
+.cbt.is-reduced .cbt-top,
+.cbt.is-reduced .cbt-bottom,
+.cbt.is-reduced .cbt-legend,
+.cbt.is-reduced .cbt-enemy-fill,
+.cbt.is-reduced .cbt-health-fill,
+.cbt.is-reduced .cbt-legend-list { transition: none; animation: none; }
+.cbt.is-reduced .cbt-enemy-critical .cbt-enemy-track,
+.cbt.is-reduced .cbt-hero-critical .cbt-health-track,
+.cbt.is-reduced .cbt-health-critical .cbt-health-track { animation: none; }
+.cbt.is-reduced .cbt-health-sheen,
+.cbt.is-reduced .cbt-enemy-sheen,
+.cbt.is-reduced .cbt-health-impact,
+.cbt.is-reduced .cbt-enemy-impact,
+.cbt.is-reduced .cbt-health-heal,
+.cbt.is-reduced .cbt-enemy-heal { animation: none; opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cbt-top,
+  .cbt-bottom,
+  .cbt-legend,
+  .cbt-enemy-fill,
+  .cbt-health-fill { transition: none; }
+  .cbt-legend-list { animation: none; }
+  .cbt-enemy-critical .cbt-enemy-track,
+  .cbt-hero-critical .cbt-health-track,
+  .cbt-health-critical .cbt-health-track { animation: none; }
+  .cbt-health-sheen,
+  .cbt-enemy-sheen,
+  .cbt-health-impact,
+  .cbt-enemy-impact,
+  .cbt-health-heal,
+  .cbt-enemy-heal { animation: none; opacity: 0; }
+  .cbt-hitmark { animation: cbt-hit-hold 0.42s ease both; }
+  .cbt-hitmark-fatal { animation: cbt-hit-hold 0.9s ease both; }
+}
+
+/* ---- fit at 1024x692 ---------------------------------------------------- */
+
+@media (max-height: 720px), (max-width: 1080px) {
+  .cbt-top { top: 10px; width: min(500px, 60vw); }
+  .cbt-enemy { padding: 7px 13px 9px; }
+  .cbt-enemy-track { height: 15px; }
+  .cbt-bottom { bottom: 12px; padding: 0 14px; gap: 12px; }
+  .cbt-portrait { width: 96px; height: 126px; }
+  .cbt-hero-body { min-width: 170px; }
+  .cbt-health-now { font-size: 25px; }
+  .cbt-ammo-now { font-size: 36px; }
+  .cbt-weapon-view { width: 104px; height: 56px; }
+  .cbt-legend { top: 10px; left: 12px; }
+}

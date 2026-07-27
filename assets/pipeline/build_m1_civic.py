@@ -110,6 +110,7 @@ class Blocker:
         self.x0, self.x1, self.y0, self.y1 = to_blender_rect(raw)
         self.z0, self.z1 = raw["baseY"], raw["topY"]
         self.mine = raw["mine"]
+        self.tags = raw.get("tags", [])
 
     @property
     def plan_area(self):
@@ -942,6 +943,32 @@ for deck in decks:
         f"{covered:.1f} m2 of walkable surface, {deck.thickness:.2f}m thick"
     )
     authored_report.append({"id": deck.id, "y": deck.z, "rects": len(rects), "areaM2": round(covered, 2)})
+
+# Pediments and hoods: this building's OWN soffit blockers — solid stone that
+# hangs with air under it rather than a walkable top. The centre-bay pediment
+# over the north balcony is the one on the Town House, and neither the generated
+# silhouette nor the deck loop draws it: the silhouette is a plain wall face
+# there and the deck loop only lays walkable tops. So it is authored here as
+# solid masonry filling exactly the collision the level put at 7.30-7.80m — a
+# projecting hood over the bay, not a plate hung in the air — with a shallow
+# corona oversailing the fascia so it reads as a cornice and not a flush panel.
+hoods = [b for b in blockers if b.mine and "soffit" in b.tags]
+for hood in hoods:
+    add_box(hood.x0, hood.x1, hood.y0, hood.y1, hood.z0, hood.z1, PAINT_UV)
+    corona = min(0.12, (hood.z1 - hood.z0) * 0.4)
+    over = 0.12
+    add_box(
+        hood.x0 - over, hood.x1 + over, hood.y0 - over, hood.y1 + over,
+        hood.z1 - corona, hood.z1, PAINT_UV,
+    )
+    log(
+        f"authored soffit {hood.id} at z={hood.z0:.2f}..{hood.z1:.2f}: "
+        f"solid pediment hood over {hood.x1 - hood.x0:.2f} x {hood.y1 - hood.y0:.2f}m"
+    )
+    authored_report.append({
+        "id": hood.id, "y": hood.z0, "rects": 1,
+        "areaM2": round((hood.x1 - hood.x0) * (hood.y1 - hood.y0), 2),
+    })
 
 # The envelope's plan and ceiling are pinned by the authored surfaces where they
 # reach them, and by an explicit rail of eight corner studs where they do not.

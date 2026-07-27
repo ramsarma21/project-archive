@@ -337,11 +337,17 @@ export function inspectWorldGlb(path) {
   const data = readFileSync(path);
   const document = glbDocument(data);
   if (!document) {
+    // A file that EXISTS but does not parse is not the "work in progress" case
+    // this guard declines to police — that is a missing file, handled above. A
+    // present-but-unparseable GLB is a truncated or corrupt publish that will
+    // fail to load in the browser exactly as it failed to parse here, and
+    // shipping it is the defect. Absence is someone's unfinished work; a broken
+    // file on the served path is not, so it blocks.
     findings.push({
       code: "UNREADABLE_GLB",
-      block: false,
+      block: true,
       detail: "not a parseable binary glTF",
-      fix: "check the export; this file may be truncated",
+      fix: "check the export; this file is truncated or corrupt and will not load",
     });
     return { findings };
   }
@@ -471,6 +477,76 @@ export function inspectWorldGlb(path) {
       fix:
         'set "alphaMode": "OPAQUE". Every instance of this material currently pays for a\n' +
         "      sorted transparent draw; M1's market draws 36 of them.",
+    });
+  });
+
+  // A whole-body albedo wired into the EMISSIVE slot.
+  //
+  // WHY THIS LIVES HERE. Seven of the fifteen rigs shipped with
+  // emissiveFactor [1,1,1] and an emissiveTexture pointing at the SAME image as
+  // their base colour. Emissive is light-independent, so those seven rendered at
+  // full albedo brightness whatever the scene lighting did: played live it read as
+  // "all the npcs glow BRIGHT, but you literally cannot see anything else at all".
+  // It also silently defeats crowd tinting, because RiggedCharacter.tsx clones the
+  // material and multiplies `.color` only, never `.emissive`/`.emissiveMap`.
+  //
+  // This is the same KIND of defect as the alphaMode check above - a material
+  // property the generator set wrongly, which costs real render behaviour and
+  // errors nowhere - so it belongs in the same gate rather than in a new script.
+  // Geometry SIZE went to scripts/check-world-scale.mjs because that needs real
+  // scene evaluation; this needs nothing but the material wiring, which is already
+  // parsed here.
+  //
+  // Emissive is NOT policed in general. A lantern, a forge or a lit window is a
+  // legitimate light source, so the block is narrow on purpose: it fires only when
+  // the emissive texture resolves to the very same image as the base colour, which
+  // is a whole object glowing rather than a lamp. Anything else is reported.
+  (document.json.materials ?? []).forEach((material, index) => {
+    const factor = material.emissiveFactor;
+    const emissive = material.emissiveTexture;
+    if (!factor || Math.max(...factor) <= 0) return;
+    const pbr = material.pbrMetallicRoughness ?? {};
+    const emissiveImage =
+      emissive?.index !== undefined ? textures[emissive.index]?.source : undefined;
+    const baseImage =
+      pbr.baseColorTexture?.index !== undefined
+        ? textures[pbr.baseColorTexture.index]?.source
+        : undefined;
+    if (emissive === undefined) {
+      findings.push({
+        code: "EMISSIVE_WITHOUT_TEXTURE",
+        block: false,
+        detail:
+          `material[${index}] ${material.name ?? "?"} emissiveFactor=[${factor.join(", ")}] ` +
+          "with no emissive texture, so the whole surface glows a flat colour",
+        fix: 'remove "emissiveFactor" unless this surface is meant to emit light',
+      });
+      return;
+    }
+    if (emissiveImage !== undefined && emissiveImage === baseImage) {
+      findings.push({
+        code: "ALBEDO_WIRED_AS_EMISSIVE",
+        block: true,
+        detail:
+          `material[${index}] ${material.name ?? "?"} emissiveFactor=[${factor.join(", ")}] and its ` +
+          `emissive texture is image[${emissiveImage}], the same image as its base colour`,
+        fix:
+          "the object lights itself, so it stays at full brightness in an unlit scene and\n" +
+          "      ignores any runtime tint. Clear it and match the already-correct rigs\n" +
+          "      (no emissive, metallicFactor 0, roughnessFactor 0.5):\n" +
+          `      python3 assets/pipeline/fix_rig_emissive.py ${basename(path)} out.glb\n` +
+          "      python3 assets/pipeline/verify_rig_transcode.py before.glb out.glb\n" +
+          "      A real light source needs its OWN emissive mask, not the body albedo.",
+      });
+      return;
+    }
+    findings.push({
+      code: "EMISSIVE_TEXTURE_PRESENT",
+      block: false,
+      detail:
+        `material[${index}] ${material.name ?? "?"} emits light from image[${emissiveImage}] ` +
+        `(base colour is image[${baseImage}])`,
+      fix: "a dedicated emissive mask is legitimate; confirm this surface is meant to glow",
     });
   });
 
@@ -642,6 +718,173 @@ function roleSelfTest() {
   return failed;
 }
 
+/**
+ * A GLB with two textures over `images`, wired into one material verbatim.
+ * Lets the emissive self-test move only the WIRING between cases.
+ */
+function syntheticMaterialGlb(images, material) {
+  const views = [];
+  let binary = Buffer.alloc(0);
+  for (const png of images) {
+    views.push({ buffer: 0, byteOffset: binary.length, byteLength: png.length });
+    binary = Buffer.concat([binary, png, Buffer.alloc((-png.length % 4 + 4) % 4)]);
+  }
+  let json = Buffer.from(
+    JSON.stringify({
+      asset: { version: "2.0" },
+      images: images.map((_, index) => ({
+        name: `image${index}`,
+        mimeType: "image/png",
+        bufferView: index,
+      })),
+      textures: images.map((_, index) => ({ source: index })),
+      materials: [material],
+      buffers: [{ byteLength: binary.length }],
+      bufferViews: views,
+    }),
+    "utf8",
+  );
+  json = Buffer.concat([json, Buffer.alloc((-json.length % 4 + 4) % 4, 0x20)]);
+  const header = Buffer.alloc(12);
+  header.write("glTF", 0, "latin1");
+  header.writeUInt32LE(2, 4);
+  header.writeUInt32LE(12 + 8 + json.length + 8 + binary.length, 8);
+  const jsonHeader = Buffer.alloc(8);
+  jsonHeader.writeUInt32LE(json.length, 0);
+  jsonHeader.writeUInt32LE(0x4e4f534a, 4);
+  const binHeader = Buffer.alloc(8);
+  binHeader.writeUInt32LE(binary.length, 0);
+  binHeader.writeUInt32LE(0x004e4942, 4);
+  return Buffer.concat([header, jsonHeader, json, binHeader, binary]);
+}
+
+/**
+ * Does the emissive rule distinguish a glowing BODY from a real LIGHT?
+ *
+ * The way this rule would go wrong is by policing emissive in general, which would
+ * block the lanterns and lit windows the game legitimately needs - and that failure
+ * only shows up when somebody adds one, long after the rule was written. So the
+ * emissive factor is held at [1,1,1] in every case below and only the IMAGE WIRING
+ * moves. If the rule keyed on emissive being present, all three would block.
+ */
+function emissiveSelfTest() {
+  const albedo = syntheticPng(64, () => 255);
+  const mask = syntheticPng(32, (x) => (x < 4 ? 255 : 0));
+  const directory = mkdtempSync(join(tmpdir(), "world-emissive-"));
+  const cases = [
+    {
+      name: "body albedo as emissive",
+      images: [albedo],
+      material: {
+        name: "body-glow",
+        emissiveFactor: [1, 1, 1],
+        emissiveTexture: { index: 0 },
+        pbrMetallicRoughness: { baseColorTexture: { index: 0 } },
+      },
+      expectBlock: true,
+      expectCode: "ALBEDO_WIRED_AS_EMISSIVE",
+    },
+    {
+      name: "lantern with its own mask",
+      images: [mask, albedo],
+      material: {
+        name: "lantern",
+        emissiveFactor: [1, 1, 1],
+        emissiveTexture: { index: 0 },
+        pbrMetallicRoughness: { baseColorTexture: { index: 1 } },
+      },
+      expectBlock: false,
+      expectCode: "EMISSIVE_TEXTURE_PRESENT",
+    },
+    {
+      name: "flat glow, no texture",
+      images: [albedo],
+      material: {
+        name: "flat",
+        emissiveFactor: [0.5, 0.5, 0.5],
+        pbrMetallicRoughness: { baseColorTexture: { index: 0 } },
+      },
+      expectBlock: false,
+      expectCode: "EMISSIVE_WITHOUT_TEXTURE",
+    },
+    {
+      name: "no emissive at all",
+      images: [albedo],
+      material: {
+        name: "clean",
+        pbrMetallicRoughness: {
+          baseColorTexture: { index: 0 },
+          metallicFactor: 0,
+          roughnessFactor: 0.5,
+        },
+      },
+      expectBlock: false,
+      expectCode: null,
+    },
+  ];
+  let failed = 0;
+  console.log(
+    "\nworld-textures selftest: does the EMISSIVE rule tell a glowing body from a lamp?\n" +
+      "  (emissiveFactor held at [1,1,1]; only which image it points at changes)",
+  );
+  for (const testCase of cases) {
+    const path = join(directory, `${testCase.name.replace(/[^a-z0-9]+/gi, "-")}.glb`);
+    writeFileSync(path, syntheticMaterialGlb(testCase.images, testCase.material));
+    const findings = inspectWorldGlb(path).findings;
+    const blocked = findings.some((finding) => finding.block);
+    const codes = findings.map((finding) => finding.code);
+    const ok =
+      blocked === testCase.expectBlock &&
+      (testCase.expectCode === null
+        ? !codes.some((code) => code.startsWith("EMISSIVE") || code === "ALBEDO_WIRED_AS_EMISSIVE")
+        : codes.includes(testCase.expectCode));
+    if (!ok) failed++;
+    console.log(
+      `  ${ok ? "PASS" : "FAIL"}  ${testCase.name.padEnd(28)} -> ` +
+        `${blocked ? "BLOCKS" : "reports"} [${codes.join(",") || "no findings"}]`,
+    );
+  }
+  rmSync(directory, { recursive: true, force: true });
+  console.log(
+    failed === 0
+      ? "world-textures selftest: OK (a dedicated emissive mask is still allowed)"
+      : `world-textures selftest: FAIL (${failed} emissive case(s))`,
+  );
+  return failed;
+}
+
+/**
+ * A file that exists but does not parse must BLOCK, not pass. Absence is left
+ * alone (that is another agent's unfinished work), but a truncated file on the
+ * served path will fail to load in the browser exactly as it fails to parse
+ * here, and letting it through was the defect this case pins.
+ */
+function unreadableSelfTest() {
+  const directory = mkdtempSync(join(tmpdir(), "world-textures-unreadable-"));
+  const path = join(directory, "truncated.glb");
+  writeFileSync(path, Buffer.from("glTF not really a binary gltf"));
+  const result = inspectWorldGlb(path);
+  const blocked = result.findings.some((finding) => finding.block);
+  const isUnreadable = result.findings.some((finding) => finding.code === "UNREADABLE_GLB");
+  const missingHandled = inspectWorldGlb(join(directory, "does-not-exist.glb")).missing === true;
+  rmSync(directory, { recursive: true, force: true });
+  const ok = blocked && isUnreadable && missingHandled;
+  console.log(
+    `\nworld-textures selftest: does a present-but-unparseable GLB block, while absence is left alone?`,
+  );
+  console.log(
+    `  ${ok ? "PASS" : "FAIL"}  unparseable file -> ${blocked ? "BLOCKS" : "passes"}` +
+      ` [${result.findings.map((f) => f.code).join(",") || "no findings"}]; ` +
+      `missing file -> ${missingHandled ? "skipped" : "NOT skipped"}`,
+  );
+  console.log(
+    ok
+      ? "world-textures selftest: OK (a corrupt publish is refused; an unbuilt one is not)"
+      : "world-textures selftest: FAIL (unparseable-GLB gate)",
+  );
+  return ok ? 0 : 1;
+}
+
 function selfTest() {
   const SIZE = 256;
   const total = SIZE * SIZE;
@@ -695,7 +938,7 @@ function selfTest() {
       ? "world-textures selftest: OK (format held constant; only alpha changed the verdict)"
       : `world-textures selftest: FAIL (${failed} case(s))`,
   );
-  return failed + roleSelfTest();
+  return failed + roleSelfTest() + emissiveSelfTest() + unreadableSelfTest();
 }
 
 // ---------------------------------------------------------------- CLI
@@ -770,10 +1013,12 @@ if (isMain) {
       const match = /png (\d+\.\d+)MB/.exec(row.detail);
       return sum + (match ? Number(match[1]) : 0);
     }, 0);
-    console.log(
-      `  ${debt.length} known pre-existing finding(s) across ${files.length} file(s) in KNOWN_DEBT` +
-        ` (~${wasted.toFixed(0)}MB of PNG). These belong to the interior/prop factories,` +
-        ` not the character bake.`,
+    // KNOWN_DEBT overrides the gate: these findings would otherwise block. An
+    // override that lets a real defect ship must announce itself, so this warns.
+    console.warn(
+      `  WARNING: ${debt.length} finding(s) across ${files.length} file(s) suppressed by KNOWN_DEBT` +
+        ` (~${wasted.toFixed(0)}MB of PNG); the texture gate is being overridden for them.` +
+        ` These belong to the interior/prop factories, not the character bake.`,
     );
     if (reportOnly) {
       for (const row of debt) console.log(`    debt: ${row.key}  ${row.code}  ${row.detail}`);

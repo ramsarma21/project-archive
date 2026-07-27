@@ -54,7 +54,21 @@ export type DuelClipRole =
 export const DUEL_CLIP_NAMES: Readonly<Record<DuelClipRole, string>> = {
   standoff: "standoff",
   draw: "draw",
-  aim: "idleAim",
+  // THE RESTING AIM IS `standoff`, NOT `idleAim`. Both are baked on both rigs, and
+  // both point the barrel roughly downrange — but they are not equally good aims, and
+  // the difference is measurable off the GLB (.affordwork/probe-clip-aim-dir.mjs
+  // forward-kinematics the RightHand bone, whose +Y is the muzzle once the socket
+  // seats it). Across its whole loop `standoff` holds the muzzle level and BOTH hands
+  // on the stock: the hand's +Y up-component is 0.04–0.09 on the officer and about
+  // -0.1 on the player, i.e. horizontal. `idleAim` rides the muzzle 25–28° ABOVE
+  // level the entire loop (up-component ~0.47 on the officer, ~0.26 on the player)
+  // and drops the support hand off the weapon — which on screen reads as the pistol
+  // held up past the face, one-handed, exactly the frame the owner rejected twice.
+  // `standoff` is the two-handed forward present the duel actually wants, so the
+  // resting-aim role plays it. `idleAim` is left unused rather than deleted; removing
+  // a baked clip is an asset-pipeline change, and this is a one-line selection fix
+  // that both PvE (DuelActor) and PvP (ArenaActor) inherit through this table.
+  aim: "standoff",
   aimWalk: "aimWalk",
   aimRun: "aimRun",
   fire: "fire",

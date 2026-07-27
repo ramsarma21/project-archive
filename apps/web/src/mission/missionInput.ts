@@ -82,15 +82,22 @@ export interface MissionInputState {
    */
   strikeBuffered: boolean;
   /**
-   * Latched by a throw press, cleared once the throw is issued or refused.
+   * True while the throw key is HELD. This is the aiming state.
    *
-   * The aim point is resolved inside the canvas, where the camera is: a throw is
-   * aimed where the player is looking, and the distance is clamped to the tuned
-   * range. Throwing short is a mistake the player is allowed to make — that, and
-   * a body being able to block the object, is the whole of what makes aiming a
-   * skill instead of a button.
+   * The verb is hold-to-aim, release-to-throw, because the object cannot miss in
+   * a way the player can learn from unless they can see where it will land before
+   * they commit — three charges is far too few to learn a lottery. While this is
+   * true the canvas solves `previewThrow` from the live look and draws the arc and
+   * the landing ring; the aim point is resolved inside the canvas, where the
+   * camera is, and the distance is clamped to the tuned range.
    */
-  throwBuffered: boolean;
+  throwAiming: boolean;
+  /**
+   * Latched by RELEASING the throw key while aiming; cleared once the throw is
+   * issued or refused. Release, not press, is what throws — so the preview the
+   * player was reading is the throw they get.
+   */
+  throwReleased: boolean;
 }
 
 export function createMissionInputState(): MissionInputState {
@@ -102,7 +109,8 @@ export function createMissionInputState(): MissionInputState {
     jumpBuffered: false,
     dashBuffered: false,
     strikeBuffered: false,
-    throwBuffered: false,
+    throwAiming: false,
+    throwReleased: false,
   };
 }
 
@@ -114,11 +122,28 @@ export function clearMissionInput(state: MissionInputState): void {
   state.jumpBuffered = false;
   state.dashBuffered = false;
   state.strikeBuffered = false;
-  state.throwBuffered = false;
+  state.throwAiming = false;
+  state.throwReleased = false;
 }
 
 const codesOf = (action: MissionAction): ReadonlySet<string> =>
   new Set(MISSION_BINDINGS[action].codes);
+
+/**
+ * Whether a key event is being typed into a control rather than played into the
+ * game. A run has no text fields, but a debug overlay or a name prompt might, and
+ * a throw key pressed while typing must not aim a bottle. Read off the event
+ * target so it needs no document, and so it is testable without a DOM.
+ */
+function isEditableTarget(target: EventTarget | null): boolean {
+  const element = target as
+    | { readonly tagName?: string; readonly isContentEditable?: boolean }
+    | null;
+  if (!element) return false;
+  if (element.isContentEditable) return true;
+  const tag = element.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
 
 const FORWARD_KEYS = codesOf("moveForward");
 const BACK_KEYS = codesOf("moveBack");
@@ -126,12 +151,11 @@ const LEFT_KEYS = codesOf("moveLeft");
 const RIGHT_KEYS = codesOf("moveRight");
 const SPRINT_KEYS = codesOf("sprint");
 const CROUCH_KEYS = codesOf("crouch");
+// The throw is neither a movement key nor a one-shot latch: it is held to aim
+// and released to throw, handled on its own in the key events below.
+const THROW_KEYS = codesOf("throw");
 
-type LatchField =
-  | "jumpBuffered"
-  | "dashBuffered"
-  | "strikeBuffered"
-  | "throwBuffered";
+type LatchField = "jumpBuffered" | "dashBuffered" | "strikeBuffered";
 
 /** Which latch a one-shot press sets. Held actions are not in here. */
 const LATCHES: ReadonlyArray<{
@@ -142,7 +166,6 @@ const LATCHES: ReadonlyArray<{
     ["jump", "jumpBuffered"],
     ["dash", "dashBuffered"],
     ["strike", "strikeBuffered"],
-    ["throw", "throwBuffered"],
   ] as ReadonlyArray<[MissionAction, LatchField]>
 ).map(([action, field]) => ({ codes: codesOf(action), field }));
 
@@ -178,9 +201,20 @@ export function attachMissionInput(
 
   function onKeyDown(event: KeyboardEvent): void {
     if (event.metaKey || event.ctrlKey || event.altKey) return;
+    // Typing into a control is not a game input. Ignoring it here means a throw
+    // key pressed in a field never opens an aim, and no charge can be spent from
+    // one.
+    if (isEditableTarget(event.target)) return;
     // The browser's own auto-repeat. A held strike key would otherwise deliver a
     // press every 30ms, which the judge scores as a swing at nothing each time.
     if (event.repeat) return;
+    // The throw is held to aim. The keydown only opens the aim; the throw itself
+    // is issued on keyup, so the arc the player read is the throw they get.
+    if (THROW_KEYS.has(event.code)) {
+      event.preventDefault();
+      state.throwAiming = true;
+      return;
+    }
     for (const latch of LATCHES) {
       if (!latch.codes.has(event.code)) continue;
       event.preventDefault();
@@ -193,6 +227,25 @@ export function attachMissionInput(
   }
 
   function onKeyUp(event: KeyboardEvent): void {
+    if (isEditableTarget(event.target)) {
+      // Focus moved into a field between the press and the release, so the keyup
+      // lands on the control, not the game. It must NOT throw — and it must not
+      // leave the aim latched on for a release that will never arrive here. Drop
+      // the aim and any pending release so no throw fires and no charge is spent.
+      if (THROW_KEYS.has(event.code)) {
+        state.throwAiming = false;
+        state.throwReleased = false;
+      }
+      return;
+    }
+    if (THROW_KEYS.has(event.code)) {
+      // Releasing while aiming is the throw. If the aim was never opened (the
+      // key came up without our keydown, e.g. focus changed mid-press) nothing
+      // is issued.
+      if (state.throwAiming) state.throwReleased = true;
+      state.throwAiming = false;
+      return;
+    }
     held.delete(event.code);
     recompute();
   }

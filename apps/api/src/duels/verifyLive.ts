@@ -15,6 +15,16 @@
 // is the cheapest one: post a good answer and a bad one to the SAME item and
 // require that they come back different.
 //
+// AND THAT CHECK USED TO PASS WITH NOTHING GRADED, which is worth stating because
+// it is the same defect this script exists to catch, in this script. Round 4 posts
+// an empty box, which `preCheckAnswer` decides WRONG deterministically with no
+// model call. So `correct === 0 || wrong === 0` was satisfied by the pre-check
+// alone: run against an unreachable gateway, the three real answers all came back
+// CORRECT on the fallback, the empty box came back WRONG, and the script printed
+// "✓ the same item graded both ways" and exited 0. Both halves of the proof now
+// have to come from rounds a CLASSIFIER actually decided, and a run with no
+// classification at all fails by name.
+//
 // Everything it creates in the database it deletes again.
 
 import "../config.js";
@@ -186,7 +196,11 @@ async function main(): Promise<void> {
         "no classifier credential is resolvable, so every round would be granted the maximum; set TRUEFOUNDRY_API_KEY",
       );
     }
-    pass(`the classifier is reachable and the bank holds ${state.items} items`);
+    // A credential is not reachability, and saying so was the old bug in one
+    // line: `configured` is true as soon as a key and a base URL are readable
+    // from the environment, and the gateway behind them was never asked
+    // anything.
+    pass(`a credential resolves and the bank holds ${state.items} items`);
 
     // ---- a real graded round ----------------------------------------------
     //
@@ -230,7 +244,13 @@ async function main(): Promise<void> {
       },
     ];
 
-    const seen: { round: number; kind: string; receipt: string }[] = [];
+    const seen: {
+      round: number;
+      kind: string;
+      receipt: string;
+      /** True only when a classification decided this round. */
+      classified: boolean;
+    }[] = [];
     for (const entry of rounds) {
       const startedAt = Date.now();
       const response = await app.inject({
@@ -262,32 +282,70 @@ async function main(): Promise<void> {
         fail("no receipt header; the verdict cannot be authenticated once it is spent");
       }
       const kind = String(envelope.kind);
-      seen.push({ round: entry.round, kind, receipt });
+      const path = String(response.headers["x-pa-grading-path"]);
+      // The header is absent on a graded round and names the cause on an ungraded
+      // one. Printed because `source` alone cannot tell them apart: it reads
+      // GRADING_TIMEOUT whether the model overran 1250ms or the gateway refused
+      // the request in eight.
+      const fallback = response.headers["x-pa-grading-fallback"];
+      const classified = envelope.source === "CLASSIFIER";
+      seen.push({ round: entry.round, kind, receipt, classified });
 
       const mark = kind === entry.expect ? "\u2713" : "!";
       if (kind !== entry.expect) failures += 1;
       console.log(
         `  ${mark} round ${entry.round}  ${kind.padEnd(7)} ${String(REPORTED_BULLETS[kind] ?? "?").padStart(2)} balls  ` +
-          `${String(elapsed).padStart(4)}ms  ${String(response.headers["x-pa-grading-path"]).padEnd(6)}  ` +
+          `${String(elapsed).padStart(4)}ms  ${path.padEnd(9)}  ` +
           `source=${String(envelope.source).padEnd(15)} ${entry.label}`,
       );
+      if (typeof fallback === "string") {
+        console.log(`        NOT GRADED: ${fallback} — this round was granted, not read`);
+      }
       if (entry.answer.length > 0) {
         console.log(`        “${entry.answer.slice(0, 96)}${entry.answer.length > 96 ? "…" : ""}”`);
       }
     }
 
-    const correct = seen.filter((entry) => entry.kind === "CORRECT").length;
-    const wrong = seen.filter((entry) => entry.kind === "WRONG").length;
+    // ONLY CLASSIFIED ROUNDS COUNT TOWARDS THE PROOF. A fallback CORRECT is not
+    // evidence of grading and an ABSTAINED WRONG is not evidence of grading; a
+    // run in which every real answer was granted and only the empty box came back
+    // WRONG satisfied the old arithmetic exactly.
+    const graded = seen.filter((entry) => entry.classified);
+    if (graded.length === 0) {
+      const snapshot = (
+        await app.inject({
+          method: "GET",
+          url: "/v1/duels/grading/health",
+          headers: as(student),
+        })
+      ).json() as { grading?: { status?: string; advice?: string | null } };
+      fail(
+        "not one round was decided by a classification: every answer was granted " +
+          `the maximum. /v1/health says ${snapshot.grading?.status ?? "?"} — ` +
+          `${snapshot.grading?.advice ?? "no advice reported"}`,
+      );
+    }
+    const correct = graded.filter((entry) => entry.kind === "CORRECT").length;
+    const wrong = graded.filter((entry) => entry.kind === "WRONG").length;
     if (correct === 0 || wrong === 0) {
       fail(
-        `every answer graded the same way (${correct} correct, ${wrong} wrong). An unreachable classifier grants everything — this is the bug, not a pass.`,
+        `every classified answer graded the same way (${correct} correct, ${wrong} wrong of ${graded.length} classified). ` +
+          "The classifier is answering but not discriminating — this is the bug, not a pass.",
       );
     }
     pass(
-      `the same item graded both ways: ${correct} CORRECT (${REPORTED_BULLETS.CORRECT} balls) and ${wrong} WRONG (${REPORTED_BULLETS.WRONG} balls)`,
+      `the same item graded both ways BY THE CLASSIFIER: ${correct} CORRECT (${REPORTED_BULLETS.CORRECT} balls) and ${wrong} WRONG (${REPORTED_BULLETS.WRONG} balls)`,
     );
 
     // ---- the receipt binds to one profile, one duel, one round ------------
+    //
+    // WHAT A RECEIPT DOES AND DOES NOT ATTEST, because the two are easy to read
+    // as one thing. It proves THE SERVER MINTED THIS ENVELOPE for this player,
+    // this duel and this round — that the client did not author or move it. It
+    // says nothing about whether a classifier read the answer: a fallback CORRECT
+    // granted because the gateway was unreachable is minted by the server and gets
+    // a perfectly valid receipt. "Signed" and "graded" are independent, and the
+    // section above is the one that establishes graded.
     console.log("\nReceipt binding");
     const verifier = createDuelGrading(app.log);
     const first = seen[0]!;
@@ -408,6 +466,43 @@ async function main(): Promise<void> {
     }
     pass("a request carrying `bullets` is refused the same way");
 
+    // ---- and what the endpoints say about all of it -------------------------
+    //
+    // Read last, so it reports the rate the rounds above actually produced. This
+    // is the number a person watches during a lesson, and it was capable of
+    // saying DEGRADED through a run in which nothing was graded at all.
+    console.log("\nWhat /v1/health says about the run it just did");
+    const finalHealth = (
+      await app.inject({ method: "GET", url: "/v1/health" })
+    ).json() as {
+      grading?: {
+        status?: string;
+        classifiedInWindow?: number;
+        gradeableInWindow?: number;
+        ungradedInWindow?: number;
+        ungradedPercent?: number | null;
+        ungradedByDiagnosis?: Record<string, number>;
+        advice?: string | null;
+      };
+    };
+    const signal = finalHealth.grading ?? {};
+    console.log(
+      `      status=${signal.status} classified=${signal.classifiedInWindow}/${signal.gradeableInWindow} ` +
+        `ungraded=${signal.ungradedInWindow} (${signal.ungradedPercent ?? "n/a"}%)`,
+    );
+    if (signal.advice) console.log(`      ${signal.advice}`);
+    const anyUngraded = (signal.ungradedInWindow ?? 0) > 0;
+    if (signal.status === "OK" && anyUngraded && signal.classifiedInWindow === 0) {
+      fail(
+        "/v1/health says OK while nothing was graded; the endpoint is reporting " +
+          "the opposite of the truth",
+      );
+    }
+    if (!anyUngraded && signal.status !== "OK") {
+      fail(`/v1/health says ${signal.status} with no ungraded rounds in the window`);
+    }
+    pass(`/v1/health agrees with what the rounds above did: ${signal.status}`);
+
     console.log(
       failures === 0
         ? "\nThe duel grades answers. A wrong one costs the student half the magazine.\n"
@@ -417,7 +512,13 @@ async function main(): Promise<void> {
     for (const user of users) await dropUser(user).catch(() => undefined);
     await app.close();
   }
-  process.exit(0);
+  // A verdict that graded the wrong way is a red run, not a green one. Every
+  // hard precondition above throws through `fail`, but a round whose kind did
+  // not match its expectation only increments `failures` and keeps going so the
+  // whole picture is printed — and that count has to reach the exit code, or a
+  // live run in which a CORRECT answer was graded WRONG prints its ! line and
+  // still exits 0, which is the silent-success this script exists to refuse.
+  process.exit(failures === 0 ? 0 : 1);
 }
 
 main().catch((cause) => {

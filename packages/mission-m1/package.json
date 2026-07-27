@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@pa/beat": "workspace:*",
+    "@pa/duel": "workspace:*",
     "@pa/engine-world": "workspace:*"
   },
   "devDependencies": {

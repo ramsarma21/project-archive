@@ -25,6 +25,7 @@
 // cannot drift from the simulation that produces them.
 
 import type { CombatIntent, DuelPhase, DuelSide, Vec3 } from "@pa/duel";
+import { withDevSessionHeader } from "../devSession.js";
 
 /** Same-origin. Vite proxies /api to the API so the session cookie is first-party. */
 const BASE = "";
@@ -57,6 +58,12 @@ export interface OpponentView {
   readonly handle: string;
   readonly rank: number;
   readonly position: Vec3;
+  /** Ground velocity, m/s. Frozen with the position when `visible` is false. */
+  readonly velocity: { readonly x: number; readonly z: number };
+  /** Aim yaw — snapshot-backed, so facing is never inferred. Frozen when unseen. */
+  readonly aimYaw: number;
+  /** Mid-dash flag — snapshot-backed; frozen when unseen. */
+  readonly dashing: boolean;
   readonly capsuleHeight: number;
   readonly health: number;
   readonly ammo: number;
@@ -88,6 +95,13 @@ export interface MatchSnapshot {
   readonly self: SelfView;
   readonly opponent: OpponentView;
   readonly projectiles: readonly ProjectileView[];
+  /**
+   * The authoritative post-answer countdown in whole seconds, or null. Mirrors
+   * @pa/pvp's `MatchSnapshot.resumeCountdownSeconds`: non-null (3, 2, 1) only while
+   * the server is in BULLETS_GRANTED, and never while a side still owes an answer.
+   * There is no client clock behind it — it is read from the snapshot and shown.
+   */
+  readonly resumeCountdownSeconds: number | null;
 }
 
 export interface MatchResultPayload {
@@ -113,6 +127,23 @@ export interface QuestionPayload {
    * discloses the repeat rather than hiding it, and so does the screen.
    */
   readonly recycled: boolean;
+  /**
+   * The Codex cards this question draws on — the RELEVANT ones. Server-derived, but
+   * NO LONGER SHOWN during a question: naming them would hand the player the answer to
+   * the evidence mechanic. Kept on the wire for diagnostics and the post-verdict
+   * surface; the offered hand below is what the player interacts with.
+   */
+  readonly codexCardIds: readonly string[];
+  /**
+   * The offered evidence hand — the ids to deal, indistinguishable relevant cards and
+   * decoys, in the server's deterministic order. IDENTICAL for both sides of a match.
+   * Which of these are relevant is the server's secret; only this safe projection
+   * crosses the wire, so nothing the client renders reveals the answer before grading.
+   */
+  readonly offeredCardIds: readonly string[];
+  /** How many supporting cards a selection must place. Public; never which. */
+  readonly minSupport: number;
+  readonly maxSelectable: number;
 }
 
 export interface MatchRead {
@@ -131,6 +162,12 @@ export interface IntentAck {
 
 export interface AnswerAck {
   readonly verdict: "CORRECT" | "WRONG";
+  /**
+   * Why the placed evidence fell short, if it did. A misconception class only
+   * (TOO_FEW, INCOMPATIBLE, …) — never which cards were relevant — and returned only
+   * to the answering side, so nothing leaks to the opponent.
+   */
+  readonly evidence?: string;
   readonly snapshot: MatchSnapshot;
 }
 
@@ -156,6 +193,32 @@ export interface LobbyJoined {
   readonly matchId: string;
   readonly status: string;
   readonly side: DuelSide;
+}
+
+/**
+ * What a reloaded window is currently committed to, from `GET /api/pvp/active`.
+ *
+ * A browser refreshed mid-duel loses the matchId it was polling. This is how the Hub
+ * or the standalone page recovers it without opening a second lobby and being refused:
+ * an active match (with the side to resume as), an open lobby (with its code), or
+ * nothing. `NONE` is the honest terminal state — a resolved match swept past its
+ * retention has nothing left to rejoin, and the result is already on the board.
+ */
+export interface PvpActiveState {
+  /**
+   * MATCH  — a still-live match to resume (`matchId`, `side`).
+   * RESULT — a resolved match still in its retention window (`matchId`, `side`,
+   *          `result`), so a reload lands on the result screen.
+   * LOBBY  — an open lobby this profile hosts (`code`, `handle`).
+   * NONE   — nothing to restore.
+   */
+  readonly kind: "MATCH" | "RESULT" | "LOBBY" | "NONE";
+  readonly matchId?: string;
+  readonly side?: DuelSide;
+  readonly code?: string;
+  readonly status?: string;
+  readonly handle?: string;
+  readonly result?: MatchResultPayload | null;
 }
 
 /**
@@ -268,14 +331,49 @@ function mutationHeaders(): Record<string, string> {
   return csrfToken === null ? {} : { "x-pa-csrf-token": csrfToken };
 }
 
+/**
+ * The production request timeout, shared by every PvP fetch AND the latency test model.
+ *
+ * The poll loop is recursive: it sends, awaits the response, then schedules the next
+ * request. A request that HANGS would stall the whole loop — the fight would freeze and
+ * no further intent frame would ever be sent. So every fetch is bounded: after this many
+ * milliseconds it is aborted and reported as UNREACHABLE, exactly like a dropped packet.
+ * UNREACHABLE says nothing about the match, so the loop keeps polling and — crucially —
+ * an in-flight edge receipt is never acknowledged on a timeout, so the press stays
+ * pending and rides the next poll. 200ms is the contract the latency model is tested at.
+ */
+export const REQUEST_TIMEOUT_MS = 200;
+
+/**
+ * The grading timeout, for the answer POST alone.
+ *
+ * Answer grading runs a classifier server-side and legitimately takes far longer than a
+ * position poll — measured at roughly 600–850ms — so the 200ms high-frequency budget
+ * would abort a healthy grade and read it as a network failure. 1500ms clears the
+ * observed range with generous margin while still bounding a genuinely hung grade so the
+ * screen does not wait forever. Every OTHER path (poll/read/intent/active/lobby/forfeit)
+ * keeps the tight 200ms budget, since a hung one of those would stall the recursive loop.
+ */
+export const ANSWER_TIMEOUT_MS = 1500;
+
 async function callJson<T>(
   path: string,
   init: RequestInit = {},
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
 ): Promise<PvpCall<T>> {
+  // AbortController + a timer, cleaned up in `finally`, so a hung request cannot block the
+  // recursive loop and a completed one leaves no dangling timer.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(`${BASE}${path}`, {
       credentials: "include",
       ...init,
+      // This tab's dev-session handle rides on EVERY PvP call — reads, polls and
+      // mutations alike — so two windows create/join/poll as two independent local
+      // profiles rather than as one shared cookie identity.
+      headers: withDevSessionHeader(init.headers as Record<string, string> | undefined),
+      signal: controller.signal,
     });
     if (response.status >= 500) {
       return { status: "UNREACHABLE", detail: `HTTP_${response.status}` };
@@ -302,19 +400,33 @@ async function callJson<T>(
     }
     return { status: "OK", value: (await response.json()) as T };
   } catch (cause) {
-    return {
-      status: "UNREACHABLE",
-      detail: cause instanceof Error ? cause.message : String(cause),
-    };
+    // A TIMEOUT and a network error are both UNREACHABLE — neither is a statement about
+    // the match, and both must leave any pending edge receipt unacknowledged.
+    const detail = controller.signal.aborted
+      ? `TIMEOUT_${timeoutMs}`
+      : cause instanceof Error
+        ? cause.message
+        : String(cause);
+    return { status: "UNREACHABLE", detail };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-function post<T>(path: string, body?: unknown): Promise<PvpCall<T>> {
-  return callJson<T>(path, {
-    method: "POST",
-    headers: { "content-type": "application/json", ...mutationHeaders() },
-    body: JSON.stringify(body ?? {}),
-  });
+function post<T>(
+  path: string,
+  body?: unknown,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): Promise<PvpCall<T>> {
+  return callJson<T>(
+    path,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", ...mutationHeaders() },
+      body: JSON.stringify(body ?? {}),
+    },
+    timeoutMs,
+  );
 }
 
 /**
@@ -325,6 +437,8 @@ function post<T>(path: string, body?: unknown): Promise<PvpCall<T>> {
  */
 export interface PvpTransport {
   identity(): Promise<PvpCall<PvpIdentity>>;
+  /** What this window is already committed to — an in-progress match, a lobby, or nothing. */
+  active(): Promise<PvpCall<PvpActiveState>>;
   createLobby(): Promise<PvpCall<LobbyCreated>>;
   readLobby(code: string): Promise<PvpCall<LobbyRead>>;
   cancelLobby(code: string): Promise<PvpCall<{ code: string; status: string }>>;
@@ -334,7 +448,11 @@ export interface PvpTransport {
     matchId: string,
     frames: readonly IntentFrame[],
   ): Promise<PvpCall<IntentAck>>;
-  answer(matchId: string, answerText: string): Promise<PvpCall<AnswerAck>>;
+  answer(
+    matchId: string,
+    answerText: string,
+    selectedCardIds: readonly string[],
+  ): Promise<PvpCall<AnswerAck>>;
   forfeit(
     matchId: string,
   ): Promise<PvpCall<{ result: MatchResultPayload | null }>>;
@@ -366,6 +484,7 @@ async function readIdentity(): Promise<PvpCall<PvpIdentity>> {
 
 export const httpPvpTransport: PvpTransport = {
   identity: readIdentity,
+  active: () => callJson<PvpActiveState>("/api/pvp/active"),
   createLobby: () => post<LobbyCreated>("/api/pvp/lobby"),
   readLobby: (code) => callJson<LobbyRead>(`/api/pvp/lobby/${encodeURIComponent(code)}`),
   cancelLobby: (code) =>
@@ -381,10 +500,13 @@ export const httpPvpTransport: PvpTransport = {
     post<IntentAck>(`/api/pvp/match/${encodeURIComponent(matchId)}/intents`, {
       frames,
     }),
-  answer: (matchId, answerText) =>
-    post<AnswerAck>(`/api/pvp/match/${encodeURIComponent(matchId)}/answer`, {
-      answerText,
-    }),
+  answer: (matchId, answerText, selectedCardIds) =>
+    post<AnswerAck>(
+      `/api/pvp/match/${encodeURIComponent(matchId)}/answer`,
+      { answerText, selectedCardIds },
+      // Grading is slow; give it the longer budget so a healthy grade is not aborted.
+      ANSWER_TIMEOUT_MS,
+    ),
   forfeit: (matchId) =>
     post<{ result: MatchResultPayload | null }>(
       `/api/pvp/match/${encodeURIComponent(matchId)}/forfeit`,

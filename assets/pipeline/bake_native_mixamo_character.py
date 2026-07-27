@@ -477,6 +477,83 @@ for stray in [o for o in character if o.type == "MESH" and o not in meshes]:
     bpy.data.objects.remove(stray, do_unlink=True)
 assert meshes, "input is not skinned"
 
+
+# ---------------------------------------------------------------- unit scale
+# Mixamo does not guarantee the units of what it hands back, and this script had no
+# opinion about them for nine days.
+#
+# WHAT HAPPENED. officer-clean.fbx is 357 bytes of S3 "503 Slow Down" HTML saved
+# with a .fbx extension - a download that failed without failing - so the officer
+# could not be uploaded to Mixamo as FBX and went up as OBJ instead. An OBJ carries
+# no unit declaration. For the officer, Mixamo returned a rig authored in METRES
+# (Hips rest 1.2239, mesh object scale 1.0); for every sibling it returned the usual
+# CENTIMETRE rig (Hips rest ~115, mesh object scale 100). Blender's FBX importer
+# applies the conventional 0.01 armature scale either way, so the officer arrived
+# 100x too small - 1.9cm tall - and this script baked and exported him that way.
+#
+# Nothing downstream complained. The retarget is proportional, so the clips looked
+# right; both runtime loaders normalise a rig by height/measuredHeight, so he
+# rendered at the correct height on screen. The file was simply wrong.
+#
+# WHY THE CORRECTION IS RESTRICTED TO A DECIMAL FACTOR. Normalising to a target
+# height would also silently resize a rig that is merely a different body, turning a
+# unit bug into an unrequested art change - the failure mode this repo has been bitten
+# by repeatedly, where preserving one observable quantity hides a second change. A
+# unit mismatch is always a power of ten, so only a power of ten is ever applied, and
+# an input that no decimal factor can rescue is refused rather than guessed at.
+HUMAN_HEIGHT_M = (1.2, 2.3)
+UNIT_FACTORS = (1000.0, 100.0, 10.0, 0.1, 0.01, 0.001)
+
+
+def skinned_world_height(objects):
+    """World-space Z span of the skinned meshes, in metres. Blender is Z-up."""
+    bpy.context.view_layer.update()
+    low, high = None, None
+    for mesh in objects:
+        matrix = mesh.matrix_world
+        for vertex in mesh.data.vertices:
+            z = (matrix @ vertex.co).z
+            low = z if low is None else min(low, z)
+            high = z if high is None else max(high, z)
+    return None if low is None else high - low
+
+
+def normalise_rig_units(armature, mesh_objects):
+    height = skinned_world_height(mesh_objects)
+    if height is None or height <= 0:
+        raise SystemExit("RIG_UNITS_FAIL cannot measure the rig's height")
+    if HUMAN_HEIGHT_M[0] <= height <= HUMAN_HEIGHT_M[1]:
+        print(f"RIG_UNITS_OK height={height:.6f}m (no correction needed)")
+        return 1.0
+    usable = [
+        factor
+        for factor in UNIT_FACTORS
+        if HUMAN_HEIGHT_M[0] <= height * factor <= HUMAN_HEIGHT_M[1]
+    ]
+    if len(usable) != 1:
+        raise SystemExit(
+            f"RIG_UNITS_FAIL height={height:.6f}m is not human-scaled and no single "
+            f"decimal unit factor lands it in {HUMAN_HEIGHT_M} (candidates={usable}). "
+            "The input rig is wrong in a way this bake must not paper over."
+        )
+    factor = usable[0]
+    # Scaling the ARMATURE OBJECT rescales mesh, skeleton and every baked clip
+    # together, because the meshes are its children and the actions are keyed in
+    # bone-local space. Bone rest lengths in armature-local units are unchanged, so
+    # rescale_hips_location's ratio - and therefore the retarget - is untouched.
+    armature.scale = armature.scale * factor
+    corrected = skinned_world_height(mesh_objects)
+    print(
+        f"RIG_UNITS_CORRECTED height={height:.6f}m -> {corrected:.6f}m "
+        f"(x{factor:g}; input was authored in the wrong unit)"
+    )
+    if not HUMAN_HEIGHT_M[0] <= corrected <= HUMAN_HEIGHT_M[1]:
+        raise SystemExit(f"RIG_UNITS_FAIL correction landed at {corrected:.6f}m")
+    return factor
+
+
+normalise_rig_units(rig, meshes)
+
 if MATERIAL_SOURCE:
     before_material_objects = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=MATERIAL_SOURCE)
@@ -581,6 +658,19 @@ for action in actions:
     track.mute = True
 
 os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
+
+# Re-measured rather than trusted: normalise_rig_units ran before the clips were
+# attached, and a bake step that moved the rig would otherwise ship silently. This
+# is the last point at which a mis-scaled rig can be stopped inside Blender;
+# scripts/check-world-scale.mjs stops it again at publication.
+final_height = skinned_world_height(meshes)
+if final_height is None or not HUMAN_HEIGHT_M[0] <= final_height <= HUMAN_HEIGHT_M[1]:
+    raise SystemExit(
+        f"RIG_UNITS_FAIL refusing to export {OUTPUT}: height {final_height}m is "
+        f"outside {HUMAN_HEIGHT_M}"
+    )
+print(f"RIG_UNITS_EXPORT height={final_height:.6f}m")
+
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.export_scene.gltf(
     filepath=OUTPUT,

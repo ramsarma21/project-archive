@@ -2,15 +2,18 @@
 // Unlike text-to-3D, Image-to-3D preserves the exact pose/outfit silhouette.
 //
 // Usage:
-//   node gen_character_from_image.mjs reference.png output.glb
+//   node gen_character_from_image.mjs reference.png output.glb [targetPolycount]
+// targetPolycount is optional and defaults to 30000; a higher base count (e.g.
+// 50000) preserves more facial detail before the web optimizer decimates it.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname, extname } from "node:path";
 
-const [, , imageArg, outputArg] = process.argv;
+const [, , imageArg, outputArg, polyArg] = process.argv;
 if (!imageArg || !outputArg) {
-  console.error("usage: node gen_character_from_image.mjs reference.png output.glb");
+  console.error("usage: node gen_character_from_image.mjs reference.png output.glb [targetPolycount]");
   process.exit(1);
 }
+const targetPolycount = Number(polyArg ?? "30000") || 30000;
 const imagePath = resolve(imageArg);
 const outputPath = resolve(outputArg);
 const env = readFileSync(resolve(".env"), "utf8");
@@ -33,7 +36,7 @@ const create = await fetch("https://api.meshy.ai/openapi/v1/image-to-3d", {
     should_texture: true,
     enable_pbr: false,
     should_remesh: true,
-    target_polycount: 30000,
+    target_polycount: targetPolycount,
     topology: "triangle",
     target_formats: ["glb"],
   }),

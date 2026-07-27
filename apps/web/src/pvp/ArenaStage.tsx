@@ -1,14 +1,25 @@
-import { Suspense, useCallback, useMemo, useRef } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { FACE_OFF_SECONDS } from "@pa/duel";
-import { PLAYER_RIG } from "../duel/m1Duel.js";
+import { referenceArena } from "@pa/duel";
 import {
-  AIM_PLANE_Y,
-  approach,
-  cameraFollowRate,
-  desiredCamera,
-} from "../duel/duelCamera.js";
+  LOOK_TUNING,
+  chaseCameraPosition,
+  chaseFocus,
+  type CollisionWorld,
+} from "@pa/engine-world";
+import { PLAYER_RIG } from "../duel/m1Duel.js";
+import { AIM_PLANE_Y, approach } from "../duel/duelCamera.js";
+import {
+  aimGroundPoint,
+  attachPvpLook,
+  clearChaseDistance,
+  drainLook,
+  lookAim,
+  seedLookFromAim,
+  type PvpLookController,
+  type PvpLookState,
+} from "./pvpLook.js";
 import { ArenaActor, type ArenaActorFrame } from "./ArenaActor.js";
 import {
   ArenaAimMark,
@@ -20,13 +31,12 @@ import {
   ArenaMuzzleFlashes,
 } from "./ArenaGunplay.js";
 import { ArenaScenery } from "./ArenaScenery.js";
-import { answeringCameraSettles, cameraPhaseFor } from "./arenaCamera.js";
 import {
   staleBodyOpacity,
   type ArenaSample,
   type ArenaSource,
+  type OpponentSighting,
 } from "./arenaFeed.js";
-import type { ActorPose } from "../duel/duelRuntime.js";
 
 // One canvas, one sampler, one camera.
 //
@@ -55,149 +65,168 @@ function Sampler(props: {
 }
 
 /**
- * Pointer to a world aim direction.
+ * Bind the player's look to the canvas — the ONLY place a pointer is captured.
  *
- * The authority's aim is a world-space vector, so the pointer is cast onto the plane
- * an aimed ball actually travels in — the standing chest line. That is what makes
- * "point at his chest and click" mean what it looks like it means. The direction is
- * reported up rather than the point, because a direction is all the intent frame has
- * a field for, which is also why a client cannot describe a position it did not earn.
+ * On the canvas element, so a click on the HUD is not a request to capture the mouse,
+ * and torn down on unmount so no listener outlives the match. The `enabled` prop is
+ * driven by the phase: a question disables collection and drops the pointer lock so
+ * the player can reach the answer box, and re-enables without replaying travel.
  */
-function AimTracker(props: {
-  read: () => ArenaSample | null;
-  aimRef: { current: THREE.Vector3 };
-  onAim: (x: number, z: number) => void;
-}) {
-  const raycaster = useMemo(() => new THREE.Raycaster(), []);
-  const plane = useMemo(
-    () => new THREE.Plane(new THREE.Vector3(0, 1, 0), -AIM_PLANE_Y),
-    [],
-  );
-  const hit = useMemo(() => new THREE.Vector3(), []);
-  const { camera, pointer } = useThree();
+function LookCapture(props: { look: PvpLookState; enabled: boolean }) {
+  const gl = useThree((state) => state.gl);
+  const controllerRef = useRef<PvpLookController | null>(null);
+  const enabledRef = useRef(props.enabled);
+  enabledRef.current = props.enabled;
 
-  useFrame(() => {
-    const sample = props.read();
-    if (!sample) return;
-    raycaster.setFromCamera(pointer, camera);
-    if (!raycaster.ray.intersectPlane(plane, hit)) return;
-    props.aimRef.current.copy(hit);
-    const dx = hit.x - sample.self.x;
-    const dz = hit.z - sample.self.z;
-    // Below this the pointer is inside the player's own body and the direction is
-    // noise; the last good aim keeps standing, exactly as the duel does.
-    if (Math.hypot(dx, dz) > 0.35) props.onAim(dx, dz);
-  });
+  // ATTACH IN AN EFFECT, NOT IN RENDER. `attachPvpLook` adds document/window listeners,
+  // so calling it from a useMemo — which runs during render — leaks a listener set every
+  // time React discards a render (StrictMode's double invoke, a thrown-away memo), with
+  // no symmetric teardown. An effect has one: exactly one attach per commit and one
+  // detach per teardown, so a StrictMode mount/unmount/remount ends with a single
+  // listener set, no duplicated mouse deltas, and no owned pointer lock left behind.
+  useEffect(() => {
+    const controller = attachPvpLook(
+      props.look,
+      gl.domElement as unknown as HTMLElement,
+    );
+    controller.setEnabled(enabledRef.current);
+    controllerRef.current = controller;
+    return () => {
+      controller.detach();
+      controllerRef.current = null;
+    };
+  }, [gl, props.look]);
 
+  useEffect(() => {
+    controllerRef.current?.setEnabled(props.enabled);
+  }, [props.enabled]);
   return null;
 }
 
 /**
- * The camera, which is the traversal camera, which is the boss duel's camera.
+ * Bind gameplay pointer input to the canvas — the one place PvP captures a pointer.
  *
- * NOTHING HERE IS A SECOND CAMERA. Every pose comes out of the duel's own
- * `desiredCamera` and every approach rate out of its `cameraFollowRate`, for the same
- * reason the props and the ball treatments are imported rather than reinvented: a
- * player should not have to re-learn how they see their own character between running
- * a route and fighting at the end of it.
- *
- * The engagement pose is over-the-shoulder at 4.9 m back, 2.62 m up, 0.72 m outboard.
- * THE HEIGHT IS LOAD-BEARING AND IS NOT TOUCHED. The balls are slow and dodgeable
- * because they can be seen, and a low camera hides the one coming at you; that height
- * and the mark each ball casts on the cobbles are between them the whole reason a duel
- * is a fight rather than a coin flip.
- *
- * The single exception — what the camera does while a question is open — is decided in
- * `arenaCamera.ts`, where it can be read and tested on its own.
+ * The session owns the input controller; this is the only layer with the canvas, so
+ * it wires the two together and returns the detach so the listeners live exactly as
+ * long as the canvas does.
  */
-function ArenaCamera(props: {
+function InputCapture(props: { bindInput: (canvas: HTMLElement) => () => void }) {
+  const gl = useThree((state) => state.gl);
+  useEffect(
+    () => props.bindInput(gl.domElement as unknown as HTMLElement),
+    [gl, props.bindInput],
+  );
+  return null;
+}
+
+/**
+ * Report the DELAYED opponent sighting to the DOM HUD, so the "sight line broken"
+ * banner and the drawn body agree on when the opponent is out of sight.
+ *
+ * The banner used to read the newest raw snapshot, which flips the instant the server
+ * says the line broke — while the body, drawn from the delayed presentation sample, is
+ * still standing in the open for a render delay longer. Both must read the ONE delayed
+ * sample. This reads the same sample the actor does and reports the sighting KIND up
+ * only when it changes, so a per-frame value drives React state without a per-frame
+ * re-render.
+ */
+function OpponentSightingReporter(props: {
   read: () => ArenaSample | null;
-  reducedMotion: boolean;
+  onOpponentSighting: (kind: OpponentSighting["kind"]) => void;
+}) {
+  const last = useRef<OpponentSighting["kind"] | null>(null);
+  useFrame(() => {
+    const sample = props.read();
+    if (!sample) return;
+    const kind = sample.opponent.kind;
+    if (kind !== last.current) {
+      last.current = kind;
+      props.onOpponentSighting(kind);
+    }
+  });
+  return null;
+}
+
+/**
+ * The ONE place the look is drained per frame.
+ *
+ * Draining here, before the camera and before the movement basis read the yaw, is
+ * what makes camera, movement and aim agree on a single value within a frame — the
+ * property that keeps them from disagreeing by one mouse event's worth of yaw. The
+ * look is seeded once from the authoritative aim, then owned by the mouse. Aim and
+ * camera yaw are reported upward; NOTHING downstream writes back into the look, which
+ * is the whole of why the strafe can no longer precess the frame.
+ */
+function LookFrame(props: {
+  look: PvpLookState;
+  read: () => ArenaSample | null;
+  aimRef: { current: THREE.Vector3 };
+  bounds: CollisionWorld["bounds"];
+  onAim: (x: number, z: number) => void;
   onCameraYaw: (yaw: number) => void;
 }) {
-  const position = useRef(new THREE.Vector3(0, 3, -14));
-  const target = useRef(new THREE.Vector3(0, 1.2, 0));
-  const fov = useRef(40);
-  const aimYaw = useRef(0);
-  const started = useRef(false);
-  // The last opponent pose the server was willing to place. See below.
-  const lastOpponent = useRef<ActorPose | null>(null);
+  useFrame(() => {
+    const sample = props.read();
+    if (sample) {
+      seedLookFromAim(props.look, Math.sin(sample.self.yaw), Math.cos(sample.self.yaw));
+    }
+    const look = drainLook(props.look);
+    props.onCameraYaw(look.yaw);
+    const aim = lookAim(props.look);
+    props.onAim(aim.x, aim.z);
+    if (sample) {
+      // The reticle mark uses the ONE shared ground-point convention — clamped reach,
+      // arena bounds, normalized aim — that the projectile marks use too.
+      const ground = aimGroundPoint({ x: sample.self.x, z: sample.self.z }, aim, props.bounds);
+      props.aimRef.current.set(ground.x, AIM_PLANE_Y, ground.z);
+    }
+  });
+  return null;
+}
+
+/**
+ * A mission-style orbit camera, placed FROM the player's look and from nothing else.
+ *
+ * No body-yaw follow and no recenter: the camera orbits where the mouse points, so it
+ * cannot chase the body's facing and it cannot be part of the feedback loop that made
+ * the frame precess. Pitch is clamped by the look primitive; the camera-to-focus
+ * segment is tested against the arena so it never sits inside a chimney or a parapet,
+ * pulling IN immediately when something intrudes and easing back OUT only once the
+ * line is clear again. The look owns the yaw, so there is no shortest-angle turn to
+ * make on a phase transition — there is no angle to interpolate at all.
+ */
+function OrbitCamera(props: {
+  look: PvpLookState;
+  read: () => ArenaSample | null;
+  reducedMotion: boolean;
+  world: CollisionWorld;
+}) {
+  const distance = useRef<number>(LOOK_TUNING.chaseDistanceM);
+  const camPos = useRef(new THREE.Vector3());
+  const focusV = useRef(new THREE.Vector3());
 
   useFrame(({ camera }, delta) => {
     const sample = props.read();
     if (!sample) return;
+    // Already drained by `LookFrame`, which is mounted before this component.
+    const look = props.look.look;
+    const focus = chaseFocus({ x: sample.self.x, y: sample.self.y, z: sample.self.z });
 
-    const settled = answeringCameraSettles(sample.phase);
-    // The chase camera sits behind the body's own facing, smoothed so a flick of the
-    // pointer does not whip the whole frame, and reported up so movement stays
-    // camera-relative like every other mode.
-    if (!settled) {
-      aimYaw.current = approach(
-        aimYaw.current,
-        sample.self.yaw,
-        props.reducedMotion ? 5 : 9,
-        delta,
-      );
-    }
-    props.onCameraYaw(aimYaw.current);
-
-    // A CULLED OPPONENT IS A STATE, NOT A GAP. The snapshot stops carrying a position
-    // once cover breaks the sight line, so a camera that frames both bodies will
-    // sometimes have one. The framing axis holds the last position the server was
-    // willing to place — which is exactly what the rest of the renderer draws, as a
-    // fading sighting — rather than collapsing onto the player and spinning the frame
-    // to a default bearing. Before any sighting at all, the player's own facing is the
-    // axis, which is the face-off bearing anyway.
-    if (sample.opponent.kind !== "UNPLACED") lastOpponent.current = sample.opponent.pose;
-    const opponentPose = lastOpponent.current ?? {
-      ...sample.self,
-      x: sample.self.x + Math.sin(sample.self.yaw),
-      z: sample.self.z + Math.cos(sample.self.yaw),
-    };
-
-    const wanted = desiredCamera({
-      phase: cameraPhaseFor(sample.phase),
-      faceOffProgress:
-        sample.phase === "FACE_OFF"
-          ? Math.min(1, sample.faceOffElapsedS / FACE_OFF_SECONDS)
-          : 1,
-      player: sample.self,
-      opponent: opponentPose,
-      aimYaw: aimYaw.current,
-      playerDowned: sample.selfReadout.health <= 0,
-      reducedMotion: props.reducedMotion,
-      inspect: null,
-    });
-
-    // The RATE still comes from the real phase. Nobody is steering while a question is
-    // open, so the camera should settle rather than track.
-    const rate = props.reducedMotion ? 9 : cameraFollowRate(sample.phase);
-    if (!started.current) {
-      started.current = true;
-      position.current.set(...wanted.position);
-      target.current.set(...wanted.target);
-      fov.current = wanted.fov;
+    // A VERIFIED-clear distance, never the unchecked 0.85m fallback.
+    const clear = clearChaseDistance(props.world, look, focus);
+    if (clear < distance.current) {
+      distance.current = clear; // pull in immediately: never clip through geometry
     } else {
-      position.current.set(
-        approach(position.current.x, wanted.position[0], rate, delta),
-        approach(position.current.y, wanted.position[1], rate, delta),
-        approach(position.current.z, wanted.position[2], rate, delta),
-      );
-      target.current.set(
-        approach(target.current.x, wanted.target[0], rate * 1.3, delta),
-        approach(target.current.y, wanted.target[1], rate * 1.3, delta),
-        approach(target.current.z, wanted.target[2], rate * 1.3, delta),
-      );
-      fov.current = approach(fov.current, wanted.fov, rate, delta);
+      // Ease back out only once the line is clear, so the camera does not snap away
+      // from the player the instant they clear a corner.
+      distance.current = approach(distance.current, clear, props.reducedMotion ? 6 : 10, delta);
     }
 
-    camera.position.copy(position.current);
-    camera.lookAt(target.current);
-    const perspective = camera as THREE.PerspectiveCamera;
-    if (perspective.isPerspectiveCamera && Math.abs(perspective.fov - fov.current) > 0.01) {
-      perspective.fov = fov.current;
-      perspective.updateProjectionMatrix();
-    }
+    const pos = chaseCameraPosition(look, focus, distance.current);
+    camPos.current.set(pos.x, pos.y, pos.z);
+    focusV.current.set(focus.x, focus.y, focus.z);
+    camera.position.copy(camPos.current);
+    camera.lookAt(focusV.current);
   });
 
   return null;
@@ -206,14 +235,26 @@ function ArenaCamera(props: {
 export interface ArenaStageProps {
   readonly source: ArenaSource;
   readonly reducedMotion: boolean;
+  /** The player's look, owned by the caller so it survives a re-render and drives input. */
+  readonly look: PvpLookState;
+  /** Whether look collection is on. False while a question is open. */
+  readonly lookEnabled: boolean;
+  /** Binds gameplay pointer input to the canvas; returns the detach. */
+  readonly bindInput: (canvas: HTMLElement) => () => void;
   readonly onAim: (x: number, z: number) => void;
   readonly onCameraYaw: (yaw: number) => void;
+  /**
+   * The delayed opponent sighting, reported up when it changes, so the DOM banner reads
+   * the same presentation sample the drawn body does rather than the newest raw snapshot.
+   */
+  readonly onOpponentSighting?: (kind: OpponentSighting["kind"]) => void;
 }
 
 export function ArenaStage(props: ArenaStageProps) {
   const sample = useRef<ArenaSample | null>(null);
   const aimRef = useRef(new THREE.Vector3(0, AIM_PLANE_Y, 0));
   const read = useCallback(() => sample.current, []);
+  const world = useMemo<CollisionWorld>(() => referenceArena().world, []);
 
   const readSelf = useCallback((): ArenaActorFrame | null => {
     const current = sample.current;
@@ -257,11 +298,10 @@ export function ArenaStage(props: ArenaStageProps) {
         crouched: sighting.pose.crouched,
         speedMps: sighting.pose.speedMps,
         travelOffFacing: sighting.pose.travelOffFacing,
-        // The projection carries no dash for the opponent, and inferring one from two
-        // positions would be a guess about a mechanic. So their roll is not animated,
-        // which is a missing flourish rather than missing information: the burst is
-        // visible in the movement itself.
-        dashing: false,
+        // Snapshot-backed now: the projection carries the opponent's dash (LOS-gated,
+        // frozen when unseen), so the roll animates from an observation rather than a
+        // guess about a mechanic.
+        dashing: sighting.dashing,
         lastFireTick: current.cues.OPPONENT.lastFireTick,
         lastHitTick: current.cues.OPPONENT.lastHitTick,
       },
@@ -282,11 +322,24 @@ export function ArenaStage(props: ArenaStageProps) {
       }}
     >
       <Sampler source={props.source} into={sample} />
-      <AimTracker read={read} aimRef={aimRef} onAim={props.onAim} />
-      <ArenaCamera
+      {props.onOpponentSighting && (
+        <OpponentSightingReporter read={read} onOpponentSighting={props.onOpponentSighting} />
+      )}
+      <LookCapture look={props.look} enabled={props.lookEnabled} />
+      <InputCapture bindInput={props.bindInput} />
+      <LookFrame
+        look={props.look}
+        read={read}
+        aimRef={aimRef}
+        bounds={world.bounds}
+        onAim={props.onAim}
+        onCameraYaw={props.onCameraYaw}
+      />
+      <OrbitCamera
+        look={props.look}
         read={read}
         reducedMotion={props.reducedMotion}
-        onCameraYaw={props.onCameraYaw}
+        world={world}
       />
       <Suspense fallback={null}>
         <ArenaScenery />

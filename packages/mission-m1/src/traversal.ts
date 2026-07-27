@@ -36,8 +36,11 @@ import {
   DASH_ENVELOPE,
   MOVEMENT_CAPABILITIES,
   PARKOUR_TUNING,
+  planVerb,
+  probeAhead,
   solveLeapOfFaith,
   type ReceivingTarget,
+  type SelectContext,
 } from "@pa/engine-world/parkour";
 import {
   ACTION_MS,
@@ -349,6 +352,67 @@ function verifyBallistic(
   };
 }
 
+/**
+ * Verify a VAULT the way the RUNTIME reads it, with no separate trajectory.
+ *
+ * The static verifier used to hand `beginAuthored` a three-point arc peaking at
+ * `vaultArcHeightM` above the two endpoints — both on the ground — which cleared
+ * far lower than the arc the live reader actually flies. `planVerb` anchors a
+ * vault on the OBSTACLE TOP (start, near-top, far-top, far side), so the real arc
+ * rises over the barrels and, at the old GAOL line, clipped the two flanking
+ * stall canopies to either side. The static arc missed them; the live arc did
+ * not, and the runtime then silently fell back to MANTLE. This asks the exact
+ * question the runtime asks: probe the travel line, plan the VAULT, preflight it.
+ */
+function liveVaultRefusal(
+  world: CollisionWorld,
+  from: RouteNode,
+  to: RouteNode,
+): string | null {
+  const dx = to.pos[0] - from.pos[0];
+  const dz = to.pos[2] - from.pos[2];
+  const len = Math.hypot(dx, dz) || 1;
+  const dirX = dx / len;
+  const dirZ = dz / len;
+  const yaw = Math.atan2(dirX, dirZ);
+  const speed = RUN_SPEED;
+  const start = {
+    ...createGroundedState(toVec(from.pos), yaw),
+    vel: { x: dirX * speed, y: 0, z: dirZ * speed },
+  };
+  const probe = probeAhead(world, {
+    pos: toVec(from.pos),
+    velX: dirX * speed,
+    velZ: dirZ * speed,
+    yaw,
+  });
+  const ctx: SelectContext = {
+    grounded: true,
+    // Sprint is the parkour consent the reader requires; a verifier stands in for
+    // a player holding it.
+    sprintHeld: true,
+    jumpBuffered: false,
+    crouchHeld: false,
+    chaining: false,
+    receivingTargets: [],
+    reducedMotion: false,
+  };
+  const choice = planVerb(world, probe, ctx, "VAULT", toVec(from.pos));
+  if (!choice || choice.motion.kind !== "AUTHORED") {
+    return "the reader finds no vault on the travel line (no far side read)";
+  }
+  const started = beginAuthored(world, start, {
+    kind: choice.motion.authored,
+    anchors: choice.motion.anchors,
+    durationMs: choice.motion.durationMs,
+    ignore: choice.motion.ignore,
+    arcHeight: choice.motion.arcHeight,
+  });
+  return started
+    ? null
+    : "beginAuthored refuses the live vault arc (obstacle-top trajectory clips geometry)";
+}
+
 function verifyAuthored(
   compiled: CompiledLevel,
   from: RouteNode,
@@ -364,6 +428,10 @@ function verifyAuthored(
 
   let kind: "VAULT" | "CLIMB_UP" | "CLIMB_DOWN" | "DUCK_UNDER";
   const anchors: Array<{ x: number; y: number; z: number }> = [];
+  // A VAULT is preflighted by the live reader (see `liveVaultRefusal`) rather
+  // than by the hand-built arc below, so the verifier and the runtime cannot
+  // disagree about which trajectory it flies.
+  let liveVerified = false;
 
   if (spec.kind === "VAULT") {
     kind = "VAULT";
@@ -398,15 +466,11 @@ function verifyAuthored(
         );
       }
     }
-    anchors.push(
-      toVec(from.pos),
-      {
-        x: (from.pos[0] + to.pos[0]) / 2,
-        y: Math.max(from.pos[1], to.pos[1]) + PARKOUR_TUNING.vaultArcHeightM,
-        z: (from.pos[2] + to.pos[2]) / 2,
-      },
-      toVec(to.pos),
-    );
+    // The trajectory is the runtime's, not a static counterfactual. This is the
+    // check that used to pass a vault the live reader refuses.
+    const refusal = liveVaultRefusal(world, from, to);
+    if (refusal) problems.push(refusal);
+    liveVerified = true;
   } else if (spec.kind === "DUCK_UNDER") {
     kind = "DUCK_UNDER";
     verb = "SLIDE";
@@ -473,15 +537,18 @@ function verifyAuthored(
     anchors.push(toVec(from.pos), toVec(to.pos));
   }
 
-  const started = beginAuthored(world, createGroundedState(toVec(from.pos), 0), {
-    kind,
-    anchors,
-    durationMs: Math.round(durationS * 1000),
-    ...(spec.ignore ? { ignore: spec.ignore } : {}),
-    ...(spec.kind === "VAULT" ? { arcHeight: PARKOUR_TUNING.vaultArcHeightM } : {}),
-  });
-  if (!started) {
-    problems.push("beginAuthored refuses this affordance (endpoint or trajectory)");
+  // A VAULT was already preflighted through the live reader above; every other
+  // authored kind is checked here against its own endpoints.
+  if (!liveVerified) {
+    const started = beginAuthored(world, createGroundedState(toVec(from.pos), 0), {
+      kind,
+      anchors,
+      durationMs: Math.round(durationS * 1000),
+      ...(spec.ignore ? { ignore: spec.ignore } : {}),
+    });
+    if (!started) {
+      problems.push("beginAuthored refuses this affordance (endpoint or trajectory)");
+    }
   }
 
   const intensity =

@@ -22,6 +22,15 @@ export function AssessmentPanel(props: {
   preview: boolean;
   delay: number;
   reducedMotion: boolean;
+  /**
+   * Whether Deploy may actually open this operation, and what the button says
+   * when it cannot. Threaded from the hub's server-backed standing rather than
+   * inferred from the map node, so a signed-out preview or an interrupted attempt
+   * disables the button and states why — it never merely lets `requestDeploy`
+   * no-op behind an enabled-looking control.
+   */
+  canDeploy: boolean;
+  deployLabel: string;
   onDeploy: (missionId: string) => void;
 }) {
   const { mission } = props;
@@ -41,8 +50,6 @@ export function AssessmentPanel(props: {
       </SystemPanel>
     );
   }
-
-  const locked = mission.status === "LOCKED";
 
   return (
     <SystemPanel
@@ -72,10 +79,10 @@ export function AssessmentPanel(props: {
         <button
           type="button"
           className="hub-deploy"
-          disabled={locked}
+          disabled={!props.canDeploy}
           onClick={() => props.onDeploy(mission.id)}
         >
-          {locked ? "Locked" : "Deploy"}
+          {props.deployLabel}
         </button>
       </div>
     </SystemPanel>

@@ -30,6 +30,18 @@
   color: #8fa8c0;
 }
 
+/* Why a round's evidence fell short, in plain words. A misconception class made
+   readable — never which card was relevant, so it cannot become the answer. */
+.pvp-evidence-hint {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: #f2c14e;
+  padding: 0.4rem 0.6rem;
+  border-left: 2px solid rgba(242, 193, 78, 0.6);
+  background: rgba(56, 44, 16, 0.35);
+  border-radius: 4px;
+}
+
 .pvp-warn {
   color: #f2c14e;
 }
@@ -106,6 +118,21 @@
   border-color: #47739c;
 }
 
+/* The primary control plus its compact gating reason, side by side. */
+.pvp-submit-group {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+.pvp-gate {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #f2c14e;
+  font-variant-numeric: tabular-nums;
+}
+
 .pvp-btn-danger {
   border-color: #6d3138;
   background: #2a1519;
@@ -172,6 +199,7 @@
 }
 
 .pvp-body {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr minmax(320px, 26rem);
   min-height: 0;
@@ -512,6 +540,123 @@
   background: rgba(90, 40, 40, 0.35);
   border: 1px solid #a33f3f;
   color: #ffc4c4;
+}
+
+/* ---- the centered question / countdown overlay --------------------------- */
+
+/* Covers the whole match body and centres its card over the arena. Inert by
+   default (pointer-events: none) so the resume countdown never eats a click meant
+   for the yard; only the interactive question card opts back in. */
+.pvp-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 3vw, 2rem);
+  pointer-events: none;
+}
+
+.pvp-overlay-card {
+  width: min(52rem, 92vw);
+  max-height: calc(100% - 1.5rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: clamp(1.1rem, 2.5vw, 1.9rem);
+  color: #dceaf7;
+  border: 1px solid rgba(94, 200, 255, 0.32);
+  border-radius: 12px;
+  background:
+    radial-gradient(130% 70% at 50% 0%, rgba(38, 108, 160, 0.32), transparent 64%),
+    linear-gradient(180deg, rgba(6, 22, 38, 0.94), rgba(4, 12, 22, 0.97));
+  box-shadow:
+    0 0 0 1px rgba(94, 200, 255, 0.12),
+    0 28px 70px rgba(0, 0, 0, 0.62),
+    inset 0 0 46px rgba(64, 156, 255, 0.07);
+  backdrop-filter: blur(10px) saturate(1.1);
+  animation: pvp-overlay-rise 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* The question card is the only interactive surface; wait/countdown banners are not. */
+.pvp-overlay-card.is-interactive { pointer-events: auto; }
+
+.pvp-overlay-kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6fc4f0;
+  text-shadow: 0 0 10px rgba(110, 195, 240, 0.5);
+}
+
+/* Substantially larger prompt typography than the old sidebar panel. */
+.pvp-overlay .pvp-question {
+  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.pvp-overlay .pvp-answer {
+  min-height: 12rem;
+  font-size: 1.02rem;
+}
+
+.pvp-q-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.pvp-q-chip {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(94, 200, 255, 0.32);
+  background: rgba(10, 34, 56, 0.55);
+  color: #bfe4ff;
+}
+
+.pvp-countdown {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  padding: 0.4rem 0;
+}
+.pvp-countdown-copy {
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(159, 220, 255, 0.85);
+}
+.pvp-countdown-number {
+  font-size: clamp(3.5rem, 9vw, 5.5rem);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: #eaf8ff;
+  text-shadow: 0 0 26px rgba(120, 205, 255, 0.6);
+  animation: pvp-countdown-pop 0.3s ease both;
+}
+
+@media (max-width: 900px) {
+  .pvp-overlay { padding: 0.6rem; align-items: start; }
+  .pvp-overlay-card { width: 100%; }
+}
+
+.pvp-overlay.is-reduced .pvp-overlay-card,
+.pvp-overlay.is-reduced .pvp-countdown-number {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pvp-overlay-card,
+  .pvp-countdown-number {
+    animation: none;
+  }
+}
+
+@keyframes pvp-overlay-rise {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pvp-countdown-pop {
+  from { opacity: 0.35; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .pvp-waiting {

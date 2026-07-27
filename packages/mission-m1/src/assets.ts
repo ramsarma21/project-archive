@@ -25,7 +25,7 @@ export const ASSETS: AssetRequirement[] = [
   { key: "bldg-printshop", status: "EXISTING", path: "world/props/bldg-printshop.glb", sizeM: [13, 7.1, 14], why: "Edes & Gill. The run opens on its leads." },
   { key: "printer-drying-rack", status: "EXISTING", path: "world/props/printer-drying-rack.glb", sizeM: [2.6, 1.6, 2.8], why: "The unstamped sheets, taken at a run." },
   { key: "market-awning", status: "EXISTING", path: "world/props/market-awning.glb", sizeM: [3.2, 2.6, 2.4], why: "Pentices and stall canopies; the mid line's running surface." },
-  { key: "hay-cart", status: "EXISTING", path: "world/props/hay-cart.glb", sizeM: [3.4, 2.2, 2.2], why: "Every soft landing in the mission, including two dive targets.", standableAt: [2.2] },
+  { key: "hay-cart", status: "EXISTING", path: "world/props/hay-cart.glb", sizeM: [2.8, 2.2, 2.4], why: "The lane and duel-yard hay: a loaded four-wheeled fodder cart with a flat trodden top at 2.2m. The two printshop dive targets are their own `hay-wain-loaded`; this serves the LANE_HAY and COVER_HAY_NW landings, whose footprints a 2.8 x 2.4 body contain-fits without shortfall.", standableAt: [2.2] },
   { key: "market-stall", status: "EXISTING", path: "world/props/market-stall.glb", sizeM: [2.6, 1.9, 2.0], why: "The shambles, and the bookseller's stall under the elm.", standableAt: [1.9, 1.1] },
   { key: "hand-cart", status: "EXISTING", path: "world/props/hand-cart.glb", sizeM: [2.4, 0.95, 1.6], why: "Street-line cover that also breaks the watch's sightline.", standableAt: [0.95] },
   { key: "crate-stack", status: "EXISTING", path: "world/props/crate-stack.glb", sizeM: [2.2, 1.9, 1.8], why: "Crossovers between the street and the canopies.", standableAt: [1.9] },
@@ -118,8 +118,43 @@ export const ASSETS: AssetRequirement[] = [
   // it was read, both of these drew entirely above their own deck — a gambrel
   // walk from 11.200 to 11.242 over a deck at 11.200 — and no art at any height
   // could have carried the surface it was standing on.
-  { key: "roof-ridge-walk", status: "EXISTING", path: "world/props/roof-ridge-walk.glb", sizeM: [9.4, 0.042, 2.8], why: "The flat gambrel top of the meeting house at 11.2m: the last standable surface before the steeple climb.", standableAt: [0.042] },
+  { key: "roof-ridge-walk", status: "EXISTING", path: "world/props/roof-ridge-walk.glb", sizeM: [9.4, 0.042, 2.8], why: "A leaded gambrel flat with a boarded walk down its spine, 42mm from the lead to the top of the boards. Nothing in M1 draws it today — MEETING_RIDGE was re-keyed to `roof-ridge-monitor`, which had three metres of gap to fill that 42mm of board cannot — and it is kept because 42mm of dressing over an EXISTING flat is a contract the next roof deck will want.", standableAt: [0.042] },
   { key: "roof-plank-gantry", status: "EXISTING", path: "world/props/roof-plank-gantry.glb", sizeM: [2.8, 0.03, 1.2], why: "The fire board off the Town House leads. `roof-walk-board-long` is 5.4m and too long for this 2.8m span.", standableAt: [0.03] },
+  {
+    key: "roof-ridge-monitor",
+    status: "EXISTING",
+    path: "world/props/roof-ridge-monitor.glb",
+    // Three metres of building that the building cannot draw.
+    //
+    // MEETING_RIDGE is a walkable plane at 11.20m carried by HOLLIS_MEETING,
+    // whose collision mass tops out at 8.20m. A single-entry cluster takes its
+    // draw box from its OWN collision, so `bldg-meeting-hollis` is drawn to
+    // 8.20 and cannot reach the walk however it is built. The plank walk hung
+    // in the sky and the climb up to it went through open air.
+    //
+    // The owner's ruling is the one this whole level runs on — the art moves to
+    // meet the collision, never the reverse — so the gap is filled with art: a
+    // raised monitor 3.0m tall, based at 8.20 and topping out flat at 11.20.
+    // `drawBox` hangs a lone deck's dressing so its declared `standableAt`
+    // lands on the plane, computing baseY = plane - height, so a 3.0m asset
+    // standable at 3.0 puts its base at 8.20m exactly. The declared height must
+    // equal the mesh's true thickness or that arithmetic binds nothing.
+    //
+    // ITS OWN KEY, and that is the load-bearing half. `roof-ridge-walk` is
+    // declared 0.042m with `standableAt: [0.042]`, and those two numbers are a
+    // measurement of its mesh that was deliberately confirmed today and is
+    // policed by verify_roofline_kit.mjs. Re-declaring that key at 3.0 to serve
+    // this one draw would have made the kit's own contract a lie.
+    //
+    // 2.8m deep on an 8.6m building reads as a ridge monitor rather than as a
+    // full gambrel, which the owner accepted: a raised monitor with louvred
+    // sides and a leaded walk on top is what a New England meeting house put
+    // over its roof to light and vent the hall, and it is period-plausible in a
+    // way that a gambrel squeezed into a third of the plan would not be.
+    sizeM: [9.4, 3.0, 2.8],
+    standableAt: [3.0],
+    why: "The raised monitor on the Hollis Street meeting house: 3.0m of louvred timber standing on the lead flat at 8.20m and carrying the leaded walk at 11.20m, which is the last standable surface before the steeple climb. Before it, MEETING_RIDGE's dressing was 42mm of board hanging three metres clear of the building underneath it.",
+  },
 
   // ---- needed from the art agent ----------------------------------------
   {
@@ -209,27 +244,45 @@ export const ASSETS: AssetRequirement[] = [
   },
   {
     key: "printshop-sign-hood",
-    status: "NEEDED",
+    status: "EXISTING",
     path: "world/props/printshop-sign-hood.glb",
+    // 50mm, and the whole of it is board.
+    //
+    // This is the roofline kit's deck contract, and it is a consequence rather
+    // than a style: `drawBox` boxes a lone deck at its asset's declared height
+    // and hangs it by `standableAt`, so the mesh's TOP FACE is the plane and
+    // everything else the object has must fit in the 50mm underneath it. There
+    // is no room in that for the sign board itself, which is why the sign is
+    // the hood's painted soffit rather than a board swinging under it — a
+    // pendant on a bracket would put its own bottom at the bounding box floor
+    // and drop the boarding it hangs from 400mm above the catch.
     sizeM: [3.2, 0.05, 1.4],
     standableAt: [0.05],
-    why: "The catch at 6.20m outside Edes & Gill, 0.90m under the eaves, and the first rung of the opening descent. `printshop-hanging-sign` was standing in and cannot: its mesh is 1.90 x 1.06 x 0.14, a board on a bracket, so a contain-fit into the 3.20 x 1.20 x 1.40 hull is bound by the board's HEIGHT and draws 2.14 x 1.20 x 0.16 — two thirds of the ledge's length, a ninth of its depth, and standing UP off the plane through the printshop roof, because a lone deck's dressing is bottom-aligned on the surface the player lands on. So what belongs here is a projecting boarded hood over the shop door with the sign hung under it: 3.2 by 1.4 in plan, and built to the roofline kit's deck contract of 50mm above the plane, so its top IS the catch rather than something the runner clips.",
+    why: "The catch at 6.20m outside Edes & Gill, 0.90m under the eaves, and the first rung of the opening descent. `printshop-hanging-sign` was standing in and cannot: its mesh is 1.90 x 1.06 x 0.14, a board on a bracket, so a contain-fit is bound by the board's HEIGHT and draws 2.14 x 1.20 x 0.16 — two thirds of the ledge's length, a ninth of its depth, and standing UP off the plane through the printshop roof, because a lone deck's dressing is registered on the surface the player lands on. What is here now is a projecting boarded hood over the shop door, 3.2 by 1.4 in plan and 50mm of pine boarding on a fascia, so its top IS the catch rather than something the runner clips.",
   },
   {
     key: "bldg-scaffold-run",
-    status: "NEEDED",
+    status: "EXISTING",
     path: "world/props/bldg-scaffold-run.glb",
+    // Two decks and no mass, which is what sets the base.
+    //
+    // SCAFFOLD_D1 and SCAFFOLD_D2 share a footprint exactly, so `clusterSpans`
+    // makes them one object and `drawBox` takes the several-entry branch: the
+    // size is this field and the base is `max(maxY) - height`, i.e. 5.60 - 5.60
+    // = 0. So the declared height is also the statement that the scaffold
+    // stands on the street, and the top staging's boards ARE the top of the
+    // bounding box. Both of those are asserted by the build.
     sizeM: [2.5, 5.6, 11.3],
     standableAt: [2.9, 5.6],
-    why: "Repair scaffolding the length of the Town House's west front, and the safe way up it: putlog staging at 2.90 and 5.60 over an 11.3m run, 2.5m out from the wall. `bldg-scaffold` was standing in and cannot, and the reason is a run rather than a shape: that mesh is 1.90 x 1.34 x 1.90, which at this height is a single 2.5m square section, so a contain-fit into the run draws 2.50 x 1.77 x 2.50 — one bay of scaffolding under one end of eleven metres of staging the route walks. It is not squashed art, it is a quarter of the object. Wants three lifts of ledgers and standards bayed along the frontage with boarded staging on the second and fourth, the top staging flush at 5.60 so it is the surface the player stands on.",
+    why: "Repair scaffolding the length of the Town House's west front, and the safe way up it: putlog staging at 2.90 and 5.60 over an 11.3m run, 2.5m out from the wall. `bldg-scaffold` was standing in and cannot, and the reason is a run rather than a shape: that mesh is 1.90 x 1.34 x 1.90, which at this height is a single 2.5m square section, so a contain-fit into the run draws 2.50 x 1.77 x 2.50 — one bay of scaffolding under one end of eleven metres of staging the route walks. It is not squashed art, it is a quarter of the object. What is here now is six bays of standards, ledgers and putlogs over the 11.3m frontage with boarded staging at both authored planes, the top staging flush with the box top at 5.60.",
   },
   {
     key: "yard-kerb-stone",
-    status: "NEEDED",
+    status: "EXISTING",
     path: "world/props/yard-kerb-stone.glb",
     sizeM: [5.6, 0.34, 1.2],
     standableAt: [0.34],
-    why: "The kerb round the Dock Square pump yard: 5.6m of dressed granite edging 0.34m proud, which is inside STEP_UP going up and inside the free step-down coming back. `colonial-yard-perimeter` was standing in and cannot, and this one is an asset bug rather than a declaration: that key is a road-kit GROUND PLATE measuring 226.00 x 0.08 x 20.00 with a sidecar that says so, so the contain-fit is 0.0248 and it draws 5.60 x 0.002 x 0.50 — two millimetres of paving lying in the road where the level says there is a step. A kerb is a raised edge; nothing about a ground plate can be one.",
+    why: "The kerb round the Dock Square pump yard: 5.6m of dressed granite edging 0.34m proud, which is inside STEP_UP going up and inside the free step-down coming back. `colonial-yard-perimeter` was standing in and cannot, and this one is an asset bug rather than a declaration: that key is a road-kit GROUND PLATE measuring 226.00 x 0.08 x 20.00 with a sidecar that says so, so the contain-fit is 0.0248 and it draws 5.60 x 0.002 x 0.50 — two millimetres of paving lying in the road where the level says there is a step. A kerb is a raised edge; nothing about a ground plate can be one. What is here now is four dressed kerbstones on a bedding course, jointed and weathered, flat on top at 0.34 with the arris chamfered off the street side.",
   },
   {
     key: "crowd-market-1765",

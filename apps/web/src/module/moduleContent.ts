@@ -1,8 +1,18 @@
 import {
+  MODULE_CHECK_SELECTIONS,
+  MODULE_VISUAL_CLASSIFICATIONS,
   moduleDefinitionDefects,
   type LearningModuleDefinition,
   type ModuleCard,
+  type ModuleCheck,
+  type ModuleCheckOption,
+  type ModuleCheckSelection,
+  type ModuleNarrationBeat,
+  type ModulePresenter,
+  type ModuleScene,
   type ModuleSourceExcerpt,
+  type ModuleVisual,
+  type ModuleVisualClassification,
 } from "./moduleFormat.js";
 
 // ---------------------------------------------------------------------------
@@ -83,6 +93,190 @@ function readExcerpt(
   return { sourceId, title, attribution, lines };
 }
 
+/**
+ * A card's cinematic scene, or a defect. Returns undefined when the card has no
+ * scene at all; returns null (and pushes defects) when a scene is present but
+ * malformed, so the card is refused rather than half-rendered.
+ */
+function readScene(
+  value: unknown,
+  cardId: string,
+  defects: string[],
+): ModuleScene | null | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    defects.push(`${cardId}: scene is not an object`);
+    return null;
+  }
+  const rawVisuals = value["visuals"];
+  const rawBeats = value["beats"];
+  if (!Array.isArray(rawBeats) || rawBeats.length === 0) {
+    defects.push(`${cardId}: scene needs a non-empty beats array`);
+    return null;
+  }
+  if (rawVisuals !== undefined && !Array.isArray(rawVisuals)) {
+    defects.push(`${cardId}: scene visuals is not an array`);
+    return null;
+  }
+
+  const visuals: ModuleVisual[] = [];
+  for (const [index, raw] of (rawVisuals ?? []).entries()) {
+    if (!isRecord(raw)) {
+      defects.push(`${cardId}: visual ${index} is not an object`);
+      return null;
+    }
+    const id = stringAt(raw, "id");
+    const src = stringAt(raw, "src");
+    const alt = stringAt(raw, "alt");
+    const title = stringAt(raw, "title");
+    const caption = stringAt(raw, "caption");
+    const attribution = stringAt(raw, "attribution");
+    const sourceUrl = stringAt(raw, "sourceUrl");
+    const date = stringAt(raw, "date");
+    const rights = stringAt(raw, "rights");
+    const classification = raw["classification"];
+    if (
+      !id || !src || !alt || !title || !caption || !attribution || !sourceUrl ||
+      !date || !rights
+    ) {
+      defects.push(
+        `${cardId}: visual ${id ?? index} needs id, src, alt, title, caption, ` +
+          "attribution, sourceUrl, date and rights",
+      );
+      return null;
+    }
+    if (
+      typeof classification !== "string" ||
+      !MODULE_VISUAL_CLASSIFICATIONS.includes(
+        classification as ModuleVisualClassification,
+      )
+    ) {
+      defects.push(`${cardId}: visual ${id} has an unknown classification`);
+      return null;
+    }
+    visuals.push({
+      id,
+      src,
+      alt,
+      title,
+      caption,
+      attribution,
+      sourceUrl,
+      date,
+      rights,
+      classification: classification as ModuleVisualClassification,
+    });
+  }
+
+  const beats: ModuleNarrationBeat[] = [];
+  for (const [index, raw] of rawBeats.entries()) {
+    if (!isRecord(raw)) {
+      defects.push(`${cardId}: beat ${index} is not an object`);
+      return null;
+    }
+    const id = stringAt(raw, "id");
+    const text = stringAt(raw, "text");
+    if (!id || !text) {
+      defects.push(`${cardId}: beat ${id ?? index} needs an id and text`);
+      return null;
+    }
+    const visualId = stringAt(raw, "visualId");
+    const beat: ModuleNarrationBeat = visualId ? { id, text, visualId } : { id, text };
+    beats.push(beat);
+  }
+
+  return { beats, visuals };
+}
+
+/** A card's mastery check, or a defect (null) when present but malformed. */
+function readCheck(
+  value: unknown,
+  cardId: string,
+  defects: string[],
+): ModuleCheck | null | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    defects.push(`${cardId}: check is not an object`);
+    return null;
+  }
+  const id = stringAt(value, "id");
+  const prompt = stringAt(value, "prompt");
+  const reinforcement = stringAt(value, "reinforcement");
+  const rawOptions = value["options"];
+  if (!id || !prompt || !reinforcement) {
+    defects.push(`${cardId}: check needs an id, prompt and reinforcement`);
+    return null;
+  }
+  if (!Array.isArray(rawOptions) || rawOptions.length === 0) {
+    defects.push(`${cardId}: check ${id} needs a non-empty options array`);
+    return null;
+  }
+  const options: ModuleCheckOption[] = [];
+  for (const [index, raw] of rawOptions.entries()) {
+    if (!isRecord(raw)) {
+      defects.push(`${cardId}: check ${id} option ${index} is not an object`);
+      return null;
+    }
+    const optionId = stringAt(raw, "id");
+    const text = stringAt(raw, "text");
+    const feedback = stringAt(raw, "feedback");
+    const correct = raw["correct"];
+    if (!optionId || !text || !feedback || typeof correct !== "boolean") {
+      defects.push(
+        `${cardId}: check ${id} option ${optionId ?? index} needs an id, text, ` +
+          "boolean correct and feedback",
+      );
+      return null;
+    }
+    options.push({ id: optionId, text, correct, feedback });
+  }
+
+  // `selection` is optional and defaults to single. A present value that is not
+  // one of the known modes is a defect, not a silent fall-through to single —
+  // "multiselect" or a typo should refuse the deck, not quietly grade as one.
+  const rawSelection = value["selection"];
+  let selection: ModuleCheckSelection | undefined;
+  if (rawSelection !== undefined) {
+    if (
+      typeof rawSelection !== "string" ||
+      !MODULE_CHECK_SELECTIONS.includes(rawSelection as ModuleCheckSelection)
+    ) {
+      defects.push(`${cardId}: check ${id} has an unknown selection`);
+      return null;
+    }
+    selection = rawSelection as ModuleCheckSelection;
+  }
+
+  const conceptId = stringAt(value, "conceptId");
+  let check: ModuleCheck = { id, prompt, options, reinforcement };
+  // Assigned conditionally so a check that omits either key stays deep-equal to
+  // one authored without it — the same rule the card fields follow.
+  if (selection) check = { ...check, selection };
+  if (conceptId) check = { ...check, conceptId };
+  return check;
+}
+
+/** The deck's presenter, or a defect (null) when present but malformed. */
+function readPresenter(
+  value: unknown,
+  defects: string[],
+): ModulePresenter | null | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    defects.push("presenter is not an object");
+    return null;
+  }
+  const glbKey = stringAt(value, "glbKey");
+  const displayName = stringAt(value, "displayName");
+  const talkClip = stringAt(value, "talkClip");
+  const idleClip = stringAt(value, "idleClip");
+  if (!glbKey || !displayName || !talkClip || !idleClip) {
+    defects.push("presenter needs a glbKey, displayName, talkClip and idleClip");
+    return null;
+  }
+  return { glbKey, displayName, talkClip, idleClip };
+}
+
 function readCard(
   value: unknown,
   at: number,
@@ -115,6 +309,8 @@ function readCard(
   }
 
   const excerpt = readExcerpt(value["excerpt"], id, defects);
+  const scene = readScene(value["scene"], id, defects);
+  const check = readCheck(value["check"], id, defects);
 
   if (
     !cueId ||
@@ -124,12 +320,14 @@ function readCard(
     body.length === 0 ||
     !conceptIds ||
     !codexCardIds ||
-    typeof throughSeconds !== "number"
+    typeof throughSeconds !== "number" ||
+    scene === null ||
+    check === null
   ) {
     return null;
   }
 
-  const card: ModuleCard = {
+  let card: ModuleCard = {
     id,
     cueId,
     throughSeconds,
@@ -139,10 +337,13 @@ function readCard(
     codexCardIds,
     advanceLabel,
   };
-  // Assigned conditionally: the format marks `excerpt` optional, and writing an
+  // Assigned conditionally: the format marks these optional, and writing an
   // explicit `undefined` would make a card that has none unequal to one authored
   // without the key at all.
-  return excerpt ? { ...card, excerpt } : card;
+  if (excerpt) card = { ...card, excerpt };
+  if (scene) card = { ...card, scene };
+  if (check) card = { ...card, check };
+  return card;
 }
 
 /**
@@ -184,10 +385,13 @@ export function loadAuthoredModule(envelope: unknown): LoadedModule {
     if (card) cards.push(card);
   });
 
+  const presenter = readPresenter(body["presenter"], defects);
+
   if (!moduleId || !chapterId || !missionId || !title || !subtitle) {
     return { ok: false, defects };
   }
   if (cards.length !== rawCards.length) return { ok: false, defects };
+  if (presenter === null) return { ok: false, defects };
 
   const definition: LearningModuleDefinition = {
     moduleId,
@@ -196,6 +400,7 @@ export function loadAuthoredModule(envelope: unknown): LoadedModule {
     title,
     subtitle,
     cards,
+    ...(presenter ? { presenter } : {}),
   };
 
   // The same authoring rules the in-code definitions are held to: contiguous

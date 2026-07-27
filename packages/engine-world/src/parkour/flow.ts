@@ -29,8 +29,10 @@
 
 import {
   CAPSULE_RADIUS,
+  CONTACT_EPS,
   STAND_HEIGHT,
   type CollisionWorld,
+  type Platform,
   type Vec3,
   canStand,
   isCrouched,
@@ -40,6 +42,7 @@ import {
   AIRBORNE_PHASES,
   AUTHORED_PHASES,
   DASH_DURATION_MS,
+  DECEL,
   RUN_SPEED,
   beginAuthored,
   beginDash,
@@ -50,6 +53,7 @@ import {
   dashSpeed,
   isDashing,
   type MotionState,
+  simulateWalkOff,
   stepMotion,
 } from "../playerMotion.js";
 import type { NoiseEvent } from "../stealth/noise.js";
@@ -59,9 +63,10 @@ import {
   leapRestPosition,
   type ReceivingTarget,
 } from "./leapOfFaith.js";
-import { probeAhead, type ParkourProbe } from "./probe.js";
+import { predictCommittedWalkOff, probeAhead, type ParkourProbe } from "./probe.js";
 import {
-  selectVerb,
+  planVerb,
+  rankVerbs,
   type SelectContext,
   type VerbChoice,
 } from "./select.js";
@@ -86,6 +91,15 @@ export interface FlowState {
   cooldownTicks: number;
   /** Ticks until another burst may open. Zero means dash is ready. */
   dashCooldownTicks: number;
+  /**
+   * Ticks a jump press is still live for. See `PARKOUR_TUNING.jumpBufferTicks`.
+   *
+   * The press arrives on whichever tick the frame happens to deliver it to, and
+   * that tick is very often one the jump cannot be taken on. Holding it for a
+   * few steps is the difference between a jump that fires late and a jump that
+   * never fires at all, and only one of those is a thing a player can learn.
+   */
+  jumpBufferTicks: number;
   /** Speed restored when the running verb completes. */
   exitSpeedMps: number;
   /** Highest foot height reached since leaving the ground, for drop accounting. */
@@ -99,13 +113,36 @@ export interface FlowState {
   /** Dive in progress, if any. */
   leapTargetId: string | null;
   /**
-   * Direction over an unsurvivable lip, latched by the edge brake. While set,
-   * input and momentum heading that way are suppressed before motion steps.
-   * Damping alone cannot hold a lip: grounded motion re-accelerates toward held
-   * input every tick, so the player creeps off at a walking pace.
+   * Direction over a CONFIRMED unsurvivable lip. Set when the exact walk-off
+   * prediction resolved to a fatal drop with no safe verb, and PERSISTED across
+   * ticks: braking removes the very velocity the prediction read, so a read taken
+   * after the brake fires would honestly report a survivable creep and, trusted
+   * alone, would erase the hazard it just confirmed. So the hazard is held until
+   * the player steers off it or the lip is genuinely gone — not until the brake
+   * has hidden its own evidence. While set, the pre-motion brake refuses to
+   * accelerate over the lip and removes the over-lip velocity when the body could
+   * not otherwise stop in time.
    */
   brakeDirX: number | null;
   brakeDirZ: number;
+  /**
+   * Distance from the body to the confirmed lip, refreshed each tick the hazard
+   * holds. The pre-motion brake sizes its stopping distance against this.
+   */
+  brakeLipDistM: number;
+  /**
+   * The IDENTITY of the confirmed hazard: what the fatal fall lands on (a surface
+   * id, or null for the void) and how far it drops. This is what lets the hazard
+   * tell braking apart from geometry change. Braking makes the LIVE read look
+   * survivable, but the same lip still leads to the same landing, so the hazard —
+   * recomputed each tick at the committed speed against the CURRENT world — is
+   * held. When the world changes so that the committed mover no longer falls
+   * fatally (a deck fills the gap, the lip is gone, the drop shrinks), the
+   * recompute comes back safe and the brake releases at once. Identity is also
+   * why turning to a different lip does not silently inherit the old one's hold.
+   */
+  brakeLandingId: string | null;
+  brakeDropM: number;
   /** Clip the animation layer should be playing this tick. */
   clip: string;
   /** True when `clip` should play once and clamp. */
@@ -141,6 +178,141 @@ export interface FlowEvent {
   reason?: string;
 }
 
+/**
+ * How closely the player's intent must point along a directed gateway's axis for
+ * the guided read/commit to engage — the cosine of the angle between them. 0.5 is
+ * a 60° cone: wide enough that a normal approach at the vault counts, tight enough
+ * that a body turning away (pushing back off the axis) is left to the honest read.
+ */
+const GUIDED_INTENT_DOT = 0.5;
+
+// ---- directed drop onto a narrow authored receiver -------------------------
+//
+// A directed descent gateway (the ropewalk tie beam) authorises a RUN_OFF or a
+// HANG_DROP onto a board only a little wider than the body. The authored pace
+// caps the approach, but a walk-off is ballistic: the takeoff SPEED decides
+// where the capsule comes down, and a body that reaches the lip a touch fast —
+// because an encounter restarted it from rest a few metres back, or any other
+// legitimate approach-state variation — clips the board's far lip and slides off
+// as the drop-in momentum carries its centre across the narrow axis.
+//
+// These constants tie a TRAJECTORY-AWARE takeoff cap and a landing settle to
+// narrow directed receivers only. Neither widens collision, teleports, freezes,
+// nor names a node: the receiver is found by simulating the walk-off, and the
+// safe target is the board's own capsule-radius inset.
+
+/** A reference walk-off speed slow enough to land on the near half of any board the descent reaches, used to identify the receiver deck. */
+const DIRECTED_DROP_REF_SPEED_MPS = 1.4;
+/** Along-approach-axis board extent at or below which the inset is load-bearing (a board a sprint overshoots), so the cap engages. Wider receivers need no aim. */
+const NARROW_RECEIVER_SPAN_M = 2.2;
+/** Bisection steps resolving the centre-landing speed. 6 => ~0.015 m/s. */
+const DIRECTED_DROP_SOLVE_STEPS = 6;
+/** Sim horizon for the aim: the deepest directed drop the roll ceiling allows is ~1.1s of fall. */
+const DIRECTED_DROP_SIM_MS = 1400;
+
+/**
+ * Is a lip actually within reach ahead along the axis? A cheap support probe so
+ * the expensive walk-off aim runs only in the last strides into a drop, not on
+ * every flat grounded tick a directed-descent gateway happens to be held.
+ */
+function lipAhead(
+  world: CollisionWorld,
+  motion: MotionState,
+  axisX: number,
+  axisZ: number,
+  alongSpeed: number,
+): boolean {
+  const lookM = 0.5 + Math.max(0, alongSpeed) * 0.2;
+  const px = motion.pos.x + axisX * lookM;
+  const pz = motion.pos.z + axisZ * lookM;
+  const ahead = supportBelow(world, px, pz, motion.pos.y + 0.05, 0.05);
+  return !ahead || ahead.y < motion.pos.y - 0.35;
+}
+
+/** The narrow rectangular board a directed drop lands on, if the descent along the axis comes down on one. */
+function directedReceiverBoard(
+  world: CollisionWorld,
+  motion: MotionState,
+  axisX: number,
+  axisZ: number,
+  dt: number,
+  tuning: ParkourTuning,
+): Platform | null {
+  const ref = simulateWalkOff(
+    world,
+    motion,
+    axisX * DIRECTED_DROP_REF_SPEED_MPS,
+    axisZ * DIRECTED_DROP_REF_SPEED_MPS,
+    { dt, maxMs: DIRECTED_DROP_SIM_MS, maxFallM: tuning.rollMaxDropM + 0.5 },
+  );
+  if (!ref.landed || !ref.landingId) return null;
+  const board = world.platforms.find((p) => p.id === ref.landingId);
+  if (!board || board.polygon) return null;
+  const spanAlong =
+    Math.abs(axisX) * (board.maxX - board.minX) +
+    Math.abs(axisZ) * (board.maxZ - board.minZ);
+  return spanAlong <= NARROW_RECEIVER_SPAN_M ? board : null;
+}
+
+/**
+ * The largest along-axis takeoff speed whose predicted capsule landing sits at
+ * (or just north of) the receiver board's cross-axis CENTRE — the most robust
+ * single aim, leaving the whole capsule inside the board's safe support inset.
+ * Returns null when the current cap already lands centre-or-nearer (no brake
+ * wanted) or when there is no narrow receiver ahead.
+ *
+ * Landing projection is monotone in takeoff speed, so a bisection between the
+ * slow reference speed and the current cap converges. `simulateWalkOff` IS the
+ * production integrator, so the predicted landing is the one the body will take.
+ */
+function directedDropTakeoffCap(
+  world: CollisionWorld,
+  motion: MotionState,
+  axisX: number,
+  axisZ: number,
+  alongCap: number,
+  dt: number,
+  tuning: ParkourTuning,
+): number | null {
+  if (alongCap <= DIRECTED_DROP_REF_SPEED_MPS) return null;
+  if (!lipAhead(world, motion, axisX, axisZ, alongCap)) return null;
+  const board = directedReceiverBoard(world, motion, axisX, axisZ, dt, tuning);
+  if (!board) return null;
+
+  const centreProj =
+    ((board.minX + board.maxX) / 2) * axisX +
+    ((board.minZ + board.maxZ) / 2) * axisZ;
+
+  // Predicted landing projection along the axis for a candidate speed, or null
+  // when the body overshoots off the board entirely at that speed.
+  const landingProjAt = (v: number): number | null => {
+    const w = simulateWalkOff(world, motion, axisX * v, axisZ * v, {
+      dt,
+      maxMs: DIRECTED_DROP_SIM_MS,
+      maxFallM: tuning.rollMaxDropM + 0.5,
+    });
+    if (!w.landed || w.landingId !== board.id) return null;
+    return w.landingPos.x * axisX + w.landingPos.z * axisZ;
+  };
+
+  // At the current cap the landing is at or north of centre already: the body is
+  // slow enough, aim nothing (a slow entry lands on the near half, still safe).
+  const projAtCap = landingProjAt(alongCap);
+  if (projAtCap !== null && projAtCap <= centreProj) return null;
+
+  // Bisect for the speed that lands at the board centre. `lo` always lands on the
+  // board north of centre; `hi` lands south of centre or off the board (too fast).
+  let lo = DIRECTED_DROP_REF_SPEED_MPS;
+  let hi = alongCap;
+  for (let i = 0; i < DIRECTED_DROP_SOLVE_STEPS; i += 1) {
+    const mid = (lo + hi) * 0.5;
+    const proj = landingProjAt(mid);
+    if (proj === null || proj > centreProj) hi = mid;
+    else lo = mid;
+  }
+  return Math.min(alongCap, lo);
+}
+
 export interface FlowInput {
   /** Fixed step. Always FIELD_DT; accepted explicitly so tests can be honest. */
   dt: number;
@@ -163,6 +335,37 @@ export interface FlowInput {
   flowEnabled: boolean;
   reducedMotion: boolean;
   receivingTargets: readonly ReceivingTarget[];
+  /**
+   * Whether an INFERRED upward ascent — a MANTLE or CLIMB_UP the reader commits
+   * off geometry alone, without a buffered jump — may fire.
+   *
+   * Optional and TRUE by default, so a caller that has not wired it keeps the
+   * behaviour it had: Shift alone climbs whatever standable face is in front of
+   * the body. A caller that knows the player's committed route can set it false
+   * when the guidance is a same-height or lower run past an incidental climb
+   * face, so a held sprint is not read as parkour consent up a wrong-axis roof.
+   * It gates ONLY those two upward commits — the affordance still previews, a
+   * buffered Space still commits, and VAULT, CLIMB_OVER, STEP_UP, the edge brake,
+   * every downward verb and any climb the guidance actually asks for (an upward
+   * waypoint) are untouched. See traversal.ts for the derivation.
+   */
+  inferredAscentAllowed?: boolean;
+  /**
+   * A DIRECTED ACTION GATEWAY the committed route has selected: the authored axis
+   * (unit XZ, take-off -> receiver) and the verb family that gateway allows. When
+   * set AND the player's intent agrees with the axis, the reader probes ALONG the
+   * axis (so a vault reads its authored IN->OUT obstacle, not a live slide a few
+   * degrees off it) and only the allowed verb family may COMMIT — the body cannot
+   * be hijacked onto a different traversal at the gateway.
+   *
+   * This never forces anything: intent must point at the axis, the verb still
+   * runs the full planVerb/commitVerb/preflight, jump and speed consent and the
+   * high-ascent gate all still apply, and the preview stays the honest best read.
+   * Optional; an unwired caller behaves exactly as before. See wayfind.ts.
+   */
+  guidedAxisX?: number;
+  guidedAxisZ?: number;
+  guidedVerbs?: readonly TraversalVerb[];
 }
 
 export interface FlowResult {
@@ -182,6 +385,7 @@ export function createFlowState(): FlowState {
     inFlow: false,
     cooldownTicks: 0,
     dashCooldownTicks: 0,
+    jumpBufferTicks: 0,
     exitSpeedMps: 0,
     fallFromY: 0,
     landing: "NONE",
@@ -190,6 +394,9 @@ export function createFlowState(): FlowState {
     leapTargetId: null,
     brakeDirX: null,
     brakeDirZ: 0,
+    brakeLipDistM: 0,
+    brakeLandingId: null,
+    brakeDropM: 0,
     clip: "idle",
     clipOnce: false,
     previewVerb: "NONE",
@@ -203,7 +410,20 @@ function landingFor(dropM: number, tuning: ParkourTuning): LandingKind {
   return "HARD";
 }
 
-const LANDING_RECOVERY_TICKS: Readonly<Record<LandingKind, number>> = {
+/**
+ * How long each landing occupies the body, in fixed steps.
+ *
+ * Exported because it is also the length of the LANDING CLIP'S WINDOW, and the
+ * animation layer has to scale the clip to it. Mixamo's landing performances
+ * run 1.4-2.0 seconds; the recovery they are covering is 150-800ms. Played
+ * unscaled, only the first tenth to quarter of the clip is ever seen — and the
+ * opening of a landing performance is the arms coming out to catch balance, so
+ * what the player actually sees is a hand flail that is then cut off mid-gesture
+ * and blended back to a run. See `LANDING_CLIP` and the timeScale that reads
+ * this, which together make "the clip lasts exactly as long as the landing" a
+ * property of the numbers rather than something two files have to agree on.
+ */
+export const LANDING_RECOVERY_TICKS: Readonly<Record<LandingKind, number>> = {
   NONE: 0,
   RUN: 9,
   ROLL: 24,
@@ -331,6 +551,13 @@ export function stepFlow(
   if (flow.cooldownTicks > 0) flow.cooldownTicks -= 1;
   if (flow.dashCooldownTicks > 0) flow.dashCooldownTicks -= 1;
   if (flow.landingTicks > 0) flow.landingTicks -= 1;
+  if (flow.jumpBufferTicks > 0) flow.jumpBufferTicks -= 1;
+  // A press arriving this tick re-arms the window. It is latched into flow state
+  // rather than consumed here because the tick that receives a press is usually
+  // not a tick that can act on it: the body is still a frame off the ground, or
+  // mid-vault, or inside the verb cooldown. See `jumpBufferTicks`.
+  if (input.jumpBuffered) flow.jumpBufferTicks = tuning.jumpBufferTicks;
+  const jumpWanted = flow.jumpBufferTicks > 0;
   if (flow.chainWindowTicks === 0 && flow.chain > 0) {
     flow.chain = 0;
     flow.inFlow = false;
@@ -339,6 +566,27 @@ export function stepFlow(
   const wasAuthored = motion.action !== null && AUTHORED_PHASES.has(motion.phase);
   const wasAirborne = AIRBORNE_PHASES.has(motion.phase);
   const previousY = motion.pos.y;
+
+  // A DIRECTED DESCENT the route holds until the body performs it: a RUN_OFF (or
+  // HANG_DROP) onto a narrow authored receiver. Only the ropewalk tie-beam
+  // gateway authorises this family, so this signal is exactly "a controlled drop
+  // onto a board a sprint overshoots" — the case the takeoff aim and landing
+  // settle below are tied to, and nothing else. Requires the player to actually
+  // be pushing along the authored axis, like every other guided read.
+  const guidedAxisX = input.guidedAxisX;
+  const guidedAxisZ = input.guidedAxisZ;
+  const directedDescent =
+    input.flowEnabled &&
+    guidedAxisX !== undefined &&
+    guidedAxisZ !== undefined &&
+    (input.guidedVerbs?.includes("RUN_OFF") ?? false);
+  const intentMagRaw = Math.hypot(input.targetVelX, input.targetVelZ);
+  const descentIntentAgrees =
+    directedDescent &&
+    intentMagRaw > 1e-3 &&
+    (input.targetVelX * guidedAxisX! + input.targetVelZ * guidedAxisZ!) /
+        intentMagRaw >=
+      GUIDED_INTENT_DOT;
 
   // ---- dive capture ------------------------------------------------------
   // Checked before motion so a fast descent cannot pass through the accepting
@@ -429,6 +677,47 @@ export function stepFlow(
     flow.verb = "NONE";
   }
 
+  // ---- revalidate the persisted hazard before anything consults it -------
+  //
+  // A hazard is a fact about the geometry, and the geometry it was confirmed
+  // against may be gone: a deck can fill the drop in, a route swap can move the
+  // lip, the player can turn away. Nothing this tick — not the burst about to
+  // open, not the brake, not the verb ladder — may be refused or held by a
+  // hazard that is no longer real, so the hazard is recomputed HERE, before any
+  // of them read it, from a committed mover against the current world. It
+  // survives only if that committed mover still falls fatally the way it is
+  // pointed; otherwise it is released now, and a dash or a verb this tick sees a
+  // clear road. The identity (landing id, drop) is refreshed while it holds.
+  if (flow.brakeDirX !== null) {
+    const intentMag = Math.hypot(input.targetVelX, input.targetVelZ);
+    const stillToward =
+      intentMag > 1e-3 &&
+      input.targetVelX * flow.brakeDirX + input.targetVelZ * flow.brakeDirZ > 0;
+    let stale = !stillToward;
+    if (!stale) {
+      const committed = predictCommittedWalkOff(
+        world,
+        motion,
+        input.targetVelX,
+        input.targetVelZ,
+        tuning,
+      );
+      if (Number.isFinite(committed.dropM) && committed.dropM <= tuning.edgeBrakeMinDropM) {
+        stale = true;
+      } else {
+        flow.brakeLandingId = committed.landingId;
+        flow.brakeDropM = committed.dropM;
+      }
+    }
+    if (stale) {
+      flow.brakeDirX = null;
+      flow.brakeDirZ = 0;
+      flow.brakeLipDistM = 0;
+      flow.brakeLandingId = null;
+      flow.brakeDropM = 0;
+    }
+  }
+
   // ---- the burst ---------------------------------------------------------
   //
   // Opened here rather than through the verb ladder, because a dash is not a
@@ -451,9 +740,13 @@ export function stepFlow(
   }
 
   // ---- advance motion ----------------------------------------------------
-  // A latched edge brake suppresses input and momentum heading over the lip
-  // BEFORE motion integrates, which is the only ordering that actually holds a
-  // ledge. Turning away and running along the edge stays untouched.
+  // A confirmed edge hazard brakes BEFORE motion integrates, which is the only
+  // ordering that actually holds a ledge, and it brakes on STOPPING DISTANCE
+  // rather than waiting for the body to be a hand's breadth from the lip. The
+  // held target can never point over the lip (the refusal), and the over-lip
+  // velocity is removed outright the moment the body could no longer stop before
+  // the lip at the deceleration it will actually achieve. Turning away and
+  // running along the edge stays untouched.
   let targetVelX = input.targetVelX;
   let targetVelZ = input.targetVelZ;
   if (
@@ -461,7 +754,7 @@ export function stepFlow(
     motion.grounded &&
     !AUTHORED_PHASES.has(motion.phase) &&
     !AIRBORNE_PHASES.has(motion.phase) &&
-    !input.jumpBuffered
+    !jumpWanted
   ) {
     const dirX = flow.brakeDirX;
     const dirZ = flow.brakeDirZ;
@@ -472,14 +765,80 @@ export function stepFlow(
     }
     const alongVel = motion.vel.x * dirX + motion.vel.z * dirZ;
     if (alongVel > 0) {
-      motion = {
-        ...motion,
-        vel: {
-          x: motion.vel.x - dirX * alongVel,
-          y: motion.vel.y,
-          z: motion.vel.z - dirZ * alongVel,
-        },
-      };
+      const stoppingDistM = (alongVel * alongVel) / (2 * DECEL);
+      const roomM = flow.brakeLipDistM - tuning.edgeBrakeHoldM;
+      if (stoppingDistM >= roomM) {
+        motion = {
+          ...motion,
+          vel: {
+            x: motion.vel.x - dirX * alongVel,
+            y: motion.vel.y,
+            z: motion.vel.z - dirZ * alongVel,
+          },
+        };
+      }
+    }
+  }
+
+  // ---- aim a directed drop onto the middle of its narrow receiver ---------
+  // Before the body walks off the lip, hold its along-axis takeoff speed to one
+  // whose PREDICTED capsule landing sits on the CENTRE of the receiving board,
+  // not merely somewhere on it. This is the trajectory-aware half of the fix:
+  // the authored approach cap gets a body to the lip at a sane pace, but a
+  // walk-off is ballistic — the takeoff SPEED decides where the capsule comes
+  // down, and an arc a hair too fast comes down on the far lip and rolls off, a
+  // hair too slow on the near one. So the honest control is to check where the
+  // walk-off actually lands and shave the takeoff until it lands square. Only
+  // ever LOWERS the speed, only bites in the last strides into a narrow
+  // receiver, and preserves the full-approach deceleration that brought the body
+  // here; a body already slow enough is left alone. The edge brake still owns any
+  // lip whose walk-off has no safe landing at all — this only aims one that does.
+  if (
+    directedDescent &&
+    descentIntentAgrees &&
+    motion.grounded &&
+    !wasAuthored &&
+    !wasAirborne &&
+    !jumpWanted &&
+    flow.brakeDirX === null
+  ) {
+    const gAxisLen = Math.hypot(guidedAxisX!, guidedAxisZ!);
+    if (gAxisLen > 1e-6) {
+      const ax = guidedAxisX! / gAxisLen;
+      const az = guidedAxisZ! / gAxisLen;
+      const alongTarget = targetVelX * ax + targetVelZ * az;
+      if (alongTarget > DIRECTED_DROP_REF_SPEED_MPS) {
+        const vSafe = directedDropTakeoffCap(
+          world,
+          motion,
+          ax,
+          az,
+          alongTarget,
+          input.dt,
+          tuning,
+        );
+        if (vSafe !== null && vSafe < alongTarget) {
+          // Trim the excess along-axis speed from both the target and the live
+          // velocity, so the body settles to the aimed pace before the lip
+          // rather than carrying a fast entry into the arc. Cross-axis motion
+          // (a step along the board) and the descent itself are untouched.
+          const cutT = alongTarget - vSafe;
+          targetVelX -= ax * cutT;
+          targetVelZ -= az * cutT;
+          const alongVel = motion.vel.x * ax + motion.vel.z * az;
+          if (alongVel > vSafe) {
+            const cutV = alongVel - vSafe;
+            motion = {
+              ...motion,
+              vel: {
+                x: motion.vel.x - ax * cutV,
+                y: motion.vel.y,
+                z: motion.vel.z - az * cutV,
+              },
+            };
+          }
+        }
+      }
     }
   }
 
@@ -560,9 +919,42 @@ export function stepFlow(
     // the run. The retention ladder is where the cost of a bad landing lives.
     const carried = entrySpeedMps * tuning.landingSpeedRetention[landing];
     if (carried > 0) {
+      let carriedX = entryDirX * carried;
+      let carriedZ = entryDirZ * carried;
+      // A directed drop that has just landed on its narrow receiver: the momentum
+      // that carried the body ACROSS the board's narrow axis is drop-in, not
+      // travel — the route runs along the board, not across it — and left intact
+      // it walks a landing that is inside the safe inset out over the near lip
+      // before the body settles. Damp only that cross-axis (approach-axis)
+      // component, keeping any along-board step. A small generic settle tied to
+      // narrow directed receivers: no teleport, no freeze, no snap to centre.
+      if (directedDescent && guidedAxisX !== undefined && guidedAxisZ !== undefined) {
+        const axisLen = Math.hypot(guidedAxisX, guidedAxisZ);
+        const support = supportBelow(
+          world,
+          motion.pos.x,
+          motion.pos.z,
+          motion.pos.y + CONTACT_EPS,
+        );
+        const board = support
+          ? world.platforms.find((p) => p.id === support.id)
+          : undefined;
+        if (axisLen > 1e-6 && board && !board.polygon) {
+          const ax = guidedAxisX / axisLen;
+          const az = guidedAxisZ / axisLen;
+          const spanAlong =
+            Math.abs(ax) * (board.maxX - board.minX) +
+            Math.abs(az) * (board.maxZ - board.minZ);
+          if (spanAlong <= NARROW_RECEIVER_SPAN_M) {
+            const along = carriedX * ax + carriedZ * az;
+            carriedX -= ax * along;
+            carriedZ -= az * along;
+          }
+        }
+      }
       motion = {
         ...motion,
-        vel: { x: entryDirX * carried, y: 0, z: entryDirZ * carried },
+        vel: { x: carriedX, y: 0, z: carriedZ },
       };
     }
 
@@ -614,19 +1006,38 @@ export function stepFlow(
     return { motion, flow, events, noise, probe };
   }
 
-  // The brake is re-latched from this tick's read, never held over stale geometry.
-  flow.brakeDirX = null;
-  flow.brakeDirZ = 0;
-
+  const pushing = Math.hypot(targetVelX, targetVelZ) > 1e-3;
   const ctx: SelectContext = {
     grounded: motion.grounded,
     sprintHeld: input.sprintHeld,
-    jumpBuffered: input.jumpBuffered,
+    jumpBuffered: jumpWanted,
     crouchHeld: input.crouchHeld,
     chaining: flow.chainWindowTicks > 0,
     receivingTargets: input.receivingTargets,
     reducedMotion: input.reducedMotion,
+    pushing,
   };
+
+  // A directed gateway steers the READ onto its authored axis, but only when the
+  // player is actually pushing along it. Intent away from the axis leaves the
+  // reader honest — the guidance cannot drag a body onto a vault it is turning
+  // away from. Measured on the RAW input (what the player asked for), not the
+  // brake-reduced local.
+  const guidedAxis =
+    input.guidedAxisX !== undefined && input.guidedAxisZ !== undefined
+      ? { x: input.guidedAxisX, z: input.guidedAxisZ }
+      : null;
+  const intentMag = Math.hypot(input.targetVelX, input.targetVelZ);
+  const intentAgrees =
+    guidedAxis !== null &&
+    intentMag > 1e-3 &&
+    (input.targetVelX / intentMag) * guidedAxis.x +
+      (input.targetVelZ / intentMag) * guidedAxis.z >=
+      GUIDED_INTENT_DOT;
+  const guidedCommit =
+    intentAgrees && (input.guidedVerbs?.length ?? 0) > 0
+      ? input.guidedVerbs!
+      : null;
 
   probe = probeAhead(
     world,
@@ -635,22 +1046,201 @@ export function stepFlow(
       velX: motion.vel.x,
       velZ: motion.vel.z,
       yaw: motion.yaw,
+      dirOverrideX: intentAgrees ? guidedAxis!.x : undefined,
+      dirOverrideZ: intentAgrees ? guidedAxis!.z : undefined,
+      // The exact walk-off prediction fells THIS body: the complete live state —
+      // an open dash, a mid-action phase and its ticks, the coyote already spent,
+      // the velocities and yaw — deep-cloned and stepped forward, not a fresh
+      // GROUNDED body rebuilt from scalars. The target it accelerates toward is
+      // the RAW input, not the brake-reduced local, so the prediction reflects
+      // what the player is actually asking the body to do.
+      intentX: input.targetVelX,
+      intentZ: input.targetVelZ,
+      airtimeMs: motion.airtimeMs,
+      capsuleHeight: motion.capsuleHeight,
+      motion,
     },
     tuning,
   );
-  const choice = selectVerb(world, probe, ctx, motion.pos, tuning);
-  flow.previewVerb = choice?.verb ?? "NONE";
-  flow.previewReason = choice?.reason ?? "";
 
-  if (choice && flow.cooldownTicks === 0) {
-    const committed = commitVerb(world, motion, flow, choice, probe, tuning);
+  // ---- keep the held hazard's lip distance current -----------------------
+  // Release and recompute happen at the TOP of the tick, before anything reads
+  // the hazard (see the revalidation block), and confirmation happens at the
+  // EDGE_BRAKE commit. All that is left here is to keep the distance to the lip
+  // fresh for a hazard that persisted through a braked tick, so the pre-motion
+  // stopping-distance brake stays sized correctly as the body settles.
+  if (flow.brakeDirX !== null && probe.edge !== null) {
+    flow.brakeLipDistM = probe.edge.contactDistanceM;
+  }
+
+  // ---- walk the ladder to the end -----------------------------------------
+  //
+  // SELECTION AND COMMITMENT ARE ONE LOOP, and they were two. `selectVerb`
+  // returned the best candidate whose PLAN validated, and the controller then
+  // either fired that one candidate or did nothing at all for the tick. Two
+  // failure modes came out of the gap between "plans" and "can actually run
+  // right now", and both of them are the player asking for something and the
+  // game answering with silence:
+  //
+  //   * A candidate that is not yet at its commit distance ended the tick. A
+  //     mantle read two metres out is the correct read and the wrong action,
+  //     and it took the whole tick with it — including any buffered jump.
+  //
+  //   * A candidate whose plan validated but which `beginAuthored` then REFUSED
+  //     also ended the tick, and went on ending every tick after it, because the
+  //     next read produced the same refusing candidate. `planVerb` checks the
+  //     endpoint; `beginAuthored` additionally sweeps the whole trajectory, and
+  //     in a street built out of adjacent boxes those two disagree constantly.
+  //     Measured against M1's alley crates it is a permanent stop: MANTLE
+  //     previewed, MANTLE refused, forever, with the only way out of the alley
+  //     one and a half metres above the player's head.
+  //
+  // So every ranked candidate gets its turn, and the first one that the physics
+  // actually accepts is the one that runs. The preview reported to a dev overlay
+  // is still the best READ, which is the honest thing for it to show.
+  const ranked = rankVerbs(probe, ctx, tuning);
+  let previewed: VerbChoice | null = null;
+  let acted = false;
+
+  // Shift is a sprint, not parkour consent. When the committed guidance is a
+  // same-height/lower run, an inferred upward MANTLE or CLIMB_UP onto an
+  // incidental face is refused unless the player explicitly buffers Space — the
+  // read that used to walk a sprinting body up a 2.2m east face off its route and
+  // onto the wrong axis of the Town House roof. Default true, so an unwired
+  // caller is unchanged. A MANTLE onto an obstacle only became safe to gate once
+  // the gaol-barrels VAULT stopped silently falling back to it (see the GAOL
+  // repair): the SAFE street line now vaults its obstacle, it does not mantle it.
+  const inferredAscentAllowed = input.inferredAscentAllowed ?? true;
+
+  for (const verb of ranked) {
+    const plan = planVerb(world, probe, ctx, verb, motion.pos, tuning);
+    if (!plan) continue;
+    if (!previewed) previewed = plan;
+    // A directed gateway with the player pushing along its axis: only the
+    // gateway's own verb family may COMMIT, so the body cannot be hijacked onto a
+    // different traversal at the action. Preview is already recorded above, so it
+    // stays truthful; the edge brake is exempt because refusing to fall is a
+    // safety, not a hijack, and must never be filtered out.
+    if (guidedCommit && verb !== "EDGE_BRAKE" && !guidedCommit.includes(verb)) {
+      continue;
+    }
+    // An inferred upward ascent the route did not ask for: preview it (done
+    // above) but do not commit it without a buffered jump. Only the commit is
+    // gated — the ladder falls through to whatever is ranked below (a same-height
+    // run past the face, the VAULT that clears the obstacle, or the edge brake if
+    // the read is a fall). MANTLE and CLIMB_UP are the two inferred UPWARD verbs;
+    // VAULT and CLIMB_OVER cross an obstacle rather than mount a deck and stay
+    // automatic, and a buffered Space commits either gated verb outright.
+    if (
+      !inferredAscentAllowed &&
+      !jumpWanted &&
+      (verb === "MANTLE" || verb === "CLIMB_UP")
+    ) {
+      continue;
+    }
+    // THE COOLDOWN IS FOR VERBS, AND THE BRAKE IS NOT ONE. It exists so a chain
+    // does not fire twice off one read; the brake fires nothing, it refuses. And
+    // the ticks right after a verb are exactly when a refusal is most needed,
+    // because a verb ENDS by handing the body its exit speed back. Measured on
+    // the Town House: a hang drop off the roof plants the body on the south
+    // cornice fifteen centimetres from the far lip, restores 2.3 m/s pointing at
+    // it, and the brake — ranked, planned, ready — sat out three ticks of
+    // cooldown while the body covered eleven of those fifteen centimetres. It
+    // then stopped a body whose centre was already over the edge, and the point
+    // under the feet was no longer deck.
+    // THE COOLDOWN IS FOR VERBS THAT KEEP A CHAIN MOVING, NOT FOR THE ANSWERS AT A
+    // LIP. The brake refuses rather than fires; a hang drop and a leap of faith are
+    // the controlled descents the ladder deliberately ranks ABOVE the brake as the
+    // safe way off a lip whose walk-off is fatal. All three are needed in exactly
+    // the ticks right after a verb ends — a verb ends by restoring the body's exit
+    // speed toward whatever is ahead. Suppressing the descents through the cooldown
+    // while leaving the brake exempt let EDGE_BRAKE confirm a hazard the descent
+    // answers, and the persisted hazard then killed the approach — a silent
+    // soft-lock. It is the whole F-section descent out of the Liberty Elm: the
+    // crown overhangs the low bough, the low bough overhangs the stall awning, and
+    // each tier lands into the cooldown of the last, so a chain of hang drops down
+    // a fatal-walk-off face never got past the first rim. Exempting the descents
+    // keeps the climb/drop chain whole; each is still gated by its own read (a
+    // reachable straight-down for the hang drop, sprint + an in-cone receiving
+    // target for the dive), so nothing fires off a cooldown that the geometry and
+    // intent did not already ask for.
+    if (
+      flow.cooldownTicks > 0 &&
+      verb !== "EDGE_BRAKE" &&
+      verb !== "LEAP_OF_FAITH" &&
+      verb !== "HANG_DROP"
+    ) {
+      continue;
+    }
+    // Not there yet is not the same as cannot. A dive read at half a metre from
+    // a twelve-metre lip is the right verb waiting for the right tick, and
+    // letting the rung below it act in the meantime is how a swan dive turns
+    // into the edge brake that was ranked underneath it. The ladder stops here
+    // and tries again next tick, one step closer.
+    if (plan.contactDistanceM > plan.commitDistanceM) break;
+    const committed = commitVerb(world, motion, flow, plan, probe, tuning);
+    // The physics refused it — `beginAuthored` sweeps a trajectory `planVerb`
+    // never saw. THIS is the rung to fall through, and falling through is the
+    // whole repair: a refusal used to end the tick and then end every tick
+    // after it, because the next read produced the same refusing candidate.
+    if (!committed) continue;
+    motion = committed.motion;
+    flow = committed.flow;
+    events.push(...committed.events);
+    noise.push(...committed.noise);
+    // BLOCKED is a report that the geometry has no answer, not an action. It
+    // must not stand between the player and their own jump.
+    if (plan.verb !== "BLOCKED") {
+      acted = true;
+      break;
+    }
+  }
+
+  // ---- the jump always does something -------------------------------------
+  //
+  // If the ladder did not act and the player has a live jump press, they leave
+  // the ground. That is the whole guarantee, and it is deliberately stated as a
+  // property of the controller rather than as another rung: a rung can be
+  // outranked by a candidate that then turns out not to be able to run, which
+  // is how the guarantee was lost in the first place.
+  //
+  // Note what this does NOT do. A verb that actually commits still wins — press
+  // jump at a vaultable crate and you vault it, because that is the read the
+  // whole system exists to make. What can no longer happen is pressing jump and
+  // getting neither.
+  if (!acted && jumpWanted && motion.grounded) {
+    const jump = planVerb(world, probe, ctx, "JUMP", motion.pos, tuning);
+    const committed = jump
+      ? commitVerb(world, motion, flow, jump, probe, tuning)
+      : null;
     if (committed) {
       motion = committed.motion;
       flow = committed.flow;
       events.push(...committed.events);
       noise.push(...committed.noise);
+      acted = true;
     }
   }
+
+  // A press is spent by whatever the tick did with it. Holding it past a verb
+  // that committed would fire a second launch off the top of the thing the
+  // player just climbed, which is not what the press meant.
+  if (acted) flow.jumpBufferTicks = 0;
+
+  // THE PREVIEW IS WHAT THE GEOMETRY OFFERS, NOT WHAT THE PLAYER IS CURRENTLY
+  // ENTITLED TO. Commitment needs the parkour key held; the read does not, and
+  // must not, because the affordance layer draws its catch bands and its
+  // first-time captions off this. A player who has not learned about the key is
+  // exactly the player who needs to be told there is something here to catch —
+  // and gating the preview on the key would show them nothing, which is the
+  // shape of every "the game is broken" report on this mission so far.
+  const shown =
+    previewed ??
+    (ctx.sprintHeld
+      ? null
+      : firstPlan(world, probe, { ...ctx, sprintHeld: true }, motion.pos, tuning));
+  flow.previewVerb = shown?.verb ?? "NONE";
+  flow.previewReason = shown?.reason ?? "";
 
   flow.clip =
     flow.verb !== "NONE"
@@ -661,6 +1251,21 @@ export function stepFlow(
   flow.clipOnce = flow.verb !== "NONE" || flow.landingTicks > 0;
 
   return { motion, flow, events, noise, probe };
+}
+
+/** The best candidate that plans against this world, or null. Read only. */
+function firstPlan(
+  world: CollisionWorld,
+  probe: ParkourProbe,
+  ctx: SelectContext,
+  start: Vec3,
+  tuning: ParkourTuning,
+): VerbChoice | null {
+  for (const verb of rankVerbs(probe, ctx, tuning)) {
+    const plan = planVerb(world, probe, ctx, verb, start, tuning);
+    if (plan) return plan;
+  }
+  return null;
 }
 
 /**
@@ -758,9 +1363,17 @@ function commitVerb(
   const noise: NoiseEvent[] = [];
   let motion = motionIn;
   const flow: FlowState = { ...flowIn };
-  if (choice.verb !== "EDGE_BRAKE") {
+  // A deliberate leave — an authored move or a launch — clears the hazard: the
+  // player chose to go. A passive outcome (a run-off the brake has already
+  // neutralised, a block, the brake itself) leaves it alone, so the persisted
+  // hazard is not wiped by the harmless RUN_OFF that ranks once braking has made
+  // the read look survivable.
+  if (choice.motion.kind === "AUTHORED" || choice.motion.kind === "LAUNCH") {
     flow.brakeDirX = null;
     flow.brakeDirZ = 0;
+    flow.brakeLandingId = null;
+    flow.brakeDropM = 0;
+    flow.brakeLipDistM = 0;
   }
 
   if (choice.verb === "BLOCKED") {
@@ -778,29 +1391,25 @@ function commitVerb(
 
   if (choice.verb === "EDGE_BRAKE") {
     // A burst outranks damping — `stepDash` hands the integrator its own target
-    // velocity every tick — so the brake has to close the window rather than
-    // fight it. Closing it here also means the player keeps whatever speed the
-    // burst had produced, and is then braked on that speed like anyone else.
+    // velocity every tick — so the brake cancels it, and the body is then braked
+    // on whatever speed the burst produced like anyone else.
     if (isDashing(motion)) {
       motion = cancelDash(motion);
       flow.dashCooldownTicks = tuning.dashCooldownTicks;
       if (flow.verb === "DASH") flow.verb = "NONE";
       events.push({ type: "dashEnded", verb: "DASH", chain: flow.chain });
     }
-    let velX = motion.vel.x * tuning.edgeBrakeRetainPerTick;
-    let velZ = motion.vel.z * tuning.edgeBrakeRetainPerTick;
-    if (choice.contactDistanceM <= tuning.edgeBrakeHoldM) {
-      // Remove only the component heading over the lip, and latch the direction so
-      // next tick's input cannot re-accelerate into it.
-      const along = velX * probe.dirX + velZ * probe.dirZ;
-      if (along > 0) {
-        velX -= probe.dirX * along;
-        velZ -= probe.dirZ * along;
-      }
-      flow.brakeDirX = probe.dirX;
-      flow.brakeDirZ = probe.dirZ;
-    }
-    motion = { ...motion, vel: { x: velX, y: motion.vel.y, z: velZ } };
+    // CONFIRM the hazard, and only here — reaching this commit means the ladder
+    // ranked EDGE_BRAKE above every descent, so there is genuinely nothing safe to
+    // do at this lip. The body still carries the speed that proved the drop fatal,
+    // so the live read's identity IS the hazard's identity. The velocity is not
+    // touched; the stopping-distance brake ran before this tick's displacement and
+    // runs again next tick from the persisted hazard.
+    flow.brakeDirX = probe.dirX;
+    flow.brakeDirZ = probe.dirZ;
+    flow.brakeLipDistM = probe.edge?.contactDistanceM ?? choice.contactDistanceM;
+    flow.brakeLandingId = probe.edge?.landingId ?? null;
+    flow.brakeDropM = probe.edge?.dropM ?? Infinity;
     events.push({
       type: "edgeBraked",
       verb: "EDGE_BRAKE",

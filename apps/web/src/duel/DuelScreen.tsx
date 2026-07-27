@@ -18,18 +18,19 @@ import {
   type OpponentSource,
 } from "@pa/duel";
 import { DuelStage } from "./DuelStage.js";
-import { RoundHud } from "./RoundHud.js";
+import { CombatHud } from "./CombatHud.js";
+import { ammoReadout } from "./combatHudModel.js";
+import { useControlsLegend } from "./controlsLegend.js";
 import { QuestionPanel } from "./QuestionPanel.js";
 import {
   BreakBeat,
-  ControlsHint,
   DamageVignette,
   FaceOffTitle,
   OutcomePanel,
   VerdictBeat,
 } from "./DuelOverlay.js";
 import { createDuelRuntime, type DuelHud, type DuelRuntime } from "./duelRuntime.js";
-import { createDuelInput } from "./duelInput.js";
+import { createDuelInput, duelControls } from "./duelInput.js";
 import {
   httpVerdictAuthority,
   type VerdictAuthority,
@@ -186,6 +187,16 @@ export function DuelScreen(props: DuelScreenProps) {
     input.setEnabled(!answering && hud.phase !== "DUEL_RESOLVED");
   }, [input, answering, hud.phase]);
 
+  // The hold-Tab controls legend. Disabled during the answering beat and the outcome so
+  // Tab stays with the question overlay's own focus traversal and the exit buttons.
+  const hudWithdrawn =
+    hud.phase === "QUESTION_PENDING" || hud.phase === "VERDICT_COMMITTED";
+  const controlsHeld = useControlsLegend(!hudWithdrawn && hud.phase !== "DUEL_RESOLVED");
+  const controlItems = useMemo(
+    () => duelControls((descriptor.playerLoadout ?? []).length),
+    [descriptor.playerLoadout],
+  );
+
   useEffect(() => {
     if (!hud.outcome || reported.current) return;
     reported.current = true;
@@ -195,7 +206,7 @@ export function DuelScreen(props: DuelScreenProps) {
   }, [hud.outcome, props.onResolved, runtime]);
 
   const submit = useCallback(
-    async (answer: string) => {
+    async (answer: string, selectedCardIds: readonly string[]) => {
       if (submitting) return;
       const item = hud.item;
       if (!item) return;
@@ -208,6 +219,7 @@ export function DuelScreen(props: DuelScreenProps) {
           side: "A",
           item,
           answer,
+          selectedCardIds,
         });
         // The verdict is the authority's. The client hands it over unread, and there
         // is no field on this call that could carry a bullet count.
@@ -248,7 +260,37 @@ export function DuelScreen(props: DuelScreenProps) {
       <div className="duel-vignette" aria-hidden />
       <DamageVignette health={hud.health.A} />
 
-      <RoundHud hud={hud} opponentName={descriptor.opponentName} />
+      {/* The Overwatch-style HUD. It withdraws during the answering beat (below) rather
+          than fighting the question panel for the same space; nothing it shows moves
+          while a question is open, so there is nothing to withdraw that matters. */}
+      <CombatHud
+        self={{
+          name: "You",
+          weaponLabel: "Flintlock",
+          glbKey: descriptor.playerGlbKey,
+          health: hud.health.A,
+          maxHealth: hud.maxHealth.A,
+          ammo: ammoReadout(hud.ammo.A, hud.magazine.A),
+        }}
+        enemy={{
+          // The display name only — no role line, which was duplicating "The King's
+          // officer" alongside itself. In PvP the role is a genuinely distinct rank.
+          name: descriptor.opponentName,
+          health: hud.health.B,
+          maxHealth: hud.maxHealth.B,
+        }}
+        round={hud.round}
+        clockSeconds={hud.phase === "ENGAGEMENT_LIVE" ? hud.secondsRemaining : null}
+        clockUrgent={
+          hud.phase === "ENGAGEMENT_LIVE" &&
+          hud.secondsRemaining !== null &&
+          hud.secondsRemaining <= 5
+        }
+        withdrawn={hudWithdrawn}
+        showReticle={hud.phase === "ENGAGEMENT_LIVE" || hud.phase === "BULLETS_GRANTED"}
+        controls={{ items: controlItems, held: controlsHeld }}
+        {...(props.reducedMotion === undefined ? {} : { reducedMotion: props.reducedMotion })}
+      />
 
       {hud.phase === "FACE_OFF" && (
         <FaceOffTitle hud={hud} opponentName={descriptor.opponentName} />
@@ -263,8 +305,11 @@ export function DuelScreen(props: DuelScreenProps) {
             recycled={hud.itemRecycled}
             speaker={questionSpeaker(hud.mode, descriptor.opponentName)}
             submitting={submitting}
-            onSubmit={(answer) => void submit(answer)}
+            onSubmit={(answer, selectedCardIds) => void submit(answer, selectedCardIds)}
             notice={submitting ? "The System is reading your answer." : notice}
+            {...(props.reducedMotion === undefined
+              ? {}
+              : { reducedMotion: props.reducedMotion })}
           />
         )}
         {hud.phase === "BULLETS_GRANTED" && <VerdictBeat hud={hud} />}
@@ -277,11 +322,6 @@ export function DuelScreen(props: DuelScreenProps) {
           />
         )}
       </div>
-
-      <ControlsHint
-        visible={hud.phase === "ENGAGEMENT_LIVE" && hud.round <= 1}
-        abilityCount={(descriptor.playerLoadout ?? []).length}
-      />
     </div>
   );
 }

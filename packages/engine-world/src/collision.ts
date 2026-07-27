@@ -135,11 +135,73 @@ export interface Platform {
   polygon?: ReadonlyArray<readonly [number, number]>;
 }
 
+/**
+ * An authored permission to climb straight up.
+ *
+ * Everything else the parkour reader knows, it works out by looking: it walks
+ * forward until the ground steps up, or backwards until a surface overhead
+ * stops, and decides from the shape of what it found. That inference covers a
+ * ledge you approach across open ground and it cannot cover a pure vertical
+ * ascent — two decks with the same footprint, one above the other, where the
+ * player stands in the middle of a floor and goes up. There is no lip to find,
+ * no face to meet, nothing to measure. The distinction between "this scaffold
+ * has a ladder up its middle" and "you are underneath a canopy" is not in the
+ * geometry at all; it is intent, and intent has to be authored.
+ *
+ * So a climb volume is the level saying it outright: a body standing inside
+ * this footprint, with its feet in this band, may be offered a rise onto
+ * `toSurface`. It grants nothing else. The rise still has to pass every test a
+ * climb normally passes — a standable landing, head room, a clear path — and
+ * the volume only exempts the reader's reachability bound, which exists to
+ * refuse exactly the guess this volume replaces with a fact.
+ */
+export interface ClimbVolume {
+  id: string;
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+  /** Feet band. A body standing outside it is not at the foot of this climb. */
+  minY: number;
+  maxY: number;
+  /** Deck or landable mass top the ascent arrives on. */
+  toSurface: string;
+}
+
 export interface CollisionWorld {
   blockers: Blocker[];
   platforms: Platform[];
   // Outer world clamp (walkable bounds); horizontal sweeps clamp to it.
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
+  // Authored vertical ascents. Absent in worlds that have none (the duel arena,
+  // most tests): no volume simply means no ascent is exempted.
+  climbVolumes?: ClimbVolume[];
+}
+
+/**
+ * Is a body at (x, footY, z) standing at the foot of an authored ascent onto
+ * `toSurface`?
+ */
+export function climbVolumeAt(
+  world: CollisionWorld,
+  x: number,
+  footY: number,
+  z: number,
+  toSurface: string,
+): ClimbVolume | null {
+  const volumes = world.climbVolumes;
+  if (!volumes) return null;
+  for (const volume of volumes) {
+    if (volume.toSurface !== toSurface) continue;
+    if (footY < volume.minY - HEIGHT_EPS || footY > volume.maxY + HEIGHT_EPS) {
+      continue;
+    }
+    if (!pointInRect(x, z, volume.minX, volume.maxX, volume.minZ, volume.maxZ)) {
+      continue;
+    }
+    return volume;
+  }
+  return null;
 }
 
 // ---- deterministic semantic broad phase -----------------------------------
@@ -431,6 +493,283 @@ function pointInPolygon(
     }
   }
   return inside;
+}
+
+/**
+ * Is (x,z) over this platform's surface, allowing for the body's own width?
+ *
+ * Exported because a platform is a floor and something other than the support
+ * query has to be able to say so: an authored traversal path walks a capsule
+ * along anchors, and without this it can rise straight through a staging.
+ *
+ * The margin is NEGATIVE against the footprint — the point has to be inside by
+ * the radius rather than merely near it — because a body pulling onto the lip
+ * of a deck legitimately has its capsule overlapping the edge on the way up,
+ * and refusing that would refuse every mantle in the game.
+ */
+export function platformCovers(
+  platform: Platform,
+  x: number,
+  z: number,
+  radius = 0,
+): boolean {
+  if (platform.polygon) {
+    if (!pointInPolygon(x, z, platform.polygon)) return false;
+    if (radius <= 0) return true;
+    // Inside by at least `radius`, matching the rect branch's negative margin: a
+    // polygon deck used to ignore the radius entirely, so a swept path skimming
+    // its edge read as never crossing it while an identical rect deck read as
+    // crossing — the far side of the same "you rise through the boards" defect,
+    // just for the polygon half of the world. The point has to sit a body's
+    // radius clear of every edge, not merely inside the outline.
+    const poly = platform.polygon;
+    let minDistSq = Infinity;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const d = pointSegmentDistanceSq(
+        x,
+        z,
+        poly[j]![0],
+        poly[j]![1],
+        poly[i]![0],
+        poly[i]![1],
+      );
+      if (d < minDistSq) minDistSq = d;
+    }
+    return minDistSq >= radius * radius;
+  }
+  return pointInRect(
+    x,
+    z,
+    platform.minX,
+    platform.maxX,
+    platform.minZ,
+    platform.maxZ,
+    -radius,
+  );
+}
+
+/**
+ * Does a capsule of `radius` centred at (x,z) overlap this platform's footprint?
+ *
+ * A COLLISION TEST EXPANDS THE FOOTPRINT, IT DOES NOT ERODE IT. A body whose
+ * capsule so much as clips a deck's boards is over the deck for the purpose of
+ * "may it pass through" — the opposite margin from `platformCovers`, which asks
+ * whether the body is safely ON the surface and deliberately shrinks the deck so
+ * a mantle onto the lip is not read as standing. Eroding here let a capsule pass
+ * through the outer radius of every deck, and made a plank narrower than the
+ * body invisible to the sweep entirely. So this dilates: inside the outline, or
+ * within a radius of any edge, counts — which also means a platform thinner than
+ * a body's diameter is still a wall to it.
+ */
+export function platformFootprintOverlaps(
+  platform: Platform,
+  x: number,
+  z: number,
+  radius: number,
+): boolean {
+  if (platform.polygon) {
+    if (pointInPolygon(x, z, platform.polygon)) return true;
+    if (radius <= 0) return false;
+    const poly = platform.polygon;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const d = pointSegmentDistanceSq(
+        x,
+        z,
+        poly[j]![0],
+        poly[j]![1],
+        poly[i]![0],
+        poly[i]![1],
+      );
+      if (d <= radius * radius) return true;
+    }
+    return false;
+  }
+  // EXACT point-to-rect distance, with ROUNDED corners. Expanding the rect by the
+  // radius on each axis (a square-cornered dilation) falsely reports a body near a
+  // corner but a clean radius away diagonally as overlapping — a point 0.30m off
+  // in each of x and z is 0.30m inside an axis-expanded 0.35m rect yet 0.424m from
+  // the true corner. The Minkowski sum of a rect and a disc has quarter-circle
+  // corners, so the honest test is the squared distance from the point to the rect.
+  const dx = Math.max(platform.minX - x, 0, x - platform.maxX);
+  const dz = Math.max(platform.minZ - z, 0, z - platform.maxZ);
+  return dx * dx + dz * dz <= radius * radius;
+}
+
+/**
+ * Squared minimum distance between two 2D segments — zero when they cross, else
+ * the least of the four endpoint-to-segment distances. Exact; no sampling.
+ */
+function segmentSegmentDistanceSq(
+  ax: number,
+  az: number,
+  bx: number,
+  bz: number,
+  cx: number,
+  cz: number,
+  dx: number,
+  dz: number,
+): number {
+  if (segmentsIntersect2d(ax, az, bx, bz, cx, cz, dx, dz)) return 0;
+  return Math.min(
+    pointSegmentDistanceSq(ax, az, cx, cz, dx, dz),
+    pointSegmentDistanceSq(bx, bz, cx, cz, dx, dz),
+    pointSegmentDistanceSq(cx, cz, ax, az, bx, bz),
+    pointSegmentDistanceSq(dx, dz, ax, az, bx, bz),
+  );
+}
+
+/**
+ * Does the swept capsule of `radius` whose CENTRE travels the segment (ax,az)->
+ * (bx,bz) overlap this platform's footprint? EXACT, not sampled: the swept
+ * capsule is the Minkowski sum of the segment and a disc — a stadium of radius r
+ * around the segment — and it overlaps the footprint exactly when the minimum
+ * distance from the segment to the footprint is at most the radius. Zero distance
+ * (the segment enters the interior or crosses an edge) is a hit; otherwise the
+ * true distance to the edges decides, with correctly rounded corners. Tangency —
+ * the segment exactly a radius away — counts as contact (a body grazing the
+ * boards is over them), which is the safe boundary for a floor test.
+ */
+function sweptSegmentOverlapsPlatform(
+  platform: Platform,
+  ax: number,
+  az: number,
+  bx: number,
+  bz: number,
+  radius: number,
+): boolean {
+  const r2 = radius * radius;
+  if (platform.polygon) {
+    const poly = platform.polygon;
+    // Interior contact: either end inside the outline.
+    if (pointInPolygon(ax, az, poly) || pointInPolygon(bx, bz, poly)) return true;
+    let minSq = Infinity;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const d = segmentSegmentDistanceSq(
+        ax, az, bx, bz,
+        poly[j]![0], poly[j]![1], poly[i]![0], poly[i]![1],
+      );
+      if (d <= r2) return true;
+      if (d < minSq) minSq = d;
+    }
+    return minSq <= r2;
+  }
+  const { minX, maxX, minZ, maxZ } = platform;
+  if (segmentIntersectsRect(ax, az, bx, bz, minX, maxX, minZ, maxZ)) return true;
+  const edges: Array<[number, number, number, number]> = [
+    [minX, minZ, maxX, minZ],
+    [maxX, minZ, maxX, maxZ],
+    [maxX, maxZ, minX, maxZ],
+    [minX, maxZ, minX, minZ],
+  ];
+  for (const [px, pz, qx, qz] of edges) {
+    if (segmentSegmentDistanceSq(ax, az, bx, bz, px, pz, qx, qz) <= r2) return true;
+  }
+  return false;
+}
+
+/**
+ * The first platform plane a swept CAPSULE passes THROUGH, or null.
+ *
+ * THE ONE PLACE THAT KNOWS A DECK IS A FLOOR TO A MOVING BODY, and it is a TRUE
+ * swept test over the whole segment and the whole capsule, not a check at the
+ * endpoints. A platform has a single y and no solid span, so `sweepXZ`,
+ * `headClearance` and the intrusion predicate are all blind to it — correct for
+ * the side (you walk under a roof) and wrong for the plane (a body must not drive
+ * its head, its middle, or its feet through the boards). Every path that is
+ * placed rather than swept — an authored vault, a reduced-motion completion, a
+ * validated move whose world then changed — has to ask this.
+ *
+ * THE TEST, STATED ONCE: the plane is crossed when, at some point along the
+ * motion, the plane lies STRICTLY inside the capsule's vertical span AND the
+ * capsule's disc (its footprint, expanded by the radius) overlaps the platform.
+ * That single condition covers every way a body can drive through a deck:
+ *
+ *   - a horizontal passage clean THROUGH a deck, outside-to-outside, where both
+ *     endpoints are clear of the footprint but the swept disc crosses it;
+ *   - a diagonal crossing;
+ *   - the head rising up through the underside;
+ *   - a descent passing through an INTERMEDIATE deck on the way down.
+ *
+ * And it deliberately does NOT catch a legitimate landing, because a body coming
+ * down onto a deck's top has its feet AT the plane and its body ABOVE it — the
+ * plane is at the boundary of the span, never strictly inside — so support and
+ * `landingValid` own that. The surfaces the move legitimately touches (the deck
+ * it leaves, the deck it tops out on, a crate it vaults) are named in `ignore`;
+ * everything else is a floor. The span is opened by a contact epsilon at both
+ * ends so standing on, or leaving, a plane is never a crossing.
+ */
+export function sweptCapsuleCrossesPlatform(
+  world: CollisionWorld,
+  from: Vec3,
+  to: Vec3,
+  radius: number,
+  height: number,
+  ignore?: ReadonlySet<string>,
+): Platform | null {
+  const eps = CONTACT_EPS;
+  const foot0 = from.y;
+  const dfoot = to.y - foot0;
+  for (const platform of world.platforms) {
+    if (ignore?.has(platform.id)) continue;
+    const py = platform.y;
+    // The band of foot heights for which the plane is STRICTLY inside the span:
+    //   foot + eps < py < foot + height - eps   <=>   py - height + eps < foot < py - eps
+    const footLo = py - height + eps;
+    const footHi = py - eps;
+    // Solve for the sub-interval of t in [0,1] where foot(t) is in (footLo, footHi).
+    let tLo: number;
+    let tHi: number;
+    if (Math.abs(dfoot) < HEIGHT_EPS) {
+      if (!(foot0 > footLo && foot0 < footHi)) continue; // never straddles
+      tLo = 0;
+      tHi = 1;
+    } else {
+      const ta = (footLo - foot0) / dfoot;
+      const tb = (footHi - foot0) / dfoot;
+      tLo = Math.max(0, Math.min(ta, tb));
+      tHi = Math.min(1, Math.max(ta, tb));
+      if (tLo >= tHi) continue; // the straddle band is outside [0,1]
+    }
+    // The swept capsule's centre travels this straddling sub-segment. Whether it
+    // touches the footprint is an EXACT segment-vs-footprint distance test, not a
+    // march of point samples — no coarse step to slip a thin plank through or to
+    // clip a rounded corner on.
+    const ax = from.x + (to.x - from.x) * tLo;
+    const az = from.z + (to.z - from.z) * tLo;
+    const bx = from.x + (to.x - from.x) * tHi;
+    const bz = from.z + (to.z - from.z) * tHi;
+    if (sweptSegmentOverlapsPlatform(platform, ax, az, bx, bz, radius)) {
+      return platform;
+    }
+  }
+  return null;
+}
+
+/**
+ * The lowest platform plane strictly above a standing capsule's crown at (x,z),
+ * or Infinity. A deck is a ceiling to a rising body the way a blocker base is —
+ * `headClearance` cannot see it — so the ballistic step clamps the rise against
+ * this. The footprint is expanded by the radius, so a body rising beside a deck's
+ * edge stops on the boards rather than shooting up past their overhang.
+ */
+export function platformCeilingAt(
+  world: CollisionWorld,
+  x: number,
+  z: number,
+  radius: number,
+  footY: number,
+  height: number,
+  ignore?: ReadonlySet<string>,
+): number {
+  const headY = footY + height;
+  let ceiling = Infinity;
+  for (const platform of world.platforms) {
+    if (ignore?.has(platform.id)) continue;
+    if (platform.y < headY - CONTACT_EPS) continue;
+    if (!platformFootprintOverlaps(platform, x, z, radius)) continue;
+    if (platform.y < ceiling) ceiling = platform.y;
+  }
+  return ceiling;
 }
 
 // Does a vertical capsule span [footY, headY] intersect a solid box's span?
@@ -825,6 +1164,236 @@ export function blockerIdsAt(
   return ids;
 }
 
+/**
+ * How many resolution passes a single step gets, and how far it may move a body.
+ *
+ * Four is the number every commercial controller lands on — Unreal, Unity and
+ * Source all iterate three or four times — because one pass resolves one
+ * contact and a body wedged in a corner has two. Re-measuring between passes is
+ * what makes it converge instead of oscillate: after the deepest overlap is
+ * pushed out, the second one is measured from where the body now is, so a
+ * corner walks out diagonally rather than being pushed twice in the same frame.
+ *
+ * The budget is a safety rail, not a tuning knob. A body that is somehow half a
+ * metre inside something is in a situation this function cannot honestly fix,
+ * and shoving it that far in one frame would look like a teleport; better to
+ * move it as far as the budget allows and let the next frame continue.
+ */
+const DEPENETRATION_PASSES = 4;
+const DEPENETRATION_BUDGET_M = 0.5;
+// Clear of the face rather than exactly on it, matching the sweep's own skin.
+const DEPENETRATION_SKIN = 1e-4;
+
+export interface OverlapResolution {
+  x: number;
+  z: number;
+  /** True when the body ended the resolution touching nothing. */
+  clear: boolean;
+  /** How far the body was pushed, for diagnostics and event thresholds. */
+  movedM: number;
+}
+
+/**
+ * Push a body out of anything it is standing inside.
+ *
+ * THE SWEEP CANNOT DO THIS AND IS NOT SUPPOSED TO. `sweepXZ` stops a body
+ * before it enters a blocker, which is the whole job while the body is moving
+ * under its own power. It has nothing to say about a body that is ALREADY
+ * inside one, and there are several honest ways to get there: an authored verb
+ * whose path was validated and whose world then changed, a door or route swap
+ * that registers a collider where a player is standing, a spawn onto a spot
+ * something else occupies, or the accumulated 1e-5 skins of a long slide along
+ * a corner. Before this existed such a body stayed embedded indefinitely — it
+ * escaped only if the player happened to push outward, which is the "you glitch
+ * on objects" the owner reported.
+ *
+ * WHAT HAPPENS WITH TWO BLOCKERS AT ONCE, since that is the case that makes
+ * naive implementations misbehave: the overlaps are measured, sorted deepest
+ * first, and only the deepest is resolved per pass, with everything re-measured
+ * from the new position on the next pass. Resolving each independently and
+ * summing the pushes is the tempting version and it is wrong twice over — in an
+ * inside corner it ejects the body roughly twice as far as either wall needs,
+ * and between two facing walls the two pushes cancel and it never moves at all.
+ * Deepest-first with re-measurement converges on the corner instead, and when
+ * no solution exists — a slot narrower than the body — the loop notices it is
+ * not making progress and stops rather than jittering. Ties are broken by
+ * authored blocker order, so the result is identical on every machine.
+ *
+ * A body this cannot free is left where it is and reported with `clear: false`.
+ * That is deliberate: it is still recoverable by walking (the sweep lets an
+ * embedded body move outward), and a caller that wants a stronger remedy can
+ * fall back to `depenetrateXZ`'s ring search. Teleporting somebody several
+ * metres is worse than the problem.
+ */
+export function resolveOverlapXZ(
+  world: CollisionWorld,
+  pos: Vec3,
+  radius: number,
+  height: number,
+  ignore?: ReadonlySet<string>,
+): OverlapResolution {
+  let x = pos.x;
+  let z = pos.z;
+  let budget = DEPENETRATION_BUDGET_M;
+  let clear = false;
+
+  for (let pass = 0; pass < DEPENETRATION_PASSES; pass++) {
+    const candidates = broadPhaseCandidates(world, {
+      minX: x - radius * BROAD_PHASE_RADIUS_FACTOR,
+      maxX: x + radius * BROAD_PHASE_RADIUS_FACTOR,
+      minZ: z - radius * BROAD_PHASE_RADIUS_FACTOR,
+      maxZ: z + radius * BROAD_PHASE_RADIUS_FACTOR,
+      minY: pos.y,
+      maxY: pos.y + height,
+    });
+    let deepest: { depth: number; nx: number; nz: number } | null = null;
+    for (const blockerIndex of candidates) {
+      const blocker = world.blockers[blockerIndex]!;
+      if (ignore?.has(blocker.id)) continue;
+      const mtv = minimumTranslationXZ(blocker, x, z, radius);
+      if (!mtv) continue;
+      // Strictly deeper, so an earlier authored blocker wins a tie.
+      if (!deepest || mtv.depth > deepest.depth) deepest = mtv;
+    }
+    if (!deepest) {
+      clear = true;
+      break;
+    }
+    const push = Math.min(deepest.depth + DEPENETRATION_SKIN, budget);
+    if (push <= 0) break;
+    x += deepest.nx * push;
+    z += deepest.nz * push;
+    budget -= push;
+  }
+
+  return {
+    x,
+    z,
+    clear,
+    movedM: Math.hypot(x - pos.x, z - pos.z),
+  };
+}
+
+export interface CapsulePenetration {
+  id: string;
+  /** How far the capsule is inside the blocker's nearest face, in metres. */
+  depthM: number;
+}
+
+/**
+ * The solid blockers the capsule at `pos` is embedded in beyond a skin
+ * tolerance — the canonical non-penetration invariant.
+ *
+ * THIS IS THE ONE PREDICATE the dev/test runtime asserts every tick and the
+ * traversal fuzzer gates on: a non-empty result is a capsule that ended a frame
+ * inside something solid, which is the "glitch through objects" the owner sees.
+ * It is radius- and span-aware (the same expanded footprint the sweep uses) and
+ * it ignores the sub-skin "resting against a wall" contact the sweep leaves on
+ * purpose, so a body merely leaning on a wall does not read as a violation.
+ *
+ * `ignore` is the caller's legitimate set — the low kerbs the grounded solver
+ * steps through, the obstacle an authored vault is crossing — passed exactly as
+ * the solver passes it, so the invariant never flags the solver's own intent.
+ */
+export function capsuleEmbeddedIn(
+  world: CollisionWorld,
+  pos: Vec3,
+  radius: number,
+  height: number,
+  ignore?: ReadonlySet<string>,
+  skin = CONTACT_EPS,
+): CapsulePenetration[] {
+  const out: CapsulePenetration[] = [];
+  const broadRadius = radius * BROAD_PHASE_RADIUS_FACTOR;
+  const candidates = broadPhaseCandidates(world, {
+    minX: pos.x - broadRadius,
+    maxX: pos.x + broadRadius,
+    minZ: pos.z - broadRadius,
+    maxZ: pos.z + broadRadius,
+    minY: pos.y,
+    maxY: pos.y + height,
+  });
+  for (const blockerIndex of candidates) {
+    const blocker = world.blockers[blockerIndex]!;
+    if (ignore?.has(blocker.id)) continue;
+    const mtv = minimumTranslationXZ(blocker, pos.x, pos.z, radius);
+    if (mtv && mtv.depth > skin) out.push({ id: blocker.id, depthM: mtv.depth });
+  }
+  return out;
+}
+
+/**
+ * The shortest push that would take a body at (x, z) out of `blocker`, or null
+ * when it is not meaningfully inside it. Shares its axis choice with
+ * `blockerContactNormal` so a depenetration and a slide never disagree about
+ * which face the body is against.
+ *
+ * "Meaningfully" is doing work: `sweepXZ` deliberately leaves a body a hair's
+ * breadth off every face it stops against, and `intrudesXZ` treats a footprint
+ * as closed, so a body resting on a wall is a rounding error away from reading
+ * as inside it. Ignoring sub-skin depths keeps a player leaning on a wall from
+ * being nudged a tenth of a millimetre every frame for the rest of the run.
+ */
+function minimumTranslationXZ(
+  blocker: Blocker,
+  x: number,
+  z: number,
+  radius: number,
+): { depth: number; nx: number; nz: number } | null {
+  if (!intrudesXZ(blocker, x, z, radius)) return null;
+  const footprint = blocker.footprint;
+
+  if (footprint?.kind === "capsule") {
+    const abX = footprint.bx - footprint.ax;
+    const abZ = footprint.bz - footprint.az;
+    const lengthSq = abX * abX + abZ * abZ;
+    const t =
+      lengthSq > 1e-12
+        ? Math.max(
+            0,
+            Math.min(
+              1,
+              ((x - footprint.ax) * abX + (z - footprint.az) * abZ) / lengthSq,
+            ),
+          )
+        : 0;
+    const dx = x - (footprint.ax + abX * t);
+    const dz = z - (footprint.az + abZ * t);
+    const distance = Math.sqrt(dx * dx + dz * dz);
+    const depth = footprint.radius + radius - distance;
+    if (depth <= DEPENETRATION_SKIN) return null;
+    const [nx, nz] = blockerContactNormal(blocker, x, z, radius);
+    return { depth, nx, nz };
+  }
+
+  let localX = x;
+  let localZ = z;
+  let halfX = (blocker.maxX - blocker.minX) / 2;
+  let halfZ = (blocker.maxZ - blocker.minZ) / 2;
+  let centerX = (blocker.minX + blocker.maxX) / 2;
+  let centerZ = (blocker.minZ + blocker.maxZ) / 2;
+  if (footprint?.kind === "obb") {
+    const dx = x - footprint.cx;
+    const dz = z - footprint.cz;
+    const c = Math.cos(footprint.yaw);
+    const s = Math.sin(footprint.yaw);
+    localX = dx * c - dz * s;
+    localZ = dx * s + dz * c;
+    halfX = footprint.halfX;
+    halfZ = footprint.halfZ;
+    centerX = 0;
+    centerZ = 0;
+  }
+  const dx = localX - centerX;
+  const dz = localZ - centerZ;
+  const escapeX = halfX + radius - Math.abs(dx);
+  const escapeZ = halfZ + radius - Math.abs(dz);
+  const depth = Math.min(escapeX, escapeZ);
+  if (depth <= DEPENETRATION_SKIN) return null;
+  const [nx, nz] = blockerContactNormal(blocker, x, z, radius);
+  return { depth, nx, nz };
+}
+
 // Bounded deterministic recovery for a position that became embedded after a
 // route/collision registration change. Search nearest rings first; callers may
 // roll back to their last-safe point if no local solution exists.
@@ -988,6 +1557,95 @@ function firstIntrusionTime(
 }
 
 /**
+ * The blockers a grounded body walks up instead of into.
+ *
+ * EVERY CHARACTER CONTROLLER HAS A STEP OFFSET AND THIS ONE DID NOT. The sweep
+ * stops the capsule the same distance short of a blocker whatever its height,
+ * so a 3cm doorstep and a cathedral wall were the same wall to a running body:
+ * measured, a 3cm blocker stopped a full-speed run dead. The parkour ladder was
+ * papering over it in play with a 750ms scripted vault over a 10cm kerb, which
+ * is a verb doing a job a tolerance should be doing silently.
+ *
+ * Unreal, Unity and Source all implement this as lift-sweep-drop, which assumes
+ * a capsule cast for the drop. This engine's support query is a point at the
+ * body's centre, and lift-sweep-drop against a point query lands the body back
+ * on the floor in front of the kerb every frame — a 7cm frame of travel never
+ * carries the centre far enough to find the top. So the same result is reached
+ * the other way round: a low landable top is simply not solid to a body that
+ * could stand on it, and the support snap below carries the rise. The body
+ * walks at the kerb, through the last third of a metre of it, and steps up as
+ * its centre crosses. Same outcome, no lift, nothing to jitter.
+ *
+ * Only landable finite tops qualify. A non-landable lip of the same height is
+ * still a wall, which is what keeps a low parapet from being walked over.
+ */
+export function lowStepIds(
+  world: CollisionWorld,
+  x: number,
+  z: number,
+  radius: number,
+  footY: number,
+  maxStepM: number,
+): ReadonlySet<string> | undefined {
+  if (maxStepM <= 0) return undefined;
+  let ids: Set<string> | null = null;
+  const broadRadius = radius * BROAD_PHASE_RADIUS_FACTOR;
+  const candidates = broadPhaseCandidates(world, {
+    minX: x - broadRadius,
+    maxX: x + broadRadius,
+    minZ: z - broadRadius,
+    maxZ: z + broadRadius,
+  });
+  for (const blockerIndex of candidates) {
+    const b = world.blockers[blockerIndex]!;
+    if (!b.landable || !Number.isFinite(b.topY)) continue;
+    if (b.topY <= footY + HEIGHT_EPS) continue;
+    if (b.topY > footY + maxStepM) continue;
+    (ids ??= new Set()).add(b.id);
+  }
+  return ids ?? undefined;
+}
+
+/**
+ * Support under a body that is also about to be somewhere.
+ *
+ * Straight `supportBelow` is a point query at the centre, so a body is held up
+ * only once its middle is over a surface — which for a step means the feet
+ * would clip a third of a metre into the kerb before rising. Sampling a second
+ * point a radius ahead along the travel direction puts the rise at the moment
+ * of contact instead, where a person would take it.
+ *
+ * Deliberately forward only, not a ring. Forward-biased, a body rises early and
+ * still falls when its centre leaves a lip, which is the generous direction on
+ * both counts; a full ring would also hold it up a radius PAST the lip, which
+ * is a body standing on air and a different change (see P4 in the audit).
+ */
+export function supportAhead(
+  world: CollisionWorld,
+  x: number,
+  z: number,
+  dirX: number,
+  dirZ: number,
+  radius: number,
+  footY: number,
+  snapUp: number,
+): Support | null {
+  const here = supportBelow(world, x, z, footY, snapUp);
+  const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+  if (length <= 1e-9) return here;
+  const ahead = supportBelow(
+    world,
+    x + (dirX / length) * radius,
+    z + (dirZ / length) * radius,
+    footY,
+    snapUp,
+  );
+  if (!here) return ahead;
+  if (!ahead) return here;
+  return ahead.y > here.y ? ahead : here;
+}
+
+/**
  * Projects horizontal velocity onto all contact planes in authored hit order.
  * Keeping this pure and shared prevents grounded and ballistic motion from
  * disagreeing about wall-slide response.
@@ -1110,6 +1768,12 @@ export interface Support {
 // Highest support surface at (x,z) whose top is at or below footY + snapUp.
 // Considers the ground plane (y=0), landable blocker tops, and platforms.
 // Returns null when nothing (including the ground) is within reach below.
+//
+// A CENTRE-POINT query, deliberately. What a body rests ON when its footprint
+// overlaps a mass but its centre does not — the sliver a fall can drop it into —
+// is `rideOutOfEmbed`'s job, gated on the honest landing actually embedding, so
+// that edges and authored drops keep their point-query semantics and only a body
+// that genuinely ended up inside a mass is lifted onto it.
 export function supportBelow(
   world: CollisionWorld,
   x: number,
@@ -1143,6 +1807,83 @@ export function supportBelow(
     if (inside) consider(p.y, p.id);
   }
   return best;
+}
+
+/**
+ * The support a body actually comes to rest on when the honest point support
+ * would leave it EMBEDDED in a solid mass.
+ *
+ * Pass the point support (`supportBelow`/`supportAhead`) as `base`. If standing
+ * at `base.y` leaves the capsule clear, `base` is returned unchanged — so an
+ * ordinary walk-off, a step, and every authored drop that lands in the open keep
+ * their exact point-query behaviour and nothing becomes sticky. Only when the
+ * base landing genuinely embeds the capsule — the body fell into the sliver
+ * between a landable cart/crate top and the wall behind it, an overlap the sweep
+ * never had a chance to refuse because the entry was vertical — does this ride
+ * the body up onto the LOWEST landable mass top it overlaps that it can actually
+ * stand on (clear, with head room). The body then rests ON the thing it fell
+ * against instead of inside it, which is the whole non-penetration invariant on
+ * the vertical axis, and it holds the body there on subsequent grounded ticks so
+ * it cannot jitter back down into the embed.
+ */
+export function rideOutOfEmbed(
+  world: CollisionWorld,
+  x: number,
+  z: number,
+  base: Support | null,
+  radius: number,
+  height: number,
+  ignore?: ReadonlySet<string>,
+): Support | null {
+  if (!base) return base;
+  if (capsuleEmbeddedIn(world, { x, y: base.y, z }, radius, height, ignore).length === 0) {
+    return base;
+  }
+  let best: Support | null = null;
+  const broadRadius = radius * BROAD_PHASE_RADIUS_FACTOR;
+  // SNAPSHOT the candidate indices. `broadPhaseCandidates` returns a per-world
+  // scratch array it reuses on every call, and the loop below calls
+  // `capsuleEmbeddedIn` (and, through it, `broadPhaseCandidates`) again per
+  // candidate — which would clear and refill that same scratch mid-iteration,
+  // corrupting not only this loop but any collision query in flight. Copying the
+  // indices once makes the iteration independent of the shared buffer.
+  const candidates = [
+    ...broadPhaseCandidates(world, {
+      minX: x - broadRadius,
+      maxX: x + broadRadius,
+      minZ: z - broadRadius,
+      maxZ: z + broadRadius,
+    }),
+  ];
+  for (const blockerIndex of candidates) {
+    const b = world.blockers[blockerIndex]!;
+    if (ignore?.has(b.id)) continue;
+    if (!b.landable || !Number.isFinite(b.topY)) continue;
+    if (b.topY <= base.y + HEIGHT_EPS) continue; // above the honest floor
+    if (!intrudesXZ(b, x, z, radius)) continue; // the capsule is over this mass
+    // The CENTRE must be beside the mass, not over it. A body whose centre is
+    // over a mass top is landing on it the ordinary way — the point support
+    // already found it — and a body DESCENDING OFF a mass (an authored drop) has
+    // its centre over that mass until its momentum carries it clear, so riding it
+    // back up would cancel the drop. Only a body wedged in the SLIVER beside a
+    // mass, its centre out over the floor of the gap, is the case this exists for.
+    if (intrudesXZ(b, x, z, 0)) continue;
+    // Standing on this top must itself be clear. `capsuleEmbeddedIn` is the right
+    // arbiter: it ignores the sub-skin "resting against the wall" contact that a
+    // body wedged in a sliver necessarily has, and it already catches a beam or
+    // soffit whose solid span would cut the standing capsule (that reads as a
+    // lateral embed), so no separate head-clearance test is needed — and the
+    // head-clearance test would wrongly reject the cart top here, because the
+    // capsule touches the tall wall behind it at exactly a radius.
+    if (capsuleEmbeddedIn(world, { x, y: b.topY, z }, radius, height, ignore).length > 0) {
+      continue;
+    }
+    // A deck has no solid span for the embed test to see, so guard it explicitly:
+    // do not rest the body where a deck plane would cut its torso.
+    if (deckThroughBody(world, x, z, b.topY, height)) continue;
+    if (!best || b.topY < best.y) best = { y: b.topY, id: b.id };
+  }
+  return best ?? base;
 }
 
 // The platform the feet currently rest on (within its rect and within
@@ -1200,6 +1941,37 @@ export function headClearance(
   return clearance;
 }
 
+/**
+ * A deck plane that would cut a body standing at (x, z, footY), if any.
+ *
+ * A platform is a support surface with no thickness and therefore no underside,
+ * which is what lets a player walk beneath a roof — but it means `headClearance`
+ * cannot see one, and a landing under a low awning passed every test the game
+ * had while putting the player's head visibly through the boards. Mantling onto
+ * a market counter with its own canopy 0.65m above it was the worst of them.
+ *
+ * Tested at the body's centre with no radius, the same way `supportBelow` finds
+ * the floor, so the two agree about which deck a body is on. An awning whose
+ * edge merely clips a shoulder is not a ceiling.
+ */
+export function deckThroughBody(
+  world: CollisionWorld,
+  x: number,
+  z: number,
+  footY: number,
+  height: number,
+): Platform | null {
+  for (const p of world.platforms) {
+    if (p.y <= footY + CONTACT_EPS) continue;
+    if (p.y >= footY + height - CONTACT_EPS) continue;
+    const inside = p.polygon
+      ? pointInPolygon(x, z, p.polygon)
+      : pointInRect(x, z, p.minX, p.maxX, p.minZ, p.maxZ);
+    if (inside) return p;
+  }
+  return null;
+}
+
 // A landing at (x,z, landY) is valid when a support surface sits within
 // CONTACT_EPS of landY and a standing capsule of `height` fits above it.
 export function landingValid(
@@ -1214,6 +1986,7 @@ export function landingValid(
   const support = supportBelow(world, x, z, landY + CONTACT_EPS, CONTACT_EPS + 0.02);
   if (!support) return false;
   if (Math.abs(support.y - landY) > CONTACT_EPS + 0.05) return false;
+  if (deckThroughBody(world, x, z, support.y, height)) return false;
   return headClearance(world, x, z, radius, support.y, ignore) >= height - 0.05;
 }
 

@@ -211,6 +211,17 @@ export type DuelEvent =
       readonly unspentA: number;
       readonly unspentB: number;
     }
+  | {
+      // Emitted once, when a cover-taking boss reaches a valid cover position and
+      // its line of sight to the player is actually blocked — the authoritative
+      // signal the question overlay is gated on, and the renderer's cue that the
+      // officer is down behind cover. Only a boss with `takesCoverBeforeQuestion`
+      // produces it.
+      readonly type: "BOSS_TOOK_COVER";
+      readonly round: number;
+      readonly tick: number;
+      readonly coverId: string;
+    }
   | { readonly type: "ROUND_RESOLVED"; readonly summary: RoundSummary };
 
 export type DuelEventType = DuelEvent["type"];

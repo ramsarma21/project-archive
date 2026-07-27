@@ -49,8 +49,8 @@ export const NODES: RouteNode[] = [
   node("B_STREET_W", "B_SHAMBLES", [17.8, 0.0, -0.4], "GROUND", ["street-line"]),
   node("B_CART_FOOT", "B_SHAMBLES", [20.8, 0.0, -0.6], "GROUND", ["street-line"]),
   node("B_CART_0", "B_SHAMBLES", [20.8, BAND.CART, -2.0], "CART_0", ["street-line"]),
-  node("B_VAULT_IN", "B_SHAMBLES", [20.95, 0.0, -0.35], "GROUND", ["street-line"]),
-  node("B_VAULT_OUT", "B_SHAMBLES", [23.4, 0.0, -0.35], "GROUND", ["street-line"]),
+  node("B_VAULT_IN", "B_SHAMBLES", [20.95, 0.0, -0.6], "GROUND", ["street-line"]),
+  node("B_VAULT_OUT", "B_SHAMBLES", [23.4, 0.0, -0.6], "GROUND", ["street-line"]),
   node("B_DUCK", "B_SHAMBLES", [25.9, 0.0, -0.4], "GROUND", ["street-line", "crouch"],
     "Under the hoist frame. A standing capsule does not fit; a crouched one does."),
   node("B_STREET_MID", "B_SHAMBLES", [28.4, 0.0, -0.4], "GROUND", ["street-line", "blend"],
@@ -72,6 +72,15 @@ export const NODES: RouteNode[] = [
   node("B_CANOPY_0", "B_SHAMBLES", [19.7, BAND.STALL_ROOF, 1.3], "STALL_0__CANOPY", ["mid-line"]),
   node("B_CANOPY_1", "B_SHAMBLES", [23.9, BAND.STALL_ROOF, 1.3], "STALL_1__CANOPY", ["mid-line"]),
   node("B_CANOPY_2", "B_SHAMBLES", [28.1, BAND.STALL_ROOF, 1.3], "STALL_2__CANOPY", ["mid-line"]),
+  // The SAFE street line's way up onto the canopies: a guided CLIMB from the crate
+  // foot onto the SOUTH EDGE of stall 2's imported awning, whose deck overhangs to
+  // z=-0.2. It lands here, on the canopy the body is standing on, then runs the
+  // half-metre north to the canopy centre — a genuinely upward waypoint the reader
+  // offers and auto-commits, replacing the crate->canopy JUMP that was only
+  // executable through an unprompted Space window off a dead-standstill mantle.
+  node("B_CANOPY_2_S", "B_SHAMBLES", [28.8, BAND.STALL_ROOF, 0.25], "STALL_2__CANOPY",
+    ["mid-line", "crossover"],
+    "South-edge climb landing on stall 2's awning, off the crate foot."),
   node("B_CANOPY_3", "B_SHAMBLES", [32.3, BAND.STALL_ROOF, 1.3], "STALL_3__CANOPY", ["mid-line"]),
   node("B_CANOPY_4", "B_SHAMBLES", [36.5, BAND.STALL_ROOF, 1.3], "STALL_4__CANOPY", ["mid-line"]),
 
@@ -125,7 +134,19 @@ export const NODES: RouteNode[] = [
     "Under the pediment: the only spot on the balcony the tower watch cannot see into."),
   node("C_GALLERY_E", "C_ASCENT", [56.6, BAND.GALLERY, -6.45], "GALLERY_N", ["exposed"]),
   node("C_GALLERY_CORNER", "C_ASCENT", [58.3, BAND.GALLERY, -6.7], "GALLERY_E", []),
-  node("C_GALLERY_EMID", "C_ASCENT", [58.3, BAND.GALLERY, 0.0], "GALLERY_E", []),
+  // The north-lip takeoff, not the deep mid-gallery. The clock ledge overhangs
+  // the east gallery from its north edge at z=-4.5 south, so the body climbs onto
+  // it here; sitting the node at z=0 marked a spot 4m south that a normal ascent —
+  // up the lip, onto the ledge, on to the cornice — never stands on, and the
+  // height-aware mark then held an unreachable hold once the player was above.
+  //
+  // z=-4.0 rather than the lip's own -4.5: at -4.5 the node clears the building's
+  // east bulk and stands in the Old Brick tower watch's sweep (0.97 visibility),
+  // which would put the guaranteed climb in the open and break the reflex beat's
+  // one hidden escape. -4.0 is the northernmost spot still screened by the
+  // building (0.0), half a metre under the ledge's north edge, which the body
+  // reaches from the lip all the same.
+  node("C_GALLERY_EMID", "C_ASCENT", [58.3, BAND.GALLERY, -4.0], "GALLERY_E", []),
   node("C_CLOCK", "C_ASCENT", [58.3, BAND.CLOCK_LEDGE, 0.0], "CLOCK_LEDGE", []),
   node("C_CORNICE_E", "C_ASCENT", [58.3, BAND.CORNICE, 0.0], "CORNICE_E", []),
   node("C_CORNICE_SE", "C_ASCENT", [58.3, BAND.CORNICE, 6.3], "CORNICE_E", []),
@@ -183,8 +204,21 @@ export const NODES: RouteNode[] = [
   node("F_UPPER", "F_TREE", [82.0, BAND.BOUGH_UPPER, 2.6], "BOUGH_UPPER", ["bough", "expert"]),
   node("F_POST", "F_TREE", [79.6, BAND.BOUGH_CROWN, 0.4], "BOUGH_CROWN", ["post"],
     "Feet on the crown limb, the effigy swinging a tier below, the crowd under that."),
-  node("F_AWNING", "F_TREE", [78.2, 3.2, 2.8], "TREE_AWNING", ["catch"]),
-  node("F_GROUND", "F_TREE", [78.0, 0.0, 3.6], "GROUND", []),
+  node("F_POST_STEP", "F_TREE", [79.6, BAND.BOUGH_LOW, 3.8], "BOUGH_LOW", ["bough"],
+    "The lip off the crown onto the low bough. F_LOW itself sits back under the crown's overhang — the spot the ascent climb-volume serves — so there is no edge there to leave from; you come down at the crown's northern rim and walk in. This is that rim, on the exposed low bough a body-length past where the crown ends."),
+  // The two descent landings sit at the WEST edges the body actually drops off,
+  // not under the overhang above them. The low bough (x from 77.4) overhangs the
+  // stall awning, so the only rim a body can leave the boughs from is the bough's
+  // west edge — a hang-drop there comes down on the awning a stride west at
+  // (77.0, 3.2). Placed under the bough at x=78.2 the receiver sat behind a solid
+  // deck the body cannot fall through, so the mark led it to an interior spot a
+  // stride short of the rim and it braked at a fatal 6.4m walk-off it could never
+  // take. The awning in turn overhangs the ground, so its own west edge (x=76.6)
+  // is where the second hang-drop leaves from, coming down on open ground clear of
+  // the awning at (76.2, 0). Both landings are on the same imported decks; only the
+  // waypoints moved to where the descent is physically takeable.
+  node("F_AWNING", "F_TREE", [77.0, 3.2, 2.8], "TREE_AWNING", ["catch"]),
+  node("F_GROUND", "F_TREE", [76.2, 0.0, 3.6], "GROUND", []),
 
   // The crossing under the elm. Twelve bodies, torchlight at 0.85 — the brightest
   // ground in the mission — and the man you have been racing arriving on his own
@@ -283,11 +317,24 @@ export const LINKS: RouteLink[] = [
   link("B_CANOPY_4", "B_CRATES_B", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 4.0 }),
   link("B_CRATES_B", "B_STREET_E", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 3.0 }),
   link("B_STREET_MID", "B_CRATES_FOOT", "RUN", "SAFE", "RUN"),
-  link("B_CRATES_FOOT", "B_CRATES_A", "CLIMB", "SAFE", "CLIMB", {
+  // The SAFE way up is the guided climb onto stall 2's south-edge awning, not the
+  // crates. The crate top is 0.65m BELOW the canopy and the reader, standing on
+  // it, sees the street below its far lip and offers only a RUN_OFF — the
+  // crate->canopy jump was executable only through an unprompted ~117-317ms Space
+  // window off a dead-standstill mantle, which is not a truthful SAFE affordance.
+  // Climbing the awning's overhanging south edge is a genuinely upward waypoint
+  // the reader offers and auto-commits.
+  link("B_CRATES_FOOT", "B_CANOPY_2_S", "CLIMB", "SAFE", "CLIMB"),
+  link("B_CANOPY_2_S", "B_CANOPY_2", "RUN", "SAFE", "RUN"),
+  // The crates are kept as visible optional scenery and a dev-inspection node,
+  // OFF the SAFE progression. The climb-and-leap over them is a real but brutal
+  // trick — the unprompted Space window above — so it is authored EXPERT, not
+  // SAFE and not a FAST relabel of the SAFE line.
+  link("B_CRATES_FOOT", "B_CRATES_A", "CLIMB", "EXPERT", "CLIMB", {
     ignore: ["SHAMBLES_CRATES_A"],
-    note: "The street line does not reach the square. Halfway along the Shambles it has to go up, and the crates are how.",
+    note: "Optional crate climb. The awning south edge is the SAFE way up; this is the harder line onto the crate top.",
   }),
-  link("B_CRATES_A", "B_CANOPY_2", "JUMP", "SAFE", "LEAP"),
+  link("B_CRATES_A", "B_CANOPY_2", "JUMP", "EXPERT", "LEAP"),
 
   // -- B: high line ---------------------------------------------------------
   link("B_PENTICE_FOOT", "B_PENTICE", "CLIMB", "SAFE", "CLIMB"),
@@ -449,9 +496,29 @@ export const LINKS: RouteLink[] = [
   }),
   link("E_ELLIOT_ROOF", "E_ELLIOT_LIP", "RUN", "FAST", "RUN"),
 
-  link("D_SROOF_E", "D_MEETING_ROOF", "DROP", "FAST", "CHAIN_DROP", {
-    speedMps: 4.0,
-    note: "Over the ropewalk rather than through it. Four seconds cheaper and fully exposed to the street below, which is where the constable now is.",
+  // AUTHORED AS A CHAIN DROP UNTIL TODAY, AND IT NEVER WAS ONE.
+  //
+  // A chain drop is passive: hold forward, leave the lip, land a tier lower.
+  // There is no tier here. The south row's roof ends at x=71.6 and the meeting
+  // house's begins at 73.3, so what is between the two nodes is 1.8m of open
+  // air with a 12.4m fall to Orange Street underneath it. The link priced
+  // itself node-to-node at 4.2m and passed every check; the reader, standing at
+  // the actual lip, measured the actual fall and braked, which is exactly what
+  // a safety brake is for. So the leg was takeable only by deliberately
+  // pressing jump — the definition of a JUMP link and not of a drop — and two
+  // readings of this route in a row called it a defect.
+  //
+  // It is a leap, and the ridge is where a leap lands. A full-speed running
+  // jump off this lip flies 6.8m before it comes down, which overflies the
+  // meeting house's eave and the three metres of roof behind it: aiming this at
+  // D_MEETING_ROOF was authoring an arc the body does not fly. Measured from
+  // the lip the ridge is 3.7m out against a 4.26m budget for a 1.2m drop.
+  //
+  // It stays FAST, so the guaranteed line still goes through the ropewalk, and
+  // it is now a bigger shortcut than it was — it skips the gambrel climb as
+  // well — which is the honest price of the most exposed move in the section.
+  link("D_SROOF_E", "E_RIDGE", "JUMP", "FAST", "LEAP", {
+    note: "Over the ropewalk rather than through it: across Orange Street onto the meeting-house ridge, with a 12.4m fall to the cobbles under it if it is misjudged. Four seconds cheaper than the ropewalk and fully exposed to the street below, which is where the constable now is.",
   }),
 
   // -- E --------------------------------------------------------------------
@@ -493,7 +560,16 @@ export const LINKS: RouteLink[] = [
   link("F_UPPER", "F_CROWN", "DROP", "EXPERT", "CHAIN_DROP", { speedMps: 2.3 }),
   link("F_CROWN", "F_POST", "RUN", "SAFE", "RUN"),
   link("F_POST", "F_CROWN", "RUN", "SAFE", "RUN"),
-  link("F_POST", "F_LOW", "CLIMB", "SAFE", "CLIMB", { ignore: ["LIBERTY_ELM_TRUNK"] }),
+  // Down off the objective: a controlled climb-down at the crown's northern rim
+  // onto the exposed low bough, then a step in under the overhang to the low-bough
+  // spot. It is a CLIMB, not a run-off: the crown overhangs the low bough by about
+  // a metre on every side, so a body that STROLLS off the rim sails past the
+  // exposed bough beneath and falls to the street — the reader lowers the body
+  // straight down onto the bough it can see under its feet instead. F_LOW itself
+  // is under the overhang (the ascent climb-volume spot), so the rim is where the
+  // descent is authored, the way a player actually comes down.
+  link("F_POST", "F_POST_STEP", "CLIMB", "SAFE", "CLIMB", { ignore: ["LIBERTY_ELM_TRUNK"] }),
+  link("F_POST_STEP", "F_LOW", "RUN", "SAFE", "RUN"),
   link("F_LOW", "F_AWNING", "CLIMB", "SAFE", "CLIMB", {
     note: "Out of the boughs onto the stall awning. Straight to the street would be 6.4m, which is past the roll ceiling, and the reader would brake at the lip with the constable arriving.",
   }),

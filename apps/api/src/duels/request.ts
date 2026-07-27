@@ -29,6 +29,7 @@
 // is minted here.
 
 import { MAX_SUBMITTED_ANSWER_CHARS, DUEL_ROUND_CEILING } from "@pa/grading";
+import { parseSelectedCardIds } from "./evidence.js";
 
 export { MAX_SUBMITTED_ANSWER_CHARS, DUEL_ROUND_CEILING };
 
@@ -43,15 +44,26 @@ export interface DuelVerdictRequest {
   readonly conceptId: string;
   /** The student's own words. This is the only place they exist on this path. */
   readonly answer: string;
+  /**
+   * The Codex cards the player placed as evidence, if any. A CLAIM about which cards
+   * were placed, never about which are relevant: the server re-derives the offered
+   * hand and the policy for the round's item and grades this against them. Parsed
+   * LENIENTLY — a malformed value becomes an empty selection, never a rejection,
+   * because a 4xx on this wire pays the client the full magazine.
+   */
+  readonly selectedCardIds: readonly string[];
 }
 
-const ALLOWED_KEYS = [
+/** The five required string fields. `selectedCardIds` is an optional array, handled apart. */
+const REQUIRED_STRING_KEYS = [
   "side",
   "itemId",
   "itemVersion",
   "conceptId",
   "answer",
 ] as const;
+
+const ALLOWED_KEYS = [...REQUIRED_STRING_KEYS, "selectedCardIds"] as const;
 
 /**
  * Field names that would mean the client is trying to supply its own grade. The
@@ -118,7 +130,7 @@ export function parseDuelVerdictRequest(body: unknown): DuelRequestParse {
     }
     return { ok: false, code: "UNKNOWN_FIELD", detail: key };
   }
-  for (const key of ALLOWED_KEYS) {
+  for (const key of REQUIRED_STRING_KEYS) {
     if (!(key in record)) return { ok: false, code: "MISSING_FIELD", detail: key };
     if (typeof record[key] !== "string") {
       return { ok: false, code: "BAD_FIELD_TYPE", detail: key };
@@ -148,6 +160,9 @@ export function parseDuelVerdictRequest(body: unknown): DuelRequestParse {
       itemVersion: record["itemVersion"] as string,
       conceptId: record["conceptId"] as string,
       answer,
+      // Lenient: absent or malformed becomes []. The server grades the selection
+      // against its own re-derived hand, so nothing here is trusted for relevance.
+      selectedCardIds: parseSelectedCardIds(record["selectedCardIds"]),
     },
   };
 }

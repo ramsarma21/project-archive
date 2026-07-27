@@ -3,10 +3,11 @@
 import { cpSync, mkdirSync, existsSync, readdirSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { inspectWorldGlb } from "../../scripts/check-world-textures.mjs";
+import { inspectWorldScale } from "../../scripts/check-world-scale.mjs";
 
 let refused = 0;
 /**
- * Publish one GLB, unless its textures carry the Meshy bake defect.
+ * Publish one GLB, unless its textures or its SCALE carry a known defect.
  *
  * This is the only place a NEW asset can be stopped before it ships: seven of
  * fifteen character rigs reached public/ with a multi-megabyte opaque-alpha PNG
@@ -14,16 +15,26 @@ let refused = 0;
  * alpha rather than looking at the format, so an asset that genuinely needs
  * transparency still publishes. See scripts/check-world-textures.mjs.
  *
- * Set WORLD_TEXTURE_GUARD=off to publish anyway; it prints what it let through.
+ * The scale half was added after officer-rigged.glb shipped with its whole rig 100x
+ * too small and survived nine days: both runtime loaders normalise a character to a
+ * target height, so it rendered correctly and only the file was wrong. See
+ * scripts/check-world-scale.mjs.
+ *
+ * `rigged` is read from the DESTINATION, not the source, because a rig is renamed as
+ * it is published - officer-v2-native.glb becomes officer-rigged.glb - so keying the
+ * character check on the build filename would silently never fire.
+ *
+ * Set WORLD_TEXTURE_GUARD=off or WORLD_SCALE_GUARD=off to publish anyway; either
+ * prints what it let through.
  */
 function publish(from, to) {
-  const blocking = inspectWorldGlb(from).findings.filter((finding) => finding.block);
+  const blocking = [
+    ...(process.env.WORLD_TEXTURE_GUARD === "off" ? [] : inspectWorldGlb(from).findings),
+    ...(process.env.WORLD_SCALE_GUARD === "off"
+      ? []
+      : inspectWorldScale(from, { rigged: /-rigged\.glb$/.test(to) }).findings),
+  ].filter((finding) => finding.block);
   if (blocking.length === 0) {
-    cpSync(from, to);
-    return true;
-  }
-  if (process.env.WORLD_TEXTURE_GUARD === "off") {
-    console.warn(`[sync] OVERRIDE: publishing ${from} despite ${blocking.length} texture defect(s)`);
     cpSync(from, to);
     return true;
   }

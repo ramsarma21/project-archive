@@ -35,6 +35,7 @@ import {
 // keeping it narrow is the point. A fixture that builds a real match legitimately
 // needs the lobby and question-pool machinery that production netcode never touches.
 import {
+  allAskableCardIds,
   askableItems,
   createLobby,
   createPvpMatch,
@@ -90,14 +91,14 @@ export function m1Bank(): PvpQuestionBank {
   return parsed.bank;
 }
 
-function member(profileId: string): LobbyMember {
+function member(profileId: string, pvpLegalCardIds: readonly string[]): LobbyMember {
   return {
     profileId,
     handle: generateHandle(profileId).handle,
     rank: 1,
     unlockedAbilityIds: [],
     cosmetics: DEFAULT_COSMETIC_LOADOUT,
-    pvpLegalCardIds: [],
+    pvpLegalCardIds,
   };
 }
 
@@ -128,18 +129,22 @@ export function liveAuthority(rounds = 6, startedAtMs = 0): {
   authority: PvpAuthority;
   questions: readonly { itemId: string }[];
 } {
-  const lobby = createLobby(member("profile-a"), 1_000_000);
-  const joined = joinLobby(lobby, member("profile-b"), 1_000_100);
+  const bank = m1Bank();
+  const pvpLegalCardIds = allAskableCardIds(bank);
+  const lobby = createLobby(member("profile-a", pvpLegalCardIds), 1_000_000);
+  const joined = joinLobby(lobby, member("profile-b", pvpLegalCardIds), 1_000_100);
   if (!joined.ok) throw new Error(joined.reason);
   const sides = lobbySides(joined.lobby);
   if (!sides) throw new Error("no sides");
 
-  const bank = m1Bank();
   const drawn = selectRoundQuestions({
     bank,
     seed: joined.lobby.seed,
     rounds,
-    askable: askableItems(bank, { A: [], B: [] }),
+    askable: askableItems(bank, {
+      A: sides.A.pvpLegalCardIds,
+      B: sides.B.pvpLegalCardIds,
+    }),
   });
   if (!drawn.ok) throw new Error(drawn.reason);
 

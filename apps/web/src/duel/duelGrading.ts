@@ -38,6 +38,7 @@ import {
   type DuelSide,
   type VerdictKind,
 } from "@pa/duel";
+import { withDevSessionHeader } from "../devSession.js";
 
 /** Mission-Slate 1.7. Not a network timeout: a game rule with a number. */
 export const GRADING_CAP_MS = 1500;
@@ -81,6 +82,13 @@ export interface VerdictRequest {
   readonly item: DuelQuestionRef;
   /** The player's own words. Goes to the authority and nowhere else. */
   readonly answer: string;
+  /**
+   * The Codex cards the player placed as evidence. A CLAIM about what was placed, not
+   * about what is relevant: the server re-derives the offered hand and the policy for
+   * the round's item and grades this against them. The client cannot mark a card
+   * "relevant" — there is no field for it.
+   */
+  readonly selectedCardIds: readonly string[];
 }
 
 export type VerdictOrigin =
@@ -114,7 +122,10 @@ export function duelVerdictEndpoint(duelId: string, round: number): string {
 
 async function csrfToken(): Promise<string | null> {
   try {
-    const response = await fetch("/v1/session", { credentials: "include" });
+    const response = await fetch("/v1/session", {
+      credentials: "include",
+      headers: withDevSessionHeader(),
+    });
     if (!response.ok) return null;
     const body = (await response.json()) as { csrfToken?: unknown };
     return typeof body.csrfToken === "string" ? body.csrfToken : null;
@@ -146,16 +157,17 @@ export const httpVerdictAuthority: VerdictAuthority = async (request) => {
       method: "POST",
       signal: controller.signal,
       credentials: "include",
-      headers: {
+      headers: withDevSessionHeader({
         "content-type": "application/json",
         ...(csrf ? { "x-pa-csrf-token": csrf } : {}),
-      },
+      }),
       body: JSON.stringify({
         side: request.side,
         itemId: request.item.itemId,
         itemVersion: request.item.itemVersion,
         conceptId: request.item.conceptId,
         answer: request.answer,
+        selectedCardIds: request.selectedCardIds,
       }),
     });
     if (!response.ok) return timeout("AUTHORITY_UNREACHABLE");

@@ -113,6 +113,7 @@ export {
   type MatchSnapshot,
   type OpponentView,
   type ProjectileView,
+  type PvpActiveState,
   type PvpCall,
   type PvpIdentity,
   type PvpTransport,

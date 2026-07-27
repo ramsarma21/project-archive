@@ -27,6 +27,7 @@ import {
   simulateBallistic,
   GRAVITY,
   STANDING_JUMP_VY,
+  STEP_UP,
   type MotionState,
 } from "../playerMotion.js";
 
@@ -461,4 +462,237 @@ test("walking off a high platform falls instead of teleporting to ground", () =>
   assert.ok(r.state.pos.y < 3, "should have left the roof");
   assert.ok(r.events.includes("landed"), "should land on the ground below");
   assert.ok(Math.abs(r.state.pos.y) < 0.01, `ground landing y=${r.state.pos.y}`);
+});
+
+// ---------------------------------------------------------------------------
+// DEPENETRATION.
+//
+// Until today nothing in the step ever pushed a body out of anything. A capsule
+// that ended a frame inside a blocker stayed inside it indefinitely and escaped
+// only if the player happened to hold a direction that pointed outward, which
+// is the "you glitch on objects" in the owner's report. The sweep is not the
+// answer to this and never was: it stops a body from ENTERING a blocker, and is
+// silent about one that is already in.
+// ---------------------------------------------------------------------------
+
+test("a body that starts inside a blocker is pushed out of it", () => {
+  const world: CollisionWorld = {
+    blockers: [wallFromRect("BLOCK", 0, 0, 1, 1, { topY: 3 })],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  const embedded = createGroundedState({ x: 0, y: 0, z: 0 }, 0);
+  assert.equal(
+    positionClear(world, embedded.pos, CAPSULE_RADIUS, STAND_HEIGHT),
+    false,
+    "the fixture has to start embedded or it proves nothing",
+  );
+
+  // No input at all. Before this existed the body sat here forever.
+  const rested = run(world, embedded, 60, 1 / 60, {});
+  assert.ok(
+    positionClear(world, rested.state.pos, CAPSULE_RADIUS, STAND_HEIGHT),
+    `still embedded at (${rested.state.pos.x}, ${rested.state.pos.z})`,
+  );
+});
+
+test("a body wedged in a corner leaves it, and is not fired out of it", () => {
+  // TWO BLOCKERS AT ONCE IS THE CASE THAT BREAKS NAIVE IMPLEMENTATIONS. Resolve
+  // each overlap independently and add the pushes together and an inside corner
+  // ejects the body about twice as far as either wall needs. The resolution is
+  // deepest-first with everything re-measured from the new position each pass,
+  // so the corner is walked out of rather than sprung out of.
+  const world: CollisionWorld = {
+    blockers: [
+      wallFromRect("WEST", -1, 0, 1, 4, { topY: 3 }),
+      wallFromRect("SOUTH", 0, -1, 4, 1, { topY: 3 }),
+    ],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  // Just inside the corner both walls make at (0, 0).
+  const start = { x: -0.1, y: 0, z: -0.1 };
+  const rested = run(world, createGroundedState(start, 0), 60, 1 / 60, {});
+  const moved = Math.hypot(
+    rested.state.pos.x - start.x,
+    rested.state.pos.z - start.z,
+  );
+  assert.ok(
+    positionClear(world, rested.state.pos, CAPSULE_RADIUS, STAND_HEIGHT),
+    `corner did not resolve: (${rested.state.pos.x}, ${rested.state.pos.z})`,
+  );
+  // Freeing this corner needs about 0.45m on each axis, so 0.7m of travel. Twice
+  // that would be the double-push bug; three times it would be an ejection.
+  assert.ok(
+    moved < 1.4,
+    `pushed ${moved.toFixed(2)}m out of a corner that needs about 0.7m`,
+  );
+});
+
+test("depenetration does not nudge a body that is merely leaning on a wall", () => {
+  // The sweep parks a body a hair off every face it stops against and the
+  // footprint test treats faces as closed, so "resting against" is a rounding
+  // error from "inside". A body pressed on a wall must come to rest, not creep.
+  const world: CollisionWorld = {
+    blockers: [wallFromRect("WALL", 0, 4, 6, 0.5, { topY: 3 })],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  const pressed = run(world, createGroundedState({ x: 0, y: 0, z: 0 }, 0), 240, 1 / 60, {
+    targetVelZ: 4.6,
+  });
+  const settled = run(world, pressed.state, 120, 1 / 60, { targetVelZ: 4.6 });
+  assert.ok(
+    Math.abs(settled.state.pos.z - pressed.state.pos.z) < 1e-3,
+    `body crept ${(settled.state.pos.z - pressed.state.pos.z).toExponential(2)}m while held against a wall`,
+  );
+});
+
+test("a slot narrower than the body stops rather than jittering", () => {
+  // No solution exists here. The loop must notice it is not making progress and
+  // leave the body where it is; oscillating between two faces every frame is
+  // worse than being stuck, because it looks like the world is shaking.
+  const world: CollisionWorld = {
+    blockers: [
+      wallFromRect("A", 0, -0.5, 4, 0.2, { topY: 3 }),
+      wallFromRect("B", 0, 0.5, 4, 0.2, { topY: 3 }),
+    ],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  const a = run(world, createGroundedState({ x: 0, y: 0, z: 0 }, 0), 60, 1 / 60, {});
+  const b = run(world, a.state, 60, 1 / 60, {});
+  assert.ok(
+    Math.abs(b.state.pos.z - a.state.pos.z) < 1e-6,
+    `unresolvable slot is still moving the body by ${(b.state.pos.z - a.state.pos.z).toExponential(2)}m`,
+  );
+});
+
+test("a landing whose head is through a deck is not a landing", () => {
+  // A platform is a support with no thickness and therefore no underside, which
+  // is exactly what lets a player walk beneath a roof — and it means head
+  // clearance cannot see one. Mantling onto a market counter with its own
+  // canopy 0.65m above it passed every test the game had while putting the
+  // player's head through the boards, and was the single worst case the
+  // through-the-floor survey found: four verbs, 1.10m in.
+  const counter = wallFromRect("COUNTER", 0, 3, 1.3, 1, { topY: 1.9 });
+  const world: CollisionWorld = {
+    blockers: [counter],
+    platforms: [platformFromRect("AWNING", -1.4, 1.4, 1.6, 4.4, 2.55)],
+    bounds: OPEN_BOUNDS,
+  };
+  assert.equal(
+    landingValid(world, 0, 3, CAPSULE_RADIUS, 1.9, STAND_HEIGHT),
+    false,
+    "0.65m of headroom under an awning is not somewhere a body can stand",
+  );
+  // It is the headroom and not the awning that refuses: a counter low enough to
+  // stand on under the same boards is a landing again.
+  const lowCounter: CollisionWorld = {
+    ...world,
+    blockers: [wallFromRect("COUNTER", 0, 3, 1.3, 1, { topY: 0.9 })],
+  };
+  assert.equal(
+    landingValid(lowCounter, 0, 3, CAPSULE_RADIUS, 0.9, STAND_HEIGHT),
+    true,
+  );
+  // And the awning's own top is unaffected: you land ON a deck all the time.
+  assert.equal(
+    landingValid(world, 0, 3, CAPSULE_RADIUS, 2.55, STAND_HEIGHT),
+    true,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// STEP OFFSET.
+//
+// The sweep stops the capsule the same distance short of a blocker whatever its
+// height, so before this a 3cm doorstep and a cathedral wall were the same wall
+// to a running body. The parkour ladder was papering over it with a 750ms
+// scripted vault for a 10cm kerb, which is a verb doing a tolerance's job.
+// ---------------------------------------------------------------------------
+
+test("a kerb too low to be worth a verb no longer stops a run", () => {
+  for (const height of [0.03, 0.1, 0.34]) {
+    const world: CollisionWorld = {
+      blockers: [wallFromRect("KERB", 0, 3, 6, 1.5, { topY: height })],
+      platforms: [],
+      bounds: OPEN_BOUNDS,
+    };
+    let state = createGroundedState({ x: 0, y: 0, z: 0 }, 0);
+    let stoodOnTop = false;
+    for (let tick = 0; tick < 180; tick++) {
+      state = stepMotion(world, state, {
+        dt: 1 / 60,
+        targetVelX: 0,
+        targetVelZ: 4.6,
+        reducedMotion: false,
+      }).state;
+      // The kerb spans z = 2.25 to 3.75; anywhere in its middle the body should
+      // be up on it rather than pushed against it or walking through it.
+      if (state.pos.z > 2.6 && state.pos.z < 3.4) {
+        assert.ok(
+          Math.abs(state.pos.y - height) < 0.02,
+          `crossing a ${(height * 100).toFixed(0)}cm kerb at z=${state.pos.z.toFixed(2)} with feet at y=${state.pos.y.toFixed(3)}`,
+        );
+        stoodOnTop = true;
+      }
+    }
+    assert.ok(
+      stoodOnTop && state.pos.z > 4,
+      `a ${(height * 100).toFixed(0)}cm kerb stopped a full-speed run at z=${state.pos.z.toFixed(2)}`,
+    );
+  }
+});
+
+test("the step offset is a ceiling, not a ramp up anything", () => {
+  // Above the free step the body must still be stopped, or the offset has
+  // quietly become a climb and the verb ladder has nothing left to do.
+  const world: CollisionWorld = {
+    blockers: [wallFromRect("LEDGE", 0, 3, 6, 0.6, { topY: STEP_UP + 0.1 })],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  const r = run(world, createGroundedState({ x: 0, y: 0, z: 0 }, 0), 180, 1 / 60, {
+    targetVelZ: 4.6,
+  });
+  assert.ok(r.state.pos.y < 0.01, `body climbed to y=${r.state.pos.y} unasked`);
+  assert.ok(r.state.pos.z < 3, `body passed the ledge at z=${r.state.pos.z}`);
+});
+
+test("the step offset will not put a body under a soffit it cannot stand in", () => {
+  // Lifting the capsule is only legal if the capsule fits lifted. A kerb with a
+  // beam over it must stop the body, not wedge it.
+  const world: CollisionWorld = {
+    blockers: [
+      wallFromRect("KERB", 0, 3, 6, 0.3, { topY: 0.3 }),
+      wallFromRect("BEAM", 0, 3, 6, 0.3, { baseY: 1.2, topY: 1.8 }),
+    ],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  const r = run(world, createGroundedState({ x: 0, y: 0, z: 0 }, 0), 180, 1 / 60, {
+    targetVelZ: 4.6,
+  });
+  assert.ok(
+    r.state.pos.z < 3,
+    `body stepped up into a 1.2m soffit and ended at z=${r.state.pos.z.toFixed(2)}`,
+  );
+});
+
+test("the step offset will not walk a body out over a hole", () => {
+  // The far side has to have something to stand on. A lip with nothing behind
+  // it is a lip, and leaving the ground is the fall path's business.
+  const world: CollisionWorld = {
+    blockers: [wallFromRect("LIP", 0, 3, 6, 0.3, { topY: 0.3, landable: false })],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+  const r = run(world, createGroundedState({ x: 0, y: 0, z: 0 }, 0), 120, 1 / 60, {
+    targetVelZ: 4.6,
+  });
+  assert.ok(
+    Math.abs(r.state.pos.y) < 0.01,
+    `body rose to y=${r.state.pos.y} onto a top that is not landable`,
+  );
 });

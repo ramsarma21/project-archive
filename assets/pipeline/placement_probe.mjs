@@ -47,6 +47,29 @@ export const DECK_MIN_PCT = 95;
  */
 export const MASS_TOP_MIN_PCT = 70;
 
+/**
+ * How far sideways a ray is retried when nothing lands at the plane.
+ *
+ * A millimetre, and it is not a tolerance — it is the width of a crack that
+ * does not exist in the geometry.
+ *
+ * `rowPlacements` divides a block exactly and the sample grid divides the same
+ * block inflated by its jetty, so whenever a block has an EVEN house count the
+ * middle sample column falls exactly on the shared edge of two abutting
+ * coplanar quads. The two tiles' world bounds meet at 12.5 to the last bit, but
+ * each is raycast in its OWN local frame, and the inverse transform puts the ray
+ * a fraction of a ULP outside the boundary triangle on BOTH sides. The ray
+ * passes between two touching surfaces and reports nothing at all: on
+ * MARKET_SHED__ROOF, x = 12.4998 and x = 12.5002 both hit and x = 12.500000
+ * misses the entire building, ground included.
+ *
+ * One millimetre is far below anything the level authors — the finest real
+ * feature here is a 20mm board — so a retry cannot invent a surface. It can only
+ * step off an infinitely thin seam, and the retried ray still has to land AT the
+ * plane to count.
+ */
+export const EDGE_NUDGE_M = 0.001;
+
 /** Per-axis amount of a collision box the draw fails to reach. */
 export const shortfallOf = (want, drawn) => want.map((value, axis) => value - drawn[axis]);
 
@@ -267,6 +290,16 @@ export function surveyFirstHit(
  * deck may have a chimney standing on it, so the FIRST thing a ray meets is not
  * always the surface being asked about. What matters is whether something drawn
  * is at the height the player's feet are.
+ *
+ * A sample that finds nothing at the plane is retried `EDGE_NUDGE_M` sideways
+ * before it is counted as air, on each axis in turn, because a seam between two
+ * abutting quads is a line the ray can pass straight through. The retry is
+ * gated on "nothing AT THE PLANE" rather than on "nothing at all": the narrower
+ * gate is what the old one used, and it never fired for a seam that lies UNDER
+ * something else — the ropewalk tie beam at 8.60m sits beneath a lead roof, so
+ * its rays always met geometry and were never retried. Either way the retried
+ * ray has to land at the plane itself, so this loosens where the question is
+ * asked and not what counts as an answer.
  */
 export function surveyNearPlane(
   THREE,
@@ -279,12 +312,29 @@ export function surveyNearPlane(
   raycaster.far = far;
   const down = new THREE.Vector3(0, -1, 0);
   const samples = footprintSamples(part, grid);
-  let hit = 0;
-  for (const [x, z] of samples) {
+  const atPlane = (x, z) => {
     raycaster.set(new THREE.Vector3(x, plane + from, z), down);
-    if (raycaster.intersectObjects(targets, false).some((h) => Math.abs(h.point.y - plane) < tol)) {
+    return raycaster.intersectObjects(targets, false).some((h) => Math.abs(h.point.y - plane) < tol);
+  };
+  let hit = 0;
+  let nudged = 0;
+  for (const [x, z] of samples) {
+    if (atPlane(x, z)) {
       hit++;
+      continue;
+    }
+    // Both axes, because a seam runs along one of them and which one depends on
+    // whether the run was laid across the street or up it. Stepping along the
+    // seam finds the same crack again; stepping across it lands in a tile.
+    if (atPlane(x + EDGE_NUDGE_M, z) || atPlane(x, z + EDGE_NUDGE_M)) {
+      hit++;
+      nudged++;
     }
   }
-  return { total: samples.length, hit, fraction: samples.length ? hit / samples.length : 1 };
+  return {
+    total: samples.length,
+    hit,
+    nudged,
+    fraction: samples.length ? hit / samples.length : 1,
+  };
 }

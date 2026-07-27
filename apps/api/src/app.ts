@@ -14,18 +14,32 @@ import {
   createSession,
   csrfTokenForSession,
   getSessionUser,
+  googleCallbackErrorReason,
   googleConfigured,
+  resolveLocalDevProfile,
   resolveProfile,
   revokeSession,
 } from "./auth.js";
+import {
+  devSessionStore,
+  devSessionsEnabled,
+  effectiveSessionId,
+  googleCallbackSuccessRedirect,
+  requestDevSessionHandle,
+} from "./devSession.js";
 import { reportingService } from "@pa/reporting";
 import { registerDuelRoutes } from "./routes/duels.js";
+import { registerEncounterRoutes } from "./routes/encounters.js";
 import { registerProgressionRoutes } from "./routes/progression.js";
 import { registerPvpRoutes } from "./routes/pvp.js";
 import { registerReportingRoutes } from "./routes/reporting.js";
+import { registerLocalSessionRoute } from "./routes/localSession.js";
 import { createDuelGrading } from "./duels/grading.js";
+import { postgresDuelVerdictStore } from "./duels/verdictStore.js";
+import { m1DuelId, m1ExpectedDuelItem } from "@pa/mission-m1";
 import { createPvpGrading } from "./pvp/grading.js";
-import { bostonProgressionContent } from "./progression/content.js";
+import { bostonProgressionContent, M1_MODULE_ID } from "./progression/content.js";
+import { pvpCardResolver } from "./pvp/cardAccess.js";
 import { postgresProgressionStore } from "./progression/postgresStore.js";
 import { ProgressionService } from "./progression/service.js";
 
@@ -44,13 +58,23 @@ const COOKIE_SECURE = process.env.COOKIE_SECURE === "true";
  * the server minted a verdict, so a client that cannot read it cannot carry it to
  * the commit and the signature stays decoration.
  *
- * The other two are diagnostics: which path graded the round and how long it took.
- * Neither can influence a bullet count — the duel derives that from `kind` alone.
+ * The other three are diagnostics: which path graded the round, how long it took,
+ * and — when the round was granted without being graded — why. None of them can
+ * influence a bullet count; the duel derives that from `kind` alone.
  */
 const EXPOSED_HEADERS = [
   "x-pa-verdict-receipt",
   "x-pa-grading-path",
   "x-pa-grading-latency-ms",
+  "x-pa-grading-fallback",
+  // So the web encounter client can read whether a verdict was the generous
+  // infrastructure grant when the app is served cross-origin (dev is same-origin
+  // via the Vite proxy, which is why this could ship unreadable otherwise).
+  "x-pa-encounter-granted",
+  // The boss-duel evidence gate's feedback class (TOO_FEW, INCOMPATIBLE, …). A
+  // misconception class only, never which cards were relevant, so the answering
+  // player can be told why their evidence fell short without the answer leaking.
+  "x-pa-evidence",
 ];
 
 function setSessionCookie(reply: FastifyReply, sessionId: string): void {
@@ -64,7 +88,7 @@ function setSessionCookie(reply: FastifyReply, sessionId: string): void {
 }
 
 async function requireOwner(req: FastifyRequest, profileId: string) {
-  const user = await getSessionUser(req.cookies[SESSION_COOKIE]);
+  const user = await getSessionUser(effectiveSessionId(req));
   if (!user) return { error: "AUTH_REQUIRED" as const };
   if (user.profileId !== profileId) return { error: "PROFILE_FORBIDDEN" as const };
   return { user };
@@ -101,10 +125,14 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
   // ability unlock schedule all come from @pa/abilities, and the module decks
   // gate every attempt. The capstone's item bank is still unauthored, so an
   // assessment mutation continues to report PACKAGE_MISSING.
+  const progressionContent = bostonProgressionContent();
   const progression = new ProgressionService(
     postgresProgressionStore(),
-    bostonProgressionContent(),
+    progressionContent,
   );
+  // The nine M1 Codex cards, from the API's own card map rather than a hand-list.
+  // These are what the PLAYTEST_ALL access policy grants every PvP caller today.
+  const m1CardIds = progressionContent.codexCardsForModule(M1_MODULE_ID);
   // The boss duel's grading authority. Without it the client's 1.5-second cap
   // fires on every round and grants the maximum, which looks exactly like
   // working grading.
@@ -118,12 +146,82 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
   await registerProgressionRoutes(app, progression, {
     verifyVerdictReceipt: duelGrading.verifyReceipt,
   });
-  await registerDuelRoutes(app, { grading: duelGrading });
+  // The boss duel is bound to the authenticated profile's OWN open attempt. The
+  // route no longer trusts a client-supplied duelId/itemId: it resolves the open
+  // progression attempt, requires the request's duel id to be that attempt's
+  // canonical one, and grades the item the round actually asks — computed from the
+  // stored attempt seed and ordinal by the same @pa/mission-m1 algorithm the client
+  // runs. The verdict store makes the first minted verdict per {profile, duel,
+  // round} final, so a changed second answer cannot re-grade the round.
+  await registerDuelRoutes(app, {
+    grading: duelGrading,
+    resolveAttempt: async (profileId) => {
+      try {
+        const snapshot = await progression.snapshot(profileId);
+        const open = snapshot.openAttempt;
+        if (!open) return null;
+        return {
+          attemptId: open.attemptId,
+          attemptOrdinal: open.attemptOrdinal,
+          attemptSeedHex: open.attemptSeedHex,
+          missionId: open.missionId,
+          chapterId: open.chapterId,
+        };
+      } catch (cause) {
+        app.log.warn({ cause, profileId }, "duel: open attempt unreadable; refusing");
+        return null;
+      }
+    },
+    questionAuthority: {
+      duelId: (attempt) => m1DuelId(attempt.attemptOrdinal),
+      expectedItemId: (attempt, round) =>
+        m1ExpectedDuelItem({
+          attemptSeedHex: attempt.attemptSeedHex,
+          attemptOrdinal: attempt.attemptOrdinal,
+          round,
+        }).item.itemId,
+    },
+    verdictStore: postgresDuelVerdictStore(),
+    // The boss is the mission capstone: a player who reaches it holds the whole M1
+    // deck, and the evidence hand is drawn from exactly these nine. Server-derived
+    // from the card map, never hand-listed.
+    evidenceAuthorizedCardIds: m1CardIds,
+  });
+  // The forced perspective encounters share the duel's authority machinery: the
+  // same open-attempt resolver, signed grading over the encounter bank, and the
+  // same durable first-verdict store — the encounter's canonical id namespaces
+  // its verdict rows inside `duel_verdicts`, so there is no new migration. The
+  // route grades the item the stop asks (recomputed from the stored attempt),
+  // never the client's claim, and a wrong answer still resolves so a stop cannot
+  // soft-lock the route.
+  await registerEncounterRoutes(app, {
+    resolveAttempt: async (profileId) => {
+      try {
+        const snapshot = await progression.snapshot(profileId);
+        const open = snapshot.openAttempt;
+        if (!open) return null;
+        return {
+          attemptId: open.attemptId,
+          attemptOrdinal: open.attemptOrdinal,
+          attemptSeedHex: open.attemptSeedHex,
+          missionId: open.missionId,
+          chapterId: open.chapterId,
+        };
+      } catch (cause) {
+        app.log.warn({ cause, profileId }, "encounter: open attempt unreadable; refusing");
+        return null;
+      }
+    },
+    verdictStore: postgresDuelVerdictStore(),
+  });
   // PvP holds its lobbies and live matches in memory, so a restart loses a code and
   // at most one fight. Standing is durable in pvp_standing (migration 007): a
   // leaderboard that evaporates is the one loss a playtest cannot absorb.
   await registerPvpRoutes(app, {
-    ...createPvpGrading(app.log),
+    // Built with the DUEL's grading signal, so PvP rounds record into the same rolling
+    // fallback rate the boss duel does and `/v1/health.grading` reflects both modes.
+    // Health semantics stay shared: one signal, one status word, one alarm.
+    ...createPvpGrading(app.log, { signal: duelGrading.signal }),
     // The capstone-sharing guard's one input. A profile whose progression cannot
     // be read is treated as having mastered nothing, which WITHHOLDS the shared
     // capstone items rather than leaking a gate question into a duel — the pool
@@ -139,6 +237,19 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
         return [];
       }
     },
+    // The server-side card resolver. Today's policy (M1_PVP_CARD_ACCESS) is
+    // PLAYTEST_ALL, so this hands every caller the nine M1 cards without reading the
+    // snapshot. Flip that one value to ASSESSMENT_PASSED and this grants the cards
+    // only once the caller's chapter assessment has passed — the snapshot read below
+    // is what makes that authoritative rather than trusting the client.
+    resolvePvpCardIds: pvpCardResolver({
+      m1CardIds,
+      log: app.log,
+      assessmentPassed: async (profileId) => {
+        const snapshot = await progression.snapshot(profileId);
+        return snapshot.activeChapter.assessmentPassedAt !== null;
+      },
+    }),
   });
   // The educator surface: three reads, no writes.
   //
@@ -189,7 +300,9 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
   });
 
   app.get("/v1/session", async (req) => {
-    const sid = req.cookies[SESSION_COOKIE];
+    // In non-production a tab's dev-session header takes precedence over the shared
+    // cookie, so two tabs can report two different local profiles from one browser.
+    const sid = effectiveSessionId(req);
     const user = await getSessionUser(sid);
     if (!user) return { authenticated: false, profile: null };
     const rows = await query<{
@@ -239,20 +352,81 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
           `${WEB_ORIGIN}/?auth=failed&reason=${encodeURIComponent(error ?? "no_code")}`,
         );
       }
+      // Which stage is running, so a failure names the exact one rather than a bare
+      // "auth=failed". Every value here is non-secret.
+      let stage: "token_callback" | "resolve_profile" | "create_session" | "redirect" =
+        "token_callback";
       try {
         const identity = await completeGoogleCallback(code, state);
+        stage = "resolve_profile";
         const profile = await resolveProfile(identity);
+        stage = "create_session";
         const sid = await createSession(profile.id, profile.account_id);
         setSessionCookie(reply, sid);
-        return reply.redirect(`${WEB_ORIGIN}/?auth=success`);
+        // Outside production the callback also mints a tab-scoped handle and hands it
+        // back in the URL fragment, so a SECOND Google tab (or a Google tab beside a
+        // local one) is not aliased to the shared cookie the most recent sign-in
+        // overwrote. In production this is exactly cookie-only: no handle, no fragment.
+        stage = "redirect";
+        return reply.redirect(
+          googleCallbackSuccessRedirect({
+            webOrigin: WEB_ORIGIN,
+            sessionId: sid,
+            mintDevSession: devSessionsEnabled()
+              ? (s) => devSessionStore.mint(s)
+              : undefined,
+          }),
+        );
       } catch (cause) {
+        // The stage a token/verify failure reports comes from the tagged error; the
+        // later stages name themselves, since a DB or redirect failure has no tag.
+        const reason =
+          stage === "token_callback"
+            ? googleCallbackErrorReason(cause)
+            : stage === "resolve_profile"
+              ? "profile_resolve"
+              : stage === "create_session"
+                ? "session_create"
+                : "redirect_build";
         req.log.error(cause, "google callback failed");
-        return reply.redirect(`${WEB_ORIGIN}/?auth=failed`);
+        // The dev logger is off, so a real diagnostic needs its own line. NON-SECRET:
+        // the reason code plus the error MESSAGE (a failed token exchange carries only
+        // Google's error JSON, never an access/id token; a success path never reaches
+        // here). Gated to non-production, exactly like the reason surfaced below.
+        if (devSessionsEnabled()) {
+          const detail = cause instanceof Error ? cause.message : String(cause);
+          console.error(`[auth/callback] failed stage=${stage} reason=${reason} :: ${detail}`);
+        }
+        // In development the browser lands on a SPECIFIC, non-secret reason so the next
+        // failure is diagnosable rather than a bare auth=failed. Production stays bare,
+        // so nothing about the internal stage is ever disclosed on a deployed task.
+        const suffix = devSessionsEnabled() ? `&reason=${encodeURIComponent(reason)}` : "";
+        return reply.redirect(`${WEB_ORIGIN}/?auth=failed${suffix}`);
       }
     },
   );
 
+  // A server session for a local development profile. Mounted only outside
+  // production (404 there), so the local build is ranked and gradable without
+  // opening an anonymous session door on a deployed task.
+  registerLocalSessionRoute(app, {
+    resolveProfile: resolveLocalDevProfile,
+    createSession,
+    cookieSecure: COOKIE_SECURE,
+    // Non-production only: the route answers 404 in production, so this is never
+    // reached there and no tab credential is ever minted on a deployed task.
+    mintDevSession: (sid) => devSessionStore.mint(sid),
+  });
+
   app.post("/v1/logout", async (req, reply) => {
+    // Tab-scoped first: a dev-session tab drops only its OWN handle, so signing out
+    // of one local test tab cannot reach into another tab's identity. This is a
+    // no-op in production (no handle is ever honoured there).
+    const handle = requestDevSessionHandle(req);
+    if (handle) devSessionStore.revoke(handle);
+    // The shared HttpOnly cookie session is still revoked and cleared, which is the
+    // honest browser-wide semantics a Google sign-out needs — the cookie is not
+    // tab-scoped and this endpoint does not pretend it is.
     await revokeSession(req.cookies[SESSION_COOKIE]);
     reply.clearCookie(SESSION_COOKIE, { path: "/" });
     return { ok: true };

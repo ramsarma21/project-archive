@@ -254,6 +254,17 @@ export function disperseAtDawn(
 // look, and everything before it is the night the mission is actually set in.
 // ---------------------------------------------------------------------------
 
+/**
+ * Renderer exposure, fixed for the whole mission.
+ *
+ * Fixed on purpose: an exposure that tracked the frame would be an automatic
+ * gain control, and a stealth mission whose picture brightens whenever the
+ * player steps into the dark has thrown away the thing the player is choosing
+ * between. The dark gets darker on screen because the light rig says so, not
+ * because a curve gave up.
+ */
+export const MISSION_EXPOSURE = 1;
+
 export interface DawnSkyStop {
   readonly at: number;
   /** Background and fog colour, as a hex string both CSS and three.js accept. */
@@ -270,26 +281,66 @@ export interface DawnSkyStop {
   readonly sunIntensity: number;
   /** Sun elevation in degrees. Low is a long raking shadow, which dawn is. */
   readonly sunElevationDeg: number;
+  /**
+   * What the town's own lamps are still worth, [0,1].
+   *
+   * Lanterns are the whole of the mission's local contrast, so they cannot be a
+   * constant: a lamp that still reads as a pool of light at sun-up would be the
+   * one thing on screen refusing to admit the night is over. It falls faster
+   * than the sky rises, because a lamp stops being *visible* long before it
+   * stops being *lit* — by first light the flame is still burning and is no
+   * longer doing anything for you.
+   *
+   * Display only. The stealth field's light term is the authored volume in
+   * `MissionLevel.light`, lifted by `dawnLightLevel`, and neither reads this.
+   */
+  readonly lanternGain: number;
 }
 
+// The intensities below are roughly an order of magnitude above the ones this
+// table shipped with, and that is a correction rather than a brightening.
+//
+// three has not scaled light intensity by PI since r155, and a Lambert surface
+// returns `irradiance * albedo / PI`. At the old `ambient: 0.46` a mid colonial
+// wall therefore left the shader at 0.0024 linear — and three's ACES filmic
+// curve, which R3F installs by default, evaluates its numerator as
+// `x(x + 0.0245786) - 0.000090537`, which is NEGATIVE below 0.00325 and clamps
+// to zero. So the city was not dim, it was arithmetically clipped to #000000,
+// and the only things anybody could see were the character rigs whose albedo
+// was wired as an emissive texture and so bypassed lighting entirely. The stage
+// now tone-maps with the Khronos neutral curve — see `MISSION_EXPOSURE` and the
+// note on the canvas — which is linear through the bottom of the range, and
+// these numbers are solved against it for a measured target rather than chosen
+// by eye.
+//
+// What is targeted at each stop is the sRGB an UNLIT mid wall lands on: 0.115
+// at full dark, rising to 0.62 at sun-up. Unlit is the operative word. The
+// contrast the player reads the city by is `M1Lanterns`, whose pools put the
+// same wall between 0.28 and 0.50 within a few metres of a flame, so standing
+// in the light stays worth three or four times the picture that standing out of
+// it is. A uniform lift of the floor would have bought the same visibility and
+// thrown that away.
 const SKY_STOPS: readonly DawnSkyStop[] = [
   {
     at: 0,
     sky: "#0a1220",
     horizon: "#101c2e",
-    fogDensity: 0.026,
-    // The floor is legibility, not realism. These two lights are the whole of
-    // the mission's lighting — the level's authored lamplight is a simulation
-    // value, not a lamp in the scene — so a physically honest 4 a.m. would be an
-    // unplayable black screen. Night is as dark as a player can still read a
-    // rooftop edge in, and the change from here to sun-up is what carries the
-    // clock.
-    ambient: 0.46,
+    // Thinner than it was. Exponential-squared fog at 0.026 took two thirds of a
+    // building at forty metres, and this mission's wayfinding is landmarks — the
+    // Town House, the steeple, the elm — none of which can be aimed at through
+    // fog that has already eaten them.
+    fogDensity: 0.016,
+    ambient: 3.35,
     hemiSky: "#3f5c86",
     hemiGround: "#141a22",
     sunColour: "#8ea6cc",
-    sunIntensity: 0.1,
+    // The moon rather than the sun, and worth about a fifth of the picture at
+    // this stop. Not for brightness: a purely hemispherical night has no
+    // direction in it, so a roof plane and a wall plane resolve to the same
+    // value, and that is the one read a rooftop route cannot afford to lose.
+    sunIntensity: 0.25,
     sunElevationDeg: 5,
+    lanternGain: 1,
   },
   {
     // Front-loaded deliberately: dark values are where the eye reads a relative
@@ -299,49 +350,53 @@ const SKY_STOPS: readonly DawnSkyStop[] = [
     at: 0.12,
     sky: "#132132",
     horizon: "#22304a",
-    fogDensity: 0.025,
-    ambient: 0.52,
+    fogDensity: 0.0155,
+    ambient: 3.98,
     hemiSky: "#4a668c",
     hemiGround: "#171d26",
     sunColour: "#93aad0",
-    sunIntensity: 0.16,
+    sunIntensity: 0.37,
     sunElevationDeg: 5,
+    lanternGain: 0.94,
   },
   {
     at: 0.3,
     sky: "#22334a",
     horizon: "#42405a",
-    fogDensity: 0.023,
-    ambient: 0.6,
+    fogDensity: 0.0145,
+    ambient: 5.12,
     hemiSky: "#5c789c",
     hemiGround: "#1d2229",
     sunColour: "#b8aecb",
-    sunIntensity: 0.26,
+    sunIntensity: 0.7,
     sunElevationDeg: 6,
+    lanternGain: 0.72,
   },
   {
     at: DAWN.liftAtDawn,
     sky: "#425468",
     horizon: "#8f6f62",
-    fogDensity: 0.019,
-    ambient: 0.74,
+    fogDensity: 0.0125,
+    ambient: 6.36,
     hemiSky: "#7c92ad",
     hemiGround: "#28271f",
     sunColour: "#dda484",
-    sunIntensity: 0.55,
+    sunIntensity: 1.98,
     sunElevationDeg: 7,
+    lanternGain: 0.4,
   },
   {
     at: 0.8,
     sky: "#6c8098",
     horizon: "#c58d69",
-    fogDensity: 0.015,
-    ambient: 0.92,
+    fogDensity: 0.0105,
+    ambient: 6.94,
     hemiSky: "#a8c0dc",
     hemiGround: "#332f27",
     sunColour: "#f5b385",
-    sunIntensity: 1,
+    sunIntensity: 4.92,
     sunElevationDeg: 10,
+    lanternGain: 0.12,
   },
   {
     // The daylight the stage used to draw unconditionally, in a mission written
@@ -350,13 +405,17 @@ const SKY_STOPS: readonly DawnSkyStop[] = [
     at: 1,
     sky: "#8c9db1",
     horizon: "#c9c0ae",
-    fogDensity: 0.011,
-    ambient: 1.05,
+    fogDensity: 0.008,
+    ambient: 9,
     hemiSky: "#cddcf0",
     hemiGround: "#3c3a34",
     sunColour: "#fff3df",
-    sunIntensity: 1.35,
+    sunIntensity: 7.12,
     sunElevationDeg: 24,
+    // Out. Not dimmed to a token: the lamps were lit against a night that has
+    // ended, and a player who overran the clock should be able to watch the town
+    // stop helping them hide.
+    lanternGain: 0,
   },
 ];
 
@@ -404,6 +463,8 @@ export function dawnSky(lift01: number): DawnSkyStop {
     sunElevationDeg:
       lower.sunElevationDeg +
       (upper.sunElevationDeg - lower.sunElevationDeg) * t,
+    lanternGain:
+      lower.lanternGain + (upper.lanternGain - lower.lanternGain) * t,
   };
 }
 

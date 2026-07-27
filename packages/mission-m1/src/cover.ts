@@ -43,7 +43,12 @@ import {
   type Vec3,
 } from "@pa/engine-world/collision";
 import { PARKOUR_TUNING } from "@pa/engine-world/parkour";
-import { eyePoint, visibility, type WatcherEye } from "@pa/engine-world/stealth";
+import {
+  eyePoint,
+  visibility,
+  type WatcherEye,
+  type WatcherPose,
+} from "@pa/engine-world/stealth";
 import type { CompiledLevel } from "./compile.js";
 import { M1_EFFIGY_RUN } from "./level/index.js";
 import { watcherPosesAtTick } from "./runtime.js";
@@ -234,8 +239,19 @@ export function coverAt(
   seed: number,
   read: CoverRead,
   level: MissionLevel = M1_EFFIGY_RUN,
+  /**
+   * Where the watchers ACTUALLY are this tick, when the caller knows.
+   *
+   * Absent falls back to the authored patrol, which is right for level tooling
+   * asking about an undisturbed run and wrong for a live one: a watcher who has
+   * left his post to come and look is not where the clock says he is, and cover
+   * measured against the mark he abandoned would hand the player a 0.3x screen
+   * against a man standing next to them. The container knows the real poses
+   * because it steps the pursuit; this is how it says so.
+   */
+  livePoses?: readonly WatcherPose[],
 ): CoverResult {
-  const poses = watcherPosesAtTick(read.tick, seed, level);
+  const poses = livePoses ?? watcherPosesAtTick(read.tick, seed, level);
   let best: CoverResult = NO_COVER;
   for (const pose of poses) {
     const watcher: WatcherEye & { id: string } = {
@@ -267,6 +283,7 @@ export function coverPredicate(
   compiled: CompiledLevel,
   seed: number,
   level: MissionLevel = M1_EFFIGY_RUN,
-): (read: CoverRead) => boolean {
-  return (read) => coverAt(compiled, seed, read, level).covered;
+): (read: CoverRead, livePoses?: readonly WatcherPose[]) => boolean {
+  return (read, livePoses) =>
+    coverAt(compiled, seed, read, level, livePoses).covered;
 }

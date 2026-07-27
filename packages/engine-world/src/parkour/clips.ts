@@ -201,3 +201,16 @@ export const PARKOUR_CLIP_FALLBACKS: Readonly<Record<string, string>> =
   Object.fromEntries(
     PARKOUR_CLIP_REQUESTS.map((request) => [request.name, request.fallback]),
   );
+
+/**
+ * Authored screen time per clip, so the mixer can be told how fast to play a
+ * Mixamo performance without a second copy of the number.
+ *
+ * Projected from the same requests rather than restated: `targetMs` is already
+ * the answer to "how long should this read for", and the boundary check exists
+ * precisely to stop a tuning constant acquiring a duplicate that drifts.
+ */
+export const PARKOUR_CLIP_TARGET_MS: Readonly<Record<string, number>> =
+  Object.fromEntries(
+    PARKOUR_CLIP_REQUESTS.map((request) => [request.name, request.targetMs]),
+  );

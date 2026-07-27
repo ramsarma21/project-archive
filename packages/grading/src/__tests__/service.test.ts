@@ -5,7 +5,12 @@ import { GradingService, UnknownItemError, projectVerdict } from "../service.js"
 import { MemoryVerdictCache } from "../cache.js";
 import { MemoryReviewLog } from "../reviewLog.js";
 import { MemoryLowConfidenceLedger } from "../lowConfidence.js";
-import { RetryableProviderError } from "../provider.js";
+import {
+  ProviderNotConfiguredError,
+  ProviderRejectedError,
+  ProviderUnreachableError,
+  RetryableProviderError,
+} from "../provider.js";
 import type { ClassifierProvider, ProviderResult } from "../provider.js";
 import { CIRCUIT_FAILURE_THRESHOLD } from "../tuning.js";
 
@@ -227,6 +232,7 @@ describe("failing generous", () => {
     assert.equal(verdict.kind, "CORRECT");
     assert.equal(verdict.source, "GRADING_TIMEOUT");
     assert.equal(verdict.provenance.fallbackReason, "TIMEOUT");
+    assert.equal(verdict.provenance.fallbackDiagnosis, "DEADLINE_EXCEEDED");
     assert.equal(verdict.provenance.needsReview, true);
     assert.equal(reviewLog.countOf("TIMEOUT_GRANT"), 1);
     const entry = reviewLog.entries[0];
@@ -264,6 +270,7 @@ describe("failing generous", () => {
     const verdict = await service.grade(request(BOTH, "an answer"));
     assert.equal(verdict.kind, "CORRECT");
     assert.equal(verdict.provenance.fallbackReason, "NOT_CONFIGURED");
+    assert.equal(verdict.provenance.fallbackDiagnosis, "NO_CREDENTIAL");
   });
 
   it("retries once on a 429 within budget, then grants", async () => {
@@ -275,6 +282,8 @@ describe("failing generous", () => {
     const verdict = await service.grade(request(BOTH, "an answer"));
     assert.equal(calls, 2, "one retry inside the 1.5s budget");
     assert.equal(verdict.provenance.fallbackReason, "PROVIDER_ERROR");
+    assert.equal(verdict.provenance.fallbackDiagnosis, "PROVIDER_REJECTED");
+    assert.equal(verdict.provenance.fallbackStatus, 429);
     assert.equal(verdict.kind, "CORRECT");
   });
 
@@ -287,6 +296,112 @@ describe("failing generous", () => {
     });
     await service.grade(request(BOTH, "an answer"));
     assert.equal(calls, 1);
+  });
+});
+
+describe("failing generous, but saying which failure it was", () => {
+  // WHY THIS BLOCK EXISTS. Every fallback below grants CORRECT and reports
+  // `source: "GRADING_TIMEOUT"`, and that is correct and must stay: a student
+  // never loses a mission to infrastructure, and the duel derives fourteen
+  // bullets from that one word. What was NOT correct is that it was the only word
+  // available. A duel run against a gateway with no route to it returned
+  // GRADING_TIMEOUT in eight milliseconds and a review-log entry that said
+  // TIMEOUT_GRANT, so a broken gateway, a wrong model name, a missing credential
+  // and a genuinely slow model were one indistinguishable condition. The elapsed
+  // time was the only thing that told them apart, and reading latency to discover
+  // that nothing is being graded is not a diagnostic.
+  const cases: readonly [string, Error, string, number | null][] = [
+    [
+      "an unreachable gateway",
+      new ProviderUnreachableError(new Error("fetch failed")),
+      "PROVIDER_UNREACHABLE",
+      null,
+    ],
+    ["a refused request", new ProviderRejectedError(403), "PROVIDER_REJECTED", 403],
+    [
+      "a credential that vanished after boot",
+      new ProviderNotConfiguredError("no key"),
+      "NO_CREDENTIAL",
+      null,
+    ],
+  ];
+
+  for (const [label, error, diagnosis, status] of cases) {
+    it(`names ${label} as ${diagnosis} without calling it a timeout`, async () => {
+      const reviewLog = new MemoryReviewLog();
+      const service = new GradingService({ bank, provider: thrower(error), reviewLog });
+      const verdict = await service.grade(request(BOTH, "an answer"));
+
+      assert.equal(verdict.kind, "CORRECT", "the generous grant is unchanged");
+      assert.equal(verdict.source, "GRADING_TIMEOUT", "the wire vocabulary is unchanged");
+      assert.equal(verdict.provenance.fallbackDiagnosis, diagnosis);
+      assert.equal(verdict.provenance.fallbackStatus, status);
+      // The review log is the evidence for the grant. It must not call this a
+      // timeout either.
+      assert.equal(reviewLog.countOf("TIMEOUT_GRANT"), 0);
+      assert.equal(reviewLog.countOf("UNGRADED_GRANT"), 1);
+      assert.equal(reviewLog.entries[0]?.fallbackDiagnosis, diagnosis);
+      assert.equal(reviewLog.entries[0]?.fallbackStatus, status);
+    });
+  }
+
+  it("keeps the coarse reason a caller outside this package may be reading", async () => {
+    // `packages/assessment` mirrors `FallbackReason` structurally and refuses any
+    // verdict carrying one. Those five values are frozen; the diagnosis is the
+    // field that got finer.
+    for (const [error, reason] of [
+      [new ProviderUnreachableError(new Error("x")), "PROVIDER_ERROR"],
+      [new ProviderRejectedError(404), "PROVIDER_ERROR"],
+      [new Error("something nobody classified"), "PROVIDER_ERROR"],
+    ] as const) {
+      const service = new GradingService({ bank, provider: thrower(error) });
+      const verdict = await service.grade(request(BOTH, "an answer"));
+      assert.equal(verdict.provenance.fallbackReason, reason);
+    }
+  });
+
+  it("does not guess a cause for an error it cannot classify", async () => {
+    const service = new GradingService({
+      bank,
+      provider: thrower(new Error("upstream exploded")),
+    });
+    const verdict = await service.grade(request(BOTH, "an answer"));
+    // Naming this UNREACHABLE would put a wrong cause in front of whoever is
+    // debugging it, which is the failure this whole change is about.
+    assert.equal(verdict.provenance.fallbackDiagnosis, "PROVIDER_FAILED");
+  });
+
+  it("still calls a real deadline overrun a timeout", async () => {
+    const reviewLog = new MemoryReviewLog();
+    const never: ClassifierProvider = {
+      classify: (_request, signal) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener("abort", () => reject(abortError()));
+        }),
+    };
+    const service = new GradingService({
+      bank,
+      provider: never,
+      reviewLog,
+      timeoutMs: 40,
+    });
+    const verdict = await service.grade(request(BOTH, "an answer"));
+    assert.equal(verdict.provenance.fallbackDiagnosis, "DEADLINE_EXCEEDED");
+    assert.equal(reviewLog.countOf("TIMEOUT_GRANT"), 1, "the one honest timeout");
+    assert.equal(reviewLog.countOf("UNGRADED_GRANT"), 0);
+  });
+
+  it("names an open breaker rather than reporting the round it short-circuited", async () => {
+    const service = new GradingService({
+      bank,
+      provider: thrower(new ProviderRejectedError(401)),
+    });
+    for (let call = 0; call < CIRCUIT_FAILURE_THRESHOLD; call += 1) {
+      await service.grade(request(BOTH, `answer ${call}`));
+    }
+    const open = await service.grade(request(BOTH, "one more"));
+    assert.equal(open.provenance.fallbackDiagnosis, "CIRCUIT_OPEN");
+    assert.equal(open.provenance.fallbackReason, "CIRCUIT_OPEN");
   });
 });
 

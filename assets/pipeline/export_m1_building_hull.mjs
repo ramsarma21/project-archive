@@ -147,6 +147,18 @@ function spansPlane(blocker, y) {
 }
 
 /**
+ * How far below a deck a solid's base must sit for the deck to be dropped under
+ * it. A tower or a spire rises THROUGH a plinth from well below, and drawing a
+ * floor across its shaft would be a floor inside a solid — so the ring is cut to
+ * the walk-around and the shaft is the tower's own stone. But cover that merely
+ * RESTS on the deck — a crate stack, a balustrade — has its base AT the plane and
+ * is carried BY the deck, so the stone has to be drawn under it or the object it
+ * carries floats. The old mask dropped both, which left `TOWNHOUSE_MASONS_W`
+ * standing on the one cell of gallery its own footprint had deleted.
+ */
+const THROUGH_M = 0.3;
+
+/**
  * The standable part of a deck rect inside the envelope, as a grid mask.
  *
  * A mask rather than a rectangle decomposition on purpose: the shapes are rings
@@ -174,7 +186,7 @@ function standableMask(rectLocal, y) {
       const z = box.minZ + ((j + 0.5) / MASK_N) * (box.maxZ - box.minZ);
       const blocked = blockers.some(
         (b) =>
-          spansPlane(b, y) &&
+          b.topY > y + 0.02 && b.baseY < y - THROUGH_M &&
           x > b.minX + UNDERCUT_M && x < b.maxX - UNDERCUT_M &&
           z > b.minZ + UNDERCUT_M && z < b.maxZ - UNDERCUT_M,
       );

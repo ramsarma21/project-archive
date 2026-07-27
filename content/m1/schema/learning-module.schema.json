@@ -23,7 +23,8 @@
           "type": "array",
           "minItems": 1,
           "items": { "$ref": "#/$defs/card" }
-        }
+        },
+        "presenter": { "$ref": "#/$defs/presenter" }
       }
     }
   },
@@ -61,7 +62,104 @@
           "description": "Propositions this card is the sole source for. This is the field that makes the duel's answerable-from-the-module claim checkable rather than asserted.",
           "items": { "type": "string", "minLength": 1 }
         },
-        "advanceLabel": { "type": "string", "minLength": 1 }
+        "advanceLabel": { "type": "string", "minLength": 1 },
+        "scene": { "$ref": "#/$defs/scene" },
+        "check": { "$ref": "#/$defs/check" }
+      }
+    },
+    "presenter": {
+      "type": "object",
+      "description": "The embodied System presenter: an imported rigged GLB shown in a transparent hologram layer. Missing/loading renders no presenter and emits a dev QA error — never a primitive stand-in.",
+      "required": ["glbKey", "displayName", "talkClip", "idleClip"],
+      "additionalProperties": false,
+      "properties": {
+        "glbKey": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 },
+        "talkClip": { "type": "string", "minLength": 1 },
+        "idleClip": { "type": "string", "minLength": 1 }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "description": "A card's cinematic slideshow: an ordered set of narration/subtitle beats over a set of provenanced visuals. Optional and decorative — a card with no scene renders as flat instruction.",
+      "required": ["beats"],
+      "additionalProperties": false,
+      "properties": {
+        "beats": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/beat" } },
+        "visuals": { "type": "array", "items": { "$ref": "#/$defs/visual" } }
+      }
+    },
+    "beat": {
+      "type": "object",
+      "description": "One narration/subtitle beat. `text` is spoken by the voiceover provider and shown verbatim as the subtitle.",
+      "required": ["id", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 },
+        "visualId": { "type": "string", "minLength": 1 },
+        "audio": {
+          "type": "object",
+          "description": "A future external-audio cue. No URL or key is authored now; only the shape a later provider will fill.",
+          "required": ["cueId"],
+          "additionalProperties": false,
+          "properties": {
+            "cueId": { "type": "string", "minLength": 1 },
+            "src": { "type": "string", "minLength": 1 },
+            "startMs": { "type": "number", "minimum": 0 },
+            "durationMs": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "visual": {
+      "type": "object",
+      "description": "One floating document/image panel with full provenance. `src` is a local imported asset path, never a runtime hotlink. A PROJECT_RECONSTRUCTION may not caption itself 'actual'.",
+      "required": ["id", "src", "alt", "title", "caption", "attribution", "sourceUrl", "date", "rights", "classification"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "src": { "type": "string", "pattern": "^/", "minLength": 1 },
+        "alt": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "caption": { "type": "string", "minLength": 1 },
+        "attribution": { "type": "string", "minLength": 1 },
+        "sourceUrl": { "type": "string", "minLength": 1 },
+        "date": { "type": "string", "minLength": 1 },
+        "rights": { "type": "string", "minLength": 1 },
+        "classification": { "enum": ["PRIMARY_SOURCE", "PERIOD_ART", "LATER_DEPICTION", "PROJECT_RECONSTRUCTION"] }
+      }
+    },
+    "check": {
+      "type": "object",
+      "description": "A short pre-authored mastery check placed after a concept card. Truth is carried per option by its stable `correct` flag, not by position, so the answer need not be first. A single-select (the default) marks exactly one option correct; a multiple-select marks two or three and the learner must choose the exact correct set. The learner cannot advance past the concept until they answer correctly. Pays no XP and is not timed.",
+      "required": ["id", "prompt", "options", "reinforcement"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "prompt": { "type": "string", "minLength": 1 },
+        "selection": {
+          "enum": ["single", "multiple"],
+          "description": "Single- or multiple-select. Optional; an absent value is 'single', so content authored before this field keeps its meaning."
+        },
+        "conceptId": { "type": "string", "pattern": "^[A-Z]{3}\\.CONCEPT\\.[A-Z][A-Z0-9_]*\\.v\\d+$" },
+        "reinforcement": { "type": "string", "minLength": 1 },
+        "options": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "required": ["id", "text", "correct", "feedback"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "text": { "type": "string", "minLength": 1 },
+              "correct": { "type": "boolean" },
+              "feedback": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
       }
     }
   }

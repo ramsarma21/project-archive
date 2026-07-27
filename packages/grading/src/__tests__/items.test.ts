@@ -112,16 +112,32 @@ describe("the line every item draws", () => {
     }
   });
 
-  it("gives all but one item a single required proposition", () => {
-    // The content's port block counts sixteen, treating NAME_TWO as two-part. It is
-    // one here — a count is not two propositions — so seventeen carry one core.
+  it("gives twelve items a single core and six a genuine two-part core", () => {
+    // The owner made the prose grader require both halves on the items whose evidence
+    // hand demands two cards, so a written half-answer fails just as a one-card
+    // selection does. Twelve items keep a single required proposition (NAME_TWO's
+    // count is one idea); six carry two ideas with needs "all", which is still binary
+    // rather than partial credit.
     const single = bank.items.filter((item) => item.ideas.length === 1);
-    assert.equal(single.length, 17, "expected 17 single-core items");
+    assert.equal(single.length, 12, "expected 12 single-core items");
+    const twoPart = bank.items.filter((item) => item.ideas.length === 2);
+    assert.equal(twoPart.length, 6, "expected 6 two-part items in the PvE bank");
+    for (const item of twoPart) {
+      assert.equal(item.needs, 2, `${item.itemId} must require both halves`);
+    }
   });
 
-  it("splits only the item whose core is genuinely two propositions", () => {
-    assert.deepEqual(twoPartCoreItemIds(), [
+  it("splits exactly the items whose core is genuinely two propositions", () => {
+    // The five postwar/representation items promoted to a two-card minimum, plus
+    // BOSTON_DOES_ELECT which was always two-part, plus the PvP-only HOW_FAR_IT_GOES.
+    assert.deepEqual([...twoPartCoreItemIds()].sort(), [
+      "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1",
+      "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
+      "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
       "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
+      "BOS.MD01.DUEL.REP.HOW_FAR_IT_GOES.v1",
+      "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1",
+      "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1",
     ]);
     const item = bank.get("BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1");
     assert.equal(item?.ideas.length, 2);

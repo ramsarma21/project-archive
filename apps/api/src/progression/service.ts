@@ -83,6 +83,18 @@ export interface CommitMissionOutcomeResult {
   derived: ProgressionDerived;
 }
 
+export interface AbandonMissionAttemptResult {
+  /** FORFEITED spent an attempt; ALREADY_CLOSED found nothing open and spent none. */
+  status: "FORFEITED" | "ALREADY_CLOSED";
+  /** The now-FAILED attempt, or null when there was nothing open to close. */
+  attempt: MissionAttempt | null;
+  /** Null only when a stale/foreign attempt id resolved to no owned row. */
+  mission: MissionProgress | null;
+  campaign: CampaignProgression;
+  chapter: ChapterProgression;
+  derived: ProgressionDerived;
+}
+
 export interface SubmitAssessmentResult {
   attempt: ChapterAssessmentAttempt;
   passed: boolean;
@@ -215,6 +227,15 @@ export class ProgressionService {
     if (deck && !moduleDeckCovered(deck, request.acknowledgedCueIds)) {
       return fail("MODULE_REQUIRED");
     }
+    // The mastery checks are the second half of the gate. The required set is
+    // derived from module metadata here, never trusted from the request, so a
+    // forged body that omits a check the concept card gates behind cannot open
+    // the mission. Same MODULE_REQUIRED failure as an uncovered deck.
+    const requiredChecks = this.content.moduleRequiredCheckIds(request.moduleId);
+    const acknowledgedCheckIds = request.acknowledgedCheckIds ?? [];
+    if (!moduleDeckCovered(requiredChecks, acknowledgedCheckIds)) {
+      return fail("MODULE_REQUIRED");
+    }
     return this.store.transact(profileId, async (tx) => {
       const { chapter } = await this.ensureCampaign(tx, profileId);
       if (chapter.chapterId !== request.chapterId || chapter.status !== "ACTIVE") {
@@ -280,8 +301,10 @@ export class ProgressionService {
             moduleId: request.moduleId,
             gatesOrdinal,
             acknowledgedCues: request.acknowledgedCueIds.length,
+            acknowledgedChecks: acknowledgedCheckIds.length,
             observedSeconds: request.observedSeconds,
             deckVerified: deck !== null,
+            checksVerified: requiredChecks.length > 0,
           },
         },
       ];
@@ -327,7 +350,11 @@ export class ProgressionService {
       }
       const reward = this.content.missionReward(chapter.chapterId, request.missionId);
       if (!reward) return fail("PACKAGE_MISSING");
-      if (await tx.liveMissionAttempt(chapter.chapterId, request.missionId)) {
+      // ONE open attempt per profile, across every chapter and mission. Checked
+      // globally rather than per-mission so a reload cannot open a second run on a
+      // different route while one is still live; the per-profile advisory lock
+      // serialises two racing opens into this single check.
+      if (await tx.liveMissionAttemptForProfile()) {
         return fail("ATTEMPT_ALREADY_OPEN");
       }
       const mission = await this.missionRow(
@@ -495,6 +522,123 @@ export class ProgressionService {
           levelsGained: delta.levelsGained,
           ranksGained: delta.ranksGained,
           unlockedAbilityIds: delta.unlockedAbilities.map((a) => a.abilityId),
+          derived: this.derived(delta.campaign, delta.chapter),
+        },
+      };
+    });
+  }
+
+  /**
+   * Forfeit an interrupted mission attempt.
+   *
+   * The bug this closes: `authorizeAttempt` used to hand a reloaded client the
+   * SAME still-open attempt row (`ATTEMPT_ALREADY_OPEN` -> resume), while the
+   * browser started a brand-new runtime against it — so pulling the network in a
+   * losing run and reloading gave that run back, unlimited times. An open attempt
+   * can only be spent, never resumed, and this is the door: it closes the profile's
+   * one live attempt as FAILED with zero XP, through the SAME `applyMissionOutcome`
+   * machinery a real failure uses, so `attempts_used` advances and the ordinal moves
+   * exactly as it would have if the run had been lost honestly.
+   *
+   * The request names the attempt id (the server-projected open attempt). Binding
+   * to the id makes the close EXACT: `tx.missionAttempt` scopes the lookup to this
+   * profile, so a foreign id resolves to nothing and cannot close another profile's
+   * run, and a status that is not IN_PROGRESS returns ALREADY_CLOSED rather than
+   * spending a second attempt. No ordinal, no reward, no mission from the client —
+   * everything the attempt is worth was fixed when it opened.
+   */
+  async abandonMissionAttempt(
+    profileId: string,
+    request: { attemptId: string },
+  ): Promise<ServiceResult<AbandonMissionAttemptResult>> {
+    return this.store.transact(profileId, async (tx) => {
+      const { campaign, chapter } = await this.ensureCampaign(tx, profileId);
+      // Scoped to this profile by the store. A foreign or stale id is nothing to
+      // close, which is the idempotent, cannot-touch-another-profile answer.
+      const attempt = await tx.missionAttempt(request.attemptId);
+      if (!attempt || attempt.status !== "IN_PROGRESS") {
+        const mission = attempt
+          ? await this.missionRow(tx, profileId, attempt.chapterId, attempt.missionId)
+          : null;
+        return {
+          ok: true as const,
+          value: {
+            status: "ALREADY_CLOSED" as const,
+            attempt: null,
+            mission,
+            campaign,
+            chapter,
+            derived: this.derived(campaign, chapter),
+          },
+        };
+      }
+      if (attempt.chapterId !== chapter.chapterId || chapter.status !== "ACTIVE") {
+        // An open attempt is always on the active chapter; anything else is a
+        // corrupt state rather than a forfeit this method should silently absorb.
+        return fail("CHAPTER_NOT_ACTIVE");
+      }
+      const mission = await this.missionRow(
+        tx,
+        profileId,
+        attempt.chapterId,
+        attempt.missionId,
+      );
+
+      const reward = this.content.missionReward(attempt.chapterId, attempt.missionId);
+      const curve = this.content.xpCurve(attempt.chapterId);
+      if (!reward || !curve) return fail("PACKAGE_MISSING");
+
+      const at = this.at();
+      const applied = applyMissionOutcome({
+        campaign,
+        chapter,
+        mission,
+        commit: {
+          missionId: attempt.missionId,
+          chapterId: attempt.chapterId,
+          // From the stored row. A forfeit spends the ordinal the attempt was
+          // opened at, never one the client names.
+          attemptOrdinal: attempt.attemptOrdinal,
+          // The whole point: an abandoned run is a lost run.
+          outcome: "FAILED",
+          baseXp: reward.baseXp,
+          at,
+        },
+        curve,
+        abilityMilestones: this.content.abilityMilestones(attempt.chapterId),
+      });
+      // A FAILED outcome pays zero and never unlocks anything, so `applied` cannot
+      // fail on the reward math; the only failures are chapter/ordinal races, which
+      // the transaction lock has already excluded for this profile.
+      if (!applied.ok) return fail(applied.reason);
+      const delta = applied.value;
+
+      const closed: MissionAttempt = {
+        ...attempt,
+        status: "FAILED",
+        awardedXp: 0,
+        revision: attempt.revision + 1,
+        completedAt: at,
+        updatedAt: at,
+      };
+      // No client verdicts to keep: a forfeited run never reached — or never
+      // finished — its duel, so the commit log is empty rather than a truncation.
+      await tx.putMissionAttempt(closed, []);
+      await tx.putMission(delta.mission);
+      await tx.putChapter(delta.chapter);
+      await tx.putCampaign(delta.campaign);
+      await tx.appendLedger(
+        delta.ledger.map((entry) => ({ ...entry, attemptId: attempt.attemptId })),
+      );
+
+      return {
+        ok: true as const,
+        value: {
+          status: "FORFEITED" as const,
+          attempt: closed,
+          mission: delta.mission,
+          campaign: delta.campaign,
+          chapter: delta.chapter,
           derived: this.derived(delta.campaign, delta.chapter),
         },
       };

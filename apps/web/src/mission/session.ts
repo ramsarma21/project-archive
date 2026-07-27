@@ -11,6 +11,13 @@ import {
 } from "../module/moduleGate.js";
 import type { LearningModuleDefinition } from "../module/moduleFormat.js";
 import {
+  EMPTY_MODULE_KNOWLEDGE,
+  knowledgeForMission,
+  recordMissionKnowledge,
+  retryOrderedModule,
+  type ModuleKnowledgeLedger,
+} from "../module/moduleOrder.js";
+import {
   openAttempt,
   type AttemptGrant,
   type MissionAttemptTicket,
@@ -228,6 +235,16 @@ export interface MissionSession {
   readonly ledger: ModuleGateLedger;
   /** Resolved attempts per mission. A live attempt is not counted until it ends. */
   readonly tallies: Readonly<Record<string, MissionAttemptTally>>;
+  /**
+   * What each mission's last resolved attempt demonstrated, concept by concept.
+   * Written when an attempt resolves; read by the gate to order the retry deck.
+   *
+   * Session-scoped like `ledger` and `tallies` above, so a reload drops it and
+   * the next deck falls back to the authored order. The durable home is the
+   * server's assessment record, and adopting it is a swap of this field's
+   * source rather than a change to the gate.
+   */
+  readonly knowledge: ModuleKnowledgeLedger;
 }
 
 export function initialMissionSession(): MissionSession {
@@ -235,6 +252,7 @@ export function initialMissionSession(): MissionSession {
     phase: { phase: "IDLE" },
     ledger: EMPTY_MODULE_GATE_LEDGER,
     tallies: {},
+    knowledge: EMPTY_MODULE_KNOWLEDGE,
   };
 }
 
@@ -423,11 +441,23 @@ function decideAndAct(
     return blocked(withLedger, missionId, "MISSION_NOT_REGISTERED");
   }
 
+  // The retry deck opens on what the last attempt got wrong. This is the only
+  // place a module definition enters the machine, so ordering it here means
+  // both routes in — pressing Deploy, and re-asking after the deck is read —
+  // see the same deck, and the second cannot disagree with the first. On a
+  // first attempt, and on a loss where every question landed, there is no
+  // evidence to act on and the authored definition comes back unchanged.
+  const authored = env.moduleFor(missionId);
+  const definitionForGate = retryOrderedModule(
+    authored,
+    knowledgeForMission(session.knowledge, missionId),
+  );
+
   const decision = deployDecision({
     ledger,
     tally: missionTally(withLedger, missionId, env.serverTallies),
     unlocked: env.isUnlocked(missionId),
-    definition: env.moduleFor(missionId),
+    definition: definitionForGate,
   });
 
   if (decision.kind === "BLOCKED") {
@@ -539,6 +569,14 @@ function resolveAttempt(
     {
       ...session,
       tallies: { ...session.tallies, [input.ticket.missionId]: result.tally },
+      // The evidence the next deck is ordered by. Recorded for every resolved
+      // attempt including a clear, because a mission the player cleared cannot
+      // be retried and an empty round list orders nothing.
+      knowledge: recordMissionKnowledge(
+        session.knowledge,
+        input.ticket.missionId,
+        result.knowledge.rounds,
+      ),
       phase: {
         phase: "RESULT",
         ticket: input.ticket,

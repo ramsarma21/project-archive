@@ -12,7 +12,11 @@
 #     --python assets/pipeline/optimize_interior_kit.py
 import bpy
 import os
+import sys
 from mathutils import Vector
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from transcode_static_textures import enforce_texture_policy  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "build", "interior-kit")
@@ -132,6 +136,14 @@ for key, (target, max_tex) in sorted(BUDGETS.items()):
         export_jpeg_quality=85,
         export_animations=False,
     )
+    # This factory already forces JPEG, so it is not a source of the multi-megabyte
+    # PNG albedo the interior shells and the door kit had. What it does not do is
+    # police alphaMode: a Meshy source material can arrive with a blend mode set,
+    # and the exporter faithfully writes alphaMode BLEND over an albedo with no
+    # transparency in it, which buys a sorted transparent draw per instance for
+    # nothing. The policy pass measures alpha and relaxes those to OPAQUE; the
+    # image half is a no-op here.
+    enforce_texture_policy(dst, quality=95, skip_normals=True)
     out_tris = tri_count([o for o in bpy.data.objects if o.type == "MESH"])
     print("WROTE", key, os.path.getsize(dst), "srcTris", src_tris, "outTris", out_tris, "target", target, "tex", max_tex)
     processed += 1

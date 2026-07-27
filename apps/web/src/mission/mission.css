@@ -202,9 +202,14 @@
   color: #7fa5c6;
 }
 
+/* Anchored to the TOP of the column rather than the bottom, so the objective
+   lands directly under the operation's name and is the second thing read. It
+   used to sit against the bottom edge with the exposure and cover cards, which
+   is the right place for a readout you glance at and the wrong one for the
+   sentence that says what the run is. */
 .msn-hud-left {
   grid-area: left;
-  align-self: end;
+  align-self: start;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -231,38 +236,63 @@
   backdrop-filter: blur(3px);
 }
 
-.msn-hud-objectives {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.22rem;
+/* ---- the standing objective ---------------------------------------------
+ *
+ * One step at a time, sized so it is read rather than scanned. The accent is
+ * the near-white the visor reserves for the objective — `VISOR_INK` — so the
+ * plate out in the street and this card are visibly the same instrument saying
+ * the same thing, which is the entire reason the mark was built into the visor
+ * instead of onto a new HUD layer.
+ */
+
+.msn-hud-card.is-objective {
+  border-left-color: rgba(234, 248, 255, 0.8);
+  box-shadow: 0 0 24px rgba(8, 26, 42, 0.55);
 }
 
-.msn-hud-objective {
+.msn-hud-objective-now {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #eaf8ff;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8);
+}
+
+.msn-hud-objective-range {
   display: flex;
-  gap: 0.45rem;
-  font-size: 0.82rem;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.msn-hud-objective-metres {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: #9fdcff;
+}
+
+/* Named once and quietly. The run has a shape — post, then run for the yard —
+   and a player who can see the second step can spend the first one planning. */
+.msn-hud-objective-then {
+  font-size: 0.76rem;
   line-height: 1.35;
-  color: #b7cee1;
+  color: rgba(133, 168, 198, 0.9);
 }
 
-.msn-hud-objective.is-met {
-  color: #8fe0c0;
-}
-
-.msn-hud-objective.is-optional {
-  opacity: 0.72;
-  font-style: italic;
-}
-
-.msn-hud-objective-mark {
-  color: #5f93bd;
-}
-
-.msn-hud-objective.is-met .msn-hud-objective-mark {
-  color: #8fe0c0;
+/* The narrow-board walk cue: shown before the roof lip, so a Shift-held player
+   knows the SAFE leg is capped to a walk and does not run off the tie beam. */
+.msn-hud-walkcue {
+  align-self: flex-start;
+  margin-top: 0.1rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #071016;
+  background: linear-gradient(90deg, #ffe08a, #f4b942);
+  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
 }
 
 .msn-hud-meter {
@@ -291,6 +321,32 @@
    draining, not a threat rising. */
 .msn-hud-meter-fill.is-shadow {
   background: linear-gradient(90deg, #2c4a68, #8fb6d8);
+}
+
+/* The encounter-notice surge. When a forced stop arms after the drop, the
+   exposure bar shoots up (its width is driven by the real notice value) and
+   pulses so the player reads "you were spotted" before the officers close. The
+   pulse is a slow brightness breath — no full on/off, nothing seizure-like — and
+   it is dropped entirely under reduced motion, where the raised fill alone
+   carries the meaning. */
+.msn-hud-meter.is-surge .msn-hud-meter-fill {
+  background: linear-gradient(90deg, #ffd27a, #ff5a4d);
+  animation: msn-notice-flash 900ms ease-in-out infinite;
+}
+
+.msn-hud-card.is-noticed .msn-hud-card-kicker {
+  color: #ffcf87;
+  letter-spacing: 0.16em;
+}
+
+@keyframes msn-notice-flash {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.5);
+  }
 }
 
 .msn-hud-note {
@@ -767,4 +823,10 @@
    is the suspicion meter's width; holding it still keeps the readout legible. */
 .pa-reduced-motion .msn-hud-meter-fill {
   transition: none;
+}
+
+/* Reduced motion keeps the surge's meaning — the raised fill and the "Spotted"
+   label — but drops the brightness pulse. */
+.pa-reduced-motion .msn-hud-meter.is-surge .msn-hud-meter-fill {
+  animation: none;
 }

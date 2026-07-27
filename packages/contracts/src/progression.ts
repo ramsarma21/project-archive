@@ -618,6 +618,12 @@ function clientSafe<T extends z.ZodTypeAny>(schema: T): z.ZodEffects<T> {
  *
  * Note what is still absent: the attempt this opens. The server derives that
  * from attempts already resolved, so one module run can never arm two attempts.
+ *
+ * `acknowledgedCheckIds` is the check analogue of `acknowledgedCueIds`: the
+ * mastery checks the client answered correctly. It is evidence, not authority —
+ * the server derives the REQUIRED set from module metadata and refuses a run
+ * missing any, so a forged body that omits a check cannot open a mission. The
+ * ids carry no verdict or score; a wrong answer is simply never acknowledged.
  */
 export const CompleteLearningModuleRequestSchema = clientSafe(
   z
@@ -627,6 +633,7 @@ export const CompleteLearningModuleRequestSchema = clientSafe(
       gatesKind: z.enum(["MISSION_ATTEMPT", "ASSESSMENT_ATTEMPT"]),
       gatesId: StableId,
       acknowledgedCueIds: z.array(StableId).min(1).max(64),
+      acknowledgedCheckIds: z.array(StableId).max(64).default([]),
       observedSeconds: z.number().int().nonnegative().max(86_400),
     })
     .strict(),

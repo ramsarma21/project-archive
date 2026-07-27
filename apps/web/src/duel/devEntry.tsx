@@ -65,35 +65,78 @@ function Harness() {
     [runId, tier],
   );
 
+  const mode = params.get("verdict") ?? "alt";
   const authority = useMemo(() => {
-    const mode = params.get("verdict") ?? "alt";
     if (mode === "live") return httpVerdictAuthority;
     if (mode === "correct") return createStandInVerdictAuthority(() => "CORRECT", 260);
     if (mode === "wrong") return createStandInVerdictAuthority(() => "WRONG", 260);
     return createStandInVerdictAuthority(alternatingVerdicts, 260);
-  }, []);
+  }, [mode]);
 
   const grip = useMemo(gripFromParams, []);
   const inspect = useMemo(inspectFromParams, []);
 
   return (
-    <DuelScreen
-      descriptor={descriptor}
-      verdictAuthority={authority}
-      reducedMotion={params.get("reduced") === "1"}
-      playerGrip={grip}
-      opponentGrip={grip}
-      inspect={inspect}
-      onRuntime={(runtime) => {
-        // Inspection handle: lets a capture script read the phase, the tick and the
-        // poses instead of guessing them from pixels.
-        (window as unknown as { __duel?: unknown }).__duel = runtime;
+    <>
+      <HarnessBanner mode={mode} />
+      <DuelScreen
+        descriptor={descriptor}
+        verdictAuthority={authority}
+        reducedMotion={params.get("reduced") === "1"}
+        playerGrip={grip}
+        opponentGrip={grip}
+        inspect={inspect}
+        onRuntime={(runtime) => {
+          // Inspection handle: lets a capture script read the phase, the tick and
+          // the poses instead of guessing them from pixels.
+          (window as unknown as { __duel?: unknown }).__duel = runtime;
+        }}
+        onAgain={() => setRunId((value) => value + 1)}
+        onResolved={(outcome, commitLog) => {
+          console.log("[duel] resolved", outcome, commitLog);
+        }}
+      />
+    </>
+  );
+}
+
+/**
+ * A loud, unmissable label for which authority this harness is running.
+ *
+ * This page mounts the SAME `DuelScreen` the shipped mission does, so on screen it
+ * is indistinguishable from the real duel — and by default (`?verdict=alt`) it is
+ * driven by a SCRIPTED stand-in that never reads the answer and returns
+ * CORRECT/WRONG by round parity. That is exactly the "no matter what I answer it's
+ * 14, 7, 14" report: the numbers are the alternating script, not a verdict, and the
+ * grader is never asked. The banner exists so this harness can never again be
+ * mistaken for the shipped, graded duel. It is dev-only; nothing renders it in the
+ * production build, whose entry is `/index.html`.
+ */
+function HarnessBanner(props: { mode: string }) {
+  const live = props.mode === "live";
+  return (
+    <div
+      role="note"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        padding: "6px 12px",
+        font: "600 12px/1.4 ui-monospace, monospace",
+        letterSpacing: "0.02em",
+        color: live ? "#04210f" : "#2a1400",
+        background: live ? "#7CFC9A" : "#FFC24B",
+        borderBottom: `2px solid ${live ? "#0a6" : "#a65"}`,
+        textAlign: "center",
+        pointerEvents: "none",
       }}
-      onAgain={() => setRunId((value) => value + 1)}
-      onResolved={(outcome, commitLog) => {
-        console.log("[duel] resolved", outcome, commitLog);
-      }}
-    />
+    >
+      {live
+        ? "DEV DUEL HARNESS · verdict=live · answers ARE graded by the real server (/v1)."
+        : `DEV DUEL HARNESS · verdict=${props.mode} · SCRIPTED — answers are NOT graded; bullets follow a fixed script, not your answer. This is not the shipped duel — play the game at /index.html, or add ?verdict=live to grade here.`}
+    </div>
   );
 }
 

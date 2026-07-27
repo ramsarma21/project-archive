@@ -424,11 +424,16 @@ test("a landing keeps a fraction of the speed it arrived with, by flavour", () =
     let motion = runningNorth(1, RUN_SPEED, height);
     let flow = createFlowState();
     for (let tick = 0; tick < 240; tick++) {
+      // A hard landing is only reachable off a fatal ledge deliberately, and the
+      // jump must be committed BEFORE the stopping-distance brake slows the body
+      // — a player who dawdles to the lip and only then yolo-jumps gets a weak
+      // hop, which is the safety working, not a bug. So the press is made while
+      // still well back from the edge.
       const result = stepFlow(
         collision,
         motion,
         flow,
-        flowInput({ jumpBuffered: jump && tick === 30 }),
+        flowInput({ jumpBuffered: jump && tick === 5 }),
       );
       const landed = result.events.find((event) => event.type === "landed");
       motion = result.motion;

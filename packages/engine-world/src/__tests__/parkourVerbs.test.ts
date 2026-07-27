@@ -13,10 +13,12 @@ import {
   levelDesignMaxGapM,
   maxGapMetersForDrop,
   planVerb,
+  probeAhead,
   rankVerbs,
   selectVerb,
 } from "../parkour/index.js";
 import {
+  ascent,
   box,
   overhead,
   probeFor,
@@ -27,10 +29,17 @@ import {
   world,
 } from "./parkourHarness.js";
 
-test("a low lip is stepped up, not stopped at", () => {
-  const collision = world([box("curb", 3, 0.35, 1.2)]);
+test("a lip the mover walks up is not offered a verb, and one above it is", () => {
+  // The two have to be one decision or the player gets both answers. A kerb the
+  // integrator absorbs unnoticed was also ranking a scripted step, and the verb
+  // won because the reader runs first — a 750ms vault over a 10cm kerb. Below
+  // the free step height the geometry is ground; above it, it is an obstacle.
   const motion = runningNorth(1.4);
-  assert.equal(classifyVerb(probeFor(collision, motion), selectContext()), "STEP_UP");
+  const walked = world([box("curb", 3, PARKOUR_TUNING.freeStepUpM - 0.05, 1.2)]);
+  assert.equal(classifyVerb(probeFor(walked, motion), selectContext()), "NONE");
+
+  const stepped = world([box("curb", 3, PARKOUR_TUNING.freeStepUpM + 0.05, 1.2)]);
+  assert.equal(classifyVerb(probeFor(stepped, motion), selectContext()), "STEP_UP");
 });
 
 test("a crate at chest height with clear far ground is vaulted", () => {
@@ -194,6 +203,59 @@ test("a gap jump needs speed", () => {
   assert.ok(!ranked.includes("JUMP_GAP"), `unexpected jump in ${ranked.join(",")}`);
 });
 
+test("a safe run-off with a coplanar obstacle a stride beyond is descended, not gap-jumped", () => {
+  // The rope-capstan case, distilled. The body is on a bale top 1.1m over the
+  // floor (a run-off), and a coil a stride north stands at 1.05m — a hair BELOW
+  // the bale. The edge reader skips the safe floor straight down (a void it is
+  // not) and reports the coil as the far side of a gap, and unguarded the ladder
+  // ranked JUMP_GAP above the run-off and launched the body up onto the coil.
+  // A gap jump crosses a void; a safe descent onto an obstacle beyond is not one.
+  const collision = world([
+    box("bale", 1, 1.1, 2, { width: 12 }),
+    box("coil", 3.4, 1.05, 1.2, { width: 12 }),
+  ]);
+  const motion = runningNorth(1.5, RUN_SPEED, 1.1);
+  const probe = probeFor(collision, motion);
+  assert.ok(probe.edge, "expected a ledge read off the bale");
+  assert.ok(probe.edge!.far !== null, "expected the coil to read as a far gap target");
+  assert.ok(
+    probe.edge!.verticalDropM <= PARKOUR_TUNING.runOffMaxDropM,
+    `the drop straight down should be a safe run-off, was ${probe.edge!.verticalDropM.toFixed(2)}m`,
+  );
+  const ranked = rankVerbs(probe, selectContext());
+  assert.ok(
+    !ranked.includes("JUMP_GAP"),
+    `JUMP_GAP was offered onto a coplanar obstacle over a safe descent: ${ranked.join(",")}`,
+  );
+  assert.equal(
+    classifyVerb(probe, selectContext()),
+    "RUN_OFF",
+    "the body should simply run off the ledge, not launch across it",
+  );
+});
+
+test("a genuine gap over a void beyond a safe-looking near drop is still gap-jumped", () => {
+  // The negative: the SAME layout raised so the drop straight down is a fall, not
+  // a run-off. Now there IS a void to cross and the far ledge is the way over it,
+  // so the guard must not fire — JUMP_GAP is still the read.
+  const collision = world([
+    box("near", 1, 3.0, 2, { width: 12 }),
+    box("far", 3.4, 2.95, 1.2, { width: 12 }),
+  ]);
+  const motion = runningNorth(1.5, RUN_SPEED, 3.0);
+  const probe = probeFor(collision, motion);
+  assert.ok(probe.edge?.far, "expected a far lip inside gap range");
+  assert.ok(
+    probe.edge!.verticalDropM > PARKOUR_TUNING.runOffMaxDropM,
+    "the drop straight down should be a fall, not a safe run-off",
+  );
+  const ranked = rankVerbs(probe, selectContext());
+  assert.ok(
+    ranked.includes("JUMP_GAP"),
+    `a real gap over a void was not offered a jump: ${ranked.join(",")}`,
+  );
+});
+
 test("a shallow drop is run off, a mid drop is hung, a killing drop brakes", () => {
   const shallow = world([box("ledge", 0, 1.8, 8, { width: 12 })]);
   const mid = world([box("ledge", 0, 3, 8, { width: 12 })]);
@@ -292,4 +354,141 @@ test("standing on a roof above a full-height building does not read as a wall", 
     "RUN_OFF",
     "a 4m drop is inside the roll ceiling, so it is run off",
   );
+});
+
+// ---------------------------------------------------------------------------
+// Four things the ladder used to get wrong, all of them reported by a player as
+// the same sentence — "the physics isn't consistent". Each one is a specific
+// mechanism and each one is asserted here so it cannot come back quietly.
+// ---------------------------------------------------------------------------
+
+test("a deck with no solid mass under it is still something to climb", () => {
+  // A `deck` compiles to a platform: a support surface with no vertical span.
+  // The obstacle reader marched point samples asking which BLOCKERS they were
+  // inside, so a scaffold staging read as empty air — and in M1 that was the
+  // whole guaranteed ascent of the Town House and every bough of the objective.
+  const collision = world([], [roof("staging", 2, 9, 2.9)]);
+  const motion = runningNorth(0, RUN_SPEED);
+  const probe = probeFor(collision, motion);
+  assert.ok(probe.obstacle, "the staging must read as an obstacle");
+  assert.equal(probe.obstacle!.id, "staging");
+  assert.ok(
+    Math.abs(probe.obstacle!.heightM - 2.9) < 0.01,
+    `height was ${probe.obstacle!.heightM}`,
+  );
+  assert.equal(classifyVerb(probe, selectContext()), "CLIMB_UP");
+});
+
+test("a deck overhead is climbed onto from its lip, and not from its middle", () => {
+  // Two stagings with the same footprint: from the lower one the upper one is
+  // over the player's head with no edge to walk at, which is how M1 authors the
+  // second lift of its scaffold, the clock ledge and three tiers of the elm.
+  //
+  // Nothing distinguishes that from standing under a market awning EXCEPT how
+  // far the boards run on behind you. At the lip they stop within an arm's
+  // reach and a body can get a hand over them; six metres in they do not, and
+  // offering a climb there is the "it pulls you up through the boards" the
+  // owner reported. So the reader marches backwards, and the two cases here
+  // differ only in where the player is standing.
+  const collision = world(
+    [],
+    [roof("lower", -6, 6, 2.9), roof("upper", -6, 6, 5.6)],
+  );
+
+  const atLip = probeFor(collision, runningNorth(-5.8, RUN_SPEED, 2.9));
+  assert.ok(atLip.obstacle, "at the lip the staging overhead must read");
+  assert.equal(atLip.obstacle!.id, "upper");
+  assert.equal(classifyVerb(atLip, selectContext()), "CLIMB_UP");
+
+  const underMiddle = probeFor(collision, runningNorth(0, RUN_SPEED, 2.9));
+  assert.equal(
+    underMiddle.obstacle,
+    null,
+    "six metres under the middle of a floor there is nothing to get a hand over",
+  );
+});
+
+test("an authored climb volume grants the ascent inference cannot find", () => {
+  // The other half, and the reason the bound above is shippable. M1's clock
+  // ledge and cornice are pure vertical ascents whose standing point is 3.5m
+  // and 5.7m inside its own deck: no reading of "you are at a lip" reaches
+  // them, because they are not at one. The level declares those, and a body
+  // standing in a declared volume skips the reachability bound.
+  const decks = [roof("lower", -6, 6, 2.9), roof("upper", -6, 6, 5.6)];
+  const declared = world([], decks, [ascent("upper", -2, 2, 2.9)]);
+  const motion = runningNorth(0, RUN_SPEED, 2.9);
+  const probe = probeFor(declared, motion);
+  assert.ok(probe.obstacle, "inside the volume the ascent must be offered");
+  assert.equal(probe.obstacle!.id, "upper");
+  assert.equal(classifyVerb(probe, selectContext()), "CLIMB_UP");
+
+  // And it grants exactly its own footprint: a stride outside it, nothing.
+  assert.equal(
+    probeFor(declared, runningNorth(3, RUN_SPEED, 2.9)).obstacle,
+    null,
+    "a volume must not authorise the whole deck it points at",
+  );
+  // ...its own storey: the same spot one lift down is a different climb.
+  assert.equal(
+    probeFor(
+      world([], [roof("upper", -6, 6, 2.7)], [ascent("upper", -2, 2, 2.9)]),
+      runningNorth(0, RUN_SPEED, 0),
+    ).obstacle,
+    null,
+    "a volume must not authorise a body standing outside its feet band",
+  );
+  // ...and its own destination.
+  assert.equal(
+    probeFor(
+      world([], decks, [ascent("somewhere-else", -2, 2, 2.9)]),
+      motion,
+    ).obstacle,
+    null,
+    "a volume must not authorise a rise onto a surface it does not name",
+  );
+});
+
+test("a body pressed against a climbable face is still offered the climb", () => {
+  // The flow floor switched the reader off below 0.9 m/s, and walking into
+  // something is exactly what takes the speed away — so the read stopped at the
+  // moment the player was asking for it and stayed stopped while they held the
+  // key. The only way over anything was to reverse and run at it again.
+  const collision = world([box("ledge", 1, 1.6, 1.4)]);
+  const resting = { ...runningNorth(0, 0), pos: { x: 0, y: 0, z: 0 } };
+  const probe = probeAhead(collision, {
+    pos: resting.pos,
+    velX: 0,
+    velZ: 0,
+    yaw: 0,
+    intentX: 0,
+    intentZ: 1,
+  });
+  assert.equal(
+    classifyVerb(probe, selectContext({ pushing: true })),
+    "MANTLE",
+    "holding forward at the face must keep offering the verb",
+  );
+  assert.equal(
+    classifyVerb(probe, selectContext({ pushing: false })),
+    "NONE",
+    "and a player who is not pushing must not be yanked over anything",
+  );
+});
+
+test("at a standstill the read follows the input, not the stale heading", () => {
+  // `stepGrounded` only turns the body while it is moving, so a player who has
+  // stopped at a corner and then pushed a different way was still read along the
+  // direction they arrived from.
+  const collision = world([box("ledge", -1.1, 1.6, 1.4)]);
+  const probe = probeAhead(collision, {
+    pos: { x: 0, y: 0, z: 0 },
+    velX: 0,
+    velZ: 0,
+    // Facing north; the ledge is south.
+    yaw: 0,
+    intentX: 0,
+    intentZ: -1,
+  });
+  assert.ok(probe.obstacle, "the ledge behind the body's heading must be read");
+  assert.equal(probe.obstacle!.id, "ledge");
 });

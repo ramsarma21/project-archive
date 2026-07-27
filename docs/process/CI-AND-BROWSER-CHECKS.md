@@ -36,23 +36,29 @@ and both self-adapt when a migration is added:
   Postgres twice and asserts each is applied exactly once, so a non-idempotent
   migration fails there.
 
-### Why two jobs are advisory
+### Why two jobs are still advisory
 
-`pnpm-lock.yaml` currently describes fewer projects than the workspace contains,
-so **no frozen install can succeed** until it is regenerated on a quiet tree.
-That single fact is why:
+The original reason — `pnpm-lock.yaml` describing fewer projects than the
+workspace — is **resolved**: the lockfile now lists every one of the 17
+workspace importers (`.`, `apps/api`, `apps/web`, `infra`, and the 13
+`packages/*`), so the "fewer projects" blocker no longer holds. See the closed
+entry in §4.
 
-- `lockfile` fails,
-- `api-image` fails (the Dockerfile installs `--frozen-lockfile` on purpose — a
-  production image that resolves different versions than CI is not a
-  reproducible artifact),
-- and `verify` / `api-postgres` install with `--no-frozen-lockfile`, which means
-  CI can currently resolve versions the lockfile does not pin.
+What has **not** happened yet is the CI switch. `.github/workflows/ci.yml` still:
 
-Both are advisory so that drift nobody caused does not block unrelated work.
-**After running `pnpm install` on a quiet tree and committing the lockfile:**
+- installs `verify` / `api-postgres` with `--no-frozen-lockfile`, so CI can
+  still resolve versions the lockfile does not pin, and
+- keeps `lockfile` and `api-image` on `continue-on-error: true`, so neither
+  blocks unrelated work.
+
+So these two jobs remain advisory by configuration, not because a frozen install
+is known to be impossible. The remaining step — done on a quiet tree, and only
+after confirming a clean `pnpm install --frozen-lockfile` (not run here) — is to
 drop `continue-on-error` from both jobs and switch the two installs to
-`--frozen-lockfile`. That is the step that makes CI reproducible.
+`--frozen-lockfile`. `api-image` matters independently: the Dockerfile installs
+`--frozen-lockfile` on purpose, because a production image that resolves
+different versions than CI is not a reproducible artifact. That switch is what
+makes CI reproducible.
 
 ---
 
@@ -218,14 +224,18 @@ Still open:
 - **`API_ORIGIN` in `.env.example` is not read anywhere.** Harmless today, but it
   is the same shape of trap that `SESSION_SECRET` turned into. Now annotated in
   place rather than removed, so the next reader knows it is inert.
-- **The duel verdict receipt is verified but nothing signs its way to the
-  commit.** `apps/api` now checks the receipt on the mission-outcome commit and
-  refuses an invalid one, but no client sends one:
-  `apps/web/src/duel/duelGrading.ts` never reads the `x-pa-verdict-receipt`
-  response header, so every verdict commits as `unsigned` and
-  `DUEL_RECEIPT_ENFORCEMENT` stays `AUDIT`. The web change is two lines — read the
-  header, put it on the round's `VERDICT_COMMITTED` entry alongside the duel id —
-  and flipping the variable to `REQUIRE` is what makes the signature load-bearing.
+- **`DUEL_RECEIPT_ENFORCEMENT` cannot leave `AUDIT` yet, and the reason is no
+  longer the client.** `apps/web/src/duel/duelGrading.ts` does read the
+  `x-pa-verdict-receipt` response header and does send the duel id alongside it on
+  the round's `VERDICT_COMMITTED` entry, and a graded round commits `verified`,
+  measured against a running API. What blocks `REQUIRE` is that enforcement cannot
+  tell a **stripped** receipt from an **honestly ungraded** round. The client's
+  1.5-second cap, an unreachable API and the stand-in authority all produce a
+  verdict no server minted; the design grants the maximum for all three so that
+  infrastructure never costs a student a mission; and the only field that would
+  distinguish tampering from one of those is client-supplied. So `REQUIRE` would
+  answer 409 on a round that was legitimately never graded. Closing this needs a
+  server-side record of what the server minted, not a change on the web side.
 - **`@pa/reporting` still reports the degraded path.** The columns it asked for
   exist and the API writes them (migration 008), but
   `evidenceFromDurableRows` still hard-codes `masteredWithRecycledItems: null`

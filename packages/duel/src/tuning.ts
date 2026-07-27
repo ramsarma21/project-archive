@@ -29,11 +29,22 @@ export const ENGAGEMENT_SECONDS = 20;
 export const RESUME_COUNTDOWN_SECONDS = 3;
 /** The boss breaks line of sight to reload; a flintlock takes about this long. */
 export const LINE_OF_SIGHT_BREAK_SECONDS = 1.5;
+/**
+ * The bounded maximum a boss that PHYSICALLY takes cover (see
+ * `takesCoverBeforeQuestion`) may spend crossing the yard into cover before the
+ * round resolves regardless. It is a termination guarantee, not a target — a boss
+ * reaching valid cover ends the break the instant its line of sight is blocked,
+ * usually well under this. Sized generously against a small arena so a legitimate
+ * approach is never cut short, and finite so the loop provably terminates even if a
+ * player actively body-blocks every cover point.
+ */
+export const COVER_APPROACH_MAX_SECONDS = 6;
 
 export const FACE_OFF_TICKS = ticks(FACE_OFF_SECONDS);
 export const ENGAGEMENT_TICKS = ticks(ENGAGEMENT_SECONDS);
 export const RESUME_COUNTDOWN_TICKS = ticks(RESUME_COUNTDOWN_SECONDS);
 export const LINE_OF_SIGHT_BREAK_TICKS = ticks(LINE_OF_SIGHT_BREAK_SECONDS);
+export const COVER_APPROACH_MAX_TICKS = ticks(COVER_APPROACH_MAX_SECONDS);
 
 // ---- the bullet economy ----------------------------------------------------
 //

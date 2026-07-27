@@ -20,6 +20,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  AnimationClip,
+  Matrix4,
+  Object3D,
+  Quaternion,
+  QuaternionKeyframeTrack,
+  Vector3,
+} from "three";
+
+import {
   BULLETS_FOR_CORRECT,
   BULLETS_FOR_WRONG,
   DUEL_ROUND_CEILING,
@@ -35,7 +44,12 @@ import {
   type DuelQuestionRef,
   type DuelState,
 } from "@pa/duel";
-import { CLIP_AUTHORED_MS, RUN_SPEED, WALK_SPEED } from "@pa/engine-world";
+import {
+  CLIP_AUTHORED_MS,
+  CLIP_AUTHORED_SPEED_MPS,
+  RUN_SPEED,
+  WALK_SPEED,
+} from "@pa/engine-world";
 
 import {
   DUEL_CLIP_NAMES,
@@ -43,17 +57,26 @@ import {
   duelClipTimeScale,
 } from "../src/duel/duelClips.js";
 import {
+  ASSET_MUZZLE_AXIS,
+  ASSET_TOP_AXIS,
+  BONE_AIM_AXIS,
+  BONE_THUMB_AXIS,
+  GRIP_POINT_M,
   HAND_BONE_CANDIDATES,
-  PALM_DROP_M,
+  PISTOL_LENGTH_M,
+  SOCKET_OFFSET_M,
   gripQuaternion,
   resolveHandBoneName,
+  seatWeaponInHand,
   socketInverseScale,
+  weaponLocalOffset,
 } from "../src/duel/weaponSocket.js";
+import { levelAimArms } from "../src/duel/aimPose.js";
 import { fitPropToHeight, fittedCover, yardArenaSpec } from "../src/duel/arenaSpec.js";
 import { selectActorVisual } from "../src/duel/actorVisual.js";
 import {
   DUEL_CONTROLS,
-  LATCH_BUFFER_FRAMES,
+  EDGE_INTENT_MAX_AGE_MS,
   createDuelInput,
   duelControls,
   moveVector,
@@ -116,38 +139,278 @@ test("socket scale undoes whatever units the rig arrived in", () => {
   assert.equal(socketInverseScale(Number.NaN), 1);
 });
 
-test("the grip rotation is a rotation, and maps the muzzle along the hand", () => {
+test("the grip rotation seats the TRUE muzzle (-X) along the hand's aim axis", () => {
   const quaternion = gripQuaternion([0, 0, 0]);
   assert.ok(Math.abs(quaternion.length() - 1) < 1e-9, "unit quaternion");
-  // The asset's +X is the muzzle; it must come out along the hand bone's +Y, which
-  // runs wrist to knuckles on every rig in the cast.
-  const muzzle = { x: 1, y: 0, z: 0 };
-  const rotated = applyQuaternion(muzzle, quaternion);
-  assert.ok(rotated.y > 0.999, `muzzle along the hand, got ${JSON.stringify(rotated)}`);
+
+  // The barrel of the flintlock points along the asset's -X (the thin bore ring;
+  // see .affordwork/inspect-flintlock-muzzle.mjs). It must come out along the hand
+  // bone's +Y, which runs wrist to knuckles and lies along the aim on every rig in
+  // the cast.
+  const muzzle = ASSET_MUZZLE_AXIS.clone().applyQuaternion(quaternion);
+  assert.ok(
+    muzzle.dot(BONE_AIM_AXIS) > 0.999,
+    `muzzle must seat along the aim, got ${JSON.stringify(muzzle.toArray())}`,
+  );
+
+  // The top of the frame goes to the thumb side, so the grip hangs down into the
+  // palm rather than being rolled upside-down.
+  const top = ASSET_TOP_AXIS.clone().applyQuaternion(quaternion);
+  assert.ok(
+    top.dot(BONE_THUMB_AXIS) > 0.999,
+    `the frame must stay upright, got ${JSON.stringify(top.toArray())}`,
+  );
 });
 
-test("the palm drop is inside the grip, not past the butt", () => {
-  // Measured off the asset: the origin sits at the top of the grip and the butt is
-  // 0.123m below it, so lifting the weapon by more than that would put the hand
-  // under the butt entirely.
-  assert.ok(PALM_DROP_M > 0.02 && PALM_DROP_M < 0.123);
+test("REGRESSION: the breech (+X) never seats along the aim (that is the backward gun)", () => {
+  // The defect this whole block exists to catch: an earlier revision mapped the
+  // asset's +X onto the aim, which points the BREECH downrange and the barrel back
+  // at the shooter. +X must now come out opposite the aim.
+  const breech = new Vector3(1, 0, 0).applyQuaternion(gripQuaternion([0, 0, 0]));
+  assert.ok(
+    breech.dot(BONE_AIM_AXIS) < -0.999,
+    `the breech must point away from the aim, got ${JSON.stringify(breech.toArray())}`,
+  );
 });
 
-function applyQuaternion(
-  vector: { x: number; y: number; z: number },
-  q: { x: number; y: number; z: number; w: number },
-): { x: number; y: number; z: number } {
-  const { x, y, z } = vector;
-  const ix = q.w * x + q.y * z - q.z * y;
-  const iy = q.w * y + q.z * x - q.x * z;
-  const iz = q.w * z + q.x * y - q.y * x;
-  const iw = -q.x * x - q.y * y - q.z * z;
-  return {
-    x: ix * q.w + iw * -q.x + iy * -q.z - iz * -q.y,
-    y: iy * q.w + iw * -q.y + iz * -q.x - ix * -q.z,
-    z: iz * q.w + iw * -q.z + ix * -q.y - iy * -q.x,
-  };
+// The full presentation chain, as a transform: a fighter's group is yawed by
+// atan2(aimX, aimZ) (duelRuntime.actorPose), the aim clip carries the hand bone's
+// +Y along the body's forward (+Z), and the socket applies gripQuaternion. Proven
+// here for representative yaws and for both fighters, because the two sides face
+// opposite ways and a sign error would only surface on one of them.
+//
+// R_AIM is the idealised aim pose: it takes the hand bone's own axes onto the
+// body's, sending bone +Y (BONE_AIM_AXIS) onto the body's forward +Z and bone +X
+// (the thumb side) onto up +Y. This is what an aim clip does, and it is what makes
+// "the muzzle seats along bone +Y" mean "the muzzle points where the body aims".
+const R_AIM = new Matrix4().makeBasis(
+  new Vector3(0, 1, 0), // bone +X (thumb) -> body up
+  new Vector3(0, 0, 1), // bone +Y (aim)   -> body forward
+  new Vector3(1, 0, 0), // bone +Z (palm)  -> body right
+);
+
+function worldMuzzleForAim(aimX: number, aimZ: number, trimDeg: readonly [number, number, number]): Vector3 {
+  const group = new Object3D();
+  group.rotation.y = Math.atan2(aimX, aimZ); // duelRuntime.actorPose
+  group.updateMatrixWorld(true);
+  const seat = new Quaternion().setFromRotationMatrix(R_AIM).multiply(gripQuaternion(trimDeg));
+  const muzzle = ASSET_MUZZLE_AXIS.clone().applyQuaternion(seat); // in body space
+  return muzzle.applyQuaternion(group.quaternion); // in world space
 }
+
+test("the muzzle points down the actor's aim for every yaw and both sides", () => {
+  // Representative aims: 0, +90, -90, 180 degrees. Side A opens facing +Z and side
+  // B facing -Z, so 0 and 180 are literally the two sides' opening headings.
+  const aims: ReadonlyArray<readonly [number, number, string]> = [
+    [0, 1, "yaw 0 (+Z, side A opening)"],
+    [1, 0, "yaw +90 (+X)"],
+    [-1, 0, "yaw -90 (-X)"],
+    [0, -1, "yaw 180 (-Z, side B opening)"],
+  ];
+  for (const [ax, az, label] of aims) {
+    const aim = new Vector3(ax, 0, az).normalize();
+    // The derived seating, with no trim, is exact.
+    const muzzle = worldMuzzleForAim(ax, az, [0, 0, 0]);
+    assert.ok(
+      muzzle.dot(aim) > 0.999,
+      `${label}: muzzle ${JSON.stringify(muzzle.toArray())} must lie along aim ${JSON.stringify(aim.toArray())}`,
+    );
+    assert.ok(Math.abs(muzzle.y) < 1e-6, `${label}: an aimed barrel is level, got y=${muzzle.y}`);
+
+    // With the by-eye grip trim it stays well downrange — never mirrored, never
+    // backward, never sideways.
+    const trimmed = worldMuzzleForAim(ax, az, [0, 0, -14]);
+    assert.ok(
+      trimmed.dot(aim) > 0.95,
+      `${label}: trimmed muzzle drifts too far from aim (dot ${trimmed.dot(aim).toFixed(3)})`,
+    );
+  }
+});
+
+test("the grip point is on the grip, between the frame and the butt", () => {
+  // Measured off the asset (.affordwork/probe-flintlock-grip.mjs): the grip block
+  // runs out toward +X and descends in -Y, the frame underside is ~-0.052m and the
+  // butt ~-0.123m. The palm closes between the two, and out along the grip column.
+  assert.ok(GRIP_POINT_M[0] > 0.2 && GRIP_POINT_M[0] < 0.34, "the grip is toward the butt end, not the origin");
+  assert.ok(GRIP_POINT_M[1] < -0.052 && GRIP_POINT_M[1] > -0.123, "the palm is between the frame and the butt");
+  assert.ok(Math.abs(GRIP_POINT_M[2]) < 0.01, "the grip is centred on the flank axis");
+});
+
+test("REGRESSION: the weapon is seated by its GRIP, not by its model origin", () => {
+  // The "gun is not in the hand" defect: the flintlock's origin sits near the
+  // breech (asset X≈0), so seating by the origin (the old behaviour: only a small
+  // +Y slide) left the grip ~0.29m from the palm. The weapon's local offset must
+  // therefore carry the grip point back to the hold origin — a big -X shift — not
+  // sit near zero.
+  const [x, y, z] = weaponLocalOffset(0);
+  assert.ok(Math.abs(x - -GRIP_POINT_M[0]) < 1e-9, "the grip's X is cancelled to the hand");
+  assert.ok(Math.abs(y - -GRIP_POINT_M[1]) < 1e-9, "the grip's Y is cancelled to the hand");
+  assert.ok(Math.abs(z - -GRIP_POINT_M[2]) < 1e-9);
+  assert.ok(Math.abs(x) > 0.2, "seating by the origin (offset ~0) is the defect this guards");
+
+  // The palm-drop knob slides only along the grip's own +Y and never off it.
+  const dropped = weaponLocalOffset(0.02);
+  assert.ok(Math.abs(dropped[1] - (weaponLocalOffset(0)[1] + 0.02)) < 1e-9);
+  assert.equal(dropped[0], weaponLocalOffset(0)[0]);
+});
+
+test("the flintlock is a plausible pistol length, in metres", () => {
+  // A held flintlock pistol is roughly 0.35–0.45m. The asset is measured along its
+  // own long (X) axis; the socket renders it at that size in world metres.
+  assert.ok(PISTOL_LENGTH_M >= 0.3 && PISTOL_LENGTH_M <= 0.5, `got ${PISTOL_LENGTH_M}m`);
+});
+
+// The full mount, as a transform. A rig arrives at some world scale (the cast is
+// mid-normalisation, so this is deliberately not 1); the socket must undo that and
+// land the asset's grip point on the hand bone within a tight tolerance, and the
+// weapon's world matrix must equal the hand bone's world matrix composed with the
+// named grip seating — rotation, offset and scale together.
+function boneAtScale(scale: number, worldPos: readonly [number, number, number]): Object3D {
+  const root = new Object3D();
+  root.scale.setScalar(scale);
+  const bone = new Object3D();
+  bone.name = "mixamorigRightHand";
+  // Place the hand somewhere non-trivial in the rig so a missed compose shows up.
+  bone.position.set(worldPos[0] / scale, worldPos[1] / scale, worldPos[2] / scale);
+  root.add(bone);
+  root.updateMatrixWorld(true);
+  return bone;
+}
+
+test("the mount lands the asset's grip point on the hand bone within a tight tolerance", () => {
+  for (const scale of [0.01, 0.0091, 0.816, 1]) {
+    const bone = boneAtScale(scale, [0.4, 1.2, -0.3]);
+    // A marker child at the asset's grip point stands in for the pistol's grip.
+    const weapon = new Object3D();
+    const gripMarker = new Object3D();
+    gripMarker.position.set(GRIP_POINT_M[0], GRIP_POINT_M[1], GRIP_POINT_M[2]);
+    weapon.add(gripMarker);
+
+    // Zero the fine bone-frame offset so the grip lands exactly on the bone; the
+    // default offset is a deliberate few-cm nudge, checked separately below.
+    const socket = seatWeaponInHand({
+      bone,
+      weapon,
+      grip: { offset: [0, 0, 0], trimEulerDeg: [0, 0, 0], palmDrop: 0 },
+      name: "test.socket",
+    });
+    bone.add(socket);
+    bone.updateMatrixWorld(true);
+
+    const gripWorld = gripMarker.getWorldPosition(new Vector3());
+    const boneWorld = bone.getWorldPosition(new Vector3());
+    assert.ok(
+      gripWorld.distanceTo(boneWorld) < 1e-6,
+      `scale ${scale}: grip ${JSON.stringify(gripWorld.toArray())} must sit on the hand ${JSON.stringify(boneWorld.toArray())}`,
+    );
+
+    // And the weapon renders in metres regardless of the rig's world scale: the
+    // socket cancels the bone scale exactly.
+    const weaponScale = weapon.getWorldScale(new Vector3());
+    assert.ok(Math.abs(weaponScale.x - 1) < 1e-6, `scale ${scale}: weapon world scale must be metres`);
+  }
+});
+
+test("the default grip nudge keeps the grip within a couple of centimetres of the hand", () => {
+  const bone = boneAtScale(0.01, [0.4, 1.2, -0.3]);
+  const weapon = new Object3D();
+  const gripMarker = new Object3D();
+  gripMarker.position.set(GRIP_POINT_M[0], GRIP_POINT_M[1], GRIP_POINT_M[2]);
+  weapon.add(gripMarker);
+
+  // The default placement: the shipped SOCKET_OFFSET_M nudge, no trim distortion.
+  const socket = seatWeaponInHand({ bone, weapon, name: "test.socket" });
+  bone.add(socket);
+  bone.updateMatrixWorld(true);
+
+  const gripWorld = gripMarker.getWorldPosition(new Vector3());
+  const boneWorld = bone.getWorldPosition(new Vector3());
+  const nudge = Math.hypot(...SOCKET_OFFSET_M);
+  assert.ok(
+    Math.abs(gripWorld.distanceTo(boneWorld) - nudge) < 1e-6,
+    "the grip sits exactly the named offset from the hand, and no further",
+  );
+  assert.ok(nudge < 0.03, "the intended nudge is small: the gun is in the hand, not floating");
+});
+
+test("the seated muzzle still points down the hand's aim after the grip fix", () => {
+  // Re-parenting must not disturb the orientation the previous pass established.
+  const bone = boneAtScale(0.01, [0.4, 1.2, -0.3]);
+  const weapon = new Object3D();
+  const muzzleMarker = new Object3D();
+  // A point one metre down the asset's muzzle axis, so its displacement from the
+  // weapon origin is the muzzle direction in world space.
+  muzzleMarker.position.copy(ASSET_MUZZLE_AXIS);
+  weapon.add(muzzleMarker);
+
+  const socket = seatWeaponInHand({
+    bone,
+    weapon,
+    grip: { offset: [0, 0, 0], trimEulerDeg: [0, 0, 0], palmDrop: 0 },
+    name: "test.socket",
+  });
+  bone.add(socket);
+  bone.updateMatrixWorld(true);
+
+  const origin = weapon.getWorldPosition(new Vector3());
+  const tip = muzzleMarker.getWorldPosition(new Vector3());
+  const muzzleDir = tip.sub(origin).normalize();
+  // The bone here is unrotated, so the hand's aim axis (bone +Y) is world +Y.
+  assert.ok(
+    muzzleDir.dot(BONE_AIM_AXIS) > 0.999,
+    `muzzle must still seat along the aim, got ${JSON.stringify(muzzleDir.toArray())}`,
+  );
+});
+
+test("the resting aim plays the level two-handed present, not the up-tilted idle", () => {
+  // Measured off both production rigs (.affordwork/probe-clip-aim-dir.mjs, which
+  // forward-kinematics the RightHand bone whose +Y the socket makes the muzzle):
+  // `standoff` holds the muzzle level (up-component 0.04–0.09 officer, ~-0.1 player)
+  // with BOTH hands on the stock across its whole loop, while `idleAim` rides the
+  // muzzle 25–28° above level (up-component ~0.47 officer, ~0.26 player) and drops
+  // the support hand — the one-handed, pointing-up frame the owner rejected. The
+  // resting-aim role must select the level two-handed present, and both fighters
+  // inherit this through the one table.
+  assert.equal(DUEL_CLIP_NAMES.aim, "standoff", "the aim state plays the forward two-handed present");
+  assert.equal(DUEL_CLIP_NAMES.standoff, "standoff");
+  assert.notEqual(DUEL_CLIP_NAMES.aim, "idleAim", "idleAim rides the muzzle up and drops the off hand");
+});
+
+test("aim levelling pulls the moving arms onto the standoff aim and leaves the legs alone", () => {
+  const forward = [0, 0, 0, 1];
+  const up = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2).toArray();
+  const standoff = new AnimationClip("standoff", -1, [
+    new QuaternionKeyframeTrack("mixamorigRightArm.quaternion", [0], forward),
+    new QuaternionKeyframeTrack("mixamorigLeftForeArm.quaternion", [0], forward),
+  ]);
+  // Both clips start with the shooting arm rolled up; the leg is up too and must stay.
+  const aimWalk = new AnimationClip("aimWalk", -1, [
+    new QuaternionKeyframeTrack("mixamorigRightArm.quaternion", [0], up),
+    new QuaternionKeyframeTrack("mixamorigLeftForeArm.quaternion", [0], up),
+    new QuaternionKeyframeTrack("mixamorigRightUpLeg.quaternion", [0], up),
+  ]);
+  const draw = new AnimationClip("draw", -1, [
+    new QuaternionKeyframeTrack("mixamorigRightArm.quaternion", [0], up),
+  ]);
+
+  const out = levelAimArms([standoff, aimWalk, draw]);
+
+  const walk = out.find((clip) => clip.name === "aimWalk")!;
+  const arm = walk.tracks.find((t) => t.name === "mixamorigRightArm.quaternion")!;
+  for (let i = 0; i < 4; i++) {
+    assert.ok(Math.abs(arm.values[i]! - forward[i]!) < 1e-6, "aimWalk arm is pulled to the level standoff aim");
+  }
+  const leg = walk.tracks.find((t) => t.name.includes("UpLeg"))!;
+  for (let i = 0; i < 4; i++) {
+    assert.ok(Math.abs(leg.values[i]! - up[i]!) < 1e-6, "the leg stride is untouched");
+  }
+
+  // A clip with no levelling entry is returned as the same object, not cloned.
+  assert.equal(out.find((clip) => clip.name === "draw"), draw);
+  // The reference pose is not modified in place.
+  const ref = out.find((clip) => clip.name === "standoff")!;
+  assert.equal(ref, standoff);
+});
 
 // ---- the arena -------------------------------------------------------------
 
@@ -209,25 +472,32 @@ test("nothing visible stands where a fighter can reach it without collision", ()
 
 // ---- clip timing -----------------------------------------------------------
 
-test("aimWalk is stride-matched at the engine's own walk speed", () => {
-  // The engine measured this clip at exactly WALK_SPEED, so the correction is 1.
+test("aimWalk is stride-matched against its measured cycle speed", () => {
   const scale = duelClipTimeScale({
     role: "aimWalk",
     authoredSeconds: 0.833,
     speedMps: WALK_SPEED,
   });
-  assert.ok(Math.abs(scale - 1) < 1e-6, `expected 1, got ${scale}`);
+  // Measured at 2.53 m/s and driven at 2.3, so the aim walk is very slightly
+  // slowed rather than left alone. It used to be measured at exactly WALK_SPEED
+  // and left at 1, which was an artifact of the old stance measurement dividing
+  // by half a cycle instead of by the stance.
+  assert.ok(
+    Math.abs(scale - WALK_SPEED / CLIP_AUTHORED_SPEED_MPS.aimWalk!) < 1e-6,
+    `expected the measured stride match, got ${scale}`,
+  );
+  assert.ok(scale < 1);
 });
 
-test("aimRun is corrected away from 1, because its cycle is slower than the run", () => {
+test("aimRun is corrected away from 1, because its cycle is faster than the drive", () => {
   const scale = duelClipTimeScale({
     role: "aimRun",
     authoredSeconds: 0.767,
     speedMps: RUN_SPEED,
   });
-  // Authored at 2.55 m/s and driven at 4.6: without this the character skates.
-  assert.ok(Math.abs(scale - RUN_SPEED / 2.55) < 1e-6);
-  assert.ok(scale > 1.5);
+  // Authored at 3.20 m/s and driven at 4.6: without this the character skates.
+  assert.ok(Math.abs(scale - RUN_SPEED / CLIP_AUTHORED_SPEED_MPS.aimRun!) < 1e-6);
+  assert.ok(scale > 1.4);
 });
 
 test("a back-step plays the forward cycle in reverse", () => {
@@ -1082,15 +1352,21 @@ test("a held latch never spends two balls, however many ticks one frame buys", (
 
 test("a press is dropped rather than banked across a stopped clock", () => {
   withFakeWindow((clickFire) => {
-    const input = createDuelInput();
+    let nowMs = 0;
+    const input = createDuelInput({ now: () => nowMs });
     const detach = input.attach();
     try {
       clickFire();
       assert.equal(input.pending().fire, true);
-      // QUESTION_PENDING advances nothing. A click there must not be saved up and
-      // fired seconds later at whatever the pointer happens to be on.
-      for (let frame = 0; frame < LATCH_BUFFER_FRAMES; frame++) input.settle(0);
-      assert.equal(input.pending().fire, false, "the buffer expired the press");
+      // QUESTION_PENDING advances no tick, so `settle(0)` never consumes the press. It
+      // must not be saved up and fired seconds later — age is the backstop now, not a
+      // frame count, so it is dropped once EDGE_INTENT_MAX_AGE_MS of wall time passes.
+      nowMs = EDGE_INTENT_MAX_AGE_MS - 1;
+      input.settle(0);
+      assert.equal(input.pending().fire, true, "still live just under the age");
+      nowMs = EDGE_INTENT_MAX_AGE_MS + 1;
+      input.settle(0);
+      assert.equal(input.pending().fire, false, "expired by age, not banked");
     } finally {
       detach();
     }

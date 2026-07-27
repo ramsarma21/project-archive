@@ -16,7 +16,7 @@ bullet count.
 | Verdict | `src/verdict.ts` | Binary, with provenance and an HMAC receipt |
 | Review log | `src/reviewLog.ts` | Every generous grant, attributable |
 | Low confidence | `src/lowConfidence.ts` | Grant, count, stop, flag |
-| Eval gate | `src/eval/` | 312 labelled cases; blocks shipping |
+| Eval gate | `src/eval/` | 314 labelled cases; blocks shipping |
 
 ## The rubric format
 
@@ -42,6 +42,20 @@ feedback map because the duel shows no feedback.
 **The line is the author's.** `ideas` lists what has to be present and `needs` says
 how many — `"all"` by default. There is no third outcome anywhere in the package,
 and `packages/duel` rejects a non-binary verdict at its wire boundary by name.
+
+**Two-part cores.** Twelve of the eighteen M1 items carry a single required
+proposition. Six carry a genuine two-part core — two `ideas` with `needs: "all"` —
+so a written answer that supplies only one half fails, the prose analogue of the
+two-card evidence minimum those items also demand (a cause *and* its consequence, a
+mechanism *and* who it burdened, a grievance *and* the town's standing). This is
+still binary, not partial credit: the answer is correct only if it carries both, and
+a half is wrong. The halves are stated as meanings rather than wordings, so many
+phrasings and either order pass — the classifier reports each idea it found and the
+code counts. The split lives in `src/items/port.ts` (`TWO_PART_CORES`), because
+`ideas` is this package's structure; the content states the requirement in prose.
+`wrongIfSays` for those items names the missing half, so the model's guidance and the
+eval rationales both say which half a half-answer left out, without quoting the
+answer.
 
 **Examples are held out, never prompted.** `accept` and `reject` are verbatim
 student-voice answers and they become the evaluation set. `wrongIfSays` is the
@@ -81,8 +95,8 @@ the question's own words, a label, or a feeling?*
 ## Running the gate
 
 ```bash
-pnpm --filter @pa/grading test          # offline: 234 tests, no model calls
-pnpm --filter @pa/grading grading:eval  # the gate: 312 labelled cases, real model
+pnpm --filter @pa/grading test          # offline: 238 tests, no model calls
+pnpm --filter @pa/grading grading:eval  # the gate: 314 labelled cases, real model
 pnpm --filter @pa/grading grading:bench # serial latency and tokens per call
 ```
 

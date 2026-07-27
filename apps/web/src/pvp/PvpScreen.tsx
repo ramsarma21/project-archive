@@ -7,6 +7,7 @@ import { PvpQuestion } from "./PvpQuestion.js";
 import { PvpResult } from "./PvpResult.js";
 import { refusalText } from "./refusals.js";
 import { usePvpSession } from "./usePvpSession.js";
+import type { PresentedSighting } from "./arenaPort.js";
 import type { PvpTransport } from "./protocol.js";
 import "./pvp.css";
 
@@ -29,6 +30,9 @@ export function PvpScreen(props: PvpScreenProps) {
   const session = usePvpSession(props.transport);
   const reducedMotion = props.reducedMotion ?? false;
   const [handle, setHandle] = useState<string | null>(null);
+  // The presented opponent sighting, reported up from the arena so the side-panel HUD
+  // warning reads the same delayed sample the drawn body does.
+  const [sighting, setSighting] = useState<PresentedSighting>("IN_SIGHT");
 
   useEffect(() => {
     if (session.phase.name === "HOSTING") setHandle(session.phase.handle);
@@ -62,6 +66,8 @@ export function PvpScreen(props: PvpScreenProps) {
         </div>
       );
     }
+    const answering =
+      snapshot.phase === "QUESTION_PENDING" || snapshot.phase === "VERDICT_COMMITTED";
     return (
       <div className="pvp">
         <div className="pvp-match">
@@ -95,19 +101,42 @@ export function PvpScreen(props: PvpScreenProps) {
               reducedMotion={reducedMotion}
               onAim={session.setAim}
               onCameraYaw={session.setCameraYaw}
+              bindInput={session.bindInput}
+              onOpponentSighting={setSighting}
+              progress={session.progress}
             />
-            <div className="pvp-side">
+            {/* The question/wait/verdict/countdown is a large centered overlay OVER the
+                arena and side, in the System's language — not a panel in the narrow
+                sidebar. It owns keyboard input while a question is open, and is inert
+                otherwise so movement during the resume countdown still reaches the
+                canvas. It hides itself once combat resumes. */}
+            <PvpQuestion
+              question={session.question}
+              snapshot={snapshot}
+              lastVerdict={session.lastVerdict}
+              lastEvidence={session.lastEvidence}
+              answering={session.answering}
+              reducedMotion={reducedMotion}
+              onSubmit={session.submitAnswer}
+            />
+            {/* The centred question overlay covers the whole body, including this side
+                column. Rather than fight it for the same pixels at 1024x692, the side
+                withdraws while a question is open: its stats are frozen then and the
+                only thing that matters is the overlay. The live health/ammo the player
+                still needs live in the arena HUD, which withdraws on the same beat. */}
+            <div
+              className="pvp-side"
+              style={
+                answering
+                  ? { opacity: 0.12, pointerEvents: "none", transition: "opacity 0.24s ease" }
+                  : { transition: "opacity 0.24s ease" }
+              }
+              aria-hidden={answering}
+            >
               {session.error && (
                 <div className="pvp-error">{refusalText(session.error)}</div>
               )}
-              <PvpQuestion
-                question={session.question}
-                snapshot={snapshot}
-                lastVerdict={session.lastVerdict}
-                answering={session.answering}
-                onSubmit={session.submitAnswer}
-              />
-              <PvpHud snapshot={snapshot} progress={session.progress} />
+              <PvpHud snapshot={snapshot} progress={session.progress} sighting={sighting} />
               {session.rejected.length > 0 && (
                 <div className="pvp-panel">
                   <div className="pvp-panel-title">Refused frames</div>

@@ -41,7 +41,11 @@ export const TRAVERSAL_BINDINGS = {
     codes: ["ShiftLeft", "ShiftRight"],
     kind: "HOLD",
     label: "Shift",
-    does: "Run — and running is what lets the world vault, slide and leap for you",
+    // The one line every player has to read. It is not a speed modifier: while
+    // it is down the world will catch, vault, climb and dive FOR you, and while
+    // it is up it will leave you alone. Both halves are load-bearing — see
+    // SelectContext.sprintHeld — so both halves are said.
+    does: "Hold to run AND to climb — the world only catches you while you hold it",
   },
   crouch: {
     codes: ["KeyC", "ControlLeft"],
@@ -89,6 +93,13 @@ export function traversalActionFor(code: string): TraversalAction | null {
  */
 export const TRAVERSAL_LEGEND: readonly { keys: string; does: string }[] = [
   { keys: "WASD", does: "Move" },
+  // The one entry with no row in the binding table above, because a mouse is
+  // not a KeyboardEvent.code and inventing a fake one to satisfy the "drawn
+  // from the table" rule would be the tidiness, not the point. It is listed
+  // because it is the verb a player is most lost without: movement is relative
+  // to where you are looking, so until you know the mouse turns you, half the
+  // control scheme does not work. See playerLook.ts, which owns the look.
+  { keys: "Mouse", does: "Look — and you move where you are looking" },
   { keys: TRAVERSAL_BINDINGS.sprint.label, does: TRAVERSAL_BINDINGS.sprint.does },
   { keys: TRAVERSAL_BINDINGS.jump.label, does: TRAVERSAL_BINDINGS.jump.does },
   { keys: TRAVERSAL_BINDINGS.dash.label, does: TRAVERSAL_BINDINGS.dash.does },

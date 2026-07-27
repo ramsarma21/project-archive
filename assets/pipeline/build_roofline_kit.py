@@ -417,6 +417,112 @@ def add_box(mesh, uv_layer, lo, hi, material, tile, uv_offset=(0.0, 0.0), skip=(
             )
 
 
+def add_solid(mesh, uv_layer, corners, material, tile, uv_axes=(0, 2)):
+    """`add_box`, but for a six-faced solid that is not axis-aligned.
+
+    Takes the same (i, j, k) corner dictionary `add_box` builds internally, so a
+    caller can move individual corners: a louvre blade is a box whose outer pair
+    of edges has been dropped, and a chamfered kerb arris is a box whose top
+    outer edge has been pulled in. Winding is left to the caller's
+    `recalc_face_normals`, which every builder here already runs — a slat tilted
+    the other way would otherwise come out inside-out.
+    """
+    quads = (
+        ((0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)),
+        ((0, 1, 0), (1, 1, 0), (1, 0, 0), (0, 0, 0)),
+        ((1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)),
+        ((0, 1, 0), (0, 0, 0), (0, 0, 1), (0, 1, 1)),
+        ((1, 1, 0), (0, 1, 0), (0, 1, 1), (1, 1, 1)),
+        ((0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1)),
+    )
+    axis_u, axis_v = uv_axes
+    verts = {}
+    for quad in quads:
+        loop = []
+        for key in quad:
+            if key not in verts:
+                verts[key] = mesh.verts.new(corners[key])
+            loop.append(verts[key])
+        try:
+            face = mesh.faces.new(loop)
+        except ValueError:
+            continue
+        face.material_index = material
+        for vertex_loop in face.loops:
+            point = vertex_loop.vert.co
+            vertex_loop[uv_layer].uv = (point[axis_u] / tile, point[axis_v] / tile)
+
+
+def add_slat(mesh, uv_layer, x, y, z_in, z_out, thick, cross, material, tile):
+    """One louvre blade: a board tilted so its outer edge sheds water.
+
+    `x` and `y` are (lo, hi) plan extents and `cross` is the plan axis the blade
+    projects along, so the top face runs from `z_in` at that axis's LOW end to
+    `z_out` at its high end. The caller orders the pair, which is what lets one
+    function serve all four sides of a monitor: on the south side the outside is
+    the low end and on the north side it is the high end.
+    """
+    corners = {}
+    for i in (0, 1):
+        for j in (0, 1):
+            top = z_in + (z_out - z_in) * ((i, j)[cross])
+            for k in (0, 1):
+                corners[(i, j, k)] = Vector((x[i], y[j], top if k else top - thick))
+    add_solid(mesh, uv_layer, corners, material, tile, uv_axes=(1 - cross, 2))
+
+
+def add_strut(mesh, uv_layer, start, end, radius, material, tile, sides=8):
+    """A round timber between two points, as a low-sided prism.
+
+    Every member of a scaffold is this: standards, ledgers, putlogs and braces
+    differ only in where their ends are. The caps are flat and perpendicular to
+    the run, so an axis-aligned member's end lands EXACTLY on the coordinate
+    asked for — which is what lets the putlogs pin the bounding box on the
+    scaffold's 2.5m width while the standards stay inboard of it.
+    """
+    start, end = Vector(start), Vector(end)
+    axis = end - start
+    length = axis.length
+    if length < 1e-6:
+        return
+    axis = axis / length
+    reference = Vector((0.0, 0.0, 1.0))
+    if abs(axis.dot(reference)) > 0.98:
+        reference = Vector((1.0, 0.0, 0.0))
+    u = axis.cross(reference).normalized()
+    v = axis.cross(u)
+    rings = []
+    for point in (start, end):
+        rings.append(
+            [
+                mesh.verts.new(
+                    point
+                    + u * (radius * math.cos(2.0 * math.pi * s / sides))
+                    + v * (radius * math.sin(2.0 * math.pi * s / sides))
+                )
+                for s in range(sides)
+            ]
+        )
+    faces = []
+    for s in range(sides):
+        t = (s + 1) % sides
+        faces.append([rings[0][s], rings[0][t], rings[1][t], rings[1][s]])
+    faces.append(list(reversed(rings[0])))
+    faces.append(list(rings[1]))
+    for loop in faces:
+        try:
+            face = mesh.faces.new(loop)
+        except ValueError:
+            continue
+        face.material_index = material
+        for vertex_loop in face.loops:
+            point = vertex_loop.vert.co
+            # Along the timber and round it: the grain of a pole runs its length,
+            # so the long axis takes the U and the girth takes the V.
+            along = (point - start).dot(axis)
+            vertex_loop[uv_layer].uv = (along / tile, (point - start).dot(u) / tile)
+
+
 def add_grid(mesh, uv_layer, points, material, tile, uv_offset=(0.0, 0.0), flip=False):
     """A quad grid from a 2D array of positions, UV-mapped by its X/Y footprint."""
     verts = [[mesh.verts.new(point) for point in row] for row in points]
@@ -1342,16 +1448,614 @@ def build_ropewalk_shell():
     )
 
 
+# ---------------------------------------------------------------------------
+# 6. roof-ridge-monitor — three metres of meeting house the meeting house cannot draw
+# ---------------------------------------------------------------------------
+# MEETING_RIDGE is a walkable plane at 11.20m on a building whose collision mass
+# stops at 8.20m. A single-entry cluster takes its draw box from its OWN
+# collision, so `bldg-meeting-hollis` is drawn to 8.20 and no roof art on it can
+# reach the walk; `roof-ridge-walk` cannot close the gap either, because it is
+# 42mm of leaded flat and did exactly what it was built to do — put its boards ON
+# the plane, with three metres of sky underneath them.
+#
+# So the gap is filled with a raised monitor, which is what a New England meeting
+# house put over its roof to light and vent the hall: a louvred timber lantern
+# the length of the ridge with a leaded walk on top for the plumber. 2.8m deep on
+# an 8.6m building reads as a monitor rather than as a full gambrel, which is the
+# trade the owner took.
+#
+# The whole vertical budget is spent DOWNWARD from the plane, the same discipline
+# the plank and the fire board follow and for the same reason: `drawBox` hangs a
+# lone deck's dressing by its declared `standableAt`, so the mesh's top face is
+# the plane and everything else is under the boot. Nothing may stand above it —
+# no parapet, no ridge cresting, no finial — because the box top IS 11.20m and
+# anything over it is a metre of monitor drawn below where the player walks.
+
+
+def build_ridge_monitor():
+    key = "roof-ridge-monitor"
+    box = draw_box(key)
+    length, height, depth = box[0], box[1], box[2]
+    new_scene()
+    lead, _ = load_material("lead", 1024)
+    plank, plank_image = load_material("plank", 1024)
+    board, _ = load_material("board-ropewalk", 1024)
+    bands = plank_bands(plank_image)
+    LEAD, PLANK, BOARD = 0, 1, 2
+
+    mesh = bmesh.new()
+    uv_layer = mesh.loops.layers.uv.new("UVMap")
+
+    hx, hy = length / 2.0, depth / 2.0
+    # Read bottom to top, these are a flashed kerb, a sill, the louvred housing,
+    # a boxed cornice, and 30mm of leadwork. Only the last of those is inside the
+    # tolerance the probe measures; the rest is what the thing looks like from
+    # the roof below, which is the whole point of building it at all.
+    APRON_Z = 0.16
+    SILL_Z = 0.34
+    EAVES_Z = height - 0.62
+    CORNICE_Z = height - 0.30
+    LEAD_Z = height - 0.03
+    # How far the louvred housing is set back from the plan on x. The cornice is
+    # full width, so this is the shadow line that makes the monitor a built thing
+    # rather than an extruded rectangle.
+    BODY_IN = 0.17
+
+    # WHY THE HOUSING IS ONLY THE SOUTHERN HALF OF THE DEPTH
+    # -----------------------------------------------------
+    # The deck this dresses is 2.8m deep and its plane is at 11.20m, but the roof
+    # UNDER it at 8.20m is walked: `D_MEETING_ROOF` stands at world z 9.00 and
+    # `E_GAMBREL_S` at 10.20, both inside this footprint, and both are the foot of
+    # a climb up onto the walk. The first build filled all 2.8m solid, and the
+    # frame from E_GAMBREL_S — the owner's own named vantage — came back with the
+    # player standing INSIDE the louvres.
+    #
+    # No solid form based at 8.20 and full-depth at 11.20 can leave headroom over
+    # z=9.00: a body standing there needs 1.9m of it 1.4m in from the north edge,
+    # and even a vertical face set back that far is a cantilever wider than what
+    # is left holding it up. So the monitor is what it would really have been on a
+    # roof with a walk on it — a louvred vent housing along the SOUTH side, and
+    # the rest of the walk carried on posts and joists over open air. The player
+    # arrives beside a post at the head of the climb instead of inside a wall.
+    #
+    # The leadwork above stays full-depth, and that half is not negotiable: the
+    # probe rays a 21 x 21 grid over the whole 9.4 x 2.8 rect at 11.20m.
+    #
+    # WHICH SIDE IS NORTH. The exporter maps Blender +Y to game -Z, so the game's
+    # NORTH — the side both route nodes stand on — is Blender -Y. The first
+    # attempt at this put the housing on -Y by name and built it on the wrong
+    # side of the walk; the frame from E_GAMBREL_S came back identical to the
+    # solid version, which is the only reason it was caught. Every edge below is
+    # therefore named for the game direction, never for the Blender sign.
+    HOUSING_D = 1.30
+    SOUTH_Y = hy               # game z 7.60, the far side from the route
+    HOUSE_Y = hy - HOUSING_D   # game z 8.90, the housing's north face
+    NORTH_Y = -hy              # game z 10.40, the walk's outer edge
+    POST = 0.075
+
+    # The flashed apron where the housing meets the meeting house's lead flat at
+    # 8.20m. Under the housing only: full depth here would be a 160mm lead kerb
+    # under the feet of both nodes standing on the roof in front of it.
+    add_box(mesh, uv_layer, (-hx, HOUSE_Y - 0.10, 0.0), (hx, SOUTH_Y, APRON_Z), LEAD,
+            TILE_M["lead"], skip=("-z",))
+    # The oak sill the frame is tenoned into, weathered on top so the apron sheds.
+    add_box(mesh, uv_layer, (-hx + 0.05, HOUSE_Y - 0.05, APRON_Z),
+            (hx - 0.05, SOUTH_Y - 0.05, SILL_Z), BOARD, TILE_M["board-ropewalk"],
+            skip=("-z",))
+
+    # The body behind the louvres, boarded and in shadow. Solid rather than open:
+    # the runtime draws single-sided, so an open lantern is a hole you can see
+    # the inside of the far wall through from every angle the route uses.
+    core_x = hx - BODY_IN - 0.11
+    add_box(mesh, uv_layer, (-core_x, HOUSE_Y + 0.11, SILL_Z),
+            (core_x, SOUTH_Y - BODY_IN - 0.11, EAVES_Z),
+            BOARD, TILE_M["board-ropewalk"], skip=("+z", "-z"),
+            tile_v=(EAVES_Z - SILL_Z))
+
+    # Corner posts and mullions, dividing the housing into bays. Six along the
+    # length: on a 9.4m monitor that is a 1.5m bay, which is the panel a pair of
+    # hands could louvre.
+    frame_x = hx - BODY_IN
+    frame_far, frame_near = SOUTH_Y - BODY_IN, HOUSE_Y
+    long_bays = 6
+    stiles_x = [-frame_x + (2.0 * frame_x) * i / long_bays for i in range(long_bays + 1)]
+    for x in stiles_x:
+        for y in (frame_far, frame_near):
+            add_box(mesh, uv_layer, (x - POST, y - POST, SILL_Z), (x + POST, y + POST, EAVES_Z),
+                    BOARD, TILE_M["board-ropewalk"], skip=("+z", "-z"),
+                    tile_v=(EAVES_Z - SILL_Z))
+
+    # The louvres. Blades at a 0.17m pitch, each projecting 0.10m out of the
+    # frame and dropping 0.055 across that projection — enough tilt to throw a
+    # shadow line under every blade, which is the only thing that reads at night.
+    PITCH, THICK, PROJ, DROP = 0.17, 0.032, 0.10, 0.055
+    top_blade = EAVES_Z - 0.06
+    blades = int((top_blade - SILL_Z - 0.08) / PITCH)
+    for index in range(blades):
+        z = SILL_Z + 0.08 + (index + 1) * PITCH
+        for bay in range(long_bays):
+            x = (stiles_x[bay] + POST, stiles_x[bay + 1] - POST)
+            add_slat(mesh, uv_layer, x, (frame_far, frame_far + PROJ), z, z - DROP, THICK,
+                     1, PLANK, TILE_M["plank"])
+            add_slat(mesh, uv_layer, x, (frame_near - PROJ, frame_near), z - DROP, z, THICK,
+                     1, PLANK, TILE_M["plank"])
+        y = (frame_near + POST, frame_far - POST)
+        add_slat(mesh, uv_layer, (frame_x, frame_x + PROJ), y, z, z - DROP, THICK,
+                 0, PLANK, TILE_M["plank"])
+        add_slat(mesh, uv_layer, (-frame_x - PROJ, -frame_x), y, z - DROP, z, THICK,
+                 0, PLANK, TILE_M["plank"])
+
+    # The open half: posts on the walk's north edge carrying it, with a joist
+    # back to the housing over each one. Everything else here lives in the top
+    # 0.6m so a standing body passes under it, which is the whole reason this
+    # half is open at all.
+    for x in stiles_x:
+        add_box(mesh, uv_layer, (x - POST, NORTH_Y, 0.0), (x + POST, NORTH_Y + 2.0 * POST, EAVES_Z),
+                BOARD, TILE_M["board-ropewalk"], skip=("+z",),
+                tile_v=EAVES_Z)
+        add_box(mesh, uv_layer, (x - 0.055, NORTH_Y, EAVES_Z - 0.19),
+                (x + 0.055, HOUSE_Y, EAVES_Z), BOARD, TILE_M["board-ropewalk"],
+                skip=("+z",))
+
+    # The cornice, full plan and full depth, on a bed mould stepped back to the
+    # frame. It oversails by BODY_IN, which throws the whole side into shadow
+    # from below — the one elevation of this object anybody looks at from the
+    # street is the underside of this.
+    add_box(mesh, uv_layer, (-hx + 0.09, -hy + 0.09, EAVES_Z - 0.10),
+            (hx - 0.09, hy - 0.09, EAVES_Z + 0.02), BOARD, TILE_M["board-ropewalk"],
+            skip=("+z", "-z"))
+    add_box(mesh, uv_layer, (-hx, -hy, EAVES_Z + 0.02), (hx, hy, CORNICE_Z),
+            BOARD, TILE_M["board-ropewalk"], skip=("+z", "-z"))
+
+    # The leadwork, and the only 30mm of this object the route can feel. Same
+    # section as the gambrel walk it replaces: sheets seamed over rolls, a walk
+    # down the spine, and a flush gutter round the edge that carries the probe's
+    # outermost ray. Everything is AT the plane or below it, never over.
+    add_box(mesh, uv_layer, (-hx, -hy, CORNICE_Z), (hx, hy, LEAD_Z), LEAD,
+            TILE_M["lead"], skip=("-z",))
+    GUTTER = 0.24
+    for lo, hi in ((-hy, -hy + GUTTER), (hy - GUTTER, hy)):
+        add_box(mesh, uv_layer, (-hx, lo, LEAD_Z), (hx, hi, height), LEAD, TILE_M["lead"])
+    for lo, hi in ((-hx, -hx + GUTTER), (hx - GUTTER, hx)):
+        add_box(mesh, uv_layer, (lo, -hy + GUTTER, LEAD_Z), (hi, hy - GUTTER, height),
+                LEAD, TILE_M["lead"])
+
+    flat_x, flat_y = hx - GUTTER, hy - GUTTER
+    rolls = max(2, int(round((2.0 * flat_x) / 1.05)))
+    for index in range(1, rolls):
+        x = -flat_x + (2.0 * flat_x) * index / rolls
+        add_box(mesh, uv_layer, (x - 0.055, -flat_y, LEAD_Z), (x + 0.055, flat_y, height),
+                LEAD, TILE_M["lead"])
+
+    WALK_HALF = 0.33
+    walk_boards = 3
+    walk_gap = 0.008
+    board_w = (2.0 * WALK_HALF - walk_gap * (walk_boards - 1)) / walk_boards
+    for index in range(walk_boards):
+        y0 = -WALK_HALF + index * (board_w + walk_gap)
+        y1 = y0 + board_w
+        strip = bands[RNG.randrange(len(bands))]
+        offset = RNG.uniform(0.0, 1.0)
+        before = len(mesh.faces)
+        add_box(mesh, uv_layer, (-flat_x, y0, LEAD_Z), (flat_x, y1, height), PLANK,
+                TILE_M["plank"], skip=("-z",))
+        mesh.faces.ensure_lookup_table()
+        for face in list(mesh.faces)[before:]:
+            for vertex_loop in face.loops:
+                point = vertex_loop.vert.co
+                across = (point[1] - y0) / max(y1 - y0, 1e-6)
+                vertex_loop[uv_layer].uv = (
+                    strip[0] + across * (strip[1] - strip[0]),
+                    point[0] / TILE_M["plank"] + offset,
+                )
+
+    bmesh.ops.remove_doubles(mesh, verts=list(mesh.verts), dist=1e-5)
+    bmesh.ops.recalc_face_normals(mesh, faces=list(mesh.faces))
+    return finish(mesh, key, [lead, plank, board], box, exact_z=True, out_name=f"{key}.glb")
+
+
+# ---------------------------------------------------------------------------
+# 7. printshop-sign-hood — the catch outside Edes & Gill
+# ---------------------------------------------------------------------------
+# 50mm, and all of it board. PRINTSHOP_SIGN is a lone DECK at 6.20m declared
+# 0.05m tall and standable at 0.05, so `drawBox` boxes it 3.20 x 0.05 x 1.40 and
+# hangs it at 6.15: the mesh's top face IS the surface the player lands on and
+# there are fifty millimetres underneath it for the whole object.
+#
+# That rules out the shape the name suggests. A hood with a sign swinging under
+# it needs a metre of pendant, and a pendant inside this box would put its own
+# bottom on the box floor and lift the boarding 400mm above the catch — which is
+# precisely the defect `printshop-hanging-sign` shipped, arrived at from the
+# other direction. So the sign is the hood's painted soffit, the boards run out
+# from the wall the way a hood's boards do, and the fascia takes the front edge.
+
+
+def build_sign_hood():
+    key = "printshop-sign-hood"
+    box = draw_box(key)
+    length, thick, depth = box[0], box[1], box[2]
+    new_scene()
+    plank, plank_image = load_material("plank", 512)
+    board, _ = load_material("board-ropewalk", 512)
+    bands = plank_bands(plank_image)
+    PLANK, BOARD = 0, 1
+
+    mesh = bmesh.new()
+    uv_layer = mesh.loops.layers.uv.new("UVMap")
+    hx, hy = length / 2.0, depth / 2.0
+
+    # The soffit: one continuous painted board under everything, which is what
+    # the sign is. It also closes the underside, so nothing here is a one-sided
+    # sheet seen from the street below, and it is what shows through the 6mm
+    # gaps between the boards rather than the inside of the hood.
+    SOFFIT = 0.012
+    BOARD_BASE = 0.009
+    add_box(mesh, uv_layer, (-hx, -hy, 0.0), (hx, hy, SOFFIT), BOARD,
+            TILE_M["board-ropewalk"])
+
+    # The boarding, running OUT from the wall rather than along it — which is how
+    # a hood is boarded, because that is the way the water has to go. Twelve
+    # boards on a 3.2m frontage is a nine-inch board.
+    count = 12
+    gap = 0.006
+    widths = [1.0 + RNG.uniform(-0.07, 0.07) for _ in range(count)]
+    total = (length - gap * (count - 1)) / sum(widths)
+    widths = [w * total for w in widths]
+    FASCIA = 0.075
+    CUP = 0.0035
+    NSEG = 6
+
+    x = -hx
+    for index, width in enumerate(widths):
+        x0, x1 = x, x + width
+        x = x1 + gap
+        strip = bands[RNG.randrange(len(bands))]
+        offset = RNG.uniform(0.0, 1.0)
+        # Cupped across the board and sagging a hair towards the fascia. Both
+        # only ever take the surface DOWN: every millimetre upward is spent out
+        # of a 50mm ceiling that is also the plane the player lands on.
+        rows_top, rows_bottom = [], []
+        for j in range(NSEG + 1):
+            tv = j / NSEG
+            y = -hy + (2.0 * hy - FASCIA) * tv
+            row_top, row_bottom = [], []
+            for i in range(NSEG + 1):
+                tu = i / NSEG
+                cup = CUP * (1.0 - (2.0 * tu - 1.0) ** 2)
+                sag = 0.0022 * tv * tv
+                row_top.append(Vector((x0 + (x1 - x0) * tu, y, thick - cup - sag)))
+                row_bottom.append(Vector((x0 + (x1 - x0) * tu, y, BOARD_BASE)))
+            rows_top.append(row_top)
+            rows_bottom.append(row_bottom)
+
+        def hood_uv(point, strip=strip, offset=offset, x0=x0, x1=x1):
+            across = (point[0] - x0) / max(x1 - x0, 1e-6)
+            return (strip[0] + across * (strip[1] - strip[0]),
+                    point[1] / TILE_M["plank"] + offset)
+
+        for rows, flip in ((rows_top, False), (rows_bottom, True)):
+            verts = [[mesh.verts.new(point) for point in row] for row in rows]
+            for j in range(len(rows) - 1):
+                for i in range(len(rows[0]) - 1):
+                    loop = [verts[j][i], verts[j][i + 1], verts[j + 1][i + 1], verts[j + 1][i]]
+                    if flip:
+                        loop.reverse()
+                    face = mesh.faces.new(loop)
+                    face.material_index = PLANK
+                    for vertex_loop in face.loops:
+                        vertex_loop[uv_layer].uv = hood_uv(vertex_loop.vert.co)
+        # The four sawn edges, so a probe ray cannot fall down the side of a board.
+        for side in ("x0", "x1", "y0", "y1"):
+            if side in ("y0", "y1"):
+                j = 0 if side == "y0" else NSEG
+                pairs = [(rows_top[j][i], rows_bottom[j][i]) for i in range(NSEG + 1)]
+            else:
+                i = 0 if side == "x0" else NSEG
+                pairs = [(rows_top[j][i], rows_bottom[j][i]) for j in range(NSEG + 1)]
+            ring = pairs if side in ("y1", "x0") else list(reversed(pairs))
+            for a, b in zip(ring, ring[1:]):
+                face = mesh.faces.new([
+                    mesh.verts.new(a[0]), mesh.verts.new(b[0]),
+                    mesh.verts.new(b[1]), mesh.verts.new(a[1]),
+                ])
+                face.material_index = PLANK
+                for vertex_loop in face.loops:
+                    vertex_loop[uv_layer].uv = hood_uv(vertex_loop.vert.co)
+
+    # The fascia along the front edge, flush with the boarding's top so the hood
+    # measures its full 1.4m and the runner meets one surface rather than a lip.
+    add_box(mesh, uv_layer, (-hx, hy - FASCIA, BOARD_BASE), (hx, hy, thick), BOARD,
+            TILE_M["board-ropewalk"])
+
+    bmesh.ops.remove_doubles(mesh, verts=list(mesh.verts), dist=1e-5)
+    bmesh.ops.recalc_face_normals(mesh, faces=list(mesh.faces))
+    return finish(mesh, key, [plank, board], box, exact_z=True, out_name=f"{key}.glb")
+
+
+# ---------------------------------------------------------------------------
+# 8. bldg-scaffold-run — eleven metres of staging on the Town House's west front
+# ---------------------------------------------------------------------------
+# SCAFFOLD_D1 and SCAFFOLD_D2 share a footprint exactly, so the level's own
+# clusterer makes them one object and `drawBox` takes the several-entry branch:
+# the box is the DECLARED 2.5 x 5.6 x 11.3 and the base is the top plane less the
+# height, which puts the scaffold on the street at y=0. Both staging planes are
+# therefore inside one mesh, at 2.90 and at 5.60, and 5.60 is also the top of the
+# bounding box — so the upper boards are the last thing in the object and nothing
+# may be built over them. That is why there is no guard rail on the top lift.
+#
+# Where the bounding box is pinned matters here more than usual, because the
+# obvious answer is wrong. Pinning the 2.5m width with the STANDARDS would need
+# an octagonal pole's silhouette to land exactly on a coordinate, which depends
+# on its rotation; the PUTLOGS are square-ended and span the full width by
+# definition, so they pin it exactly and the standards stay comfortably inboard.
+# The boards then run between the standards, with the gap a scaffold board really
+# does leave where a standard passes it.
+
+
+def build_scaffold_run():
+    key = "bldg-scaffold-run"
+    box = draw_box(key)
+    across, height, run = box[0], box[1], box[2]
+    new_scene()
+    plank, plank_image = load_material("plank", 1024)
+    board, _ = load_material("board-ropewalk", 1024)
+    bands = plank_bands(plank_image)
+    PLANK, BOARD = 0, 1
+    pole_tile = TILE_M["board-ropewalk"]
+
+    mesh = bmesh.new()
+    uv_layer = mesh.loops.layers.uv.new("UVMap")
+    hx, hy = across / 2.0, run / 2.0
+
+    # The two authored planes, read off the hull rather than transcribed.
+    decks = sorted(deck["y"] for deck in HULL[key]["decks"])
+    assert len(decks) == 2, f"{key}: expected two staging planes, got {decks}"
+    assert abs(decks[-1] - height) < 1e-6, (
+        f"{key}: the top staging is at {decks[-1]:.3f} but the box top is "
+        f"{height:.3f}; the upper boards have to BE the top of the mesh"
+    )
+    log(f"{key}: staging at {', '.join(f'{d:.2f}' for d in decks)}m over a "
+        f"{run:.2f}m run, {across:.2f}m out from the wall")
+
+    BOARD_T = 0.045
+    STANDARD_R = 0.052
+    LEDGER_R = 0.045
+    PUTLOG_R = 0.050
+    # Standards inboard of the box by their own radius plus a hair, so the pole
+    # cannot be what decides the width whichever way its octagon happens to sit.
+    row_x = hx - STANDARD_R - 0.010
+    bays = 6
+    # Inset by the standard's own radius at both ends, for the same reason the
+    # rows are: a pole centred ON the boundary reaches half its girth past it,
+    # and `finish` would then shrink the whole scaffold by that much to fit.
+    end = STANDARD_R + 0.010
+    bay_y = [-hy + end + (run - 2.0 * end) * i / bays for i in range(bays + 1)]
+
+    # Sole boards under each row of standards. A scaffold on a street stood on
+    # timber, not on the cobbles, and it also puts something at ground level for
+    # the eye to end on. CLAMPED to the box: a 0.28m board centred on a standard
+    # 0.062m inside the edge reaches 0.078m past it, and `finish` answers an
+    # overrun by shrinking the whole scaffold — the first build of this came out
+    # trued by 0.94127 on x for exactly that, which is 150mm of staging width
+    # lost to a sole board nobody would have looked at.
+    for sign in (-1.0, 1.0):
+        add_box(mesh, uv_layer,
+                (max(sign * row_x - 0.14, -hx), -hy, 0.0),
+                (min(sign * row_x + 0.14, hx), hy, 0.05),
+                BOARD, pole_tile)
+
+    for y in bay_y:
+        for sign in (-1.0, 1.0):
+            add_strut(mesh, uv_layer, (sign * row_x, y, 0.02), (sign * row_x, y, height),
+                      STANDARD_R, BOARD, pole_tile)
+
+    # Lifts of ledgers along the run, inside the standards. Two carry staging and
+    # two are the intermediate lifts that make it read as a frame rather than as
+    # two shelves on posts.
+    ledger_z = []
+    for plane in decks:
+        ledger_z.append(plane - BOARD_T - 2.0 * PUTLOG_R - LEDGER_R)
+    ledger_z.append(decks[0] / 2.0)
+    ledger_z.append((decks[0] + decks[1]) / 2.0 + 0.15)
+    for z in ledger_z:
+        for sign in (-1.0, 1.0):
+            add_strut(mesh, uv_layer, (sign * row_x, -hy, z), (sign * row_x, hy, z),
+                      LEDGER_R, BOARD, pole_tile)
+
+    # Putlogs across the width at every standard, carrying the boards. These are
+    # the members that reach the full 2.5m, and the assertion in `finish` is what
+    # proves they did.
+    for plane in decks:
+        z = plane - BOARD_T - PUTLOG_R
+        for y in bay_y:
+            add_strut(mesh, uv_layer, (-hx, y, z), (hx, y, z), PUTLOG_R, BOARD, pole_tile)
+        # One extra putlog mid-bay: a 1.9m span of nine-inch board on its own
+        # bounces, and a bouncing board is not a thing a level walks on.
+        for index in range(bays):
+            y = (bay_y[index] + bay_y[index + 1]) / 2.0
+            add_strut(mesh, uv_layer, (-hx, y, z), (hx, y, z), PUTLOG_R, BOARD, pole_tile)
+
+    # Ledger braces on the street face, zig-zagging the length of the run. This
+    # is the single detail that separates scaffolding from a pile of poles.
+    #
+    # Held clear of the box top by the brace's own girth. `add_strut` caps a
+    # timber square to its RUN, so a diagonal one ending exactly on 5.60 puts
+    # half its thickness through the plane — 22mm of pole standing over the
+    # staging, and 22mm that `finish` would take off the whole scaffold's height.
+    BRACE_R = LEDGER_R * 0.85
+    for index in range(0, bays, 2):
+        y0, y1 = bay_y[index], bay_y[min(index + 2, bays)]
+        add_strut(mesh, uv_layer, (-row_x, y0, 0.07), (-row_x, y1, decks[0]),
+                  BRACE_R, BOARD, pole_tile, sides=6)
+        add_strut(mesh, uv_layer, (-row_x, y1, decks[0]), (-row_x, y0, height - 2.0 * BRACE_R),
+                  BRACE_R, BOARD, pole_tile, sides=6)
+
+    # The staging. Boards between the standards, so the gap a standard needs is
+    # where a standard is; the putlogs under them already reach the box edge.
+    field = row_x - STANDARD_R - 0.015
+    count = 5
+    gap = 0.010
+    width = (2.0 * field - gap * (count - 1)) / count
+    for plane in decks:
+        for index in range(count):
+            x0 = -field + index * (width + gap)
+            x1 = x0 + width
+            strip = bands[RNG.randrange(len(bands))]
+            offset = RNG.uniform(0.0, 1.0)
+            before = len(mesh.faces)
+            add_box(mesh, uv_layer, (x0, -hy, plane - BOARD_T), (x1, hy, plane),
+                    PLANK, TILE_M["plank"])
+            mesh.faces.ensure_lookup_table()
+            for face in list(mesh.faces)[before:]:
+                for vertex_loop in face.loops:
+                    point = vertex_loop.vert.co
+                    across_board = (point[0] - x0) / max(x1 - x0, 1e-6)
+                    vertex_loop[uv_layer].uv = (
+                        strip[0] + across_board * (strip[1] - strip[0]),
+                        point[1] / TILE_M["plank"] + offset,
+                    )
+
+    # The ladders, at the end of the run the route actually climbs.
+    # C_SCAFF_FOOT, C_SCAFF_1 and C_SCAFF_2 all stand at world z = -6.4, which is
+    # 4.35m from the object's centre — and the exporter maps Blender Y to game Z
+    # with the sign flipped, so that end of the run is +y HERE. Getting that
+    # backwards would have put the only way up at the wrong end of eleven metres
+    # of staging, which the probe cannot see and the player cannot miss.
+    #
+    # Each ladder stops FLUSH with the staging it serves rather than projecting
+    # the metre a real one would: a stile standing proud of SCAFFOLD_D1 is a pole
+    # through the plane the player walks on.
+    ladder_y = bay_y[bays] - (bay_y[bays] - bay_y[bays - 1]) * 0.62
+    for base, top in ((0.02, decks[0]), (decks[0], decks[1])):
+        lean = -row_x + STANDARD_R + 0.09
+        for sign in (-1.0, 1.0):
+            # Stopped 5mm under the landing. A leaning stile's cap is square to
+            # its own run, so its far corner sits a millimetre above the end
+            # point — and a millimetre over 5.60 is a millimetre `finish` takes
+            # off the whole scaffold, which moves the staging off its plane.
+            add_strut(mesh, uv_layer,
+                      (lean + 0.10, ladder_y + sign * 0.22, base),
+                      (lean, ladder_y + sign * 0.22, top - 0.005),
+                      0.030, BOARD, pole_tile, sides=6)
+        rungs = max(3, int((top - base) / 0.30))
+        for index in range(1, rungs):
+            t = index / rungs
+            z = base + (top - base) * t
+            x = lean + 0.10 * (1.0 - t)
+            add_strut(mesh, uv_layer, (x, ladder_y - 0.22, z), (x, ladder_y + 0.22, z),
+                      0.021, BOARD, pole_tile, sides=6)
+
+    bmesh.ops.remove_doubles(mesh, verts=list(mesh.verts), dist=1e-5)
+    bmesh.ops.recalc_face_normals(mesh, faces=list(mesh.faces))
+    return finish(mesh, key, [plank, board], box, exact_z=True, out_name=f"{key}.glb")
+
+
+# ---------------------------------------------------------------------------
+# 9. yard-kerb-stone — the kerb round the Dock Square pump yard
+# ---------------------------------------------------------------------------
+# 0.34m of dressed granite, and the one asset in this wave whose predecessor was
+# not merely the wrong shape: `colonial-yard-perimeter` is a road-kit GROUND
+# PLATE of 226.00 x 0.08 x 20.00, so the contain-fit came out at 0.0248 and drew
+# two millimetres of paving lying in the road where the level says there is a
+# step. Nothing about a ground plate can be a raised edge.
+#
+# PUMP_KERB is a landable MASS, so what matters is that the top is flat AT 0.34
+# over essentially the whole footprint. The arris is chamfered, which is what a
+# dressed kerb has and is also free: a chamfer only ever takes the surface down,
+# and 22mm is two orders inside the 0.35m the probe and the reader both allow.
+
+
+def build_kerb_stone():
+    key = "yard-kerb-stone"
+    box = draw_box(key)
+    length, height, depth = box[0], box[1], box[2]
+    new_scene()
+    stone, _ = load_material("stone", 1024)
+    tile = TILE_M["stone"]
+    STONE = 0
+
+    mesh = bmesh.new()
+    uv_layer = mesh.loops.layers.uv.new("UVMap")
+    hx, hy = length / 2.0, depth / 2.0
+
+    # The bedding course, full plan: it pins the bounding box on both horizontals
+    # and it is the horizontal joint line that makes the kerb read as two courses
+    # of stone rather than as one extruded block.
+    BED_Z = 0.095
+    add_box(mesh, uv_layer, (-hx, -hy, 0.0), (hx, hy, BED_Z), STONE, tile, skip=("-z",))
+
+    # Four kerbstones on it, 1.4m apiece, which is the length one team could set.
+    # Jointed rather than butted: the joints are cut back to the bedding course,
+    # 0.245m down, which is well inside the step-down and is a shadow line the
+    # eye reads as masonry at any distance.
+    stones = 4
+    JOINT = 0.014
+    CHAMFER = 0.022
+    width = (length - JOINT * (stones - 1)) / stones
+
+    # The joints, RAKED rather than open. An open joint is a 14mm slot straight
+    # down to the bedding course, and the probe's 21-sample column at x=0 lands
+    # exactly on the middle one: it would still count, because 245mm is inside
+    # the 350mm step-down, but a slot the width of a finger through a kerb is
+    # not what a jointed kerb looks like either. 18mm of rake reads as a joint
+    # and measures as the stone.
+    for index in range(stones - 1):
+        x0 = -hx + (index + 1) * width + index * JOINT
+        add_box(mesh, uv_layer, (x0, -hy, BED_Z - 0.01), (x0 + JOINT, hy, height - 0.018),
+                STONE, tile, skip=("-z",))
+
+    for index in range(stones):
+        x0 = -hx + index * (width + JOINT)
+        x1 = x0 + width
+        # A hand-set stone settles. Only ever downwards, and by a couple of
+        # millimetres: this is the difference between granite and an extrusion,
+        # and it costs nothing against a 0.35m tolerance. The two END stones do
+        # not settle, because they are what pins the mesh's height to 0.34.
+        settle = 0.0 if index in (0, stones - 1) else RNG.uniform(0.0, 0.004)
+        top = height - settle
+        add_box(mesh, uv_layer, (x0, -hy, BED_Z - 0.01), (x1, hy, top - CHAMFER),
+                STONE, tile, skip=("+z", "-z"))
+        # The weathered arris: a real chamfer, cut by pulling the cap's top pair
+        # of edges in off its bottom pair. Both long edges, because the pump yard
+        # is walked from the square on one side and from the well on the other.
+        corners = {}
+        for i in (0, 1):
+            for j in (0, 1):
+                for k in (0, 1):
+                    corners[(i, j, k)] = Vector((
+                        x0 if i == 0 else x1,
+                        (-hy if j == 0 else hy) + (CHAMFER if j == 0 else -CHAMFER) * k,
+                        top - CHAMFER if k == 0 else top,
+                    ))
+        add_solid(mesh, uv_layer, corners, STONE, tile, uv_axes=(0, 1))
+
+    bmesh.ops.remove_doubles(mesh, verts=list(mesh.verts), dist=1e-5)
+    bmesh.ops.recalc_face_normals(mesh, faces=list(mesh.faces))
+    return finish(mesh, key, [stone], box, exact_z=True, out_name=f"{key}.glb")
+
+
 BUILDERS = {
     "roof-plank-gantry": build_gantry,
     "roof-ridge-walk": build_ridge_walk,
+    "roof-ridge-monitor": build_ridge_monitor,
     "roof-chimney-stack": build_chimney,
     "service-wall-end": build_pier,
     "int-shell-ropewalk-a": build_ropewalk_shell,
+    "printshop-sign-hood": build_sign_hood,
+    "bldg-scaffold-run": build_scaffold_run,
+    "yard-kerb-stone": build_kerb_stone,
 }
 
 for name, builder in BUILDERS.items():
     if WANTED and name not in WANTED:
+        continue
+    # A key the level has stopped drawing has no box to fit to, and `draw_box`
+    # would reduce an empty list of sizes to a silent nan rather than to an
+    # error. `roof-ridge-walk` is in exactly that state since MEETING_RIDGE was
+    # re-keyed to `roof-ridge-monitor`: still declared, still shipped, drawn
+    # nowhere. Skipping it loudly is the honest reading of that.
+    if not HULL.get(name, {}).get("draws"):
+        log(f"--- {name}: nothing in the level draws this key any more; skipped")
         continue
     log(f"--- {name}")
     builder()

@@ -23,7 +23,7 @@
     "verdictSpace": ["CORRECT", "WRONG"],
     "task": "Classification, not generation. You are given one authored item and one student answer. You return one of two words. You never write a question, never write an answer, never explain history to the student, and never grade anything the item did not ask for.",
 
-    "whyBinary": "A correct answer grants fourteen balls and a wrong answer grants seven, and there is nothing between them. Partial credit was removed on purpose: a half-right answer worth as much as a right one destroys the premise that knowledge converts into resources. Every rubric below therefore states its own line, and the line is the author's judgement rather than yours.",
+    "whyBinary": "A correct answer grants fourteen balls and a wrong answer grants seven, and there is nothing between them. Partial credit was removed on purpose: a half-right answer worth as much as a right one destroys the premise that knowledge converts into resources. Every rubric below therefore states its own line, and the line is the author's judgement rather than yours. Some items require two ideas rather than one, and that is still binary and not partial credit: the answer is correct only if it carries both, and a half-answer that supplies one is wrong, exactly as a one-card evidence selection is.",
 
     "asymmetry": "The two errors are not equally bad. A false positive hands a student seven balls they did not earn. A false negative halves the ammunition of someone who knew the material and phrased it their own way, and that player stops believing the game is fair. So every rubric below is written to the generous side of its own line, and the accept lists are deliberately long.",
 
@@ -154,28 +154,26 @@
       "itemVersion": "v1",
       "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
       "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1"],
+      "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-      "question": "The war with France ended two years ago and Britain won it. So what problem did winning leave Britain holding — the one Parliament is trying to solve on my board?",
+      "question": "The war with France ended two years ago and Britain won it. What problem did that victory leave Britain holding, and how is Parliament trying to solve it on my board?",
       "referenceAnswer": "A debt. The war cost far more than Britain had, so it came out of a victory owing an enormous amount of money, and the stamp is one way it means to get some of that back.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHAT_IT_LEFT.v1",
-        "requiredCore": "Britain came out of the war owing money, short of money, or having spent more than it could afford.",
-        "line": "Any financial answer counts, whether the student says debt, owing, broke, or too expensive. A non-financial answer does not, even when it is true history — the question asks what Parliament is solving, and Parliament is solving a money problem.",
+        "requiredCore": "Two parts, and a half-answer fails: the war left Britain owing money, and Parliament's fix is to raise part of it from the colonies through the stamp.",
+        "line": "The question asks two things, so a correct answer carries both: the money problem the war left, and how Parliament means to solve it, by raising revenue from the colonies. Naming only the debt answers the problem but not the fix; naming only the tax answers the fix but not the problem. Any financial wording earns the first half, and any wording of making the colonies pay or the stamp raising it here earns the second.",
         "acceptExamples": [
-          { "text": "debt", "why": "One word. It is the answer." },
-          { "text": "they owed a ton of money", "why": "The proposition, informally." },
-          { "text": "they were broke", "why": "Same." },
-          { "text": "the war cost way more than they had so they couldn't pay for it", "why": "Cost and inability to pay is the debt described from the other side. The author's decision is to accept expense-without-the-word-debt rather than fail a student over a noun." },
-          { "text": "they had to pay for everything the war used up", "why": "An outstanding obligation in a student's own phrasing." },
-          { "text": "an army over here they still had to pay for", "why": "The clause the module gained so the capstone's only released postwar item could be served without doubt. It was already correct under the required core — a standing cost is a money problem — and it is listed so the connection is visible rather than inferred." }
+          { "text": "they came out owing a fortune, so theyre making us cover part of it with the stamp", "why": "Both halves: the war debt and the colonies made to pay it." },
+          { "text": "debt from the war, and their fix is taxing the colonies to help clear it", "why": "The problem and the fix, in one line." },
+          { "text": "they spent more than they had beating france, so now the stamp squeezes some of it out of us", "why": "Money problem plus the colonial fix." },
+          { "text": "money trouble from the war, and the plan is to make the colonies pay a share", "why": "Both halves without the word debt." }
         ],
         "rejectExamples": [
-          { "text": "they got Canada and all the land west", "why": "True, and not financial. Territory gained is not the problem Parliament is solving." },
-          { "text": "they won and got more respect than france", "why": "Non-financial." },
-          { "text": "the stamp act", "why": "Names the solution as the problem." },
-          { "text": "the colonists got angry at them", "why": "An effect that comes later, not what the war left." },
-          { "text": "france wanted revenge", "why": "Plausible, unrelated to the taught proposition." }
+          { "text": "the war left them broke", "why": "Only the money problem. It does not say how Parliament solves it, by raising the money from the colonies." },
+          { "text": "theyre taxing the colonies with the stamp", "why": "Only the fix. It never names the war debt the tax is meant to answer." },
+          { "text": "they got Canada and all the land west", "why": "Neither half, and not financial. Territory gained is not the problem Parliament is solving." },
+          { "text": "the colonists got angry at them", "why": "An effect further down the chain, not the war's cost or Parliament's fix." },
+          { "text": "france wanted revenge", "why": "Plausible, and neither half of what the question asked." }
         ]
       }
     },
@@ -185,28 +183,26 @@
       "itemVersion": "v1",
       "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
       "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.COLONIAL_REVENUE.v1"],
+      "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-      "question": "Britain carries the debt. Say plainly who Parliament decided should help pay it down.",
+      "question": "Say plainly who Parliament decided should help pay this down, and what that money is meant to clear.",
       "referenceAnswer": "The colonies. Parliament decided that people here — Boston and the rest of America — should supply part of the revenue.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHO_PAYS.v1",
-        "requiredCore": "The colonies, America, or the colonists — including 'us' and 'we', which a student speaking in character is entitled to say.",
-        "line": "The answer must land on this side of the Atlantic. A payer inside Britain is wrong; an unspecific payer that does not distinguish the colonies from everybody is also wrong, because 'everyone pays' is exactly the status quo the taught proposition changed.",
+        "requiredCore": "Two parts, and a half-answer fails: the payer is the colonies (America, us, the colonists), and what that money clears is Britain's war debt.",
+        "line": "The question asks who pays and what the money clears, so both must be present. The payer must land on this side of the Atlantic, the colonies or America or us, not inside Britain and not 'everyone'. The thing cleared must be the war debt, the money the war with France left owing. Naming only the payer, or only the debt, is half an answer.",
         "acceptExamples": [
-          { "text": "us", "why": "One word, in character, correct." },
-          { "text": "the colonies", "why": "The proposition." },
-          { "text": "america", "why": "Same." },
-          { "text": "boston and the other colonies over here", "why": "Same." },
-          { "text": "us colonists have to pay for their war", "why": "Correct, with volunteered extra that costs nothing." },
-          { "text": "the people living in the colonies, not the ones in england", "why": "Correct, and the contrast is a bonus rather than a requirement." }
+          { "text": "us over here, and its going to pay down what the war cost them", "why": "Payer plus the war debt it clears." },
+          { "text": "the colonies, to cover the debt from fighting france", "why": "Both halves, plainly." },
+          { "text": "america pays, and what were clearing is their war bill", "why": "Payer and debt, own words." },
+          { "text": "the people in the colonies have to settle the money britain owes from the war", "why": "Both halves without either proper noun." }
         ],
         "rejectExamples": [
-          { "text": "british taxpayers back home", "why": "A payer inside Britain. This is the wrong side of the taught claim." },
-          { "text": "the king pays it himself", "why": "Wrong payer." },
-          { "text": "everyone in the empire had to pay", "why": "Does not name the colonies and does not distinguish the new policy from the old one. This is the deliberate line in this item and the one most likely to be argued with." },
-          { "text": "france had to pay because they lost", "why": "Plausible-sounding and wrong." },
-          { "text": "nobody, they just borrowed more", "why": "Wrong." }
+          { "text": "the colonies", "why": "Only the payer. It does not say what the money clears, the war debt it is meant to settle." },
+          { "text": "the war debt", "why": "Only the thing owed. It never names who Parliament made pay it." },
+          { "text": "british taxpayers back home", "why": "A payer inside Britain, and no debt. The wrong side of the taught claim." },
+          { "text": "everyone in the empire had to pay", "why": "An unspecific payer that does not single out the colonies, and no mention of the war debt." },
+          { "text": "france had to pay because they lost", "why": "Wrong payer, and neither half." }
         ]
       }
     },
@@ -252,7 +248,7 @@
         "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"
       ],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1", "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1"],
-      "question": "A printer told me this Act came out of nowhere — that Parliament woke one morning and invented it to spite you. Start at the end of the war and show me it did not.",
+      "question": "A printer told me this Act came out of nowhere, that Parliament woke one morning and invented it to spite you. Start at the end of the war and show me it did not.",
       "referenceAnswer": "The war with France ended in 1763 and left Britain owing more than it ever had. Parliament needed revenue against that debt and decided the colonies should supply part of it. The stamp is how it collects. Every step follows the one before it; none of it is sudden.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.POSTWAR.CAME_FROM_NOWHERE.v1",
@@ -279,26 +275,26 @@
       "itemVersion": "v1",
       "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
       "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.COLONIAL_REVENUE.v1", "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"],
+      "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1", "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1", "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1"],
       "question": "Here is what I cannot follow. The debt is owed in London. The stamp is paid in Boston. Give me the line that joins those two.",
       "referenceAnswer": "Britain needs revenue to pay down the debt, Parliament decided part of that revenue should come from the colonies, so a debt in London becomes a tax collected here. Our money goes against their bill.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.POSTWAR.DEBT_TO_TAX.v1",
-        "requiredCore": "Money raised from the colonies goes toward Britain's debt.",
-        "line": "The join has to be the money itself. Any answer in which colonial payment reduces British debt is correct, however roughly phrased. Any answer that supplies a different motive for the tax — trade, punishment, control — has not joined the two things the question named.",
+        "requiredCore": "Two parts, and a one-ended answer fails: the money is raised from the colonies (our taxes, the stamp), and it goes toward Britain's war debt.",
+        "line": "The join runs money from the colonies to Britain's debt: our payment here, reducing what Britain owes there. An answer that names only the colonial payment, or only the debt, has not joined them. Any wording of colonial money reducing the British debt counts, however rough; a different motive, trade or punishment or authority, does not join the two things named.",
         "acceptExamples": [
-          { "text": "they owe money so theyre taxing us to get it", "why": "The join, exactly." },
-          { "text": "our taxes pay their war bill", "why": "Five words." },
-          { "text": "the money from the stamps gets shipped back to pay what they owe", "why": "Correct, with a mechanism the student invented and which costs nothing." },
-          { "text": "they need cash and we are where theyre getting it from", "why": "The join without the word debt, which the question itself supplies." }
+          { "text": "we pay the stamp here and that money goes against what they owe from the war", "why": "Both ends: colonial payment and the war debt." },
+          { "text": "they raise it off us and put it toward the war bill they ran up", "why": "The join, own words." },
+          { "text": "our tax money crosses back to pay down their debt", "why": "Colonial money reducing the British debt." },
+          { "text": "the coins from our stamps end up paying britains war debt", "why": "Both ends without the question's phrasing." }
         ],
         "rejectExamples": [
-          { "text": "to stop smuggling and control trade", "why": "A different motive. Trade regulation is not the revenue chain." },
-          { "text": "because they wanted to punish boston", "why": "Punishment motive — plausible for a student who knows 1774, wrong for 1765." },
+          { "text": "we pay the stamp tax here", "why": "Only the colonial end. It does not join the payment to Britain's debt." },
+          { "text": "britain owes a lot from the war", "why": "Only the debt end. It never says colonial money is what goes toward it." },
           { "text": "because we are their colony so they can do what they want", "why": "Authority without money. The question asked what joins a debt to a payment." },
-          { "text": "the debt is in london and the stamp is paid in boston", "why": "Restates the question and adds nothing." },
-          { "text": "because boston is rich and they knew we could afford it", "why": "Invented and not the taught proposition." }
+          { "text": "to stop smuggling and control trade", "why": "A different motive, not the revenue-to-debt join." },
+          { "text": "the debt is in london and the stamp is paid in boston", "why": "Restates the question and joins nothing." }
         ]
       }
     },
@@ -310,7 +306,7 @@
       "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
       "codexCardIds": ["BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "Two things on this table: a deed drawn up in court, and a bolt of cloth off a ship. Come November one of them needs the Crown's paid stamp. Which — and what makes it the one?",
+      "question": "Two things on this table: a deed drawn up in court, and a bolt of cloth off a ship. Come November one of them needs the Crown's paid stamp. Which is it, and what makes you sure?",
       "referenceAnswer": "The deed. The Act taxes printed paper and legal paper, and a deed is a legal paper. Cloth is an ordinary good, and ordinary goods are not what the Act is aimed at.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.DEED_OR_CLOTH.v1",
@@ -371,7 +367,7 @@
       "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
       "codexCardIds": ["BOS.MD01.CARD.PRINTER_IMPACT.v1", "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "Of every trade in Boston — coopers, ropemakers, fishmongers — why does this Act fall hardest on the shop you run for?",
+      "question": "Of every trade in Boston, the coopers, the ropemakers, the fishmongers, why does this Act fall hardest on the shop you run for?",
       "referenceAnswer": "Because the Act taxes printed paper and printed paper is everything a printer makes. Every sheet that comes off the press is the taxed article, so the duty reaches every job in the shop.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.WHY_A_PRINTER.v1",
@@ -400,7 +396,7 @@
       "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
       "codexCardIds": ["BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "My apprentice has it that this Act taxes everything Boston buys — bread, cloth, nails, the lot. Correct him.",
+      "question": "My apprentice has it that this Act taxes everything Boston buys, bread, cloth, nails, the lot. Correct him.",
       "referenceAnswer": "He is wrong. The stamp falls on printed paper and legal paper — newspapers, handbills, deeds, court papers, licences. Bread and cloth and nails are ordinary goods, and ordinary goods are not what the Act taxes.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.CORRECT_THE_APPRENTICE.v1",
@@ -462,7 +458,7 @@
       "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
       "codexCardIds": ["BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "A woman writes to her sister in Salem, in her own hand, and seals it. Does the Act catch that letter? Tell me why — a bare yes or no earns you nothing.",
+      "question": "A woman writes to her sister in Salem, in her own hand, and seals it. Does the Act catch that letter? Tell me why; a bare yes or no earns you nothing.",
       "referenceAnswer": "No. It is not printed and it is not a legal paper, so it falls outside what the Act taxes. Private handwriting is not the target; printed sheets and official documents are.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.PRIVATE_LETTER.v1",
@@ -521,9 +517,9 @@
       "itemVersion": "v1",
       "poolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1",
       "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
-      "codexCardIds": ["BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1"],
+      "codexCardIds": ["BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1", "BOS.MD01.CARD.CONSENT_GROUND.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"],
-      "question": "You write that this town elects nobody. That is false — Boston votes, I have watched it vote. So tell me what Boston does elect, and why that does not settle the matter.",
+      "question": "You write that this town elects nobody. That is false. Boston votes; I have watched it vote. So tell me what Boston does elect, and why that does not settle the matter.",
       "referenceAnswer": "Boston elects its own town meeting and its own representatives to the Massachusetts assembly. It elects no member of Parliament — and Parliament is the body that laid this tax. Electing one body is not consent for a different one.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.BOSTON_DOES_ELECT.v1",
@@ -550,26 +546,26 @@
       "itemVersion": "v1",
       "poolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1",
       "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
-      "codexCardIds": ["BOS.MD01.CARD.CONSENT_GROUND.v1"],
+      "codexCardIds": ["BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1", "BOS.MD01.CARD.CONSENT_GROUND.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"],
-      "question": "Three pence on a sheet of paper. That is what all this noise is about — the price. Or is it something else? Say which, and be precise.",
+      "question": "Three pence on a sheet of paper. Is this noise about the price, or something else? Name what the objection truly is, and say why this town has the standing to make it.",
       "referenceAnswer": "It is not the price. The objection is to who laid the tax — Parliament, a body this town did not choose. The town would object the same if the stamp cost a farthing.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.NOT_THE_MONEY.v1",
-        "requiredCore": "The objection is not the amount but who laid the tax, or that it was laid without the town's consent.",
-        "line": "The answer has to move the ground from cost to authority and name where it lands. 'Something else' with nothing named is a dodge, and the question asks for precision on purpose. An answer that hedges — mostly authority, partly cost — still contains the core and is CORRECT; an answer that never leaves cost is WRONG.",
+        "requiredCore": "Two parts, and a half-answer fails: the objection is not the price but who laid the tax without the town's consent, and the town's standing is that Boston elected none of them (no member in Parliament).",
+        "line": "The answer must move the ground from cost to who laid the tax, and give the town's standing to object: that Boston chose none of the men who laid it. Moving off cost without the standing is half; giving the standing without leaving cost is half. The two can be said in many words, and 'taxed by men we never chose' carries both at once. Any wording of not-elected, no member there, no vote in it earns the standing.",
         "acceptExamples": [
-          { "text": "its not the money, its who decided it", "why": "The move, seven words." },
-          { "text": "wed say the same thing if it cost a penny", "why": "Cost dismissed by the counterfactual, which is the sharpest form of this answer." },
-          { "text": "the problem is they taxed us without asking us", "why": "Consent named instead of authority. Same core." },
-          { "text": "kind of the price but mostly that parliament had no right to lay it on us", "why": "Hedged and still carries the core. Hedging is not contradiction." }
+          { "text": "its not the money, its that parliament laid it and we elected nobody there", "why": "The ground moved, and the standing given." },
+          { "text": "we could find three pence, the point is a tax by men this town never voted for", "why": "Cost dismissed, plus not-chosen-by-us." },
+          { "text": "not the cost, its who taxed us, and we have no say in parliament at all", "why": "Both halves, own words." },
+          { "text": "the objection is who laid it without asking us, since boston elected none of them", "why": "Consent and the electoral standing together." }
         ],
         "rejectExamples": [
-          { "text": "its the price, three pence adds up on every sheet", "why": "Never leaves cost. This is the item's whole point." },
-          { "text": "people here are poor and cant afford another tax", "why": "Affordability." },
-          { "text": "its something else", "why": "Names nothing after being asked to be precise." },
-          { "text": "its because the british are unfair to us", "why": "Generic feeling, which TEA's scorers treat as no credit." },
-          { "text": "its the principle of the thing", "why": "Gestures at a principle without saying which. One clause more — whose consent, or who laid it — and it would be correct." }
+          { "text": "its who decided it, not the price", "why": "Moves off cost but gives no standing: it does not say the town elected none of the men who laid the tax." },
+          { "text": "we never elected anyone in parliament", "why": "Gives the standing but never says the objection is who laid it rather than the price." },
+          { "text": "its the price, three pence adds up on every sheet", "why": "Never leaves cost, which is the ground the item asks the student to move off." },
+          { "text": "people here are poor and cant afford another tax", "why": "Affordability, and neither half." },
+          { "text": "its the principle of the thing", "why": "Names neither half: not the who-laid-it ground and not the town's standing." }
         ]
       }
     },
@@ -581,7 +577,7 @@
       "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
       "codexCardIds": ["BOS.MD01.CARD.CONSENT_GROUND.v1", "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"],
-      "question": "Finish the claim your sheet makes. A tax on this town may lawfully be laid only by —",
+      "question": "Finish the claim your sheet makes. A tax on this town may lawfully be laid only by whom?",
       "referenceAnswer": "— a body the town itself elected. Its own representatives; men Boston chose.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.FINISH_THE_CLAIM.v1",
@@ -644,26 +640,26 @@
       "itemVersion": "v1",
       "poolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1",
       "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
-      "codexCardIds": ["BOS.MD01.CARD.CONSENT_GROUND.v1", "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1"],
+      "codexCardIds": ["BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1", "BOS.MD01.CARD.CONSENT_GROUND.v1", "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"],
       "question": "Parliament passed this Act by a lawful vote, in the proper form, in the proper place. I have the statute in my hand. On what ground do you still call it unjust?",
       "referenceAnswer": "Because the vote was taken in a body Boston never chose. Lawful passage in Parliament is not this town's consent — a vote we had no part in binds us to nothing we agreed to.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.LAWFUL_BUT_UNJUST.v1",
-        "requiredCore": "The vote was lawful for Parliament and still is not Boston's consent, because Boston had no part in it.",
-        "line": "The answer must separate lawful passage from consent. It does not have to use either word: 'its their law not ours, we didnt vote on it' does the whole job. What fails is denying that the vote happened, denying Parliament's authority over everything, or arguing about the money.",
+        "requiredCore": "Two parts, and a half-answer fails: a lawful vote in Parliament is still not Boston's consent, and the reason is that Boston elected none of the men who passed it.",
+        "line": "The answer must separate lawful passage from consent, and give the ground: that Boston had no part in the vote, electing none of those who cast it. 'Legal for them but we chose nobody there' does both. Conceding it is lawful without the electoral ground is half; giving the electoral ground without conceding the lawful vote is half. Denying the vote happened, denying Parliament's authority entirely, or arguing cost all fail.",
         "acceptExamples": [
-          { "text": "legal for them but nobody there speaks for us", "why": "The separation, exactly." },
-          { "text": "a vote we werent part of isnt our agreement", "why": "Consent named without the word." },
-          { "text": "its their law, not ours, we never voted on it", "why": "Same." },
-          { "text": "being legal doesnt make it right when we had no say in it", "why": "Same, with the lawful/just distinction stated." }
+          { "text": "its a real law for them, but we chose none of the men who voted it, so its not our consent", "why": "Lawful conceded, and the electoral ground given." },
+          { "text": "legal in parliament and still not binding on us, because boston elected nobody in that room", "why": "Both halves, plainly." },
+          { "text": "being lawful doesnt make it ours when we had no vote and no member there", "why": "The separation plus no part in it." },
+          { "text": "a proper vote we had no part in, by men we never elected, isnt our agreement", "why": "Lawful, and the ground that we elected none." }
         ],
         "rejectExamples": [
-          { "text": "the vote was rigged, they cheated", "why": "Disputes the fact instead of its authority. The item concedes the vote and asks about consent." },
-          { "text": "parliament has no power over the colonies at all", "why": "The over-claim Mission-Slate §4.9 rejects. Boston's own argument in 1765 does not go this far." },
-          { "text": "because three pence is too much for a sheet of paper", "why": "Cost." },
-          { "text": "laws can be unjust sometimes", "why": "True and empty. Nothing here is about consent or about this vote." },
-          { "text": "because we want to be our own country", "why": "Anachronistic in 1765." }
+          { "text": "its legal but we never agreed to it", "why": "Separates lawful from consent but gives no ground: it does not say Boston elected none of the men who voted it." },
+          { "text": "we elected nobody in parliament", "why": "Gives the electoral ground but never grants that the vote was lawful and separates that from consent." },
+          { "text": "the vote was rigged, they cheated", "why": "Disputes the fact instead of conceding it and arguing consent." },
+          { "text": "parliament has no power over the colonies at all", "why": "The over-claim Boston's 1765 argument does not make." },
+          { "text": "because three pence is too much for a sheet of paper", "why": "Cost, and neither half." }
         ]
       }
     }
@@ -677,7 +673,7 @@
       "itemId": "pool.idPrefix + '.' + item.id + pool.idSuffix — the ids are already identical",
       "question": "ask",
       "referenceAnswer": "correct",
-      "rubric.requiredCore": "one `ideas` entry with needs: \"all\". Sixteen of the eighteen items here deliberately have a single required proposition, which is a cleaner fit for that format than a multi-idea list with a count.",
+      "rubric.requiredCore": "one or two `ideas` entries with needs: \"all\". Twelve of the eighteen items carry a single required proposition; six carry a genuine two-part core so a written answer that supplies only one half does not pass. Both shapes stay binary: needs \"all\" is all-or-nothing, never partial credit.",
       "rubric.line": "note — the reasoning, which that format correctly never sends to the model",
       "rubric.acceptExamples[].text": "accept — held out of the prompt",
       "rubric.rejectExamples[].text": "reject — held out of the prompt",
@@ -687,9 +683,16 @@
       "gradingPolicy": "buildSystemPrompt's HOW TO JUDGE section, which already states most of it",
       "eval/duel-answers.labeled.json": "additional held-out cases beyond each item's own accept/reject, none of them duplicating a rubric example"
     },
-    "twoItemsNeedTwoIdeas": [
-      "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1 — the local body and the absence from Parliament, needs: \"all\".",
-      "BOS.MD01.DUEL.STAMP.NAME_TWO.v1 — two distinct in-category instances, which is a count rather than two propositions and may be better expressed as one idea."
+    "itemsWithTwoPartCores": [
+      "The prose grader requires BOTH halves (needs: all over two ideas) on the items whose evidence hand also demands two cards, so a written answer that supplies only one half fails just as a one-card selection does.",
+      "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1 — the money problem the war left, and Parliament's fix of raising it from the colonies.",
+      "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1 — the colonies as payer, and the war debt the money clears.",
+      "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1 — colonial payment, and that it goes toward Britain's war debt.",
+      "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1 — the local body it elects, and the absence from Parliament.",
+      "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1 — who laid it without consent, and the town's standing that it elected none of them.",
+      "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1 — lawful is not consent, and the ground that Boston elected none of the voters.",
+      "BOS.MD01.DUEL.REP.HOW_FAR_IT_GOES.v1 (pvpOnly) — the different argument, and where the man overshoots by refusing all taxes.",
+      "BOS.MD01.DUEL.STAMP.NAME_TWO.v1 — two distinct in-category instances, which is a count rather than two propositions and stays one idea."
     ],
     "conflicts": [
       {
@@ -706,7 +709,7 @@
       },
       {
         "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1",
-        "thisBank": "A bare \"something else\" is WRONG, and the question now says \"say which, and be precise\".",
+        "thisBank": "A bare \"something else\" is WRONG: the question asks the student to name the objection and to say why the town has the standing to make it.",
         "thatBank": "A note records that needs: 1 lets a bare \"something else\" pass, and that the fix belongs in the question rather than in a third outcome.",
         "argument": "Agreement, not conflict. That note names the fix and this is the fix: the question was rewritten to ask for the ground, so refusing an answer that names none is now fair to the student."
       }
@@ -778,7 +781,7 @@
         "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
         "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1"],
         "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-        "question": "Two years: 1762 and 1764. In one of them Britain is already carrying the debt that produced this stamp. Which year — and what happened between the two?",
+        "question": "Two years: 1762 and 1764. In one of them Britain is already carrying the debt that produced this stamp. Which year, and what happened between the two?",
         "referenceAnswer": "1764. The war with France ended in 1763, and it is the end of the war that leaves Britain with the debt.",
         "rubric": {
           "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHICH_YEAR.v1",
@@ -804,23 +807,23 @@
         "pvpOnly": true,
         "poolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1",
         "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
-        "codexCardIds": ["BOS.MD01.CARD.CONSENT_GROUND.v1"],
+        "codexCardIds": ["BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1", "BOS.MD01.CARD.CONSENT_GROUND.v1"],
         "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"],
         "question": "A man in the crowd shouts that he will never pay a tax to anybody, ever, for any reason. Is he making Boston's argument, or a different one? Say which, and where he goes past you.",
         "referenceAnswer": "A different one. Boston objects to a tax laid by a body it did not elect, not to taxation itself — the town's own assembly could tax it tomorrow. He has turned a claim about consent into a refusal to be taxed at all.",
         "rubric": {
           "rubricId": "BOS.MD01.RUBRIC.REP.HOW_FAR_IT_GOES.v1",
-          "requiredCore": "A different argument — Boston's objection is to who laid the tax, not to taxation as such, so refusing all taxes goes further than the town's claim.",
-          "line": "The answer must separate the two positions. Any wording of 'we would pay one our own men voted' counts, and so does any wording of 'he is against all taxes and we are not'. Agreeing that he speaks for Boston fails, and so does a bare 'different' with nothing distinguishing them.",
+          "requiredCore": "Two parts, and a half-answer fails: it is a different argument, Boston objects to who lays the tax and not to taxation itself, and where he goes past is refusing every tax, further than the town's claim.",
+          "line": "The answer must separate the two positions and say where the man overshoots. Boston would pay a tax its own body voted; he refuses every tax there is. Naming only 'different' without the overshoot is half, and so is naming the overshoot without the town's own position. Conceding he speaks for Boston fails. Any wording of 'we would pay one our own men passed' plus 'he is against all taxes' carries both.",
           "acceptExamples": [
-            { "text": "different. we would pay a tax our own assembly voted, hes against all of them", "why": "Both positions named and separated." },
-            { "text": "thats not us. our problem is who is doing the taxing, not the taxing", "why": "The distinction in the student's own words." },
-            { "text": "no, he goes too far. we never said no taxes, we said not by them", "why": "Same." }
+            { "text": "different. wed pay a tax our own assembly voted, hes refusing every tax there is", "why": "The town's position and the man's overshoot, separated." },
+            { "text": "thats not us. our fight is who does the taxing, and he goes and rejects all taxing", "why": "Both halves in the student's own words." },
+            { "text": "no, he overshoots. we never said no taxes, only not by men we didnt elect", "why": "The overshoot named and the town's line held." }
           ],
           "rejectExamples": [
+            { "text": "different, thats all", "why": "Picks the side but never says where he goes past the town, refusing all taxes and not just this one." },
             { "text": "yes, thats exactly what we are saying", "why": "Concedes the over-claim Mission-Slate §4.9 rejects." },
-            { "text": "different", "why": "A bare choice after the item asked where he goes past you." },
-            { "text": "we never elected parliament so the tax has no consent behind it", "why": "The universal sentence. Correct about the concept and silent on the man." },
+            { "text": "we never elected parliament so the tax has no consent behind it", "why": "The universal sentence. Correct about the concept and silent on the man and where he overshoots." },
             { "text": "hes right, taxes are theft", "why": "Concedes, in a register from a different century." }
           ]
         },
@@ -862,7 +865,7 @@
         "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
         "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1"],
         "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-        "question": "The war ended two years ago and yet the redcoats are still here. What are they still costing Britain — and what has that to do with the stamp on my paper?",
+        "question": "The war ended two years ago and yet the redcoats are still here. What are they still costing Britain, and what has that to do with the stamp on my paper?",
         "referenceAnswer": "An army kept in America still has to be paid for, on top of the debt the war already left. That is more money Britain has to raise, and the stamp is how it means to raise part of it here.",
         "rubric": {
           "rubricId": "BOS.MD01.RUBRIC.POSTWAR.STILL_HERE.v1",
@@ -891,7 +894,7 @@
         "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
         "codexCardIds": ["BOS.MD01.CARD.CONSENT_GROUND.v1"],
         "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"],
-        "question": "Two men refuse the stamp. The first says three pence is more than he can spare. The second says he never voted for the men who set it. One of them is making the town's case. Which — and what is the other one making?",
+        "question": "Two men refuse the stamp. The first says three pence is more than he can spare. The second says he never voted for the men who set it. One of them is making the town's case. Which man is it, and what is the other one making?",
         "referenceAnswer": "The second. The town's case is that the tax was laid by a body it did not elect. The first man is making a complaint about money, which is a fair complaint and is not the claim on that sheet.",
         "rubric": {
           "rubricId": "BOS.MD01.RUBRIC.REP.WHICH_MAN.v1",

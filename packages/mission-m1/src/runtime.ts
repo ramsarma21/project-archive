@@ -94,12 +94,18 @@ export function watcherPosesAtTick(
  * and no adapter. Until something binds it the container reads `?? false` and
  * every screen in the level is worth exactly nothing, which is the state this
  * function exists to end.
+ *
+ * It takes the LIVE watcher poses as a second argument now, and a caller that
+ * has them must pass them. Cover is a question about geometry between two
+ * bodies, so a watcher who has walked off his post to come and look must be
+ * measured from where he is standing; against the mark he left, a player could
+ * claim a screen from a man who is beside them.
  */
 export function coveredAtFor(
   seed: number,
   compiled?: CompiledLevel,
   level: MissionLevel = M1_EFFIGY_RUN,
-): (read: CoverRead) => boolean {
+): (read: CoverRead, livePoses?: readonly WatcherPose[]) => boolean {
   return coverPredicate(compiled ?? compileLevel(level), seed, level);
 }
 
@@ -556,7 +562,13 @@ const ASSET_BY_KEY = new Map(ASSETS.map((asset) => [asset.key, asset]));
  *
  *   SOLID    the blocker IS the wall. Base and top are both authored, and the
  *            module is drawn only as deep as its blocker so the stone a ball
- *            stops against is the stone you can see.
+ *            stops against is the stone you can see. Tiled along the run: a wall,
+ *            a fence, a rope-laying floor is a REPEAT of one section.
+ *   BLOCK    one discrete object that fills its whole blocker — a crate stack, a
+ *            loaded cart, a bale block, a tie beam. Same scale rule as SOLID but
+ *            never tiled: it is a single thing, not a run, so splitting it into
+ *            two instances only invents a seam down its middle that the support
+ *            probe then reads as a crack. Drawn as one fitted instance.
  *   CANOPY   a roof on posts. The collision is the roof; the posts stand on the
  *            street, so the module is as tall as the surface is high. Every
  *            canopy in this level stands on ground at y=0; one over a raised
@@ -581,7 +593,7 @@ const ASSET_BY_KEY = new Map(ASSETS.map((asset) => [asset.key, asset]));
  */
 export interface ModuleRun {
   naturalM: Vec3Tuple;
-  stance: "SOLID" | "CANOPY" | "WALKWAY" | "ROW";
+  stance: "SOLID" | "BLOCK" | "CANOPY" | "WALKWAY" | "ROW";
   /** WALKWAY only: real length of one module. */
   moduleLengthM?: number;
   /**
@@ -640,9 +652,12 @@ export const MODULE_RUNS: Record<string, ModuleRun> = {
     stance: "CANOPY",
   },
   // The rope-laying floor: the yard's spine, and the stage inside the ropewalk.
-  // Both are low solids the length of a run, which is what a ropewalk is.
+  // Both are low solids the length of a run, which is what a ropewalk is. Rebuilt
+  // to a closed solid bench with a flat top; naturalM is its aspect at the
+  // convention's ~1.9 longest axis, the fill taking the absolute size off each
+  // blocker.
   "ropewalk-laying-rig": {
-    naturalM: [1.898, 0.569, 0.541],
+    naturalM: [1.9, 0.28, 0.244],
     stance: "SOLID",
   },
   // The Town House gallery rail, in two lengths either side of the stair head.
@@ -659,8 +674,52 @@ export const MODULE_RUNS: Record<string, ModuleRun> = {
   // base and its top from the blocker's own top, so the beam the player ducks
   // cannot drift off the beam the player sees.
   "duck-beam-frame": {
-    naturalM: [1.899, 1.166, 0.664],
-    stance: "SOLID",
+    naturalM: [1.9, 1.247, 1.188],
+    stance: "BLOCK",
+  },
+
+  // The route-bearing cover props — crate stacks, the crate mound, the loaded
+  // carts and the lane hay. Each is drawn as one flat-topped mass FILLED into the
+  // blocker it stands for rather than contain-fitted inside it: a contain-fit
+  // takes the smallest of three ratios, so a stack whose plan aspect is not the
+  // blocker's dropped a wedge of its own footprint and the top the player lands
+  // on came up short at the edges. Filled, the blocker IS the object on all three
+  // axes — the truth of a stack of crates or a loaded cart the run lands on.
+  //
+  // naturalM is the mesh's ASPECT at the module convention's ~1.9 longest axis
+  // (the same Meshy-export scale every other run here is recorded at); the fill
+  // re-derives the absolute scale from the blocker, so only the ratios are read
+  // and the shipped mesh's own metres never enter the tiling. The heights below
+  // divide out against each blocker's own height, so the vertical scale is 1.0 at
+  // BAND.STACK / BAND.CART / the hay's 2.2m and the round cart wheels stay round;
+  // only the horizontal footprint takes up the blocker's plan.
+  "crate-stack": {
+    naturalM: [1.9, 1.641, 1.555],
+    stance: "BLOCK",
+  },
+  "crate-mound": {
+    naturalM: [1.9, 1.86, 1.9],
+    stance: "BLOCK",
+  },
+  "hand-cart": {
+    naturalM: [1.9, 0.752, 1.267],
+    stance: "BLOCK",
+  },
+  "hay-cart": {
+    naturalM: [1.9, 1.493, 1.629],
+    stance: "BLOCK",
+  },
+  // The gaol barrels: the one vault on the street line. A BLOCK, not a loose
+  // PROP, so the imported barrels FILL their collider on every axis rather than
+  // contain-fitting inside it — a contain-fit took the mesh's longest-axis ratio
+  // and drew the group barely half the 1.10m height the player actually vaults,
+  // so the thing on screen was shorter than the thing the mover reasons about.
+  // naturalM is the mesh's aspect at the ~1.9 convention, measured off the GLB's
+  // POSITION accessors (1.900 x 0.893 x 1.446 raw); the fill takes the absolute
+  // size off the blocker, which is authored 1.10m cubic.
+  "barrel-group": {
+    naturalM: [1.9, 0.893, 1.446],
+    stance: "BLOCK",
   },
 
   // ---- the terraces -----------------------------------------------------
@@ -704,10 +763,13 @@ export const MODULE_RUNS: Record<string, ModuleRun> = {
   },
   // Not a house, but the same arithmetic: a bale is a module and a stack of them
   // is a grid. The quiet way down out of the tie beam was landing on a 2.6 x 2.6m
-  // pad of hemp that drew one 74cm bundle in the middle of it.
+  // pad of hemp that drew one 74cm bundle in the middle of it; rebuilt to a
+  // solid flat-topped bale block that FILLS the bale blocker, so the landing is
+  // flat edge to edge. naturalM is the block's aspect at the convention's ~1.9
+  // longest axis.
   "cargo-net-bundle": {
-    naturalM: [1.28, 1.899, 1.067],
-    stance: "ROW",
+    naturalM: [1.9, 1.9, 1.781],
+    stance: "BLOCK",
   },
 };
 
@@ -761,7 +823,9 @@ function moduleRunPlacements(
   // on, all of the blocker.
   const across = alongX ? depth : width;
 
-  const tiles = Math.max(1, Math.round(run / moduleLength));
+  // A BLOCK is one object, not a run, so it is never split: a single instance
+  // fills the whole blocker and no seam is invented down its middle.
+  const tiles = spec.stance === "BLOCK" ? 1 : Math.max(1, Math.round(run / moduleLength));
   const tileLength = run / tiles;
   const start = alongX ? span.rect.minX : span.rect.minZ;
   const centre = alongX

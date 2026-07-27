@@ -428,7 +428,33 @@ export interface ThrowPreview {
   radiusM: number;
   /** Charges that would be left afterwards. */
   chargesAfter: number;
+  /**
+   * The object's position at each simulated tick, release point first.
+   *
+   * The ACTUAL trajectory, not a curve fit to the endpoints: the aiming UI draws
+   * a line through these, so the arc bends around the same wall and stops at the
+   * same body the live throw will, because it is the same `stepDiversion`. Empty
+   * on a refusal, where there is no flight to draw.
+   */
+  samples: readonly Vec3[];
 }
+
+/**
+ * Wall-clock spacing between kept trajectory samples. At 60Hz this is one per
+ * tick — so the drawn arc and a live 60Hz throw coincide exactly — and at higher
+ * integration rates the flight is thinned to roughly the same count, because the
+ * number of points a person needs to read an arc is a function of its DURATION,
+ * not of how finely the physics was stepped.
+ */
+const PREVIEW_SAMPLE_INTERVAL_S = 1 / 60;
+
+/**
+ * Hard ceiling on trajectory points, independent of dt. The stride already
+ * bounds a settling throw to about four seconds' worth; this is the guard that
+ * makes the bound total rather than "usually", so no dt — 60, 240, 1000Hz or
+ * finer — can allocate the millions of points a naive per-tick record would.
+ */
+const PREVIEW_MAX_SAMPLES = 256;
 
 /**
  * Where this throw would land, resolved by running the throw.
@@ -459,6 +485,7 @@ export function previewThrow(
     impactTicks: 0,
     radiusM: 0,
     chargesAfter: inventory.charges,
+    samples: [],
   };
   if (inventory.charges <= 0) return { ...empty, refusal: "NO_CHARGES" };
   const solution = solveThrow(origin, aim, tuning);
@@ -470,32 +497,54 @@ export function previewThrow(
   }
 
   let object = createDiversion("preview", solution);
+  // The trajectory the aiming UI draws through, bounded by the flight's DURATION
+  // rather than the tick rate. A sample every `stride` ticks — one per tick at
+  // 60Hz, so the display and the live 60Hz throw are identical point for point,
+  // and thinned at higher rates — keeps the count near flight-seconds ×60
+  // whether the caller integrates at 60, 240 or 1000Hz, instead of the millions
+  // a fine dt would otherwise allocate. The origin, the impact tick and the rest
+  // point are always kept, so the collision and settle shape survive the thinning.
+  const stride = Math.max(1, Math.round(PREVIEW_SAMPLE_INTERVAL_S / dt));
+  const samples: Vec3[] = [{ ...object.pos }];
+  let lastSampledTick = 0;
+  const sampleAt = (tick: number, pos: Vec3): void => {
+    if (tick === lastSampledTick || samples.length >= PREVIEW_MAX_SAMPLES) return;
+    samples.push({ ...pos });
+    lastSampledTick = tick;
+  };
   let impactTicks = 0;
   // A thrown bottle settles in well under a second of flight plus a bounce or
   // two; the bound is a guard against a pathological world, not a budget.
   const limit = Math.ceil(4 * (1 / Math.max(dt, 1e-6)));
+  const radiusM = tuning.throwImpactIntensity * tuning.noiseRadiusPerIntensityM;
   for (let tick = 0; tick < limit; tick++) {
     const step = stepDiversion(world, object, dt, tuning, actors);
     object = step.object;
-    if (impactTicks === 0 && step.noise.length > 0) impactTicks = tick + 1;
+    const here = tick + 1;
+    if (impactTicks === 0 && step.noise.length > 0) impactTicks = here;
     if (object.atRest) {
+      sampleAt(here, object.pos); // always end on the rest point
       return {
         ok: true,
         refusal: "NONE",
         restsAt: { ...object.pos },
-        impactTicks: impactTicks || tick + 1,
-        radiusM: tuning.throwImpactIntensity * tuning.noiseRadiusPerIntensityM,
+        impactTicks: impactTicks || here,
+        radiusM,
         chargesAfter: inventory.charges - 1,
+        samples,
       };
     }
+    if (impactTicks === here || here % stride === 0) sampleAt(here, object.pos);
   }
+  sampleAt(limit, object.pos); // a non-settling flight still ends on its last point
   return {
     ok: true,
     refusal: "NONE",
     restsAt: null,
     impactTicks,
-    radiusM: tuning.throwImpactIntensity * tuning.noiseRadiusPerIntensityM,
+    radiusM,
     chargesAfter: inventory.charges - 1,
+    samples,
   };
 }
 

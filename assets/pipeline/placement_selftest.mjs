@@ -43,12 +43,15 @@ import {
 } from "./placement_lib.mjs";
 import {
   DECK_MIN_PCT,
+  EDGE_NUDGE_M,
   FOOTPRINT_TOL,
   MASS_TOP_MIN_PCT,
   asPart,
+  footprintSamples,
   placeInto,
   shortfallOf,
   surveyFirstHit,
+  surveyNearPlane,
 } from "./placement_probe.mjs";
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) <= eps;
@@ -336,6 +339,88 @@ function probesTheRightPlane() {
   };
 }
 
+// ---------------------------------------------------------------------------
+// 6. a seam is not a hole
+// ---------------------------------------------------------------------------
+
+/**
+ * Defect 5. A surface drawn continuously across a seam must read 100%, and a
+ * surface that is genuinely not there must still read as missing.
+ *
+ * Both halves matter, and the second one more. The cure for the seam is a 1mm
+ * sideways retry, and a nudge is exactly the kind of fudge that quietly grows
+ * into "make everything pass" — so this states the limit as well as the fix.
+ *
+ * The fixture is the real geometry's arithmetic, not a drawing of it. Two
+ * MODULE tiles of one source, abutting at x = 12.5, over a part whose middle
+ * sample column falls exactly there: this is `rowPlacements` dividing a block
+ * into an even number of houses while the grid divides the same block inflated
+ * by its jetty. Two axis-aligned boxes butted together in world space do NOT
+ * reproduce it — the ray hits both — because the crack is not in the world
+ * bounds, which meet at 12.5 to the last bit. It is in each tile's own local
+ * frame, where the inverse transform puts the ray a fraction of a ULP outside
+ * the boundary triangle on both sides at once. Building the tiles through
+ * `placeInto` from a natural size that is not a round number is what puts that
+ * crack back, and it is why this fixture is worth its length.
+ *
+ *   continuous  both tiles, roof unbroken across the seam       -> 100%
+ *   straight    the same, cast once with no retry               -> 80%, and if
+ *               this ever reads 100% the fixture has stopped
+ *               reproducing the defect and proves nothing
+ *   gap         the right tile removed, so half of it is air    -> well under
+ *               the support gate, because a nudge cannot invent a surface
+ *   low         both tiles present but 2m below the plane       -> 0%, because
+ *               the retried ray must also land AT the plane
+ */
+function aSeamIsNotAHole(THREE) {
+  // Not round on purpose: a Meshy export normalises to roughly two units on its
+  // longest axis, and it is the resulting non-exact fill scale that cracks.
+  const natural = [1.10028791427612305, 1.89931738376617432, 1.2762901782989502];
+  const source = unitCubeSource(THREE, natural);
+  const plane = 5.6;
+  const tile = (x, y = 0) => ({ id: `T${x}`, pos: [x, y, 5.2], size: [3.5, 5.6, 4], yaw: 0, fit: "MODULE" });
+  const draw = (tiles) =>
+    tiles.flatMap((t) => placeInto(THREE, source.next(), t, natural).targets);
+
+  // The middle of five columns over 10..15 is x = 12.5, the tiles' shared edge.
+  const part = asPart({ minX: 10, maxX: 15, minZ: 4, maxZ: 6.4 }, { kind: "DECK" });
+  const survey = (targets, at = plane) =>
+    surveyNearPlane(THREE, targets, part, at, { grid: 5, tol: 0.35 });
+
+  const both = draw([tile(10.75), tile(14.25)]);
+  const continuous = survey(both);
+
+  // The same question with no retry at all, so the fixture has to demonstrate
+  // that it still reproduces what the retry is for.
+  const raycaster = new THREE.Raycaster();
+  raycaster.far = 120;
+  const down = new THREE.Vector3(0, -1, 0);
+  let straight = 0;
+  for (const [x, z] of footprintSamples(part, 5)) {
+    raycaster.set(new THREE.Vector3(x, plane + 3, z), down);
+    if (raycaster.intersectObjects(both, false).some((h) => Math.abs(h.point.y - plane) < 0.35)) {
+      straight++;
+    }
+  }
+
+  const gap = survey(draw([tile(10.75)]));
+  const low = survey(draw([tile(10.75, -2), tile(14.25, -2)]));
+
+  return {
+    ok:
+      continuous.fraction === 1 &&
+      continuous.nudged > 0 &&
+      straight < continuous.hit &&
+      gap.fraction < 0.9 &&
+      low.fraction === 0,
+    detail:
+      `continuous ${(continuous.fraction * 100).toFixed(0)}% (${continuous.nudged} of ` +
+      `${continuous.total} rescued by ${(EDGE_NUDGE_M * 1000).toFixed(0)}mm), ` +
+      `no retry ${((straight / continuous.total) * 100).toFixed(0)}%; ` +
+      `half-absent ${(gap.fraction * 100).toFixed(0)}%, 2m low ${(low.fraction * 100).toFixed(0)}%`,
+  };
+}
+
 /** Degenerate inputs must not read as complete coverage. */
 function degenerateOverlapReadsZero() {
   const apart = coveredFraction(
@@ -373,6 +458,7 @@ export function runSelfTests({ THREE }) {
     ["an exact fit and an exact run read complete", "2 transposed yaw", () => exactFitReadsComplete()],
     ["nothing counts as its own support", "3 self-support", () => nothingSupportsItself()],
     ["the probe plane follows the route", "4 wrong probe height", () => probesTheRightPlane()],
+    ["a seam reads solid and a hole does not", "5 lost edge retry", () => aSeamIsNotAHole(THREE)],
     ["disjoint footprints read zero", "the tool that passes everything", () => degenerateOverlapReadsZero()],
   ];
   return cases.map(([name, catches, run]) => {

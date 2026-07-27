@@ -8,12 +8,13 @@
 
 import type {
   Blocker,
+  ClimbVolume,
   CollisionWorld,
   Platform,
 } from "@pa/engine-world/collision";
 import { rampStrips } from "./authoring.js";
 import type { CrowdCluster } from "@pa/engine-world/stealth";
-import type { DeckSpec, MassSpec, MissionLevel } from "./types.js";
+import type { ClimbSpec, DeckSpec, MassSpec, MissionLevel } from "./types.js";
 
 function blockerFrom(mass: MassSpec): Blocker {
   const base: Blocker = {
@@ -72,6 +73,19 @@ function platformFrom(spec: DeckSpec): Platform {
   };
 }
 
+function climbVolumeFrom(spec: ClimbSpec): ClimbVolume {
+  return {
+    id: spec.id,
+    minX: spec.rect.minX,
+    maxX: spec.rect.maxX,
+    minZ: spec.rect.minZ,
+    maxZ: spec.rect.maxZ,
+    minY: spec.standMinY,
+    maxY: spec.standMaxY,
+    toSurface: spec.onto,
+  };
+}
+
 export interface CompiledLevel {
   world: CollisionWorld;
   /** Every deck including the strips a ramp expands into. */
@@ -95,6 +109,7 @@ export function compileLevel(level: MissionLevel): CompiledLevel {
       minZ: level.bounds.minZ,
       maxZ: level.bounds.maxZ,
     },
+    climbVolumes: level.climbs.map(climbVolumeFrom),
   };
 
   const massById = new Map(level.masses.map((mass) => [mass.id, mass]));

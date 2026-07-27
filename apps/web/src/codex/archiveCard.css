@@ -1,0 +1,321 @@
+/* ArchiveCard — the collectible frame shared by the Codex, PvE and PvP.
+   An original archival plate: a bevelled metallic frame in the card's category
+   colour, a provenanced period image behind a legibility scrim, a foil sheen that
+   only animates when motion is allowed, and clear selected / disabled / focus
+   states. No world geometry lives here; this is a UI/Archive surface. */
+
+.arc-card {
+  --arc-accent: #78cdff;
+  --arc-accent-deep: #1f5f8a;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: #eaf3ff;
+  border: 0;
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--arc-accent) 14%, transparent), transparent 60%),
+    linear-gradient(180deg, #0d1c2c, #060d16 70%);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--arc-accent) 22%, transparent) inset,
+    0 14px 30px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  font: inherit;
+}
+
+.arc-tile {
+  width: 100%;
+}
+.arc-full {
+  width: min(24rem, 100%);
+}
+
+/* The ornate bevelled frame, drawn as a layered border with corner accents. */
+.arc-frame {
+  position: absolute;
+  inset: 4px;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--arc-accent) 55%, #d7d2c4 20%);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5) inset,
+    0 0 14px color-mix(in srgb, var(--arc-accent) 24%, transparent) inset;
+}
+.arc-frame::before,
+.arc-frame::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--arc-accent);
+  opacity: 0.85;
+}
+.arc-frame::before {
+  top: -1px;
+  left: -1px;
+  border-right: 0;
+  border-bottom: 0;
+  border-top-left-radius: 10px;
+}
+.arc-frame::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: 0;
+  border-top: 0;
+  border-bottom-right-radius: 10px;
+}
+
+/* Foil sheen. A diagonal highlight that drifts across the card on hover, and is
+   held still for a player who has asked for reduced motion. */
+.arc-foil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    color-mix(in srgb, var(--arc-accent) 26%, transparent) 45%,
+    rgba(255, 255, 255, 0.16) 50%,
+    color-mix(in srgb, var(--arc-accent) 26%, transparent) 55%,
+    transparent 70%
+  );
+  background-size: 300% 300%;
+  background-position: 0% 0%;
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.arc-card.is-interactive:hover .arc-foil,
+.arc-card.is-interactive:focus-visible .arc-foil {
+  opacity: 0.9;
+  animation: arc-foil-drift 1.6s ease-in-out infinite alternate;
+}
+.arc-card.is-reduced .arc-foil {
+  animation: none !important;
+}
+
+.arc-top {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.7rem 0.35rem;
+}
+.arc-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--arc-accent) 78%, #ffffff 22%);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--arc-accent) 40%, transparent);
+}
+.arc-glyph {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.arc-date {
+  flex: none;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: rgba(206, 224, 240, 0.72);
+  font-variant-numeric: tabular-nums;
+}
+
+.arc-art {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #05101c;
+}
+.arc-full .arc-art {
+  aspect-ratio: 4 / 3;
+}
+.arc-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.92) contrast(1.02);
+}
+.arc-art-fallback {
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--arc-accent) 12%, transparent) 0 8px,
+      transparent 8px 16px
+    ),
+    linear-gradient(160deg, #0f2233, #08131f);
+}
+.arc-art-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(4, 10, 18, 0.05) 40%, rgba(4, 10, 18, 0.85));
+}
+
+.arc-body {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.55rem 0.7rem 0.35rem;
+  flex: 1 1 auto;
+}
+.arc-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.arc-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1.15;
+  color: #f4faff;
+}
+.arc-full .arc-title {
+  font-size: 1.18rem;
+}
+.arc-chip-slot {
+  flex: none;
+}
+.arc-perspective {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--arc-accent) 70%, #cfe6ff 30%);
+}
+.arc-claim {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(224, 238, 252, 0.9);
+}
+.arc-tile .arc-claim {
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.arc-foot {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.7rem 0.6rem;
+  border-top: 1px solid color-mix(in srgb, var(--arc-accent) 16%, transparent);
+  margin-top: auto;
+}
+.arc-source {
+  font-size: 0.56rem;
+  font-style: italic;
+  color: rgba(180, 202, 222, 0.7);
+  line-height: 1.2;
+}
+.arc-footnote {
+  flex: none;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--arc-accent) 80%, #ffffff 20%);
+}
+
+/* ---- interactive & states ------------------------------------------------- */
+
+.arc-card.is-interactive {
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.arc-card.is-interactive:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--arc-accent) 30%, transparent) inset,
+    0 18px 38px rgba(0, 0, 0, 0.55);
+}
+.arc-card.is-reduced.is-interactive:hover {
+  transform: none;
+}
+.arc-card.is-interactive:focus-visible {
+  outline: none;
+}
+.arc-card.is-interactive:focus-visible .arc-frame {
+  border-color: #ffffff;
+  box-shadow:
+    0 0 0 2px #04101d,
+    0 0 0 4px var(--arc-accent),
+    0 0 18px color-mix(in srgb, var(--arc-accent) 45%, transparent) inset;
+}
+
+.arc-card.is-selected .arc-frame {
+  border-color: var(--arc-accent);
+  box-shadow:
+    0 0 0 2px var(--arc-accent) inset,
+    0 0 22px color-mix(in srgb, var(--arc-accent) 55%, transparent);
+}
+.arc-card.is-selected {
+  box-shadow:
+    0 0 0 1px var(--arc-accent),
+    0 16px 34px rgba(0, 0, 0, 0.55),
+    0 0 26px color-mix(in srgb, var(--arc-accent) 30%, transparent);
+}
+/* A selected card carries a corner tick, so selection is not colour-only. */
+.arc-card.is-selected::after {
+  content: "✓";
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  right: 8px;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  border-radius: 50%;
+  color: #04101d;
+  background: var(--arc-accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--arc-accent) 60%, transparent);
+}
+
+.arc-card.is-disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.5) brightness(0.7);
+  opacity: 0.72;
+}
+.arc-card.is-disabled .arc-foil {
+  display: none;
+}
+
+@keyframes arc-foil-drift {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 100% 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arc-foil {
+    animation: none !important;
+  }
+  .arc-card.is-interactive:hover {
+    transform: none;
+  }
+}

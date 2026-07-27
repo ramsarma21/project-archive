@@ -26,19 +26,15 @@ import {
   BULLETS_FOR_WRONG,
   FACE_OFF_TICKS,
   FIELD_DT,
-  bossProfileForTier,
   duelCommitLog,
   mintVerdict,
   projectFieldSeed,
+  type BossProfile,
   type DuelEvent,
+  type OpponentSource,
   type VerdictKind,
 } from "@pa/duel";
-import {
-  ARENA,
-  arenaPlacement,
-  arenaWorld,
-  duelQuestionsForAttempt,
-} from "@pa/mission-m1";
+import { ARENA, arenaWorld } from "@pa/mission-m1";
 
 import {
   clearDuelView,
@@ -46,7 +42,8 @@ import {
   duelView,
   type MissionDuelBrief,
 } from "../src/mission/duelPort.js";
-import { M1_MISSION_ID } from "../src/chapter/m1Mission.js";
+import { M1_MISSION_ID, duelBrief } from "../src/chapter/m1Mission.js";
+import { roundAmmoSources } from "@pa/duel";
 import { OFFICER_RIG, PLAYER_RIG } from "../src/duel/m1Duel.js";
 import {
   missionCast,
@@ -68,23 +65,14 @@ const SEED = projectFieldSeed(["MISSION.DUEL.TEST"]);
  * that mattered.
  */
 function missionBrief(attemptOrdinal = 1): MissionDuelBrief {
-  return {
-    duelId: `PA.SEA01.CH02.BOSTON.MD01.EFFIGY_RUN#duel@${attemptOrdinal}`,
-    seed: SEED,
-    rounds: ARENA.rounds,
-    world: arenaWorld(),
-    opponent: {
-      kind: "BOSS",
-      profile: bossProfileForTier(1, "BOS.MD01.BOSS.CONSTABLE"),
-    },
-    questions: duelQuestionsForAttempt(SEED, attemptOrdinal),
-    placement: arenaPlacement(),
-    conceptIds: [
-      "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "BOS.CONCEPT.REPRESENTATION.v1",
-    ],
-  };
+  // THE PRODUCTION BRIEF, not a restatement of it. This used to hand-copy every
+  // field — including `opponent`, where it built a default (AUTHORED_FLAT) boss
+  // rather than the mission's real SYMMETRIC_COMPLEMENT one. Because nothing here
+  // asserted on the boss's ammo policy and the player's 7/14 report is identical
+  // under both, the copy silently disagreed with the mission for as long as it
+  // stood: a wrong answer never armed the boss, and this suite was green through
+  // it. Binding to `duelBrief` is what makes that class of drift impossible.
+  return duelBrief(SEED, attemptOrdinal);
 }
 
 // ---- the registration ------------------------------------------------------
@@ -140,6 +128,39 @@ test("the descriptor carries the brief's simulation input unaltered", () => {
   assert.equal(descriptor.arena.placement, brief.placement);
   assert.equal(descriptor.opponent, brief.opponent);
   assert.equal(descriptor.questionBank, brief.questions);
+});
+
+test("the mission boss is the symmetric-complement officer, and a wrong answer arms HIM", () => {
+  // THE REGRESSION THIS FILE MISSED. The complement rule — correct arms the player
+  // 14 and the boss 7, wrong arms the player 7 and the boss 14 — landed in the core
+  // and in the stand-alone m1Duel.ts descriptor, but the real mission path
+  // (duelBrief) kept building a default AUTHORED_FLAT boss, so in the fight a player
+  // actually fought the officer was armed with a flat 7 every round and a wrong
+  // answer never armed the enemy. The player's own 7/14 is identical under both
+  // policies, which is why every existing report test stayed green through it. So
+  // this asserts the BOSS half, off the production brief.
+  const brief = missionBrief();
+  const opponent = brief.opponent as OpponentSource;
+  assert.equal(opponent.kind, "BOSS");
+  const profile = (opponent as { profile: BossProfile }).profile;
+  assert.equal(
+    profile.ammoPolicy,
+    "SYMMETRIC_COMPLEMENT",
+    "the mission officer must earn the mirror of the player's award, not a flat magazine",
+  );
+
+  // Driven through the core's own award, off a committed verdict — not asserted
+  // about a constant. A wrong answer arms the boss 14; a correct one, 7.
+  const config = { opponent } as Parameters<typeof roundAmmoSources>[0];
+  const bossFor = (kind: VerdictKind) =>
+    roundAmmoSources(config, [
+      {
+        side: "A",
+        verdict: mintVerdict({ kind, itemId: "X", itemVersion: "v1", source: "CLASSIFIER" }),
+      },
+    ]).B;
+  assert.deepEqual(bossFor("WRONG"), { kind: "AUTHORED", bullets: BULLETS_FOR_CORRECT });
+  assert.deepEqual(bossFor("CORRECT"), { kind: "AUTHORED", bullets: BULLETS_FOR_WRONG });
 });
 
 test("the mission's arena is not recentred on the way through", () => {

@@ -2,7 +2,6 @@ import type { MissionAttempt, XpFraction } from "@pa/contracts";
 import {
   postModuleCompletion,
   postOpenMissionAttempt,
-  pullProgression,
   type ProgressionCallResult,
 } from "../api.js";
 import type { ModuleRunCompletion } from "../module/moduleGate.js";
@@ -45,6 +44,13 @@ export type AuthorizationRefusal =
   | "MISSION_LOCKED"
   /** The chapter has no authored reward or curve yet, so it cannot be priced. */
   | "CONTENT_MISSING"
+  /**
+   * A run left open by an earlier session is still open server-side. It is NOT
+   * resumed into this fresh runtime — that was the unlimited-replay bug — so the
+   * only way forward is to forfeit it, which spends the attempt honestly and lets
+   * the next one open. The hub surfaces this from `snapshot.openAttempt`.
+   */
+  | "ATTEMPT_INTERRUPTED"
   | "REFUSED";
 
 export interface AttemptAuthorization {
@@ -57,8 +63,6 @@ export interface AttemptAuthorization {
   readonly moduleCompletedAt: string;
   /** Stamped at open time. Display only — the payout is recomputed anyway. */
   readonly xpFraction: XpFraction;
-  /** True when a run left open by an earlier session was picked back up. */
-  readonly resumed: boolean;
   /**
    * False when the container's locally-derived ordinal disagreed with the
    * server's. Always the server's that is used; this exists so a hub showing
@@ -102,7 +106,6 @@ function refusalFor(result: ProgressionCallResult<unknown>): AuthorizationResult
 function authorizationFrom(input: {
   attempt: MissionAttempt;
   expectedOrdinal: number;
-  resumed: boolean;
 }): AttemptAuthorization {
   return {
     attemptId: input.attempt.attemptId,
@@ -111,7 +114,6 @@ function authorizationFrom(input: {
     moduleId: input.attempt.moduleId,
     moduleCompletedAt: input.attempt.moduleCompletedAt,
     xpFraction: input.attempt.xpFraction,
-    resumed: input.resumed,
     clientOrdinalMatched: input.attempt.attemptOrdinal === input.expectedOrdinal,
   };
 }
@@ -170,38 +172,22 @@ export async function authorizeAttempt(
       authorization: authorizationFrom({
         attempt: opened.value,
         expectedOrdinal: completion.attemptOrdinal,
-        resumed: false,
       }),
     };
   }
 
   // A run this profile never finished is still open — the tab was closed mid
-  // mission, or the network died and the page was reloaded. The right move is
-  // to hand back the attempt they are already inside rather than refuse them
-  // the mission forever: the attempt is spent either way, and its ordinal and
-  // fraction are already fixed, so resuming it costs nothing and abandoning
-  // them to a permanent ATTEMPT_ALREADY_OPEN costs the mission.
+  // mission, or the network died and the page was reloaded. It is NOT resumed
+  // into this fresh runtime: the runtime restarts from the top while the durable
+  // attempt keeps its progress, so handing the row back to a new runtime is the
+  // unlimited-replay bug (reload, get the losing attempt back, forever). One live
+  // run at a time, and the only way past an interrupted one is to forfeit it —
+  // which the hub offers off `snapshot.openAttempt`, spending the attempt honestly.
   if (opened.status === "REFUSED" && opened.error === "ATTEMPT_ALREADY_OPEN") {
-    const snapshot = await pullProgression(profileId);
-    const live = snapshot.status === "OK" ? snapshot.value.openAttempt : null;
-    if (live && live.missionId === completion.missionId) {
-      return {
-        ok: true,
-        authorization: authorizationFrom({
-          attempt: live,
-          expectedOrdinal: completion.attemptOrdinal,
-          resumed: true,
-        }),
-      };
-    }
-    // Open on a DIFFERENT mission. One live run at a time is the rule; the
-    // player finishes or abandons that one first.
     return {
       ok: false,
-      reason: "REFUSED",
-      detail: live
-        ? `an attempt on ${live.missionId} is still open`
-        : "ATTEMPT_ALREADY_OPEN",
+      reason: "ATTEMPT_INTERRUPTED",
+      detail: "an attempt is still open; forfeit it to retry",
     };
   }
 

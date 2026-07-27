@@ -13,10 +13,14 @@ export * from "./compile.js";
 export * from "./cover.js";
 export * from "./traversal.js";
 export * from "./routeGraph.js";
+export * from "./wayfind.js";
 export * from "./stealth.js";
 export * from "./pacing.js";
 export * from "./runtime.js";
 export * from "./duelBrief.js";
+export * from "./duelCodex.js";
+export * from "./duelEvidence.js";
+export * from "./encounters/index.js";
 export { M1_EFFIGY_RUN, SECTIONS } from "./level/index.js";
 export {
   GEOMETRY,

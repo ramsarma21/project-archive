@@ -41,6 +41,8 @@ import {
 } from "@pa/grading";
 import type { PvpRouteOptions } from "../routes/pvp.js";
 import { pvpItemBank } from "./questionPool.js";
+import { GradingSignal } from "../duels/gradingSignal.js";
+import { combineWithEvidence } from "../duels/grading.js";
 
 /**
  * @pa/duel's source vocabulary, restated as a runtime set.
@@ -94,6 +96,38 @@ export interface PvpGradingHealth {
 export interface PvpGrading
   extends Pick<PvpRouteOptions, "verifyReceipt" | "gradeAnswer"> {
   readonly health: PvpGradingHealth;
+  /**
+   * The rolling grading-fallback signal PvP rounds are recorded into, and the thing
+   * that makes an outage in a ranked duel VISIBLE rather than a class of geniuses.
+   * Every PvP round records into it, so /v1/health can report the fallback rate for
+   * duels as well as boss fights. Shared with the duel's own signal when app.ts
+   * injects it (see `createPvpGrading`'s `signal` option); its own otherwise.
+   */
+  readonly signal: GradingSignal;
+}
+
+export interface PvpGradingOptions {
+  /**
+   * A grading signal to record PvP rounds into, so PvP CONTRIBUTES TO THE SHARED
+   * HEALTH DIAGNOSTICS instead of keeping a private count that /v1/health cannot see.
+   *
+   * THE EXACT app.ts WIRING THIS REQUIRES (integration owns app.ts; this is the
+   * requirement stated precisely so it can be applied without guesswork):
+   *
+   *   const duelGrading = createDuelGrading(app.log);
+   *   // …register duel routes as today…
+   *   await registerPvpRoutes(app, {
+   *     ...createPvpGrading(app.log, { signal: duelGrading.signal }),
+   *     masteredConcepts,
+   *   });
+   *
+   * Passing `duelGrading.signal` folds PvP rounds into the SAME rolling rate the boss
+   * duel already reports on `/v1/health.grading`, so a grading outage during a ranked
+   * PvP duel is visible on the endpoint the load balancer and the projector both
+   * read. Left unset (as today), PvP builds its own signal and reports it on `signal`,
+   * but that private signal is not surfaced on `/v1/health` until app.ts shares one.
+   */
+  readonly signal?: GradingSignal;
 }
 
 /**
@@ -103,7 +137,10 @@ export interface PvpGrading
  * sides of the mint/verify pair, which is what stops a CORRECT from round one
  * being replayed at round six, lifted into another match, or used by the opponent.
  */
-export function createPvpGrading(logger: FastifyBaseLogger): PvpGrading {
+export function createPvpGrading(
+  logger: FastifyBaseLogger,
+  options: PvpGradingOptions = {},
+): PvpGrading {
   // The PvP bank, not `m1ItemBank()`: an open-ended duel draws from a pool wider
   // than the six-round PvE rotation, and every item in that pool has to be
   // gradable. `eligiblePvpItems` intersects the draw with exactly this bank, so
@@ -129,6 +166,11 @@ export function createPvpGrading(logger: FastifyBaseLogger): PvpGrading {
     lowConfidence: new MemoryLowConfidenceLedger(),
   });
 
+  // Its own by default, the duel's when app.ts shares one. Either way every PvP
+  // round is recorded, so a grading outage during a ranked duel shows up in the
+  // same rate a boss fight's rounds do rather than being invisible.
+  const signal = options.signal ?? new GradingSignal({ configured });
+
   return {
     verifyReceipt: (envelope, binding, receipt) => {
       const narrowed = narrowEnvelope(envelope);
@@ -152,7 +194,27 @@ export function createPvpGrading(logger: FastifyBaseLogger): PvpGrading {
         roundIndex: input.roundIndex,
         responseRef: null,
       });
-      const envelope = verdictEnvelope(verdict);
+      // Recorded on every round, not just the failures: the denominator is what makes
+      // "granted without grading" a rate rather than a count, and a fallback count
+      // without a round count cannot tell a bad minute from a dead gateway.
+      signal.record(logger, {
+        profileId: input.profileId,
+        duelId: input.matchId,
+        roundIndex: input.roundIndex,
+        itemId: input.itemId,
+        path: verdict.provenance.path,
+        latencyMs: verdict.provenance.latencyMs,
+        fallbackReason: verdict.provenance.fallbackReason,
+        fallbackDiagnosis: verdict.provenance.fallbackDiagnosis,
+        fallbackStatus: verdict.provenance.fallbackStatus,
+      });
+      // Prose AND evidence, combined exactly as the boss duel does: a CLASSIFIER
+      // CORRECT with unsatisfied evidence becomes WRONG before the receipt is minted;
+      // a generous grant is never downgraded.
+      const envelope = combineWithEvidence(
+        verdictEnvelope(verdict),
+        input.evidenceSatisfied,
+      );
       return {
         envelope,
         receipt: mintVerdictReceipt(
@@ -166,6 +228,7 @@ export function createPvpGrading(logger: FastifyBaseLogger): PvpGrading {
         ),
       };
     },
+    signal,
     health: {
       configured,
       model: configured ? gradingModel() : null,

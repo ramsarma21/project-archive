@@ -19,7 +19,7 @@ import {
   parseHandle,
 } from "../handles.js";
 import { leaderboard, newStandingRecord } from "../standing.js";
-import { advanceUntil, answerRound, askedEnvelope, expectedReceipt, liveMatch } from "./harness.js";
+import { advanceUntil, askedEnvelope, expectedReceipt, liveMatch } from "./harness.js";
 
 test("a handle cannot carry a message, because it cannot carry free text", () => {
   // The validator is an enumeration, not a filter: there is no clever spelling that
@@ -143,79 +143,184 @@ test("while a player is answering, the opponent learns only that they are", () =
   const asking = advanceUntil(fixture.authority, (a) => a.state.phase === "QUESTION_PENDING");
   const view = snapshotsFor(asking).A.opponent;
   assert.equal(view.answering, true);
-  // No timing detail beyond the boolean, no progress, no keystroke count.
+  // No timing detail beyond the boolean, no progress, no keystroke count. Aim,
+  // velocity and dash are gameplay pose (LOS-gated), never identity or answer detail.
   assert.deepEqual(Object.keys(view).sort(), [
+    "aimYaw",
     "ammo",
     "answering",
     "capsuleHeight",
+    "dashing",
     "handle",
     "health",
     "position",
     "positionAtTick",
     "rank",
     "side",
+    "velocity",
     "visible",
   ]);
 });
 
-test("an opponent behind cover is not in the snapshot at all", () => {
+test("an opponent behind cover is not in the snapshot, and its live position is withheld", () => {
   // A wallhack is a rendering of data the client should not have. The fix is to not
   // send it: while line of sight is broken the client keeps a stale ghost, which is
   // exactly what an honest client would draw anyway.
+  //
+  // The occlusion is FORCED with an authored full-height wall between the two bodies
+  // rather than left to the reference arena's geometry happening to block a chosen
+  // pair of coordinates. The previous version of this test branched on
+  // `opponent.visible` and, when the arena left them in view, asserted the trivially
+  // true opposite — so it went green while proving nothing about hiding a position.
   const fixture = liveMatch();
-  fixture.authority = advanceUntil(
+  const live = advanceUntil(
     fixture.authority,
     (a) => a.state.phase === "QUESTION_PENDING",
   );
-  fixture.authority = answerRound(fixture, { A: "CORRECT", B: "CORRECT" });
-  const live = advanceUntil(fixture.authority, (a) => a.state.phase === "ENGAGEMENT_LIVE");
 
-  // Put B behind the arena's chest-high pillar, out of A's sight.
-  const hidden = {
-    ...live,
-    state: {
-      ...live.state,
-      combat: {
-        ...live.state.combat,
-        fighters: {
-          ...live.state.combat.fighters,
-          A: {
-            ...live.state.combat.fighters.A,
-            motion: { ...live.state.combat.fighters.A.motion, pos: { x: -8, y: 0, z: 0 } },
-          },
-          B: {
-            ...live.state.combat.fighters.B,
-            motion: { ...live.state.combat.fighters.B.motion, pos: { x: 0.5, y: 0, z: 0 } },
-          },
+  // A wall straddling the z-axis, tall enough to block an eye-height sightline, wide
+  // enough that a straight segment between the two bodies must pass through it.
+  const wall = {
+    id: "test-occluder",
+    minX: -1,
+    maxX: 1,
+    minZ: -20,
+    maxZ: 20,
+    baseY: 0,
+    topY: Number.POSITIVE_INFINITY,
+    landable: false,
+    tags: new Set<string>(),
+  };
+  const world = { ...live.world, blockers: [...live.world.blockers, wall] };
+
+  const aPos = { x: -8, y: 0, z: 0 };
+  const seenPos = { x: -3, y: 0, z: 0 }; // where A last legitimately saw B — same side
+  const livePos = { x: 12.5, y: 0, z: -7.25 }; // where B actually is now — behind the wall
+  const place = (bPos: { x: number; y: number; z: number }) => ({
+    ...live.state,
+    combat: {
+      ...live.state.combat,
+      fighters: {
+        ...live.state.combat.fighters,
+        A: {
+          ...live.state.combat.fighters.A,
+          motion: { ...live.state.combat.fighters.A.motion, pos: aPos },
+        },
+        B: {
+          ...live.state.combat.fighters.B,
+          motion: { ...live.state.combat.fighters.B.motion, pos: bPos },
         },
       },
     },
-  } as typeof live;
+  });
 
-  const lastKnown = initialLastKnown(hidden.state.combat);
-  const refreshed = updateLastKnown(hidden.world, hidden.state.combat, lastKnown);
+  // A's memory is seeded with B at the seen position, then B slips behind the wall.
+  const remembered = initialLastKnown(place(seenPos).combat);
+  const hiddenState = place(livePos);
+  const lastKnown = updateLastKnown(world, hiddenState.combat, remembered);
+
   const snapshot = projectSnapshotFor("A", {
-    matchId: hidden.identity.matchId,
-    state: hidden.state,
-    world: hidden.world,
-    lastKnown: refreshed,
+    matchId: "m",
+    state: hiddenState,
+    world,
+    lastKnown,
     handles: { A: "QuietLantern-1234", B: "SwiftKestrel-5678" },
     ranks: { A: 1, B: 1 },
     awaiting: [],
   });
 
-  if (!snapshot.opponent.visible) {
-    assert.notDeepEqual(
-      snapshot.opponent.position,
-      hidden.state.combat.fighters.B.motion.pos,
-      "an unseen opponent's live position must not be transmitted",
-    );
-  } else {
-    // If the arena's geometry leaves them visible, the invariant under test is that
-    // visibility and the transmitted position agree — which it does by construction.
-    assert.deepEqual(
-      snapshot.opponent.position,
-      hidden.state.combat.fighters.B.motion.pos,
-    );
+  assert.equal(
+    snapshot.opponent.visible,
+    false,
+    "the wall must break line of sight",
+  );
+  // The withheld thing, asserted directly: B's LIVE position is nowhere in what A is
+  // handed, and the stale ghost is what stands in for it.
+  assert.notDeepEqual(
+    snapshot.opponent.position,
+    livePos,
+    "an unseen opponent's live position must not be transmitted",
+  );
+  assert.deepEqual(snapshot.opponent.position, seenPos, "only the last-seen ghost");
+  const json = JSON.stringify(snapshot);
+  assert.equal(json.includes("12.5"), false, "B's live x must not appear anywhere");
+  assert.equal(json.includes("-7.25"), false, "B's live z must not appear anywhere");
+});
+
+test("opponent aim, velocity and dash are snapshot-backed and freeze with the position", () => {
+  const fixture = liveMatch();
+  const base = advanceUntil(fixture.authority, (a) => a.state.phase === "QUESTION_PENDING");
+
+  // A distinctive remembered pose — nothing like the live fighter's — so a frozen
+  // read is unmistakable from a live one.
+  const frozen = {
+    position: { x: -3, y: 0, z: 0 },
+    velocity: { x: 5, z: 6 },
+    aimYaw: 1.234,
+    dashing: true,
+    capsuleHeight: base.state.combat.fighters.B.motion.capsuleHeight,
+    tick: 0,
+  };
+
+  // Visible: aim/velocity/dash come from the LIVE body.
+  const seen = projectSnapshotFor("A", {
+    matchId: "m",
+    state: base.state,
+    world: base.world,
+    lastKnown: { A: frozen, B: frozen },
+    handles: { A: "QuietLantern-1234", B: "SwiftKestrel-5678" },
+    ranks: { A: 1, B: 1 },
+    awaiting: [],
+  });
+  const liveB = base.state.combat.fighters.B;
+  if (seen.opponent.visible) {
+    assert.equal(seen.opponent.aimYaw, Math.atan2(liveB.aimX, liveB.aimZ), "live aim");
+    assert.equal(seen.opponent.dashing, liveB.motion.dash !== null, "live dash");
+    assert.notEqual(seen.opponent.aimYaw, frozen.aimYaw, "not the frozen aim while seen");
   }
+
+  // Hidden behind a wall: aim/velocity/dash ALL come from the frozen record, together.
+  const wall = {
+    id: "occ",
+    minX: -1,
+    maxX: 1,
+    minZ: -20,
+    maxZ: 20,
+    baseY: 0,
+    topY: Number.POSITIVE_INFINITY,
+    landable: false,
+    tags: new Set<string>(),
+  };
+  const world = { ...base.world, blockers: [...base.world.blockers, wall] };
+  const place = (bPos: { x: number; y: number; z: number }) => ({
+    ...base.state,
+    combat: {
+      ...base.state.combat,
+      fighters: {
+        ...base.state.combat.fighters,
+        A: {
+          ...base.state.combat.fighters.A,
+          motion: { ...base.state.combat.fighters.A.motion, pos: { x: -8, y: 0, z: 0 } },
+        },
+        B: {
+          ...base.state.combat.fighters.B,
+          motion: { ...base.state.combat.fighters.B.motion, pos: bPos },
+        },
+      },
+    },
+  });
+  const hidden = projectSnapshotFor("A", {
+    matchId: "m",
+    state: place({ x: 12.5, y: 0, z: -7.25 }),
+    world,
+    lastKnown: { A: frozen, B: frozen },
+    handles: { A: "QuietLantern-1234", B: "SwiftKestrel-5678" },
+    ranks: { A: 1, B: 1 },
+    awaiting: [],
+  });
+  assert.equal(hidden.opponent.visible, false, "the wall breaks the sight line");
+  assert.equal(hidden.opponent.aimYaw, frozen.aimYaw, "aim frozen with the position");
+  assert.deepEqual(hidden.opponent.velocity, frozen.velocity, "velocity frozen too");
+  assert.equal(hidden.opponent.dashing, frozen.dashing, "dash frozen too");
+  assert.deepEqual(hidden.opponent.position, frozen.position, "and the position itself");
 });

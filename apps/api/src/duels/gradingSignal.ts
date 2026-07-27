@@ -59,6 +59,7 @@
 import type { FastifyBaseLogger } from "fastify";
 import {
   FALLBACK_DIAGNOSIS_ADVICE,
+  isTimeoutDiagnosis,
   type FallbackDiagnosis,
   type FallbackReason,
   type VerdictPath,
@@ -181,6 +182,8 @@ export class GradingSignal {
   private readonly gradeable: number[] = [];
   private readonly classified: number[] = [];
   private readonly ungraded: number[] = [];
+  /** The subset of ungraded rounds that cannot be explained by a slow model. */
+  private readonly hardFaults: number[] = [];
   private roundsSinceBoot = 0;
   private classifiedSinceBoot = 0;
   private ungradedSinceBoot = 0;
@@ -241,6 +244,9 @@ export class GradingSignal {
       this.ungraded.push(at);
       this.ungradedSinceBoot += 1;
       this.lastUngradedAt = at;
+      if (diagnosis !== null && !isTimeoutDiagnosis(diagnosis)) {
+        this.hardFaults.push(at);
+      }
       this.byReason.set(
         round.fallbackReason as string,
         (this.byReason.get(round.fallbackReason as string) ?? 0) + 1,
@@ -257,10 +263,21 @@ export class GradingSignal {
     // The metric line. Emitted at info so it is not mistaken for a problem on its
     // own — one fallback is a slow model call, not an outage — and so a healthy
     // lesson still produces the denominator.
+    //
+    // `graded` IS THE DENOMINATOR AND IT IS THE GRADEABLE COUNT, NOT THE ROUND
+    // COUNT. CloudWatch sums this field for the rate's denominator
+    // (`infra/lib/project-archive-stack.ts`), and /v1/health divides by
+    // `gradeableInWindow`; the two are the same number only if a pre-check is
+    // excluded from both. It is excluded from the snapshot's denominator above,
+    // so it is emitted as 0 here as well — otherwise the same seven-round duel
+    // that reads 100% ungraded on /v1/health reads 86% on the alarm, and the two
+    // readers of the identical event disagree about whether grading is down. The
+    // line is still written for a pre-check (it is a real round, and the metric
+    // filter matches it), it just contributes 0 to numerator and denominator.
     logger.info(
       {
         paMetric: GRADING_METRIC_MARKER,
-        graded: 1,
+        graded: gradeable ? 1 : 0,
         fallback: ungraded ? 1 : 0,
         path: round.path,
         reason: round.fallbackReason,
@@ -283,6 +300,7 @@ export class GradingSignal {
         : "duel grading: graded",
     );
 
+    if (ungraded) this.announce(diagnosis, round.fallbackStatus ?? null);
     this.escalate(logger, snapshot, at);
   }
 
@@ -290,43 +308,138 @@ export class GradingSignal {
     const at = this.now();
     this.prune(at);
     const roundsInWindow = this.rounds.length;
+    const gradeableInWindow = this.gradeable.length;
+    const classifiedInWindow = this.classified.length;
     const ungradedInWindow = this.ungraded.length;
     const percent =
-      roundsInWindow >= MIN_ROUNDS_FOR_RATE
-        ? Math.round((ungradedInWindow / roundsInWindow) * 100)
+      gradeableInWindow >= MIN_ROUNDS_FOR_RATE
+        ? Math.round((ungradedInWindow / gradeableInWindow) * 100)
         : null;
     const threshold = alertPercent();
+    const status = this.status(
+      percent,
+      threshold,
+      classifiedInWindow,
+      this.hardFaults.length,
+    );
     return {
-      status: this.status(percent, threshold),
+      status,
       configured: this.configured,
       windowMinutes: WINDOW_MS / 60_000,
       roundsInWindow,
+      gradeableInWindow,
+      classifiedInWindow,
       ungradedInWindow,
       ungradedPercent: percent,
       alertPercent: threshold,
       roundsSinceBoot: this.roundsSinceBoot,
+      classifiedSinceBoot: this.classifiedSinceBoot,
       ungradedSinceBoot: this.ungradedSinceBoot,
       lastUngradedAt:
         this.lastUngradedAt === null
           ? null
           : new Date(this.lastUngradedAt).toISOString(),
       ungradedByReason: Object.fromEntries(this.byReason),
+      ungradedByDiagnosis: Object.fromEntries(this.byDiagnosis),
+      advice: status === "OK" ? null : this.advice(),
     };
   }
 
   private status(
     percent: number | null,
     threshold: number,
+    classifiedInWindow: number,
+    hardFaultsInWindow: number,
   ): GradingSignalStatus {
     // Known at boot and true of every round: no credential means no grading, and
     // this must not wait for a window to fill before saying so.
     if (!this.configured) return "UNGRADED";
+    // A CONNECTIVITY OR CONFIGURATION FAULT IS A FACT, NOT A RATE, so it does not
+    // wait for MIN_ROUNDS_FOR_RATE. A refused credential refuses the next round
+    // too, and an unreachable gateway stays unreachable; one is as conclusive as
+    // a hundred. Only a DEADLINE_EXCEEDED is genuinely a rate question — a slow
+    // model call or a closed laptop lid is one round, not an outage — and that is
+    // the distinction `hardFaults` draws. Without this, a four-round duel against
+    // a dead gateway reported OK, because three ungraded rounds is under the
+    // minimum sample: measured, and the reason this clause exists.
+    if (hardFaultsInWindow > 0 && classifiedInWindow === 0) return "UNGRADED";
     if (percent === null) return "OK";
-    if (percent >= 100) return "UNGRADED";
+    // AT OR ABOVE THE THRESHOLD WITH NOTHING CLASSIFIED IS UNGRADED, NOT
+    // DEGRADED, and the second clause is why this is not just `percent >= 100`. A
+    // rate of 86% with zero classifications is not "mostly broken" — it is
+    // entirely broken with a pre-check in the sample, which is exactly the
+    // measured state that reported DEGRADED while no answer had been read.
+    if (percent >= 100 || classifiedInWindow === 0) return "UNGRADED";
     // A threshold of 0 disables the log escalation; it must not make every
     // healthy lesson read as DEGRADED.
     if (threshold > 0 && percent >= threshold) return "DEGRADED";
     return "OK";
+  }
+
+  /** The advice for the most frequent diagnosis, or for a missing credential. */
+  private advice(): string {
+    if (!this.configured) return FALLBACK_DIAGNOSIS_ADVICE.NO_CREDENTIAL;
+    let worst: string | null = null;
+    let count = 0;
+    for (const [diagnosis, seen] of this.byDiagnosis) {
+      if (seen > count) {
+        worst = diagnosis;
+        count = seen;
+      }
+    }
+    const advice =
+      worst === null
+        ? undefined
+        : FALLBACK_DIAGNOSIS_ADVICE[worst as FallbackDiagnosis];
+    return advice ?? "some rounds were granted without being graded.";
+  }
+
+  /**
+   * Say it on the console, on the FIRST ungraded round, once per cause.
+   *
+   * WHY THIS DOES NOT GO THROUGH THE LOGGER. `apps/api/src/app.ts` builds Fastify
+   * with `logger: process.env.NODE_ENV === "production"`, so on a laptop
+   * `app.log` is a no-op. Every other signal in this file — the per-round metric
+   * line, the once-a-minute escalation, @pa/grading's review log, and the
+   * "no classifier credential" warning at boot — is written through it, which
+   * means the entire apparatus for making this condition visible was silent in
+   * exactly the environment where somebody is sitting in front of it. A duel was
+   * played through with every round granted the maximum and nothing on the
+   * console said so.
+   *
+   * It is also NOT rate-limited by time and NOT gated on the window filling. The
+   * escalation waits for MIN_ROUNDS_FOR_RATE rounds and a threshold crossing,
+   * which is correct for an alarm and useless for a person who is about to
+   * conclude from round one that grading works.
+   */
+  private announce(
+    diagnosis: FallbackDiagnosis | null,
+    status: number | null,
+  ): void {
+    if (!this.announceToConsole) return;
+    const key = `${diagnosis ?? "UNKNOWN"}:${status ?? ""}`;
+    if (this.announced.has(key)) return;
+    this.announced.add(key);
+    const advice =
+      diagnosis === null
+        ? "the cause was not reported."
+        : FALLBACK_DIAGNOSIS_ADVICE[diagnosis];
+    console.error(
+      [
+        "",
+        "  ┌─────────────────────────────────────────────────────────────────────┐",
+        "  │  DUEL GRADING IS NOT GRADING.                                       │",
+        "  └─────────────────────────────────────────────────────────────────────┘",
+        `  cause      ${diagnosis ?? "UNKNOWN"}${status === null ? "" : ` (HTTP ${status})`}`,
+        `  what to do ${advice}`,
+        "",
+        "  Until this is fixed EVERY answer is granted the maximum, so a wrong",
+        "  answer and a correct one both pay 14 bullets. That is deliberate — a",
+        "  student must never lose a mission to infrastructure — and it means a",
+        "  playtest from here measures nothing about grading.",
+        "",
+      ].join("\n"),
+    );
   }
 
   private escalate(
@@ -348,20 +461,28 @@ export class GradingSignal {
       {
         ungradedPercent: snapshot.ungradedPercent,
         roundsInWindow: snapshot.roundsInWindow,
+        gradeableInWindow: snapshot.gradeableInWindow,
+        classifiedInWindow: snapshot.classifiedInWindow,
         ungradedInWindow: snapshot.ungradedInWindow,
         windowMinutes: snapshot.windowMinutes,
         reasons: snapshot.ungradedByReason,
+        diagnoses: snapshot.ungradedByDiagnosis,
       },
       "duel grading: answers are not being graded; students are receiving the " +
-        "maximum for any answer. Check the classifier credential and the gateway.",
+        `maximum for any answer. ${snapshot.advice ?? ""}`.trimEnd(),
     );
   }
 
   private prune(at: number): void {
     const cutoff = at - WINDOW_MS;
-    while (this.rounds.length > 0 && this.rounds[0]! < cutoff) this.rounds.shift();
-    while (this.ungraded.length > 0 && this.ungraded[0]! < cutoff) {
-      this.ungraded.shift();
+    for (const window of [
+      this.rounds,
+      this.gradeable,
+      this.classified,
+      this.ungraded,
+      this.hardFaults,
+    ]) {
+      while (window.length > 0 && window[0]! < cutoff) window.shift();
     }
   }
 }

@@ -62,6 +62,18 @@ export interface MassSpec {
   yaw?: number;
   /** Round footprint (tree trunks, posts, capstans) instead of a box. */
   round?: { radius: number };
+  /**
+   * Ids of the objects that carry this mass when it is SUSPENDED — a soffit slab
+   * with air under it, or a dressing hung off another body. A mass that names a
+   * carrier rests on nothing at its own base by design (a pediment hood over a
+   * balcony, an effigy hung from the elm's bole, a tie beam guyed across a lane),
+   * so the placement verifier does NOT ask for a drawn floor beneath it. Instead
+   * it asks the two questions that are actually true of a suspended object: that
+   * the imported mesh OCCUPIES the collision volume it stands for, and that a
+   * named carrier is drawn reaching it. Omitted = an ordinary floor-supported
+   * mass, checked for a surface under its base as before.
+   */
+  carriedBy?: string[];
   tags: string[];
   note?: string;
 }
@@ -80,6 +92,36 @@ export interface DeckSpec {
   /** Mass ids this deck sits on; the jetty invariant is checked against them. */
   carriedBy: string[];
   tags: string[];
+  note?: string;
+}
+
+/**
+ * A declared vertical ascent: "from in here, you may go straight up onto that".
+ *
+ * The parkour reader works out every other move by looking at the geometry, and
+ * for a pure vertical it has nothing to look at. Both ends of the move share an
+ * x and a z, the player stands in the middle of a floor, and the only thing
+ * separating the Town House scaffold — which exists to be climbed — from the
+ * underside of a market canopy is what the level meant. So these are declared.
+ *
+ * A volume grants no move by itself. It exempts the reader's reachability bound
+ * inside its own footprint and nothing else: the rise still needs a standable
+ * landing with head room, and everywhere outside a volume the bound applies as
+ * normal. `serves` names the route link the volume exists for, so the route
+ * test can check that the two have not drifted apart.
+ */
+export interface ClimbSpec {
+  id: string;
+  section: SectionId;
+  /** Footprint a body must be standing in to be at the foot of this ascent. */
+  rect: Rect;
+  /** Feet band, so a volume names one storey of a scaffold and not the tower. */
+  standMinY: number;
+  standMaxY: number;
+  /** Deck or landable mass top the ascent arrives on. */
+  onto: string;
+  /** Route link id this volume exists to make available. */
+  serves: string;
   note?: string;
 }
 
@@ -357,6 +399,7 @@ export interface MissionLevel {
   masses: MassSpec[];
   decks: DeckSpec[];
   ramps: RampSpec[];
+  climbs: ClimbSpec[];
   nodes: RouteNode[];
   links: RouteLink[];
   patrols: PatrolSpec[];

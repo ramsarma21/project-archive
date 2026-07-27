@@ -19,6 +19,14 @@ const TEXT: Readonly<Record<string, string>> = {
   LOBBY_NOT_OPEN: "Somebody already joined that lobby.",
   LOBBY_EXPIRED: "That lobby timed out. Open a new one.",
   ALREADY_IN_LOBBY: "You are already in a lobby.",
+  LOBBY_ALREADY_OPEN:
+    "You already have a lobby open. Use its code, or cancel it before opening another.",
+  ACTIVE_MATCH_EXISTS:
+    "You are already in a duel. Finish it — or forfeit it — before starting another.",
+  ABILITIES_NOT_ACCEPTED:
+    "Abilities are not part of PvP yet, so a loadout cannot be sent. Try again without one.",
+  CARDS_NOT_ACCEPTED:
+    "The server decides which Codex cards you carry into PvP — they cannot be sent from here. Try again without them.",
   MATCH_CODE_INVALID:
     "That is not a match code. They are six characters, and they never contain O, I, L, 0 or 1.",
   MATCH_NOT_FOUND:

@@ -211,3 +211,36 @@ test("a word outside the duel's vocabulary is refused rather than coerced", () =
 test("an empty receipt never verifies", () => {
   assert.equal(grading.verifyReceipt(ENVELOPE, BINDING, ""), false);
 });
+
+test("PvP rounds are recorded into the grading signal, so an outage is visible", () => {
+  // The signal is the shared health diagnostic. With no credential every round is
+  // granted, and PvP must contribute to that rate rather than keeping a private count
+  // /v1/health cannot see — otherwise a ranked duel against a dead gateway is exactly
+  // the class-of-geniuses the signal exists to expose.
+  const isolated = createPvpGrading(silent);
+  const before = isolated.signal.snapshot();
+  assert.equal(before.configured, false);
+  assert.equal(before.status, "UNGRADED", "no credential pins the status");
+  assert.equal(before.roundsSinceBoot, 0);
+});
+
+test("a PvP grading can share the duel's signal instead of keeping its own", async () => {
+  // The seam app.ts uses to fold PvP rounds into the SAME rate boss fights feed. When
+  // a signal is injected, `createPvpGrading` records into it rather than a private one.
+  const { GradingSignal } = await import("../src/duels/gradingSignal.js");
+  const shared = new GradingSignal({ configured: false, announceToConsole: false });
+  const wired = createPvpGrading(silent, { signal: shared });
+  assert.equal(wired.signal, shared, "the injected signal is the one recorded into");
+
+  await wired.gradeAnswer({
+    profileId: BINDING.profileId,
+    matchId: BINDING.attemptId,
+    roundIndex: 3,
+    itemId: ITEM_ID,
+    answerText: "an answer the unreachable classifier will grant",
+  });
+  assert.ok(
+    shared.snapshot().roundsSinceBoot >= 1,
+    "the PvP round landed in the shared signal",
+  );
+});

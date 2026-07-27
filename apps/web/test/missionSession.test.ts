@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { MAX_MISSION_ATTEMPTS } from "@pa/contracts";
+import { LEARNING_MODULE_SECONDS, MAX_MISSION_ATTEMPTS } from "@pa/contracts";
 import {
   initialMissionSession,
   missionSessionIsForeground,
@@ -13,8 +13,11 @@ import {
 import type { AttemptGrant } from "../src/mission/attempt.js";
 import type { MissionInstance } from "../src/mission/levelPort.js";
 import type { MissionResult } from "../src/mission/result.js";
+import type { LearningModuleDefinition } from "../src/module/moduleFormat.js";
+import { completeModuleRun } from "../src/module/moduleGate.js";
 import {
   TEST_BASE_XP,
+  TEST_CHAPTER,
   TEST_MISSION,
   testCompletion,
   testDefinition,
@@ -728,5 +731,172 @@ test("no ranked mission is reachable without the server having opened it", () =>
     stray.ok && stray.effects.map((effect) => effect.kind),
     ["DISPOSE_INSTANCE"],
     "a level that arrives before the grant is freed, not entered",
+  );
+});
+
+// ---- the retry deck -------------------------------------------------------
+//
+// What is pinned here is the deck a PLAYER is handed, read off the MODULE
+// phase, rather than `retryOrderedModule` in isolation — moduleOrder.test.ts
+// already covers the ordering itself, and it passed for months while nothing
+// called the function.
+
+/** A frame, three teaching cards and a synthesis: the shape M1's deck has. */
+function orderableModule(): LearningModuleDefinition {
+  const card = (
+    id: string,
+    throughSeconds: number,
+    conceptIds: readonly string[],
+  ) => ({
+    id,
+    cueId: `CUE.${id}`,
+    throughSeconds,
+    kicker: id,
+    body: [id],
+    conceptIds,
+    codexCardIds: [],
+    advanceLabel: "Next",
+  });
+  return {
+    moduleId: `${TEST_MISSION}.MODULE`,
+    chapterId: TEST_CHAPTER,
+    missionId: TEST_MISSION,
+    title: "Orderable",
+    subtitle: "The authored subtitle.",
+    cards: [
+      card("OPEN", 20, []),
+      card("A", 60, ["CONCEPT.A"]),
+      card("B", 110, ["CONCEPT.B"]),
+      card("SYNTHESIS", 160, ["CONCEPT.A", "CONCEPT.B"]),
+      card("CLOSE", LEARNING_MODULE_SECONDS, []),
+    ],
+  };
+}
+
+/** Reads the deck out of the MODULE phase and completes it, as the player does. */
+function readDeckAndEnter(
+  state: Drive,
+  ordinal: number,
+  env: MissionSessionEnv,
+): readonly string[] {
+  send(state, { kind: "REQUEST_DEPLOY", missionId: TEST_MISSION }, env);
+  assert.equal(state.session.phase.phase, "MODULE");
+  const phase = state.session.phase as Extract<
+    typeof state.session.phase,
+    { phase: "MODULE" }
+  >;
+  const deck = phase.definition;
+  const completion = completeModuleRun({
+    definition: deck,
+    attemptOrdinal: ordinal,
+    acknowledgedCueIds: deck.cards.map((entry) => entry.cueId),
+    observedSeconds: 180,
+    at: env.now,
+  });
+  assert.ok(completion, "the deck the gate offered did not complete");
+  send(state, { kind: "MODULE_COMPLETED", completion }, env);
+  return deck.cards.map((entry) => entry.id);
+}
+
+/** Loses the duel with the named concepts answered wrong, and returns to the hub. */
+function loseOn(state: Drive, ordinal: number, wrong: readonly string[], env: MissionSessionEnv) {
+  send(state, { kind: "INSTANCE_READY", instance: testInstance({ attemptOrdinal: ordinal }) }, env);
+  send(
+    state,
+    {
+      kind: "TRAVERSAL_RESOLVED",
+      outcome: {
+        kind: "REACHED_DUEL",
+        simulatedS: 150,
+        droppedSteps: 0,
+        objectiveIds: ["reach-post"],
+        detections: 0,
+        throwsStruckBody: 0,
+      },
+    },
+    env,
+  );
+  send(
+    state,
+    {
+      kind: "DUEL_RESOLVED",
+      report: {
+        ...testDuelReport(false),
+        rounds: ["CONCEPT.A", "CONCEPT.B"].map((conceptId, at) => ({
+          round: at + 1,
+          itemId: `i${at + 1}`,
+          conceptId,
+          verdict: wrong.includes(conceptId) ? ("WRONG" as const) : ("CORRECT" as const),
+          bullets: 1,
+        })),
+      },
+    },
+    env,
+  );
+  send(state, { kind: "RETURN_TO_HUB" }, env);
+  send(state, { kind: "RETURN_SETTLED" }, env);
+}
+
+test("a retry opens on the concept the last attempt got wrong", () => {
+  const env = testEnv({ module: orderableModule() });
+  const state = drive();
+
+  const first = readDeckAndEnter(state, 1, env);
+  assert.deepEqual(first, ["OPEN", "A", "B", "SYNTHESIS", "CLOSE"], "authored order");
+  loseOn(state, 1, ["CONCEPT.B"], env);
+
+  const second = readDeckAndEnter(state, 2, env);
+  assert.deepEqual(
+    second,
+    ["OPEN", "B", "A", "SYNTHESIS", "CLOSE"],
+    "the missed concept leads; the frames and the synthesis do not move",
+  );
+  loseOn(state, 2, ["CONCEPT.A"], env);
+
+  const third = readDeckAndEnter(state, 3, env);
+  assert.deepEqual(
+    third,
+    ["OPEN", "A", "B", "SYNTHESIS", "CLOSE"],
+    "the third deck follows the SECOND attempt's evidence, not the first's",
+  );
+});
+
+test("the retry deck is still three minutes and still coverable", () => {
+  const env = testEnv({ module: orderableModule() });
+  const state = drive();
+  readDeckAndEnter(state, 1, env);
+  loseOn(state, 1, ["CONCEPT.B"], env);
+
+  send(state, { kind: "REQUEST_DEPLOY", missionId: TEST_MISSION }, env);
+  const phase = state.session.phase;
+  assert.equal(phase.phase, "MODULE");
+  if (phase.phase !== "MODULE") return;
+  const deck = phase.definition;
+
+  assert.equal(
+    deck.cards.at(-1)?.throughSeconds,
+    LEARNING_MODULE_SECONDS,
+    "a reorder is presentation: the deck still totals the authored duration",
+  );
+  assert.deepEqual(
+    [...deck.cards.map((card) => card.cueId)].sort(),
+    [...orderableModule().cards.map((card) => card.cueId)].sort(),
+    "the cue set is untouched, so the server's coverage rule cannot tell the difference",
+  );
+  assert.equal(deck.moduleId, orderableModule().moduleId, "still the authored module row");
+  assert.notEqual(deck.subtitle, orderableModule().subtitle, "the retry says so in its own voice");
+});
+
+test("a clean loss on mechanics is not handed a shuffled deck", () => {
+  const env = testEnv({ module: orderableModule() });
+  const state = drive();
+  readDeckAndEnter(state, 1, env);
+  loseOn(state, 1, [], env);
+
+  const second = readDeckAndEnter(state, 2, env);
+  assert.deepEqual(
+    second,
+    ["OPEN", "A", "B", "SYNTHESIS", "CLOSE"],
+    "every question landed, so there is nothing to reorder toward",
   );
 });

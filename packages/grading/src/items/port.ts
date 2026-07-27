@@ -39,9 +39,11 @@
 //   rubric.ignoreForThisItem  -> sameThing
 //   codexCardIds              -> cards
 //
-// Sixteen of the eighteen items carry a single required proposition, which is a
-// cleaner fit for `ideas`/`needs` than a multi-idea list with a count. Two need
-// two elements, and both are handled explicitly below.
+// Twelve of the eighteen items carry a single required proposition, which is a
+// cleaner fit for `ideas`/`needs` than a multi-idea list with a count. Six carry a
+// genuine two-part core so a written answer that supplies only one half fails, the
+// prose analogue of the two-card evidence minimum; they are handled explicitly
+// below. Both shapes stay binary — needs "all" is all-or-nothing, not partial credit.
 
 import type { AuthoredItem, AuthoredPool } from "../rubric.js";
 
@@ -99,7 +101,7 @@ export interface ContentBank {
 
 // ---- items whose core is two propositions -----------------------------------
 //
-// The content's `portTo.twoItemsNeedTwoIdeas` names both. Splitting is done here
+// The content's `portTo.itemsWithTwoPartCores` names them. Splitting is done here
 // rather than in the content because `ideas` is this package's structure; the
 // content states the requirement in prose and the split has to agree with it.
 
@@ -110,6 +112,39 @@ const TWO_PART_CORES: Readonly<Record<string, readonly [string, string]>> = {
   "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1": [
     "Boston does elect a local body of its own — its town meeting, its own assembly, its own representatives here",
     "Boston does not elect the body that laid this tax — in any wording, including 'not Parliament', 'not the ones in England', 'nobody over there'",
+  ],
+
+  // The items whose evidence hand demands two cards now demand two ideas in prose
+  // too: a written answer that supplies only one half fails, exactly as a one-card
+  // selection does. Each pair mirrors the same synthesis the cards require (a cause
+  // and its consequence, a mechanism and who it burdened, a grievance and the
+  // town's standing). The halves are stated as meanings, not wordings, so many
+  // phrasings and either order still pass; the classifier reports each and the code
+  // requires all.
+  "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1": [
+    "The war left Britain owing money, short of money, or with a war cost it still has to pay: a financial problem",
+    "Parliament's fix is to raise part of that money from the colonies, and the stamp is how it collects it here",
+  ],
+  "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1": [
+    "The payer is the colonies, America, the colonists, or 'us': someone on this side of the Atlantic rather than inside Britain",
+    "What that money clears is Britain's war debt, the money the war with France left owing",
+  ],
+  "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1": [
+    "The money is raised from the colonies: our taxes, or the stamp we pay here",
+    "and that money goes toward Britain's war debt, paying down what Britain owes",
+  ],
+  "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1": [
+    "The objection is not the price but who laid the tax, a body Boston did not choose, so it was laid without the town's consent",
+    "The town's standing to say so is that Boston elected none of them: it has no member in the Parliament that laid it",
+  ],
+  "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1": [
+    "A lawful vote in Parliament is still not this town's consent: being legal does not make it binding on Boston",
+    "The ground is that Boston had no part in that vote, electing none of the men who passed it",
+  ],
+  // PvP-only hardening item; two-part in the wider PvP grading bank.
+  "BOS.MD01.DUEL.REP.HOW_FAR_IT_GOES.v1": [
+    "It is a different argument: Boston objects to who lays the tax, not to taxation itself, and would pay a tax its own body voted",
+    "Where the man goes past the town is refusing all taxes, any tax at all, which is further than Boston's claim",
   ],
 };
 
@@ -162,8 +197,8 @@ function toAuthoredItem(
     correct: item.referenceAnswer,
     ideas,
     // Every item in this bank requires all of its stated core. The line is not a
-    // count here; it is written into the core's own wording, which is why sixteen
-    // items have exactly one idea.
+    // count here; it is written into the core's own wording, which is why twelve
+    // items have exactly one idea and six have two.
     needs: "all",
     // `ignoreForThisItem` is prose — "which name the student gives the war does not
     // matter" — rather than a list of interchangeable wordings, so it maps to

@@ -1,4 +1,5 @@
-import { M1_EFFIGY_RUN } from "@pa/mission-m1";
+import { M1_EFFIGY_RUN, precisionBeatSpec } from "@pa/mission-m1";
+import { FIELD_TICK_HZ } from "@pa/engine-world";
 import type { VisorLandmark, VisorSource, VisorZone } from "./visorPlan.js";
 
 // ---------------------------------------------------------------------------
@@ -102,6 +103,16 @@ function landmarks(): VisorLandmark[] {
 
 export function m1VisorSource(): VisorSource {
   const beat = M1_EFFIGY_RUN.precision;
+  // Every figure in this line is the CHART'S, not a number typed here: the
+  // fourteen strikes it asks for (thirteen of them judged — the opening one
+  // starts the chart and is not scored), the three bars of rising density, and
+  // the ~5.6s the whole phrase runs. The briefing once said "six strokes, in
+  // rhythm", a figure from a retired chart; reading them off
+  // `precisionBeatSpec().chart` here means no player-facing surface keeps them
+  // in step by hand. See @pa/beat's m1NailStance.ts.
+  const chart = precisionBeatSpec().chart;
+  const bars = chart.phases.reduce((total, phase) => total + phase.bars, 0);
+  const durationS = chart.spanTicks / FIELD_TICK_HZ;
   return {
     nodes: M1_EFFIGY_RUN.nodes.map((node) => ({
       id: node.id,
@@ -126,7 +137,9 @@ export function m1VisorSource(): VisorSource {
       pos: beat.target,
       workY: beat.target[1],
       label: "The Liberty Elm",
-      detail: "Nail the handbill. Six strokes, in rhythm.",
+      detail:
+        `Nail the handbill — ${chart.strikes} strikes total, ${chart.judgedBeats} judged, ` +
+        `${bars} bars rising over ~${durationS.toFixed(1)}s.`,
     },
     // The drying rack, found by its authored tag rather than by its id, so a
     // level that moves its opening pickup moves this with it.

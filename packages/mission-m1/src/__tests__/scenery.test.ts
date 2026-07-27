@@ -159,6 +159,39 @@ test("every module run is measured off a shipped mesh, not guessed", () => {
   }
 });
 
+test("the gaol barrels fill the same box the vault collider occupies", () => {
+  // The live VAULT is over GAOL_BARRELS' collider, so the imported barrels have
+  // to occupy that collider on every axis — not contain-fit inside it, which took
+  // the mesh's longest-axis ratio and drew the group barely half the 1.10m height
+  // the player actually vaults. A BLOCK fills; a loose PROP left the mismatch.
+  const mass = M1_EFFIGY_RUN.masses.find((m) => m.id === "GAOL_BARRELS")!;
+  const draw = placements.find(
+    (p) => p.parts.length === 1 && p.parts[0] === "GAOL_BARRELS",
+  )!;
+  assert.ok(draw, "the gaol barrels are drawn");
+  assert.equal(
+    draw.fit,
+    "MODULE",
+    "the barrels must FILL their collider, not contain-fit inside it",
+  );
+  const plan = planOf(draw);
+  for (const edge of ["minX", "maxX", "minZ", "maxZ"] as const) {
+    assert.ok(
+      Math.abs(plan[edge] - mass.rect[edge]) < MM,
+      `${edge}: art ${plan[edge].toFixed(3)}, collider ${mass.rect[edge].toFixed(3)}`,
+    );
+  }
+  const top = Number.isFinite(mass.topY) ? mass.topY : mass.baseY;
+  assert.ok(
+    Math.abs(draw.pos[1] - mass.baseY) < MM,
+    `base: art ${draw.pos[1]}, collider ${mass.baseY}`,
+  );
+  assert.ok(
+    Math.abs(draw.pos[1] + draw.size[1] - top) < MM,
+    `top: art ${(draw.pos[1] + draw.size[1]).toFixed(3)}, collider ${top}`,
+  );
+});
+
 test("the roof runs land on a roof that is drawn", () => {
   // The point of the whole thing. Three of the mission's roof lines cross these
   // blocks, and before the terrace the shambles' three nodes stood up to 3.7m

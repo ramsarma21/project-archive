@@ -4,6 +4,7 @@
 
 import { JETTY_M, RAMP_STEP_RISE_M } from "./envelope.js";
 import type {
+  ClimbSpec,
   DeckSpec,
   MassSpec,
   RampSpec,
@@ -98,6 +99,8 @@ export interface PropOpts {
   baseY?: number;
   landable?: boolean;
   yaw?: number;
+  /** For a suspended dressing (an effigy hung from a bough): what carries it. */
+  carriedBy?: string[];
   tags?: string[];
   note?: string;
 }
@@ -113,6 +116,7 @@ export function prop(opts: PropOpts): MassSpec {
     topY: opts.topY,
     landable: opts.landable ?? true,
     ...(opts.yaw === undefined ? {} : { yaw: opts.yaw }),
+    ...(opts.carriedBy ? { carriedBy: opts.carriedBy } : {}),
     tags: ["prop", ...(opts.tags ?? [])],
     ...(opts.note ? { note: opts.note } : {}),
   };
@@ -155,6 +159,8 @@ export function soffit(opts: {
   rect: Rect;
   baseY: number;
   thickness?: number;
+  /** The body this slab is part of or guyed to; it rests on nothing itself. */
+  carriedBy?: string[];
   tags?: string[];
   note?: string;
 }): MassSpec {
@@ -166,7 +172,47 @@ export function soffit(opts: {
     baseY: opts.baseY,
     topY: opts.baseY + (opts.thickness ?? 0.5),
     landable: false,
+    ...(opts.carriedBy ? { carriedBy: opts.carriedBy } : {}),
     tags: ["soffit", ...(opts.tags ?? [])],
+    ...(opts.note ? { note: opts.note } : {}),
+  };
+}
+
+export interface ClimbVolumeOpts {
+  section: SectionId;
+  /** Route link this volume exists to make available; also names the volume. */
+  serves: string;
+  /** Deck or landable mass top the ascent arrives on. */
+  onto: string;
+  /** Where the player stands to make it — normally the link's from-node. */
+  at: Vec3Tuple;
+  /** Half extents of the standing footprint. */
+  halfX?: number;
+  halfZ?: number;
+  note?: string;
+}
+
+/**
+ * The foot of an authored vertical ascent.
+ *
+ * Sized to the arrival rather than to the storey: a player walks the last stride
+ * into the spot and the volume has to already be true when they get there, so it
+ * reaches back further than a body is wide. It should still be small enough that
+ * standing under the far end of the same boards grants nothing, because the
+ * whole value of authoring this is that it says where.
+ */
+export function climbVolume(opts: ClimbVolumeOpts): ClimbSpec {
+  const halfX = opts.halfX ?? 0.9;
+  const halfZ = opts.halfZ ?? 0.9;
+  const [x, y, z] = opts.at;
+  return {
+    id: `CLIMBVOL_${opts.serves}`,
+    section: opts.section,
+    rect: rect(x - halfX, x + halfX, z - halfZ, z + halfZ),
+    standMinY: y - 0.4,
+    standMaxY: y + 0.4,
+    onto: opts.onto,
+    serves: opts.serves,
     ...(opts.note ? { note: opts.note } : {}),
   };
 }

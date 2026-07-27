@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getSession, pullProgression } from "../api.js";
+import { getSession, postAbandonMissionAttempt, pullProgression } from "../api.js";
 import { cacheProgression, forgetProgression, progressionFor } from "../db.js";
 import type { MissionAttemptTally } from "../module/moduleGate.js";
 import type { ModuleRunCompletion } from "../module/moduleGate.js";
@@ -82,6 +82,12 @@ export interface ProgressionApi {
   standing(missionId: string): DeployStanding;
   /** Records the module and opens the attempt server-side. Online-only. */
   authorize(completion: ModuleRunCompletion): Promise<AuthorizationResult>;
+  /**
+   * Forfeit the interrupted attempt the server still holds open, then refresh.
+   * Drains any queued terminal outcome FIRST, so a run that actually finished
+   * spends its real outcome rather than being clobbered by a forfeit.
+   */
+  forfeitInterruptedAttempt(): Promise<void>;
   /** Commits a resolved attempt, or queues it durably. Never throws. */
   recordResult(result: MissionResult): Promise<void>;
   refresh(): Promise<void>;
@@ -320,6 +326,41 @@ export function useProgression(options: ProgressionOptions): ProgressionApi {
     [countUnsynced, drain, load, view.openAttempt],
   );
 
+  const forfeitInterruptedAttempt = useCallback(async (): Promise<void> => {
+    const { profileId, csrfToken } = identityRef.current;
+    if (!profileId || !csrfToken) return;
+    const open = view.openAttempt;
+    if (!open) return;
+
+    // OUTBOX FIRST. An interrupted attempt whose terminal outcome is sitting in the
+    // outbox actually finished — the network dropped before the commit landed — and
+    // that real outcome must spend the attempt, not a forfeit. Drain, then re-read:
+    // if the queued outcome closed the attempt, there is nothing left to forfeit and
+    // the honest result stands.
+    await drain();
+    const refreshed = await pullProgression(profileId);
+    if (refreshed.status === "OK") {
+      setView(projectProgression(refreshed.value));
+      setSource("SERVER");
+      await cacheProgression(profileId, refreshed.value, new Date().toISOString());
+    }
+    const stillOpen =
+      refreshed.status === "OK" ? refreshed.value.openAttempt : open;
+    if (!stillOpen) return;
+
+    const result = await postAbandonMissionAttempt(
+      profileId,
+      { attemptId: stillOpen.attemptId },
+      csrfToken,
+    );
+    if (result.status === "REFUSED") setLastError(result.error);
+    else if (result.status === "UNREACHABLE") setLastError(result.detail);
+    // Reload so the closed attempt, the advanced ordinal and the re-armed module
+    // gate are all the server's current truth. The next Deploy requires the module
+    // again because the attempt is spent and a new ordinal needs its own completion.
+    await load();
+  }, [drain, load, view.openAttempt]);
+
   const refresh = useCallback(async () => {
     await load();
   }, [load]);
@@ -341,11 +382,13 @@ export function useProgression(options: ProgressionOptions): ProgressionApi {
       isUnlocked,
       standing,
       authorize,
+      forfeitInterruptedAttempt,
       recordResult,
       refresh,
     }),
     [
       authorize,
+      forfeitInterruptedAttempt,
       identity.displayName,
       identity.profileId,
       identity.seedHex,

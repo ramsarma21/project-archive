@@ -75,9 +75,32 @@ const args = process.argv.slice(2);
 const keys = args.filter((arg) => !arg.startsWith("--"));
 /** `--self-test` lists every invariant; `--self-test-only` stops after them. */
 const showSelfTest = args.includes("--self-test") || args.includes("--self-test-only");
+// `bldg-scaffold-run` is deliberately not in the default set, and it is worth
+// saying why rather than leaving it looking forgotten.
+//
+// The DECK check here asks what the FIRST thing a falling foot meets is, and
+// fails a sample where that is more than TOL_ABOVE over the plane. That is the
+// right question for a plank or a leaded flat, where anything over the surface
+// is a boot sunk into the art. It is the wrong question for a scaffold: its
+// standards rise through the lower staging at the board's edge, because that is
+// where a standard goes, and ten of this deck's 441 samples land on one. The
+// deck is 97.7% boards and 2.3% poles you walk around, which is a scaffold.
+//
+// It is not unchecked. `verify_m1_placements.mjs` asks the other question — is
+// ANY drawn surface at the plane the player's feet are — and both staging
+// planes answer it. Run it here by name to see the numbers:
+//   node --import tsx assets/pipeline/verify_roofline_kit.mjs bldg-scaffold-run
 const KEYS = keys.length
   ? keys
-  : ["roof-plank-gantry", "roof-ridge-walk", "roof-chimney-stack", "service-wall-end"];
+  : [
+      "roof-plank-gantry",
+      "roof-ridge-walk",
+      "roof-ridge-monitor",
+      "roof-chimney-stack",
+      "service-wall-end",
+      "printshop-sign-hood",
+      "yard-kerb-stone",
+    ];
 
 // The instrument proves itself before it measures anything. A tool that has been
 // wrong four times does not get to report a number on trust.
