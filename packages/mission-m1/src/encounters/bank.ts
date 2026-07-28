@@ -172,44 +172,60 @@ const SHAMBLES: PerspectiveEncounter = {
 };
 
 // ---------------------------------------------------------------------------
-// B. ROPEWALK_STOP — the ropewalk's night man, on the interior route.
+// B. ROPEWALK_STOP — the printer's bill-sticker, on the meeting-house roof.
 //
-// Perspective: a wage-earning dockhand, not an ideologue. He does not care about
-// sovereignty; he cares about whether he works tomorrow. The accepted family
-// connects the Stamp Act's SCOPE, COST or DISRUPTION to his trade: the stamped
-// paper is on the ship's clearance papers, the bills of lading, the contracts,
-// the newspapers and legal writs — so no stamp means no cleared cargo, no work,
-// lower wages, higher prices, idle rigging. Any plausible line from the Act to
-// his livelihood passes; a sovereignty lecture that never touches the docks, or
-// a wrong-tax answer, does not.
+// The stable id is ROPEWALK_STOP and the item ids are still BOS.MD01.ENC.ROPEWALK.*
+// — they are opaque join keys the client, the grading authority and the drift
+// test all key on, and the player never sees them — but the BEAT has moved. It
+// used to force the guided line to dive south through the whole ropewalk shed to
+// meet a dockhand; the route lane built a direct roofline connection over Hollis
+// Meeting (D_SROOF_E -> the meeting-house leads -> the steeple), and this stop now
+// lives ON that direct line so the detour is gone. The ropewalk shed and its
+// night man (SENTRY_ROPEWALK) are untouched — the shed stays a real, optionally
+// explorable space; only the mandatory beat left it.
+//
+// The concept is unchanged: BOS.CONCEPT.STAMP_SCOPE.v1, the reach of the Stamp
+// Act across printed and legal paper. The speaker is re-cast to fit where the
+// beat now happens AND to teach that reach in the module's own central exemplar:
+// a printer's bill-sticker, up on the meeting-house leads by lantern to hang the
+// night's notices. He is a wage-earning working man, not an ideologue — his whole
+// trade IS the printed paper the Act taxes (newspapers, handbills, notices), so a
+// tax on that paper is a tax on his living. The accepted family connects the
+// Stamp Act's SCOPE, COST or DISRUPTION to that trade: the stamp falls on every
+// sheet the printers run, so a bought stamp on each one means fewer runs, fewer
+// bills to paste, dearer paper, and his wage shrinks or stops. Any plausible line
+// from the Act to his livelihood passes; an abstract-rights lecture that never
+// reaches the presses, or a wrong-tax answer, does not.
 // ---------------------------------------------------------------------------
 
-const ROPEWALK: PerspectiveEncounter = {
+const BILLMAN: PerspectiveEncounter = {
   id: "ROPEWALK_STOP",
   order: 1,
   poolId: "BOS.MD01.POOL.ENC_ROPEWALK.v1",
   conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
   speaker: {
-    role: "Ropewalk night man",
-    watcherId: "SENTRY_ROPEWALK",
+    role: "Printer's bill-sticker",
+    watcherId: "BILLMAN_HOLLIS",
     secondaryWatcherId: null,
-    affiliation: "The ropewalk's wages",
-    loyalty: "Loyal to no side but his own pay — the work, the contracts, the ships.",
+    affiliation: "The printers' bill-work",
+    loyalty: "Loyal to no side but his own pay — the sheets, the paste, the bills that go up by dark.",
     priorities: [
       "Wages and steady work",
-      "Ship clearances and contracts",
-      "No trouble that stops the walk",
+      "The printers who feed him sheets",
+      "No trouble that shuts the presses",
     ],
     situationalHint:
-      "He's a working man, not a politician. He'll stand aside if you can show the stamped paper touches HIS trade — the clearances, the contracts, the cargo — not if you preach him rights he can't eat.",
+      "He's a working man, not a politician. He'll stand aside if you can show the stamp lands on the printed paper his whole trade IS — the newspapers, the handbills, the notices — not if you preach him rights he can't eat.",
   },
   trigger: {
-    // On the required interior floor line — between D2_FLOOR_W (59.6, 21.8) and
-    // the vault/slide toward D2_STAGE — so the stop is on the route the player
-    // walks, not off it. The night man closes from his post at (72.6, 23.6).
-    at: [61.5, 0, 19.6],
-    radiusM: 4.0,
-    speakerStandoff: [63.5, 0, 20.4],
+    // On the direct roofline the route lane built: the player lands on the Hollis
+    // Meeting leads (HOLLIS_MEETING__ROOF, y=8.20) at the west strip around
+    // D_MEETING_W (74.3, 8.2, 9) and crosses to the steeple, so the stop is on
+    // the route the player walks, not off it. The bill-sticker closes from his
+    // post on the same flat roof at (74.9, 8.2, 12.0), clear of the raised monitor.
+    at: [74.6, 8.2, 9.4],
+    radiusM: 3.6,
+    speakerStandoff: [74.9, 8.2, 11.0],
     secondaryStandoff: null,
     requiresGroundedApproach: false,
   },
@@ -220,27 +236,27 @@ const ROPEWALK: PerspectiveEncounter = {
       itemId: "BOS.MD01.ENC.ROPEWALK.WHY_CARE.v1",
       itemVersion: "v1",
       prompt:
-        "You're the effigy lot, aren't you. Tell me straight, why should a man who lays rope for a living care a damn about a stamp on a bit of paper? Make it my business.",
+        "You're the effigy lot, aren't you. Tell me straight, why should a man who pastes bills for his bread care a damn about a stamp on a bit of paper? Make it my business.",
     },
     {
       variantId: "WHAT_STOPS",
       itemId: "BOS.MD01.ENC.ROPEWALK.WHAT_STOPS.v1",
       itemVersion: "v1",
       prompt:
-        "Say the stamp comes in and I don't buy it. What of it stops — here, in this walk, on these ships? Name me the thing it actually costs me.",
+        "Say the stamp comes in and the printers won't buy it. What of it stops — here, on this wall, in the sheets I hang? Name me the thing it actually costs me.",
     },
     {
       variantId: "WHOSE_TROUBLE",
       itemId: "BOS.MD01.ENC.ROPEWALK.WHOSE_TROUBLE.v1",
       itemVersion: "v1",
       prompt:
-        "Papers and pamphlets — that's the merchants' quarrel and the lawyers', not mine. What has any of that got to do with the rope I sell and the wage I take home?",
+        "Deeds and lawyers' writs — that's the merchants' quarrel and the courts', not mine. What has a tax on their paper got to do with the bills I paste and the wage I take home?",
     },
   ],
 };
 
 /** The two encounters, in route order. */
-export const M1_ENCOUNTERS: readonly PerspectiveEncounter[] = [SHAMBLES, ROPEWALK];
+export const M1_ENCOUNTERS: readonly PerspectiveEncounter[] = [SHAMBLES, BILLMAN];
 
 const BY_ID = new Map(M1_ENCOUNTERS.map((enc) => [enc.id, enc]));
 
