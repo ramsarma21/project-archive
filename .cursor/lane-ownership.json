@@ -50,7 +50,8 @@
     "mission-encounters": [
       "packages/duel/**",
       "packages/netcode/**",
-      "scripts/check-drawn-penetration.mjs"
+      "scripts/check-drawn-penetration.mjs",
+      "packages/engine-world/src/__tests__/transcendentalDeterminism.test.ts"
     ],
     "mission-cinematic": [
       "apps/web/src/mission/duelPort.ts",
