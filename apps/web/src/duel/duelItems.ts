@@ -195,7 +195,7 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
     itemId: "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1",
     conceptId: "BOS.CONCEPT.REPRESENTATION.v1",
     prompt:
-      "Finish the claim your sheet makes. A tax on this town may lawfully be laid only by whom?",
+      "Finish the claim your sheet makes. A tax on this town may rightly be laid only by whom?",
   },
   {
     itemId: "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1",
