@@ -692,7 +692,11 @@ test("presentation reports the clip the animation layer should play", () => {
     clips.add(flowPresentation(motion, flow).clip);
   }
   assert.ok(clips.has("run"), "sprinting should ask for the run clip");
-  assert.ok(clips.has("climbUp"), "the folded mantle should ask for the climbUp clip");
+  // The ledge is 1.5m — inside the 0.5-1.9m mantle band — so the folded mantle
+  // asks for the one-shot `mantle`, not the cyclic `climbUp` (which is reserved
+  // for the taller >1.9m climb band / ladders). This changed 2026-07-28 when the
+  // baked-but-orphaned mantle clip was wired onto CLIMB_UP.
+  assert.ok(clips.has("mantle"), "the folded mantle should ask for the mantle clip");
 });
 
 test("reduced motion resolves verbs instantly and refuses to offer a dive", () => {

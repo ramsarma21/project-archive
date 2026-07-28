@@ -471,9 +471,22 @@ function locomotionClip(
  * one verb with two silhouettes, and which one is playing is a fact about the
  * motion phase rather than a second entry in the verb table.
  */
-function verbClip(motion: MotionState, verb: TraversalVerb): string {
+function verbClip(
+  motion: MotionState,
+  verb: TraversalVerb,
+  tuning: ParkourTuning,
+): string {
   if (verb === "JUMP" && motion.phase === "RUNNING_JUMP") {
     return VERB_CLIP.JUMP_GAP;
+  }
+  // CLIMB_UP is the mantle by default (VERB_CLIP.CLIMB_UP), a one-shot pull. A
+  // rise above the mantle band is the >1.9m climb band — a ladder-style ascent
+  // that must loop the rung-pull rather than snap through one mantle — so it
+  // takes the cyclic `climbUp`, decided by the authored rise the same way JUMP
+  // above is decided by its phase.
+  if (verb === "CLIMB_UP" && motion.action) {
+    const riseM = motion.action.endPos.y - motion.action.startPos.y;
+    if (riseM > tuning.mantleMaxHeightM) return "climbUp";
   }
   return VERB_CLIP[verb];
 }
@@ -1005,7 +1018,7 @@ export function stepFlow(
     flow.clip = flow.landingTicks > 0
       ? LANDING_CLIP[flow.landing]
       : flow.verb !== "NONE"
-        ? verbClip(motion, flow.verb)
+        ? verbClip(motion, flow.verb, tuning)
         : locomotionClip(motion, input, tuning);
     flow.clipOnce = flow.landingTicks > 0 || flow.verb !== "NONE";
     return { motion, flow, events, noise, probe };
@@ -1258,7 +1271,7 @@ export function stepFlow(
 
   flow.clip =
     flow.verb !== "NONE"
-      ? verbClip(motion, flow.verb)
+      ? verbClip(motion, flow.verb, tuning)
       : flow.landingTicks > 0
         ? LANDING_CLIP[flow.landing]
         : locomotionClip(motion, input, tuning);
