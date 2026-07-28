@@ -75,7 +75,9 @@
     "world-audit": [
       "scripts/check-world-visual*",
       "apps/web/public/world/props/bldg-townhouse-1713.glb",
-      "assets/pipeline/*townhouse*"
+      "apps/web/public/world/props/bldg-brick.glb",
+      "assets/pipeline/*townhouse*",
+      "assets/pipeline/*brick*"
     ],
     "api-hunt": [
       "apps/api/**",
