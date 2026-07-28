@@ -3,7 +3,6 @@
   "_contested": "Owned by no single lane and shared by several. Denied to everyone: these need the orchestrator to sequence a merge, because a silent parallel edit here is how work gets clobbered.",
   "contested": [
     "apps/web/src/mission/MissionRun.tsx",
-    "apps/web/src/mission/MissionStage.tsx",
     "apps/web/src/mission/MissionHud.tsx",
     "apps/web/src/mission/MissionBeatPanel.tsx",
     "apps/web/src/mission/mission.css",
@@ -34,7 +33,9 @@
       "apps/web/src/chapter/M1Scenery.tsx",
       "scripts/check-world-affordances.mjs",
       "assets/pipeline/*ladder*",
-      "apps/web/public/world/props/work-ladder*"
+      "apps/web/public/world/props/work-ladder*",
+      "apps/web/src/mission/MissionStage.tsx",
+      "scripts/check-clip-fidelity.mjs"
     ],
     "mission-flow": [
       "apps/web/public/world/props/liberty-elm-hero.glb",
