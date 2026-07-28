@@ -130,15 +130,15 @@ const ART_BY_CARD: Readonly<Record<string, CardArt>> = {
 
 /** Per-card period and perspective badges. Presentation only. */
 const CARD_META: Readonly<Record<string, { date: string; perspective: string }>> = {
-  "BOS.MD01.CARD.WAR_DEBT.v1": { date: "1763", perspective: "Crown finance" },
-  "BOS.MD01.CARD.COLONIAL_REVENUE.v1": { date: "1764", perspective: "Parliament" },
-  "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1": { date: "1763 to 1765", perspective: "Cause and effect" },
-  "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1": { date: "1765", perspective: "The statute" },
-  "BOS.MD01.CARD.STAMP_DATE.v1": { date: "1 Nov 1765", perspective: "The statute" },
-  "BOS.MD01.CARD.PRINTER_IMPACT.v1": { date: "1765", perspective: "The print trade" },
-  "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1": { date: "1765", perspective: "Boston's claim" },
-  "BOS.MD01.CARD.CONSENT_GROUND.v1": { date: "1765", perspective: "Boston's claim" },
-  "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1": { date: "1765", perspective: "Boston's reply" },
+  "BOS.MD01.CARD.WAR_DEBT.v1": { date: "1763", perspective: "The problem" },
+  "BOS.MD01.CARD.COLONIAL_REVENUE.v1": { date: "1764", perspective: "The payer" },
+  "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1": { date: "1763 to 1765", perspective: "The order" },
+  "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1": { date: "1765", perspective: "What is taxed" },
+  "BOS.MD01.CARD.STAMP_DATE.v1": { date: "1 Nov 1765", perspective: "When it begins" },
+  "BOS.MD01.CARD.PRINTER_IMPACT.v1": { date: "1765", perspective: "Who it burdens" },
+  "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1": { date: "1765", perspective: "The fact" },
+  "BOS.MD01.CARD.CONSENT_GROUND.v1": { date: "1765", perspective: "The principle" },
+  "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1": { date: "1765", perspective: "The reply" },
 };
 
 const SOURCE_LABELS: Readonly<Record<string, string>> = {
