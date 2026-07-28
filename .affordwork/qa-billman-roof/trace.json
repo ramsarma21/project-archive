@@ -1,0 +1,240 @@
+{
+  "summary": {
+    "url": "http://localhost:5219/src/mission/floor.html?at=D_MEETING_W&toward=D_MEETING_ROOF&encounterVerdict=correct",
+    "armedSeen": false,
+    "questionOpened": true,
+    "openGap3D": 2.193,
+    "openGapXZ": 2.193,
+    "approachFrames": 16,
+    "measuredClip_counts": {
+      "run": 8,
+      "idle": 6,
+      "walk": 2
+    },
+    "measuredClip_flips": 13,
+    "renderedClip_counts": {
+      "walk": 16
+    },
+    "renderedClip_flips": 0,
+    "maxGap3DDuringApproach": 2.93,
+    "finalPhase": null,
+    "summaries": [
+      {
+        "id": "ROPEWALK_STOP",
+        "kind": "CORRECT",
+        "reprieve": true
+      }
+    ],
+    "errors": []
+  },
+  "approach": [
+    {
+      "tick": 5,
+      "phase": "APPROACH",
+      "dMs": 33.3,
+      "mps": 4.004,
+      "measuredClip": "run",
+      "renderedClip": "walk",
+      "sx": 74.874,
+      "sy": 8.2,
+      "sz": 11.869,
+      "gap3D": 2.926,
+      "gapXZ": 2.926
+    },
+    {
+      "tick": 8,
+      "phase": "APPROACH",
+      "dMs": 33.3,
+      "mps": 3.003,
+      "measuredClip": "run",
+      "renderedClip": "walk",
+      "sx": 74.854,
+      "sy": 8.2,
+      "sz": 11.771,
+      "gap3D": 2.826,
+      "gapXZ": 2.826
+    },
+    {
+      "tick": 8,
+      "phase": "APPROACH",
+      "dMs": 8.3,
+      "mps": 0,
+      "measuredClip": "idle",
+      "renderedClip": "walk",
+      "sx": 74.854,
+      "sy": 8.2,
+      "sz": 11.771,
+      "gap3D": 2.826,
+      "gapXZ": 2.826
+    },
+    {
+      "tick": 9,
+      "phase": "APPROACH",
+      "dMs": 8.4,
+      "mps": 3.968,
+      "measuredClip": "run",
+      "renderedClip": "walk",
+      "sx": 74.848,
+      "sy": 8.2,
+      "sz": 11.739,
+      "gap3D": 2.793,
+      "gapXZ": 2.793
+    },
+    {
+      "tick": 9,
+      "phase": "APPROACH",
+      "dMs": 8.3,
+      "mps": 0,
+      "measuredClip": "idle",
+      "renderedClip": "walk",
+      "sx": 74.848,
+      "sy": 8.2,
+      "sz": 11.739,
+      "gap3D": 2.793,
+      "gapXZ": 2.793
+    },
+    {
+      "tick": 10,
+      "phase": "APPROACH",
+      "dMs": 8.3,
+      "mps": 4.016,
+      "measuredClip": "run",
+      "renderedClip": "walk",
+      "sx": 74.841,
+      "sy": 8.2,
+      "sz": 11.706,
+      "gap3D": 2.759,
+      "gapXZ": 2.759
+    },
+    {
+      "tick": 10,
+      "phase": "APPROACH",
+      "dMs": 8.4,
+      "mps": 0,
+      "measuredClip": "idle",
+      "renderedClip": "walk",
+      "sx": 74.841,
+      "sy": 8.2,
+      "sz": 11.706,
+      "gap3D": 2.759,
+      "gapXZ": 2.759
+    },
+    {
+      "tick": 11,
+      "phase": "APPROACH",
+      "dMs": 8.2,
+      "mps": 4.065,
+      "measuredClip": "run",
+      "renderedClip": "walk",
+      "sx": 74.835,
+      "sy": 8.2,
+      "sz": 11.673,
+      "gap3D": 2.726,
+      "gapXZ": 2.726
+    },
+    {
+      "tick": 11,
+      "phase": "APPROACH",
+      "dMs": 8.3,
+      "mps": 0,
+      "measuredClip": "idle",
+      "renderedClip": "walk",
+      "sx": 74.835,
+      "sy": 8.2,
+      "sz": 11.673,
+      "gap3D": 2.726,
+      "gapXZ": 2.726
+    },
+    {
+      "tick": 12,
+      "phase": "APPROACH",
+      "dMs": 8.5,
+      "mps": 3.922,
+      "measuredClip": "run",
+      "renderedClip": "walk",
+      "sx": 74.828,
+      "sy": 8.2,
+      "sz": 11.64,
+      "gap3D": 2.693,
+      "gapXZ": 2.693
+    },
+    {
+      "tick": 12,
+      "phase": "APPROACH",
+      "dMs": 8.3,
+      "mps": 0,
+      "measuredClip": "idle",
+      "renderedClip": "walk",
+      "sx": 74.828,
+      "sy": 8.2,
+      "sz": 11.64,
+      "gap3D": 2.693,
+      "gapXZ": 2.693
+    },
+    {
+      "tick": 13,
+      "phase": "APPROACH",
+      "dMs": 8.3,
+      "mps": 4.016,
+      "measuredClip": "run",
+      "renderedClip": "walk",
+      "sx": 74.822,
+      "sy": 8.2,
+      "sz": 11.608,
+      "gap3D": 2.659,
+      "gapXZ": 2.659
+    },
+    {
+      "tick": 13,
+      "phase": "APPROACH",
+      "dMs": 8.4,
+      "mps": 0,
+      "measuredClip": "idle",
+      "renderedClip": "walk",
+      "sx": 74.822,
+      "sy": 8.2,
+      "sz": 11.608,
+      "gap3D": 2.659,
+      "gapXZ": 2.659
+    },
+    {
+      "tick": 14,
+      "phase": "APPROACH",
+      "dMs": 7.7,
+      "mps": 4.329,
+      "measuredClip": "run",
+      "renderedClip": "walk",
+      "sx": 74.815,
+      "sy": 8.2,
+      "sz": 11.575,
+      "gap3D": 2.626,
+      "gapXZ": 2.626
+    },
+    {
+      "tick": 19,
+      "phase": "APPROACH",
+      "dMs": 142.3,
+      "mps": 1.171,
+      "measuredClip": "walk",
+      "renderedClip": "walk",
+      "sx": 74.782,
+      "sy": 8.2,
+      "sz": 11.412,
+      "gap3D": 2.459,
+      "gapXZ": 2.459
+    },
+    {
+      "tick": 24,
+      "phase": "APPROACH",
+      "dMs": 141.7,
+      "mps": 1.176,
+      "measuredClip": "walk",
+      "renderedClip": "walk",
+      "sx": 74.75,
+      "sy": 8.2,
+      "sz": 11.248,
+      "gap3D": 2.293,
+      "gapXZ": 2.293
+    }
+  ]
+}

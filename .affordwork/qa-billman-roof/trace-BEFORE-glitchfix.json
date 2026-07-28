@@ -1,0 +1,256 @@
+{
+  "summary": {
+    "url": "http://localhost:5219/src/mission/floor.html?at=D_MEETING_W&toward=D_MEETING_ROOF&encounterVerdict=correct",
+    "armedSeen": true,
+    "questionOpened": true,
+    "openGap3D": 2.193,
+    "openGapXZ": 2.193,
+    "approachFrames": 19,
+    "clipCounts": {
+      "run": 9,
+      "idle": 7,
+      "walk": 3
+    },
+    "clipFlips": 14,
+    "maxGap3DDuringApproach": 2.93,
+    "finalPhase": null,
+    "summaries": [
+      {
+        "id": "ROPEWALK_STOP",
+        "kind": "CORRECT",
+        "reprieve": true
+      }
+    ],
+    "errors": []
+  },
+  "approach": [
+    {
+      "tick": 5,
+      "phase": "APPROACH",
+      "dMs": 25.1,
+      "mps": 5.312,
+      "clip": "run",
+      "sx": 74.874,
+      "sy": 8.2,
+      "sz": 11.869,
+      "gap3D": 2.926,
+      "gapXZ": 2.926
+    },
+    {
+      "tick": 6,
+      "phase": "APPROACH",
+      "dMs": 7.3,
+      "mps": 4.566,
+      "clip": "run",
+      "sx": 74.867,
+      "sy": 8.2,
+      "sz": 11.837,
+      "gap3D": 2.893,
+      "gapXZ": 2.893
+    },
+    {
+      "tick": 7,
+      "phase": "APPROACH",
+      "dMs": 8.8,
+      "mps": 3.788,
+      "clip": "run",
+      "sx": 74.861,
+      "sy": 8.2,
+      "sz": 11.804,
+      "gap3D": 2.859,
+      "gapXZ": 2.859
+    },
+    {
+      "tick": 7,
+      "phase": "APPROACH",
+      "dMs": 8,
+      "mps": 0,
+      "clip": "idle",
+      "sx": 74.861,
+      "sy": 8.2,
+      "sz": 11.804,
+      "gap3D": 2.859,
+      "gapXZ": 2.859
+    },
+    {
+      "tick": 8,
+      "phase": "APPROACH",
+      "dMs": 8.8,
+      "mps": 3.788,
+      "clip": "run",
+      "sx": 74.854,
+      "sy": 8.2,
+      "sz": 11.771,
+      "gap3D": 2.826,
+      "gapXZ": 2.826
+    },
+    {
+      "tick": 8,
+      "phase": "APPROACH",
+      "dMs": 8,
+      "mps": 0,
+      "clip": "idle",
+      "sx": 74.854,
+      "sy": 8.2,
+      "sz": 11.771,
+      "gap3D": 2.826,
+      "gapXZ": 2.826
+    },
+    {
+      "tick": 9,
+      "phase": "APPROACH",
+      "dMs": 9,
+      "mps": 3.704,
+      "clip": "run",
+      "sx": 74.848,
+      "sy": 8.2,
+      "sz": 11.739,
+      "gap3D": 2.793,
+      "gapXZ": 2.793
+    },
+    {
+      "tick": 9,
+      "phase": "APPROACH",
+      "dMs": 7.5,
+      "mps": 0,
+      "clip": "idle",
+      "sx": 74.848,
+      "sy": 8.2,
+      "sz": 11.739,
+      "gap3D": 2.793,
+      "gapXZ": 2.793
+    },
+    {
+      "tick": 10,
+      "phase": "APPROACH",
+      "dMs": 9.3,
+      "mps": 3.584,
+      "clip": "run",
+      "sx": 74.841,
+      "sy": 8.2,
+      "sz": 11.706,
+      "gap3D": 2.759,
+      "gapXZ": 2.759
+    },
+    {
+      "tick": 10,
+      "phase": "APPROACH",
+      "dMs": 8.1,
+      "mps": 0,
+      "clip": "idle",
+      "sx": 74.841,
+      "sy": 8.2,
+      "sz": 11.706,
+      "gap3D": 2.759,
+      "gapXZ": 2.759
+    },
+    {
+      "tick": 11,
+      "phase": "APPROACH",
+      "dMs": 7.8,
+      "mps": 4.274,
+      "clip": "run",
+      "sx": 74.835,
+      "sy": 8.2,
+      "sz": 11.673,
+      "gap3D": 2.726,
+      "gapXZ": 2.726
+    },
+    {
+      "tick": 11,
+      "phase": "APPROACH",
+      "dMs": 9.1,
+      "mps": 0,
+      "clip": "idle",
+      "sx": 74.835,
+      "sy": 8.2,
+      "sz": 11.673,
+      "gap3D": 2.726,
+      "gapXZ": 2.726
+    },
+    {
+      "tick": 12,
+      "phase": "APPROACH",
+      "dMs": 8.2,
+      "mps": 4.065,
+      "clip": "run",
+      "sx": 74.828,
+      "sy": 8.2,
+      "sz": 11.64,
+      "gap3D": 2.693,
+      "gapXZ": 2.693
+    },
+    {
+      "tick": 12,
+      "phase": "APPROACH",
+      "dMs": 8.4,
+      "mps": 0,
+      "clip": "idle",
+      "sx": 74.828,
+      "sy": 8.2,
+      "sz": 11.64,
+      "gap3D": 2.693,
+      "gapXZ": 2.693
+    },
+    {
+      "tick": 17,
+      "phase": "APPROACH",
+      "dMs": 133.3,
+      "mps": 1.25,
+      "clip": "walk",
+      "sx": 74.795,
+      "sy": 8.2,
+      "sz": 11.477,
+      "gap3D": 2.526,
+      "gapXZ": 2.526
+    },
+    {
+      "tick": 22,
+      "phase": "APPROACH",
+      "dMs": 124.7,
+      "mps": 1.337,
+      "clip": "walk",
+      "sx": 74.763,
+      "sy": 8.2,
+      "sz": 11.314,
+      "gap3D": 2.359,
+      "gapXZ": 2.359
+    },
+    {
+      "tick": 24,
+      "phase": "APPROACH",
+      "dMs": 33.4,
+      "mps": 1.996,
+      "clip": "walk",
+      "sx": 74.75,
+      "sy": 8.2,
+      "sz": 11.248,
+      "gap3D": 2.293,
+      "gapXZ": 2.293
+    },
+    {
+      "tick": 25,
+      "phase": "APPROACH",
+      "dMs": 8.6,
+      "mps": 3.876,
+      "clip": "run",
+      "sx": 74.743,
+      "sy": 8.2,
+      "sz": 11.216,
+      "gap3D": 2.259,
+      "gapXZ": 2.259
+    },
+    {
+      "tick": 25,
+      "phase": "APPROACH",
+      "dMs": 8.1,
+      "mps": 0,
+      "clip": "idle",
+      "sx": 74.743,
+      "sy": 8.2,
+      "sz": 11.216,
+      "gap3D": 2.259,
+      "gapXZ": 2.259
+    }
+  ]
+}
