@@ -94,6 +94,15 @@ export interface GradeRequest {
   readonly roundIndex: number;
   /** Opaque reference to the retained answer record, when there is one. */
   readonly responseRef?: string | null;
+  /**
+   * Optional salt appended to the PROVIDER idempotency key only, never to the
+   * verdict cache key. Production never sets it, so nothing about live grading or
+   * caching changes. The eval harness sets a distinct value per repeat so a gateway
+   * that de-duplicates identical in-flight requests cannot collapse a majority vote
+   * into one cached answer — the repeats must be independent samples to be worth
+   * taking.
+   */
+  readonly idempotencySalt?: string;
 }
 
 export interface GradingServiceOptions {
@@ -417,7 +426,9 @@ export class GradingService {
         const result = await classifyWithDeadline(
           this.provider,
           classifierRequest,
-          cacheKey,
+          // The verdict cache key stays `cacheKey`; only the provider idempotency
+          // key is salted, and only when a caller asks (the eval's repeats).
+          request.idempotencySalt ? `${cacheKey}#${request.idempotencySalt}` : cacheKey,
           remaining,
         );
         const classification = parseRawClassification(result.raw, item);

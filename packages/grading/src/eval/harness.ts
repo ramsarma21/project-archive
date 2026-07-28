@@ -36,9 +36,16 @@ import type { ClassifierProvider } from "../provider.js";
 import { buildSystemPrompt, type JudgingPolicy } from "../prompt.js";
 import {
   EVAL_MAX_FALSE_NEGATIVE_RATE,
+  EVAL_MAX_FALSE_POSITIVE_RATE,
   EVAL_PASS_THRESHOLD,
 } from "../tuning.js";
-import { HAND_LABELLED_CASES, type EvalCase, type EvalCategory } from "./cases.js";
+import {
+  HAND_LABELLED_CASES,
+  TOLERATED_FALSE_POSITIVES,
+  isToleratedFalsePositive,
+  type EvalCase,
+  type EvalCategory,
+} from "./cases.js";
 import { authoredLabelledCases } from "./contentCases.js";
 
 export type { EvalCase, EvalCategory };
@@ -170,6 +177,11 @@ export interface EvalReport {
   readonly gate: {
     readonly accuracyThreshold: number;
     readonly falseNegativeCeiling: number;
+    readonly falsePositiveCeiling: number;
+    /** Wrong answers graded correct that are NOT on the tolerated list. Any is a fail. */
+    readonly untoleratedFalsePositives: number;
+    /** Size of the named-exception list this run was measured against. */
+    readonly toleratedFalsePositives: number;
     readonly pass: boolean;
     readonly reasons: readonly string[];
   };
@@ -193,7 +205,90 @@ export interface RunEvalOptions {
   readonly concurrency?: number;
   readonly timeoutMs?: number;
   readonly policy?: JudgingPolicy;
+  /**
+   * Grade each case this many times and take the MAJORITY verdict, so one
+   * temperature-zero per-case flip cannot decide the gate. Default 1 — a quick
+   * local run stays a single pass; the gate run passes 3. Costs `repeats`x the
+   * model calls and roughly `repeats`x the wall-clock. An odd value avoids ties.
+   */
+  readonly repeats?: number;
   readonly onProgress?: (done: number, total: number) => void;
+}
+
+/**
+ * Grade one case `repeats` times and fold the runs into a single result by MAJORITY.
+ *
+ * Each repeat carries a distinct idempotency salt so the gateway cannot collapse the
+ * calls into one cached answer — the point is independent samples of a grader that is
+ * not perfectly deterministic even at temperature zero. Fallbacks (infrastructure)
+ * are excluded from the vote exactly as they are from the rate; a case is ungraded
+ * only if EVERY repeat fell back. Tokens sum and latency takes the worst, so the cost
+ * the run reports is the cost it actually paid.
+ */
+async function gradeWithRepeats(
+  service: GradingService,
+  testCase: EvalCase,
+  index: number,
+  repeats: number,
+): Promise<{
+  readonly actual: "CORRECT" | "WRONG";
+  readonly ungraded: boolean;
+  readonly latencyMs: number;
+  readonly path: string;
+  readonly confidence: string | null;
+  readonly promptTokens: number | null;
+  readonly completionTokens: number | null;
+}> {
+  let correct = 0;
+  let wrong = 0;
+  let gradedCount = 0;
+  let latencyMs = 0;
+  let promptTokens: number | null = null;
+  let completionTokens: number | null = null;
+  let lastPath = "";
+  let lastConfidence: string | null = null;
+  let lastKind: "CORRECT" | "WRONG" = "WRONG";
+
+  for (let repeat = 0; repeat < Math.max(1, repeats); repeat += 1) {
+    const verdict = await service.grade({
+      itemId: testCase.itemId,
+      answer: testCase.answer,
+      profileId: "eval",
+      attemptId: `eval-${index}-${repeat}`,
+      roundIndex: index % 6,
+      // Distinct per repeat so the provider treats each as a fresh classification.
+      idempotencySalt: `eval#${index}#${repeat}`,
+    });
+    latencyMs = Math.max(latencyMs, verdict.provenance.latencyMs);
+    lastPath = verdict.provenance.path;
+    lastConfidence = verdict.provenance.confidence;
+    lastKind = verdict.kind;
+    const pt = verdict.provenance.promptTokens;
+    const ct = verdict.provenance.completionTokens;
+    if (pt !== null) promptTokens = (promptTokens ?? 0) + pt;
+    if (ct !== null) completionTokens = (completionTokens ?? 0) + ct;
+    if (verdict.provenance.fallbackReason !== null) continue; // a fallback does not vote
+    gradedCount += 1;
+    if (verdict.kind === "CORRECT") correct += 1;
+    else wrong += 1;
+  }
+
+  if (gradedCount === 0) {
+    // Every repeat fell back: ungraded, carrying the last run's provenance.
+    return {
+      actual: lastKind,
+      ungraded: true,
+      latencyMs,
+      path: lastPath,
+      confidence: lastConfidence,
+      promptTokens,
+      completionTokens,
+    };
+  }
+  // Majority; a tie (only reachable with an even `repeats`) resolves to WRONG, the
+  // grader's own default when it is not sure, never a manufactured CORRECT.
+  const actual: "CORRECT" | "WRONG" = correct > wrong ? "CORRECT" : "WRONG";
+  return { actual, ungraded: false, latencyMs, path: lastPath, confidence: lastConfidence, promptTokens, completionTokens };
 }
 
 export async function runEval(options: RunEvalOptions): Promise<EvalReport> {
@@ -219,6 +314,7 @@ export async function runEval(options: RunEvalOptions): Promise<EvalReport> {
   let cursor = 0;
   let done = 0;
   const concurrency = Math.max(1, options.concurrency ?? 6);
+  const repeats = Math.max(1, options.repeats ?? 1);
 
   const worker = async (): Promise<void> => {
     for (;;) {
@@ -227,24 +323,17 @@ export async function runEval(options: RunEvalOptions): Promise<EvalReport> {
       if (index >= cases.length) return;
       const testCase = cases[index];
       if (testCase === undefined) return;
-      const verdict = await service.grade({
-        itemId: testCase.itemId,
-        answer: testCase.answer,
-        profileId: "eval",
-        attemptId: `eval-${index}`,
-        roundIndex: index % 6,
-      });
-      const ungraded = verdict.provenance.fallbackReason !== null;
+      const folded = await gradeWithRepeats(service, testCase, index, repeats);
       results[index] = {
         testCase,
-        actual: verdict.kind,
-        pass: verdict.kind === testCase.expect,
-        ungraded,
-        latencyMs: verdict.provenance.latencyMs,
-        path: verdict.provenance.path,
-        confidence: verdict.provenance.confidence,
-        promptTokens: verdict.provenance.promptTokens,
-        completionTokens: verdict.provenance.completionTokens,
+        actual: folded.actual,
+        pass: folded.actual === testCase.expect,
+        ungraded: folded.ungraded,
+        latencyMs: folded.latencyMs,
+        path: folded.path,
+        confidence: folded.confidence,
+        promptTokens: folded.promptTokens,
+        completionTokens: folded.completionTokens,
       };
       done += 1;
       options.onProgress?.(done, cases.length);
@@ -288,6 +377,18 @@ export async function runEval(options: RunEvalOptions): Promise<EvalReport> {
   const falsePositiveRate =
     expectedWrong.length === 0 ? 0 : falsePositives / expectedWrong.length;
 
+  // The false-positive gate has two parts doing different jobs (see tuning.ts and
+  // eval/cases.ts). The EXCEPTION LIST is the precise half: any wrong-expected case
+  // graded correct that is not tolerated fails the gate outright, at any rate — this
+  // is what catches a targeted regression like the two rubric bugs, which lived
+  // under the ceiling. The CEILING is the coarse half: it catches gross drift while
+  // staying above temperature-zero run-to-run noise, so an honest wobble on a large
+  // set does not red-flag a grader that has not regressed.
+  const falsePositiveResults = expectedWrong.filter((r) => r.actual === "CORRECT");
+  const untoleratedFalsePositives = falsePositiveResults.filter(
+    (r) => !isToleratedFalsePositive(r.testCase.itemId, r.testCase.answer),
+  );
+
   const reasons: string[] = [];
   if (accuracy < EVAL_PASS_THRESHOLD) {
     reasons.push(
@@ -297,6 +398,19 @@ export async function runEval(options: RunEvalOptions): Promise<EvalReport> {
   if (falseNegativeRate > EVAL_MAX_FALSE_NEGATIVE_RATE) {
     reasons.push(
       `false-negative rate ${(falseNegativeRate * 100).toFixed(1)}% exceeds the ${(EVAL_MAX_FALSE_NEGATIVE_RATE * 100).toFixed(0)}% ceiling — correct answers are being marked wrong`,
+    );
+  }
+  if (untoleratedFalsePositives.length > 0) {
+    const named = untoleratedFalsePositives
+      .map((r) => `${r.testCase.itemId} <- ${JSON.stringify(r.testCase.answer)}`)
+      .join("; ");
+    reasons.push(
+      `${untoleratedFalsePositives.length} wrong answer(s) graded correct and not on the tolerated list: ${named}. Fix the rubric or add the case to TOLERATED_FALSE_POSITIVES with a reason — never edit the label.`,
+    );
+  }
+  if (falsePositiveRate > EVAL_MAX_FALSE_POSITIVE_RATE) {
+    reasons.push(
+      `false-positive rate ${(falsePositiveRate * 100).toFixed(1)}% exceeds the ${(EVAL_MAX_FALSE_POSITIVE_RATE * 100).toFixed(0)}% ceiling — wrong answers are being graded correct beyond noise`,
     );
   }
   if (graded.length < all.length * 0.9) {
@@ -337,6 +451,9 @@ export async function runEval(options: RunEvalOptions): Promise<EvalReport> {
     gate: {
       accuracyThreshold: EVAL_PASS_THRESHOLD,
       falseNegativeCeiling: EVAL_MAX_FALSE_NEGATIVE_RATE,
+      falsePositiveCeiling: EVAL_MAX_FALSE_POSITIVE_RATE,
+      untoleratedFalsePositives: untoleratedFalsePositives.length,
+      toleratedFalsePositives: TOLERATED_FALSE_POSITIVES.length,
       pass: reasons.length === 0,
       reasons,
     },
@@ -375,8 +492,11 @@ export function formatEvalReport(report: EvalReport): string {
   }
   lines.push(
     "",
+    `false-positive gate  ceiling ${pct(report.gate.falsePositiveCeiling)} · ` +
+      `${report.gate.untoleratedFalsePositives} un-tolerated · ` +
+      `${report.gate.toleratedFalsePositives} on the exception list`,
     report.gate.pass
-      ? `GATE PASS  accuracy >= ${pct(report.gate.accuracyThreshold)} and false negatives <= ${pct(report.gate.falseNegativeCeiling)}`
+      ? `GATE PASS  accuracy >= ${pct(report.gate.accuracyThreshold)}, false negatives <= ${pct(report.gate.falseNegativeCeiling)}, false positives <= ${pct(report.gate.falsePositiveCeiling)} and none un-tolerated`
       : `GATE FAIL  ${report.gate.reasons.join("; ")}`,
   );
   return lines.join("\n");

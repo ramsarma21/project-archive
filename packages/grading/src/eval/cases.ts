@@ -548,3 +548,49 @@ export const HAND_LABELLED_CASES: readonly EvalCase[] = [
     why: "Confidently reversed ordering with a plausible-sounding consequence attached.",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// The named-exception list — the half of the false-positive gate that actually
+// catches targeted regressions.
+//
+// A WRONG-expected case that grades CORRECT and is NOT listed here fails the gate
+// outright, regardless of the false-positive CEILING. The ceiling (see
+// tuning.ts · EVAL_MAX_FALSE_POSITIVE_RATE) only catches gross drift without
+// tripping on temperature-zero noise; it would not have caught the two rubric
+// bugs this gate was built after, because they sat at 1.73%, under any sane
+// ceiling. This list is what makes a single over-crediting answer visible.
+//
+// THE REASON FIELD IS LOAD-BEARING. An entry with no reason is a silenced failure,
+// and this repo has already paid once for a guard that warned instead of blocking.
+// Every entry states, in prose, why crediting this specific wrong answer is a
+// tolerated grader limitation rather than a bug to fix — and that reason is what a
+// reviewer disputes when they think it should be removed.
+//
+// IT IS EMPTY ON PURPOSE. After the NAME_TWO, WHAT_RIGHT and
+// CORRECT_THE_APPRENTICE rubric fixes there is no wrong answer the grader credits
+// that we are willing to tolerate. The structure stays, empty, because the gate's
+// whole design is "any un-listed false positive fails": an empty list is the
+// strongest possible form of that, and a future genuinely-unfixable over-credit
+// gets added here WITH ITS REASON rather than by loosening the ceiling.
+export interface ToleratedFalsePositive {
+  readonly itemId: string;
+  readonly answer: string;
+  /** Why crediting this wrong answer is tolerated. Never blank. */
+  readonly reason: string;
+}
+
+export const TOLERATED_FALSE_POSITIVES: readonly ToleratedFalsePositive[] = [];
+
+/** The match key the gate uses: item id plus the answer, trimmed and lower-cased. */
+export function falsePositiveKey(itemId: string, answer: string): string {
+  return `${itemId}\u0000${answer.trim().toLowerCase()}`;
+}
+
+const TOLERATED_KEYS: ReadonlySet<string> = new Set(
+  TOLERATED_FALSE_POSITIVES.map((entry) => falsePositiveKey(entry.itemId, entry.answer)),
+);
+
+/** True when this (item, answer) false positive is on the named-exception list. */
+export function isToleratedFalsePositive(itemId: string, answer: string): boolean {
+  return TOLERATED_KEYS.has(falsePositiveKey(itemId, answer));
+}

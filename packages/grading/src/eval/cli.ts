@@ -65,6 +65,9 @@ async function main(): Promise<void> {
     cases,
     policy,
     concurrency: Number(flag("concurrency") ?? 6),
+    // The gate run passes --repeats 3 so one temperature-zero per-case flip cannot
+    // decide it; a bare local run stays a single, quick pass.
+    repeats: Number(flag("repeats") ?? 1),
     ...(flag("timeout") === undefined ? {} : { timeoutMs: Number(flag("timeout")) }),
     onProgress: (done, total) => {
       if (done % 20 === 0 || done === total) {

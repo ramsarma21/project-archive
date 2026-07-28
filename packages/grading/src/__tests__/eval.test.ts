@@ -9,7 +9,12 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { m1ItemBank } from "../items/m1.js";
-import { HAND_LABELLED_CASES } from "../eval/cases.js";
+import {
+  HAND_LABELLED_CASES,
+  TOLERATED_FALSE_POSITIVES,
+  isToleratedFalsePositive,
+  type EvalCase,
+} from "../eval/cases.js";
 import {
   authoredLabelledCases,
   authoredLabelledCounts,
@@ -17,6 +22,7 @@ import {
 import { authoredCases, buildEvalSet, runEval } from "../eval/harness.js";
 import {
   EVAL_MAX_FALSE_NEGATIVE_RATE,
+  EVAL_MAX_FALSE_POSITIVE_RATE,
   EVAL_PASS_THRESHOLD,
 } from "../tuning.js";
 import type { ClassifierProvider, ProviderResult } from "../provider.js";
@@ -259,5 +265,114 @@ describe("the harness arithmetic", () => {
     assert.ok(phrasing !== undefined);
     assert.ok(phrasing.total >= 20);
     assert.equal(phrasing.passRate, 1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The false-positive gate: a ceiling for gross drift, plus a named-exception list
+// that fails on any un-tolerated over-credit. And majority mode, which the gate
+// run uses so one temperature-zero flip cannot decide it.
+// ---------------------------------------------------------------------------
+
+/** A provider whose verdict depends on the repeat index carried in the idempotency
+ * key, so a test can prove majority voting and that the repeats are distinct calls. */
+function perRepeatProvider(
+  bank_: ReturnType<typeof m1ItemBank>,
+  sayCorrectOnRepeats: ReadonlySet<number>,
+): ClassifierProvider {
+  return {
+    classify: async (request, _signal, idempotencyKey): Promise<ProviderResult> => {
+      const item = bank_.items.find((candidate) =>
+        request.system.includes(`QUESTION ASKED: ${JSON.stringify(candidate.ask)}`),
+      );
+      if (item === undefined) throw new Error("provider could not identify the item");
+      const repeat = Number(idempotencyKey.split("#").pop());
+      const sayCorrect = sayCorrectOnRepeats.has(repeat);
+      const ideas: Record<string, boolean> = {};
+      for (const idea of item.ideas) ideas[idea.key] = sayCorrect;
+      return { raw: { ideas, answers: true, confidence: "HIGH" }, model: "per-repeat", promptTokens: 10, completionTokens: 2 };
+    },
+  };
+}
+
+function wrongCase(): EvalCase {
+  const found = set.find((testCase) => testCase.expect === "WRONG");
+  assert.ok(found, "the set must contain a WRONG-expected case");
+  return found;
+}
+
+describe("the false-positive gate", () => {
+  it("carries the ceiling and the exception-list size in the report", async () => {
+    const report = await runEval({
+      bank,
+      provider: oracle(bank, new Set()),
+      model: "oracle",
+      concurrency: 8,
+    });
+    assert.equal(report.gate.falsePositiveCeiling, EVAL_MAX_FALSE_POSITIVE_RATE);
+    assert.equal(report.gate.toleratedFalsePositives, TOLERATED_FALSE_POSITIVES.length);
+    assert.equal(report.gate.untoleratedFalsePositives, 0);
+    assert.equal(report.gate.pass, true);
+  });
+
+  it("fails on a single un-tolerated false positive even below the ceiling", async () => {
+    // Flip exactly one WRONG-expected case to CORRECT: one over-credit out of the
+    // whole set is well under any percentage ceiling, and it must still fail —
+    // that is the half of the gate the ceiling cannot provide.
+    const target = wrongCase();
+    const lies = new Set([`${target.itemId}\u0000${target.answer.trim()}`]);
+    const report = await runEval({
+      bank,
+      provider: oracle(bank, lies),
+      model: "oracle",
+      concurrency: 8,
+    });
+    assert.equal(report.falseNegatives, 0);
+    assert.ok(report.falsePositives >= 1);
+    assert.ok(report.falsePositiveRate < EVAL_MAX_FALSE_POSITIVE_RATE, "one FP is under the ceiling");
+    assert.equal(report.gate.untoleratedFalsePositives >= 1, true);
+    assert.equal(report.gate.pass, false);
+    assert.ok(
+      report.gate.reasons.some((reason) => reason.includes("not on the tolerated list")),
+      `reasons: ${report.gate.reasons.join("; ")}`,
+    );
+  });
+
+  it("ships an empty exception list, and the matcher is exact", () => {
+    assert.equal(TOLERATED_FALSE_POSITIVES.length, 0);
+    assert.equal(isToleratedFalsePositive("any.item", "any answer"), false);
+    // Every entry, if any are ever added, must carry a non-blank reason.
+    for (const entry of TOLERATED_FALSE_POSITIVES) {
+      assert.ok(entry.reason.trim().length > 0, `${entry.itemId} tolerated with no reason`);
+    }
+  });
+});
+
+describe("majority mode", () => {
+  it("takes the majority verdict across repeats, and the repeats are distinct calls", async () => {
+    const target = wrongCase();
+    // CORRECT on 2 of 3 repeats -> majority CORRECT -> an over-credit the gate sees.
+    const majorityCorrect = await runEval({
+      bank,
+      provider: perRepeatProvider(bank, new Set([0, 1])),
+      model: "per-repeat",
+      cases: [target],
+      repeats: 3,
+      concurrency: 1,
+    });
+    assert.equal(majorityCorrect.falsePositives, 1, "2-of-3 CORRECT is a majority CORRECT");
+
+    // CORRECT on only 1 of 3 -> majority WRONG -> correctly rejected. If the gateway
+    // had collapsed the three identical requests this could not differ from above,
+    // so this also proves the per-repeat idempotency salt makes them distinct.
+    const majorityWrong = await runEval({
+      bank,
+      provider: perRepeatProvider(bank, new Set([0])),
+      model: "per-repeat",
+      cases: [target],
+      repeats: 3,
+      concurrency: 1,
+    });
+    assert.equal(majorityWrong.falsePositives, 0, "1-of-3 CORRECT is a majority WRONG");
   });
 });
