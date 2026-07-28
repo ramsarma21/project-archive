@@ -19,9 +19,12 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   ignore list.
 - **[~]** No transition drives the body through **drawn** geometry. **Now measurable**
   (`0aefc4c`): 10 of 32 transitions clip drawn geometry — the meeting-house ridge at 0.32 m is
-  "climbing through a church", caught at last. Five elm climbs bury the body ≤0.81 m in the trunk
-  and **survived two elm rebuilds**, so the anchors run up the bole's centreline by design: a
-  climb-authoring defect, not an asset one. Fixes in flight.
+  "climbing through a church", caught at last. Four of the five elm climbs now **graze** rather than bury
+  (0.667→0.115, 0.461→0.114, 0.330→0.055) after routing the swept paths out of the drawn canopy
+  — standing at the anchors was always clean. The fifth cannot clear without moving the beat
+  stance, and its residual is the instrument's own synthetic run-up. Remaining: the church ridge
+  at 0.326 m is the `roof-ridge-monitor` **asset drawn proud**, not a path defect — routed to the
+  asset lane. Town House ×2 at 0.144 m judged mesh-proud and left, with reasons.
 - **[x]** A climb happens only where a visible means exists, and the means is **solid** — the
   body can no longer pass through a ladder (`381860f`). It stands a body-radius beside the climb
   foot so no invisible wall appears where the player must stand; the mover collides with it while
@@ -35,8 +38,8 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[~]** Eight of nine traversal moments are adjudicated **legitimately hard and kept, with
   reasons** — a 2.2 m stride off a roof is what the engine's own `runOffMaxDropM` encodes. The one
   genuinely implausible moment is a 3.4 m drop that classifies as a *roll* onto a 1.6 m beam
-  barely wider than the body; a 0.2 m beam raise makes it a controlled hang-drop. In flight.
-  Original measurements: three drops land 1.9–2.2 m
+  barely wider than the body — **fixed**: the beam is up 0.2 m, so the fall is 3.2 m and reads as
+  a feet-first hang-drop. All nine now adjudicated. Original measurements: three drops land 1.9–2.2 m
   as a stride where a body would roll, one 5.2 m drop is at the roll ceiling, one 3.4 m drop
   lands on a 1.6 m beam, one 3.2 m hang-drop hits hard ground, two 3.0 m roof-pitch climbs are
   at the climb ceiling.

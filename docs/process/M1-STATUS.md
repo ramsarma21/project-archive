@@ -305,6 +305,7 @@ the orchestrator actually made, and the specific change made in response.
 | Called two gates "blocking" for hours when CI had never run once — `main` was 204 commits unpushed | A gate is unverified until a real run is observed. Say "unverified" until then, and push early enough to find out. |
 | Accepted a local green as evidence for a cross-platform property; the first Linux run failed on a baked-constant guard comparing against the host's own `Math.sin` | A determinism claim cannot be verified on one platform. Reason about the runner, not the laptop. |
 | Quoted the affordance debt count as a fixed number to a lane whose branch predated three retirements | A moving count needs its baseline named. Say "22 on `main` as of X", not "22". |
+| Told a lane the elm climb **anchors** ran through the trunk; standing at every anchor was clean and it was the **swept paths** threading the canopy | Name the measured thing, not the inferred cause. The instrument reported per-transition depth, not per-anchor. |
 
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran
