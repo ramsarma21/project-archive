@@ -225,7 +225,7 @@ test("a jump under a deck stops at the boards instead of teleporting on top", ()
   const freeApex = (STANDING_JUMP_VY * STANDING_JUMP_VY) / (2 * GRAVITY);
   let maxFoot = 0;
   for (let i = 0; i < 240; i++) {
-    s = stepMotion(w, s, { dt: 1 / 120, targetVelX: 0, targetVelZ: 0, reducedMotion: false }).state;
+    s = stepMotion(w, s, { dt: 1 / 60, targetVelX: 0, targetVelZ: 0, reducedMotion: false }).state;
     maxFoot = Math.max(maxFoot, s.pos.y);
     if (s.grounded) break;
   }
