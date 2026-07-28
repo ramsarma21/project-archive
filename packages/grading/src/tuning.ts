@@ -61,3 +61,27 @@ export const MAX_ANSWER_CHARS = 1_200;
  */
 export const EVAL_PASS_THRESHOLD = 0.95;
 export const EVAL_MAX_FALSE_NEGATIVE_RATE = 0.02;
+
+/**
+ * The false-positive ceiling — a wrong answer graded correct. Gated now, where it
+ * was not before, because over-crediting is the owner's actual complaint ("it keeps
+ * granting right") and in a teaching duel a win you can get with a wrong answer
+ * teaches the misconception at the moment it was meant to be corrected.
+ *
+ * TWO MECHANISMS WITH A DIVISION OF LABOUR, and the ceiling is the WEAKER half:
+ *
+ *   - This CEILING catches gross drift only. It is set at 2.0% to sit above the
+ *     temperature-zero measurement noise (the graded count wobbles by a case or two
+ *     run to run, and one case is ~0.6%), so it never trips on that noise. But 2.0%
+ *     would NOT have caught the two rubric bugs this gate was built after — they sat
+ *     at 1.73%, under any sane ceiling — so a ceiling alone is a gate that reports
+ *     healthy while teaching a falsehood.
+ *   - The NAMED-EXCEPTION LIST (eval/cases.ts · TOLERATED_FALSE_POSITIVES) is the
+ *     half that actually catches targeted regressions: any wrong-expected case that
+ *     grades correct and is not on that list fails the gate outright, ceiling or no.
+ *
+ * Do not "simplify" the exception list into the ceiling. They do different jobs; the
+ * ceiling is only here so honest run-to-run noise on a large set does not red-flag a
+ * grader that has not regressed.
+ */
+export const EVAL_MAX_FALSE_POSITIVE_RATE = 0.02;

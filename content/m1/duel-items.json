@@ -400,7 +400,7 @@
       "referenceAnswer": "He is wrong. The stamp falls on printed paper and legal paper — newspapers, handbills, deeds, court papers, licences. Bread and cloth and nails are ordinary goods, and ordinary goods are not what the Act taxes.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.CORRECT_THE_APPRENTICE.v1",
-        "requiredCore": "The Act does not reach ordinary goods; what it taxes is printed and/or legal paper.",
+        "requiredCore": "An asserted correction: the answer must SAY that ordinary goods are not taxed and/or that what the Act taxes is printed or legal paper — as a claim, not a word list. A bare run of the boundary's own terms (paper, legal, printed, goods, not taxed) with no correction made asserts nothing and does not carry it.",
         "line": "The correction must name what is actually taxed, not merely deny the apprentice. An incomplete enumeration still holds the boundary and earns it — a student who says 'only newspapers and stuff like that' has separated paper from goods, which is the concept. A bare contradiction has not.",
         "acceptExamples": [
           { "text": "no its just paper things", "why": "Denies and names the category." },
@@ -414,7 +414,8 @@
           { "text": "no, only things imported from britain", "why": "A different and wrong boundary, and the one a student who has already met the Sugar Act is most likely to reach for." },
           { "text": "no, only tea", "why": "Wrong Act, wrong decade." },
           { "text": "no, only rich people have to pay it", "why": "Substitutes who pays for what is taxed." },
-          { "text": "no, it taxes all the printed things and also everything you buy", "why": "Names the category and then reinstates the apprentice's error." }
+          { "text": "no, it taxes all the printed things and also everything you buy", "why": "Names the category and then reinstates the apprentice's error." },
+          { "text": "paper legal printed goods not taxed target", "why": "A run of the rubric's own boundary words with no correction asserted and nothing said to the apprentice. It names both sides of the line and claims neither: a list of terms is not an assertion, so the core is absent however correct every word in it is." }
         ]
       }
     },
