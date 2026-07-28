@@ -19,6 +19,7 @@ import {
   type CollisionWorld,
   type Vec3,
   headClearance,
+  ladderTaggedIds,
   positionClear,
   supportBelow,
 } from "@pa/engine-world/collision";
@@ -540,11 +541,16 @@ function verifyAuthored(
   // A VAULT was already preflighted through the live reader above; every other
   // authored kind is checked here against its own endpoints.
   if (!liveVerified) {
+    // The climb passes its own ladder: the solid stands beside the climb line and
+    // is a climb affordance, not a wall the ascent must avoid. Ignored here so the
+    // authored trajectory is verified against the world it moves through, exactly
+    // as the reader and node-fit ignore it.
+    const climbIgnore = [...(spec.ignore ?? []), ...ladderTaggedIds(world)];
     const started = beginAuthored(world, createGroundedState(toVec(from.pos), 0), {
       kind,
       anchors,
       durationMs: Math.round(durationS * 1000),
-      ...(spec.ignore ? { ignore: spec.ignore } : {}),
+      ignore: climbIgnore,
     });
     if (!started) {
       problems.push("beginAuthored refuses this affordance (endpoint or trajectory)");
@@ -602,6 +608,10 @@ function verifyGrounded(
       )
       .map((mass) => mass.id),
   );
+  // Ladders stand BESIDE the route line, not on it; a grounded walk that passes
+  // near a climb foot is not walking into a wall. They are climb affordances the
+  // verification sees through, exactly as node-fit and the reader do.
+  for (const id of ladderTaggedIds(world)) kerbs.add(id);
 
   for (let index = 0; index <= steps; index++) {
     const t = index / steps;
@@ -734,6 +744,13 @@ export function verifyNode(compiled: CompiledLevel, spec: RouteNode): string[] {
   const problems: string[] = [];
   const crouched = spec.tags.includes("crouch");
   const height = crouched ? CROUCH_HEIGHT : STAND_HEIGHT;
+  // A ladder is a climb affordance the route stands AT and BESIDE, not a wall it
+  // walks into: a climb node sits at its ladder's foot by design. So the solid
+  // ladders are transparent to node-fit and standable-span here — the same way
+  // the reader and the arming predicate ignore them. Whether a solid ladder
+  // actually walls the route IN PLAY is proven by check-playthrough, where the
+  // mover does collide with them.
+  const ladders = ladderTaggedIds(world);
   const support = supportBelow(
     world,
     spec.pos[0],
@@ -758,6 +775,7 @@ export function verifyNode(compiled: CompiledLevel, spec: RouteNode): string[] {
       { x: spec.pos[0], y: spec.pos[1], z: spec.pos[2] },
       CAPSULE_RADIUS,
       height,
+      ladders,
     )
   ) {
     problems.push("the body does not fit here");
@@ -766,7 +784,7 @@ export function verifyNode(compiled: CompiledLevel, spec: RouteNode): string[] {
   // Below minStandableTopDepthM the parkour reader classifies the top as not
   // standable and degrades a mantle to a climb-over, so a route node on one is
   // a place the player cannot actually be left.
-  const span = standableSpanM(world, spec.pos, height);
+  const span = standableSpanM(world, spec.pos, height, 3, ladders);
   if (span < MOVEMENT_CAPABILITIES.minStandableTopDepthM - 1e-6) {
     problems.push(
       `only ${span.toFixed(2)}m of standable surface across the narrow axis; the reader needs ${MOVEMENT_CAPABILITIES.minStandableTopDepthM.toFixed(2)}m`,
@@ -785,6 +803,7 @@ export function standableSpanM(
   pos: Vec3Tuple,
   height: number,
   limit = 3,
+  ignore?: ReadonlySet<string>,
 ): number {
   const step = 0.05;
   const reach = (dx: number, dz: number): number => {
@@ -794,7 +813,7 @@ export function standableSpanM(
       const z = pos[2] + dz * d;
       const support = supportBelow(world, x, z, pos[1] + CONTACT_EPS);
       if (!support || Math.abs(support.y - pos[1]) > CONTACT_EPS) break;
-      if (!positionClear(world, { x, y: pos[1], z }, CAPSULE_RADIUS, height)) break;
+      if (!positionClear(world, { x, y: pos[1], z }, CAPSULE_RADIUS, height, ignore)) break;
       travelled = d;
     }
     return travelled;

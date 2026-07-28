@@ -26,23 +26,34 @@
 //          rather than hangs — arming alone is the soft-lock, so it is not enough.
 //          No body is ever inside solid geometry (window.__diag penetration ring).
 //   YARD   a driven run reaches the rope-walk yard region (the route's end line).
+//   REFUSAL "no ladder, no climb", in real play. At the foot of an authored ladder
+//          a climb ARMS; with every ladder and grip stripped from the live world
+//          the SAME climb volume REFUSES (nothing offered, nothing performed). A
+//          controlled A/B whose only difference is the affordance — the runtime
+//          half of the fix the floating-ladder / climb-through bugs needed.
+//   BEAT   the Liberty Elm crown is REACHED BY CLIMBING (not by spawning on the
+//          bough as the unit test does), and the posting beat ARMS from where the
+//          climb arrives — reachability against the widened stance (2.4 m, ±135°).
 //   DUEL   the duel harness LOADS A WORLD (verdict=live must not render the two
-//          fighters into an empty void), and a graded answer discriminates right
-//          from wrong (verdict=correct grants the player more balls than wrong).
+//          fighters into an empty void), a graded answer discriminates right from
+//          wrong (verdict=correct grants more balls than wrong), and the GRADER
+//          RAN ON THE REAL PATH — a live answer moves the API's own grading window
+//          (/v1/health), which a client-minted fallback the server never saw could
+//          not do.
 //
 // WHAT IT DELIBERATELY DOES NOT ASSERT, with the reason (see the report / README):
 //   Full REACHED_DUEL completion is NOT required of the autonomous driver. The
 //   terminal objective is gated on the reaction-timing posting beat at the Liberty
 //   Elm and a precise bough dismount; a bot that reliably executes that skill beat
 //   is itself a flaky dependency, and a flaky gate gets disabled — worse than none.
-//   The authored route's reachability is already covered at the DATA level by
-//   mission-m1's route.test.ts / traversability.test.ts; this gate adds the
-//   rendered + encounter + penetration coverage those cannot see, and samples the
-//   final "reach the yard" section end-to-end via a drop-in rather than requiring
-//   the skill beat to be played.
+//   BEAT proves the crown is reachable and the beat ARMS; it does not play the
+//   flare-timing skill beat to RESOLVED. And the grader check proves the real path
+//   ran, NOT that a model classified: with no classifier credential (the CI shape)
+//   classifiedInWindow cannot move, and asserting a real classification would need
+//   a live model call — a flaky external dependency this gate refuses to take on.
 //
 // USAGE
-//   node scripts/check-playthrough.mjs [baseURL] [--only world,route,yard,duel]
+//   node scripts/check-playthrough.mjs [baseURL] [--only world,route,yard,refusal,beat,duel]
 //   PLAYTHROUGH_BASE=http://localhost:5273 node scripts/check-playthrough.mjs
 //
 // It needs a running dev web server (the mission + duel harnesses), and the DUEL
@@ -122,6 +133,29 @@ const DUEL = {
   // botSky = fraction of the lower-centre band that is open sky. A real arena fills
   // it with ground/props (~0.06); the void leaves the fighters in open sky (~0.89).
   voidBotSkyMax: 0.5,
+};
+// REFUSAL — "no ladder, no climb", exercised in real play. Spawns at the foot of
+// the authored scaffold ladder (route node C_SCAFF_FOOT, the SCAFFOLD_D1 climb
+// volume) and drives the body up. With the ladder present a climb must ARM; with
+// every ladder AND grip stripped from the live collision world the same climb
+// volume must REFUSE — nothing offered, nothing performed. The stance is written
+// against OBSERVABLE behaviour (previewVerb / motion.phase / flow.verb /
+// verbsUsed), never the probe internals, because the engine lane is actively
+// changing parkour/probe.ts. Real ladder/grip coordinates come from
+// packages/mission-m1/src/level/ladders.ts, not invented here.
+const REFUSAL = {
+  at: "C_SCAFF_FOOT", toward: "C_SCAFF_1", climbSurface: "SCAFFOLD_D1",
+  driveS: 4.5, // long enough that a refusal that leaks would have climbed by now
+};
+// BEAT — the Liberty Elm posting beat must be REACHED BY CLIMBING, not assumed by
+// spawning on the bough (which is exactly what missionBeat.test.ts does). Drops in
+// on the low bough (F_LOW), climbs the authored elm GRIP to the crown (F_CROWN),
+// and asserts the beat ARMS from where the climb arrives. Reachability, not the
+// old tight stance values — the tolerances were widened to 2.4 m / ±135°.
+const BEAT = {
+  at: "F_LOW", toward: "F_CROWN",
+  crownY: 8.0, // BOUGH_CROWN band is 8.3; 8.0 is "arrived at the crown"
+  climbS: 6, settleS: 5,
 };
 const JUMP_VERBS = ["JUMP", "JUMP_GAP", "LEAP_OF_FAITH", "DASH_JUMP"];
 
@@ -223,6 +257,88 @@ const MISSION_READ = () => {
     outcome: rt.outcome ? { kind: rt.outcome.kind, code: rt.outcome.failure?.code ?? null } : null,
   };
 };
+
+// The climb-affordance observables, read off the running game's own black boxes.
+// previewVerb is what the geometry OFFERS (the affordance cue, computed every step
+// regardless of consent); motion.phase / flow.verb / verbsUsed are what actually
+// RAN. A refusal is the absence of all four; a climb is the presence of any.
+const CLIMB_READ = () => {
+  const rt = window.__floor;
+  if (!rt || !rt.motion) return null;
+  const m = rt.motion;
+  return {
+    pos: { x: m.pos.x, y: m.pos.y, z: m.pos.z },
+    phase: m.phase,
+    grounded: m.grounded,
+    previewVerb: rt.flow?.previewVerb ?? null,
+    verb: rt.flow?.verb ?? null,
+    climbing: m.phase === "CLIMB_UP" || rt.flow?.verb === "CLIMB_UP",
+    climbUsed: [...(rt.verbsUsed ?? [])].includes("CLIMB_UP"),
+    climbOffered: rt.flow?.previewVerb === "CLIMB_UP",
+    beat: rt.beat ? rt.beat.phase : null,
+  };
+};
+
+// The API's own grading counters, read without a session off /v1/health through
+// the web dev server's proxy. `configured:false` (no classifier credential — the
+// CI shape) pins the model out of reach, so `classifiedInWindow` cannot move; what
+// still moves when a REAL duel round reaches the server pipeline is the round /
+// gradeable count, and that is the honest proof the grader ran in play rather than
+// the client minting a fallback the server never saw.
+async function fetchGrading() {
+  try {
+    const res = await fetch(`${BASE}/v1/health`, { signal: AbortSignal.timeout(4000) });
+    const json = await res.json();
+    return json?.grading ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Boot a mission-floor drop-in at a named route node and wait for the runtime to
+// tick. No GLB settle is needed here (these stages read the collision world and
+// motion, not the render census), so the wait is short.
+async function bootMissionAt(browser, at, toward, settleMs = 2500) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const pageErrors = [];
+  page.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));
+  const url = `${BASE}/src/mission/floor.html?hold=0&at=${at}&toward=${toward}&encounterVerdict=correct`;
+  await page.goto(url, { waitUntil: "commit", timeout: 120000 });
+  let up = false;
+  for (let i = 0; i < 300; i++) {
+    if ((await page.evaluate(() => window.__floor?.ticks ?? null).catch(() => null)) !== null) { up = true; break; }
+    await sleep(200);
+  }
+  if (up) await sleep(settleMs);
+  return { page, url, up, pageErrors };
+}
+
+// Sprint the body forward (Shift+W) and buffer Space each grounded tick so a gated
+// upward ascent commits. Watches the climb observables for the whole window (or
+// until the first climb, when breakOnClimb is set). Returns what it saw.
+async function driveAndWatchClimb(page, seconds, { breakOnClimb = false } = {}) {
+  await page.mouse.click(640, 400).catch(() => {});
+  await page.keyboard.down("ShiftLeft");
+  await page.keyboard.down("KeyW");
+  let climbArmed = false, climbOffered = false, maxY = -Infinity;
+  const verbs = new Set();
+  const start = Date.now();
+  while ((Date.now() - start) / 1000 < seconds) {
+    const s = await page.evaluate(CLIMB_READ).catch(() => null);
+    if (s) {
+      if (s.pos.y > maxY) maxY = s.pos.y;
+      if (s.verb && s.verb !== "NONE") verbs.add(s.verb);
+      if (s.climbOffered) climbOffered = true;
+      if (s.climbing || s.climbUsed) { climbArmed = true; climbOffered = true; }
+      if (s.grounded) await page.keyboard.press("Space").catch(() => {});
+      if (breakOnClimb && climbArmed) break;
+    }
+    await sleep(100);
+  }
+  await page.keyboard.up("KeyW").catch(() => {});
+  await page.keyboard.up("ShiftLeft").catch(() => {});
+  return { climbArmed, climbSeen: climbArmed || climbOffered, maxY, verbs: [...verbs] };
+}
 
 function worldCensus() {
   const st = window.__stage;
@@ -471,6 +587,128 @@ async function stageYard(browser) {
 }
 
 // ---------------------------------------------------------------------------
+// STAGE: REFUSAL (a climb arms at a validated ladder; without one it refuses).
+//
+// This is the runtime half of the "no ladder, no climb" rule and the one check
+// here that would have caught the shipped floating-ladder / climb-through class.
+// It is a controlled A/B at ONE authored ladder foot, so the only difference
+// between the two runs is whether the affordance exists — which is exactly what
+// the refusal predicate keys on. Written against observable behaviour so it does
+// not break when the engine lane edits probe.ts.
+// ---------------------------------------------------------------------------
+async function stageRefusal(browser) {
+  log("\n[REFUSAL] a climb arms at a validated ladder, and refuses without one");
+
+  // --- positive: the scaffold ladder is authored, so a climb MUST arm here ---
+  {
+    const { page, url, up } = await bootMissionAt(browser, REFUSAL.at, REFUSAL.toward);
+    if (!up) {
+      assert(false, "mission runtime comes up (refusal/ladder)", `window.__floor never appeared at ${url}`);
+      await page.close();
+    } else {
+      const armed = await driveAndWatchClimb(page, REFUSAL.driveS, { breakOnClimb: true });
+      await page.screenshot({ path: join(OUT, "refusal-ladder.png") }).catch(() => {});
+      writeFileSync(join(OUT, "refusal-ladder.json"), JSON.stringify(armed, null, 2));
+      log(`        ladder present: climbArmed=${armed.climbArmed} maxY=${armed.maxY.toFixed(2)} verbs=${JSON.stringify(armed.verbs)}`);
+      assert(armed.climbArmed, "a validated ladder arms a climb in real play",
+        `driven up the authored scaffold ladder at ${REFUSAL.at}, the body never entered CLIMB_UP (motion.phase/flow.verb/verbsUsed) within ${REFUSAL.driveS}s — a climb the world authors a ladder for did not arm (maxY=${armed.maxY.toFixed(2)}, verbs ${JSON.stringify(armed.verbs)}); see refusal-ladder.png`);
+      await page.close();
+    }
+  }
+
+  // --- negative: strip every ladder AND grip; the SAME climb volume must refuse.
+  // Removing the affordances from the live collision world reconstructs "a climb
+  // volume that has no ladder or grip" — the shipped world authors one for all 11,
+  // so this is the only way to reach the bare-volume state the predicate guards.
+  {
+    const { page, url, up } = await bootMissionAt(browser, REFUSAL.at, REFUSAL.toward);
+    if (!up) {
+      assert(false, "mission runtime comes up (refusal/bare)", `window.__floor never appeared at ${url}`);
+      await page.close();
+    } else {
+      const stripped = await page.evaluate(() => {
+        const w = window.__floor?.instance?.world;
+        if (!w) return { ok: false, had: null };
+        const had = { ladders: (w.ladders ?? []).length, grips: (w.grips ?? []).length };
+        w.ladders = [];
+        w.grips = [];
+        return { ok: true, had };
+      });
+      const bare = await driveAndWatchClimb(page, REFUSAL.driveS);
+      await page.screenshot({ path: join(OUT, "refusal-bare.png") }).catch(() => {});
+      writeFileSync(join(OUT, "refusal-bare.json"), JSON.stringify({ stripped, bare }, null, 2));
+      log(`        affordance stripped (${JSON.stringify(stripped.had)}): climbSeen=${bare.climbSeen} maxY=${bare.maxY.toFixed(2)}`);
+      assert(stripped.ok, "the live collision world is reachable to strip affordances",
+        "window.__floor.instance.world was not present, so the refusal negative could not be set up (build without the dev runtime handle?)");
+      assert(!bare.climbSeen, "no ladder and no grip means no climb (refusal holds in play)",
+        `standing in the ${REFUSAL.climbSurface} climb volume with EVERY ladder and grip removed from the live world, the body was still offered or performed a climb (previewVerb/motion.phase/flow.verb/verbsUsed reported CLIMB_UP; reached y=${bare.maxY.toFixed(2)}) — the climb-refusal predicate did not fire, which is the floating-ladder / climb-through class the refusal fix exists to prevent; see refusal-bare.png`);
+      await page.close();
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// STAGE: BEAT (the Liberty Elm crown is reached by CLIMBING, and the beat arms).
+//
+// missionBeat.test.ts spawns the player on the bough and pins arming from there;
+// it never proves the crown can be climbed to. This drops in on the low bough,
+// climbs the authored elm grip to the crown, and asserts the posting beat arms
+// from where the climb arrives — reachability, against the widened stance.
+// ---------------------------------------------------------------------------
+async function stageBeat(browser) {
+  log("\n[BEAT] the Liberty Elm crown is reachable by climbing, and the beat arms on arrival");
+  const { page, url, up } = await bootMissionAt(browser, BEAT.at, BEAT.toward);
+  if (!up) {
+    assert(false, "mission runtime comes up (elm beat)", `window.__floor never appeared at ${url}`);
+    await page.close();
+    return;
+  }
+  const spawn = await page.evaluate(CLIMB_READ);
+  await page.mouse.click(640, 400).catch(() => {});
+
+  // Phase 1: climb from the bough to the crown, then stop pushing.
+  await page.keyboard.down("ShiftLeft");
+  await page.keyboard.down("KeyW");
+  let sawClimb = false, maxY = -Infinity, reachedCrown = false;
+  const t0 = Date.now();
+  while ((Date.now() - t0) / 1000 < BEAT.climbS) {
+    const s = await page.evaluate(CLIMB_READ).catch(() => null);
+    if (s) {
+      if (s.pos.y > maxY) maxY = s.pos.y;
+      if (s.climbing || s.climbUsed) sawClimb = true;
+      if (s.pos.y >= BEAT.crownY) { reachedCrown = true; break; }
+      if (s.grounded) await page.keyboard.press("Space").catch(() => {});
+    }
+    await sleep(100);
+  }
+  await page.keyboard.up("KeyW").catch(() => {});
+  await page.keyboard.up("ShiftLeft").catch(() => {});
+
+  // Phase 2: settle in the stance; the beat must arm from the arrival pose.
+  let beatArmed = false, arrival = null;
+  const t1 = Date.now();
+  while ((Date.now() - t1) / 1000 < BEAT.settleS) {
+    const s = await page.evaluate(CLIMB_READ).catch(() => null);
+    if (s) {
+      if (!arrival) arrival = s.pos;
+      if (s.beat === "ACTIVE" || s.beat === "SETTLING" || s.beat === "RESOLVED") { beatArmed = true; break; }
+    }
+    await sleep(120);
+  }
+  const end = await page.evaluate(CLIMB_READ);
+  await page.screenshot({ path: join(OUT, "beat-crown.png") }).catch(() => {});
+  writeFileSync(join(OUT, "beat.json"), JSON.stringify({ url, spawn: spawn?.pos, arrival, end, sawClimb, maxY, reachedCrown, beatArmed }, null, 2));
+  log(`        spawn y=${spawn?.pos.y.toFixed(1)} maxY=${maxY.toFixed(2)} reachedCrown=${reachedCrown} climbed=${sawClimb} endBeat=${end?.beat} beatArmed=${beatArmed}`);
+  assert(sawClimb, "the elm crown is reached by CLIMBING, not by spawning there",
+    `driven from ${BEAT.at} toward ${BEAT.toward}, the body never entered CLIMB_UP — the crown climb the posting beat sits on did not run (maxY=${maxY.toFixed(2)}); see beat-crown.png`);
+  assert(reachedCrown, "the climb reaches the crown band",
+    `the body climbed but only reached y=${maxY.toFixed(2)} (< crown ${BEAT.crownY}) — it did not arrive at the crown where the posting beat sits; see beat-crown.png`);
+  assert(beatArmed, "the posting beat arms from where the climb arrives",
+    `the body climbed to the crown (y=${maxY.toFixed(2)}) but the beat never left STANCE (end phase ${end?.beat ?? "n/a"}) — the beat's stance (2.4 m / ±135°) is not reachable from the climb's arrival pose; see beat-crown.png`);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------
 // STAGE: DUEL (world loads, and grading discriminates).
 // ---------------------------------------------------------------------------
 // botSky: fraction of the lower-centre band of a screenshot that is open sky. A
@@ -507,6 +745,31 @@ async function duelBotSky(page) {
   return page.evaluate(skyFractionOfPng, dataUrl);
 }
 
+// Drive an already-mounted duel page to submit one real answer: wait for the
+// question panel, fill it, select the evidence cards until Submit enables, and
+// click. Returns whether a submission was actually sent. Used by the live grader
+// check — the round it triggers is what must reach the server's grading pipeline.
+async function submitLiveAnswer(page) {
+  const readPhase = () => page.evaluate(() => { const d = window.__duel; if (!d) return null; return d.getHud().phase; }).catch(() => null);
+  let sawQ = false;
+  for (let i = 0; i < 120; i++) {
+    const phase = await readPhase();
+    if ((await page.$("textarea.duel-answer")) && phase === "QUESTION_PENDING") { sawQ = true; break; }
+    await sleep(300);
+  }
+  if (!sawQ) return false;
+  await page.fill("textarea.duel-answer", "Parliament resolved the colonies should help pay the war debt through the stamp.").catch(() => {});
+  const cards = await page.$$("button.ev-mini-face");
+  for (let i = 0; i < cards.length && i < 4; i++) {
+    await cards[i].click().catch(() => {});
+    await sleep(180);
+    if (!(await page.$eval("button.duel-submit", (b) => b.disabled).catch(() => true))) break;
+  }
+  if (await page.$eval("button.duel-submit", (b) => b.disabled).catch(() => true)) return false;
+  await page.click("button.duel-submit").catch(() => {});
+  return true;
+}
+
 async function stageDuel(browser) {
   // --- world loads (verdict=live must not be an empty void) ---
   log("\n[DUEL] the harness loads a world (verdict=live)");
@@ -533,6 +796,45 @@ async function stageDuel(browser) {
       log(`        botSky=${botSky.toFixed(3)} (void>${DUEL.voidBotSkyMax}) fighters=${pos ? `A(${pos.A.x.toFixed(0)},${pos.A.z.toFixed(0)}) B(${pos.B.x.toFixed(0)},${pos.B.z.toFixed(0)})` : "n/a"}`);
       assert(botSky <= DUEL.voidBotSkyMax, "duel renders a world, not an empty void",
         `the lower-centre of the frame is ${(botSky * 100).toFixed(0)}% open sky (> ${(DUEL.voidBotSkyMax * 100).toFixed(0)}%) — the fighters are standing in the void with no arena around them (the arena is drawn at the origin while the fight is at the mission's coordinates)`);
+
+      // --- the grader RAN on the real duel path (not a client-minted verdict) ---
+      // "Grading never ran in play" was a WIRING failure — the classifier not
+      // invoked on the real duel path — and it disguised itself as a client-minted
+      // fallback verdict, so asserting "a verdict appeared" catches nothing. Submit
+      // a real answer on this live attempt and require the API's OWN grading window
+      // to advance: the round/gradeable counters move only when the server grading
+      // pipeline processes the round, whereas a client mint the server never saw
+      // leaves them flat. classifiedInWindow deliberately is NOT asserted — with no
+      // classifier credential (the CI shape, status UNGRADED) the model is out of
+      // reach and cannot classify, so requiring it would need a live model call:
+      // a flaky external dependency this gate must not take on. The gradeable-round
+      // delta is the honest, deterministic proof that the real path ran.
+      log("\n[DUEL] the grader ran on the real duel path (live submit moves /v1/health)");
+      const before = await fetchGrading();
+      const submitted = await submitLiveAnswer(page);
+      let after = before;
+      if (submitted && before) {
+        for (let i = 0; i < 30; i++) {
+          const h = await fetchGrading();
+          if (h && h.roundsInWindow > before.roundsInWindow) { after = h; break; }
+          await sleep(200);
+        }
+      }
+      const dRounds = before && after ? after.roundsInWindow - before.roundsInWindow : null;
+      const dGradeable = before && after ? after.gradeableInWindow - before.gradeableInWindow : null;
+      const dClassified = before && after ? after.classifiedInWindow - before.classifiedInWindow : null;
+      writeFileSync(join(OUT, "duel-grader.json"), JSON.stringify({ before, after, submitted, dRounds, dGradeable, dClassified }, null, 2));
+      log(`        live submit=${submitted} rounds ${before?.roundsInWindow}→${after?.roundsInWindow} gradeable ${before?.gradeableInWindow}→${after?.gradeableInWindow} classified ${before?.classifiedInWindow}→${after?.classifiedInWindow} (status ${after?.status})`);
+      assert(before !== null && after !== null, "the API grading counters are readable",
+        `GET ${BASE}/v1/health returned no grading snapshot — cannot prove the grader ran on the real path (is the API up and exposing /v1/health.grading?)`);
+      assert(submitted, "the live duel accepts a real answer on the real attempt",
+        `verdict=live never reached a submittable QUESTION_PENDING panel, so the grader could not be exercised on the real path.${originMismatchHint(denials)}`);
+      assert(dGradeable !== null && dGradeable > 0 && dRounds !== null && dRounds > 0,
+        "the grader ran on the real duel path (server recorded a gradeable round)",
+        `a live answer was submitted but the API's grading window did not advance (roundsInWindow Δ=${dRounds}, gradeableInWindow Δ=${dGradeable}) — the verdict reached the player WITHOUT the server grading pipeline running, which is exactly how "grading never ran in play" hid last time (a client-minted fallback the server never saw); see duel-grader.json`);
+      if (after && before && dClassified === 0) {
+        notes.push(`DUEL grader: classifiedInWindow did not move (${after.classifiedInWindow}) — expected with no classifier credential (grading OFF, status ${after.status}). The gradeable-round delta (${dGradeable}) proves the round reached the server pipeline and fell back to the max grant; a real model classification would need a live credential and is deliberately not asserted (it would be flaky).`);
+      }
     }
     await page.close();
   }
@@ -598,6 +900,8 @@ async function main() {
   try {
     if (wants("world") || wants("route")) await stageWorldAndRoute(browser);
     if (wants("yard")) await stageYard(browser);
+    if (wants("refusal")) await stageRefusal(browser);
+    if (wants("beat")) await stageBeat(browser);
     if (wants("duel")) await stageDuel(browser);
   } finally {
     await browser.close();
@@ -606,7 +910,7 @@ async function main() {
   log("\n==================== PLAYTHROUGH ====================");
   for (const n of notes) log(`  note: ${n}`);
   if (failures.length === 0) {
-    log(`ALL PASS — the mission renders, the route advances, every stop resolves, and the duel loads a graded world.`);
+    log(`ALL PASS — the mission renders, the route advances, every stop resolves, a climb refuses without a ladder and arms with one, the elm crown is reachable and its beat arms, and the duel loads a graded world whose grader runs on the real path.`);
     process.exit(0);
   }
   log(`${failures.length} CHECK(S) FAILED:`);

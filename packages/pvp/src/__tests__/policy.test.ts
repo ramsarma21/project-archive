@@ -301,6 +301,36 @@ test("the PvP-legal card gate is live, and it bites: no cards, nothing askable",
   assert.equal(askableItems(bank, { A: shared, B: [] }, OPEN_PLAYTEST_GATES).length, 0);
 });
 
+test("with the gate on, a cardless (capstone) item is never freely askable", () => {
+  // The guard `item.codexCardIds.length > 0` is what stops an item that requires NO
+  // card — a capstone item — from passing `every()` vacuously (an empty array is
+  // trivially "every card held") and being askable to a player who has mastered
+  // nothing. The M1 bank has no such item, so nothing exercised the guard: removing
+  // it left the whole suite green while a capstone question became askable to anyone.
+  const cardless = {
+    itemId: "BOS.CAPSTONE.NOCARDS.v1",
+    itemVersion: "v1",
+    poolId: "BOS.POOL.CAP",
+    conceptId: M1_CONCEPT_IDS[0]!,
+    codexCardIds: [] as readonly string[],
+    question: "a capstone item that requires no card",
+  };
+  const bank = {
+    contentId: "TEST",
+    items: [cardless],
+    conceptByRound: [M1_CONCEPT_IDS[0]!],
+  };
+  // Neither side holds any card. With the gate on, the cardless item must NOT be
+  // askable — it would otherwise be handed to a player who mastered nothing.
+  assert.equal(askableItems(bank, { A: [], B: [] }, OPEN_PLAYTEST_GATES).length, 0);
+  assert.equal(askableItems(bank, { A: [], B: [] }, SHIPPING_GATES).length, 0);
+  // With the gate OFF, every item is askable regardless — the open-playtest posture.
+  assert.equal(
+    askableItems(bank, { A: [], B: [] }, { ...OPEN_PLAYTEST_GATES, requirePvpLegalCards: false }).length,
+    1,
+  );
+});
+
 // ---- standing --------------------------------------------------------------
 
 test("standing is strictly zero-sum, and pays for an upset", () => {

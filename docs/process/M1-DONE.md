@@ -19,9 +19,13 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   ignore list.
 - **[ ]** No transition drives the body through **drawn** geometry. Distinct from the above and
   not yet checkable — the mover reads authored hulls and has never touched a GLB.
-- **[~]** A climb happens only where a visible means exists. Refusal is on and validated
-  against ladders and grips; **the ladders are still non-colliding, so the body passes through
-  them.**
+- **[x]** A climb happens only where a visible means exists, and the means is **solid** — the
+  body can no longer pass through a ladder (`381860f`). It stands a body-radius beside the climb
+  foot so no invisible wall appears where the player must stand; the mover collides with it while
+  the reader and arming predicate see through it. Route completes, 0 m penetration.
+  - **Remaining, honestly:** because the ladder stands beside the foot, the body climbs
+    *alongside* the rungs rather than on them. True rung contact needs the climb volume moved
+    onto the ladder line, which re-opens the invisible-wall problem it was placed beside to avoid.
 - **[ ]** A fall has a consequence proportional to its height. An 11 m drop onto cobbles
   currently ends in a harmless stand; the edge brake gates a run-off above 5.5 m but never a
   jump.
@@ -37,9 +41,17 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[x]** Every collision solid is filled by the mesh drawn in it, gated and ratcheted.
 - **[~]** Every affordance has real geometry under it. 22 itemised debt entries remain, down
   from 25; three retired when the elm was rebuilt.
-- **[~]** Every asset reads as the object it represents. The elm is a tree again but its bark
-  reads as polished timber; a systematic visual sweep of the world is being built because both
-  visible defects so far were found by the owner, not by any instrument.
+- **[~]** Every asset reads as the object it represents. A visual sweep now exists
+  (`c3afd4a`) — it drives the real client, enumerates all 170 placements, and emits a legible
+  contact sheet. It immediately found **the Town House rendering with its cornice, leads and
+  cupola tower floating detached in open sky**, on the climb route, having passed all six
+  existing gates because its bounding box is continuous and the defect is the air in the middle.
+  Also open: the elm's bark reads as polished timber; the Gaol facade may be z-fighting. Both
+  in flight.
+  - **The sharpest illustration of the root problem yet:** in the same frame, one of the nine
+    ladders leans in **mid-air** against the floating slab. It is geometrically correct — foot
+    and top match the authored surfaces exactly. The drawn building is not where the authored
+    solid is. Authored-versus-drawn divergence, in one image.
 - **[ ]** Five catch targets have acceptance radii reaching past the thing meant to catch you
   (59%–88% overrun).
 - **[ ]** Cover you can see is cover that stops a ball, everywhere — true in the arena, not yet
@@ -74,9 +86,10 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   facet each, the tightest pair separates on the question, and the two over-crediting rubrics
   are fixed: false positives 1.73% → 0.58%, `AUTHORED_REJECT` 97.9% → 100%, false negatives
   held at 0.00% (`7e02bf2`).
-- **[~]** False positives are gated. Approved design in flight: a 2.0% ceiling for gross drift
-  **plus** a named-exception list, because a ceiling alone would not have caught this bug — it
-  began at 1.73%. One keyword-salad false positive remains.
+- **[x]** False positives are gated (`fcd7fbf`): a 2.0% ceiling for gross drift **plus** a
+  named-exception list that fails on any un-tolerated over-credit at any rate, shipping **empty**,
+  with a mandatory reason a test enforces. Majority mode defends the gate against a
+  temperature-zero flip. False positives 0.58% → 0.00%, false negatives held at 0.00%.
 
 ## 6. It runs
 
@@ -90,8 +103,10 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 
 - **[x]** The elm beat arms from the pose a player actually arrives in.
 - **[x]** It is a reaction test, generous and large, not a precision test.
-- **[ ]** The beat is reachable by climbing, asserted. Today the test spawns the player on the
-  bough.
+- **[x]** The beat is reachable by climbing, asserted in real play: the gate drops in on the low
+  bough, climbs the elm grip to the crown, and requires the beat to arm from that arrival
+  (`08b4ec6`). The unit test still spawns on the bough, which is now acceptable because the gate
+  covers reachability.
 
 ## 8. Nothing silently regresses
 
@@ -99,18 +114,41 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   `gh` is unauthenticated locally, so this is unconfirmed.
 - **[x]** Dev and harness paths are pinned to the real paths they mirror.
 - **[x]** Cross-lane and main-checkout writes are mechanically refused; one worker per worktree.
-- **[ ]** Climb refusal is asserted end to end. Turning it off entirely leaves 730 tests green.
-- **[ ]** Nothing asserts the grader runs on the live duel path — the same wiring failure could
-  recur undetected.
+- **[x]** Climb refusal is asserted end to end, in real play: a controlled A/B where the same
+  climb volume arms with its ladder and refuses without it (`08b4ec6`).
+- **[x]** The grader is asserted to run on the live duel path — the API's own grading window
+  must advance, which a client-minted fallback cannot cause. Limit stated honestly: it asserts
+  the gradeable-round delta, not a model classification, because CI has no classifier
+  credential.
+- **[ ]** Nothing asserts mastering a concept actually learns its codex card and mints it
+  PvP-legal; `codexDev` injects that standing. Also unconfirmed: whether any test drives
+  `M1_PVP_CARD_ACCESS`'s shipping `ASSESSMENT_PASSED` branch, since it is set to `PLAYTEST_ALL`
+  — a production gate deliberately held open for playtesting, which must not ship that way.
 - **[ ]** The full gate is run before every merge, not at the orchestrator's discretion.
 
 ---
+
+## Needs the owner — cannot be closed from here
+
+1. **`gh auth login`.** The played-mission gate is "blocking" only because the YAML says so;
+   nothing here can confirm it runs in a real Actions runner. Two gates now rest on that.
+2. **Add repository secret `TRUEFOUNDRY_GRADING_API_KEY`** — a *dedicated* key with its own
+   quota. The shared key contends with the owner's play session; one measurement run had 299 of
+   313 calls fall back. Until it exists the nightly grading gate fails loudly at preflight.
+3. **A location or a live capture for "cannot run."** Every in-lane mechanism is ruled out.
+4. **A frame-trace on the owner's hardware** to settle whether residual GPU spikes are real.
 
 ## How the loop uses this
 
 Each tick, prefer the **unmet** condition with the most player impact whose files are free.
 When a condition flips to met, mark it here with its evidence. Do not add conditions to feel
 thorough — a target that grows faster than it is met is not a target.
+
+**Mutation testing was assessed and rejected as a gate**, with numbers: the suite runs on
+`node --test`, which Stryker has no runner for, so it falls back to a coverage-blind command
+runner and re-runs a whole package suite per mutant — roughly 17 CPU-hours for the load-bearing
+set. Worse, it is blind to the grader-wiring and beat-reachability gaps entirely, because those
+live where no unit test reaches. Useful as an occasional per-file discovery run; not a gate.
 
 **Meta-work is time-boxed.** Process, guards and instruments exist to make the list above
 shrink. If a tick produces only process, that is a failed tick.

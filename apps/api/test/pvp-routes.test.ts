@@ -34,10 +34,14 @@ interface Harness {
   readonly app: FastifyInstance;
   readonly clock: { t: number };
   readonly banks: BankCall[];
-  /** Count of scheduler advancement passes that have actually executed. */
+  /** Count of scheduler advancement passes that have actually executed (all matches). */
   readonly passes: { count: number };
+  /** Passes that executed for one specific match id — see the note in the harness. */
+  passesFor(matchId: string): number;
   /** Count of every bank ATTEMPT, including ones that threw. */
   readonly bankCalls: { count: number };
+  /** Count of grade calls ENTERED (before awaiting the grader gate). */
+  readonly gradeEntries: { count: number };
   setSource(source: VerdictSource): void;
   /** Set the verdict kind the stub grader returns. Defaults to CORRECT. */
   setVerdict(kind: "CORRECT" | "WRONG"): void;
@@ -47,21 +51,56 @@ interface Harness {
   bankGate(promise: Promise<void>): void;
   /** Make the next `n` bank attempts throw, to exercise retry. */
   failBanks(n: number): void;
+  /**
+   * Run exactly one scheduler pass at `nowMs` (defaulting to the current fake clock)
+   * and resolve only once the work it enqueues — a retry settle, a retirement delete —
+   * has completed. Deterministic: no real timer, no wall-clock sleep. Requires the
+   * harness to have been built with `driveScheduler: true`.
+   */
+  tick(nowMs?: number): Promise<void>;
+  /** Drive one scheduler pass WITHOUT awaiting the work — for coalescing tests. */
+  pass(nowMs?: number): void;
+  /** Await every per-match queue, so the passes' effects have landed. */
+  drain(): Promise<void>;
 }
 
 interface HarnessOptions {
   readonly startScheduler?: boolean;
   /** Use the real wall clock so the scheduler advances the match in real time. */
   readonly realClock?: boolean;
+  /**
+   * Expose the deterministic scheduler driver as `h.tick(...)`. Pair with the default
+   * `startScheduler: false` so the only advancement is the one the test drives.
+   */
+  readonly driveScheduler?: boolean;
 }
 
 const RETENTION_MS = 60_000;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Poll a state predicate until it holds, or throw after a generous bound. Waits on a
+ * CONDITION, never on elapsed time, so it is robust under load: the bound only guards
+ * against a genuine hang, it is not the thing being measured.
+ */
+async function waitUntil(
+  predicate: () => boolean,
+  message: string,
+  timeoutMs = 5_000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate()) {
+    if (Date.now() > deadline) throw new Error(`waitUntil timed out: ${message}`);
+    await delay(2);
+  }
+}
+
 async function buildHarness(opts: HarnessOptions = {}): Promise<Harness> {
   const clock = { t: 1_000_000 };
   const passes = { count: 0 };
+  const passesByMatch = new Map<string, number>();
   const bankCalls = { count: 0 };
+  const gradeEntries = { count: 0 };
   let bankFailsRemaining = 0;
   const banks: BankCall[] = [];
   const bankedIds = new Set<string>();
@@ -77,19 +116,36 @@ async function buildHarness(opts: HarnessOptions = {}): Promise<Harness> {
   let gate: Promise<void> = Promise.resolve();
   let bankGatePromise: Promise<void> = Promise.resolve();
 
+  let driver:
+    | { pass: (nowMs?: number) => void; drain: () => Promise<void> }
+    | null = null;
+
   const app = Fastify({ logger: false });
   await app.register(cookie);
   await registerPvpRoutes(app, {
     now: opts.realClock ? Date.now : () => clock.t,
     startScheduler: opts.startScheduler ?? false,
-    onSchedulerPass: () => {
+    provideSchedulerDriver: opts.driveScheduler
+      ? (d) => {
+          driver = d;
+        }
+      : undefined,
+    onSchedulerPass: (mid) => {
+      // Counted per match id, because `matchesById` is module-global and accumulates
+      // live matches across every test in this file — a driven (or real) pass pumps
+      // ALL of them, so a global counter would fold sibling tests' matches into this
+      // one's. A per-match count is the only honest measure of THIS match's passes.
       passes.count += 1;
+      passesByMatch.set(mid, (passesByMatch.get(mid) ?? 0) + 1);
     },
     authenticate: async (sessionId) =>
       sessionId ? { profileId: sessionId } : null,
     masteredConcepts: async () => [],
     verifyReceipt: () => true,
     gradeAnswer: async ({ itemId }) => {
+      // Counted BEFORE awaiting, so a test can wait until a grade is actually holding
+      // the match queue rather than sleeping and hoping it has.
+      gradeEntries.count += 1;
       await gate;
       return {
         envelope: {
@@ -148,7 +204,9 @@ async function buildHarness(opts: HarnessOptions = {}): Promise<Harness> {
     clock,
     banks,
     passes,
+    passesFor: (matchId) => passesByMatch.get(matchId) ?? 0,
     bankCalls,
+    gradeEntries,
     setSource: (next) => {
       source = next;
     },
@@ -163,6 +221,19 @@ async function buildHarness(opts: HarnessOptions = {}): Promise<Harness> {
     },
     failBanks: (n) => {
       bankFailsRemaining = n;
+    },
+    pass: (nowMs) => {
+      if (!driver) throw new Error("harness was not built with { driveScheduler: true }");
+      driver.pass(nowMs);
+    },
+    drain: async () => {
+      if (!driver) throw new Error("harness was not built with { driveScheduler: true }");
+      await driver.drain();
+    },
+    tick: async (nowMs) => {
+      if (!driver) throw new Error("harness was not built with { driveScheduler: true }");
+      driver.pass(nowMs);
+      await driver.drain();
     },
   };
 }
@@ -454,15 +525,22 @@ test("an outage-graded result is banked as practice and moves no standing", asyn
 // ---- scheduler-enabled behavioural tests -----------------------------------
 
 test("slow dual grading advances through countdown and combat without a scheduler burst", async () => {
-  const h = await buildHarness({ startScheduler: true }); // scheduler on, fake clock
+  // DETERMINISTIC, not timed. The coalescing property — while one pass is pending
+  // behind a held grade, every subsequent tick is skipped — was previously asserted
+  // by letting the REAL 50 ms interval run for `delay(260)` and hoping it enqueued
+  // "about five" ticks that collapsed to one. Under parallel load the interval fired
+  // an unpredictable number of times around the release, so the burst wandered above
+  // the tolerance. Here the scheduler is OFF and passes are driven explicitly: the
+  // grade genuinely holds the match queue, N driven passes coalesce to exactly one,
+  // and the count is a fact rather than a race.
+  const h = await buildHarness({ startScheduler: false, driveScheduler: true });
   const host = uid("host");
   const guest = uid("guest");
   const matchId = await startMatch(h.app, host, guest);
   await advanceToQuestion(h, matchId, guest);
 
-  // Hold BOTH sides' grading open across several real scheduler intervals. The
-  // scheduler keeps ticking (every ~50 ms) the whole time; with coalescing it may
-  // enqueue at most ONE pass behind the held grade, and skips every subsequent tick.
+  // Hold grading open. The answer handler grades INSIDE the match queue, so a held
+  // grade holds the queue — exactly what a slow round does in production.
   let release!: () => void;
   h.gate(new Promise<void>((resolve) => (release = resolve)));
   const answerGuest = mutate(h.app, "POST", `/api/pvp/match/${matchId}/answer`, guest, {
@@ -471,18 +549,28 @@ test("slow dual grading advances through countdown and combat without a schedule
   const answerHost = mutate(h.app, "POST", `/api/pvp/match/${matchId}/answer`, host, {
     answerText: "host answer held mid-grade",
   });
-  await delay(260); // ~5 scheduler ticks elapse while grading is stuck
-  const beforeRelease = h.passes.count;
+  // Wait until a grade is actually holding the queue — a condition, not a sleep.
+  await waitUntil(() => h.gradeEntries.count >= 1, "a grade to hold the match queue");
+  const beforeRelease = h.passesFor(matchId);
+
+  // Drive a burst of scheduler passes while the queue is held. The first enqueues
+  // behind the held grade; the rest are coalesced away (`scheduledMatches`). None can
+  // execute yet, because the pass they enqueued is stuck behind the grade.
+  for (let tick = 0; tick < 5; tick += 1) h.pass();
+  assert.equal(
+    h.passesFor(matchId),
+    beforeRelease,
+    "no pass can execute for this match while the grade holds its queue",
+  );
 
   release();
   await Promise.all([answerGuest, answerHost]);
-  // The queue drains as microtasks now; measure BEFORE the next 50 ms tick can fire,
-  // so this counts only what was backlogged behind the grade, not normal activity.
-  await delay(1);
-  const burst = h.passes.count - beforeRelease;
-  // Coalesced: the single pending pass runs (≈1). A backlog burst would be ≈5 — one
-  // per tick the grade spanned — dumped at once.
-  assert.ok(burst <= 2, `scheduler released a burst of ${burst} passes after grading`);
+  await h.drain();
+  const burst = h.passesFor(matchId) - beforeRelease;
+  // Exactly one: the single coalesced pass for THIS match. A backlog would be five —
+  // one per driven tick — dumped at once. The old tolerance was `<= 2`; measuring this
+  // match's own passes deterministically lets us pin exactly 1.
+  assert.equal(burst, 1, `expected one coalesced pass, saw ${burst}`);
 
   // And the fight moved on rather than stalling at the question.
   const after = await readAs(h.app, `/api/pvp/match/${matchId}`, guest);
@@ -492,32 +580,42 @@ test("slow dual grading advances through countdown and combat without a schedule
 });
 
 test("closing the app clears the scheduler timer and does not hang", async () => {
+  // This one legitimately exercises the REAL interval — its whole subject is that
+  // `onClose` calls `clearInterval`. So it keeps the real timer and the real clock,
+  // but waits on a CONDITION (a pass has run) rather than a fixed sleep, so a loaded
+  // machine that is slow to fire the first tick does not fail it spuriously.
   const h = await buildHarness({ startScheduler: true, realClock: true });
   await startMatch(h.app, uid("host"), uid("guest"));
-  await delay(140); // let a few passes run
+  await waitUntil(() => h.passes.count > 0, "the scheduler to run at least one pass");
   const before = h.passes.count;
-  assert.ok(before > 0, "the scheduler ran while the app was open");
 
   await h.app.close(); // must resolve, not hang, because onClose clears the interval
+  // After the interval is cleared no NEW pass can be scheduled. Give real time for a
+  // stray tick to have fired if the clear had failed, then assert the count is stable.
   await delay(160);
   assert.equal(h.passes.count, before, "no passes fire after close: the timer was cleared");
 });
 
 test("a retention sweep during slow banking cannot delete, revive, or leak", async () => {
-  const h = await buildHarness({ startScheduler: true }); // fake clock, scheduler on
+  // DETERMINISTIC. The property is about ORDERING — a match past retention whose bank
+  // has not committed must be kept, and retired only once it has — not about elapsed
+  // time. Driven passes make the ordering exact instead of relying on a real interval
+  // sweeping within a `delay()`.
+  const h = await buildHarness({ startScheduler: false, driveScheduler: true });
   const host = uid("host");
   const guest = uid("guest");
   const matchId = await startMatch(h.app, host, guest);
 
-  // Hold the bank open so settlement is genuinely in flight.
+  // Hold the bank open so settlement is genuinely in flight and holds the match queue.
   let releaseBank!: () => void;
   h.bankGate(new Promise<void>((resolve) => (releaseBank = resolve)));
   const forfeit = mutate(h.app, "POST", `/api/pvp/match/${matchId}/forfeit`, guest);
-  await delay(40); // the forfeit enters the queue, calls bank, and awaits the gate
+  // Wait until the bank is actually entered (holding the queue) — a condition, not a sleep.
+  await waitUntil(() => h.bankCalls.count >= 1, "the forfeit's bank to be in flight");
 
-  // Jump past retention WHILE banking is unfinished, then let scheduler ticks sweep.
+  // Jump past retention WHILE banking is unfinished, and drive sweep passes.
   h.clock.t += RETENTION_MS + 1;
-  await delay(160);
+  for (let tick = 0; tick < 3; tick += 1) h.pass();
   // The match is NOT retired: its bank has not committed, so its state stays
   // recoverable. `/active` does not touch the match queue, so it answers without
   // blocking behind the in-flight settlement.
@@ -530,14 +628,14 @@ test("a retention sweep during slow banking cannot delete, revive, or leak", asy
   await forfeit;
   assert.equal(h.banks.length, 1, "banked exactly once");
 
-  // Now — and only now — retirement is allowed, and a sweep retires it.
-  await delay(160);
+  // Now — and only now — retirement is allowed, and a driven sweep retires it.
+  await h.tick();
   const gone = await readAs(h.app, `/api/pvp/match/${matchId}`, host);
   assert.equal(gone.statusCode, 404, "retired after settlement committed");
   assert.equal((await readAs(h.app, "/api/pvp/active", host)).json().kind, "NONE");
 
   // No revive, no leak: banking is never attempted a second time after cleanup.
-  await delay(120);
+  await h.tick();
   assert.equal(h.banks.length, 1, "no second bank after cleanup");
   await h.app.close();
 });
@@ -710,7 +808,13 @@ test("a side that stops all contact past the grace is still forfeited (disconnec
 });
 
 test("a failed bank retries after the backoff, not before, then banks once and cleans up", async () => {
-  const h = await buildHarness({ startScheduler: true }); // scheduler on, fake clock
+  // DETERMINISTIC, not timed. The retry is gated on the injected clock crossing
+  // `nextAttemptMs`; the pass that fires it is driven by `h.tick(...)`, which resolves
+  // only once the retry's settle (or the retirement delete) has actually run. So every
+  // assertion below observes a completed effect, never a wall-clock guess that a real
+  // 50 ms interval fired the right number of times — the guess that lost the race under
+  // parallel load and made this case flaky. No real timer, no `delay()`.
+  const h = await buildHarness({ startScheduler: false, driveScheduler: true });
   const host = uid("host");
   const guest = uid("guest");
   const matchId = await startMatch(h.app, host, guest);
@@ -723,26 +827,29 @@ test("a failed bank retries after the backoff, not before, then banks once and c
   assert.equal(h.bankCalls.count, 1, "one attempt was made, and it failed");
   assert.equal(h.banks.length, 0, "nothing banked yet");
 
-  // Hold the clock FIXED and let the scheduler tick repeatedly: the retry is NOT due
-  // until +SETTLE_RETRY_BASE_MS, so no second bank is attempted.
-  await delay(300); // ~6 scheduler ticks at the resolved instant
+  // Drive passes at the resolved instant: the retry is NOT due until +SETTLE_RETRY_BASE_MS,
+  // so however many passes run, no second bank is attempted.
+  for (let i = 0; i < 6; i += 1) await h.tick(resolvedAt);
   assert.equal(h.bankCalls.count, 1, "no retry at the resolved instant");
 
-  // Just before the backoff elapses (+499 ms): still not due.
-  h.clock.t = resolvedAt + 499;
-  await delay(200); // several ticks
+  // Just before the backoff elapses (+499 ms): still not due, across repeated passes.
+  for (let i = 0; i < 4; i += 1) await h.tick(resolvedAt + 499);
   assert.equal(h.bankCalls.count, 1, "no retry before +500 ms");
 
-  // At the backoff boundary (+500 ms): exactly one retry fires, and it succeeds.
+  // At the backoff boundary (+500 ms): one driven pass fires exactly one retry, and it
+  // succeeds. Further passes at the same instant must not re-bank a settled match.
   h.clock.t = resolvedAt + 500;
-  for (let i = 0; i < 40 && h.banks.length === 0; i += 1) await delay(25);
+  await h.tick();
   assert.equal(h.bankCalls.count, 2, "exactly one retry at/after +500 ms");
   assert.equal(h.banks.length, 1, "banked exactly once on eventual success");
+  await h.tick();
+  await h.tick();
+  assert.equal(h.bankCalls.count, 2, "no further attempts once banked");
 
   // Recoverable until retention, then retired cleanly (match, mapping, scheduled state).
   assert.equal((await readAs(h.app, "/api/pvp/active", guest)).json().kind, "RESULT");
   h.clock.t = resolvedAt + RETENTION_MS + 1;
-  await delay(160);
+  await h.tick();
   assert.equal((await readAs(h.app, "/api/pvp/active", guest)).json().kind, "NONE");
   assert.equal(
     (await readAs(h.app, `/api/pvp/match/${matchId}`, guest)).statusCode,
@@ -751,7 +858,7 @@ test("a failed bank retries after the backoff, not before, then banks once and c
   );
   // No further bank attempts after cleanup: no leak, no spin.
   const callsAtCleanup = h.bankCalls.count;
-  await delay(120);
+  await h.tick();
   assert.equal(h.banks.length, 1, "still exactly one successful bank");
   assert.equal(h.bankCalls.count, callsAtCleanup, "no bank attempts after cleanup");
   await h.app.close();

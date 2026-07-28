@@ -144,15 +144,12 @@ zero-evidence form pass (`1c4250f`).
   steeple without crossing the roof trigger, which is a soft-lock waiting to happen if
   `ROPEWALK_STOP` is mandatory. Also: the 2.0 m same-surface band alone does not separate the
   meeting-house leads (8.2) from `BOUGH_CROWN` (8.3) — only the XZ radius does. Flagged, open.
-- **The Liberty Elm is a tree now, but the bark reads as polished wood** (`8d816cb`). Rebuilt
-  procedurally rather than through Meshy, because Meshy foliage *is* the shard defect — a
-  canopy delivered as a few intersecting alpha cards. Fluted bole, three broad limb rafts,
-  crossed leaf-cluster cards with genuine cutout alpha. **All three F_TREE rows retired to
-  100% coverage** (BOUGH_UPPER 67%, LEAP_CROWN 84%, LEAP_UPPER 75%), so the boughs the player
-  lands on finally fill their footprints; debt ledger 25 → 22. Remaining: the trunk reads as
-  glossy wavy grain rather than furrowed bark (too specular, sinusoidal rather than irregular,
-  no depth), and the limb rafts read as flat planks. One more pass in flight; a Gemini→texture
-  pass for the bark is the fallback.
+- ~~The Liberty Elm~~ — **done** (`8d816cb`, then bark reworked). Rebuilt procedurally rather
+  than through Meshy, because Meshy foliage *is* the shard defect. All five F_TREE affordance
+  rows at 100%, so the boughs the player stands on fill their footprints. Bark now matte with a
+  baked normal map and irregular interlacing furrows; it reads as bark rather than varnished
+  timber. Procedural, not photographic — a Gemini texture pass on the hero trunk remains a
+  legitimate future upgrade, not a defect.
 - **Duel cards were too alike to answer — mostly fixed** (`13cdc12`). My diagnosis was wrong:
   the duel does **not** draw from the 46-concept teaching registry. It already asks on exactly
   three concepts, with nine cards (three per concept) derived from the bank. The overlap was
@@ -169,14 +166,25 @@ zero-evidence form pass (`1c4250f`).
   positives are **not**, so every pressure in the system points toward leniency, which is why
   these survived. This is the owner's own complaint ("it keeps … granting right") in another
   form. In flight, with the hard constraint that FN must not leave 0.00% to fix it.
-- **The false-negative gate is not automated.** The real classifier evaluation runs a live
-  model behind `pnpm grading:eval`, outside CI, so it only runs when someone remembers. It
-  previously sat at 3.4% against stale hand-labels while appearing healthy. To automate it:
-  a dedicated credential (the shared dev key contends with the owner's own session — 299 of
-  313 calls fell back during one measurement), a ~20 s timeout since the 1.5 s production cap
-  is a *play* cap not a *measurement* cap, low concurrency, a gate on FN ≤ ceiling plus
-  coverage ≥ 90% rather than exact zero because the live model varies run to run at
-  temperature 0, and nightly rather than per-PR. Queued for the CI lane.
+- **The live classifier gate is now wired to run without anyone remembering — but
+  unverified in a real runner.** `.github/workflows/grading-eval.yml` runs `pnpm
+  grading:eval:gate` (`--repeats 3 --concurrency 3 --timeout 20000`) nightly (08:00 UTC) and
+  on demand, against a dedicated `TRUEFOUNDRY_GRADING_API_KEY` secret. The ~20 s timeout is a
+  *measurement* cap, not the 1.5 s *play* cap; low concurrency stays off the rate limit;
+  repeats=3 keeps a temperature-zero flip from deciding the gate; the harness's coverage gate
+  turns a degraded gateway into a loud fail, not a false pass. **It fails loudly when the
+  secret is absent** (a red run naming what to add), never a silent skip — the failure mode
+  being removed. Failure signals, ranked by surviving nobody watching: a **committed dated
+  report** under `docs/process/grading-eval/` (a gap in the dates is itself the alarm), a
+  GitHub **issue** labelled `grading-eval`, and a red run + artifact. The offline structural
+  `eval.test.ts` still runs per-PR. **Honest limits:** (1) the secret does not exist yet — the
+  owner must add it, and until then every run fails at the credential preflight; (2) nothing
+  here can confirm the workflow runs in a real GitHub Actions runner (`gh` unauthenticated
+  locally, no run observed), the same unverified basis the `playthrough` gate already blocks
+  on. Wired and merged is not "works": the first real run, or the first missing date, settles
+  it. Nightly chosen over pre-release because only a live series catches drift in the *model
+  itself*, and there is no release process to hang a pre-release trigger on. Reasoning in
+  `CI-AND-BROWSER-CHECKS.md` §1a.
 - ~~The elm beat is finicky and hard to start~~ — **fixed** (`27ec2b5`). It was failing to
   arm, not rendering wrong: a 1.1 m circle on the crown tip plus a ±60° facing arc rejected
   the exact pose a player arrives in off the leap (1.5 m back, ~105° off, moving south down
@@ -239,10 +247,14 @@ zero-evidence form pass (`1c4250f`).
   `playerboy-rigged.glb` is 1.2× off its declared size and `flintlock-pistol.glb` 1.5×.
   Deliberately non-blocking, so nothing enforces them.
 - 25 itemised affordance debt entries, gated so the list can shrink but never grow silently.
-- **One flaky test**, seen once: an `apps/api` backoff-timing case failed twice under parallel
-  full-suite load and passed 199/199 in isolation; a later full run was clean. Flakiness is
-  regression-masking debt — it trains everyone to re-run instead of read — so it wants a fix
-  or a deterministic clock, not tolerance.
+- ~~One flaky test~~ — **fixed** (`111323b`), and it was **three**, not one. All drove a real
+  `setInterval` against a fake clock and used wall-clock sleeps as a proxy for "a tick ran". The
+  test now injects a scheduler driver and controls time; one assertion was tightened rather than
+  any loosened. Production backoff was never fragile.
+- **Two latent traps in `apps/api`**, found while hunting, not fixed: `SubmissionRateLimiter` in
+  `assessment/requestPolicy.ts` is defined but never wired in and never tested — dead code that
+  reads as a live protection. And `matchesById`/`passes` in the pvp route are module-global, so
+  live matches leak across tests in that file.
 
 ---
 
@@ -285,14 +297,27 @@ equal the authored deck in order. The harness's third hand-copy of that deck is 
 rather than pinned. Still divergent and deliberately deferred: PvP runs its own arena
 (`docs/process/PvP-Arena-Unification-Plan.md`).
 
-**That sweep produced one false green, and the method is why.** It cleared `beatQa` as
-agreeing, because the harness uses the authored beat defaults and those defaults are pinned
-against the level's geometry. Both true — and irrelevant, because the harness **hardcodes
-`inStance: true`**, bypassing the entire question of whether a player can reach and face the
-spot, which is precisely what real play failed. The floor harness force-faced the work on any
-bough drop-in, and never mounted the beat panel at all. So a harness can use real content,
-real components and real constants and still be worthless if it asserts away a precondition.
-Checking *what* a dev path uses is not the same as checking *what it skips*.
+**That sweep's conclusion was overbroad, and a re-audit corrected it.** It cleared eleven
+surfaces as honest "because they mount the real component with real content" — true, and
+insufficient. It conflated **driving** surfaces with **screenshot** surfaces.
+
+- **Survive the sharpened test** (usable as evidence): duel `?verdict=live` (opens a real
+  attempt and grades), `module/devEntry`, `visor/devEntry`, `dev/resetMission` (drives the real
+  progression service), and the duel/netcode/pvp/container/parkour package drivers.
+- **Do not survive — screenshot tools, never parity evidence:** `beatQa` (hardcodes
+  `inStance: true` in all five capture paths), **`codexDev`** (injects the learned and
+  PvP-legal card standing), `combatHudQa` (injects health and ammo), and the default asset
+  sheet (fits every GLB to a fixed height, not the level's boxes). Each mounts the real
+  component and injects the exact state real play must earn.
+- **`mission/devEntry` is trustworthy only on its default path.** `?at=<node>` drops the player
+  at any route node, `?boss=1` fabricates a `REACHED_DUEL` after 900 ms regardless of the route,
+  and the offline encounter authority **grants every verdict** by default. A capture taken under
+  any of those is not reachability evidence.
+
+The generalisation: **checking what a dev path uses is not checking what it skips.** A default
+is only a defect when *nothing* exercises the other side — `packages/beat` and
+`packages/assessment` both default a precondition to passing and both have tests driving the
+failing branch, so they are genuinely fine.
 
 ---
 
@@ -331,8 +356,9 @@ test claims to guard, and see whether the test still passes. Results, ranked:
 4. Two mastery guards had no test at all (fixed): either could be deleted silently, letting a
    zero-evidence form report `passed: true` or a zero-item concept read as mastered. That path
    gates the capstone and mints PvP-legal cards.
-5. `beatQa` hardcodes `inStance: true` in **all five** capture paths — confirming it may never
-   again be cited as play-parity evidence. It is a screenshot tool, not a test.
+5. **Screenshot dev surfaces inject the state real play earns** and are not parity evidence:
+   `beatQa`, `codexDev`, `combatHudQa`, the default asset sheet. Newly found: `codexDev` cannot
+   catch whether mastering a concept actually learns a card or mints it PvP-legal.
 
 **The pattern across all of them:** every gap is a *runtime, cross-system, visible* property,
 which is exactly what a unit suite structurally cannot reach — and exactly the list of things

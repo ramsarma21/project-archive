@@ -240,10 +240,11 @@ async function routeHarness(service: Service, options: HarnessOptions = {}) {
 
 function post(
   app: FastifyInstance,
-  opts: { sid?: string; csrf?: string; body?: unknown },
+  opts: { sid?: string; csrf?: string; body?: unknown; origin?: string },
 ) {
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (opts.csrf !== undefined) headers["x-pa-csrf-token"] = opts.csrf;
+  if (opts.origin !== undefined) headers.origin = opts.origin;
   return app.inject({
     method: "POST",
     url: "/v1/dev/reset-mission",
@@ -333,6 +334,40 @@ test("SECURITY: a missing or invalid CSRF token is refused (403)", async () => {
     // A token minted for a DIFFERENT session does not authorise this one.
     const wrong = await post(app, { sid: "alice", csrf: csrfTokenForSession("someone-else") });
     assert.equal(wrong.statusCode, 403, wrong.body);
+  } finally {
+    await app.close();
+  }
+});
+
+test("SECURITY: a cross-origin request is refused even with a valid CSRF token (same-origin gate)", async () => {
+  // GATE 3 is CSRF *and same origin*. The CSRF-token half is covered above; this
+  // pins the same-origin half, which nothing else in CI exercised — dropping the
+  // origin comparison in `validAssessmentMutationRequest` left the whole suite green.
+  // A foreign Origin header with an otherwise-valid token must still be a 403, so a
+  // page on another origin cannot drive a reset by replaying a token it should not
+  // have but the check must not depend on it having failed to.
+  const { store, service } = build();
+  await spendMission(service, ALICE);
+  const app = await routeHarness(service, { enabled: true, sessions: { alice: ALICE } });
+  try {
+    const foreign = await post(app, {
+      sid: "alice",
+      csrf: csrfTokenForSession("alice"),
+      origin: "http://evil.example",
+    });
+    assert.equal(foreign.statusCode, 403, foreign.body);
+    assert.equal(foreign.json().error, "CSRF_INVALID");
+    // The reset did not fire: Alice's spent mission is untouched.
+    assert.equal(store.missions.get(`${ALICE}:${CHAPTER}:${MISSION}`)?.attemptsUsed, 3);
+
+    // And the allowed origin, with the same token, is accepted — so the gate is a
+    // real discriminator on origin, not a blanket refusal that would pass vacuously.
+    const same = await post(app, {
+      sid: "alice",
+      csrf: csrfTokenForSession("alice"),
+      origin: "http://localhost:5173",
+    });
+    assert.equal(same.statusCode, 200, same.body);
   } finally {
     await app.close();
   }

@@ -321,6 +321,22 @@ export function surfaceInteriorDir(
   return { x: dx / len, z: dz / len };
 }
 
+// Ids of ladder-tagged solids, cached per blocker array. Ladders are now SOLID
+// (a body cannot walk through one), but to CLIMB ARMING they are transparent: a
+// ladder overhead at the next storey — a stacked scaffold ladder, the lean-to
+// ladder above the buttress — is not a ceiling that refuses the climb below it,
+// it is the next thing to climb. So the top-out clearance a climb is armed on
+// ignores ladder solids, exactly as the reader (probe) does.
+const ladderTaggedIdsCache = new WeakMap<object, ReadonlySet<string>>();
+export function ladderTaggedIds(world: CollisionWorld): ReadonlySet<string> {
+  const cached = ladderTaggedIdsCache.get(world.blockers);
+  if (cached) return cached;
+  const ids = new Set<string>();
+  for (const b of world.blockers) if (b.tags.has("ladder")) ids.add(b.id);
+  ladderTaggedIdsCache.set(world.blockers, ids);
+  return ids;
+}
+
 /**
  * A placed climb GRIP — a climb up a visible structure that is not a ladder.
  *
@@ -395,7 +411,7 @@ export function alignClimbToGrip(
     y: grip.topY,
     z: rect.maxZ - rect.minZ > 2 * CAPSULE_RADIUS ? clampInto(grip.base.z, rect.minZ, rect.maxZ) : (rect.minZ + rect.maxZ) / 2,
   };
-  const ignoreDest = new Set<string>([grip.toSurface, grip.support]);
+  const ignoreDest = new Set<string>([grip.toSurface, grip.support, ...ladderTaggedIds(world)]);
   if (
     !landingValid(world, topOut.x, topOut.z, CAPSULE_RADIUS, grip.topY, STAND_HEIGHT, ignoreDest)
   ) {
@@ -484,8 +500,10 @@ export function alignClimbToLadder(
   };
 
   // The top-out must accept a standing body — the destination surface itself is
-  // exempt (topping onto it is not piercing it), everything else is a ceiling.
-  const ignoreDest = new Set<string>([ladder.toSurface]);
+  // exempt (topping onto it is not piercing it), as are ladder solids (the next
+  // storey's ladder overhead is not a ceiling that refuses this climb); every
+  // other solid is a ceiling.
+  const ignoreDest = new Set<string>([ladder.toSurface, ...ladderTaggedIds(world)]);
   if (
     !landingValid(
       world,
@@ -2299,6 +2317,7 @@ export function canStand(
   z: number,
   radius: number,
   footY: number,
+  ignore?: ReadonlySet<string>,
 ): boolean {
-  return headClearance(world, x, z, radius, footY) >= STAND_HEIGHT - 0.05;
+  return headClearance(world, x, z, radius, footY, ignore) >= STAND_HEIGHT - 0.05;
 }

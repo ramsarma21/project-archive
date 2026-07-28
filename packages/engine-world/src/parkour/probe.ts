@@ -365,7 +365,7 @@ function readObstacle(
     const wideEnough = depthM >= CAPSULE_RADIUS * 2 + 0.05;
     if (
       wideEnough &&
-      canStand(world, candidate.x, candidate.z, CAPSULE_RADIUS, topY) &&
+      canStand(world, candidate.x, candidate.z, CAPSULE_RADIUS, topY, ignore) &&
       landingValid(
         world,
         candidate.x,
@@ -373,7 +373,7 @@ function readObstacle(
         CAPSULE_RADIUS,
         topY,
         STAND_HEIGHT,
-        new Set([hitId]),
+        new Set([hitId, ...(ignore ?? [])]),
       )
     ) {
       topStandable = true;
@@ -396,7 +396,7 @@ function readObstacle(
       point,
       dropM: origin.y - farSurface.y,
       standable:
-        canStand(world, point.x, point.z, CAPSULE_RADIUS, farSurface.y) &&
+        canStand(world, point.x, point.z, CAPSULE_RADIUS, farSurface.y, ignore) &&
         landingValid(
           world,
           point.x,
@@ -404,7 +404,7 @@ function readObstacle(
           CAPSULE_RADIUS,
           farSurface.y,
           STAND_HEIGHT,
-          new Set([hitId]),
+          new Set([hitId, ...(ignore ?? [])]),
         ),
     };
   }
@@ -542,7 +542,7 @@ function readRaisedSurface(
   const candidate = pointAt(origin, dirX, dirZ, faceDistanceM + inset, topY);
   const topStandable =
     depthM >= CAPSULE_RADIUS * 2 + 0.05 &&
-    canStand(world, candidate.x, candidate.z, CAPSULE_RADIUS, topY) &&
+    canStand(world, candidate.x, candidate.z, CAPSULE_RADIUS, topY, ignore) &&
     landingValid(
       world,
       candidate.x,
@@ -550,7 +550,7 @@ function readRaisedSurface(
       CAPSULE_RADIUS,
       topY,
       STAND_HEIGHT,
-      new Set([hitId]),
+          new Set([hitId, ...(ignore ?? [])]),
     );
 
   let farSide: ObstacleRead["farSide"] = null;
@@ -567,7 +567,7 @@ function readRaisedSurface(
       point,
       dropM: origin.y - farSurface.y,
       standable:
-        canStand(world, point.x, point.z, CAPSULE_RADIUS, farSurface.y) &&
+        canStand(world, point.x, point.z, CAPSULE_RADIUS, farSurface.y, ignore) &&
         landingValid(
           world,
           point.x,
@@ -575,7 +575,7 @@ function readRaisedSurface(
           CAPSULE_RADIUS,
           farSurface.y,
           STAND_HEIGHT,
-          new Set([hitId]),
+          new Set([hitId, ...(ignore ?? [])]),
         ),
     };
   }
@@ -726,7 +726,7 @@ function readOverhead(
   const inset = Math.min(tuning.topLandingInsetM, Math.max(0.12, runsFor * 0.5));
   const candidate = pointAt(origin, dirX, dirZ, inset, topY);
   const topStandable =
-    canStand(world, candidate.x, candidate.z, CAPSULE_RADIUS, topY) &&
+    canStand(world, candidate.x, candidate.z, CAPSULE_RADIUS, topY, ignore) &&
     landingValid(
       world,
       candidate.x,
@@ -734,7 +734,7 @@ function readOverhead(
       CAPSULE_RADIUS,
       topY,
       STAND_HEIGHT,
-      new Set([above.id]),
+      new Set([above.id, ...(ignore ?? [])]),
     );
   if (!topStandable) return null;
 
@@ -1003,6 +1003,22 @@ export function selfIntrusionIds(
   );
 }
 
+// The ids of every ladder-tagged solid, cached per blocker array (rebuilt when
+// the array is replaced, the same invalidation rule the broad phase uses). The
+// reader ignores these so a ladder is never read as a wall to vault or be
+// blocked by; the solver does not, so the body still cannot walk through one.
+const ladderIdsByBlockers = new WeakMap<object, ReadonlySet<string>>();
+function ladderBlockerIds(world: CollisionWorld): ReadonlySet<string> {
+  const cached = ladderIdsByBlockers.get(world.blockers);
+  if (cached) return cached;
+  const ids = new Set<string>();
+  for (const blocker of world.blockers) {
+    if (blocker.tags.has("ladder")) ids.add(blocker.id);
+  }
+  ladderIdsByBlockers.set(world.blockers, ids);
+  return ids;
+}
+
 export function probeAhead(
   world: CollisionWorld,
   input: ProbeInput,
@@ -1019,10 +1035,17 @@ export function probeAhead(
   const dirZ = hasOverride ? input.dirOverrideZ! : travel.dirZ;
   const speedMps = travel.speedMps;
   const selfIds = selfIntrusionIds(world, input.pos);
+  // A LADDER is climbed, not vaulted or blocked: the reader must see THROUGH the
+  // ladder solid to the surface behind it, or a solid ladder standing in front of
+  // its own climb reads as a wall and the climb is never offered. The MOVER still
+  // collides with the ladder (this ignore is the reader's, not the solver's), so
+  // walking into it is still stopped — the owner's "no phasing" — while the climb
+  // it fronts is still read and gated by `climbAffordanceAt`.
+  const ladderIds = ladderBlockerIds(world);
   const effectiveIgnore =
-    selfIds.length === 0 && !ignore
+    selfIds.length === 0 && !ignore && ladderIds.size === 0
       ? undefined
-      : new Set<string>([...(ignore ?? []), ...selfIds]);
+      : new Set<string>([...(ignore ?? []), ...selfIds, ...ladderIds]);
   const solid = readObstacle(
     world,
     input.pos,
