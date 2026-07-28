@@ -25,6 +25,7 @@
   "assets:verify:collision": "node --import tsx scripts/check-world-collision.mjs",
   "assets:verify:affordances": "node --import tsx scripts/check-world-affordances.mjs --gate",
     "verify:world": "node --import tsx scripts/check-world-collision.mjs && node --import tsx assets/pipeline/verify_m1_placements.mjs && node --import tsx scripts/check-world-affordances.mjs --gate",
+    "verify:playthrough": "node scripts/check-playthrough.mjs",
     "playwright:install": "playwright install chromium"
   },
   "devDependencies": {
