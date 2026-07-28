@@ -218,7 +218,7 @@ Read this before concluding a green run means the game is correct.
 | `assets:verify:collision` | a collision solid that isn't drawn (invisible walls) | whether a surface exists at an authored height |
 | `assets:verify:placement` | route surfaces having their asset's shape | non-route geometry |
 | `assets:verify:affordances` | real mesh geometry at each authored affordance | whether a human could make the move |
-| `check-playthrough` | world renders, route advances, stops resolve, no hang, no hull penetration | climbing through *drawn* geometry, animation fidelity |
+| `check-playthrough` — **blocking in CI** (`8eb2393`) | world renders, route advances, stops resolve, no hang, no hull penetration | climbing through *drawn* geometry, animation fidelity, the terminal elm beat (deliberately unplayed — a bot that could reliably hit it would itself be flaky) |
 | `check-clip-fidelity` | hands/feet vs surfaces, plant slide, clip timing | not yet a gate — red by construction |
 
 **The gap that cost the most:** every collision gate reads authored hulls. The mover has
