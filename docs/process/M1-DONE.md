@@ -206,6 +206,20 @@ runner and re-runs a whole package suite per mutant — roughly 17 CPU-hours for
 set. Worse, it is blind to the grader-wiring and beat-reachability gaps entirely, because those
 live where no unit test reaches. Useful as an occasional per-file discovery run; not a gate.
 
+**Owner's question-pipeline architecture, 28 Jul:** offline generation producing the question, its
+card binding and a **reference prose answer**, all verified before shipping. At runtime the card
+half is checked **deterministically** against the played hand — no model — and the prose half is a
+**short comparison** against the reference rather than a full rubric judgement. Cheaper, faster,
+and it removes the model from the evidence half entirely.
+  - **The risk to design around:** today's rubrics generalise (they credit wordings the module
+    never named), and a single reference answer does not. Rejecting a correct answer phrased
+    differently is a **false negative** — the gated metric, at 0.00%, and the one that silently sat
+    at 3.4%. The prose half has to stay generous without becoming a rubric call again.
+  - **The opportunity:** a deterministic card half means the two halves can be graded
+    independently, so "your evidence was right, your reasoning missed" becomes sayable — which is a
+    far better teaching signal than pass/fail, and it is exactly the wrong-answer feedback he asked
+    for.
+
 **Owner decisions taken 28 Jul:** build end-effector IK rather than re-baking clips, because
 limbs landing on the geometry is the last thing between the parkour and looking real. Widen the
 climb-over window to ~650 ms so the move reads complete. Make the market stall body the cover.
