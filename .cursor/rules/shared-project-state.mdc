@@ -36,6 +36,20 @@ did not know they existed.
   short enough to be read. Fold resolved detail into a line; delete what no longer informs a
   decision.
 
+## Trace, do not infer
+
+State a mechanism only after reading the path the feature actually takes. Inferring
+architecture from adjacent code has repeatedly produced confident, wrong diagnoses here — two
+in one afternoon, each of which would have sent a worker at the wrong file, and one of whose
+"fixes" would have made the defect worse. If you are handed a diagnosis, **verify it before
+inheriting it**, and say so when it turns out to be stale. Correcting the brief is worth more
+than executing it.
+
+Two mechanical guards exist and are not suggestions: a `preToolUse` hook refuses writes to
+another lane's files, to files shared by several lanes, and to the main checkout's source.
+`.cursor/lane-ownership.json` is the enforced map. If a write is refused, that is the answer —
+report what you need rather than routing around it.
+
 ## Evidence standard
 
 A claim in these files carries its evidence, or it carries an honest label saying it is
