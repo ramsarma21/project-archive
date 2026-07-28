@@ -108,6 +108,74 @@ test("the opening stop does not arm without a grounded drop", () => {
   assert.equal(grounded.result.phase, "APPROACH");
 });
 
+test("a stop never arms from a different surface (height-blind XZ radius)", () => {
+  // The roof-relocation soft-lock: the STAMP_SCOPE stop moved onto the Hollis
+  // Meeting leads (y=8.20), and the cobbles of Orange Street run directly beneath
+  // it at y≈0 — inside the 3.6m XZ radius. A height-blind radius armed the stop
+  // from the street, the speaker was 8m of air above the player and could never
+  // close, and the machine sat in APPROACH forever while the clock drained. The
+  // player must be grounded ON the beat's surface, not merely inside its footprint
+  // one storey down. Modelled here with a Shambles-shaped trigger at height.
+  const world = flatWorld();
+  const enc = encounterById("ROPEWALK_STOP"); // trigger.at = [74.6, 8.2, 9.4]
+  const instance = createEncounterInstance(enc, selectEncounterVariant(enc, SEED, 1));
+  const roofY = enc.trigger.at[1];
+  const step = (playerPos: Vec3) =>
+    stepEncounter(instance, {
+      world,
+      tick: 0,
+      player: { pos: playerPos, grounded: true },
+      actorPoses: [
+        { id: "BILLMAN_HOLLIS", pos: { x: 74.9, y: roofY, z: 12 }, yaw: 0 },
+      ],
+      dt: DT,
+      submit: false,
+      verdict: null,
+      dismiss: false,
+    });
+  // Grounded on the COBBLES directly under the trigger (y=0): must NOT arm.
+  const below = step({ x: enc.trigger.at[0], y: 0, z: enc.trigger.at[2] });
+  assert.equal(below.phase, "DORMANT", "armed from a storey below — the soft-lock");
+  assert.equal(below.locksLocomotion, false, "locked the player from the wrong surface");
+});
+
+test("a speaker who can never reach aborts APPROACH rather than soft-locking", () => {
+  // No state may hold the player with no way out. The structural backstop: if the
+  // speaker cannot reach conversational distance within the hard ceiling — modelled
+  // here by a speaker who never appears in the tick's pose list, so no actor is ever
+  // walked and the gate can never satisfy — the machine must ABORT to RELEASED and
+  // hand control back, not sit in APPROACH forever while the mission clock drains.
+  const world = flatWorld();
+  const instance = shamblesInstance();
+  const player: Vec3 = { x: 16.6, y: 0, z: 0.4 };
+  const step = (tick: number) =>
+    stepEncounter(instance, {
+      world,
+      tick,
+      player: { pos: player, grounded: true },
+      actorPoses: [], // the speaker is absent this whole approach
+      dt: DT,
+      submit: false,
+      verdict: null,
+      dismiss: false,
+    });
+  step(0); // arm -> APPROACH (arming is a player-position test; it still arms)
+  assert.equal(instance.phase, "APPROACH");
+  let tick = 1;
+  let result = step(tick);
+  // It never opens the question at range on the way to giving up.
+  while (result.phase === "APPROACH" && tick < 40 * FIELD_TICK_HZ) {
+    assert.equal(result.questionOpen, false);
+    tick += 1;
+    result = step(tick);
+  }
+  assert.equal(result.phase, "RELEASED", "an impossible approach did not abort — a soft-lock");
+  assert.equal(result.locksLocomotion, false, "the player is still held after the abort");
+  assert.equal(result.resolution, null, "an aborted stop must not emit a verdict/consequence");
+  // Bounded: freed well before anything that would eat the mission clock.
+  assert.ok(tick <= 17 * FIELD_TICK_HZ, `aborted at tick ${tick}, past the bounded ceiling`);
+});
+
 test("approach locks locomotion, walks actors without teleport, and keeps support", () => {
   const world = flatWorld();
   const instance = shamblesInstance();
