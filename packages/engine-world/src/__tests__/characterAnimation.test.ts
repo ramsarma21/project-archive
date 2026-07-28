@@ -108,17 +108,17 @@ test("airborne clip compaction reduces arm splay without touching root motion", 
 // The clip contract has always named what each performance degrades to, and a
 // test has always checked that the table says so. Nothing read it: selection
 // went straight to the rig-wide `fallback`, which for the player is `idle`. So
-// the two clips this rig genuinely does not carry — `dash` and `stepUp`, both
-// authored to fall back to `run` — planted a standing pose on a body still
-// crossing the ground at speed, and the manifest's claim that "dash takes its
-// authored run fallback" was documentation of something that did not happen.
+// a clip this rig does not carry — `stepUp`, authored to fall back to `run` —
+// planted a standing pose on a body still crossing the ground at speed. (`dash`
+// was in this list until 2026-07-27, when a real "Idle To Sprint" launch was
+// baked onto the rig; the substitution still has to work for anything unbaked.)
 // ---------------------------------------------------------------------------
 
 test("a missing clip takes its authored substitute, not the rig-wide fallback", () => {
   registerCharacterClips("test-rig", PLAYER_CLIP_SPEC);
-  // Exactly what the shipped rig carries: everything in the manifest, which is
-  // itself missing dash and stepUp.
-  const available = [...PLAYER_CLIPS];
+  // A rig that carries the manifest minus `dash`, to exercise the substitution
+  // for a genuinely absent clip. `stepUp` is never in the manifest at all.
+  const available = PLAYER_CLIPS.filter((name) => name !== "dash");
 
   assert.equal(chooseAvailableClip("test-rig", "dash", available), "run");
   assert.equal(chooseAvailableClip("test-rig", "stepUp", available), "run");
@@ -165,10 +165,11 @@ test("a rig with no substitution table still resolves the old way", () => {
 // ---------------------------------------------------------------------------
 
 test("the player rig times the clip it will play, not the one it was asked for", () => {
-  // The two names this rig does not carry. Both are answered with `run`, and
-  // both used to be timed as themselves, find nothing, and play the run cycle
-  // at 1.0 while the body moved at a completely different speed.
-  assert.equal(playerClipFor("dash"), "run");
+  // `stepUp` this rig does not carry: it is answered with `run`, and used to be
+  // timed as itself, find nothing, and play the run cycle at 1.0 while the body
+  // moved at a completely different speed. `dash` is now baked, so it times as
+  // itself.
+  assert.equal(playerClipFor("dash"), "dash");
   assert.equal(playerClipFor("stepUp"), "run");
   assert.equal(playerClipFor("run"), "run");
   assert.equal(playerClipFor("landRun"), "landRun");
@@ -176,17 +177,18 @@ test("the player rig times the clip it will play, not the one it was asked for",
   assert.equal(playerClipFor("nosuchclip"), PLAYER_CLIP_SPEC.fallback);
 });
 
-test("a burst plays the run cycle at the burst's own ground speed", () => {
-  // A dash is the run clip; the only thing that can make it read as a burst on
-  // this rig is that it is stride-matched to the burst speed rather than to the
-  // run speed. Anything at or below the run's own rate is not a burst at all.
-  const running = strideTimeScale(playerClipFor("run"), RUN_SPEED);
-  const bursting = strideTimeScale(playerClipFor("dash"), dashSpeed(RUN_SPEED));
-  assert.ok(bursting > running, `${bursting} should outpace ${running}`);
-  assert.ok(
-    Math.abs(bursting / running - dashSpeed(RUN_SPEED) / RUN_SPEED) < 1e-9,
-    "the cadence must scale exactly with the ground speed",
-  );
+test("the dash is a first-class one-shot, fitted to its own launch", () => {
+  // The dash used to be an alias of `run`, stride-matched to the burst speed
+  // because the rig carried no dash performance. It is now a baked clip in its
+  // own right (Mixamo "Idle To Sprint"): playerClipFor returns it unchanged, and
+  // it is fitted to its content by verbTimeScale like any other one-shot verb
+  // rather than stride-matched like a locomotion cycle.
+  assert.equal(playerClipFor("dash"), "dash");
+  const window = PARKOUR_CLIP_TARGET_MS.dash!;
+  const scale = verbTimeScale("dash", window);
+  assert.ok(scale !== null, "a baked dash must have a measured rate");
+  assert.ok(scale! > 1, `the launch compresses into its short window (got ${scale})`);
+  assert.ok(scale! <= MAX_VERB_TIME_SCALE + 1e-9, "and never above the ceiling");
 });
 
 test("every locomotion cycle is driven at a rate near its authored one", () => {
