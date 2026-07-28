@@ -1264,8 +1264,24 @@ masses.push(
     // hay-wain-loaded for the same reason as LANE_HAY: this carries the yard-hay
     // leap catch (LEAP_YARD_HAY), and the wain's flat load meets the diver at the
     // authored 2.2m where the heaped cart's flat area sat 0.2m under it.
+    //
+    // 3.1 x 3.2 (was 2.8 x 2.6), grown ONLY toward the NW corner walls to back
+    // LEAP_YARD_HAY's 1.6m acceptance disc. That dive is an OFFERED leap, so its
+    // radius is pinned at 1.6m by the reader (traversability.test) and cannot be
+    // shrunk to stop the "caught by air" overrun; the honest fix is the bigger
+    // catching object. This is a BLOCK asset, so the loaded wain fills the rect
+    // and the disc (recentred on the wain) lands on real hay across its whole
+    // radius. The EAST (92.2) and SOUTH (-2.4) edges — the two that face the
+    // duel's playing floor — are UNMOVED, because they are what the six-round
+    // breaks were solved against: BREAK_R3's peek sits 0.05m off the east face
+    // (92.6, cap radius 0.35 -> 92.25) and BREAK_R1 hides just west of the south
+    // reach. Only WEST (89.4 -> 89.1) and NORTH (-5.0 -> -5.6) grow, into the dead
+    // corner already walled off, so no break station, peek or fighting position
+    // moves and the graded cover line is untouched (BREAK_R1.pos 0.15m clear at
+    // x89.1, BREAK_R2.pos 0.15m clear at z-5.6). Wall clearances: 1.1m to
+    // YARD_WALL_W (x88.0), 0.9m to YARD_WALL_N (z-6.5).
     asset: "hay-wain-loaded",
-    rect: rect(89.4, 92.2, -5.0, -2.4),
+    rect: rect(89.1, 92.2, -5.6, -2.4),
     topY: 2.2,
     tags: ["cover", "high", "catch", "hay"],
     note: "Fodder for the rope-walk's draught horses. Full cover in the duel, and the receiving target for anyone who dives in over the wall off the upper limb.",
