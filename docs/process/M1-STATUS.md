@@ -155,14 +155,19 @@ replay harness.
   `standableAt: [6.4, 8.3, 11.2]` broad enough to fill their footprints would retire the
   F_TREE debt rows, which currently read those surfaces 4–9 cm low at 67–81% coverage.
   In flight.
-- **Duel and codex cards are too alike to answer.** The card taxonomy is the 46-concept
-  curriculum registry, where overlap is a *feature* for teaching — `STAMP_SCOPE` vs
-  `STAMP_WHAT_COUNTS`, five rights concepts, five communication concepts, four cards for the
-  one August 14 effigy. Used as an *answer key* that overlap is fatal: two cards plausibly
-  answer the same question, so the player is reading the author's mind. Likely fix is a small
-  mutually-exclusive askable set distinct from the teaching registry, with a pairwise
-  discriminator test — if no question separates two cards, they aren't two cards. Must stay
-  reasoning-based, not retreat to trivia. In flight.
+- **Duel cards were too alike to answer — mostly fixed** (`13cdc12`). My diagnosis was wrong:
+  the duel does **not** draw from the 46-concept teaching registry. It already asks on exactly
+  three concepts, with nine cards (three per concept) derived from the bank. The overlap was
+  *intra*-concept, and the mechanic deals five of nine as an evidence hand, so a hand of
+  same-facet cards was a guess. All nine now state one facet and name their boundaries, and the
+  reused perspective badges are differentiated. Still open: `CONSENT_GROUND` vs
+  `LAWFUL_NOT_CONSENTED` are a principle and its rebuttal, separable only when the question
+  explicitly invokes virtual representation — being closed by moving the discriminator into the
+  question. In flight.
+- **The false-negative gate is not automated.** The real classifier evaluation runs a live
+  model behind `pnpm grading:eval`, outside CI, so it only runs when someone remembers. It
+  previously sat at 3.4% against stale hand-labels while appearing healthy. A gate that
+  depends on memory will be wrong exactly when it matters.
 - ~~The elm beat is finicky and hard to start~~ — **fixed** (`27ec2b5`). It was failing to
   arm, not rendering wrong: a 1.1 m circle on the crown tip plus a ±60° facing arc rejected
   the exact pose a player arrives in off the leap (1.5 m back, ~105° off, moving south down
