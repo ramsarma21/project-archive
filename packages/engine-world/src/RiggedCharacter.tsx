@@ -9,6 +9,25 @@ import {
   compactPlayerAirborneClips,
   PLAYER_ACTION_CLIPS,
 } from "./characterAnimation.js";
+import {
+  applyParkourIkToRig,
+  resolveParkourLimbs,
+  type IkBox,
+  type ParkourLimbs,
+} from "./parkourIk.js";
+import type { Vec3Like } from "./actorRegistry.js";
+
+/**
+ * One frame's IK request in WORLD space: the solids a limb must stay out of /
+ * grip, whether this verb grips with hands, and optional planted-foot anchors.
+ * The player's presentation layer computes this from the authored action; every
+ * other rig omits it and is drawn straight from its clip.
+ */
+export interface RiggedIkFrame {
+  boxes: readonly IkBox[];
+  gripHands: boolean;
+  footPins?: readonly (Vec3Like | null)[];
+}
 
 // Cache-bust token for the production cast bake. The loader cache is keyed on
 // the whole URL, so the loading path and the retry eviction must build it the
@@ -83,6 +102,11 @@ function RiggedInner(props: {
   distanceAnimThrottle?: boolean;
   cullBeyondM?: number;
   probeId?: string;
+  // Presentation-only limb IK. When provided, after the mixer poses the rig each
+  // frame the arm/leg two-bone chains are rotated so hands and feet land on the
+  // authored surface instead of floating or driving through it. It NEVER moves
+  // the root or the hips — the solver owns position — so it feeds nothing hashed.
+  ikFrame?: () => RiggedIkFrame | null;
   // Fired when a loopOnce action clip reaches its final frame. Physics owns
   // the displacement/landing; this lets a caller drive the visible recovery.
   onActionComplete?: () => void;
@@ -172,6 +196,13 @@ function RiggedInner(props: {
   const animationClips = useMemo(
     () => compactPlayerAirborneClips(props.glbKey, gltf.animations),
     [gltf.animations, props.glbKey],
+  );
+  const hasIk = Boolean(props.ikFrame);
+  const ikFrameRef = useRef(props.ikFrame);
+  ikFrameRef.current = props.ikFrame;
+  const parkourLimbs = useMemo<ParkourLimbs | null>(
+    () => (hasIk ? resolveParkourLimbs(rig.root) : null),
+    [rig, hasIk],
   );
 
   useEffect(() => {
@@ -311,7 +342,27 @@ function RiggedInner(props: {
       }
     }
     mixer.update(dt);
+    applyPresentationIk();
   });
+
+  // Presentation-only: rotate the arm/leg chains so end-effectors land on the
+  // authored surface. Runs after the mixer has posed the rig and is overwritten
+  // by next frame's pose, so it never accumulates and never leaves the sim's
+  // reach. A no-op unless an ikFrame was supplied (the player rig only).
+  function applyPresentationIk(): void {
+    const limbs = parkourLimbs;
+    const request = ikFrameRef.current;
+    if (!limbs || !request) return;
+    const frame = request();
+    if (!frame) return;
+    applyParkourIkToRig(limbs, {
+      boxes: frame.boxes,
+      gripHands: frame.gripHands,
+      gripReachM: 0.45,
+      skinM: 0.01,
+      footPins: frame.footPins,
+    });
+  }
 
   return <primitive object={rig.root} />;
 }
@@ -336,6 +387,8 @@ export function RiggedCharacter(props: {
   cullBeyondM?: number;
   // Stable id so a dev harness can count currently-drawn ambient rigs.
   probeId?: string;
+  // Presentation-only limb IK (player rig only): see RiggedInner.
+  ikFrame?: () => RiggedIkFrame | null;
   onActionComplete?: () => void;
   contactShadow?: boolean;
   // Dedicated gameplay actors may require imported-only failure behavior:
@@ -368,6 +421,7 @@ export function RiggedCharacter(props: {
             distanceAnimThrottle={props.distanceAnimThrottle}
             cullBeyondM={props.cullBeyondM}
             probeId={props.probeId}
+            ikFrame={props.ikFrame}
             onActionComplete={props.onActionComplete}
           />
         </Suspense>
