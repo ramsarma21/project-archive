@@ -104,6 +104,18 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm assets:verify:placement
 
+      # The third of the mesh-vs-authoring guards: collision and placement above
+      # ask whether the solid is drawn and whether a route surface has stone under
+      # it; this asks whether the delivered mesh actually PRESENTS the affordances
+      # the route was authored against — every deck, mass top, climb arrival and
+      # dive catch. It carries an itemised, measured, categorised KNOWN_DEBT list
+      # (26 accepted entries today) printed loudly on every run, and fails on any
+      # NEW or WORSENED red: the list may shrink but must never grow silently. It
+      # self-tests before it measures. Blocking, beside the other two.
+      - name: World affordances (mesh presents the route's surfaces)
+        if: ${{ !cancelled() }}
+        run: pnpm assets:verify:affordances
+
       - name: Build packages
         if: ${{ !cancelled() }}
         run: pnpm build

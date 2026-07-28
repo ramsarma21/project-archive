@@ -112,6 +112,81 @@ const SAMPLE_MAX = 21;
 
 const EPS = 1e-9;
 
+// ---------------------------------------------------------------- known debt
+// The itemised, ACCEPTED red list. This is the guard's whole purpose: the list
+// may shrink freely, but the moment a NEW affordance goes red — or a listed one
+// gets WORSE than its recorded number — the gate exits non-zero. It is not a
+// mute: every entry is printed loudly, grouped by what it means, on every run,
+// with the number it was accepted at. Same discipline as check-world-collision's
+// KNOWN_DEBT and check-world-scale's — a decision on the record, not a silence.
+//
+// Do NOT add a row here you have not measured, and do NOT use the list to bury
+// something fixable. Each row is keyed `KIND:id` and records the verdict rank,
+// the coverage band, and the headline delta (medianDelta for a walked/arrived
+// surface, maxDelta for a mass top) at the moment it was accepted. `gateWorse`
+// below defines "worse" against exactly these.
+//
+// Recorded on branch workflow/mission-encounters against the published world at
+// 81 satisfied / 26 flagged / 0 CRITICAL.
+const DEBT_CATEGORIES = {
+  "missing-or-short": "GENUINELY MISSING GEOMETRY / TOO-SHORT ASSET — a real defect, owned by the asset & authoring lanes, not this verifier.",
+  "catch-radius": "CATCH RADIUS EXCEEDS ITS LANDING SURFACE — the dive/leap acceptance disc reaches past the wagon/bough it lands on. Owned by route authoring (route*.ts / climbs.ts), which is being re-authored; these may change or disappear.",
+  "cover-proud": "COVER ART PROUD OF ITS COLLISION LINE — a peaked awning drawn above the vault top it stands for; the market-stall body itself is 0.45m short. A decision on intended height, not a hole.",
+  "flat-plane-limit": "ACKNOWLEDGED FLAT-PLANE-SAMPLER LIMIT ON A NON-FLAT SHAPE — round/clustered obstacle tops, scaffold plank gaps, an offset/round bough tier. The mesh is present; the flat-plane test under-reads it.",
+};
+
+const KNOWN_DEBT = new Map([
+  // --- genuinely missing geometry / too-short asset (3) ---
+  ["DECK:OLD_BRICK_WATCH", { category: "missing-or-short", rank: 3, band: 0.000, delta: -3.475, note: "watch deck at 13.6m sits ~3.5m above bldg-meeting-hollis's own roofline; owner decision on record." }],
+  ["MASS_TOP:ROPE_CAPSTAN", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.986, note: "rope-coil-large crown ~0.99m below its cover top; needs a taller vaultable asset through the pipeline." }],
+  ["MASS_TOP:COVER_COILS_C", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.635, note: "rope-coil-large crown ~0.64m below its cover top; needs a taller vaultable asset through the pipeline." }],
+  // --- catch radius exceeds its landing surface (5) — route-authoring lane ---
+  ["CATCH:LEAP_YARD_HAY", { category: "catch-radius", rank: 2, band: 0.594, delta: -0.074, note: "leap acceptance radius (1.6m) exceeds the hay-wain-loaded top; the annular gap is a real catch-vs-surface decision." }],
+  ["CATCH:CATCH_LANE_HAY", { category: "catch-radius", rank: 1, band: 0.750, delta: -0.077, note: "acceptance radius reaches past the hay-wain top." }],
+  ["CATCH:LEAP_UPPER", { category: "catch-radius", rank: 1, band: 0.750, delta: -0.074, note: "acceptance radius reaches past the upper bough crown." }],
+  ["CATCH:LEAP_CROWN", { category: "catch-radius", rank: 1, band: 0.844, delta: -0.070, note: "acceptance radius reaches slightly past the bough crown." }],
+  ["CATCH:CATCH_PRINTSHOP_HAY", { category: "catch-radius", rank: 1, band: 0.875, delta: -0.079, note: "acceptance radius reaches slightly past the hay-wain top." }],
+  // --- cover art proud of its collision line (6) ---
+  ["MASS_TOP:STALL_0", { category: "cover-proud", rank: 1, band: 0.000, delta: 0.592, note: "market-awning canopy ~0.59m proud of the vault top; market-stall body itself ~0.45m short." }],
+  ["MASS_TOP:STALL_1", { category: "cover-proud", rank: 1, band: 0.000, delta: 0.592, note: "market-awning canopy ~0.59m proud of the vault top; market-stall body itself ~0.45m short." }],
+  ["MASS_TOP:STALL_2", { category: "cover-proud", rank: 1, band: 0.000, delta: 0.600, note: "market-awning canopy ~0.60m proud of the vault top; market-stall body itself ~0.45m short." }],
+  ["MASS_TOP:STALL_3", { category: "cover-proud", rank: 1, band: 0.000, delta: 0.600, note: "market-awning canopy ~0.60m proud of the vault top; market-stall body itself ~0.45m short." }],
+  ["MASS_TOP:STALL_4", { category: "cover-proud", rank: 1, band: 0.000, delta: 0.600, note: "market-awning canopy ~0.60m proud of the vault top; market-stall body itself ~0.45m short." }],
+  ["MASS_TOP:DOCK_STALLS", { category: "cover-proud", rank: 1, band: 0.000, delta: 0.592, note: "market-awning canopy ~0.59m proud of the vault top; market-stall body itself ~0.45m short." }],
+  // --- acknowledged flat-plane-sampler limit on a non-flat shape (12) ---
+  ["MASS_TOP:GAOL_BARRELS", { category: "flat-plane-limit", rank: 1, band: 0.222, delta: -0.067, note: "round/clustered barrel-group top; crowns reach the plane, no continuous surface." }],
+  ["MASS_TOP:LIBERTY_BARRELS", { category: "flat-plane-limit", rank: 1, band: 0.222, delta: -0.067, note: "round/clustered barrel-group top; crowns reach the plane, no continuous surface." }],
+  ["MASS_TOP:KING_LANE_BARRELS", { category: "flat-plane-limit", rank: 1, band: 0.222, delta: -0.067, note: "round/clustered barrel-group top; crowns reach the plane, no continuous surface." }],
+  ["MASS_TOP:DOCK_BARRELS", { category: "flat-plane-limit", rank: 1, band: 0.222, delta: -0.067, note: "round/clustered barrel-group top; crowns reach the plane, no continuous surface." }],
+  ["MASS_TOP:COVER_BARRELS_NE", { category: "flat-plane-limit", rank: 1, band: 0.125, delta: -0.088, note: "round/clustered barrel-group top; crowns reach the plane, no continuous surface." }],
+  ["MASS_TOP:COVER_BARRELS_SW", { category: "flat-plane-limit", rank: 1, band: 0.125, delta: -0.088, note: "round/clustered barrel-group top; crowns reach the plane, no continuous surface." }],
+  ["MASS_TOP:TREE_STALL", { category: "flat-plane-limit", rank: 1, band: 0.200, delta: -0.041, note: "market-stall cluster top; crowns reach the plane, no continuous surface." }],
+  ["MASS_TOP:YARD_STAGE", { category: "flat-plane-limit", rank: 1, band: 0.200, delta: -0.067, note: "warehouse-platform-scale cluster; crown reaches the plane, no continuous surface." }],
+  ["CLIMB_TO:CLIMBVOL_C_SCAFF_FOOT->C_SCAFF_1", { category: "flat-plane-limit", rank: 1, band: 0.750, delta: 0.000, note: "bldg-scaffold-run deck itself only ~75% covered (plank gaps / volume past the deck edge); the arrival is not laterally offset, so it is not rescued." }],
+  ["CLIMB_TO:CLIMBVOL_C_SCAFF_1->C_SCAFF_2", { category: "flat-plane-limit", rank: 1, band: 0.750, delta: 0.000, note: "bldg-scaffold-run deck itself only ~75% covered (plank gaps / volume past the deck edge); the arrival is not laterally offset, so it is not rescued." }],
+  ["DECK:BOUGH_UPPER", { category: "flat-plane-limit", rank: 1, band: 0.667, delta: -0.043, note: "liberty-elm-hero upper bough is an offset/round tier east of the trunk, not a full ring; the flat-plane sampler under-reads the round crown." }],
+  ["DECK:OLD_BRICK__ROOF", { category: "flat-plane-limit", rank: 1, band: 0.732, delta: -0.075, note: "bldg-meeting-hollis roof deck reads ~73% at plane; a partial-coverage edge of the flat-plane sampler." }],
+]);
+
+// How much a debt entry may drift in the GOOD direction and still match, and how
+// much numeric noise to tolerate before calling a change a regression. The
+// sampler is deterministic on fixed geometry, so these only absorb float noise
+// and small asset re-decimation jitter; a real worsening is far larger.
+const DEBT_BAND_TOL = 0.03;
+const DEBT_DELTA_TOL = 0.05;
+
+// A row is WORSE than its recorded debt if its severity rank rose, its coverage
+// band dropped, or its surface moved further from the authored plane (in either
+// direction — a shortfall deepening or a proud top rising). Improvement (higher
+// band, smaller |delta|, lower rank) never trips this.
+function gateWorse(current, debt) {
+  const reasons = [];
+  if (current.rank > debt.rank) reasons.push(`severity rose ${debt.rank}->${current.rank}`);
+  if (current.band < debt.band - DEBT_BAND_TOL) reasons.push(`coverage fell ${(debt.band * 100).toFixed(0)}%->${(current.band * 100).toFixed(0)}%`);
+  if (Math.abs(current.delta) > Math.abs(debt.delta) + DEBT_DELTA_TOL) reasons.push(`surface moved from plane ${debt.delta.toFixed(2)}m->${current.delta.toFixed(2)}m`);
+  return reasons;
+}
+
 // ---------------------------------------------------------------- geometry decode
 /**
  * Every STATIC triangle of a GLB, in the mesh's own scene space (node
@@ -903,6 +978,95 @@ function rampStripsLine(data) {
   return `${data.rampStrips} ramp strips excluded (invisible stepped collision under a dressing asset).`;
 }
 
+// ---------------------------------------------------------------- the gate
+/** The headline number a debt row is judged on: a mass top's own reach, else the walked/arrived surface. */
+function rowDelta(r) {
+  if (!r.result) return 0;
+  return r.kind === "MASS_TOP" ? (r.result.maxDelta ?? 0) : (r.result.medianDelta ?? 0);
+}
+
+/**
+ * Compare the live measurement against KNOWN_DEBT and decide pass/fail.
+ *
+ * FAILS on: any flagged affordance NOT on the debt list (a previously satisfied
+ * surface gone red), and any listed affordance measured WORSE than its recorded
+ * number. PASSES a list that shrinks — an entry that improved off the list, or an
+ * affordance a route edit removed, is reported, never failed. Prints the whole
+ * debt list loudly, grouped by category, on every run.
+ */
+function gate(data, { reportOnly = false } = {}) {
+  const flagged = data.rows.filter((r) => r.verdict.rank >= 1);
+  const seen = new Set();
+  const newlyRed = [];
+  const worsened = [];
+  const held = []; // matched a debt entry, not worse
+
+  for (const r of flagged) {
+    const key = `${r.kind}:${r.id}`;
+    const debt = KNOWN_DEBT.get(key);
+    const current = { rank: r.verdict.rank, band: r.result?.coverageBand ?? 0, delta: rowDelta(r) };
+    if (!debt) { newlyRed.push({ key, r, current }); continue; }
+    seen.add(key);
+    const reasons = gateWorse(current, debt);
+    if (reasons.length) worsened.push({ key, r, current, debt, reasons });
+    else held.push({ key, r, current, debt });
+  }
+  const resolved = [...KNOWN_DEBT.keys()].filter((k) => !seen.has(k));
+
+  // The debt, printed loudly, grouped by what it means.
+  console.log("world-affordances GATE: the itemised, accepted red list — loud on every run.\n");
+  console.log(`  ${data.placedCount} scenery placements; ${flagged.length} flagged, ${KNOWN_DEBT.size} on the debt list.\n`);
+  const heldByKey = new Map(held.map((h) => [h.key, h]));
+  const worseByKey = new Map(worsened.map((w) => [w.key, w]));
+  for (const [cat, blurb] of Object.entries(DEBT_CATEGORIES)) {
+    const keys = [...KNOWN_DEBT.entries()].filter(([, v]) => v.category === cat).map(([k]) => k);
+    console.log(`  == ${cat} (${keys.length}) ==`);
+    console.log(`     ${blurb}`);
+    for (const key of keys) {
+      const debt = KNOWN_DEBT.get(key);
+      let status;
+      if (worseByKey.has(key)) status = `WORSE: ${worseByKey.get(key).reasons.join("; ")}`;
+      else if (heldByKey.has(key)) status = "held";
+      else status = "RESOLVED (improved off the list — safe to remove)";
+      console.log(`     - ${key}  [band ${(debt.band * 100).toFixed(0)}%, surface ${debt.delta.toFixed(2)}m]  ${status}`);
+      console.log(`         ${debt.note}`);
+    }
+    console.log("");
+  }
+
+  const blocking = newlyRed.length > 0 || worsened.length > 0;
+  if (newlyRed.length) {
+    console.error(`  FAIL: ${newlyRed.length} affordance(s) newly flagged and NOT on the debt list (a regression):`);
+    for (const n of newlyRed) {
+      console.error(`    error: ${n.key}  ${n.r.verdict.label}  ${n.r.verdict.reason}`);
+    }
+    console.error("");
+  }
+  if (worsened.length) {
+    console.error(`  FAIL: ${worsened.length} debt entr(y/ies) measured WORSE than recorded:`);
+    for (const w of worsened) {
+      console.error(`    error: ${w.key}  ${w.reasons.join("; ")}`);
+    }
+    console.error("");
+  }
+  if (resolved.length) {
+    console.log(`  ${resolved.length} debt entr(y/ies) resolved (improved off the list; the list may shrink freely):`);
+    for (const k of resolved) console.log(`    resolved: ${k}`);
+    console.log("");
+  }
+
+  if (blocking && !reportOnly) {
+    console.error("  A surface the route depends on regressed. Fix the asset/authoring so the mesh\n" +
+      "  meets the plane again, or — only if it is a newly ACCEPTED, measured, itemised\n" +
+      "  debt — add it to KNOWN_DEBT with its number and category. Never widen a\n" +
+      "  threshold to make this pass.");
+    return 1;
+  }
+  console.log(`world-affordances GATE: OK (${held.length} known debt held at or under its recorded number, ` +
+    `${resolved.length} resolved; no new or worsened red).`);
+  return 0;
+}
+
 // ---------------------------------------------------------------- selftest
 function boxGlb({ sx, sy, sz }) {
   // A unit-ish box centred on X/Z, sitting from y=0 to y=sy, sized sx x sy x sz.
@@ -1228,8 +1392,22 @@ if (isMain) {
   }
   const verifyFit = argv.find((a) => a.startsWith("--verify-fit="));
   const asJson = argv.includes("--json");
+  const isGate = argv.includes("--gate");
+  const reportOnly = argv.includes("--report");
+
+  // The gate proves its instrument before it measures anything — a gate whose
+  // sampler is wrong would fail (or pass) for the wrong reason.
+  if (isGate && selfTest() !== 0) {
+    console.error("\nworld-affordances: refusing to gate with a broken instrument.");
+    process.exit(1);
+  }
 
   const data = await run({ allNodes: argv.includes("--all-nodes") });
+
+  if (isGate) {
+    console.log("");
+    process.exit(gate(data, { reportOnly }) === 0 ? 0 : 1);
+  }
 
   if (verifyFit) {
     const id = verifyFit.split("=")[1];
@@ -1263,27 +1441,24 @@ if (isMain) {
 }
 
 // ---------------------------------------------------------------- wiring it in
-// WHAT IT WOULD TAKE TO MAKE THIS A BLOCKING GATE, and what would have to be
-// true first. This is deliberately NOT wired into `pnpm lint` / `verify:content`
-// today, because it is red across much of M1 and a red blocking step would break
-// the build for everyone.
+// HOW IT IS WIRED. `--gate` is a blocking step: `pnpm verify:affordances` runs it
+// beside `assets:verify:collision` and `assets:verify:placement` in package.json
+// and .github/workflows/ci.yml. It self-tests first (refuses to gate with a
+// broken instrument), measures the published world, and exits non-zero on any
+// affordance flagged that is NOT on KNOWN_DEBT, or any debt entry measured worse
+// than its recorded number (see `gate` / `gateWorse`).
 //
-//   1. Green means: for every DECK/CLIMB_TO/CATCH affordance, coverageBand is at
-//      or near 1.0 with |medianDelta| <= ALIGN_BAND_M; for every MASS_TOP, the
-//      highest flat top is within ALIGN_BAND_M of the authored blocker top. That
-//      is only achievable once the world is rebuilt to present those surfaces —
-//      it cannot be reached by loosening the thresholds here, and must not be.
+//   1. It does NOT require the whole list green — the world is not yet rebuilt to
+//      present every surface. It requires the red list to never GROW silently:
+//      the accepted debt is itemised, measured, categorised and printed loudly on
+//      every run, and anything new or worsened fails. The list may shrink freely.
 //   2. It runs under the TypeScript loader (`node --import tsx`) because it calls
-//      the level's own `sceneryPlacements()`; a lint step that must work without
-//      node_modules (check-world-scale.mjs) cannot host it. So it belongs beside
-//      `verify:content` (already `node --import tsx`), as e.g.
-//         "verify:affordances": "node --import tsx scripts/check-world-affordances.mjs --selftest && node --import tsx scripts/check-world-affordances.mjs --gate"
-//      where a future `--gate` flag exits non-zero on rank>=2. Add it to the CI
-//      job only after (1) holds, or as a non-blocking report first.
-//   3. The PARTIAL class (round/clustered obstacles: barrels, coils) and the
-//      face heuristic are lower-confidence and must not gate as-is — either
-//      exclude them, or give the level a way to declare "vault top, not a
-//      walkway" so the right test is applied. Until then they are report-only.
+//      the level's own `sceneryPlacements()`, so it lives beside `verify:content`
+//      and the asset verifiers, which already do.
+//   3. It never gates by loosening a tolerance: the horizontality band and align
+//      tolerances are fixed. A regression is fixed in the asset/authoring lane,
+//      or — only if it is a newly ACCEPTED, measured problem — added to KNOWN_DEBT
+//      with its number and category. The debt list is a record, not a mute.
 //   4. Nothing here weakens an existing invariant: the penetration/traversability
-//      tests keep running on the authored hulls. This gate would be ADDITIVE — it
-//      asserts the delivered mesh MEETS those hulls, which nothing does today.
+//      tests keep running on the authored hulls. This gate is ADDITIVE — it
+//      asserts the delivered mesh MEETS those hulls, which nothing else does.
