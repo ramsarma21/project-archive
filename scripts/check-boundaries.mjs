@@ -424,6 +424,12 @@ const WALL_CLOCK_ALLOWLIST = new Map([
       "screen's wall-clock figures are made of; the session's clock, never a " +
       "term in the run",
   ],
+  [
+    "apps/web/src/mission/bossCutscene.ts",
+    "the yard-arrival cutscene's presentation clock, read only while the run is " +
+      "frozen (its outcome already latched) to pace subtitles and a camera ease; " +
+      "never a term in the simulation, and the sole wall-clock read for the beat",
+  ],
 ]);
 
 const WALL_CLOCK_RE = /\b(?:Date\s*\.\s*now\s*\(|performance\s*\.\s*now\s*\(|new\s+Date\s*\()/;

@@ -47,6 +47,13 @@ import {
   speakingGesture,
   type CinePose,
 } from "./encounterCinematic.js";
+import {
+  BOSS_OFFICER_ASSET,
+  BOSS_OFFICER_HEIGHT_M,
+  bossChallengeAt,
+  bossElapsedS,
+  type BossChallengeStage,
+} from "./bossCutscene.js";
 import type { MissionCivilian, MissionWatcherCast } from "./levelPort.js";
 import type { MissionInputState } from "./missionInput.js";
 import {
@@ -618,6 +625,75 @@ function MissionWatch(props: { runtime: MissionRuntime; reducedMotion: boolean }
 const NO_WATCH: readonly MissionWatcherCast[] = [];
 
 /**
+ * The officer, staged for the boss-challenge cutscene.
+ *
+ * He is NOT one of the level's traversal watchers — the yard has no cone — so he
+ * is a dedicated cinematic body, drawn only while the challenge is armed and
+ * placed by `bossChallengeAt` from the player's own arrival pose (so he is on
+ * the player's surface, never floating on a plane he does not share). His clip
+ * and restrained speaking gesture come from the same encounter-cinematic
+ * vocabulary the guards use: `idle` + a nod while he talks, the baked `draw`
+ * (once, clamped) as he calls the reckoning.
+ *
+ * The clock is the SAME `startedAtMs` the subtitle overlay runs off, so the line
+ * on screen and the pose in the world are one moment. Nothing here can stall the
+ * cutscene: if this rig never loads (Suspense fallback null), the officer is
+ * simply unseen and the overlay's timer still opens the duel.
+ */
+function BossChallengeActor(props: {
+  stage: BossChallengeStage;
+  reducedMotion: boolean;
+}) {
+  const group = useRef<THREE.Group>(null);
+  const rate = useRef({ current: 1 });
+  const [clip, setClip] = useState("idle");
+  const clipRef = useRef("idle");
+
+  useEffect(() => {
+    registerCharacterClips(BOSS_OFFICER_ASSET, OFFICER_CLIP_SPEC);
+  }, []);
+
+  useFrame(() => {
+    const node = group.current;
+    if (!node) return;
+    const elapsedS = bossElapsedS(props.stage.startedAtMs);
+    const read = bossChallengeAt({
+      elapsedS,
+      player: props.stage.player,
+      reducedMotion: props.reducedMotion,
+    });
+    const officer = read.officer;
+    node.position.set(
+      officer.pose.x,
+      officer.pose.y + officer.gesture.bobY,
+      officer.pose.z,
+    );
+    node.rotation.set(officer.gesture.nod, officer.pose.yaw, 0);
+    // A drawn pose holds at its own cadence; the idle stand is stride-matched to
+    // a standing body (0 m/s), the same call the watch rigs use.
+    rate.current.current = officer.loopOnce ? 1 : strideTimeScale(officer.clip, 0);
+    if (clipRef.current !== officer.clip) {
+      clipRef.current = officer.clip;
+      setClip(officer.clip);
+    }
+  });
+
+  return (
+    <group ref={group}>
+      <RiggedCharacter
+        glbKey={BOSS_OFFICER_ASSET}
+        height={BOSS_OFFICER_HEIGHT_M}
+        clip={clip}
+        loopOnce={WATCH_ACTION_CLIPS.has(clip)}
+        timeScaleRef={rate.current}
+        castShadow
+        showFallback={false}
+      />
+    </group>
+  );
+}
+
+/**
  * The sky, as the mission clock.
  *
  * This is the whole visible half of the dawn design. The three minutes are the
@@ -1095,6 +1171,9 @@ function ChaseCamera(props: {
   runtime: MissionRuntime;
   lookState: MissionLookState;
   reducedMotion: boolean;
+  /** The boss-challenge staging while it is armed, else null. Eases the camera
+   *  into the same conversation two-shot the encounter cinematic uses. */
+  bossChallenge?: BossChallengeStage | null;
 }) {
   const focusVec = useRef(new THREE.Vector3());
   // The distance actually in use, so an obstruction can be eased out of rather
@@ -1106,6 +1185,10 @@ function ChaseCamera(props: {
   // releases, so the hand-over into the cinematic and the return to gameplay are
   // smooth rather than a cut. Presentation only — the simulation never reads it.
   const cineWeight = useRef(0);
+  // The same ease, for the boss-challenge two-shot. Kept separate from the
+  // encounter weight above; the two never overlap (the challenge only arms at
+  // the yard, where no encounter is running).
+  const bossWeight = useRef(0);
 
   useFrame(({ camera }, delta) => {
     const { runtime } = props;
@@ -1202,6 +1285,42 @@ function ChaseCamera(props: {
         lookY = lerp(lookY, shot.target.y, w);
         lookZ = lerp(lookZ, shot.target.z, w);
       }
+    }
+
+    // The boss-challenge two-shot, eased in over the frozen arrival frame. Same
+    // shot geometry as an encounter stop (over-the-shoulder onto the officer),
+    // framing the officer staged by `bossChallengeAt` and the player, so the
+    // gate confrontation is composed rather than left on the gameplay chase.
+    const boss = props.bossChallenge ?? null;
+    bossWeight.current +=
+      (Number(boss !== null) - bossWeight.current) *
+      cinematicEase(props.reducedMotion, delta);
+    if (boss === null && bossWeight.current < 0.002) bossWeight.current = 0;
+    if (bossWeight.current > 0.002 && boss) {
+      const elapsedS = bossElapsedS(boss.startedAtMs);
+      const read = bossChallengeAt({
+        elapsedS,
+        player: boss.player,
+        reducedMotion: props.reducedMotion,
+      });
+      const shot = encounterConversationShot({
+        player: { x: pose.x, y: pose.y, z: pose.z, yaw: pose.yaw },
+        speaker: read.officer.pose,
+        secondary: null,
+        reducedMotion: props.reducedMotion,
+      });
+      const clearShot = clearCameraPoint(
+        runtime.instance.world,
+        shot.target,
+        shot.position,
+      );
+      const w = bossWeight.current;
+      camX = lerp(camX, clearShot.x, w);
+      camY = lerp(camY, clearShot.y, w);
+      camZ = lerp(camZ, clearShot.z, w);
+      lookX = lerp(lookX, shot.target.x, w);
+      lookY = lerp(lookY, shot.target.y, w);
+      lookZ = lerp(lookZ, shot.target.z, w);
     }
 
     camera.position.set(camX, camY, camZ);
@@ -1320,6 +1439,13 @@ export function MissionStage(props: {
   reducedMotion: boolean;
   /** True while a UI surface owns input. The sim keeps integrating; flow stops. */
   paused: boolean;
+  /**
+   * The boss-challenge staging while the yard-arrival cutscene is armed, else
+   * null/undefined. When set, the officer is staged in the yard and the camera
+   * eases into the conversation two-shot; the container holds the run frozen
+   * (paused) meanwhile. Presentation only — nothing here resolves the traversal.
+   */
+  bossChallenge?: BossChallengeStage | null;
   onResolved: (outcome: MissionTraversalOutcome) => void;
   onSample: (presentation: MissionPresentation) => void;
   /**
@@ -1374,6 +1500,7 @@ export function MissionStage(props: {
         runtime={props.runtime}
         lookState={props.lookState}
         reducedMotion={props.reducedMotion}
+        bossChallenge={props.bossChallenge ?? null}
       />
       <MouseLook lookState={props.lookState} />
 
@@ -1390,6 +1517,18 @@ export function MissionStage(props: {
       <Suspense fallback={null}>
         <MissionWatch runtime={props.runtime} reducedMotion={props.reducedMotion} />
       </Suspense>
+      {/* The officer, only while the boss-challenge cutscene is armed. Its own
+          boundary so his rig loading late cannot hold up the yard, and null
+          Suspense fallback so an unloaded officer never blocks the fight from
+          opening — the overlay's timer does that regardless of what is drawn. */}
+      {props.bossChallenge && (
+        <Suspense fallback={null}>
+          <BossChallengeActor
+            stage={props.bossChallenge}
+            reducedMotion={props.reducedMotion}
+          />
+        </Suspense>
+      )}
       {Scenery && (
         <Suspense fallback={null}>
           <SceneryMount Scenery={Scenery} reducedMotion={props.reducedMotion} runtime={props.runtime} />
@@ -1402,7 +1541,12 @@ export function MissionStage(props: {
           drawn over the plate naming the elm the first time the hold tried
           this. Nothing about it can drive the run: it is handed a reader and no
           way to write. */}
-      <VisorRunMark read={() => runMarkFor(props.runtime)} />
+      {/* The wayfinding mark steps aside for the boss-challenge cutscene: the
+          scene is the officer and the player, not a marker pointing at the elm
+          behind them. (In real play the route's objectives are already met by
+          the time this arms, so the mark is null anyway — this also keeps it
+          clean on any dev drop-in that arms the cutscene early.) */}
+      <VisorRunMark read={() => (props.bossChallenge ? null : runMarkFor(props.runtime))} />
 
       {/* The catch line. Mounted beside the mark and under the same contract —
           a reader and no way to write — because the two answer the two halves

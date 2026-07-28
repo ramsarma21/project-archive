@@ -5,6 +5,12 @@ import {
   duelView,
   type MissionDuelReport,
 } from "./duelPort.js";
+import { BossChallenge } from "./BossChallenge.js";
+import {
+  bossCutsceneNowMs,
+  shouldArmBossChallenge,
+  type BossChallengeStage,
+} from "./bossCutscene.js";
 import { MissionBeatPanel } from "./MissionBeatPanel.js";
 import { MissionEncounter } from "./MissionEncounter.js";
 import { MissionHud } from "./MissionHud.js";
@@ -22,6 +28,7 @@ import {
 import { createMissionLookState } from "./missionLook.js";
 import { missionDefinition } from "./missionFormat.js";
 import type { MissionPresentation } from "./traversal.js";
+import type { MissionTraversalOutcome } from "./result.js";
 import type { MissionSessionApi } from "./useMissionSession.js";
 // The held moment. Imported rather than registered, which is the seam its author
 // designed: the visor's index registers M1's annotation source at import time, so
@@ -191,6 +198,14 @@ export function MissionRun(props: {
   const [confirming, setConfirming] = useState(false);
   const input = useMemo(createMissionInputState, []);
 
+  // The boss-challenge cutscene, armed once when the route reaches the duel.
+  // While it is set the run is held frozen (the outcome is already latched, so
+  // the sim no-ops) and the officer stops the player in the yard; the pending
+  // REACHED_DUEL outcome is resolved — opening the duel — only when the cutscene
+  // ends, however it ends (played out, skipped, or the hard cap).
+  const [bossChallenge, setBossChallenge] = useState<BossChallengeStage | null>(null);
+  const pendingDuelOutcome = useRef<MissionTraversalOutcome | null>(null);
+
   // The encounter authority: the real CSRF-authenticated HTTP route in
   // production, or a deterministic dev stand-in when a `?encounterVerdict=` query
   // asks for one. Resolved once; the route binds every verdict to the player's
@@ -216,7 +231,10 @@ export function MissionRun(props: {
   // Escape opens the confirmation rather than leaving, because leaving spends an
   // attempt and a mis-hit Escape is not consent to that.
   useEffect(() => {
-    if (!inTraversal) return undefined;
+    // Suppressed while the boss-challenge cutscene owns the screen: there,
+    // Escape skips the cutscene (handled by BossChallenge) rather than opening
+    // the abandon prompt.
+    if (!inTraversal || bossChallenge) return undefined;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       event.preventDefault();
@@ -224,7 +242,7 @@ export function MissionRun(props: {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [inTraversal]);
+  }, [inTraversal, bossChallenge]);
 
   // A fresh attempt starts with a clean HUD rather than the last run's numbers.
   const attemptId = "ticket" in phase ? phase.ticket.attemptId : null;
@@ -233,6 +251,9 @@ export function MissionRun(props: {
     lastAttempt.current = attemptId;
     if (hud !== null) setHud(null);
     if (confirming) setConfirming(false);
+    // A fresh attempt cannot inherit the last run's cutscene.
+    if (bossChallenge) setBossChallenge(null);
+    pendingDuelOutcome.current = null;
   }
 
   // The camera's orientation, which is the player's and is mutated in place so
@@ -322,6 +343,38 @@ export function MissionRun(props: {
       lookAttempt.current = attemptId;
       lookState.current = createMissionLookState(runtime.instance.spawn.yaw);
     }
+    // Reaching the duel does not open it directly: the officer is there again,
+    // and he stops the player first. So a REACHED_DUEL outcome arms the
+    // boss-challenge cutscene (once) instead of resolving straightaway, and the
+    // resolution is deferred to `enterDuel` below. A FAILED traversal has no
+    // such beat and resolves immediately.
+    const onResolved = (outcome: MissionTraversalOutcome) => {
+      if (shouldArmBossChallenge(outcome, bossChallenge !== null)) {
+        pendingDuelOutcome.current = outcome;
+        setBossChallenge({
+          startedAtMs: bossCutsceneNowMs(),
+          player: {
+            x: runtime.motion.pos.x,
+            y: runtime.motion.pos.y,
+            z: runtime.motion.pos.z,
+            yaw: runtime.motion.yaw,
+          },
+        });
+        return;
+      }
+      session.resolveTraversal(outcome);
+    };
+    // The single exit from the cutscene, however it ends. Idempotent on the
+    // overlay side; here it hands the latched outcome to the session, which
+    // opens the duel. `runtime.outcome` is the same REACHED_DUEL the sim already
+    // latched, so it is an honest fallback if the ref was ever cleared — the
+    // fight can never be stranded behind a lost reference.
+    const enterDuel = () => {
+      const outcome = pendingDuelOutcome.current ?? runtime.outcome;
+      pendingDuelOutcome.current = null;
+      setBossChallenge(null);
+      if (outcome) session.resolveTraversal(outcome);
+    };
     return (
       <div className="msn">
         <MissionStage
@@ -329,11 +382,14 @@ export function MissionRun(props: {
           input={input}
           lookState={lookState.current}
           reducedMotion={props.reducedMotion}
-          paused={confirming}
-          onResolved={session.resolveTraversal}
+          paused={confirming || bossChallenge !== null}
+          bossChallenge={bossChallenge}
+          onResolved={onResolved}
           onSample={setHud}
         />
-        {hud && (
+        {/* The HUD, beat panel and mid-route encounter surface all step aside for
+            the boss-challenge cutscene, which owns the screen while it runs. */}
+        {!bossChallenge && hud && (
           <MissionHud
             title={title}
             attemptOrdinal={phase.ticket.attemptOrdinal}
@@ -341,7 +397,7 @@ export function MissionRun(props: {
             onAbandon={() => setConfirming(true)}
           />
         )}
-        {hud?.beat && (
+        {!bossChallenge && hud?.beat && (
           <MissionBeatPanel
             beat={hud.beat}
             inStance={hud.inBeatStance}
@@ -349,12 +405,22 @@ export function MissionRun(props: {
             reducedMotion={props.reducedMotion}
           />
         )}
-        <MissionEncounter
-          runtime={runtime}
-          authority={encounterAuthority}
-          reducedMotion={props.reducedMotion}
-        />
-        {confirming && (
+        {!bossChallenge && (
+          <MissionEncounter
+            runtime={runtime}
+            authority={encounterAuthority}
+            reducedMotion={props.reducedMotion}
+          />
+        )}
+        {bossChallenge && (
+          <BossChallenge
+            player={bossChallenge.player}
+            startedAtMs={bossChallenge.startedAtMs}
+            reducedMotion={props.reducedMotion}
+            onEnter={enterDuel}
+          />
+        )}
+        {!bossChallenge && confirming && (
           <AbandonConfirm
             attemptOrdinal={phase.ticket.attemptOrdinal}
             onConfirm={() => session.abandonAttempt("left during traversal")}

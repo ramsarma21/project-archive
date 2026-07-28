@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import type { Vec3 } from "@pa/engine-world";
 import { M1_EFFIGY_RUN } from "@pa/mission-m1";
@@ -9,6 +9,12 @@ import { M1_MISSION_ID, m1Instance } from "../chapter/m1Mission.js";
 // the same import-time seam the container relies on.
 import { VisorHold } from "../visor/index.js";
 import { MissionBeatPanel } from "./MissionBeatPanel.js";
+import { BossChallenge } from "./BossChallenge.js";
+import {
+  bossCutsceneNowMs,
+  shouldArmBossChallenge,
+  type BossChallengeStage,
+} from "./bossCutscene.js";
 import { MissionEncounter } from "./MissionEncounter.js";
 import { MissionHud } from "./MissionHud.js";
 import { MissionStage } from "./MissionStage.js";
@@ -18,14 +24,22 @@ import {
 } from "./encounterAuthority.js";
 import { attachMissionInput, createMissionInputState } from "./missionInput.js";
 import { createMissionLookState } from "./missionLook.js";
+import { dawnRead } from "./dawn.js";
 import {
   createMissionRuntime,
   disposeMissionRuntime,
+  missionObservation,
   type MissionPresentation,
 } from "./traversal.js";
+import { duelView } from "./duelPort.js";
+// Registers the real duel view so `?boss=1` can hand off to the actual arena
+// after the cutscene — the same view the container mounts in its DUEL phase.
+import { installMissionDuel } from "../duel/installDuel.js";
 import type { MissionTraversalOutcome } from "./result.js";
 import "../styles.css";
 import "./mission.css";
+
+installMissionDuel();
 
 // Harness for playing the floor. Not shipped and not routed: the hub deploys the
 // real mission through the session machine, and this exists so the traversal can
@@ -134,6 +148,19 @@ function Harness() {
   const [runId, setRunId] = useState(0);
   const [hud, setHud] = useState<MissionPresentation | null>(null);
   const [outcome, setOutcome] = useState<MissionTraversalOutcome | null>(null);
+  // The yard-arrival cutscene, mirrored from the container so the harness plays
+  // the same officer beat the real MissionRun does — that parity is what keeps
+  // the dev path from drifting off the shipped one.
+  const [challenge, setChallenge] = useState<BossChallengeStage | null>(null);
+  // `?boss=1`: a dev affordance to inspect the yard-arrival cutscene without
+  // playing the whole route (the precision beat a bot cannot reliably hit gates
+  // the real REACHED_DUEL). It arms the SAME shipped cutscene from a yard drop-in
+  // and, when it ends, mounts the REAL registered duel view — so this page shows
+  // arrival → cutscene → duel with the shipped components, the transition the
+  // container's session machine performs is the only thing standing in for.
+  const bossMode = params.get("boss") === "1";
+  const [enteredDuel, setEnteredDuel] = useState(false);
+  const bossArmed = useRef(false);
   const input = useMemo(createMissionInputState, []);
 
   // The hold is the default and the run is what comes after it, which is the
@@ -204,9 +231,58 @@ function Harness() {
 
   function again(): void {
     setOutcome(null);
+    setChallenge(null);
+    setEnteredDuel(false);
+    bossArmed.current = false;
     setHud(null);
     setHeld(wantsHold);
     setRunId((value) => value + 1);
+  }
+
+  // `?boss=1`: once the run exists, arm the cutscene from the current (dropped-in)
+  // pose after a beat, exactly as a real REACHED_DUEL would. Fires once.
+  useEffect(() => {
+    if (!bossMode || !runtime || bossArmed.current) return undefined;
+    const handle = setTimeout(() => {
+      if (bossArmed.current) return;
+      bossArmed.current = true;
+      // A real player reaches the yard near the end of the night, so light the
+      // frozen frame at full dawn — representative of arrival, not the tick-0
+      // dark a drop-in would otherwise sit in. The run is about to freeze, so
+      // this dawn read is the one the sky and scenery hold for the cutscene.
+      runtime.dawn = dawnRead(
+        runtime.instance.traversalBudgetS,
+        runtime.instance.traversalBudgetS,
+      );
+      setOutcome({ kind: "REACHED_DUEL", ...missionObservation(runtime) });
+      setChallenge({
+        startedAtMs: bossCutsceneNowMs(),
+        player: {
+          x: runtime.motion.pos.x,
+          y: runtime.motion.pos.y,
+          z: runtime.motion.pos.z,
+          yaw: runtime.motion.yaw,
+        },
+      });
+    }, 900);
+    return () => clearTimeout(handle);
+  }, [bossMode, runtime]);
+
+  // Reaching the duel arms the officer's challenge before the "duel armed"
+  // curtain, exactly as the container defers the duel behind it.
+  function onResolved(next: MissionTraversalOutcome): void {
+    setOutcome(next);
+    if (runtime && shouldArmBossChallenge(next, false)) {
+      setChallenge({
+        startedAtMs: bossCutsceneNowMs(),
+        player: {
+          x: runtime.motion.pos.x,
+          y: runtime.motion.pos.y,
+          z: runtime.motion.pos.z,
+          yaw: runtime.motion.yaw,
+        },
+      });
+    }
   }
 
   if (held) {
@@ -220,6 +296,26 @@ function Harness() {
     );
   }
   if (!runtime) return null;
+
+  // After the cutscene in `?boss=1`, the traversal canvas gives way to the real
+  // duel view — the same unmount-then-mount the container does at the DUEL phase.
+  if (enteredDuel) {
+    const Duel = duelView();
+    if (Duel) {
+      return (
+        <div className="msn">
+          <Duel
+            brief={instance.duel}
+            missionId={M1_MISSION_ID}
+            attemptOrdinal={1}
+            reducedMotion={reducedMotion}
+            onResolved={() => setEnteredDuel(false)}
+            onAbandon={again}
+          />
+        </div>
+      );
+    }
+  }
 
   return (
     <div className="msn">
@@ -235,10 +331,11 @@ function Harness() {
         lookState={lookState}
         reducedMotion={reducedMotion}
         paused={outcome !== null}
-        onResolved={setOutcome}
+        bossChallenge={challenge}
+        onResolved={onResolved}
         onSample={setHud}
       />
-      {hud && (
+      {!challenge && hud && (
         <MissionHud
           title="The Effigy Run · floor harness"
           attemptOrdinal={1}
@@ -252,7 +349,7 @@ function Harness() {
           all — a player could stand in stance and never see the panel the real
           container would have raised. Rendered here so the floor plays the beat
           the way the mission does, panel and HUD and scene together. */}
-      {hud?.beat && (
+      {!challenge && hud?.beat && (
         <MissionBeatPanel
           beat={hud.beat}
           inStance={hud.inBeatStance}
@@ -260,12 +357,25 @@ function Harness() {
           reducedMotion={reducedMotion}
         />
       )}
-      <MissionEncounter
-        runtime={runtime}
-        authority={encounterAuthority}
-        reducedMotion={reducedMotion}
-      />
-      {outcome && (
+      {!challenge && (
+        <MissionEncounter
+          runtime={runtime}
+          authority={encounterAuthority}
+          reducedMotion={reducedMotion}
+        />
+      )}
+      {challenge && (
+        <BossChallenge
+          player={challenge.player}
+          startedAtMs={challenge.startedAtMs}
+          reducedMotion={reducedMotion}
+          onEnter={() => {
+            setChallenge(null);
+            if (bossMode) setEnteredDuel(true);
+          }}
+        />
+      )}
+      {outcome && !challenge && (
         <div className="msn-curtain" role="status">
           <span className="msn-curtain-kicker">
             {outcome.kind === "FAILED" ? "Attempt lost" : "Route complete"}
