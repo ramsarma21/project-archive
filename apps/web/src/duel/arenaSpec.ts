@@ -16,8 +16,12 @@
 // outside the arena bounds where the core has already clamped the player, so a
 // player can never walk through something they can see.
 //
-// The layout has 180-degree rotational symmetry on purpose. The same arena serves
-// PvP, where any asymmetry is an unfair spawn.
+// The layout has 180-degree rotational symmetry on purpose, so that it CAN serve
+// PvP — where any asymmetry is an unfair spawn — the day the arenas are unified.
+// It does not serve PvP yet: PvP still fights @pa/duel's generic `referenceArena()`
+// (12x12, four cover), and this yard is 11x11 with eight. Merging the two needs a
+// netcode golden-hash regeneration and a winnability retune; the staged plan is in
+// docs/process/PvP-Arena-Unification-Plan.md. The symmetry is the down-payment on it.
 
 import { CAPSULE_RADIUS } from "@pa/engine-world";
 import {

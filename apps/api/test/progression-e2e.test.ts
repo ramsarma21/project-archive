@@ -12,7 +12,12 @@ import type { MissionAttempt, ProgressionSnapshot } from "@pa/contracts";
 import { buildApp } from "../src/app.js";
 import { csrfTokenForSession } from "../src/auth.js";
 import { pool, query } from "../src/db.js";
-import { BOSTON_RUNTIME_CHAPTER_ID } from "../src/progression/content.js";
+import {
+  BOSTON_RUNTIME_CHAPTER_ID,
+  M1_MISSION_ID,
+  M1_MODULE_ID,
+  bostonProgressionContent,
+} from "../src/progression/content.js";
 
 // ===========================================================================
 // Clearing Mission 1 pays XP, and the payout survives a reload.
@@ -30,22 +35,16 @@ import { BOSTON_RUNTIME_CHAPTER_ID } from "../src/progression/content.js";
 // proving it pays 120.
 // ===========================================================================
 
-const M1 = "PA.SEA01.CH02.BOSTON.MD01";
-const M1_MODULE = "BOS.MD01.MODULE.BRIEF.v1";
-const M1_DECK = [
-  "BOS.MD01.CUE.BRIEF_IDENTITY.v1",
-  "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
-  "BOS.MD01.CUE.BRIEF_STAMP.v1",
-  "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
-  "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1",
-  "BOS.MD01.CUE.BRIEF_INSERT.v1",
-];
-/** The mastery checks the module now gates the three concept cards behind. */
-const M1_CHECKS = [
-  "BOS.MD01.CHECK.POSTWAR_REVENUE.v1",
-  "BOS.MD01.CHECK.STAMP_SCOPE.v1",
-  "BOS.MD01.CHECK.REPRESENTATION.v1",
-];
+const M1 = M1_MISSION_ID;
+const M1_MODULE = M1_MODULE_ID;
+// The deck and checks the runner acknowledges are the SERVER's own gate, not a
+// fourth hand-copy of content/m1/module.json. content.ts is pinned to the authored
+// file by module-deck-parity.test.ts, so deriving the request payload from it keeps
+// this e2e a test of the HTTP/Postgres join rather than a place the deck can drift.
+const CONTENT = bostonProgressionContent();
+const M1_DECK = CONTENT.moduleDeckCueIds(M1_MODULE) ?? [];
+/** The mastery checks the module gates the three concept cards behind. */
+const M1_CHECKS = CONTENT.moduleRequiredCheckIds(M1_MODULE);
 
 /** @pa/duel's log, which names a verdict on every round the server minted. */
 const DUEL_LOG = [
