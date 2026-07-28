@@ -324,6 +324,11 @@ export function alignClimbToLadder(
   const fX = ladder.faceX / faceLen;
   const fZ = ladder.faceZ / faceLen;
 
+  // A ladder that tops onto no known surface is misconfigured; it cannot arm a
+  // climb. This is the object side of "no ladder, no climb": the ladder has to
+  // name a deck or landable top the world actually has.
+  if (!surfaceRectById(world, ladder.toSurface)) return null;
+
   // The rise rides a radius OUT along the face normal so the capsule is tangent
   // to the rungs, never inside them. This is last night's tangent-rise principle
   // taken off the probe heading and put on the ladder's own normal, which is why
@@ -335,9 +340,12 @@ export function alignClimbToLadder(
   };
   const riseTop: Vec3 = { x: riseFoot.x, y: ladder.topY, z: riseFoot.z };
 
-  // Step inward (−face) far enough to plant the whole capsule a radius clear of
-  // the top edge, so the body finishes standing ON the deck, not teetering on it.
-  const inset = CAPSULE_RADIUS + 0.05;
+  // Step inward (−face) onto the served surface. The rise already stands a
+  // radius OUT from the ladder base (which sits at the wall foot / deck edge), so
+  // stepping in one radius only reaches the edge; a second radius plants the
+  // whole capsule clear of the lip, so the body finishes standing ON the deck
+  // rather than teetering on it.
+  const inset = 2 * CAPSULE_RADIUS + 0.05;
   const topOut: Vec3 = {
     x: riseTop.x - fX * inset,
     y: ladder.topY,
