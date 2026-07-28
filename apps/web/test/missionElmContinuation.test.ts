@@ -188,9 +188,11 @@ function driveSafe(options: {
   let prevSupport: string | null = null;
 
   // ---- beat driver ----
-  let beatStarted = false;
-  let dueTicks: number[] = [];
-  let dueIdx = 0;
+  // The beat is a reaction test now: it arms on its own when the player stands
+  // at the work facing the tree, and flares come up on a panel one at a time.
+  // The driver clicks the lit flare's cell as soon as it appears, which is what
+  // a paying-attention player does.
+  const clickedFlares = new Set<number>();
 
   const inStance = (): boolean => {
     const p = runtime.motion.pos;
@@ -217,19 +219,25 @@ function driveSafe(options: {
 
     let moveX = 0;
     let moveZ = 1;
-    let doStrike = false;
+    let hitCell: number | null = null;
     const drivingBeat = objId === "post-the-handbill" && inStance();
     if (drivingBeat) {
-      // Stand on the bough and aim the camera at the tree, then hammer the
-      // authored chart on its own due ticks — the beat's correct-answer seam.
+      // Stand on the bough and aim the camera at the tree; the beat arms itself,
+      // and the driver strikes each flare's cell the moment it lights.
       moveX = 0;
       moveZ = 0;
       runtime.motion = { ...runtime.motion, yaw: beatSpec.facingYaw };
-      if (!beatStarted) {
-        doStrike = true;
-      } else {
-        const nextTick = runtime.clock.tick + 1;
-        if (dueIdx < dueTicks.length && nextTick >= dueTicks[dueIdx]!) doStrike = true;
+      const run = runtime.beat;
+      if (run && run.startedTick !== null) {
+        const offset = runtime.clock.tick - run.startedTick;
+        const live = run.schedule.targets.find(
+          (t) =>
+            !run.resolved[t.index] && offset >= t.spawnTick && offset <= t.expireTick,
+        );
+        if (live && !clickedFlares.has(live.index)) {
+          hitCell = live.cell;
+          clickedFlares.add(live.index);
+        }
       }
     } else if (standing) {
       const mark = markRead(standing.objective, p);
@@ -271,7 +279,7 @@ function driveSafe(options: {
       sprintHeld: !drivingBeat,
       crouchHeld: false,
       jumpBuffered: pendingJump,
-      strikeBuffered: doStrike,
+      hitCellBuffered: hitCell,
       reducedMotion: false,
       flowEnabled: true,
     };
@@ -280,14 +288,10 @@ function driveSafe(options: {
       pendingJump = false;
       result.spacePresses += 1;
     }
-    if (step.strikeConsumed && !beatStarted && runtime.beat?.startedTick != null) {
-      beatStarted = true;
-      dueTicks = runtime.beat.chart.offsets.slice(1).map((o) => runtime.beat!.startedTick! + o);
-      result.beatJudged = runtime.beat.chart.judgedBeats;
-    } else if (step.strikeConsumed && beatStarted) {
-      result.beatStruck += 1;
-      dueIdx += 1;
+    if (runtime.beat?.startedTick != null && result.beatJudged === 0) {
+      result.beatJudged = runtime.beat.schedule.targets.length;
     }
+    if (step.hitConsumed) result.beatStruck += 1;
 
     const support = runtime.motion.grounded
       ? groundedSupport(world, runtime.motion.pos)?.id ?? null

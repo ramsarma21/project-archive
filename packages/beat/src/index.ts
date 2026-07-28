@@ -16,6 +16,7 @@
 
 export * from "./tuning.js";
 export * from "./chart.js";
+export * from "./schedule.js";
 export * from "./judge.js";
 export * from "./verbs.js";
 export * from "./noise.js";

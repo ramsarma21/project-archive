@@ -501,13 +501,14 @@ export interface MissionInputFrame {
    */
   readonly dashBuffered?: boolean;
   /**
-   * A strike press latched since the last step. Consumed by the first tick.
+   * The panel cell the player struck since the last step, or null. Consumed by
+   * the first tick.
    *
-   * EDGE TRIGGERED, and this is where that is owned. A held key delivered as
-   * true every fixed step reads to the judge as sixty strokes a second, which it
-   * would correctly score as fifty-nine strays.
+   * EDGE TRIGGERED, and this is where that is owned. A held key or an unreleased
+   * pointer delivered every fixed step reads to the beat as a run of strays, so
+   * the container carries the struck cell to exactly one tick and clears it.
    */
-  readonly strikeBuffered?: boolean;
+  readonly hitCellBuffered?: number | null;
   readonly reducedMotion: boolean;
   /**
    * False while a UI surface owns input. Motion still integrates so the player
@@ -524,8 +525,8 @@ export interface MissionRuntimeStep {
   readonly jumpConsumed: boolean;
   /** True when a buffered dash was handed to the simulation this frame. */
   readonly dashConsumed: boolean;
-  /** True when a buffered strike was handed to the beat this frame. */
-  readonly strikeConsumed: boolean;
+  /** True when a buffered panel strike was handed to the beat this frame. */
+  readonly hitConsumed: boolean;
 }
 
 const CALM_STEALTH_VIEW: StealthPresentation = {
@@ -1040,7 +1041,7 @@ export function missionThrowing(runtime: MissionRuntime): boolean {
 function stepBeatForTick(
   runtime: MissionRuntime,
   read: MissionPlayerRead,
-  strike: boolean,
+  hitCell: number | null,
 ) {
   const mount = runtime.instance.beat;
   const run = runtime.beat;
@@ -1060,7 +1061,7 @@ function stepBeatForTick(
 
   const stepped = stepBeat(run, {
     tick: runtime.clock.tick,
-    strike,
+    hitCell,
     inStance,
   });
   runtime.beat = stepped.run;
@@ -1401,7 +1402,7 @@ function mergeFacings(
 function stepOnce(
   runtime: MissionRuntime,
   frame: MissionInputFrame,
-  latched: { jump: boolean; dash: boolean; strike: boolean },
+  latched: { jump: boolean; dash: boolean; hitCell: number | null },
 ): void {
   const { instance } = runtime;
   const world = instance.world;
@@ -1430,7 +1431,7 @@ function stepOnce(
   if (enc.locked) {
     latched.jump = false;
     latched.dash = false;
-    latched.strike = false;
+    latched.hitCell = null;
   }
   const frozen = enc.ownsInput;
 
@@ -1555,7 +1556,7 @@ function stepOnce(
   // still. Nothing here has to say so.
   const traversing = runtime.flow.verb !== "NONE";
 
-  const beatNoise = stepBeatForTick(runtime, read, latched.strike);
+  const beatNoise = stepBeatForTick(runtime, read, latched.hitCell);
 
   // The one list of bodies, resolved once and handed to all three consumers. The
   // shared empty constant matters: a fresh `[]` per tick would defeat the identity
@@ -1770,7 +1771,7 @@ export function stepMissionRuntime(
       outcome: runtime.outcome,
       jumpConsumed: false,
       dashConsumed: false,
-      strikeConsumed: false,
+      hitConsumed: false,
     };
   }
 
@@ -1784,13 +1785,13 @@ export function stepMissionRuntime(
   // Every press is carried to exactly ONE tick — the first of the frame — and
   // cleared. A frame can span several fixed steps, and a press delivered to all
   // of them is a press repeated: for the jump that is a double launch, and for
-  // the strike it is a stray for every step but the one that landed.
-  const latched = {
+  // the panel strike it is a stray for every step but the one that landed.
+  const latched: { jump: boolean; dash: boolean; hitCell: number | null } = {
     jump: frame.jumpBuffered,
     dash: frame.dashBuffered ?? false,
-    strike: frame.strikeBuffered ?? false,
+    hitCell: frame.hitCellBuffered ?? null,
   };
-  const consumed = { jump: false, dash: false, strike: false };
+  const consumed = { jump: false, dash: false, hit: false };
   for (let tick = advanced.firstTick; tick <= advanced.lastTick; tick += 1) {
     // The clock's tick is the authority the field systems read, so it is set
     // per step rather than left at the end of the frame's run of steps.
@@ -1801,10 +1802,14 @@ export function stepMissionRuntime(
     // is a pure function of the ticks the run played and no drawing surface can
     // move it. See `advanceWayfinding` and levelPort's mark `advance`/`waypoint`.
     advanceWayfinding(runtime);
-    for (const action of ["jump", "dash", "strike"] as const) {
+    for (const action of ["jump", "dash"] as const) {
       if (!latched[action]) continue;
       latched[action] = false;
       consumed[action] = true;
+    }
+    if (latched.hitCell !== null) {
+      latched.hitCell = null;
+      consumed.hit = true;
     }
     if (runtime.outcome) break;
   }
@@ -1814,7 +1819,7 @@ export function stepMissionRuntime(
     outcome: runtime.outcome,
     jumpConsumed: consumed.jump,
     dashConsumed: consumed.dash,
-    strikeConsumed: consumed.strike,
+    hitConsumed: consumed.hit,
   };
 }
 
