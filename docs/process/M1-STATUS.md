@@ -133,10 +133,13 @@ replay harness.
   used as the asset for the trunk mass *and* for all three bough **decks**, so one hero mesh
   is squashed four times, flattened into thin deck boxes for the boughs. **Not yet assigned**
   (the lanes that own `assets.ts` and the elm geometry are both occupied).
-- **The elm beat is finicky and hard to start.** The whack-a-mole reaction panel often fails
-  to appear. Arming keys off a single authored stance point, so a tight tolerance means a
-  spot that looks right on the crown won't trigger, with no cue saying you're short.
-  Difficulty is deliberately system-owned in `packages/beat`, not level-tunable. In flight.
+- ~~The elm beat is finicky and hard to start~~ — **fixed** (`27ec2b5`). It was failing to
+  arm, not rendering wrong: a 1.1 m circle on the crown tip plus a ±60° facing arc rejected
+  the exact pose a player arrives in off the leap (1.5 m back, ~105° off, moving south down
+  the limb), and armed for single frames when the look swung through. The facing gate was
+  pointless — the panel is a screen-space overlay centred regardless of heading — so it was
+  an invisible precision test inside a mechanic rebuilt to stop being one. Now 2.4 m and
+  ±135°; the act's own difficulty untouched.
 - **No staging into the boss fight.** Walking into the yard cuts straight to the duel. Wants
   a cinematic: the officer there again, stopping the player, issuing the challenge, subtitled.
   Being built on the existing `encounterCinematic` machinery rather than a second system.
@@ -216,6 +219,15 @@ must match field-for-field in the same arena, and the server's transcribed modul
 equal the authored deck in order. The harness's third hand-copy of that deck is deleted
 rather than pinned. Still divergent and deliberately deferred: PvP runs its own arena
 (`docs/process/PvP-Arena-Unification-Plan.md`).
+
+**That sweep produced one false green, and the method is why.** It cleared `beatQa` as
+agreeing, because the harness uses the authored beat defaults and those defaults are pinned
+against the level's geometry. Both true — and irrelevant, because the harness **hardcodes
+`inStance: true`**, bypassing the entire question of whether a player can reach and face the
+spot, which is precisely what real play failed. The floor harness force-faced the work on any
+bough drop-in, and never mounted the beat panel at all. So a harness can use real content,
+real components and real constants and still be worthless if it asserts away a precondition.
+Checking *what* a dev path uses is not the same as checking *what it skips*.
 
 ---
 
