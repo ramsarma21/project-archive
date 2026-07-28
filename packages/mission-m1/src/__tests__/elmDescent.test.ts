@@ -42,6 +42,8 @@ import {
 import { FIELD_TICK_HZ } from "@pa/engine-world/fieldSimulation";
 import { compileLevel } from "../compile.js";
 import { M1_EFFIGY_RUN } from "../level/index.js";
+import { sceneryPlacements } from "../runtime.js";
+import { ASSETS } from "../assets.js";
 import { M1_ENCOUNTERS, encounterById } from "../encounters/bank.js";
 import { selectEncounterVariant } from "../encounters/select.js";
 import { createEncounterInstance, stepEncounter } from "../encounters/machine.js";
@@ -185,4 +187,44 @@ test("ROPEWALK_STOP still arms on the meeting-house roof (on its own surface)", 
   const trigger = encounterById("ROPEWALK_STOP").trigger.at;
   const phase = armPhaseAt("ROPEWALK_STOP", { x: trigger[0], y: trigger[1], z: trigger[2] });
   assert.notEqual(phase, "DORMANT", "ROPEWALK_STOP did not arm on its own authored roof surface");
+});
+
+// 4 -----------------------------------------------------------------------
+// The elm is ONE tree, drawn once at its declared size.
+//
+// The owner's "smeared squat cylinder under shattered green planes" frame comes
+// from the `liberty-elm-hero` MESH itself (crude flat foliage cards), NOT from
+// the placement: the renderer already collapses the trunk mass and the three
+// bough decks (connected by `carriedBy`) into a single draw sized from the
+// asset's declared [16,18,16], because a several-entry object gets its size from
+// the declaration rather than from any one collision box.
+//
+// This guards that. It fails on the tempting-but-wrong "make the boughs
+// collision-only (asset:null)" change: with the boughs dropped from the cluster
+// the lone trunk mass draws at its OWN 1.8 x 12 x 1.8 box — a squashed pole,
+// which is a strictly worse render than the one it was meant to fix. The boughs
+// must keep the asset so the cluster stays several-entry and uses [16,18,16].
+test("the Liberty Elm is drawn as one object at its declared tree size", () => {
+  const elm = sceneryPlacements().filter((p) => p.asset === "liberty-elm-hero");
+  assert.equal(
+    elm.length,
+    1,
+    `the elm draws as ${elm.length} objects; it must be ONE (a per-part draw is a squashed copy)`,
+  );
+  const draw = elm[0]!;
+  const declared = ASSETS.find((a) => a.key === "liberty-elm-hero");
+  assert.ok(declared?.sizeM, "liberty-elm-hero carries no declared sizeM to size the tree from");
+  for (let i = 0; i < 3; i += 1) {
+    assert.ok(
+      Math.abs(draw.size[i]! - declared!.sizeM[i]!) < 1e-6,
+      `the elm is drawn ${draw.size.join(" x ")}m, not its declared ${declared!.sizeM.join(" x ")}m ` +
+        `— it has been squashed into a collision box (e.g. the 1.8 x 12 x 1.8 trunk if the boughs lost their asset)`,
+    );
+  }
+  for (const part of ["LIBERTY_ELM_TRUNK", "BOUGH_LOW", "BOUGH_CROWN", "BOUGH_UPPER"]) {
+    assert.ok(
+      draw.parts.includes(part),
+      `the single elm draw omits ${part} — the boughs are no longer folded into the one tree`,
+    );
+  }
 });
