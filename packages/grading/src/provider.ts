@@ -147,6 +147,20 @@ export function gradingModel(): string {
   return process.env.TRUEFOUNDRY_GRADING_MODEL?.trim() || DEFAULT_GRADING_MODEL;
 }
 
+/**
+ * The gateway base URL and credential, exported so the offline pipeline tools
+ * (`./pipeline`) talk to the same TrueFoundry gateway as the classifier without a
+ * second copy of the resolution rules. These are offline-only helpers; the hot
+ * grading path uses the private forms above.
+ */
+export function gatewayBaseUrl(): string {
+  return baseUrl();
+}
+
+export function gatewayCredential(): string {
+  return credential();
+}
+
 /** True when a model call is possible at all. Read once at construction. */
 export function providerConfigured(): boolean {
   try {

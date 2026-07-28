@@ -1,0 +1,51 @@
+{
+  "_comment": "A handful of candidate items taken end-to-end through the gauntlet, per content/QUESTION-PIPELINE.md. NOT part of the shipping bank (verify.mjs does not read this directory) and NOT bulk generation — two proofs that a well-formed item clears the static gauntlet. Each is decision-shaped (not recall), binds to exactly one Codex card, carries a compact generalising required core and held-out accept/reject labels, and is written in the constable's voice with no AI tells. Run: pnpm --filter @pa/grading grading:pipeline. The overlap discriminator needs the model (see the doc's note on the budget-blocked key).",
+  "candidates": [
+    {
+      "id": "STAMP.SHIP_OR_WOOL",
+      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
+      "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
+      "boundCardIds": ["BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
+      "question": "A ship unloads two things at Hancock's wharf this morning: a bale of wool and a bundle of printed almanacs for the bookseller. One of them my stamp touches and one it does not. Which is which, and what puts them on opposite sides of it?",
+      "referenceAnswer": "The almanacs. Printed paper is inside the Act and a bale of wool is ordinary goods that falls outside it. What decides it is whether the thing is printed or legal paper, not what it costs or where it is bound.",
+      "requiredCore": [
+        "The printed item (the almanacs) is taxed and the ordinary goods (the wool) is not, because the Act covers printed or legal paper and not ordinary goods"
+      ],
+      "needs": "all",
+      "accept": [
+        "the almanacs. wool is just goods, the tax is only on printed paper",
+        "the printed ones. a bale of wool isnt paper so the stamp skips it",
+        "almanacs get stamped cuz theyre printed, wool is ordinary goods so its out"
+      ],
+      "reject": [
+        "the wool, its worth more so they tax that one",
+        "both of them, everything coming off a ship gets taxed",
+        "the almanacs because theyre going to a shop to be sold"
+      ],
+      "note": "Decision between two objects, one on each side of the boundary. A general statement of the scope rule does not pick between them; naming the deciding factor (printed vs ordinary) is the work."
+    },
+    {
+      "id": "REP.NO_ANSWER",
+      "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
+      "poolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1",
+      "boundCardIds": ["BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1"],
+      "question": "London's answer to us is that Parliament already speaks for every subject in the empire, whether he cast a vote for it or not. A boy beside you nods along. Put him right: why is that no answer to Boston?",
+      "referenceAnswer": "Because a vote taken by men the town never chose is still not the town's consent. Parliament may speak for the people who elected it; it does not speak for us just by declaring so, when Boston elected none of them.",
+      "requiredCore": [
+        "Parliament speaking for everyone (virtual representation) is not Boston's consent, because a vote taken by men the town did not choose is not the town's consent"
+      ],
+      "needs": "all",
+      "accept": [
+        "because we never voted for any of them, so them saying they speak for us doesnt make it true",
+        "a vote by men we didnt pick isnt our consent no matter what parliament claims",
+        "them speaking for everyone is just words, we chose none of them so it still isnt consent"
+      ],
+      "reject": [
+        "hes wrong because england is too far away to really know us",
+        "because the tax is unfair and too expensive",
+        "we have nobody in parliament"
+      ],
+      "note": "The question explicitly invokes virtual representation, which is what separates this card from the general consent principle (CONSENT_GROUND). The distance argument and the bare no-member fact are the two near-misses this item exists to reject."
+    }
+  ]
+}
