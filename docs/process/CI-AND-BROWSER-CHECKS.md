@@ -13,7 +13,7 @@ covers only the harness around them.
 
 | Job | Blocking | What it covers |
 |---|---|---|
-| `verify` | yes | boundary lint, `pnpm typecheck`, `pnpm test`, packages build, web production build |
+| `verify` | yes | boundary lint, content verification, `pnpm typecheck`, `pnpm test`, packages build, web production build |
 | `api-postgres` | yes | `@pa/api` persistence suite against a real `postgres:17-alpine` |
 | `lockfile` | **advisory** | `pnpm install --frozen-lockfile` |
 | `api-image` | **advisory** | Dockerfile lint plus a real build of `apps/api/Dockerfile` |
@@ -23,6 +23,20 @@ tracking whatever is newest locally.
 
 `verify` runs its steps with `if: ${{ !cancelled() }}`, so one failure does not
 hide the rest — a red run reports everything that is broken in a single pass.
+
+### Content verification
+
+`pnpm verify:content` runs the two content checkers — `content/m1/verify.mjs`
+(under `tsx`, because it resolves `DUEL_ROUND_CEILING`, `LEARNING_MODULE_SECONDS`,
+`CONCEPT_ID_PATTERN` and the module interfaces from their owning source rather
+than scraping literals) and `content/capstone/boston-1765/verify.mjs` (plain
+Node). They assert the invariants a build otherwise never catches: module length
+and pacing, concept-id canonicality, stray keys against the player's interfaces,
+the PvP pool composition against the round ceiling, and the capstone readiness
+gate. Both read only local files — this content directory, `content/staar`, and
+package source — so they need no build, no database, no network, and no
+credentials. The step is placed near the front of `verify` so a broken invariant
+fails in about a second rather than after the test suite.
 
 ### Migration checksums
 

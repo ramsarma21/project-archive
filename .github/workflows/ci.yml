@@ -55,6 +55,18 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm lint
 
+      # Content invariants — module length, concept-id canonicality, the PvP
+      # pool composition, the duel round ceiling, the capstone readiness gate.
+      # These are the quiet failures a build never otherwise catches: content
+      # that ships unfair to a student while every test still passes. Placed
+      # here, near the front, because it is a ~1s check that reads local files
+      # and resolves its constants from source through tsx — no build, no
+      # database, no network — so a broken invariant fails the run in seconds
+      # rather than after the test suite.
+      - name: Content verification
+        if: ${{ !cancelled() }}
+        run: pnpm verify:content
+
       - name: Typecheck
         if: ${{ !cancelled() }}
         run: pnpm typecheck
