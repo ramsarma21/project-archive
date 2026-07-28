@@ -52,15 +52,41 @@ test("the tower vista is authored and reachable, but the guided line no longer d
   );
 });
 
-test("every section is on the guaranteed path", () => {
+test("the guided line covers its sections in order, and the off-line ropewalk stays reachable", () => {
+  // The guided line runs A -> Shambles -> Dock Square -> the Town House -> the
+  // roofline -> the steeple -> the elm -> the yard. The ropewalk (D2) sits SOUTH
+  // of the roofline: the line now leaps straight from the south row onto the
+  // Hollis meeting-house roof (D_SROOF_E -> D_MEETING_W -> D_MEETING_ROOF) rather
+  // than dropping into the shed and climbing its far face back up, so D2 is off
+  // the guided line. It is kept as authored, reachable content — a dark-interior
+  // alternate a deviating player can still take — not deleted, and the relocated
+  // STAMP_SCOPE bill-sticker stop now sits on the meeting-house leads the line
+  // crosses, so the mandatory beat did not leave the guided route with the shed.
   const safe = viaPost(["SAFE"])!;
-  const visited = new Set(safe.nodes.map((id) => nodeById.get(id)!.section));
-  for (const section of level.sections) {
-    assert.ok(
-      visited.has(section.id),
-      `${section.id} is not on the route a cautious player takes`,
-    );
+  const order = safe.nodes.map((id) => nodeById.get(id)!.section);
+  const guided = [
+    "A_LEADS",
+    "B_SHAMBLES",
+    "B2_THRONG",
+    "C_ASCENT",
+    "D_ROOFLINE",
+    "E_LEAP",
+    "F_TREE",
+    "G_YARD",
+  ];
+  let cursor = -1;
+  for (const section of guided) {
+    const idx = order.indexOf(section);
+    assert.ok(idx >= 0, `${section} is not on the guided line`);
+    assert.ok(idx > cursor, `${section} is out of order on the guided line`);
+    cursor = idx;
   }
+  // The off-line ropewalk is not stranded: it has a way in and a way out.
+  const inbound = new Set(level.links.map((l) => l.to));
+  const outbound = new Set(level.links.map((l) => l.from));
+  const d2 = level.nodes.filter((n) => n.section === "D2_ROPEWALK").map((n) => n.id);
+  assert.ok(d2.some((id) => inbound.has(id)), "nothing leads into the ropewalk");
+  assert.ok(d2.some((id) => outbound.has(id)), "there is no way out of the ropewalk");
 });
 
 test("every link on the route is a SAFE link", () => {

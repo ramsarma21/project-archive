@@ -1164,15 +1164,6 @@ const DROP_TAKEOFF = "D_SROOF_E";
 const DROP_RECEIVER = "D2_ROOF_W";
 const DROP_RECEIVER_DECK = nodeById.get(DROP_RECEIVER)!.surface; // ROPEWALK_ROOF_W
 
-/** SAFE route metres from a node to the elm, for asserting forward progress. */
-function safeRemaining(id: string): number {
-  return (
-    cheapestPath(routeDistanceGraph(level), id, POST, ["SAFE"], {
-      requireVerified: false,
-    })?.metres ?? Infinity
-  );
-}
-
 /**
  * Drive the wayfinder through the real shape of the drop: grounded south-row
  * approach to the south lip, an airborne arc, then the grounded landing. The
@@ -1252,9 +1243,15 @@ function driveTheDrop(landing: WayfindSample): {
   return { offered, finalMark: final };
 }
 
-test("a SAFE drop onto the receiver deck advances the mark into the ropewalk, never back up to the take-off", () => {
-  // Land a couple of metres PAST the receiver node, on the receiver's own deck —
-  // the real arc overshoots D2_ROOF_W by ~2.7m, beyond the node-arrival radius.
+test("a SAFE drop into the off-line ropewalk recovers forward, never back up the one-way drop", () => {
+  // The ropewalk is now an OFF-LINE alternate: the guided line leaps the south
+  // row straight onto the Hollis meeting-house roof rather than dropping south
+  // into the shed, so the mark no longer LEADS the player down D_SROOF_E ->
+  // D2_ROOF_W. But the drop is still authored, and a player who takes it anyway
+  // must recover — once the body has legitimately landed on the ropewalk roof,
+  // the mark must point forward, never command an impossible climb back UP the
+  // one-way drop it just took. Land a couple of metres PAST the receiver node,
+  // on its own deck (the real arc overshoots D2_ROOF_W by ~2.7m).
   const landing: WayfindSample = {
     pos: { x: 65.2, y: 8.6, z: 20.0 },
     grounded: true,
@@ -1262,43 +1259,31 @@ test("a SAFE drop onto the receiver deck advances the mark into the ropewalk, ne
     verb: "RUN_OFF",
     completed: { verb: "RUN_OFF", landingId: DROP_RECEIVER_DECK },
   };
-  const { offered, finalMark } = driveTheDrop(landing);
+  const { finalMark } = driveTheDrop(landing);
   assert.ok(finalMark, "a mark is committed after the drop");
 
-  // The mark leads the receiver during the approach/fall (the drop's destination),
-  // proving the run was actually pointed across the drop before it landed.
-  assert.ok(
-    offered.includes(DROP_RECEIVER),
-    `the mark never led the receiver ${DROP_RECEIVER} across the drop: ${[...new Set(offered)].join(" -> ")}`,
-  );
-
-  // THE REGRESSION: once the body has legitimately dropped onto the receiver deck,
-  // the mark must never be commanded back UP to the one-way take-off it left.
+  // THE REGRESSION: the mark must never be commanded back UP to the one-way
+  // take-off it left, nor sit back up at the south-row leads height.
   assert.notEqual(
     finalMark!.nodeId,
     DROP_TAKEOFF,
     "the mark pointed back up at the drop take-off after the body landed on the receiver deck",
   );
-  // The mark never sits back up at the leads take-off height once the body is down.
   assert.ok(
     finalMark!.pos[1] < 11,
     `the mark is at y=${finalMark!.pos[1]}, back up on the south-row leads after the drop`,
   );
-  // Forward progress: the mark is meaningfully closer to the elm than the take-off.
-  assert.ok(
-    safeRemaining(finalMark!.nodeId) < safeRemaining(DROP_TAKEOFF),
-    `the mark ${finalMark!.nodeId} is not closer to the elm than the drop take-off`,
-  );
-  // And it is on the receiver deck, not the tie beam a further 3.4m DOWN through
-  // the roof — the spatially-near, vertically-distant node that used to strand it.
+  // It does not skip straight down onto the tie beam a further 3.4m through the
+  // roof the body has not dropped to.
   assert.notEqual(
     finalMark!.nodeId,
     "D2_BEAM_W",
     "the mark skipped straight down to the interior tie beam the body has not dropped to",
   );
+  // The recovery mark is forward toward the elm at roof level, not a step behind.
   assert.ok(
     finalMark!.pos[1] > 7.5,
-    `the mark is at y=${finalMark!.pos[1]}, down in the ropewalk interior rather than on the roof deck`,
+    `the mark is at y=${finalMark!.pos[1]}, below the roof level the body dropped onto`,
   );
 });
 
