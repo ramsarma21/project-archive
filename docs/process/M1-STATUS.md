@@ -159,9 +159,16 @@ replay harness.
 **Infrastructure and debt**
 - Ground support is a point query, so a body can float off a roof edge (audit P4,
   deliberately deferred).
-- The motion path is not bit-exact across browsers. 34 of 52 hashed transcendental calls are
-  in the movement files (in flight); the other 18 are in the duel's combat and policy code.
-  Replay and PvP hash positions to the last ulp with no tolerance.
+- **The motion path is bit-exact now** (`35ab20c`): perturbing `hypot/sin/cos/atan2` by 7 ulp
+  over 600 ticks leaves position and velocity bit-identical, and the netcode sweep's worst
+  end-of-round gap fell from 3.6e-14 m to 5.5e-15 m. **The duel is not** — 18 hashed
+  transcendentals remain in `packages/duel` (`combat.ts` ×8, `policy.ts` ×10), so combat and
+  policy can still diverge. Deliberately not sequenced yet; single-player M1 doesn't depend
+  on it.
+  - **A call worth remembering:** yaw was dropped from the client-facing digest (kept in the
+    full server hash) because `atan2` can't be made exact and nothing reads `motion.yaw` to
+    produce position, velocity, health or hits. If facing ever becomes load-bearing, a
+    desync in it will no longer be reported.
 - PvP still runs a different arena (12×12, 4 cover) from the duel's (11×11, 8 cover). Plan
   written: `docs/process/PvP-Arena-Unification-Plan.md`.
 - Residual mid-route frame spikes trace to GPU rasterisation, not compilation — hardware and
