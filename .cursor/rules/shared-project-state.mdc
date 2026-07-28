@@ -54,6 +54,28 @@ another lane's files, to files shared by several lanes, and to the main checkout
 `.cursor/lane-ownership.json` is the enforced map. If a write is refused, that is the answer —
 report what you need rather than routing around it.
 
+## Verifying something visual
+
+Judge an image by examining it, not by glancing at one wide frame. Crop and zoom to the thing
+being claimed, take a second angle when the first is ambiguous, and iterate until the contact,
+the seam or the surface is actually visible. A wide dark frame containing the subject somewhere
+is not evidence — nine ladders were merged as "flush to the face" on exactly that, and one of
+those captures turned out to be a blurred close-up of a wall with no ladder in it.
+
+## Reporting a hunt or an audit
+
+**Report everything you find, then rank it.** Do not suppress findings by severity while
+hunting — filtering belongs in a separate pass, and a hunt that self-censors returns less than
+it saw. Rank by what the finding was protecting or by how likely the owner is to hit it, and
+say plainly which findings you are confident in and which need a human eye.
+
+## Length
+
+Match a document to what the task needs. Cover the substance and stop; no filler sections, no
+restating the same finding in a summary, no boilerplate. The state files here are load-bearing
+only while they are short enough to be read — prefer folding resolved detail into a line over
+appending.
+
 ## Evidence standard
 
 A claim in these files carries its evidence, or it carries an honest label saying it is
