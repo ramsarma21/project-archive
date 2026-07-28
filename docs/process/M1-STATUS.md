@@ -414,6 +414,29 @@ existed. A rule keying on equality near an unpinned `Math.*` would fire on thres
 already-toleranced checks and legitimate same-platform assertions — noise guarding correct files
 against something CI now catches empirically for free.
 
+**The tear signature is now gated and everything is measured** (`5bd6835`). Near-coincident
+same-facing face pairs: authored facades **0**, generator buildings **855–6721**. Ranked, unfixed,
+awaiting sequencing:
+
+| building | pairs | |
+|---|---|---|
+| `bldg-townhouse-1713` | 6721 | civic centrepiece, on the climb route |
+| `bldg-row-brick-a` | 5457 | *was* my clean counter-example on sliver % — it is not |
+| `bldg-row-shop` | 2530 | the shambles |
+| `bldg-warehouse-street` | 2223 | the sugar house |
+| `bldg-meeting-hollis` | 1922 | Old Brick + Hollis meeting |
+| `bldg-printshop` | 1189 | the printshop, where the run opens |
+| `bldg-scaffold-run` | 855 | scaffolding lattice |
+
+**Why the gate is scoped to facades:** measured world-wide the signal is confounded — the
+hand-authored, accepted Liberty Elm scores **16040**, because a canopy of overlapping leaf cards is
+near-coincident by design. A whole-world gate would false-fail the elm.
+
+**A second sighting of the played-mission gate's wall-clock sensitivity:** a route run stalled
+transiently and cleared on re-run, which is the same shape as CI failing 8 progress-based checks on
+a GPU-less runner. The progress thresholds read a real-time sim, so a cold or headless run
+under-progresses. A frame-budgeted or timing-relative measure is the fix. Open.
+
 **A pipeline finding, from three independent repairs today.** Every one traced to the generator's
 own output, not to the processing:
 - the elm's canopy *was* Meshy foliage — a handful of intersecting alpha cards;
