@@ -72,6 +72,26 @@ const APPROACH_MAX_WALK_M = 14;
 /** Within this of the goal, an actor has arrived. Keeps personal space. */
 const ARRIVE_M = 0.65;
 /**
+ * The vertical band, in metres, within which the player counts as standing ON a
+ * stop's own surface — the SAME-SURFACE qualifier on both arming and opening.
+ *
+ * A trigger's `radiusM` is a HORIZONTAL approach zone authored on the beat's own
+ * deck; on its own it is height-blind, and a height-blind XZ radius arms from the
+ * wrong storey. The relocated STAMP_SCOPE stop sits on the Hollis Meeting leads
+ * (y=8.20); the cobbles of Orange Street run directly beneath it at y≈0, well
+ * inside the 3.6m XZ radius. Without this band the stop armed from the street,
+ * the speaker was eight metres of open air above the player and could never close
+ * the 2.2m conversational gate, and the machine sat in APPROACH forever while the
+ * mission clock (which runs during APPROACH) drained — the soft-lock the roof
+ * relocation exposed. The player must be grounded on the beat's surface, not
+ * merely inside its footprint on another floor.
+ *
+ * Sized well under any inter-storey gap on the route (the smallest here is the
+ * 8.2m from the cobbles to the leads) yet generous enough for a crouch, a low
+ * kerb, and asset-thickness variance in where "grounded" resolves.
+ */
+const SAME_SURFACE_BAND_M = 2.0;
+/**
  * How close the SPEAKER closes to the player — a conversational distance, not
  * an authored world point. The old fixed `speakerStandoff` was computed for a
  * player standing dead-centre on the trigger, but a player arms the stop
@@ -119,13 +139,24 @@ const PROGRESS_EPSILON_M = 0.25;
 /** How often a stalled actor's goal is re-anchored around the player. */
 const REANCHOR_TICKS = ticks(1.2);
 /**
- * A generous ceiling that only guarantees termination of the APPROACH loop; it
- * NEVER opens the question at range. Past it the actor keeps being driven toward
- * the nearest reachable anchor, and QUESTION still opens strictly on
- * `SPEAKER_OPEN_M`. On the authored M1 routes the re-path + re-anchor closes the
- * gap in a second or two, well inside this.
+ * After this long without progress the machine replans the speaker's route every
+ * tick rather than once per re-anchor window — the aggressive last-ditch attempt
+ * to rescue a hard-but-possible approach before the abort ceiling below.
  */
-const MAX_APPROACH_TICKS = ticks(30);
+const REPLAN_ESCALATE_TICKS = ticks(8);
+/**
+ * The HARD ceiling on APPROACH. A speaker who still cannot reach conversational
+ * distance by now is on an impossible approach, and the machine ABORTS the stop
+ * to RELEASED and hands control back — it NEVER opens the question at range, and
+ * it never holds the player past this. This is what makes a stalled approach
+ * impossible rather than merely unlikely: even if a future edge case slips past
+ * the same-surface arming gate, the player is freed within a bounded time instead
+ * of being trapped while the world clock drains. Sized comfortably above the
+ * longest legitimate approach (a cross-district placement walks its last few
+ * metres in ~2s; a blocked detour closes in a handful), so a reachable speaker
+ * always opens the question well before it.
+ */
+const APPROACH_ABORT_TICKS = ticks(16);
 /**
  * Deterministic bearings, in radians, scanned around the player when the direct
  * line to a conversational goal is blocked. Ordered from the actor's own side
@@ -714,6 +745,12 @@ function armed(instance: EncounterInstance, player: EncounterStepInput["player"]
   // `requiresGroundedApproach` documents that the OPENING stop leans on this; the
   // interior stop still only arms on a grounded arrival, which is the same test.
   if (!player.grounded) return false;
+  // SAME-SURFACE qualifier. `radiusM` is a horizontal approach zone; without a
+  // height check it arms from the wrong storey (the cobbles under the roof-top
+  // stop), and the speaker can never close the vertical gap — the soft-lock. The
+  // player must be grounded on the beat's own surface, not merely above or below
+  // its footprint. See SAME_SURFACE_BAND_M.
+  if (Math.abs(player.pos.y - trigger.at[1]) > SAME_SURFACE_BAND_M) return false;
   return distXZ(player.pos, toVec(trigger.at)) <= trigger.radiusM;
 }
 
@@ -825,10 +862,11 @@ function stepApproach(
     // patrol pose that drifted) — re-run the planner, re-anchoring to a reachable
     // open side of the player if the direct goal is boxed in. This is the
     // deterministic re-path the design asks for, and it is why there is no range
-    // timeout that opens the question while he is stuck. Past MAX_APPROACH_TICKS
-    // the re-plan runs every tick until the geometry yields, so the loop
-    // terminates WITHOUT ever opening the overlay at range.
-    const escalated = instance.approachTicks >= MAX_APPROACH_TICKS;
+    // timeout that opens the question while he is stuck. Past
+    // REPLAN_ESCALATE_TICKS the re-plan runs every tick to give the geometry the
+    // best chance to yield before APPROACH_ABORT_TICKS ends the stop; the overlay
+    // is NEVER opened at range along the way.
+    const escalated = instance.approachTicks >= REPLAN_ESCALATE_TICKS;
     if (escalated || input.tick - actor.progressTick >= REANCHOR_TICKS) {
       if (escalated || distXZ(actor.pos, actor.progressPos) < PROGRESS_EPSILON_M) {
         // Re-plan the ROUTE to the stable goal first — the goal itself does not
@@ -861,19 +899,36 @@ function stepApproach(
   }
 
   const speaker = instance.actors.find((actor) => actor.kind === "SPEAKER");
-  // THE ONLY GATE IS DISTANCE. The question opens strictly when the speaker is
+  // THE ONLY GATE IS PROXIMITY. The question opens strictly when the speaker is
   // within conversational separation of the player — never on a timer, never
-  // while he is still crossing the market. `MAX_APPROACH_TICKS` only bounds the
-  // loop; it does not open the overlay, so a blocked officer keeps re-pathing
-  // instead of the stop falling through to a popup at range.
+  // while he is still crossing the market. Proximity is checked in BOTH the
+  // horizontal plane AND height: a speaker who is within `SPEAKER_OPEN_M` in XZ
+  // but a storey above or below the player (the height-blind arming case) is NOT
+  // "at conversational distance", and opening there would frame an empty scene
+  // with the speaker off-screen overhead. The same-surface arming gate already
+  // prevents that; this is belt-and-braces on the open itself.
   const speakerClose =
-    speaker != null && distXZ(speaker.pos, player) <= SPEAKER_OPEN_M;
+    speaker != null &&
+    distXZ(speaker.pos, player) <= SPEAKER_OPEN_M &&
+    Math.abs(speaker.pos.y - player.y) <= SAME_SURFACE_BAND_M;
   if (speakerClose) {
     for (const actor of instance.actors) {
       actor.yaw = yawToward(actor.pos, player);
     }
     instance.confrontationPos = { ...player };
     instance.phase = "QUESTION";
+    return;
+  }
+  // FAILSAFE: a stalled approach must never hold the player forever. If the
+  // speaker still has not reached conversational distance by the hard ceiling,
+  // the approach is impossible (a reachable speaker always opens well before
+  // this); abandon the stop to RELEASED and hand control back rather than sitting
+  // in APPROACH while the mission clock drains. `encounterResolved` counts a
+  // RELEASED stop as participated, so aborting frees the player without leaving
+  // the traversal's encounter gate forever unmet. This is the structural
+  // guarantee that there is no state in which the player is held with no way out.
+  if (instance.approachTicks >= APPROACH_ABORT_TICKS) {
+    instance.phase = "RELEASED";
   }
 }
 
