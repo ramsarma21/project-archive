@@ -282,14 +282,27 @@ equal the authored deck in order. The harness's third hand-copy of that deck is 
 rather than pinned. Still divergent and deliberately deferred: PvP runs its own arena
 (`docs/process/PvP-Arena-Unification-Plan.md`).
 
-**That sweep produced one false green, and the method is why.** It cleared `beatQa` as
-agreeing, because the harness uses the authored beat defaults and those defaults are pinned
-against the level's geometry. Both true — and irrelevant, because the harness **hardcodes
-`inStance: true`**, bypassing the entire question of whether a player can reach and face the
-spot, which is precisely what real play failed. The floor harness force-faced the work on any
-bough drop-in, and never mounted the beat panel at all. So a harness can use real content,
-real components and real constants and still be worthless if it asserts away a precondition.
-Checking *what* a dev path uses is not the same as checking *what it skips*.
+**That sweep's conclusion was overbroad, and a re-audit corrected it.** It cleared eleven
+surfaces as honest "because they mount the real component with real content" — true, and
+insufficient. It conflated **driving** surfaces with **screenshot** surfaces.
+
+- **Survive the sharpened test** (usable as evidence): duel `?verdict=live` (opens a real
+  attempt and grades), `module/devEntry`, `visor/devEntry`, `dev/resetMission` (drives the real
+  progression service), and the duel/netcode/pvp/container/parkour package drivers.
+- **Do not survive — screenshot tools, never parity evidence:** `beatQa` (hardcodes
+  `inStance: true` in all five capture paths), **`codexDev`** (injects the learned and
+  PvP-legal card standing), `combatHudQa` (injects health and ammo), and the default asset
+  sheet (fits every GLB to a fixed height, not the level's boxes). Each mounts the real
+  component and injects the exact state real play must earn.
+- **`mission/devEntry` is trustworthy only on its default path.** `?at=<node>` drops the player
+  at any route node, `?boss=1` fabricates a `REACHED_DUEL` after 900 ms regardless of the route,
+  and the offline encounter authority **grants every verdict** by default. A capture taken under
+  any of those is not reachability evidence.
+
+The generalisation: **checking what a dev path uses is not checking what it skips.** A default
+is only a defect when *nothing* exercises the other side — `packages/beat` and
+`packages/assessment` both default a precondition to passing and both have tests driving the
+failing branch, so they are genuinely fine.
 
 ---
 
@@ -328,8 +341,9 @@ test claims to guard, and see whether the test still passes. Results, ranked:
 4. Two mastery guards had no test at all (fixed): either could be deleted silently, letting a
    zero-evidence form report `passed: true` or a zero-item concept read as mastered. That path
    gates the capstone and mints PvP-legal cards.
-5. `beatQa` hardcodes `inStance: true` in **all five** capture paths — confirming it may never
-   again be cited as play-parity evidence. It is a screenshot tool, not a test.
+5. **Screenshot dev surfaces inject the state real play earns** and are not parity evidence:
+   `beatQa`, `codexDev`, `combatHudQa`, the default asset sheet. Newly found: `codexDev` cannot
+   catch whether mastering a concept actually learns a card or mints it PvP-legal.
 
 **The pattern across all of them:** every gap is a *runtime, cross-system, visible* property,
 which is exactly what a unit suite structurally cannot reach — and exactly the list of things

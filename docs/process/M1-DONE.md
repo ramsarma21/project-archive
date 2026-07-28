@@ -98,8 +98,9 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 
 - **[x]** The elm beat arms from the pose a player actually arrives in.
 - **[x]** It is a reaction test, generous and large, not a precision test.
-- **[ ]** The beat is reachable by climbing, asserted. Today the test spawns the player on the
-  bough.
+- **[ ]** The beat is reachable by climbing, asserted. `apps/web/test/missionBeat.test.ts`
+  (lines 100–104, 393–416) spawns the player *on* the crown facing the work, granting both the
+  climb and the facing. Folds into the untested climb-refusal gap.
 
 ## 8. Nothing silently regresses
 
@@ -110,6 +111,10 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[ ]** Climb refusal is asserted end to end. Turning it off entirely leaves 730 tests green.
 - **[ ]** Nothing asserts the grader runs on the live duel path — the same wiring failure could
   recur undetected.
+- **[ ]** Nothing asserts mastering a concept actually learns its codex card and mints it
+  PvP-legal; `codexDev` injects that standing. Also unconfirmed: whether any test drives
+  `M1_PVP_CARD_ACCESS`'s shipping `ASSESSMENT_PASSED` branch, since it is set to `PLAYTEST_ALL`
+  — a production gate deliberately held open for playtesting, which must not ship that way.
 - **[ ]** The full gate is run before every merge, not at the orchestrator's discretion.
 
 ---
