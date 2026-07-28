@@ -392,9 +392,17 @@ function pointInAnyRect(px, pz, rects) {
  * misses. This is how an annulus deck is judged on its ring: the solid rising
  * core it surrounds is a hole in the walkway, not a shortfall of it, so the core
  * footprint is removed from the denominator rather than dragging coverage down.
+ *
+ * `opts.circle` (optional) `{cx, cz, r}`: sample only the inscribed disc, not the
+ * bounding square. A dive/leap catch is a circular acceptance radius, so the
+ * square's corners lie outside the zone the game will ever catch a body in;
+ * counting them measures a shape the game does not use. Points outside the disc
+ * are not counted at all (like excludeRects), so a genuine shortfall INSIDE the
+ * disc still reads red.
  */
 export function sampleSurface(candidates, rect, h, opts = {}) {
   const excludeRects = opts.excludeRects ?? null;
+  const circle = opts.circle ?? null;
   const { nx, nz } = gridFor(rect.minX, rect.maxX, rect.minZ, rect.maxZ);
   // Pre-filter triangles to those whose XZ AABB overlaps the query rect and
   // whose height range is anywhere in the search column.
@@ -429,6 +437,7 @@ export function sampleSurface(candidates, rect, h, opts = {}) {
       const px = rect.minX + ((rect.maxX - rect.minX) * (i + 0.5)) / nx;
       const pz = rect.minZ + ((rect.maxZ - rect.minZ) * (j + 0.5)) / nz;
       if (excludeRects && pointInAnyRect(px, pz, excludeRects)) continue;
+      if (circle && (px - circle.cx) ** 2 + (pz - circle.cz) ** 2 > circle.r * circle.r) continue;
       total++;
       // The HIGHEST horizontal surface at or below the plane (within the search
       // column) — the mover's own catch semantics: a descending capsule lands on
@@ -539,9 +548,20 @@ function severityOf(kind, result) {
     const overshoot = topDelta > 0 ? topDelta : 0;
     const partial = result.coverageBand < 0.5;
     const note = describeTop(result);
+    // A SHORTFALL — the highest flat surface sits BELOW the authored blocker top,
+    // so the envelope trusts a blocker the mesh does not reach: a real gap.
     if (topGap > 1.0) return { rank: 3, label: "SEVERE", reason: note };
-    if (topGap > 0.5 || overshoot > 0.6) return { rank: 2, label: "OFF", reason: note };
-    if (topGap > ALIGN_BAND_M || overshoot > ALIGN_BAND_M) return { rank: 1, label: "MARGINAL", reason: note };
+    if (topGap > 0.5) return { rank: 2, label: "OFF", reason: note };
+    if (topGap > ALIGN_BAND_M) return { rank: 1, label: "MARGINAL", reason: note };
+    // OVERSHOOT is not a shortfall. The mesh sits PROUD of the authored blocker
+    // top — solid geometry meets and exceeds the plane, which is the strongest
+    // possible pass for a cover/vault mass (the blocker the envelope trusts is
+    // fully backed). It is a peaked/sloped roof or an object drawn a touch taller
+    // than its collision line, not "nothing here", so it gets its own verdict —
+    // flagged for a human to confirm the extra height is intended (it matters
+    // only where a precise landing height is needed), never counted as a hole.
+    // Same numeric band as before; only the label and meaning are separated.
+    if (overshoot > ALIGN_BAND_M) return { rank: 1, label: "PROUD", reason: `${note} (mesh proud of the authored blocker top; solid geometry backs the plane — correct for a cover/vault, confirm if a precise landing is needed)` };
     // Top reaches the plane. Partial coverage is expected of a round/clustered
     // obstacle (barrels, coils) and is NOT a hole — flag it, don't fail it.
     if (partial) return { rank: 1, label: "PARTIAL", reason: `${note} (top reaches plane; round/clustered obstacle, not a continuous surface)` };
@@ -602,6 +622,30 @@ function rectValid(r) {
   return r.maxX - r.minX > 0.05 && r.maxZ - r.minZ > 0.05;
 }
 
+/**
+ * Is `mass` a rising core the deck fully surrounds? — the deck extends beyond it
+ * on all four sides, and the mass is a solid non-landable body rising above the
+ * deck plane (a tower shaft, a steeple lantern, a tree trunk). Such a core is a
+ * hole in the deck's walkway, not part of it.
+ */
+function isRisingCore(deck, m) {
+  const surrounds =
+    deck.rect.minX < m.rect.minX && deck.rect.maxX > m.rect.maxX &&
+    deck.rect.minZ < m.rect.minZ && deck.rect.maxZ > m.rect.maxZ;
+  const rises = m.landable === false && Number.isFinite(m.topY) && m.topY > deck.y + ALIGN_BAND_M;
+  return surrounds && rises;
+}
+
+/** The rising-core rects of a deck named as a climb's `onto` target, if any. */
+function ontoCoreRects(ontoId, compiled) {
+  const deck = compiled.deckById.get(ontoId);
+  if (!deck) return [];
+  return (deck.carriedBy ?? [])
+    .map((id) => compiled.massById.get(id))
+    .filter((m) => m && isRisingCore(deck, m))
+    .map((m) => ({ ...m.rect }));
+}
+
 /** Build the affordance list. Each entry: kind, id, section, h, rect, plus notes. */
 function enumerateAffordances({ level, compiled }) {
   const massById = compiled.massById;
@@ -627,11 +671,7 @@ function enumerateAffordances({ level, compiled }) {
       const carriers = deck.carriedBy.map((id) => massById.get(id)).filter(Boolean);
       const supports = [];
       for (const m of carriers) {
-        const surrounds =
-          deckRect.minX < m.rect.minX && deckRect.maxX > m.rect.maxX &&
-          deckRect.minZ < m.rect.minZ && deckRect.maxZ > m.rect.maxZ;
-        const rises = m.landable === false && Number.isFinite(m.topY) && m.topY > deck.y + ALIGN_BAND_M;
-        if (surrounds && rises) coreRects.push({ ...m.rect });
+        if (isRisingCore(deck, m)) coreRects.push({ ...m.rect });
         else supports.push(m);
       }
       // Sample over the deck ∩ the body that carries it from beneath: the jetty
@@ -696,7 +736,9 @@ function enumerateAffordances({ level, compiled }) {
     });
   }
 
-  // 4. Leap-of-faith / dive catch targets.
+  // 4. Leap-of-faith / dive catch targets. A catch is a circular acceptance
+  //    radius, so it is sampled over the inscribed disc, not the bounding square
+  //    (the corners are outside any body the dive resolves onto).
   for (const c of level.catches) {
     affordances.push({
       kind: "CATCH",
@@ -704,6 +746,7 @@ function enumerateAffordances({ level, compiled }) {
       section: c.section,
       h: c.centre[1],
       rect: centredRect(c.centre[0], c.centre[2], c.radiusM),
+      circle: { cx: c.centre[0], cz: c.centre[2], r: c.radiusM },
       catchKind: c.kind,
     });
   }
@@ -746,7 +789,10 @@ async function run(options) {
     // not a shortfall of it. A genuinely missing ring still reads red, because
     // the ring itself is what is now sampled.
     const excludeRects = aff.kind === "DECK" && aff.coreRects && aff.coreRects.length ? aff.coreRects : null;
-    let result = sampleSurface(candidates, aff.rect, aff.h, excludeRects ? { excludeRects } : {});
+    const baseOpts = {};
+    if (excludeRects) baseOpts.excludeRects = excludeRects;
+    if (aff.circle) baseOpts.circle = aff.circle;
+    let result = sampleSurface(candidates, aff.rect, aff.h, baseOpts);
     let sampledRect = aff.rect;
     let modelNote = excludeRects ? "ring around a solid rising core" : "";
     let face = null;
@@ -757,17 +803,23 @@ async function run(options) {
 
     // Offset / mantle climbs: the body does not rise straight up — it pulls up
     // onto an arrival surface that is laterally offset from where it stands (a
-    // buttress top set back from the wall the player faces). The standing
-    // footprint then samples the ground short of the ledge and reads a false
-    // miss. When the standing-footprint sample is red AND the ascent's own
-    // `onto` target genuinely presents a surface where the body arrives, re-judge
-    // on that arrival footprint. A missing arrival surface still reads red, so
-    // this only forgives an offset, never an absent ledge.
-    if (aff.kind === "CLIMB_TO" && verdict.rank >= 2 && aff.ontoRect) {
+    // buttress top set back from the wall; a ridge or ledge the standing spot
+    // only half overlaps, the rest of the foot hanging over the slope below).
+    // The standing footprint then samples that lower surface and reads a miss.
+    // When the standing-footprint sample is flagged AND the ascent's own `onto`
+    // target genuinely presents a surface where the body arrives, re-judge on
+    // that arrival footprint. Applies to any flagged rank (not only OFF/SEVERE),
+    // because the mechanism is identical whether it scored 60% or 25%; it is
+    // adopted ONLY when strictly better, so a genuine overhang past the ledge
+    // edge or a gappy deck (the arrival is itself partial) stays flagged.
+    if (aff.kind === "CLIMB_TO" && verdict.rank >= 1 && aff.ontoRect) {
       const arrival = intersectRect(aff.rect, aff.ontoRect);
       if (rectValid(arrival)) {
         const arrivalCands = placed.filter((pl) => pl.record.status === "OK" && placedAabbOverlapsColumn(pl.record, arrival, aff.h));
-        const arrivalResult = sampleSurface(arrivalCands, arrival, aff.h);
+        // If the onto is itself an annulus deck, punch its rising core out of the
+        // arrival too, so a climb whose footprint fell over the hole cannot pass.
+        const arrivalExclude = ontoCoreRects(aff.onto, compiled);
+        const arrivalResult = sampleSurface(arrivalCands, arrival, aff.h, arrivalExclude.length ? { excludeRects: arrivalExclude } : {});
         const arrivalVerdict = severityOf(aff.kind, arrivalResult);
         if (arrivalVerdict.rank < verdict.rank) {
           result = arrivalResult;
@@ -816,9 +868,9 @@ function report(data) {
   console.log(`  ${scored.length} geometry-verifiable affordances scored; ${ground.length} street-level (ground plates); ${unresolved.length} unresolved.\n`);
 
   console.log(`  RESULT: ${green.length} satisfied, ${red.length} NOT satisfied (or flagged for review).`);
-  const byRank = { CRITICAL: 0, SEVERE: 0, OFF: 0, MARGINAL: 0, PARTIAL: 0 };
+  const byRank = { CRITICAL: 0, SEVERE: 0, OFF: 0, MARGINAL: 0, PARTIAL: 0, PROUD: 0 };
   for (const r of red) byRank[r.verdict.label] = (byRank[r.verdict.label] ?? 0) + 1;
-  console.log(`  breakdown: ${byRank.CRITICAL} CRITICAL (nothing under), ${byRank.SEVERE} SEVERE, ${byRank.OFF} OFF, ${byRank.MARGINAL} MARGINAL, ${byRank.PARTIAL} PARTIAL (round/clustered obstacle: top reaches plane, no continuous surface).\n`);
+  console.log(`  breakdown: ${byRank.CRITICAL} CRITICAL (nothing under), ${byRank.SEVERE} SEVERE, ${byRank.OFF} OFF, ${byRank.MARGINAL} MARGINAL, ${byRank.PARTIAL} PARTIAL (round/clustered obstacle: top reaches plane, no continuous surface), ${byRank.PROUD} PROUD (mesh proud of the authored blocker top; a peaked/sloped cover or vault, not a hole).\n`);
 
   if (red.length) {
     console.log("  ===================== RANKED RED LIST =====================");
@@ -1076,9 +1128,93 @@ function selfTest() {
       `coverage@plane=${(arrivalShort.coverageBand * 100).toFixed(0)}% delta=${arrivalShort.medianDelta?.toFixed(3)}m verdict=${severityOf("CLIMB_TO", arrivalShort).label}`);
   }
 
+  // A horizontal disc of `r` at height `y`, as a triangle fan — geometry that
+  // fills a circular acceptance radius but NOT the corners of its bounding box.
+  const diskCand = (cx, cz, r, y, seg = 64) => {
+    const tris = [];
+    for (let i = 0; i < seg; i++) {
+      const a0 = (i / seg) * 2 * Math.PI;
+      const a1 = ((i + 1) / seg) * 2 * Math.PI;
+      tris.push([[cx, y, cz], [cx + r * Math.cos(a0), y, cz + r * Math.sin(a0)], [cx + r * Math.cos(a1), y, cz + r * Math.sin(a1)]]);
+    }
+    return { asset: "disc", record: { tris, ...triBounds(tris) } };
+  };
+
+  // Case 9 — CATCH SAMPLED AS A CIRCLE. A dive catch is a circular acceptance
+  // radius; the bounding square's corners lie outside the zone the game catches a
+  // body in, and counting them measures a shape the game never uses.
+  {
+    const r = 2.0;
+    const rect = centredRect(0, 0, r);
+    const circle = { cx: 0, cz: 0, r };
+    // A landing disc that fills the whole acceptance radius.
+    const full = [diskCand(0, 0, r, 3.0)];
+    const square = sampleSurface(full, rect, 3.0); // corners counted -> false miss
+    const disc = sampleSurface(full, rect, 3.0, { circle }); // only the radius
+    // The square counts its corners (outside the acceptance radius) as misses;
+    // the disc does not. The corner artifact must be visible and removed.
+    check("catch: square corners drag a full disc down", square.coverageBand < 0.85 && square.coverageBand < disc.coverageBand - 0.05,
+      `square coverage=${(square.coverageBand * 100).toFixed(0)}% vs disc ${(disc.coverageBand * 100).toFixed(0)}%`);
+    check("catch: circle sampling reads the full disc", disc.coverageBand > 0.95 && severityOf("CATCH", disc).rank === 0,
+      `circle coverage=${(disc.coverageBand * 100).toFixed(0)}% verdict=${severityOf("CATCH", disc).label}`);
+
+    // BOTH-DIRECTIONS: a landing smaller than the acceptance radius (a real
+    // catch-radius-versus-surface gap) still reads red under circle sampling —
+    // the annular gap inside the radius is a genuine miss, not a corner artifact.
+    const smallDisc = [diskCand(0, 0, r * 0.5, 3.0)];
+    const gap = sampleSurface(smallDisc, rect, 3.0, { circle });
+    check("catch: surface smaller than radius still red", gap.coverageBand < 0.6 && severityOf("CATCH", gap).rank >= 2,
+      `circle coverage=${(gap.coverageBand * 100).toFixed(0)}% verdict=${severityOf("CATCH", gap).label}`);
+  }
+
+  // Case 10 — SUB-SEVERE OFFSET CLIMB. The arrival rule applies at any flagged
+  // rank, not only OFF/SEVERE: a MARGINAL standing footprint that half-overlaps
+  // its ledge is the same mechanism as the buttress, and is re-judged on the
+  // arrival. A genuine overhang (the ledge itself gappy) is NOT rescued.
+  {
+    const ledge = cand(placeBoxTris(4, 2.6, 3, 2, 1)); // ledge top 2.6 over z[-0.5,2.5]
+    const lower = cand(placeBoxTris(4, 0.6, 2, 2, 4)); // a lower surface at 0.6 over z[3,5]
+    const onto = { minX: 0, maxX: 4, minZ: -0.5, maxZ: 2.5 };
+    const climbRect = { minX: 0, maxX: 4, minZ: 0.7, maxZ: 3.1 }; // 75% over ledge, tail over the low deck
+    const standing = sampleSurface([ledge, lower], climbRect, 2.6);
+    const sv = severityOf("CLIMB_TO", standing);
+    check("subsevere climb: standing reads MARGINAL", sv.rank === 1,
+      `standing coverage=${(standing.coverageBand * 100).toFixed(0)}% verdict=${sv.label}`);
+    const arrival = sampleSurface([ledge, lower], intersectRect(climbRect, onto), 2.6);
+    const av = severityOf("CLIMB_TO", arrival);
+    check("subsevere climb: arrival clears it", av.rank < sv.rank && av.rank === 0,
+      `arrival coverage=${(arrival.coverageBand * 100).toFixed(0)}% verdict=${av.label}`);
+
+    // BOTH-DIRECTIONS: an overhang past a gappy ledge — the arrival footprint is
+    // itself only partly covered, so it is NOT strictly better and stays flagged.
+    const gappyLedge = cand(placeBoxTris(3, 2.6, 3, 1.5, 1)); // ledge only over x[0,3]
+    const ontoGappy = { minX: 0, maxX: 4, minZ: -0.5, maxZ: 2.5 }; // authored wider than the mesh
+    const climbG = { minX: 0, maxX: 4, minZ: 0, maxZ: 2 }; // x[3,4] hangs past the ledge
+    const standG = sampleSurface([gappyLedge], climbG, 2.6);
+    const arrG = sampleSurface([gappyLedge], intersectRect(climbG, ontoGappy), 2.6);
+    check("subsevere climb: overhang not rescued", severityOf("CLIMB_TO", arrG).rank >= severityOf("CLIMB_TO", standG).rank && severityOf("CLIMB_TO", arrG).rank >= 1,
+      `standing=${severityOf("CLIMB_TO", standG).label} arrival=${severityOf("CLIMB_TO", arrG).label}`);
+  }
+
+  // Case 11 — PROUD (overshoot) vs a shortfall. A mass top ABOVE the plane is
+  // solid geometry meeting and exceeding the blocker — a peaked/sloped cover, not
+  // a hole — and gets its own verdict, distinct from a top BELOW the plane.
+  {
+    const proudTop = cand(placeBoxTris(4, 3.5, 4, 0, 0)); // top at 3.5, plane 3.0 -> +0.5
+    const rProud = sampleSurface([proudTop], centredRect(0, 0, 1.5), 3.0);
+    check("proud: mesh above the plane reads PROUD", severityOf("MASS_TOP", rProud).label === "PROUD",
+      `max=${rProud.maxDelta?.toFixed(2)} verdict=${severityOf("MASS_TOP", rProud).label}`);
+    // BOTH-DIRECTIONS: a mass top BELOW the plane is a shortfall, never PROUD.
+    const shortTop = cand(placeBoxTris(4, 2.5, 4, 0, 0)); // top at 2.5, plane 3.0 -> -0.5
+    const rShort = sampleSurface([shortTop], centredRect(0, 0, 1.5), 3.0);
+    const svShort = severityOf("MASS_TOP", rShort);
+    check("proud: mesh below the plane is a shortfall, not proud", svShort.label !== "PROUD" && svShort.rank >= 1,
+      `max=${rShort.maxDelta?.toFixed(2)} verdict=${svShort.label}`);
+  }
+
   rmSync(dir, { recursive: true, force: true });
   console.log(failed === 0
-    ? "\nworld-affordances selftest: OK (the ray-cast measures mesh height, a short mesh reads short,\n  a ring is judged on its ring, and a mantle is judged where the body arrives)"
+    ? "\nworld-affordances selftest: OK (mesh height read honestly; a short mesh reads short; a ring\n  judged on its ring; a mantle where the body arrives; a catch over its acceptance disc;\n  and a top proud of its blocker told apart from a hole)"
     : `\nworld-affordances selftest: FAIL (${failed} case(s))`);
   return failed;
 }
