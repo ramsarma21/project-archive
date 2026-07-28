@@ -257,7 +257,8 @@ export const NODES: RouteNode[] = [
     "The east edge of the crowd, squared up on the gate. Past here there are no more bodies and the gate is the only thing left."),
 
   // -- G: the yard ----------------------------------------------------------
-  node("G_HAY", "G_YARD", [90.4, 2.2, -3.2], "COVER_HAY_NW", ["arena", "catch"]),
+  node("G_HAY", "G_YARD", [90.65, 2.2, -4.0], "COVER_HAY_NW", ["arena", "catch"],
+    "On the corner hay wain, its own centre, where the upper-limb dive (LEAP_YARD_HAY) is caught."),
   node("G_GATE", "G_YARD", [88.5, 0.0, 0.0], "GROUND", ["gate"]),
   node("G_SPAWN", "G_YARD", [90.5, 0.0, 0.0], "GROUND", ["arena"]),
 ];

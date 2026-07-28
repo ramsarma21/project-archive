@@ -413,20 +413,36 @@ export const CATCHES: CatchVolume[] = [
     section: "A_LEADS",
     kind: "HAY",
     asset: "hay-cart",
-    centre: [13.3, 2.2, 1.4],
+    // Centred on the two-wain footprint (HAY_WAIN_W x10.0-12.2 + HAY_WAIN_E
+    // x12.2-14.4, both z-0.2..3.0), not biased east onto HAY_WAIN_E alone. At
+    // x=13.3 the 1.6m disc reached east to 14.9m, 0.5m past the drawn hay's east
+    // edge (14.4) — the "caught by air beside the hay" overrun (88% over hay). At
+    // x=12.2, the footprint centre, the same 1.6m disc lands x[10.6,13.8] z[-0.2,
+    // 3.0], wholly over the two wains (a BLOCK asset that fills its rect), so the
+    // acceptance disc is backed by real hay everywhere. Radius unchanged: the hay
+    // is wide enough, it was only off-centre.
+    centre: [12.2, 2.2, 1.4],
     radiusM: 1.6,
     offersLeap: false,
-    note: "The 4.9m roll off the south-east corner. A roll, not a dive: the drop is under the 6m floor.",
+    note: "The 4.9m roll off the south-east corner, onto the pair of hay wains. A roll, not a dive: the drop is under the 6m floor.",
   },
   {
     id: "CATCH_LANE_HAY",
     section: "C_ASCENT",
     kind: "HAY",
     asset: "hay-cart",
+    // Already centred on LANE_HAY (x48.0-51.0, z-10.4..-8.2, a single 3.0x2.2m
+    // wain), so recentering cannot help: the 1.6m disc (3.2m across) was simply
+    // wider than the wain's 2.2m depth and spilled 0.5m off each z edge onto air
+    // (75% over hay). The acceptance radius is cut to 1.1m — the half-depth the
+    // wain actually presents — so the disc it advertises is backed by hay on
+    // every side. This is a bail-out catch, NOT an offered dive (offersLeap
+    // false), so it feeds no leap the solver picks and tightening it makes no
+    // guided move harder; it only stops the catch claiming hay that is not there.
     centre: [49.5, 2.2, -9.3],
-    radiusM: 1.6,
+    radiusM: 1.1,
     offersLeap: false,
-    note: "The balcony's bail-out when the tower watch calls out.",
+    note: "The balcony's bail-out when the tower watch calls out. 1.1m to sit inside the lane wain.",
   },
   {
     id: "LEAP_CROWN",
@@ -453,10 +469,23 @@ export const CATCHES: CatchVolume[] = [
     section: "G_YARD",
     kind: "HAY",
     asset: "hay-cart",
-    centre: [90.4, 2.2, -3.2],
+    // Centred on COVER_HAY_NW's footprint (see geometry.ts, widened to 3.2x3.2 to
+    // back this disc). This is an OFFERED dive (offersLeap true), so its radius is
+    // pinned at the reader's leapTargetRadiusM (1.6m) by traversability.test —
+    // shrinking it to stop the "caught by air" overrun is not open, because the
+    // reader assumes a 1.6m acceptance and a smaller one would advertise a target
+    // it then refuses. So the fix here is the OTHER lever the brief names: a
+    // bigger, better-placed catching object. At [90.4,-3.2] the 1.6m disc reached
+    // 0.6m west onto the wall side and 0.8m south into open yard air (59% over
+    // hay); centred on COVER_HAY_NW's grown footprint at [90.65,-4.0] — the wain
+    // extended into the dead NW corner (see geometry.ts) — the 9.0m dive lands on
+    // real hay across the whole acceptance radius. The wain grows only toward the
+    // corner walls, not into the duel's playing area, so the six line-of-sight
+    // breaks the fight is graded on are untouched.
+    centre: [90.65, 2.2, -4.0],
     radiusM: 1.6,
     offersLeap: true,
-    note: "9.0m off the upper limb, over 3.6m of yard wall, straight into the duel. Only that limb is high enough to clear the brick.",
+    note: "9.0m off the upper limb, over 3.6m of yard wall, straight into the duel, onto the corner hay wain. Only that limb is high enough to clear the brick.",
   },
 ];
 

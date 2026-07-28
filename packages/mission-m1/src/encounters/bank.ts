@@ -224,7 +224,24 @@ const BILLMAN: PerspectiveEncounter = {
     // the route the player walks, not off it. The bill-sticker closes from his
     // post on the same flat roof at (74.9, 8.2, 12.0), clear of the raised monitor.
     at: [74.6, 8.2, 9.4],
-    radiusM: 3.6,
+    // 5.0m, not 3.6m. The beat is MANDATORY — traversal.ts gates REACHED_DUEL on
+    // `encountersParticipated`, so a run that never arms this stop can never
+    // resolve and times out (the soft-lock M1-STATUS flagged). It therefore has
+    // to catch EVERY line to the steeple, and the elm crown (the only ascent into
+    // the tree) is only reachable from that steeple, so this disc gates the sole
+    // path to the objective. Two lines cross this roof: the guided drop lands at
+    // D_MEETING_W (0.5m in), and the ground-up buttress climb tops out at
+    // E_MEETING_S (75.4, 8.2, 13.8) — 4.47m from centre — then runs to E_GAMBREL_S
+    // (3.49m) or D_MEETING_ROOF (1.94m). At 3.6m the buttress branch only clipped
+    // the disc by ~0.1-0.4m (E_GAMBREL_S at 3.49; the E_MEETING_S->E_GAMBREL_S
+    // segment dipped to 3.22m), thin enough that a corner-cutting line or a later
+    // node nudge could reopen the bypass. 5.0m puts E_MEETING_S itself inside with
+    // ~0.5m of margin, so the stop arms the instant the player tops the buttress
+    // onto the leads, and every route crosses it with room. Bounded ABOVE by the
+    // elm: BOUGH_CROWN sits at y=8.3 (inside the 2.0m same-surface band, so the
+    // XZ radius is the ONLY separator) but its nearest node is 9.0m away in XZ, so
+    // 5.0m keeps 4.0m of clearance and cannot arm the roof stop from the tree.
+    radiusM: 5.0,
     speakerStandoff: [74.9, 8.2, 11.0],
     secondaryStandoff: null,
     requiresGroundedApproach: false,
