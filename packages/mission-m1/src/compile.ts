@@ -10,11 +10,18 @@ import type {
   Blocker,
   ClimbVolume,
   CollisionWorld,
+  LadderSpec,
   Platform,
 } from "@pa/engine-world/collision";
 import { rampStrips } from "./authoring.js";
 import type { CrowdCluster } from "@pa/engine-world/stealth";
-import type { ClimbSpec, DeckSpec, MassSpec, MissionLevel } from "./types.js";
+import type {
+  ClimbSpec,
+  DeckSpec,
+  LadderPlacementSpec,
+  MassSpec,
+  MissionLevel,
+} from "./types.js";
 
 function blockerFrom(mass: MassSpec): Blocker {
   const base: Blocker = {
@@ -86,6 +93,33 @@ function climbVolumeFrom(spec: ClimbSpec): ClimbVolume {
   };
 }
 
+/**
+ * Resolve a placed ladder into the engine's LadderSpec, reading the ladder top
+ * off the surface it serves so base/top/face are all measured, never a second
+ * hand-typed height. Returns null when the served surface is unknown, so a
+ * misplaced ladder drops out rather than arming a climb onto nothing.
+ *
+ * INERT until a ladder is authored (see LadderPlacementSpec): with no
+ * `level.ladders`, `world.ladders` is empty and nothing consults it.
+ */
+function ladderFrom(
+  spec: LadderPlacementSpec,
+  topYOf: (id: string) => number | null,
+): LadderSpec | null {
+  const topY = topYOf(spec.onto);
+  if (topY === null) return null;
+  return {
+    id: spec.id,
+    base: { x: spec.at[0], y: spec.at[1], z: spec.at[2] },
+    topY,
+    faceX: spec.faceX,
+    faceZ: spec.faceZ,
+    toSurface: spec.onto,
+    widthM: spec.widthM ?? 0.6,
+    rungGapM: spec.rungGapM ?? 0.3,
+  };
+}
+
 export interface CompiledLevel {
   world: CollisionWorld;
   /** Every deck including the strips a ramp expands into. */
@@ -100,6 +134,27 @@ export function compileLevel(level: MissionLevel): CompiledLevel {
   const decks: DeckSpec[] = [...level.decks];
   for (const ramp of level.ramps) decks.push(...rampStrips(ramp));
 
+  const massById = new Map(level.masses.map((mass) => [mass.id, mass]));
+  const deckById = new Map(decks.map((spec) => [spec.id, spec]));
+  const surfaceY = (id: string): number | null => {
+    const asDeck = deckById.get(id);
+    if (asDeck) return asDeck.y;
+    const asMass = massById.get(id);
+    if (asMass && asMass.landable && Number.isFinite(asMass.topY)) {
+      return asMass.topY;
+    }
+    if (id === "GROUND") return 0;
+    return null;
+  };
+
+  // Placed ladders resolve their top off the served surface, so the ascent is
+  // measured from the object. Empty today (no ladder is authored yet); the pipe
+  // exists so a placement lights the tested `alignClimbToLadder` predicate up.
+  const ladders = (level.ladders ?? []).flatMap((placement) => {
+    const ladder = ladderFrom(placement, surfaceY);
+    return ladder ? [ladder] : [];
+  });
+
   const world: CollisionWorld = {
     blockers: level.masses.map(blockerFrom),
     platforms: decks.map(platformFrom),
@@ -110,26 +165,15 @@ export function compileLevel(level: MissionLevel): CompiledLevel {
       maxZ: level.bounds.maxZ,
     },
     climbVolumes: level.climbs.map(climbVolumeFrom),
+    ladders,
   };
-
-  const massById = new Map(level.masses.map((mass) => [mass.id, mass]));
-  const deckById = new Map(decks.map((spec) => [spec.id, spec]));
 
   return {
     world,
     decks,
     massById,
     deckById,
-    surfaceY: (id) => {
-      const asDeck = deckById.get(id);
-      if (asDeck) return asDeck.y;
-      const asMass = massById.get(id);
-      if (asMass && asMass.landable && Number.isFinite(asMass.topY)) {
-        return asMass.topY;
-      }
-      if (id === "GROUND") return 0;
-      return null;
-    },
+    surfaceY: (id) => surfaceY(id),
   };
 }
 

@@ -205,3 +205,79 @@ this report.
 Gate: lint OK, typecheck OK, build OK (no EPERM), test 2707 total / 0 failing
 (baseline 2702 + 5 new), verify:content / assets:verify:{collision,placement,
 affordances} OK, fatal-traversal fatal=0 before and after.
+
+---
+
+# Pass 2 — leg-cap lead disproven + compile pipe laid
+
+## "Cannot run" via the leg speed cap: DISPROVEN by direct real play
+
+The cap can only bite on ONE surface: `NARROW_BOARD_SURFACES = {ROPEWALK_TIE_BEAM}`
+(wayfind.ts). So the only place a leg cap can produce "cannot run" is the
+ropewalk tie-beam crossing. Drove it directly (mw-ropewalk-cap.mjs): spawn at the
+hatch D2_ROOF_N, drop onto D2_BEAM_MID, walk the beam west, drop off into the
+hemp, logging `speedCapMps(pos)` per tick.
+
+Result — the cap does NOT outlive its leg:
+- Approaching + on the beam: cap = 2.3 (intended; the run-in decelerates so the
+  body lands the 1.6m board).
+- **Last capped tick: t381 at x=66.18, still on the beam (y=5.2, z=21.3).** The
+  very next tick (x=65.99, still on the beam) cap = null and speed ramps
+  2.3 -> 3.13 -> 3.66 -> 4.0 -> 4.22. Off the beam onto the floor: cap = null
+  throughout (tail x~59.5, y=0, cap null).
+
+So a cap CANNOT outlive its leg — if anything it releases ~3m EARLY (at x~66,
+before the west end at x=63), letting the body sprint the last stretch of the
+board. That is the opposite of "cannot run." The leg-cap hypothesis is closed.
+
+Minor observation (NOT "cannot run", flag for the route lane): the early release
+lets a brief 4+ m/s sprint on the last ~3m of the 1.6m beam. The landing there is
+a run-off into the hemp (gentle) and the fatal-traversal scan is fatal=0, so it
+is not a hazard — but the cap-retire point in wayfind.ts (`legSpeedCapFor` /
+`gatewayLegCap`) releases a little before the board ends. wayfind.ts is the route
+lane; reporting rather than touching it.
+
+Net "cannot run" status: the designated lead (leg cap) is disproven with real
+play. Combined with pass 1 (EDGE_BRAKE latch revalidates/releases; no stuck
+crouch, cooldown, or stamina in free roam — stamina only bites in a chase, and to
+a 3.5 jog not a stop), NONE of the in-lane speed governors reproduce "cannot
+run." Remaining unverified possibilities are out of my lane: (a) a crouch that
+stays down because the headroom stand-up check reads false-low at a specific low
+span (playerMotion is mine, but I could not find such a spot in play — would need
+the owner's location), (b) a wayfinder/traversal leg that fails to retire on a
+NON-capped surface (no speed effect today since only the tie beam caps). Labeled
+UNVERIFIED; needs the owner's location or a live capture at the moment it happens.
+
+## Compile pipe for ladder data — laid, inert (task 2)
+
+Established the pipe so a placed ladder reaches the tested predicate the moment
+the asset lane creates ladder GLBs, without wiring refusal (which would strand
+the objective today):
+- `types.ts`: `LadderPlacementSpec` (id, base `at`, `onto`, outward face, width,
+  rungGap) + optional `MissionLevel.ladders?`.
+- `compile.ts` (unowned, per owner): `ladderFrom` resolves each placement into an
+  engine `LadderSpec`, reading the ladder TOP off the served surface (measured,
+  not re-typed), dropping any ladder onto an unknown surface; `world.ladders` is
+  populated from `level.ladders`.
+- `collision.ts`: `CollisionWorld.ladders?: LadderSpec[]`.
+- Test `mission-m1/__tests__/ladderPipe.test.ts` (3): the real level authors no
+  ladder (pipe inert, world.ladders = []); a placed ladder forwards with its top
+  resolved off SCAFFOLD_D1 (y=2.9) and `alignClimbToLadder` accepts it; a ladder
+  onto an unknown surface drops out.
+
+Inert today: `level.ladders` is unset, so `world.ladders = []` and no movement
+path reads it (fatal-traversal fatal=0, unchanged). The critical path for the
+owner's ladder law is now the CONTENT job (ladder GLBs through the asset
+pipeline) + authoring `level.ladders` per the placement spec above, then wiring
+`alignClimbToLadder` into the reader + retiring inferred bare-face climbs.
+
+## Pass 2 change set (vs main)
+- packages/engine-world/src/collision.ts  (+CollisionWorld.ladders)
+- packages/mission-m1/src/types.ts  (+LadderPlacementSpec, +MissionLevel.ladders?)
+- packages/mission-m1/src/compile.ts  (ladderFrom + world.ladders forwarding)
+- packages/mission-m1/src/__tests__/ladderPipe.test.ts  (new, 3 tests)
+- .affordwork/mw-ropewalk-cap.mjs (+out)  — the leg-cap real-play disproof
+
+Gate: lint OK, typecheck OK, build OK, test 2712 total / 0 failing,
+verify:content + assets:verify:{collision,placement,affordances} OK,
+fatal-traversal fatal=0 before and after.

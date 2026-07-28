@@ -176,6 +176,11 @@ export interface CollisionWorld {
   // Authored vertical ascents. Absent in worlds that have none (the duel arena,
   // most tests): no volume simply means no ascent is exempted.
   climbVolumes?: ClimbVolume[];
+  // Placed climb ladders, the self-describing affordance `alignClimbToLadder`
+  // consumes. Absent today: the compile pipe forwards them but nothing authors
+  // one yet (the GLBs and the refusal rule are sequenced behind this). Present so
+  // the moment a ladder is placed, the predicate has somewhere to read it from.
+  ladders?: LadderSpec[];
 }
 
 /**
