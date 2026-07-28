@@ -137,11 +137,27 @@ function vec3(hasher: StateHasher, v: { x: number; y: number; z: number }): void
 export function hashMotion(
   hasher: StateHasher,
   motion: FighterState["motion"],
+  options: { facing?: boolean } = {},
 ): void {
+  // FACING (yaw) is a cosmetic output, not simulation state that feeds the next
+  // position: nothing in the duel or the integrator reads `motion.yaw` to produce
+  // pos, vel, health or hits — `stepGrounded` derives it from velocity via
+  // `Math.atan2` and slews it with a live-speed-dependent `Math.exp`, and hands it
+  // straight back out. Neither of those can be made bit-exact across engines (atan2
+  // is implementation-approximated and the slew rate is not a fixed-step constant),
+  // so yaw is the ONE hashed field that legitimately diverges between Node and a
+  // student's Safari with zero gameplay consequence.
+  //
+  // The full server hash keeps it (property #3, totality: yaw does feed the NEXT
+  // yaw, and a Node-vs-Node replay is exact). The CLIENT-FACING digest drops it
+  // (`facing: false` from `hashPredictable`), because that digest exists to catch
+  // consequential cross-browser drift and a cosmetic field there is pure false
+  // positive — a reported "desync" on a body that is in the identical place.
+  const facing = options.facing ?? true;
   hasher.string(motion.phase);
   vec3(hasher, motion.pos);
   vec3(hasher, motion.vel);
-  hasher.float(motion.yaw);
+  if (facing) hasher.float(motion.yaw);
   hasher.float(motion.capsuleHeight);
   hasher.bool(motion.grounded);
   hasher.float(motion.airtimeMs);
@@ -184,14 +200,17 @@ export function hashMotion(
   hasher.uint32(action.anchors.length);
   for (const anchor of action.anchors) {
     hasher.float(anchor.x).float(anchor.y).float(anchor.z);
+    // Anchor yaw, startYaw and endYaw are authored FACING, atan2-derived at
+    // `beginAuthored`; excluded from the client-facing digest with `motion.yaw`.
+    if (!facing) continue;
     if (anchor.yaw === undefined) hasher.absent();
     else hasher.present().float(anchor.yaw);
   }
   hasher.float(action.arcHeight).bool(action.faceObstacle);
   vec3(hasher, action.startPos);
-  hasher.float(action.startYaw);
+  if (facing) hasher.float(action.startYaw);
   vec3(hasher, action.endPos);
-  hasher.float(action.endYaw);
+  if (facing) hasher.float(action.endYaw);
   // A Set has no defined iteration order across constructions, so it is sorted
   // before hashing. Two states that ignore the same obstacles must hash alike
   // however the sets were built.
@@ -289,6 +308,11 @@ export function hashSelf(fighter: FighterState): StateHash {
  *                        exact position the client is not always told, by design.
  *   abilities            invocation is gated on line of sight to the opponent, and
  *                        the client's opponent is an interpolated ghost.
+ *   facing (yaw)         is a cosmetic output the simulation never reads back, and
+ *                        it is the one field that cannot be made cross-engine exact
+ *                        (atan2 + a speed-dependent exp slew); hashing it here would
+ *                        report desyncs on bodies that are in the identical place.
+ *                        The full server hash still covers it (see hashMotion).
  *
  * WHAT REMAINS IS EXACTLY WHERE THE RISK IS, WHICH IS WHY THIS IS NOT A CLIMBDOWN.
  * The transcendental calls that make lockstep unsafe — 16 in `playerMotion.ts`, 18
@@ -300,7 +324,9 @@ export function hashSelf(fighter: FighterState): StateHash {
 export function hashPredictable(fighter: FighterState): StateHash {
   const hasher = new StateHasher();
   hasher.string(fighter.side);
-  hashMotion(hasher, fighter.motion);
+  // facing: false — yaw is cosmetic and cannot be made cross-engine exact, so it
+  // is kept out of the digest a client compares against the server (see hashMotion).
+  hashMotion(hasher, fighter.motion, { facing: false });
   hasher
     .uint32(fighter.dodge.iframeUntilTick)
     .uint32(fighter.dodge.readyAtTick)

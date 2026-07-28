@@ -70,7 +70,7 @@ test("standing jump: apex ~1.2m, drift <5cm, support snap to ground", () => {
   let maxDrift = 0;
   const events: string[] = [];
   for (let i = 0; i < 200; i++) {
-    const r = stepMotion(world, s, { dt: 1 / 120, targetVelX: 3, targetVelZ: 0, reducedMotion: false });
+    const r = stepMotion(world, s, { dt: 1 / 60, targetVelX: 3, targetVelZ: 0, reducedMotion: false });
     s = r.state;
     events.push(...r.events);
     apex = Math.max(apex, s.pos.y);
@@ -93,7 +93,7 @@ test("running jump: preserves launch horizontal velocity into a real arc", () =>
   s = beginRunningJump(s);
   assert.equal(s.phase, "RUNNING_JUMP");
   assert.equal(s.vel.x, 3.5);
-  const { state } = run(world, s, 300, 1 / 120, { targetVelX: 0 });
+  const { state } = run(world, s, 300, 1 / 60, { targetVelX: 0 });
   // Flight time ~2*vy/g; horizontal distance ~ vx * t.
   const flight = (2 * STANDING_JUMP_VY) / GRAVITY;
   assert.ok(Math.abs(state.pos.x - 3.5 * flight) < 0.15, `range ${state.pos.x}`);
@@ -109,7 +109,7 @@ test("running jump collides with a wall, no collider bypass", () => {
   let s = createGroundedState({ x: 0, y: 0, z: 0 }, 0);
   s.vel = { x: 6, y: 0, z: 0 };
   s = beginRunningJump(s);
-  const { state } = run(world, s, 300, 1 / 120);
+  const { state } = run(world, s, 300, 1 / 60);
   assert.ok(state.pos.x < 1.5 - 0.3, `passed through wall to x=${state.pos.x}`);
 });
 

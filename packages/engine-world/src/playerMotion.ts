@@ -37,6 +37,7 @@ import {
   SUPPORT_SNAP_UP,
   type CapsulePenetration,
 } from "./collision.js";
+import { FIELD_DT } from "./fieldSimulation.js";
 
 // ---- tuning constants ------------------------------------------------------
 
@@ -76,7 +77,7 @@ export const WEDGE_HOLD_MAX_SPEED = 0.5;
 export const WALK_SPEED = 2.3;
 export const RUN_SPEED = 4.6;
 export const CROUCH_SPEED = 1.15;
-const ACCEL = 9;
+export const ACCEL = 9;
 /**
  * Deceleration when the player asks for no movement (or the brake has removed
  * their over-lip target). Exported because the edge brake sizes its stopping
@@ -85,6 +86,43 @@ const ACCEL = 9;
  */
 export const DECEL = 14;
 const MAX_DT = 0.05;
+
+// ---- determinism: precomputed fixed-step blends ----------------------------
+//
+// The grounded velocity blend is `1 - exp(-rate * dt * 0.6)`. `Math.exp` is
+// implementation-approximated — IEEE 754 pins +,-,*,/ and sqrt, and explicitly
+// does NOT pin exp — so V8, JavaScriptCore and SpiderMonkey can each return a
+// different last bit, and a one-ulp difference on the hashed motion path is a
+// real Node-vs-Safari desync (see @pa/netcode/transcendental.test.ts).
+//
+// Every production caller advances at exactly FIELD_DT (asserted in `stepMotion`
+// / `stepFlow` via `assertFieldDt`), so the two blends collapse to two constants.
+// They are BAKED as decimal literals rather than computed at module load, which
+// is what makes them engine-independent: ECMAScript requires a numeric literal
+// to parse to the nearest representable double (correctly rounded), so every
+// conforming engine reads the identical bit pattern — whereas computing
+// `Math.exp` at load would reintroduce exactly the cross-engine spread we are
+// removing. Each literal equals the double `1 - Math.exp(-rate * FIELD_DT * 0.6)`
+// produced by the authoring engine, so replacing the call is a no-op on that
+// engine (no golden shift) and a determinism fix everywhere else.
+// `transcendentalDeterminism.test.ts` re-derives both and fails if they drift.
+export const GROUNDED_ACCEL_BLEND = 0.08606881472877181; // 1 - exp(-ACCEL * FIELD_DT * 0.6)
+export const GROUNDED_DECEL_BLEND = 0.13064176460119414; // 1 - exp(-DECEL * FIELD_DT * 0.6)
+
+/**
+ * The fixed-step invariant, in one guard: `stepMotion` and `stepFlow` may only
+ * ever advance by `FIELD_DT`. It is what lets the precomputed blends above stand
+ * in for `1 - exp(-rate * dt * 0.6)` — at any other `dt` those constants would be
+ * silently wrong, so a wrong `dt` is failed loudly here rather than integrated.
+ */
+export function assertFieldDt(dt: number): void {
+  if (dt !== FIELD_DT) {
+    throw new Error(
+      `stepMotion/stepFlow require the fixed field step FIELD_DT (${FIELD_DT}); ` +
+        `got ${dt}. The precomputed accel/decel blends are only valid at FIELD_DT.`,
+    );
+  }
+}
 
 /**
  * The speed a grounded body accelerating toward `targetSpeed` reaches after
@@ -110,7 +148,12 @@ export function projectGroundSpeed(
   dt: number,
 ): number {
   if (!(distanceM > 0) || !(targetSpeed > 0) || dt <= 0) return currentSpeed;
-  const blend = 1 - Math.exp(-ACCEL * dt * 0.6);
+  // Same `1 - exp(-ACCEL * dt * 0.6)` grounded-accel blend `stepGrounded` uses,
+  // and this projection must match it tick-for-tick. Precomputed at FIELD_DT (the
+  // only dt production passes here) so the projection is bit-identical across
+  // engines to the integrator it forecasts.
+  assertFieldDt(dt);
+  const blend = GROUNDED_ACCEL_BLEND;
   let v = currentSpeed;
   let x = 0;
   // Bounded: distance/(slowest advancing speed) ticks, capped so a near-stalled
@@ -577,7 +620,9 @@ function deckSideBlocker(
 // ---- vector helpers --------------------------------------------------------
 
 function horizSpeed(v: Vec3): number {
-  return Math.hypot(v.x, v.z);
+  // sqrt(x*x + z*z), not Math.hypot: hypot is implementation-defined in the last
+  // bits, this form uses only IEEE-754-pinned ops so it is identical on every engine.
+  return Math.sqrt(v.x * v.x + v.z * v.z);
 }
 
 function shortestAngle(a: number, b: number): number {
@@ -675,7 +720,7 @@ export function beginDash(
   speed: number,
   durationMs: number = DASH_DURATION_MS,
 ): MotionState {
-  const length = Math.hypot(dirX, dirZ);
+  const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
   if (length < 1e-6 || speed <= 0 || !canDash(state)) return state;
   const unitX = dirX / length;
   const unitZ = dirZ / length;
@@ -781,7 +826,7 @@ export function beginStagger(
   },
 ): MotionState {
   if (!canStagger(state)) return state;
-  const length = Math.hypot(input.dirX, input.dirZ);
+  const length = Math.sqrt(input.dirX * input.dirX + input.dirZ * input.dirZ);
   // A contact with no direction still costs the window; it just does not push.
   const unitX = length < 1e-6 ? 0 : input.dirX / length;
   const unitZ = length < 1e-6 ? 0 : input.dirZ / length;
@@ -934,7 +979,7 @@ function outwardNormal(a: AuthoredAnchor, b: AuthoredAnchor, kind: AuthoredActio
     dx = b.x - a.x;
     dz = b.z - a.z;
   }
-  const len = Math.hypot(dx, dz) || 1;
+  const len = Math.sqrt(dx * dx + dz * dz) || 1;
   return { x: dx / len, z: dz / len };
 }
 
@@ -978,6 +1023,9 @@ export function cancelAction(world: CollisionWorld, state: MotionState): MotionR
 // ---- per-frame step --------------------------------------------------------
 
 export function stepMotion(world: CollisionWorld, state: MotionState, input: MotionInput): MotionResult {
+  // The fixed-step invariant, guarded at the one gate every motion path flows
+  // through: the precomputed blends in `stepGrounded` are only valid at FIELD_DT.
+  assertFieldDt(input.dt);
   const dt = Math.min(input.dt, MAX_DT);
   if (state.action && AUTHORED_PHASES.has(state.phase)) {
     return stepAuthored(world, state, dt, input.reducedMotion);
@@ -1125,15 +1173,16 @@ function stepGrounded(world: CollisionWorld, state: MotionState, dt: number, inp
   const events: MotionEventType[] = [];
   const vel = { ...state.vel };
   const target = { x: input.targetVelX, z: input.targetVelZ };
-  const targetSpeed = Math.hypot(target.x, target.z);
-  const rate = targetSpeed > 0.001 ? ACCEL : DECEL;
-  const blend = 1 - Math.exp(-rate * dt * 0.6);
+  const targetSpeed = Math.sqrt(target.x * target.x + target.z * target.z);
+  // `1 - exp(-rate * dt * 0.6)` precomputed at FIELD_DT (asserted in stepMotion),
+  // so the blend is a shared literal instead of an implementation-defined exp.
+  const blend = targetSpeed > 0.001 ? GROUNDED_ACCEL_BLEND : GROUNDED_DECEL_BLEND;
   vel.x += (target.x - vel.x) * blend;
   vel.z += (target.z - vel.z) * blend;
   vel.y = 0;
 
   const pos = { ...state.pos };
-  const speed = Math.hypot(vel.x, vel.z);
+  const speed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
   let yaw = state.yaw;
 
   // A lip low enough to walk up is not a wall to a body on its feet, and the
@@ -1222,7 +1271,9 @@ function stepGrounded(world: CollisionWorld, state: MotionState, dt: number, inp
   // the sweep zeros that, so its real displacement is ~0; a body walking off a
   // mass edge actually moves. Gating on the realised motion is what tells the
   // two apart.
-  const movedThisTick = Math.hypot(pos.x - state.pos.x, pos.z - state.pos.z);
+  const movedX = pos.x - state.pos.x;
+  const movedZ = pos.z - state.pos.z;
+  const movedThisTick = Math.sqrt(movedX * movedX + movedZ * movedZ);
   const support =
     movedThisTick < WEDGE_HOLD_MAX_SPEED * dt
       ? rideOutOfEmbed(world, pos.x, pos.z, baseSupport, CAPSULE_RADIUS, state.capsuleHeight, lowSteps)
@@ -1595,7 +1646,10 @@ function samplePath(action: AuthoredAction, t: number): { x: number; y: number; 
   for (let i = 0; i < anchors.length - 1; i++) {
     const a = anchors[i]!;
     const b = anchors[i + 1]!;
-    const len = Math.max(1e-3, Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z));
+    const segX = b.x - a.x;
+    const segY = b.y - a.y;
+    const segZ = b.z - a.z;
+    const len = Math.max(1e-3, Math.sqrt(segX * segX + segY * segY + segZ * segZ));
     lengths.push(len);
     total += len;
   }

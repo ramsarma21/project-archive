@@ -53,6 +53,7 @@ import {
   dashSpeed,
   isDashing,
   type MotionState,
+  assertFieldDt,
   simulateWalkOff,
   stepMotion,
 } from "../playerMotion.js";
@@ -540,6 +541,9 @@ export function stepFlow(
   input: FlowInput,
   tuning: ParkourTuning = PARKOUR_TUNING,
 ): FlowResult {
+  // Fixed-step invariant: the flow reader and its integrator only advance by
+  // FIELD_DT, which is what makes the precomputed motion blends exact.
+  assertFieldDt(input.dt);
   const events: FlowEvent[] = [];
   const noise: NoiseEvent[] = [];
   let motion = motionIn;

@@ -307,7 +307,9 @@ export function surfaceInteriorDir(
   const cz = (rect.minZ + rect.maxZ) / 2;
   const dx = cx - footX;
   const dz = cz - footZ;
-  const len = Math.hypot(dx, dz);
+  // sqrt(dx*dx + dz*dz), not Math.hypot: only IEEE-754-pinned ops, so the result
+  // is identical on every engine (hypot is implementation-defined in the last bits).
+  const len = Math.sqrt(dx * dx + dz * dz);
   if (len < 1e-3) return null;
   return { x: dx / len, z: dz / len };
 }
@@ -324,7 +326,7 @@ export function alignClimbToLadder(
   world: CollisionWorld,
   ladder: LadderSpec,
 ): LadderClimb | null {
-  const faceLen = Math.hypot(ladder.faceX, ladder.faceZ);
+  const faceLen = Math.sqrt(ladder.faceX * ladder.faceX + ladder.faceZ * ladder.faceZ);
   if (faceLen < 1e-6) return null;
   const fX = ladder.faceX / faceLen;
   const fZ = ladder.faceZ / faceLen;
@@ -1298,7 +1300,9 @@ function intrudesXZ(b: Blocker, x: number, z: number, radius: number): boolean {
       : 0;
   const nearestX = shape.ax + abX * t;
   const nearestZ = shape.az + abZ * t;
-  return Math.hypot(x - nearestX, z - nearestZ) <= shape.radius + radius;
+  const offX = x - nearestX;
+  const offZ = z - nearestZ;
+  return Math.sqrt(offX * offX + offZ * offZ) <= shape.radius + radius;
 }
 
 export function positionClear(
@@ -1442,7 +1446,7 @@ export function resolveOverlapXZ(
     x,
     z,
     clear,
-    movedM: Math.hypot(x - pos.x, z - pos.z),
+    movedM: Math.sqrt((x - pos.x) * (x - pos.x) + (z - pos.z) * (z - pos.z)),
   };
 }
 
@@ -1642,9 +1646,9 @@ function blockerContactNormal(
     const nearestZ = footprint.az + abZ * t;
     const dx = x - nearestX;
     const dz = z - nearestZ;
-    const length = Math.hypot(dx, dz);
+    const length = Math.sqrt(dx * dx + dz * dz);
     if (length > 1e-9) return [dx / length, dz / length];
-    const segmentLength = Math.hypot(abX, abZ);
+    const segmentLength = Math.sqrt(abX * abX + abZ * abZ);
     return segmentLength > 1e-9
       ? [-abZ / segmentLength, abX / segmentLength]
       : [1, 0];
@@ -1698,7 +1702,7 @@ function firstIntrusionTime(
   dz: number,
   radius: number,
 ): number | null {
-  const distance = Math.hypot(dx, dz);
+  const distance = Math.sqrt(dx * dx + dz * dz);
   if (distance <= 1e-12) return null;
   const startInside = intrudesXZ(blocker, x, z, radius);
   if (startInside) {
@@ -1860,7 +1864,9 @@ export function sweepXZ(
   const clampedX = Math.min(Math.max(to.x, world.bounds.minX), world.bounds.maxX);
   const clampedZ = Math.min(Math.max(to.z, world.bounds.minZ), world.bounds.maxZ);
   const broadRadius = radius * BROAD_PHASE_RADIUS_FACTOR;
-  const travelDistance = Math.hypot(clampedX - from.x, clampedZ - from.z);
+  const travelDistance = Math.sqrt(
+    (clampedX - from.x) * (clampedX - from.x) + (clampedZ - from.z) * (clampedZ - from.z),
+  );
   // Contact projection can bend the remaining path outside the direct
   // start-to-end AABB. Every projected segment preserves or shortens its
   // remaining length, so the start-centred travel radius is a conservative
@@ -1881,7 +1887,7 @@ export function sweepXZ(
   let dz = clampedZ - from.z;
 
   for (let contact = 0; contact < SWEEP_MAX_CONTACTS; contact++) {
-    if (Math.hypot(dx, dz) <= 1e-10) break;
+    if (Math.sqrt(dx * dx + dz * dz) <= 1e-10) break;
     let bestT = 1;
     let best: Blocker | null = null;
     for (const blockerIndex of active) {
