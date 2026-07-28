@@ -7,12 +7,13 @@
 // fixed step and the real render loop, and read back by a Playwright driver
 // through `window.__diag`.
 //
-//   frames   — per RENDER frame: wall delta, time spent in stepMissionRuntime
-//              (sim cost, isolated from GPU cost), fixed steps run, fixed steps
-//              DROPPED by the catch-up bound, and the resulting time scale. This
-//              is the honest read on the "random slowdowns": a dropped step is
-//              sim time discarded, i.e. slow motion, and separating sim cost from
-//              frame cost says whether the cause is the solver or the renderer.
+//   frames   — per RENDER frame: the render delta R3F hands in, fixed steps run,
+//              fixed steps DROPPED by the catch-up bound, and the resulting time
+//              scale. This is the honest read on the "random slowdowns": a dropped
+//              step is sim time DISCARDED (not banked), i.e. slow motion. The
+//              sim's own per-frame cost is measured out-of-band by a node
+//              microbenchmark of stepMissionRuntime, so the fixed step and the
+//              render loop stay free of any wall-clock read (see check-boundaries).
 //
 //   embeds   — per fixed TICK on which the capsule ended inside a solid hull,
 //              measured with NO ignore set at all (stricter than the shipped
@@ -54,10 +55,8 @@ export const DIAG_ENABLED = diagEnabled();
 
 export interface FrameSample {
   tick: number;
-  /** Wall-clock frame delta handed to the sim, in ms. */
+  /** Render frame delta R3F handed the sim this frame, in ms. */
   deltaMs: number;
-  /** Time spent inside stepMissionRuntime this frame, in ms — the sim cost. */
-  simMs: number;
   /** Fixed steps actually executed this frame. */
   steps: number;
   /** Cumulative fixed steps discarded by the catch-up bound. */

@@ -198,19 +198,17 @@ if (diag) {
   const f = diag.frames;
   log(`\n=== FRAMES (${f.length}) ===`);
   if (f.length) {
-    const sim = f.map((x) => x.simMs).sort((a, b) => a - b);
     const dl = f.map((x) => x.deltaMs).sort((a, b) => a - b);
     const pct = (arr, p) => arr[Math.min(arr.length - 1, Math.floor(arr.length * p))];
     const droppedFrames = f.filter((x) => x.droppedThisFrame > 0).length;
     const totalDropped = f.length ? f[f.length - 1].droppedTotal : 0;
     const slowTs = f.filter((x) => x.timeScale < 0.999).length;
-    log(`sim ms  p50=${pct(sim, 0.5).toFixed(2)} p95=${pct(sim, 0.95).toFixed(2)} max=${sim[sim.length - 1].toFixed(2)}`);
     log(`frame ms p50=${pct(dl, 0.5).toFixed(1)} p95=${pct(dl, 0.95).toFixed(1)} max=${dl[dl.length - 1].toFixed(1)}`);
     log(`frames with dropped steps: ${droppedFrames}/${f.length}; total dropped ticks: ${totalDropped}`);
     log(`frames with timeScale<1 (reflex dilation): ${slowTs}`);
-    // Worst sim frames, with verb context.
-    const worst = [...f].sort((a, b) => b.simMs - a.simMs).slice(0, 8);
-    log("worst sim frames:", worst.map((w) => `t${w.tick} ${w.simMs.toFixed(1)}ms steps=${w.steps} verb=${w.verb} phase=${w.phase}`).join(" | "));
+    // Worst (longest) frames, with verb context.
+    const worst = [...f].sort((a, b) => b.deltaMs - a.deltaMs).slice(0, 8);
+    log("longest frames:", worst.map((w) => `t${w.tick} ${w.deltaMs.toFixed(1)}ms steps=${w.steps} dropped=${w.droppedThisFrame} verb=${w.verb} phase=${w.phase}`).join(" | "));
   }
 
   log(`\n=== EMBEDS (strict, no-ignore) (${diag.embeds.length} ticks) ===`);

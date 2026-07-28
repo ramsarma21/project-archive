@@ -254,7 +254,6 @@ function MissionDriver(props: {
     const look = drainLook(props.lookState);
     const move = lookMoveIntent(look.yaw, input.forward, input.right);
 
-    const simStart = DIAG_ENABLED ? performance.now() : 0;
     const step = stepMissionRuntime(runtime, {
       dtS: delta,
       moveX: move.x,
@@ -267,17 +266,19 @@ function MissionDriver(props: {
       reducedMotion: props.reducedMotion,
       flowEnabled: !props.paused,
     });
-    // The running-game frame trace (dev only). Isolates the sim cost from the
-    // whole frame delta, so a Playwright driver can tell "the solver is
-    // expensive" apart from "the GPU is slow", and surfaces the dropped fixed
-    // steps that are the mechanism of the reported slow motion. See diag.ts.
+    // The running-game frame trace (dev only). The render frame delta R3F hands
+    // in, the fixed steps run, the fixed steps DROPPED by the catch-up bound, and
+    // the reflex time scale — the mechanism of the reported slow motion, since a
+    // dropped step is sim time discarded rather than banked. `deltaMs` is the
+    // delta R3F provides, not a wall-clock read; the sim's own cost is left to a
+    // node microbenchmark of stepMissionRuntime, which keeps the fixed step free
+    // of any clock read. See diag.ts.
     if (DIAG_ENABLED) {
       const droppedThisFrame = runtime.droppedSteps - droppedBefore.current;
       droppedBefore.current = runtime.droppedSteps;
       pushFrame({
         tick: runtime.ticks,
         deltaMs: delta * 1000,
-        simMs: performance.now() - simStart,
         steps: step.steps,
         droppedTotal: runtime.droppedSteps,
         droppedThisFrame,
