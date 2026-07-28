@@ -148,7 +148,18 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   PvP-legal; `codexDev` injects that standing. Also unconfirmed: whether any test drives
   `M1_PVP_CARD_ACCESS`'s shipping `ASSESSMENT_PASSED` branch, since it is set to `PLAYTEST_ALL`
   — a production gate deliberately held open for playtesting, which must not ship that way.
-- **[ ]** The full gate is run before every merge, not at the orchestrator's discretion.
+- **[~]** The full gate is run before every merge, not at the orchestrator's
+  discretion. `scripts/merge-gate.mjs` (`pnpm gate`) now runs **every** blocking
+  gate — lint, typecheck, test, build, verify:content, the three assets:verify:*
+  (affordance debt held-or-shrunk), and check-playthrough where the change could
+  affect play — and exits non-zero (MERGE REFUSED) on any failure. Validated end to
+  end: static gates ~200 s parallel, a provisioned throwaway-stack playthrough
+  ~118 s, ALL PASS. **Honestly still [~], not [x]:** local enforcement can only be a
+  convention plus this loud tool — `git merge` fast-forwards (the orchestrator's
+  usual case) run no hook, so a hook cannot gate them; the tool must still be *run*.
+  Discretion is only truly removed by **CI as a required status check**, which needs
+  `main` pushed and branch protection on (main is still unpushed). See
+  `CI-AND-BROWSER-CHECKS.md` §1b.
 
 ---
 
@@ -156,9 +167,12 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 
 1. **`gh auth login`.** The played-mission gate is "blocking" only because the YAML says so;
    nothing here can confirm it runs in a real Actions runner. Two gates now rest on that.
-2. **Add repository secret `TRUEFOUNDRY_GRADING_API_KEY`** — a *dedicated* key with its own
-   quota. The shared key contends with the owner's play session; one measurement run had 299 of
-   313 calls fall back. Until it exists the nightly grading gate fails loudly at preflight.
+2. **Add repository secret `TRUEFOUNDRY_API_KEY`** — the same shared TrueFoundry key the app
+   uses (owner's decision: one key, not two). The nightly runs at 03:00 local, off the owner's
+   play window, so contention essentially closes; if a heavy nightly and a daytime manual run
+   ever do contend, fallbacks rise and the harness's 90% classification floor fails the run
+   loudly rather than lying (the acceptable failure mode). Until the secret exists the nightly
+   grading gate fails loudly at preflight. See `CI-AND-BROWSER-CHECKS.md` §1a for the trade-off.
 3. **A location or a live capture for "cannot run."** Every in-lane mechanism is ruled out.
 4. **A frame-trace on the owner's hardware** to settle whether residual GPU spikes are real.
 

@@ -169,7 +169,10 @@ zero-evidence form pass (`1c4250f`).
 - **The live classifier gate is now wired to run without anyone remembering — but
   unverified in a real runner.** `.github/workflows/grading-eval.yml` runs `pnpm
   grading:eval:gate` (`--repeats 3 --concurrency 3 --timeout 20000`) nightly (08:00 UTC) and
-  on demand, against a dedicated `TRUEFOUNDRY_GRADING_API_KEY` secret. The ~20 s timeout is a
+  on demand, against the **shared `TRUEFOUNDRY_API_KEY`** (owner's decision: one key, not the
+  dedicated `TRUEFOUNDRY_GRADING_API_KEY` originally introduced — the job runs at 03:00 local,
+  off the owner's play window, so contention essentially closes; if it ever does contend the
+  90% classification floor fails the run loudly rather than lying). The ~20 s timeout is a
   *measurement* cap, not the 1.5 s *play* cap; low concurrency stays off the rate limit;
   repeats=3 keeps a temperature-zero flip from deciding the gate; the harness's coverage gate
   turns a degraded gateway into a loud fail, not a false pass. **It fails loudly when the
@@ -178,13 +181,18 @@ zero-evidence form pass (`1c4250f`).
   report** under `docs/process/grading-eval/` (a gap in the dates is itself the alarm), a
   GitHub **issue** labelled `grading-eval`, and a red run + artifact. The offline structural
   `eval.test.ts` still runs per-PR. **Honest limits:** (1) the secret does not exist yet — the
-  owner must add it, and until then every run fails at the credential preflight; (2) nothing
-  here can confirm the workflow runs in a real GitHub Actions runner (`gh` unauthenticated
-  locally, no run observed), the same unverified basis the `playthrough` gate already blocks
-  on. Wired and merged is not "works": the first real run, or the first missing date, settles
-  it. Nightly chosen over pre-release because only a live series catches drift in the *model
-  itself*, and there is no release process to hang a pre-release trigger on. Reasoning in
-  `CI-AND-BROWSER-CHECKS.md` §1a.
+  owner must add `TRUEFOUNDRY_API_KEY`, and until then every run fails at the credential
+  preflight; (2) nothing here can confirm the workflow runs in a real GitHub Actions runner
+  (`gh` unauthenticated locally, no run observed), the same unverified basis the `playthrough`
+  gate already blocks on. Wired and merged is not "works": the first real run, or the first
+  missing date, settles it. Reasoning and the one-key trade-off in `CI-AND-BROWSER-CHECKS.md` §1a.
+- **The merge gate exists (`scripts/merge-gate.mjs`, `pnpm gate`) — the last regression
+  condition, partly.** One loud command runs every blocking gate and refuses (exit non-zero)
+  on any failure; the playthrough is provisioned on a throwaway stack and skipped only when the
+  change is play-irrelevant (docs/CI/scripts/pipeline/published-assets/tests). Validated end to
+  end (static ~200 s parallel; playthrough ~118 s; ALL PASS). It cannot be *forced* locally — a
+  git hook can't gate a fast-forward merge — so this removes discretion only as a convention +
+  loud tool until CI required checks are on (main unpushed). `M1-DONE.md` §8, `CI-AND-BROWSER-CHECKS.md` §1b.
 - ~~The elm beat is finicky and hard to start~~ — **fixed** (`27ec2b5`). It was failing to
   arm, not rendering wrong: a 1.1 m circle on the crown tip plus a ±60° facing arc rejected
   the exact pose a player arrives in off the leap (1.5 m back, ~105° off, moving south down
@@ -226,6 +234,15 @@ zero-evidence form pass (`1c4250f`).
   Needs a design decision on whether that arrangement is intended.
 
 **Infrastructure and debt**
+- **pnpm's lockfile is in sync — the "pnpm refuses to run scripts" state is stale.**
+  `pnpm install --frozen-lockfile` succeeds (30221f7 regenerated it when
+  `@react-three/rapier` was dropped), so `pnpm lint/test/typecheck/build` all run
+  directly. Caveat that survives: `verify-deps-before-run=false` in `.npmrc` is inert
+  on pnpm 11 (it reads `verifyDepsBeforeRun` from `pnpm-workspace.yaml`, unset), so
+  the *next* dependency move that drifts the lockfile will make `pnpm -r` try to repair
+  node_modules mid-run. `merge-gate.mjs`'s frozen-install preflight catches that state
+  and refuses rather than purging. The CI `lockfile`/`api-image` advisory jobs should
+  now pass; flip the main installs to `--frozen-lockfile` after the first real run.
 - Ground support is a point query, so a body can float off a roof edge (audit P4,
   deliberately deferred).
 - **Simulation is bit-exact across browsers**, motion (`35ab20c`) and duel (`4a467eb`).

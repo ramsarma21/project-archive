@@ -79,14 +79,34 @@ run and a human's local run cannot drift), which is `grading:eval` with:
   constraint, and adopting the play cap would measure timeouts instead of the
   model. This distinction is the reason the two numbers differ.
 
-**The one secret the owner must add.** The job needs a **dedicated** credential,
-not the shared dev key. Add a repository secret under *Settings → Secrets and
-variables → Actions → New repository secret*:
+**The one secret the owner must add.** Add a repository secret under *Settings →
+Secrets and variables → Actions → New repository secret*:
 
 | Secret | Required | Value |
 |---|---|---|
-| `TRUEFOUNDRY_GRADING_API_KEY` | **yes** | A TrueFoundry key with its **own quota** — not `TRUEFOUNDRY_API_KEY` (the shared/image key). Contention with the owner's own play session made **299 of 313** calls fall back on one measurement run, which measured nothing. |
-| `TRUEFOUNDRY_GRADING_BASE_URL` | optional | Only if the gateway differs from the default `https://tfy.promptlens.trilogy.com/v1`. |
+| `TRUEFOUNDRY_API_KEY` | **yes** | The TrueFoundry gateway key — the **same shared key the app uses** (the one already in `.env`). |
+| `TRUEFOUNDRY_BASE_URL` | optional | Only if the gateway differs from the default `https://tfy.promptlens.trilogy.com/v1`. |
+
+**One key, not two — the trade-off, recorded honestly.** This job originally
+required a *dedicated* `TRUEFOUNDRY_GRADING_API_KEY` with its own quota. The
+reasoning was contention: one measurement run had **299 of 313** calls fall back
+while the owner was playing on the same key, and a run that mostly falls back
+measures nothing. The owner's decision is to use **one key for everything**, and
+it is sound because this job runs at **03:00 local (08:00 UTC)**, when he is not
+playing — so the contention window essentially closes. What remains true, and is
+the honest cost of one key: a **heavy nightly and a daytime manual run *can* still
+contend**, and if they do, fallbacks rise. That is not a silent failure: the
+harness **excludes fallbacks from the rates and fails the gate** when fewer than
+90% of cases were actually classified (see "Timing sensitivity" below). So the
+worst case of key contention is a **loud red run that says "this run does not
+measure the grader,"** never a green run that quietly lied. That is the acceptable
+failure mode, which is why one key is fine here.
+
+The workflow feeds the shared key under its own name; `packages/grading/src/provider.ts`
+reads `TRUEFOUNDRY_GRADING_API_KEY` first and falls back to `TRUEFOUNDRY_API_KEY`
+when `NODE_ENV` is not `production` (unset in this job), so the shared key is what
+grades. Production duel grading still uses its own Secrets-Manager credential — the
+shared-key fallback is a dev/CI convenience the code gates on `NODE_ENV`.
 
 **How the job behaves without the secret: it fails loudly, it does not skip.** A
 skipped nightly is indistinguishable from a passing one on a dashboard, which is
@@ -149,6 +169,74 @@ committed, well-formed workflow file is **not** evidence of a working nightly. T
 `M1-DONE.md`). The honest confirmation is the first real run — or, tellingly, the
 first missing date in `docs/process/grading-eval/`. Until then, treat this as
 wired-but-unconfirmed.
+
+### 1b. The merge gate (`scripts/merge-gate.mjs`)
+
+The tool that removes the orchestrator's discretion (`M1-DONE.md` §8). One command
+runs **every** blocking gate and exits non-zero the moment one fails, so a merge
+can be made conditional on it instead of on a judgement call:
+
+```sh
+pnpm gate                 # or: node scripts/merge-gate.mjs
+pnpm gate:static          # static gates only, no playthrough
+node scripts/merge-gate.mjs --playthrough-only   # just the played-mission gate
+node scripts/merge-gate.mjs --all                 # force the playthrough
+node scripts/merge-gate.mjs --playthrough-base http://127.0.0.1:5273  # reuse a stack
+```
+
+It covers `lint`, `typecheck`, `test`, `build`, `verify:content`, the three
+`assets:verify:*` (with the affordance debt list held-or-shrunk), and
+`check-playthrough`.
+
+**Where the enforcement can honestly live.** A git hook is the obvious idea and the
+wrong one: `git merge` **fast-forwards run no hook at all** (the orchestrator's lane
+merges routinely are fast-forwards), `pre-merge-commit` fires only for a true merge
+commit and is skipped by `--no-verify`, and hooks do not travel through a clone. A
+hook that fires on some merges but not others feels like protection and is not. So
+**local enforcement can only ever be a convention plus a loud, single tool** — this
+is that tool. The **only** place discretion is genuinely removed is **CI as a
+required status check** once `main` is pushed and branch protection is on; the
+`verify`, `api-postgres` and `playthrough` jobs already run this same set.
+`--install-hooks` adds a best-effort `pre-push` hook, honestly labelled bypassable —
+note that in a worktree it writes to the **shared** git common dir, so it affects
+the main checkout and every worktree at once.
+
+**Runtime, and what it justifiably skips.** The static gates run in **parallel**
+(~200 s wall on a dev box, `test`-bound; ~260 s if run serially), each gate's output
+buffered and replayed only on failure. The playthrough is **~118 s** (a provisioned
+throwaway stack plus the ~115 s check) and runs **after** the static gates
+deliberately — its long free-run ROUTE stage is wall-clock-sensitive and would stall
+on a CPU-saturated host, so it must not overlap them. The playthrough is **skipped,
+justifiably, when the change cannot affect play**: a change confined to docs, CI,
+`scripts/`, `assets/pipeline/`, published assets under `apps/web/public/`, or test
+files cannot alter the route/refusal/beat/duel verdicts (those read authored hulls
+and nodes an asset swap does not touch), and asset integrity is already covered more
+precisely by `assets:verify:*` + the lint texture/scale checks. Anything touching
+app/package source, `content/`, `apps/api/src` or dependency config runs it. The
+scope is decided from `git diff <base>...HEAD` (base defaults to `main`); `--all`
+forces it, `--no-playthrough` skips it.
+
+**The playthrough stack.** With no `--playthrough-base`, the tool provisions its own
+isolated stack — a throwaway `postgres:17-alpine` container on port **55433** (its
+own, so it never touches the owner's dev DB on 55432), migrations applied, the API on
+**3099** and the web dev server on **5399** with `WEB_ORIGIN` pinned to the web
+origin — mirroring the CI `playthrough` job, then tears it all down (container
+removed, servers killed) on exit or Ctrl-C. It needs Docker and a Playwright
+Chromium (`pnpm playwright:install`); if Docker is absent it says so and points at
+`--playthrough-base`.
+
+**pnpm's dependency check — handled up front.** On pnpm 11 the
+`verify-deps-before-run=false` line in `.npmrc` is **inert** (pnpm 11 reads
+`verifyDepsBeforeRun` from `pnpm-workspace.yaml`, which is unset), so a `pnpm -r`
+script on a **drifted** tree tries to repair `node_modules` mid-run and can prompt to
+purge it — a hang or failure with no TTY. The gate defends against this by running
+`pnpm install --frozen-lockfile` as its first preflight. A frozen install **never
+purges** — it confirms the tree matches the lockfile (so no later step will try to
+repair) or it fails read-only, at which point the tool **stops and prints how to
+reconcile** `pnpm-lock.yaml` (a contested file it will not touch) rather than letting
+a mid-run purge happen. As of this writing the lockfile is in sync
+(`--frozen-lockfile` succeeds), so the preflight passes cleanly; the guard matters the
+next time a dependency moves.
 
 ### The played-mission gate (`playthrough`)
 
