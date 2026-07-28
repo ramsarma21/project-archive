@@ -34,7 +34,7 @@ import {
   type OpponentSource,
   type VerdictKind,
 } from "@pa/duel";
-import { ARENA, arenaWorld } from "@pa/mission-m1";
+import { ARENA } from "@pa/mission-m1";
 
 import {
   clearDuelView,
@@ -51,7 +51,11 @@ import {
   missionDuelReport,
   missionDuelRounds,
 } from "../src/duel/missionBrief.js";
-import { arenaGround, arenaScenery } from "../src/duel/missionArena.js";
+import {
+  YARD_HALF_EXTENT_X,
+  YARD_HALF_EXTENT_Z,
+  yardArena,
+} from "../src/duel/arenaSpec.js";
 import { createDuelRuntime } from "../src/duel/duelRuntime.js";
 
 const SEED = projectFieldSeed(["MISSION.DUEL.TEST"]);
@@ -117,17 +121,24 @@ test("M1 has a cast, and a mission nobody has cast has none", () => {
   assert.equal(missionCast("PA.SEA01.CH02.BOSTON.MD02"), null);
 });
 
-test("the descriptor carries the brief's simulation input unaltered", () => {
+test("the descriptor carries the brief's scoring input unaltered", () => {
   const brief = missionBrief();
   const descriptor = missionDuelDescriptor(brief, missionCast(M1_MISSION_ID)!);
 
+  // The id, the seed, the boss and the bank decide how the fight is scored and what
+  // it asks, and the server opened them — so they pass through untouched, by
+  // reference, because a copy is a place a difference can appear.
   assert.equal(descriptor.duelId, brief.duelId);
   assert.equal(descriptor.seed, brief.seed);
-  // By reference, not by value: a copy is a place a difference can appear.
-  assert.equal(descriptor.arena.world, brief.world);
-  assert.equal(descriptor.arena.placement, brief.placement);
   assert.equal(descriptor.opponent, brief.opponent);
   assert.equal(descriptor.questionBank, brief.questions);
+
+  // WHERE the fight happens is NOT the brief's. It is the shared arena, so the
+  // descriptor's world and placement are the arena's, NOT the mission's carved
+  // slice. This is the reversal of cc3de7d — asserted explicitly so a future edit
+  // that quietly re-carves the mission's yard fails here.
+  assert.notEqual(descriptor.arena.world, brief.world);
+  assert.notEqual(descriptor.arena.placement, brief.placement);
 });
 
 test("the mission boss is the symmetric-complement officer, and a wrong answer arms HIM", () => {
@@ -163,18 +174,34 @@ test("the mission boss is the symmetric-complement officer, and a wrong answer a
   assert.deepEqual(bossFor("CORRECT"), { kind: "AUTHORED", bullets: BULLETS_FOR_WRONG });
 });
 
-test("the mission's arena is not recentred on the way through", () => {
-  // The rope-walk yard is at x 88-100 in the level's own coordinates, and the
-  // stand-alone arena in arenaSpec.ts is at the origin. Translating one onto the
-  // other is the tempting fix for a fight that renders over empty ground, and it
-  // would move the player off the geometry the six break stations were solved
-  // against.
+test("the mission's duel is fought in the shared arena, at the origin", () => {
+  // THE OWNER'S DECISION, asserted. Entering the duel is a transition into the
+  // shared rope-walk arena — the same one every Boston boss fight and PvP use — so
+  // the fight is at the origin, on `yardArena()`'s geometry, and NOT on the slice
+  // the level carved out at x 88-100. This reverses cc3de7d (which drew the
+  // mission's own yard around a fight sitting at the level's coordinates); the
+  // fight moves to the arena rather than the arena to the fight.
   const brief = missionBrief();
   const descriptor = missionDuelDescriptor(brief, missionCast(M1_MISSION_ID)!);
-  assert.equal(descriptor.arena.world.bounds.minX, ARENA.bounds.minX);
-  assert.equal(descriptor.arena.world.bounds.maxX, ARENA.bounds.maxX);
-  assert.ok(descriptor.arena.placement.A.pos.x > 80, "the player stands in the level");
-  assert.ok(descriptor.arena.placement.B.pos.x > 80, "so does the officer");
+  const arena = yardArena();
+
+  assert.deepEqual(descriptor.arena.world.bounds, arena.world.bounds);
+  assert.equal(descriptor.arena.world.bounds.minX, -YARD_HALF_EXTENT_X);
+  assert.equal(descriptor.arena.world.bounds.maxX, YARD_HALF_EXTENT_X);
+  assert.equal(descriptor.arena.world.bounds.minZ, -YARD_HALF_EXTENT_Z);
+  assert.equal(descriptor.arena.world.bounds.maxZ, YARD_HALF_EXTENT_Z);
+
+  // The fighters stand on the arena's own centreline, not out in Boston.
+  assert.equal(descriptor.arena.placement.A.pos.x, 0);
+  assert.equal(descriptor.arena.placement.B.pos.x, 0);
+  assert.ok(
+    Math.abs(descriptor.arena.placement.A.pos.z) < YARD_HALF_EXTENT_Z,
+    "the player stands inside the arena",
+  );
+  assert.ok(
+    Math.abs(descriptor.arena.placement.B.pos.z) < YARD_HALF_EXTENT_Z,
+    "so does the officer",
+  );
 });
 
 test("the descriptor still cannot express a duel length, brief or not", () => {
@@ -211,13 +238,17 @@ test("the descriptor satisfies the screen without inventing an arena spec", () =
  * test chose.
  */
 function fightDuel(brief: MissionDuelBrief, answer: VerdictKind) {
+  // Fight the duel the descriptor actually builds — same shared arena the player
+  // gets — so the report is measured off the fight that ships, not a hand-assembled
+  // one on the mission's carved world.
+  const descriptor = missionDuelDescriptor(brief, missionCast(M1_MISSION_ID)!);
   const runtime = createDuelRuntime({
-    duelId: brief.duelId,
-    seed: brief.seed,
-    world: brief.world,
-    opponent: brief.opponent as Parameters<typeof createDuelRuntime>[0]["opponent"],
-    questions: brief.questions as Parameters<typeof createDuelRuntime>[0]["questions"],
-    placement: brief.placement as Parameters<typeof createDuelRuntime>[0]["placement"],
+    duelId: descriptor.duelId,
+    seed: descriptor.seed,
+    world: descriptor.arena.world,
+    opponent: descriptor.opponent as Parameters<typeof createDuelRuntime>[0]["opponent"],
+    questions: descriptor.questionBank as Parameters<typeof createDuelRuntime>[0]["questions"],
+    placement: descriptor.arena.placement,
   });
 
   const horizon = 60 * 60 * 20;
@@ -441,58 +472,8 @@ function serialisedFor(
   return missionDuelReport({ brief, ...fought }).committedEvents;
 }
 
-// ---- the arena the mission actually fights in ------------------------------
-
-test("the arena draws the level's own yard, cover included", () => {
-  const world = arenaWorld();
-  const drawn = arenaScenery(world.bounds);
-  const ids = new Set(drawn.map((placement) => placement.id.split("#")[0]));
-
-  // Every blocker in the brief's world is a mass the level authored, so every one
-  // of them has to be on screen. This is the rule arenaSpec.ts states in capitals,
-  // holding for the mission's arena as well: the cover you see stops the ball.
-  for (const blocker of world.blockers) {
-    assert.ok(ids.has(blocker.id), `${blocker.id} is drawn`);
-  }
-  assert.ok(drawn.length >= world.blockers.length);
-});
-
-test("the arena has ground under it and a horizon beyond the wall", () => {
-  const world = arenaWorld();
-  const ground = arenaGround(world.bounds);
-  assert.ok(ground.length > 0, "the yard is paved");
-
-  const centreX = (world.bounds.minX + world.bounds.maxX) / 2;
-  const centreZ = (world.bounds.minZ + world.bounds.maxZ) / 2;
-  assert.ok(
-    ground.some(
-      (plate) =>
-        plate.minX <= centreX &&
-        plate.maxX >= centreX &&
-        plate.minZ <= centreZ &&
-        plate.maxZ >= centreZ,
-    ),
-    "a plate covers the middle of the yard, where the two fighters stand",
-  );
-
-  // Something outside the yard, or the engagement camera looks over a 3.6m wall
-  // at open sky.
-  const beyond = arenaScenery(world.bounds).filter(
-    (placement) => placement.pos[0] < world.bounds.minX || placement.pos[0] > world.bounds.maxX,
-  );
-  assert.ok(beyond.length > 0, "the yard is somewhere, not a box");
-});
-
-test("the arena stops short of drawing the whole town", () => {
-  const world = arenaWorld();
-  const drawn = arenaScenery(world.bounds);
-  // M1 is a hundred-plus placements and roughly a hundred megabytes of GLB. A
-  // fight in one walled yard must not mount all of it.
-  assert.ok(drawn.length < 60, `${drawn.length} placements is more than a yard needs`);
-  for (const placement of drawn) {
-    assert.ok(
-      Math.abs(placement.pos[0] - 94) < 60,
-      `${placement.id} at x=${placement.pos[0]} is nowhere near the yard`,
-    );
-  }
-});
+// The arena the mission fights in is now the shared rope-walk yard, and its
+// drawn-cover-is-blocking-cover invariant is proven where the arena lives:
+// apps/web/test/duelArena.test.ts. There is no mission-carved arena view left to
+// test here — the fight moved into the arena rather than the arena being drawn
+// around the fight.

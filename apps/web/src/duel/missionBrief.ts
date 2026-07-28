@@ -15,6 +15,7 @@ import type {
 import { M1_MISSION_ID } from "../chapter/m1Mission.js";
 import { attachVerdictReceipts, type VerdictReceipt } from "./duelGrading.js";
 import { OFFICER_RIG, PLAYER_RIG } from "./m1Duel.js";
+import { yardArena } from "./arenaSpec.js";
 import type { DuelDescriptor } from "./DuelScreen.js";
 
 // ---------------------------------------------------------------------------
@@ -29,9 +30,27 @@ import type { DuelDescriptor } from "./DuelScreen.js";
 //
 // WHAT THE BRIEF IS AUTHORITATIVE ABOUT, and is therefore passed through
 // untouched: the duel id, the seed (projected from the server's attempt seed), the
-// collision world, where the two fighters stand, the opponent's profile and the
-// item bank. Every one of those is simulation input, and a view that adjusted any
-// of them would be a second opinion about a fight the server opened.
+// opponent's profile and the item bank. Every one of those decides how the fight is
+// scored and what it asks, and a view that adjusted any of them would be a second
+// opinion about a fight the server opened.
+//
+// WHERE THE FIGHT HAPPENS is NO LONGER the brief's. Entering a duel is a transition
+// into the shared rope-walk arena (`yardArena()` from arenaSpec.ts) — the same arena
+// the stand-alone descriptor (m1Duel.ts) and every Boston boss fight use — so the
+// mission-entered duel is fought on the origin-built arena rather than on a slice
+// carved out of wherever the level's traversal happened to end. This reverses
+// cc3de7d, which drew the mission's own yard around a fight sitting at the level's
+// coordinates: the bug it fixed (a fight rendered over empty ground ninety metres
+// from the drawn arena) is fixed the other way here, by moving the fight to the
+// arena instead of the arena to the fight. The brief's `world`/`placement` are the
+// mission's carved yard and are now unused by the duel; see the cost note in the
+// report the boss-fight ticket asks for.
+//
+// The invariant this move must not lose — THE COVER YOU SEE IS THE COVER THAT STOPS
+// A BALL — is carried by the arena itself: `yardArena()` derives every blocker and
+// every drawn prop from the ONE `YARD_COVER` list through `fitPropToHeight`, so the
+// crate you hide behind is the rectangle the core tests a shot against. That is
+// proven in apps/web/test/duelArena.test.ts.
 //
 // WHAT THE BRIEF DOES NOT CARRY, and this file therefore owns: what the fight
 // LOOKS like — two rigs and the opponent's name. The brief mirrors
@@ -52,8 +71,9 @@ import type { DuelDescriptor } from "./DuelScreen.js";
 //     the rounds actually asked, so the round reports below take their concepts
 //     from `brief.questions` instead — the only list that pairs an item with a
 //     concept.
-//   * The brief carries no dawn state, so the duel cannot open on the sky the
-//     traversal closed on. See DUEL_SKY_LIFT in missionArena.tsx.
+//   * The brief carries no dawn state. It no longer needs to: the duel opens in
+//     the shared arena, which lights itself (ArenaView's late-afternoon key), so
+//     there is no traversal sky to carry across the transition.
 //   * `MissionDuelViewProps` has no way to report a duel that cannot be
 //     constructed. `onAbandon` is the closest thing and it spends the attempt,
 //     which is the honest cost of the container having armed a duel this
@@ -107,14 +127,17 @@ export function missionDuelDescriptor(
   brief: MissionDuelBrief,
   cast: MissionCast,
 ): DuelDescriptor {
+  // Entering the duel is a transition INTO the shared arena. The world and the
+  // placement come from `yardArena()` — the origin-built rope-walk yard the
+  // stand-alone descriptor and PvP already fight in — and NOT from the brief's
+  // carved slice of the mission level. Destructured to the `world`/`placement`
+  // pair the descriptor's narrowed `arena` takes, so no `ArenaSpec` is carried
+  // past a screen that never reads it.
+  const { world, placement } = yardArena();
   return {
     duelId: brief.duelId,
     seed: brief.seed,
-    // The world and the placement are the mission's, at the mission's own
-    // coordinates. Nothing is recentred: the yard the player dropped into is the
-    // yard they fight in, and moving it would break the one thing the level's six
-    // break stations were solved against.
-    arena: { world: brief.world, placement: brief.placement },
+    arena: { world, placement },
     opponent: brief.opponent as OpponentSource,
     questionBank: brief.questions as readonly DuelQuestionRef[],
     ...cast,
