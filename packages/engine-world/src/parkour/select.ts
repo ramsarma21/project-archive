@@ -593,11 +593,18 @@ export function planVerb(
   tuning: ParkourTuning = PARKOUR_TUNING,
 ): VerbChoice | null {
   const travelYaw = Math.atan2(probe.dirX, probe.dirZ);
-  const clip = VERB_CLIP[verb];
   const noise = tuning.verbNoise[verb];
   const exitSpeedMps = exitSpeedFor(probe, ctx, tuning);
   const obstacle = probe.obstacle;
   const edge = probe.edge;
+  // CLIMB_UP defaults to the one-shot `mantle` (VERB_CLIP); a rise above the
+  // mantle band is the >1.9m climb band and loops `climbUp` instead. Same choice
+  // flow.verbClip makes at play time, kept here so the committed VerbChoice and
+  // the rendered clip agree.
+  const clip =
+    verb === "CLIMB_UP" && obstacle && obstacle.topY - start.y > tuning.mantleMaxHeightM
+      ? "climbUp"
+      : VERB_CLIP[verb];
 
   const authored = (
     authoredKind: AuthoredAction["kind"],

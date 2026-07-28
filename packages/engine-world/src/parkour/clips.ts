@@ -156,7 +156,16 @@ export const VERB_CLIP: Readonly<Record<TraversalVerb, string>> = {
   SLIDE: "slide",
   VAULT: "vault",
   CLIMB_OVER: "climbOver",
-  CLIMB_UP: "climbUp",
+  // A CLIMB_UP defaults to the one-shot `mantle` — the fast one-hand pull onto a
+  // 0.5-1.9m ledge that is by far the common case, and the clip this verb was
+  // always meant to carry ("a mantle is a fast CLIMB_UP with a mantle clip",
+  // select.ts). The taller ascent (the >1.9m climb band, ladders) is a looping
+  // rung-climb, so flow.verbClip / select.planVerb override it back to `climbUp`
+  // by the rise — one verb, two silhouettes, the same shape as JUMP/JUMP_GAP.
+  // Baked one-shot `mantle` was orphaned before this: CLIMB_UP played the cyclic
+  // `climbUp` even over a bare mantle-band ledge, which read as a looping ladder
+  // clip on a one-shot move and slid a planted foot at ~4 m/s (check-clip-fidelity).
+  CLIMB_UP: "mantle",
   // A named jump from a standstill is the `jump` clip; the flow controller
   // overrides to `runJump` once the body is carrying speed into the arc.
   JUMP: "jump",
