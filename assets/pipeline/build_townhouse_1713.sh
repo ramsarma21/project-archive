@@ -20,34 +20,27 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 KEY=bldg-townhouse-1713
-RAW=${1:-assets/source/raw/townhouse-1713-g.glb}
 BLENDER=${BLENDER:-/Applications/Blender.app/Contents/MacOS/Blender}
-# The plan collapses to the tower at 0.635 of the generated height, but that
-# reading lands on the gambrel's upper slope: the band it defines is the ridge,
-# 1.34 x 0.33, and fitted to a 4m square shaft the cupola comes out a metre wide
-# with the ridge fanned either side of it. 0.76 is above the ridge, where the band
-# really is the tower and is square in plan.
-SPLIT=0.76
 HULL=assets/source/collision/$KEY.hull.json
+
+# RE-AUTHORED, no Meshy raw. The shipped generation was 6721 near-coincident face
+# pairs (the torn/doubled-facade signature the weld gate now blocks on) — the same
+# defect the elm, the row facades and bldg-brick carried, and no weld/de-dup
+# repair reaches it. build_civic_facade.py authors the whole Town House from this
+# same hull: brick body with recessed sash, the two jettied galleries, the clock
+# ledge, both cornices, the balcony hood, the plinth ring, the top lookout, and
+# the tower blocker filled SOLID — which IS the cupola drum the old
+# build_m1_civic + build_townhouse_drum pass produced to fix the 1.4m float, now
+# reproduced in one continuous mesh (body -> drum -> lookout, no glued-on join).
+# So neither the shared civic builder nor the separate drum step is called any
+# more; build_townhouse_drum.py is kept only as the record of that first fix.
 
 echo "== hull, from GEOMETRY"
 node --import tsx assets/pipeline/export_m1_building_hull.mjs "$KEY"
 
-echo "== build"
-"$BLENDER" --background --python assets/pipeline/build_m1_civic.py -- \
-  "$RAW" "$HULL" assets/source/raw/townhouse-1713.built.glb \
-  --split $SPLIT --corbel 0.85 --tris 34000 --tex 2048 | grep "^\[$KEY\]"
-
-# The cupola drum, added as a Town-House-owned step so the shared civic builder
-# (build_m1_civic.py, another lane's file) stays untouched. The generator drew
-# its cupola on a thin neck with a 1.4m void beneath it, and the two-band warp
-# stretches that void onto 12.4-14.1m rather than filling it: the cupola floated
-# over the leads. The collision authors TOWNHOUSE_TOWER solid to 17.1m, so the
-# drum is drawn solid to match. See build_townhouse_drum.py for the full trace.
-echo "== drum"
-"$BLENDER" --background --python assets/pipeline/build_townhouse_drum.py -- \
-  assets/source/raw/townhouse-1713.built.glb "$HULL" \
-  assets/source/raw/townhouse-1713.final.glb | grep "^\[$KEY\]"
+echo "== author (body + galleries + cornices + solid drum + lookout, from the hull)"
+"$BLENDER" --background --python assets/pipeline/build_civic_facade.py -- \
+  "$HULL" assets/source/raw/townhouse-1713.final.glb | grep "^\[$KEY\]"
 
 # Copied rather than synced. sync_web.mjs promotes everything it finds newer than
 # public/, characters included, and it published a work-in-progress rig that way.
@@ -56,3 +49,4 @@ echo "== published apps/web/public/world/props/$KEY.glb"
 
 echo "== probe"
 node --import tsx assets/pipeline/verify_m1_townhouse.mjs
+node --import tsx scripts/check-world-visual-sweep.mjs --weld-gate | grep -iE "townhouse|WELD GATE:"
