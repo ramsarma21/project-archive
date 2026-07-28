@@ -577,7 +577,7 @@
       "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
       "codexCardIds": ["BOS.MD01.CARD.CONSENT_GROUND.v1", "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"],
-      "question": "Finish the claim your sheet makes. A tax on this town may lawfully be laid only by whom?",
+      "question": "Finish the claim your sheet makes. A tax on this town may rightly be laid only by whom?",
       "referenceAnswer": "— a body the town itself elected. Its own representatives; men Boston chose.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.FINISH_THE_CLAIM.v1",
