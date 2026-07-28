@@ -70,6 +70,8 @@ export interface FrameSample {
   speed: number;
   verb: string;
   phase: string;
+  /** Player foot position at the end of the frame — to localize a spike on the route. */
+  pos: { x: number; y: number; z: number };
 }
 
 export interface EmbedSample {
