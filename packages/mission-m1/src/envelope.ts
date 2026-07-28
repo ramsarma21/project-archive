@@ -119,7 +119,8 @@ export function verbNoise(verb: TraversalVerb): {
 /** Which vertical verb the reader will pick for a rise of this height. */
 export function verbForRise(riseM: number, topStandable: boolean): TraversalVerb {
   if (riseM <= PARKOUR_TUNING.stepUpMaxHeightM && topStandable) return "STEP_UP";
-  if (riseM <= PARKOUR_TUNING.mantleMaxHeightM && topStandable) return "MANTLE";
+  // The old mantle band folded into CLIMB_UP; CLIMB_OVER stays distinct.
+  if (riseM <= PARKOUR_TUNING.mantleMaxHeightM && topStandable) return "CLIMB_UP";
   if (
     riseM <= PARKOUR_TUNING.climbOverMaxHeightM &&
     !topStandable

@@ -268,8 +268,6 @@ export function verbCaption(verb: TraversalVerb): string | null {
       return "Vault it · keep running";
     case "CLIMB_OVER":
       return "Over the top · keep running";
-    case "MANTLE":
-      return "Pull up · keep running";
     case "CLIMB_UP":
       return "Climb it · keep running";
     case "SLIDE":

@@ -185,7 +185,7 @@ function driveLinkAware(
 
     if (p.x >= GAOL_X[0] && p.x <= GAOL_X[1] && p.z < 0) {
       if (runtime.flow.verb === "VAULT") result.gaolVaulted = true;
-      if (runtime.flow.verb === "MANTLE") result.gaolFellBackToMantle = true;
+      if (runtime.flow.verb === "CLIMB_UP") result.gaolFellBackToMantle = true;
     }
     // The SAFE way onto the canopies: a CLIMB_UP committed onto stall 2's awning
     // that this tick was NOT authorised by a buffered jump — the reader took it on

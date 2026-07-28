@@ -144,9 +144,9 @@ test("the cue fades as the player learns, and stops rather than vanishing", () =
   const once = cueStrength(ledger);
   assert.ok(once < fresh, "one verb performed dims it");
 
-  ledger.add("MANTLE");
   ledger.add("CLIMB_UP");
   ledger.add("SLIDE");
+  ledger.add("STEP_UP");
   const taught = cueStrength(ledger);
   assert.ok(taught < once);
   assert.equal(taughtness(ledger), 1);
@@ -187,7 +187,7 @@ test("every verb the geometry can ask for has words, and the brake does not", ()
   // deliberately mute in the teaching path: it fires when the game has just
   // refused to let you run off a killing drop, and a lesson at that moment is
   // noise over a save.
-  for (const verb of ["STEP_UP", "VAULT", "CLIMB_OVER", "MANTLE", "CLIMB_UP", "SLIDE"] as const) {
+  for (const verb of ["STEP_UP", "VAULT", "CLIMB_OVER", "CLIMB_UP", "SLIDE"] as const) {
     assert.ok(verbCaption(verb), `${verb} has nothing to say`);
     assert.equal(teachable(verb), true);
   }
@@ -199,7 +199,7 @@ test("every verb the geometry can ask for has words, and the brake does not", ()
 test("the caption names what the body does, never a key it does not have", () => {
   // The verbs have no keys. A caption that said "press X" would be teaching a
   // control that does not exist, which is worse than teaching nothing.
-  for (const verb of ["VAULT", "MANTLE", "CLIMB_UP", "SLIDE", "STEP_UP"] as const) {
+  for (const verb of ["VAULT", "CLIMB_UP", "SLIDE", "STEP_UP"] as const) {
     const caption = verbCaption(verb)!;
     assert.doesNotMatch(
       caption,

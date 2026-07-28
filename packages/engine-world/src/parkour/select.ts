@@ -187,12 +187,16 @@ function rankObstacle(
     ranked.push("VAULT");
   }
 
+  // The old MANTLE band, folded into CLIMB_UP: a pull onto a 0.5-1.9m standable
+  // ledge is a CLIMB_UP now, same authored motion it always drove. Kept as its
+  // own if (disjoint height band from the climb band below) so the envelope is
+  // byte-identical to before the fold.
   if (
     heightM > tuning.stepUpMaxHeightM &&
     heightM <= tuning.mantleMaxHeightM &&
     topStandable
   ) {
-    ranked.push("MANTLE");
+    ranked.push("CLIMB_UP");
   }
 
   if (
@@ -618,7 +622,6 @@ export function planVerb(
 
   switch (verb) {
     case "STEP_UP":
-    case "MANTLE":
     case "CLIMB_UP": {
       if (!obstacle?.topLanding) return null;
       const lip = ahead(start, probe, obstacle.faceDistanceM, obstacle.topY);
@@ -631,7 +634,7 @@ export function planVerb(
         ],
         {
           ignore: [obstacle.id],
-          arcHeight: verb === "MANTLE" ? tuning.mantleArcHeightM : 0,
+          arcHeight: 0,
           contactDistanceM: obstacle.contactDistanceM,
           commitDistanceM: tuning.commitDistanceM,
           reason: `${verb.toLowerCase()} onto ${obstacle.heightM.toFixed(2)}m top`,

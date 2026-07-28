@@ -61,10 +61,11 @@ export interface WayfindSample {
 
 /** How the verb a traversal finished under maps to the authored link kinds. */
 const COMPLETION_KINDS: Readonly<Record<string, ReadonlyArray<LinkKind>>> = {
-  CLIMB_UP: ["CLIMB"],
+  // MANTLE folded into CLIMB_UP, so a completed CLIMB_UP now also proves an
+  // authored MANTLE-kind link. CLIMB_OVER stays a distinct verb (see tuning.ts).
+  CLIMB_UP: ["CLIMB", "MANTLE"],
   CLIMB_DOWN: ["CLIMB", "DROP"],
   CLIMB_OVER: ["CLIMB"],
-  MANTLE: ["MANTLE", "CLIMB"],
   VAULT: ["VAULT"],
   JUMP: ["JUMP", "DASH_JUMP"],
   JUMP_GAP: ["JUMP", "DASH_JUMP"],
@@ -112,8 +113,8 @@ const ACTION_VERBS: Partial<Record<LinkKind, readonly TraversalVerb[]>> = {
   // authored CLIMB genuinely goes down. HANG_DROP is the verb the reader answers
   // a lowering rim with (there is no CLIMB_DOWN verb; a controlled descent off a
   // ledge is a hang drop), so it is the one downward member the family needs.
-  CLIMB: ["CLIMB_UP", "CLIMB_OVER", "MANTLE", "HANG_DROP"],
-  MANTLE: ["MANTLE", "CLIMB_UP"],
+  CLIMB: ["CLIMB_UP", "CLIMB_OVER", "HANG_DROP"],
+  MANTLE: ["CLIMB_UP"],
   JUMP: ["JUMP", "JUMP_GAP"],
   DASH_JUMP: ["DASH", "JUMP_GAP"],
   LEAP_OF_FAITH: ["LEAP_OF_FAITH"],

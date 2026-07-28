@@ -156,7 +156,6 @@ export const VERB_CLIP: Readonly<Record<TraversalVerb, string>> = {
   SLIDE: "slide",
   VAULT: "vault",
   CLIMB_OVER: "climbOver",
-  MANTLE: "mantle",
   CLIMB_UP: "climbUp",
   // A named jump from a standstill is the `jump` clip; the flow controller
   // overrides to `runJump` once the body is carrying speed into the arc.

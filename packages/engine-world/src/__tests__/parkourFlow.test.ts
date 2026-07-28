@@ -131,7 +131,7 @@ test("three obstacles in a row chain without the player naming a verb", () => {
   );
   assert.deepEqual(
     completions.map((event) => event.verb),
-    ["VAULT", "MANTLE", "SLIDE"],
+    ["VAULT", "CLIMB_UP", "SLIDE"],
     `got ${completed(result.events).join(",")}`,
   );
   // The chain must survive street-realistic 3.5m spacing. Drops between
@@ -368,8 +368,7 @@ function driveClimb(
     // A player presses Space when the climb affordance is showing — at the face,
     // not blindly on the first tick. Buffered consent must then commit the climb.
     const jumpBuffered =
-      (options.jumpBuffered ?? false) &&
-      (flow.previewVerb === "CLIMB_UP" || flow.previewVerb === "MANTLE");
+      (options.jumpBuffered ?? false) && flow.previewVerb === "CLIMB_UP";
     const result = stepFlow(
       collision,
       motion,
@@ -412,30 +411,30 @@ test("a buffered jump commits a climb inferred ascent had refused", () => {
   );
 });
 
-test("a mantle-height obstacle previews MANTLE but does not commit when inferred ascent is refused", () => {
-  // The consent gate covers both inferred upward verbs, not just the tall climb:
-  // a held sprint must not mantle onto an incidental obstacle the route runs past
+test("a mantle-height obstacle previews CLIMB_UP but does not commit when inferred ascent is refused", () => {
+  // The consent gate covers the inferred upward climb (the old mantle band folded
+  // into CLIMB_UP): a held sprint must not climb onto an incidental obstacle the route runs past
   // any more than it climbs a face. The gaol-barrels VAULT (now shifted so it
   // commits) is what freed this to be gated — the SAFE street line vaults its
   // obstacle, it no longer relies on an inferred mantle onto it.
   const collision = world([box("ledge", 3, 1.5, 1.4, { width: 12 })]);
   const refused = driveClimb(collision, { inferredAscentAllowed: false });
   assert.ok(
-    !refused.commits.includes("MANTLE"),
-    `a held sprint mantled the obstacle without consent: ${refused.commits.join(",") || "nothing"}`,
+    !refused.commits.includes("CLIMB_UP"),
+    `a held sprint climbed the obstacle without consent: ${refused.commits.join(",") || "nothing"}`,
   );
   assert.equal(
     refused.preview,
-    "MANTLE",
-    "the affordance must still preview the mantle so the key can be taught",
+    "CLIMB_UP",
+    "the affordance must still preview the climb so the key can be taught",
   );
   const consented = driveClimb(collision, {
     inferredAscentAllowed: false,
     jumpBuffered: true,
   });
   assert.ok(
-    consented.commits.includes("MANTLE"),
-    "a buffered Space must commit the mantle inferred ascent had refused",
+    consented.commits.includes("CLIMB_UP"),
+    "a buffered Space must commit the climb inferred ascent had refused",
   );
 });
 
@@ -472,10 +471,7 @@ function runGuided(
   let noise = 0;
   let jumpBuffered = input.jumpBuffered ?? false;
   for (let tick = 0; tick < ticks; tick++) {
-    if (
-      opts.jumpAtClimbPreview &&
-      (flow.previewVerb === "MANTLE" || flow.previewVerb === "CLIMB_UP")
-    ) {
+    if (opts.jumpAtClimbPreview && flow.previewVerb === "CLIMB_UP") {
       jumpBuffered = true;
     }
     const result = stepFlow(
@@ -532,8 +528,8 @@ test("a guided VAULT still refuses when a real blocker fills the landing", () =>
 });
 
 test("a guided verb family filters the commit, and disengages when intent leaves the axis", () => {
-  // A 1.5m ledge the reader would MANTLE. A VAULT-family gateway aligned with the
-  // player's intent confines the commit to VAULT — the MANTLE is filtered, and
+  // A 1.5m ledge the reader would CLIMB_UP. A VAULT-family gateway aligned with the
+  // player's intent confines the commit to VAULT — the CLIMB_UP is filtered, and
   // with nothing vaultable the body does not mount the deck.
   const collision = world([box("ledge", 3, 1.5, 1.4)]);
   const guided = runGuided(collision, runningNorth(1), 90, {
@@ -544,8 +540,8 @@ test("a guided verb family filters the commit, and disengages when intent leaves
     guidedVerbs: ["VAULT"],
   });
   assert.ok(
-    !committed(guided.events).includes("MANTLE"),
-    "the VAULT-family gateway did not filter the MANTLE",
+    !committed(guided.events).includes("CLIMB_UP"),
+    "the VAULT-family gateway did not filter the CLIMB_UP",
   );
   // Now the gateway axis points SIDEWAYS (+X) while the player runs +Z at the
   // ledge: intent disagrees with the axis, the guidance disengages, and the
@@ -558,8 +554,8 @@ test("a guided verb family filters the commit, and disengages when intent leaves
     guidedVerbs: ["VAULT"],
   });
   assert.ok(
-    committed(offAxis.events).includes("MANTLE"),
-    "intent off the gateway axis should leave the ordinary MANTLE untouched",
+    committed(offAxis.events).includes("CLIMB_UP"),
+    "intent off the gateway axis should leave the ordinary CLIMB_UP untouched",
   );
 });
 
@@ -648,17 +644,17 @@ function jumpArc(
 test("a guided ascent does not bypass ascent consent or the jump", () => {
   const collision = world([box("ledge", 3, 1.5, 1.4)]);
   // Guided CLIMB family, intent along the axis, but inferred ascent refused and no
-  // jump: the guided path still does not commit an unconsented upward MANTLE.
+  // jump: the guided path still does not commit an unconsented upward CLIMB_UP.
   const refused = runGuided(collision, runningNorth(1), 90, {
     targetVelX: 0,
     targetVelZ: RUN_SPEED,
     guidedAxisX: 0,
     guidedAxisZ: 1,
-    guidedVerbs: ["MANTLE", "CLIMB_UP"],
+    guidedVerbs: ["CLIMB_UP"],
     inferredAscentAllowed: false,
   });
   assert.ok(
-    !committed(refused.events).some((v) => v === "MANTLE" || v === "CLIMB_UP"),
+    !committed(refused.events).some((v) => v === "CLIMB_UP"),
     "the guided path committed an upward ascent the player never consented to",
   );
   // A buffered jump at the face IS consent: the same guided ascent now commits.
@@ -671,13 +667,13 @@ test("a guided ascent does not bypass ascent consent or the jump", () => {
       targetVelZ: RUN_SPEED,
       guidedAxisX: 0,
       guidedAxisZ: 1,
-      guidedVerbs: ["MANTLE", "CLIMB_UP"],
+      guidedVerbs: ["CLIMB_UP"],
       inferredAscentAllowed: false,
     },
     { jumpAtClimbPreview: true },
   );
   assert.ok(
-    committed(consented.events).some((v) => v === "MANTLE" || v === "CLIMB_UP"),
+    committed(consented.events).some((v) => v === "CLIMB_UP"),
     "a buffered jump did not consent to the guided ascent",
   );
 });
@@ -696,7 +692,7 @@ test("presentation reports the clip the animation layer should play", () => {
     clips.add(flowPresentation(motion, flow).clip);
   }
   assert.ok(clips.has("run"), "sprinting should ask for the run clip");
-  assert.ok(clips.has("mantle"), "the mantle should ask for the mantle clip");
+  assert.ok(clips.has("climbUp"), "the folded mantle should ask for the climbUp clip");
 });
 
 test("reduced motion resolves verbs instantly and refuses to offer a dive", () => {

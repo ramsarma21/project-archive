@@ -1131,11 +1131,7 @@ export function stepFlow(
     // the read is a fall). MANTLE and CLIMB_UP are the two inferred UPWARD verbs;
     // VAULT and CLIMB_OVER cross an obstacle rather than mount a deck and stay
     // automatic, and a buffered Space commits either gated verb outright.
-    if (
-      !inferredAscentAllowed &&
-      !jumpWanted &&
-      (verb === "MANTLE" || verb === "CLIMB_UP")
-    ) {
+    if (!inferredAscentAllowed && !jumpWanted && verb === "CLIMB_UP") {
       continue;
     }
     // THE COOLDOWN IS FOR VERBS, AND THE BRAKE IS NOT ONE. It exists so a chain
