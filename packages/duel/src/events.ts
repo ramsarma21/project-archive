@@ -130,6 +130,24 @@ export type DuelEvent =
       readonly round: number;
       readonly side: DuelSide;
       readonly verdict: CommittedVerdict;
+      /**
+       * How many times this item had been asked in this match when it was graded,
+       * and whether that makes this a repeat. Carried on the COMMITTED record — not
+       * just the transient `QUESTION_OPENED` — so the fact survives to grade time and
+       * into the persisted commit log, where a per-concept retrieval ledger can read
+       * it and decide what a repeat is worth.
+       *
+       * WHY IT RIDES THE RECORD RATHER THAN THE GRADING REQUEST. The verdict-request
+       * wire (`apps/api/src/duels/request.ts`) is a strict allowlist that refuses an
+       * unknown field, and a 4xx there pays the client the full magazine — so a new
+       * request field would be both out-of-lane and dangerous. The commit-log ingest
+       * (`readCommittedVerdicts`) reads named keys and ignores extras, and the receipt
+       * HMAC is over the verdict envelope only, so carrying it here is safe. In PvP the
+       * authority also has it live on `state.asked` at commit time; this is the durable
+       * copy for the record. Reuse-is-a-stopgap: see the header of questions.ts.
+       */
+      readonly appearance: number;
+      readonly recycled: boolean;
     }
   | {
       readonly type: "BULLETS_GRANTED";
@@ -257,6 +275,11 @@ export function serialiseCommitLog(
           round: event.round,
           side: event.side,
           verdict: verdictEnvelope(event.verdict),
+          // Carried into the persisted record so a repeat stays identifiable at and
+          // after grade time. `verdict` remains the HMAC input untouched; these sit
+          // beside it exactly as `receipt`/`duelId` do (attachVerdictReceipts).
+          appearance: event.appearance,
+          recycled: event.recycled,
         }
       : ({ ...event } as Record<string, unknown>),
   );

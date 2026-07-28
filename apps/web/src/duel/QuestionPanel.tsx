@@ -18,6 +18,19 @@ import type { DuelItemContent } from "./duelItems.js";
 // server grades both and the verdict is CORRECT only when both hold, so submit stays
 // disabled until at least the minimum cards are placed and the box is non-empty.
 //
+// ONE SENTENCE, NOT A PARAGRAPH (owner decision, 28 Jul). The evidence placement IS
+// the reasoning; the sentence only has to say WHY. So the box invites a single
+// sentence and is sized for one — a paragraph took 45-90s to compose and was ~80% of
+// the round's wall clock, and the pipeline the grader now rests on
+// (content/QUESTION-PIPELINE.md) compares a short answer against a reference core far
+// better than it judges an open essay. This is guidance, NOT a gate: nothing here
+// rejects a longer answer or enforces a length, because a hard length limit in the
+// client is exactly how a correct-but-verbose answer would become a false negative,
+// and the false-negative rate is gated at 0.00%. Whether each item's required core
+// actually fits one sentence is the grader/content side's to verify (the reference
+// answers and required cores live in @pa/grading + content, another lane); if a core
+// cannot be carried in a sentence, that item is reported, not this box loosened.
+//
 // NO RELEVANCE LEAKS. The old "draws on …" chips named the item's own cards — which
 // are exactly the relevant ones — and that would hand the player the answer to the new
 // evidence mechanic. They are gone: the tray shows the OFFERED hand (relevant cards
@@ -97,9 +110,9 @@ export function QuestionPanel(props: QuestionPanelProps) {
         ref={boxRef}
         className="duel-answer"
         value={answer}
-        rows={3}
+        rows={2}
         spellCheck
-        placeholder="Answer him, in your own words."
+        placeholder="One sentence — say why your evidence proves it."
         disabled={props.submitting}
         onChange={(event) => setAnswer(event.target.value)}
         onKeyDown={(event) => {
@@ -144,7 +157,7 @@ export function QuestionPanel(props: QuestionPanelProps) {
 
       {props.notice && <p className="duel-notice">{props.notice}</p>}
       <p className="duel-fineprint">
-        Untimed. Enter sends, Shift+Enter for a new line.
+        Untimed. A sentence is enough. Enter sends, Shift+Enter for a new line.
       </p>
     </div>
   );
