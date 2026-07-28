@@ -38,9 +38,20 @@ echo "== build"
   "$RAW" "$HULL" assets/source/raw/townhouse-1713.built.glb \
   --split $SPLIT --corbel 0.85 --tris 34000 --tex 2048 | grep "^\[$KEY\]"
 
+# The cupola drum, added as a Town-House-owned step so the shared civic builder
+# (build_m1_civic.py, another lane's file) stays untouched. The generator drew
+# its cupola on a thin neck with a 1.4m void beneath it, and the two-band warp
+# stretches that void onto 12.4-14.1m rather than filling it: the cupola floated
+# over the leads. The collision authors TOWNHOUSE_TOWER solid to 17.1m, so the
+# drum is drawn solid to match. See build_townhouse_drum.py for the full trace.
+echo "== drum"
+"$BLENDER" --background --python assets/pipeline/build_townhouse_drum.py -- \
+  assets/source/raw/townhouse-1713.built.glb "$HULL" \
+  assets/source/raw/townhouse-1713.final.glb | grep "^\[$KEY\]"
+
 # Copied rather than synced. sync_web.mjs promotes everything it finds newer than
 # public/, characters included, and it published a work-in-progress rig that way.
-cp assets/source/raw/townhouse-1713.built.glb "apps/web/public/world/props/$KEY.glb"
+cp assets/source/raw/townhouse-1713.final.glb "apps/web/public/world/props/$KEY.glb"
 echo "== published apps/web/public/world/props/$KEY.glb"
 
 echo "== probe"
