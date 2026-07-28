@@ -90,10 +90,12 @@ replay harness.
 ## Open
 
 **Would affect play now**
-- **Eight bare-wall climbs** violate the owner's law that a climb needs a visible means:
-  Town House east face (gallery→clock→cornice→leads), tower shaft, meeting-house south
-  wall, market pentice, shed, crate-foot awning. Three measurably pass 1.2–1.75 m through
-  drawn stone. *Blocked on ladder assets — no ladder exists in this project.* In flight.
+- **Bare-wall climbs — half done.** Nine ladders are authored, drawn and resolving through
+  `alignClimbToLadder` (`025ad65`), so the content the refusal predicate needs now exists.
+  Refusal itself is **not yet on**: a climb against blank stone still commits. Two climbs
+  stay grips by design — the elm crown (no bough asset; won't bolt a ladder to a tree) and
+  the stone buttress (already climbs drawn masonry set-offs) — so switching refusal on
+  requires modelling a grip, not just a ladder, or those two break the route. In flight.
 - **Animations do not match motion.** Vault: planted foot slides 6.8 m/s and pokes 11 cm
   into the obstacle, hands only graze the top. Climb-over: foot 13.5 cm through the wall,
   only 81% of the clip shown. Hang-drop: hand 30 cm inside the wall. Mantle: foot slides
