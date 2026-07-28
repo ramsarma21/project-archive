@@ -17,10 +17,10 @@
 // accept/reject eval set, and the same binary `needs` line apply. What is
 // different is the JUDGING FRAME, and it is carried in the ideas and the
 // reference answer: a correct answer is not the "true fact" but a justification
-// the SPEAKER — a Crown constable, or a wage-earning dockhand — would credit.
-// `needs: 1` over a family of ideas is how multiple valid perspectives all pass:
-// any one Crown-credible rationale, or any one honest line from the Act to the
-// ropewalk's livelihood, is enough.
+// the SPEAKER — a Crown constable, or a wage-earning printer's bill-sticker —
+// would credit. `needs: 1` over a family of ideas is how multiple valid
+// perspectives all pass: any one Crown-credible rationale, or any one honest line
+// from the Act's reach to the bill-sticker's livelihood, is enough.
 
 import { compilePool, ItemBank, type AuthoredPool } from "../rubric.js";
 
@@ -30,10 +30,10 @@ const SHAMBLES_WRONG = [
   "names the wrong tax or a later event (the tea tax, molasses, the Massacre) instead of the war debt or Parliament's authority",
 ] as const;
 
-const ROPEWALK_WRONG = [
-  "argues rights or representation in the abstract without connecting the Act to his trade, wages, clearances or contracts",
-  "denies that the stamped paper affects the port's work at all",
-  "names the wrong tax or the wrong goods (tea, molasses, sugar) instead of stamped legal, printed or shipping papers",
+const BILLMAN_WRONG = [
+  "argues rights or representation in the abstract without connecting the Act to his trade, the printed paper, the presses or his wage",
+  "denies that a tax on paper touches the printing his living depends on",
+  "names the wrong tax or the wrong goods (tea, molasses, sugar) instead of stamped printed or legal papers",
 ] as const;
 
 /**
@@ -121,11 +121,16 @@ const SHAMBLES_POOL: AuthoredPool = {
 };
 
 /**
- * B — the ropewalk's night man, loyal to his wage. The accepted family connects
- * the Stamp Act's scope, cost or disruption to HIS trade: clearances, bills of
- * lading, contracts, printed and legal papers, cargo, prices, wages.
+ * B — the printer's bill-sticker, loyal to his wage. Re-cast from the ropewalk's
+ * night man when the mandatory beat moved off the ropewalk detour and onto the
+ * direct roofline over Hollis Meeting; the pool id, item ids and concept are the
+ * durable join and are unchanged. The accepted family connects the Stamp Act's
+ * scope, cost or disruption to HIS trade: the printed paper the whole trade is —
+ * newspapers, handbills, notices — is exactly what the Act taxes, so a bought
+ * stamp on every sheet means fewer runs, fewer bills to paste, dearer paper, and
+ * a shrinking wage. A rights lecture that never reaches the presses does not pass.
  */
-const ROPEWALK_POOL: AuthoredPool = {
+const BILLMAN_POOL: AuthoredPool = {
   poolId: "BOS.MD01.POOL.ENC_ROPEWALK.v1",
   conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
   idPrefix: "BOS.MD01.ENC.ROPEWALK",
@@ -133,78 +138,78 @@ const ROPEWALK_POOL: AuthoredPool = {
   items: [
     {
       id: "WHY_CARE",
-      ask: "You're the effigy lot, aren't you. Tell me straight, why should a man who lays rope for a living care a damn about a stamp on a bit of paper? Make it my business.",
+      ask: "You're the effigy lot, aren't you. Tell me straight, why should a man who pastes bills for his bread care a damn about a stamp on a bit of paper? Make it my business.",
       correct:
-        "The stamp falls on the ship's clearances, bills of lading and contracts the whole port runs on, so if that paper is refused the cargoes cannot clear, the ships do not sail, the rope is not ordered, and his wage stops.",
+        "The stamp falls on the printed paper his whole trade is — the newspapers, handbills and notices — so if the printers must buy a stamp for every sheet they run less, there are fewer bills to paste, and his wage stops.",
       ideas: [
-        "the stamp tax falls on the ship's papers, clearances, contracts and bills a working port runs on, so it disrupts the trade that pays his wage",
-        "if the stamped paper is refused or dearer, cargoes cannot legally clear and the work and the pay stop or shrink",
+        "the stamp tax falls on the printed paper — newspapers, handbills, notices — that a printer's whole trade is, so it lands directly on the work that pays him",
+        "if every sheet must carry a bought stamp the presses print less or stop, so there is less bill-work and his pay shrinks or ends",
       ],
       needs: 1,
-      wrongIfSays: [...ROPEWALK_WRONG],
+      wrongIfSays: [...BILLMAN_WRONG],
       accept: [
-        "Because no stamped clearance means the ships can't sail legal, and no ships means no rope orders and no wage for you.",
-        "It taxes the papers every cargo needs, so it slows the whole port down and that's your work drying up.",
-        "Every contract and cargo bill has to carry that stamp now — gum up the papers and you gum up the trade you live off.",
+        "Because every sheet the printers run now needs a paid stamp, so they print less, and less printing means no bills for me to paste and no wage.",
+        "The tax is on printed paper itself, and papers and handbills are my whole living, so it comes straight out of my trade and not somebody else's.",
+        "Gum up the presses with a stamp on every sheet and the work you live off, the bills, just dries up.",
       ],
       reject: [
         "Because taxation without representation is tyranny and every Englishman should resist it.",
         "Because it's the principle of the thing, plain and simple.",
         "Because of the duty on molasses that the smugglers all hate.",
       ],
-      note: "Any honest line from the Act to his livelihood passes; a rights lecture that never reaches the docks does not.",
+      note: "Any honest line from the Act to his printed-paper trade passes; a rights lecture that never reaches the presses does not.",
     },
     {
       id: "WHAT_STOPS",
-      ask: "Say the stamp comes in and I don't buy it. What of it stops — here, in this walk, on these ships? Name me the thing it actually costs me.",
+      ask: "Say the stamp comes in and the printers won't buy it. What of it stops — here, on this wall, in the sheets I hang? Name me the thing it actually costs me.",
       correct:
-        "Without the stamp a ship's clearance and bills of lading are not legal, so the cargo cannot clear the customs house and the shipping halts — and every contract and paper the wharf's business runs on costs more, which squeezes the work and the wage.",
+        "Without a bought stamp on every sheet no newspaper, handbill or notice is lawful to print, so the printers cut their runs or stop and the bills he pastes stop coming — and every printed and legal paper the town's business runs on costs more, which squeezes the work and the wage.",
       ideas: [
-        "without the stamp a ship's clearance papers and bills of lading are not legal, so cargo cannot clear the customs house and shipping halts",
-        "the stamp raises the cost of the legal and printed papers the port's business depends on, squeezing contracts, prices and wages",
+        "without a paid stamp the printed papers, the newspapers and handbills and notices, are not lawful, so the presses cut back or stop and the bill-work stops",
+        "the stamp raises the cost of the printed and legal papers the town's business depends on, squeezing the printing, the trade and his wage",
       ],
       needs: 1,
-      wrongIfSays: [...ROPEWALK_WRONG],
+      wrongIfSays: [...BILLMAN_WRONG],
       accept: [
-        "The clearances stop — a ship can't leave the customs house without stamped papers, so the cargo sits and nobody's paid.",
-        "Your contracts and cargo papers all need the stamp, so the price of doing any business here climbs and the work slows.",
-        "No stamp, no legal bill of lading, no sailing — the whole wharf just stops until it's sorted.",
+        "The printing stops — no sheet is lawful without a bought stamp, so the presses cut their runs and there are no bills to hang.",
+        "Every notice, paper and handbill needs the stamp now, so the cost of printing anything climbs and the work slows.",
+        "No stamp, no lawful sheet, no run — the printers just stop until it's sorted and I'm not paid.",
       ],
       reject: [
         "It costs us our liberty, that's what.",
         "Nothing really — it's just Boston being dramatic about a small tax.",
         "It's a tax on your tea and your sugar, that's the cost.",
       ],
-      note: "A concrete trade consequence — halted clearances, dearer papers, stalled cargo — is required.",
+      note: "A concrete trade consequence — cut print runs, dearer sheets, no bills to paste — is required.",
     },
     {
       id: "WHOSE_TROUBLE",
-      ask: "Papers and pamphlets — that's the merchants' quarrel and the lawyers', not mine. What has any of that got to do with the rope I sell and the wage I take home?",
+      ask: "Deeds and lawyers' writs — that's the merchants' quarrel and the courts', not mine. What has a tax on their paper got to do with the bills I paste and the wage I take home?",
       correct:
-        "The stamped papers ARE the port's business — the clearances, bills of lading and contracts a cargo cannot move without — so a tax on those papers stalls the shipping that orders his rope and pays his wage; the merchants' and lawyers' paper is the same paper the wharf runs on.",
+        "The stamp is laid on printed paper as much as legal paper — the newspapers, handbills and notices are taxed exactly as the deeds and writs are — so the same Act that hits the lawyers' paper hits the sheets he pastes; the courts' and merchants' paper is the same kind of paper his living is.",
       ideas: [
-        "the stamp on legal, printed and commercial papers is exactly what the port's shipping and contracts run on, so a paper tax lands directly on his trade and his wage",
+        "the stamp falls on printed paper, the newspapers and handbills and notices, just as it falls on the legal papers, so a paper tax lands directly on his trade and his wage and not only on the courts and merchants",
       ],
       needs: 1,
-      wrongIfSays: [...ROPEWALK_WRONG],
+      wrongIfSays: [...BILLMAN_WRONG],
       accept: [
-        "Because those papers ARE your trade — clearances, contracts and cargo bills all carry the stamp, and if they're stalled your rope goes nowhere and neither does your pay.",
-        "The lawyers' papers and the shipping papers are the same paper the wharf runs on; tax them and the work you do dries up.",
-        "Merchants can't move a cargo without stamped papers, and no cargo means no orders for rope and no wage coming home.",
+        "Because it isn't only the deeds, the newspapers and handbills carry the stamp too, and those printed sheets ARE my trade, so if they stall my paste-work goes nowhere.",
+        "The lawyers' writs and the printers' sheets are taxed the same way; a tax on paper is a tax on the very bills I hang.",
+        "Printed paper is stamped right alongside the legal paper, so the presses I depend on stop, and no printing means no bills and no wage.",
       ],
       reject: [
         "It's about no taxation without representation — that's why it matters to everyone.",
         "It doesn't, really, that's rather why I'm asking you.",
         "Because the tax they put on tea is unfair to all of us.",
       ],
-      note: "The one required idea is that the taxed papers are the port's own working papers, so the tax reaches his wage.",
+      note: "The one required idea is that printed paper is stamped alongside the legal paper, so the tax reaches the sheets he pastes and thus his wage.",
     },
   ],
 };
 
 export const M1_ENCOUNTER_POOLS: readonly AuthoredPool[] = [
   SHAMBLES_POOL,
-  ROPEWALK_POOL,
+  BILLMAN_POOL,
 ];
 
 let cachedBank: ItemBank | null = null;

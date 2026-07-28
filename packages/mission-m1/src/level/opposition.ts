@@ -174,6 +174,39 @@ export const PATROLS: PatrolSpec[] = [
     denies: ["street-line"],
     note: "The man who is going to paper over the board, walking the other way up the street you are running above. His line passes under the roof crossing, so the 5.3m roll on the far side is audible to him and the quiet south roofs are not.",
   },
+  {
+    id: "BILLMAN_HOLLIS",
+    // The roofline crossing his stop bridges (D_SROOF_E onto the meeting leads),
+    // not E_LEAP: the leap section carries no reroute budget by design, and a
+    // section with a watcher needs one (route.test.ts). D_ROOFLINE already hosts
+    // CONSTABLE_ORANGE and its budget covers being read on the crossing.
+    section: "D_ROOFLINE",
+    asset: "dockhand-rigged",
+    role: "the printer's bill-sticker",
+    kind: "POSTED",
+    perchIgnore: [],
+    // On the meeting-house leads themselves, at the west parapet, where the
+    // notices go up. He is NOT a stealth cone: he hosts the relocated STAMP_SCOPE
+    // perspective encounter (ROPEWALK_STOP, re-fictioned as the bill-sticker) on
+    // the direct roofline the route lane built over Hollis Meeting, so the
+    // guided line no longer has to dive through the ropewalk shed to reach the
+    // beat. He stands on the flat lead roof (y=8.20) clear of the raised monitor,
+    // a short walk south of the player's landing, and closes on the player to
+    // speak when the stop arms. His sweep is off (scanAmplitude 0) and faces the
+    // wall he is pasting, so he polices no line — the encounter machine turns him
+    // to face the player during its approach.
+    waypoints: [[74.9, 8.2, 12.0]],
+    speedMps: 0,
+    capsuleHeightM: 1.55,
+    coneHalfAngleDeg: 30,
+    rangeM: 8,
+    scanAmplitudeDeg: 0,
+    scanRateDegPerSec: 0,
+    baseYaw: (-90 * Math.PI) / 180,
+    phaseOffsetsS: [0, 3.0, 6.0],
+    denies: [],
+    note: "The printer's paste-man, up on the meeting-house leads by lantern to hang the night's bills. He is the speaker for the relocated STAMP_SCOPE stop: his whole trade is the printed paper the Act taxes, so he is the man to argue the tax's reach to. Posted, not patrolling, and authored to deny no route line — the beat is the stop, not the cone.",
+  },
 ];
 
 export const DIVERSIONS: DiversionAnchor[] = [
