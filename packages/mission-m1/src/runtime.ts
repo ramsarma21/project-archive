@@ -1119,7 +1119,7 @@ export function sceneryPlacements(
     Math.min(...cluster.map((span) => rank.get(span.id)!));
   clusters.sort((a, b) => order(a) - order(b));
 
-  return clusters.flatMap((cluster): SceneryPlacement[] => {
+  const objects = clusters.flatMap((cluster): SceneryPlacement[] => {
     const head = cluster[0]!;
     const declared = ASSET_BY_KEY.get(head.asset);
     const path = declared?.path ?? `world/props/${head.asset}.glb`;
@@ -1158,4 +1158,81 @@ export function sceneryPlacements(
       },
     ];
   });
+
+  return [...objects, ...ladderPlacements(level)];
+}
+
+// ---------------------------------------------------------------------------
+// ladders
+// ---------------------------------------------------------------------------
+
+// The re-fit `work-ladder` mesh's natural bounds, thinned by refit_work_ladder.mjs
+// and kept at 1.90m tall (see assets.ts). A ladder is drawn by CONTAIN-FIT — the
+// smallest of the three box/mesh ratios, uniform — so a box built to the mesh's
+// own aspect fills exactly and the height axis binds, which is what puts the top
+// rung on the surface the climb lands on.
+const LADDER_NATURAL: Vec3Tuple = [0.43, 1.9, 0.57];
+
+/** Height of a served surface: a deck plane, a landable mass top, or the ground. */
+function surfaceHeightOf(level: MissionLevel, id: string): number | null {
+  for (const deck of level.decks) if (deck.id === id) return deck.y;
+  for (const mass of level.masses) {
+    if (mass.id === id && mass.landable && Number.isFinite(mass.topY)) return mass.topY;
+  }
+  if (id === "GROUND") return 0;
+  return null;
+}
+
+/**
+ * One visible ladder per placed climb affordance.
+ *
+ * The ladder is DRAWN, never collided: its whole job is that the player can see
+ * the thing they grip, and the climb affordance is already the authored
+ * `LadderPlacementSpec` / climb volume. A solid ladder at a climb foot would sit
+ * on the exact spot the route node stands to climb it — a blocker there is an
+ * invisible wall in the one place the player must stand — so this emits a
+ * scenery draw and no collision entry.
+ *
+ * Each ladder is sized to the rise it serves (foot on the surface it stands on,
+ * top on the surface it lands on) and oriented on its outward face so it leans
+ * against that face, foot out where the climber grips it.
+ */
+export function ladderPlacements(
+  level: MissionLevel = M1_EFFIGY_RUN,
+): SceneryPlacement[] {
+  const out: SceneryPlacement[] = [];
+  for (const spec of level.ladders ?? []) {
+    const topY = surfaceHeightOf(level, spec.onto);
+    if (topY === null) continue;
+    const footY = spec.at[1];
+    const height = topY - footY;
+    if (height <= 0) continue;
+
+    const width = (LADDER_NATURAL[0] / LADDER_NATURAL[1]) * height;
+    const depth = (LADDER_NATURAL[2] / LADDER_NATURAL[1]) * height;
+
+    const faceLen = Math.hypot(spec.faceX, spec.faceZ) || 1;
+    const fX = spec.faceX / faceLen;
+    const fZ = spec.faceZ / faceLen;
+    // Centre the box a half-depth INWARD (−face) of the foot, so the drawn
+    // ladder's outer face sits at the foot where the climber grips it and the
+    // rest of it leans in toward the surface.
+    const cx = spec.at[0] - fX * (depth / 2);
+    const cz = spec.at[2] - fZ * (depth / 2);
+    // Map the mesh's own lean axis (local +Z) onto the outward face direction.
+    const yaw = Math.atan2(fX, fZ);
+
+    out.push({
+      id: `LADDER_${spec.id}`,
+      asset: "work-ladder",
+      assetPath: "world/props/work-ladder.glb",
+      pos: [cx, footY, cz],
+      size: [width, height, depth],
+      yaw,
+      kind: "MASS",
+      fit: "PROP",
+      parts: [`LADDER_${spec.id}`],
+    });
+  }
+  return out;
 }

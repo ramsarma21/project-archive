@@ -19,11 +19,21 @@ import type { LadderPlacementSpec } from "../types.js";
 // pipe end-to-end so it cannot silently rot before the placements land.
 // ---------------------------------------------------------------------------
 
-test("the real level authors no ladder yet — the pipe is inert", () => {
+test("the real level authors its climb ladders, and every one resolves an ascent", () => {
   const { world } = compileLevel(M1_EFFIGY_RUN);
-  // Present (the field exists) but empty: nothing is refused or armed off a
-  // ladder today, so the guided route is unchanged.
-  assert.deepEqual(world.ladders, []);
+  // The content landed: one ladder per route climb-up a ladder honestly serves
+  // (the tree and the stone buttress are grips, not ladders — see level/ladders).
+  assert.equal(world.ladders?.length, 9, "nine ladders forwarded into world.ladders");
+  // Every forwarded ladder is one the tested predicate accepts: a real served
+  // surface and a top-out with standing clearance ("no ladder, no climb" armed,
+  // not refused). This is what the mission-world lane will read to turn the rule
+  // on behind this content.
+  for (const ladder of world.ladders ?? []) {
+    assert.ok(
+      alignClimbToLadder(world, ladder),
+      `${ladder.id} does not resolve an ascent the predicate accepts`,
+    );
+  }
 });
 
 test("a placed ladder is forwarded into world.ladders with its top resolved off the served surface", () => {
