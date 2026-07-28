@@ -575,25 +575,30 @@ test("the link-aware SAFE run un-sticks the clock ledge and commits one climb on
 });
 
 // ---------------------------------------------------------------------------
-// The ropewalk descent: the one-way SAFE drop off the south-row roof, on the
-// real runtime.
+// The meeting-house crossing: the one-way SAFE drop off the south-row roof, on
+// the real runtime.
 //
-// D_SROOF_E -> D2_ROOF_W is a SAFE CHAIN_DROP off the south-row roof (y=12.4)
-// onto the ropewalk roof (y=8.6). The body runs off the south lip, arcs, and
-// lands a couple of metres PAST the receiver node on its own deck. The jam: the
-// distance anchor stayed stranded up on the south row behind the take-off, so
-// the moment the receiver was banked the mark was offered D_SROOF_E — a backward,
-// upward point — and the body edge-braked against the roof lip trying to climb
-// back up the drop it had just taken. The anchor now advances to the receiver
-// deck the body actually reached, so the mark leads on east through the vents.
+// The guided line no longer dives south into the ropewalk shed. D_SROOF_E ->
+// D_MEETING_W is a SAFE CHAIN_DROP off the south-row roof (y=12.4) onto the west
+// strip of the Hollis meeting-house leads (HOLLIS_MEETING__ROOF, y=8.2), a ~1.6m
+// lip-to-lip gap and a 4.2m drop; from there the body carries on east under the
+// ridge monitor to D_MEETING_ROOF and up the steeple. The regression this guards
+// is the same one the old ropewalk drop guarded: the distance anchor must not
+// stay stranded up on the south row behind the take-off and offer D_SROOF_E — a
+// backward, upward point — the moment the landing is banked, edge-braking the
+// body against the lip trying to climb back up the drop it just took. The anchor
+// advances to the meeting-roof landing the body actually reached, so the mark
+// leads on east toward the steeple. (The ropewalk drop D_SROOF_E -> D2_ROOF_W is
+// still authored as an off-line alternate; its own recovery is covered in
+// wayfind.test.)
 // ---------------------------------------------------------------------------
 
-const ROPEWALK_ROOF = "ROPEWALK_ROOF_W";
+const MEETING_ROOF = "HOLLIS_MEETING__ROOF";
 
 interface DropRun {
   reachedRoof: boolean;
   dropsOntoRoof: number;
-  reachedVents: boolean;
+  advancedEast: boolean;
   markWentBackward: boolean;
   markLeadHeightMax: number;
   maxStallTicks: number;
@@ -603,7 +608,7 @@ interface DropRun {
 }
 
 /** Drive the link-aware SAFE player off the south-row roof through the drop. */
-function driveTheRopewalkDrop(maxSeconds: number): DropRun {
+function driveTheMeetingDrop(maxSeconds: number): DropRun {
   const runtime = firstAttemptRuntime();
   const world = runtime.instance.world;
   const kerbs = kerbIds(world);
@@ -630,7 +635,7 @@ function driveTheRopewalkDrop(maxSeconds: number): DropRun {
   const result: DropRun = {
     reachedRoof: false,
     dropsOntoRoof: 0,
-    reachedVents: false,
+    advancedEast: false,
     markWentBackward: false,
     markLeadHeightMax: -Infinity,
     maxStallTicks: 0,
@@ -680,28 +685,29 @@ function driveTheRopewalkDrop(maxSeconds: number): DropRun {
     const p = runtime.motion.pos;
     const support = groundedSupport(world, p)?.id ?? null;
     const stood = runtime.motion.grounded ? support : null;
-    if (stood === ROPEWALK_ROOF) result.reachedRoof = true;
+    if (stood === MEETING_ROOF) result.reachedRoof = true;
     if (!runtime.motion.grounded) airborneApexY = Math.max(airborneApexY, p.y);
-    // One clean drop: a landing on the ropewalk roof that FELL FROM THE LEADS (the
-    // apex was up on the south-row roof), told apart from micro-hops along the roof.
-    // More than one would be the body dropping, being sent back up the take-off,
-    // and dropping again — the oscillation the stale-anchor mark used to cause.
+    // One clean drop: a landing on the meeting-house roof that FELL FROM THE LEADS
+    // (the apex was up on the south-row roof), told apart from micro-hops along the
+    // roof. More than one would be the body dropping, being sent back up the
+    // take-off, and dropping again — the oscillation a stale-anchor mark causes.
     if (
       !wasGrounded &&
       runtime.motion.grounded &&
-      support === ROPEWALK_ROOF &&
+      support === MEETING_ROOF &&
       airborneApexY > 11
     ) {
       result.dropsOntoRoof += 1;
     }
     if (runtime.motion.grounded) airborneApexY = p.y;
-    // The vents live east on the ropewalk roof; standing at x>70 on that deck is the
-    // body advancing through D2_VENT_IN_0/OUT_0 rather than being sent backward.
-    if (stood === ROPEWALK_ROOF && p.x > 70) result.reachedVents = true;
+    // The steeple is east on the meeting-house roof; standing at x>76 on that deck
+    // (D_MEETING_ROOF, the foot of the ridge climb) is the body advancing toward
+    // the leap rather than being sent backward.
+    if (stood === MEETING_ROOF && p.x > 76) result.advancedEast = true;
     wasGrounded = runtime.motion.grounded;
 
-    // Once the body is down on the ropewalk roof, the mark must never lead a point
-    // back up on the south-row leads (the impossible climb) nor sit on the take-off.
+    // Once the body is down on the meeting-house roof, the mark must never lead a
+    // point back up on the south-row leads (the impossible climb) nor sit on the take-off.
     if (result.reachedRoof) {
       const m = markRead(objective, runtime.motion.pos);
       if (m) {
@@ -732,24 +738,28 @@ function driveTheRopewalkDrop(maxSeconds: number): DropRun {
     }
     prev = { ...p };
     if (stallTicks > result.maxStallTicks) result.maxStallTicks = stallTicks;
-    if (result.reachedVents) break;
+    // Done once the body has crossed the meeting roof to the foot of the ridge
+    // climb: the drop and the forward lead are proven, and stopping here keeps the
+    // count clear of the leap of faith further on (whose own dive is covered in
+    // missionElmContinuation, not here).
+    if (result.advancedEast) break;
   }
   return result;
 }
 
-test("the SAFE ropewalk drop lands once on the roof and leads on through the vents, never back up the drop", () => {
-  const run = driveTheRopewalkDrop(30);
+test("the SAFE meeting-house drop lands once on the roof and leads on toward the steeple, never back up the drop", () => {
+  const run = driveTheMeetingDrop(30);
   assert.equal(run.fatal, null, `the run failed on or after the drop: ${run.fatal}`);
   assert.equal(
     run.penetrated,
     false,
     `the body overlapped a blocker at ${JSON.stringify(run.penetrationAt)}`,
   );
-  assert.ok(run.reachedRoof, "the SAFE line never landed on the ropewalk roof off the drop");
+  assert.ok(run.reachedRoof, "the SAFE line never landed on the meeting-house roof off the drop");
   assert.equal(
     run.dropsOntoRoof,
     1,
-    `the body dropped onto the ropewalk roof ${run.dropsOntoRoof} times, not once`,
+    `the body dropped onto the meeting-house roof ${run.dropsOntoRoof} times, not once`,
   );
   assert.equal(
     run.markWentBackward,
@@ -757,12 +767,12 @@ test("the SAFE ropewalk drop lands once on the roof and leads on through the ven
     `after landing, the mark led back up toward the take-off (max lead height ${run.markLeadHeightMax.toFixed(1)}m) — the impossible climb`,
   );
   assert.ok(
-    run.reachedVents,
-    "the body never advanced east through the ropewalk vents after the drop — the mark did not lead forward",
+    run.advancedEast,
+    "the body never advanced east across the meeting-house roof toward the steeple after the drop — the mark did not lead forward",
   );
   assert.ok(
     run.maxStallTicks <= MAX_STALL_TICKS,
-    `the run stalled ${(run.maxStallTicks / 60).toFixed(1)}s at or after the ropewalk drop`,
+    `the run stalled ${(run.maxStallTicks / 60).toFixed(1)}s at or after the meeting-house drop`,
   );
 });
 

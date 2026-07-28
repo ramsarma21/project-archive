@@ -175,6 +175,17 @@ export const NODES: RouteNode[] = [
   node("D_NROOF_W", "D_ROOFLINE", [66.0, BAND.LOW_ROOF, -4.5], "ROW_N_A__ROOF", ["stealth-line"]),
   node("D_NROOF_E", "D_ROOFLINE", [72.6, BAND.LOW_ROOF, -8.0], "ROW_N_A__ROOF", ["stealth-line"]),
   node("D_MEETING_ROOF", "D_ROOFLINE", [76.5, BAND.MEETING_EAVE, 9.0], "HOLLIS_MEETING__ROOF", []),
+  // The crossing's landing, on the west strip of the meeting-house roof. The
+  // south row ends at x=71 (12.4m) and the meeting roof begins at x=73.3 (8.2m),
+  // a ~1.6m lip-to-lip gap and a 4.2m drop — taken as a controlled run-off/roll,
+  // not a running leap (a full leap carries past this strip onto the 11.2m ridge
+  // monitor that covers the roof from x=75.3 east). The strip west of the monitor
+  // is 2.0m of clear roof, wide enough to stand and land on; from here the body
+  // walks in under the monitor and climbs onto the steeple line. This is also the
+  // node the relocated STAMP_SCOPE bill-sticker stop (ROPEWALK_STOP) is anchored
+  // beside, on HOLLIS_MEETING__ROOF, now that the beat is on the roofline.
+  node("D_MEETING_W", "D_ROOFLINE", [74.3, BAND.MEETING_EAVE, 9.0], "HOLLIS_MEETING__ROOF", ["lip"],
+    "Onto the meeting-house roof off the south row, west of the ridge monitor."),
 
   // -- E: the leap ----------------------------------------------------------
   node("E_ELLIOT_ROOF", "E_LEAP", [77.0, BAND.MEETING_EAVE, -9.0], "ELLIOT_HOUSE__ROOF", ["stealth-line"]),
@@ -395,6 +406,22 @@ export const LINKS: RouteLink[] = [
   link("D_VAULT_OUT_0", "D_VAULT_IN_1", "RUN", "SAFE", "RUN"),
   link("D_VAULT_IN_1", "D_VAULT_OUT_1", "VAULT", "SAFE", "VAULT", { ignore: ["CHIMNEY_1"] }),
   link("D_VAULT_OUT_1", "D_SROOF_E", "RUN", "SAFE", "RUN"),
+  // The direct crossing to the steeple. The south row ends at x=71 and the
+  // meeting house begins at x=74 with its roof 4.2m lower, so the roofline
+  // continues straight onto it in one controlled drop over a ~1.6m lip-to-lip
+  // gap, rather than dropping SOUTH into the ropewalk shed and climbing the
+  // meeting house's far face back up. From the meeting roof the existing CLIMB
+  // chain (D_MEETING_ROOF -> E_RIDGE -> E_LOUVRE -> E_GALLERY) tops out at the
+  // gallery the leap of faith launches from. The ropewalk drop below
+  // (D_SROOF_E -> D2_ROOF_W) stays authored, so the shed survives as an optional
+  // dark-interior space; the guided line just no longer detours through it.
+  link("D_SROOF_E", "D_MEETING_W", "DROP", "SAFE", "CHAIN_DROP", {
+    speedMps: 3.0,
+    note: "Off the south row onto the Hollis meeting-house roof — the roofline continues straight onto the nearest high ground to the steeple, rather than dropping south into the ropewalk.",
+  }),
+  link("D_MEETING_W", "D_MEETING_ROOF", "RUN", "SAFE", "RUN", {
+    note: "In under the ridge monitor to the foot of the climb onto the steeple line.",
+  }),
 
   // -- E --------------------------------------------------------------------
   link("D_MEETING_ROOF", "E_RIDGE", "CLIMB", "SAFE", "CLIMB", { ignore: ["HOLLIS_MEETING"] }),
