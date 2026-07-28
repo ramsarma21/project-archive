@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { FittedGlb } from "@pa/engine-world";
+import type { DuelSky } from "../mission/duelPort.js";
 import { GlbGate } from "./GlbGate.js";
 import {
   GROUND_TILES,
@@ -105,16 +106,29 @@ function Dressing(props: { placements: readonly DressingPlacement[] }) {
  * A low sun is a gameplay decision as much as a mood: long shadows off chest-high
  * cover tell the player where cover is from across the yard, and the warm key against
  * the cool sky separates two figures who are otherwise both dark against dark.
+ *
+ * `sky`, when the container supplies it, is the mission's time of day at arrival:
+ * the colours and intensities swap to it so a mission-entered fight opens in the
+ * same pre-dawn the cutscene ended in. The raking DIRECTION and the shadow frustum
+ * are unchanged either way — that geometry is a readability decision, not a
+ * time-of-day one, so long cover shadows keep telling the player where cover is.
  */
-function YardLight(props: { reducedMotion: boolean }) {
+function YardLight(props: { reducedMotion: boolean; sky?: DuelSky }) {
   void props.reducedMotion;
+  const sky = props.sky;
   return (
     <>
-      <hemisphereLight args={["#9fc4e8", "#4a3d2f", 0.55]} />
+      <hemisphereLight
+        args={[
+          sky?.hemiSky ?? "#9fc4e8",
+          sky?.hemiGround ?? "#4a3d2f",
+          sky?.hemiIntensity ?? 0.55,
+        ]}
+      />
       <directionalLight
         position={[-9, 7.5, -6]}
-        intensity={2.1}
-        color="#ffd9a8"
+        intensity={sky?.sunIntensity ?? 2.1}
+        color={sky?.sunColor ?? "#ffd9a8"}
         castShadow
         // 1024 over a 26m shadow camera is ~2.5cm a texel, which is finer than the
         // cobbles; doubling it costs a software renderer dearly and buys nothing.
@@ -137,13 +151,23 @@ function YardLight(props: { reducedMotion: boolean }) {
 export function ArenaView(props: {
   cover?: readonly CoverPlacement[];
   reducedMotion?: boolean;
+  /**
+   * The mission's time of day, or absent for the stand-alone yard's own midday.
+   * When set, the background, fog and light rig take the mission's pre-dawn
+   * palette so a mission-entered fight is continuous with the arrival cutscene.
+   */
+  sky?: DuelSky;
 }) {
   const wall = useMemo(() => perimeterWall(), []);
+  const sky = props.sky;
   return (
     <>
-      <color attach="background" args={["#8ba3b8"]} />
-      <fogExp2 attach="fog" args={["#9db2c4", 0.026]} />
-      <YardLight reducedMotion={props.reducedMotion ?? false} />
+      <color attach="background" args={[sky?.background ?? "#8ba3b8"]} />
+      <fogExp2
+        attach="fog"
+        args={[sky?.fogColor ?? "#9db2c4", sky?.fogDensity ?? 0.026]}
+      />
+      <YardLight reducedMotion={props.reducedMotion ?? false} sky={sky} />
       <Ground />
       <Cover placements={props.cover} />
       <Dressing placements={wall} />
