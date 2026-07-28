@@ -1,0 +1,212 @@
+name: Grading eval (nightly)
+
+# The live half of the classifier ship gate, run WITHOUT anyone remembering.
+#
+# The offline structural half (packages/grading/src/__tests__/eval.test.ts) runs
+# on every PR inside the `verify` job's `pnpm test` step — it guards the labels,
+# the set's shape and the harness arithmetic, all without a model call. This
+# workflow is the other half: it calls a real model against the shipping grader
+# and enforces the false-negative / false-positive gates. That gate previously
+# ran only when a human typed `pnpm grading:eval`, which is exactly how it sat at
+# 3.4% false negatives for weeks while looking healthy. A gate that depends on
+# memory is wrong when it matters.
+#
+# NIGHTLY, not per-PR. A per-PR live gate would be a paid, flaky, external
+# dependency on the fast feedback path; but nightly buys the thing no offline
+# test can ever see — drift in the MODEL itself. The provider (a TrueFoundry
+# gateway model) can change under us with no diff on our side, and only a live
+# run catches that. The dated committed report (see below) turns the nightly
+# into a trend, so drift is legible and a *gap* in the dates is itself the alarm.
+# Manually triggerable via workflow_dispatch for a pre-release spot check.
+
+on:
+  schedule:
+    # 08:00 UTC = 03:00 America/Chicago — off-peak; nightly, never per-PR.
+    - cron: "0 8 * * *"
+  workflow_dispatch: {}
+
+# The dated report is committed to docs/; a failure opens/updates an issue.
+permissions:
+  contents: write
+  issues: write
+
+# Never run two nightlies at once; do not cancel one in flight for the next.
+concurrency:
+  group: grading-eval
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  grading-eval:
+    name: grading eval (live model, repeats=3)
+    runs-on: ubuntu-latest
+    # ~9-10 min at repeats=3 (3x the ~3.3 min single pass). A generous cap
+    # because CI runners are slower and noisier than a laptop and the gateway
+    # serialises, so wall-clock can drift; 30 min leaves room without hiding a
+    # genuine hang. See "timing" in docs/process/CI-AND-BROWSER-CHECKS.md.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # FAIL LOUDLY when the credential is absent — never a skip. A skipped
+      # nightly is indistinguishable from a passing one on a dashboard, which is
+      # the whole failure mode this job removes. Missing secret => a red run that
+      # says exactly what to add and where.
+      - name: Require the dedicated grading credential
+        env:
+          TRUEFOUNDRY_GRADING_API_KEY: ${{ secrets.TRUEFOUNDRY_GRADING_API_KEY }}
+        run: |
+          if [ -z "${TRUEFOUNDRY_GRADING_API_KEY}" ]; then
+            echo "::error title=Missing grading credential::The repository secret TRUEFOUNDRY_GRADING_API_KEY is not set, so the grading eval cannot run. Add it under Settings -> Secrets and variables -> Actions -> New repository secret, named exactly TRUEFOUNDRY_GRADING_API_KEY, holding a DEDICATED TrueFoundry key (NOT the shared dev key and NOT the image-generation key — contention with the owner's play session made 299 of 313 calls fall back on one measurement run). Optionally set TRUEFOUNDRY_GRADING_BASE_URL as a secret if the gateway URL differs from the default."
+            exit 1
+          fi
+          echo "grading credential present"
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      # Matches the other jobs: the lockfile lags the workspace, so a frozen
+      # install would fail on drift unrelated to this change.
+      - name: Install workspace
+        run: pnpm install --no-frozen-lockfile
+
+      # The gate. No build step: @pa/grading runs from source under tsx.
+      #
+      # --repeats 3    a temperature-zero per-case flip cannot decide the gate.
+      # --concurrency 3  low, to stay off the gateway rate limit.
+      # --timeout 20000  ~20 s per case. The 1.5 s production cap is a *play* cap
+      #                  (a player never stands still waiting on an API); a
+      #                  *measurement* has no such constraint and must not adopt
+      #                  the play cap, or it measures timeouts instead of the model.
+      # These flags live in the `grading:eval:gate` package.json script so the
+      # workflow and a human's local run cannot drift apart.
+      - name: Run grading eval (live model)
+        id: eval
+        env:
+          TRUEFOUNDRY_GRADING_API_KEY: ${{ secrets.TRUEFOUNDRY_GRADING_API_KEY }}
+          TRUEFOUNDRY_GRADING_BASE_URL: ${{ secrets.TRUEFOUNDRY_GRADING_BASE_URL || 'https://tfy.promptlens.trilogy.com/v1' }}
+          TRUEFOUNDRY_GRADING_MODEL: ${{ vars.TRUEFOUNDRY_GRADING_MODEL || 'gemini-group/gemini-3.5-flash-lite' }}
+        run: |
+          mkdir -p .affordwork/grading-eval
+          # Capture the exit code without aborting the job — the report-commit and
+          # issue steps must run first, then the job fails at the end. 0 pass,
+          # 1 gate fail, 2 misconfiguration; the harness's own coverage gate turns
+          # a degraded gateway into a loud fail (see the report), not a false pass.
+          set +e
+          pnpm grading:eval:gate --json .affordwork/grading-eval/report.json
+          code=$?
+          set -e
+          echo "exit_code=${code}" >> "$GITHUB_OUTPUT"
+          if [ "${code}" -eq 0 ]; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Record a DATED report in the repo, pass or fail. This is the signal that
+      # survives nobody watching: the git history is the trend, and a missing date
+      # is proof the nightly stopped — the exact thing a green dashboard hides.
+      - name: Write the dated report
+        if: ${{ always() && steps.eval.outcome != 'skipped' }}
+        run: |
+          date_utc="$(date -u +%F)"
+          dir="docs/process/grading-eval"
+          mkdir -p "$dir"
+          if [ -f .affordwork/grading-eval/report.json ]; then
+            cp .affordwork/grading-eval/report.json "${dir}/${date_utc}.json"
+          else
+            # No report means the eval crashed before writing one — record that,
+            # rather than leaving a silent gap that reads like a healthy skip.
+            printf '{\n  "date": "%s",\n  "error": "eval produced no report (crashed before writing); see the workflow run log",\n  "runUrl": "%s/%s/actions/runs/%s"\n}\n' \
+              "${date_utc}" "${GITHUB_SERVER_URL}" "${GITHUB_REPOSITORY}" "${GITHUB_RUN_ID}" \
+              > "${dir}/${date_utc}.json"
+          fi
+          cp "${dir}/${date_utc}.json" "${dir}/latest.json"
+
+      - name: Commit the dated report
+        if: ${{ always() && steps.eval.outcome != 'skipped' }}
+        run: |
+          date_utc="$(date -u +%F)"
+          git config user.name "grading-eval-bot"
+          git config user.email "grading-eval-bot@users.noreply.github.com"
+          git add docs/process/grading-eval/
+          if git diff --cached --quiet; then
+            echo "no report change to commit"
+            exit 0
+          fi
+          # [skip ci] so committing the report does not re-trigger the main CI.
+          git commit -m "chore(grading-eval): nightly report ${date_utc} [skip ci]"
+          pushed=0
+          for attempt in 1 2 3; do
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" \
+              && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              pushed=1
+              break
+            fi
+            echo "push attempt ${attempt} failed; retrying"
+            sleep "$((attempt * 5))"
+          done
+          if [ "${pushed}" -ne 1 ]; then
+            # Non-fatal: the artifact below still preserves the report, and the
+            # issue-on-failure still fires. A blocked push must not mask the gate.
+            echo "::warning title=Report not committed::Could not push the dated grading-eval report to ${GITHUB_REF_NAME}. If the branch is protected against the Actions bot, rely on the uploaded artifact and the failure issue instead."
+          fi
+
+      # Belt-and-suspenders: the report as an artifact too, matching the
+      # playthrough job's precedent. Artifacts expire, so the committed report is
+      # the durable trend; this covers the window before/if a push is blocked.
+      - name: Upload the report artifact
+        if: ${{ always() && steps.eval.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: grading-eval-report
+          path: .affordwork/grading-eval/report.json
+          if-no-files-found: warn
+
+      # A nightly that fails at 3 a.m. and notifies nobody is decoration. On a
+      # gate failure, open (or comment on a rolling) issue so a human is actually
+      # pinged. Uses the auto-provided GITHUB_TOKEN — no extra secret.
+      - name: Open an issue on gate failure
+        if: ${{ always() && steps.eval.outputs.result == 'fail' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          date_utc="$(date -u +%F)"
+          report=".affordwork/grading-eval/report.json"
+          body="$(mktemp)"
+          {
+            echo "The nightly grading evaluation gate failed on ${date_utc} (exit ${{ steps.eval.outputs.exit_code }})."
+            echo
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "Dated report: docs/process/grading-eval/${date_utc}.json"
+            echo
+            if [ -f "${report}" ]; then
+              echo "Headline:"
+              jq -r '"- false negatives: \(.falseNegatives) (\((.falseNegativeRate*1000|floor)/10)%)  <- the toxic direction\n- false positives: \(.falsePositives) (\((.falsePositiveRate*1000|floor)/10)%), un-tolerated: \(.gate.untoleratedFalsePositives)\n- graded: \(.gradedCases)/\(.totalCases) (fallbacks are excluded; <90% classified is itself a fail)\n- model: \(.model)"' "${report}" 2>/dev/null || echo "- (could not parse ${report})"
+              echo
+              echo "Gate reasons:"
+              jq -r '.gate.reasons[]? | "- " + .' "${report}" 2>/dev/null || echo "- (no reasons array; see the report)"
+            else
+              echo "No report was produced — the eval crashed before writing one. See the run log."
+            fi
+          } > "${body}"
+          existing="$(gh issue list --state open --label grading-eval --json number --jq '.[0].number' 2>/dev/null || true)"
+          if [ -n "${existing}" ]; then
+            gh issue comment "${existing}" --body-file "${body}"
+          else
+            gh issue create --title "Grading eval gate failed (${date_utc})" --body-file "${body}" --label grading-eval \
+              || gh issue create --title "Grading eval gate failed (${date_utc})" --body-file "${body}"
+          fi
+
+      # Make the job red when the gate did not pass, so the Actions dashboard and
+      # any required-check wiring see the failure directly.
+      - name: Fail if the gate did not pass
+        if: ${{ steps.eval.outputs.result != 'pass' }}
+        run: |
+          echo "::error title=Grading eval gate failed::exit ${{ steps.eval.outputs.exit_code }} — see docs/process/grading-eval/ and the opened issue."
+          exit 1
