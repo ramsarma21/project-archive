@@ -53,15 +53,25 @@
 //   node --import tsx scripts/check-world-visual-sweep.mjs            # full sweep
 //   node --import tsx scripts/check-world-visual-sweep.mjs --census   # numbers only, no browser
 //   node --import tsx scripts/check-world-visual-sweep.mjs --shots-only
+//   node --import tsx scripts/check-world-visual-sweep.mjs --weld-gate      # BLOCKING gate (no browser)
+//   node --import tsx scripts/check-world-visual-sweep.mjs --weld-pairs     # per-asset pair counts, ranked
+//   node --import tsx scripts/check-world-visual-sweep.mjs --weld-selftest  # prove the gate both ways
 //   PLAYTHROUGH_BASE=http://localhost:5299 node --import tsx scripts/check-world-visual-sweep.mjs
 //
-// It needs a running dev web server (the mission harness) for the visual half.
-// Start one on a port the owner is NOT using, e.g.:
+// The visual sweep needs a running dev web server (the mission harness). Start one
+// on a port the owner is NOT using, e.g.:
 //   (cd apps/web && node node_modules/vite/bin/vite.js --port 5299 --strictPort)
 //
-// It is deliberately NOT wired into CI as a blocking gate. The mechanisable half
-// COULD be (see the report it prints), but the visual half is a contact sheet a
-// human reads — a gate nobody can interpret gets disabled. Output lands under
+// WHAT IS AND IS NOT A GATE. The VISUAL half stays a contact sheet a human reads —
+// "does this look like a building" is not a number, and a gate nobody can
+// interpret gets disabled. But ONE mechanisable signal now BLOCKS: `--weld-gate`
+// asserts the near-coincident, same-facing face-pair count (the torn/doubled
+// facade signature) on the building facades. A green weld gate means: no building
+// facade has grown a tear past its recorded number and no new building shipped
+// torn. It does NOT mean the buildings are visually perfect, and it says nothing
+// about the props it measures-but-does-not-gate (see the weld-gate section below
+// for why the elm and the ropewalk are exempt). `--weld-gate` and `--weld-selftest`
+// need no browser, so CI can run them cheaply. Report output lands under
 // .affordwork/world-sweep/ (gitignored): frames, a contact-sheet.html, and
 // findings.json / findings.md.
 
@@ -78,6 +88,9 @@ mkdirSync(SHOTS, { recursive: true });
 const argv = process.argv.slice(2);
 const CENSUS_ONLY = argv.includes("--census");
 const SHOTS_ONLY = argv.includes("--shots-only");
+const WELD_GATE = argv.includes("--weld-gate");
+const WELD_PAIRS = argv.includes("--weld-pairs");
+const WELD_SELFTEST = argv.includes("--weld-selftest");
 const BASE = (process.env.PLAYTHROUGH_BASE ?? "http://localhost:5299").replace(/\/$/, "");
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -253,6 +266,251 @@ const visibilityScore = (placement) => {
     distM: +distM.toFixed(1),
   };
 };
+
+// ---------------------------------------------------------------- weld gate
+//
+// THE ONE NUMERIC SIGNAL WORTH BLOCKING ON. The visual half of this sweep stays a
+// human contact sheet on purpose — "does this look like a building" is not a
+// number. But one failure mode the generator produces IS a clean number: a torn,
+// doubled facade is two skins of the same wall drawn a hair apart, which z-fight
+// into pale ribbons. That is a count — NEAR-COINCIDENT, SAME-FACING face pairs —
+// and it discriminates where the obvious metric does not.
+//
+// Why not sliver percentage. The obvious "needle triangles" metric INVERTS: an
+// authored facade is 36-40% slivers (an architrave and a louvre are legitimately
+// high-aspect) while the torn Meshy originals were 26-32%. A gate on sliver %
+// would punish clean authoring.
+//
+// WHY THE GATE IS SCOPED TO BUILDINGS, not the whole world. Measured across every
+// placed asset (--weld-pairs), the pair count is NOT clean everywhere: the
+// hand-authored, accepted Liberty Elm scores 16040 (its canopy is overlapping
+// leaf cards — near-coincident and same-facing by design), the ropewalk rig
+// 15740, a roof-board run 29171. Those are legitimately dense/overlapping
+// geometry, not torn facades, so a whole-world gate on this signal would false-
+// fail the elm. WITHIN the building facade class the signal is clean: every
+// re-authored facade is exactly 0, every generator facade is 855+ — an empty band
+// between 0 and the lowest generator building. So the gate reads the pair count
+// on EVERY placed asset (reported for the record) but only ENFORCES it on the
+// building facades (asset path `world/props/bldg-*`), the class the torn/doubled
+// facade defect actually lives in and the class where 0 is achievable.
+//
+// CLEAN_MAX = 64: an order of magnitude clear of both sides of the building band
+// (authored 0, lowest generator building 855), with headroom for the handful of
+// legitimately co-planar faces an authored canopy-on-post might carry — no
+// current building needed even one, every authored facade is exactly 0, so this
+// is margin, not a fit to any case.
+//
+// The gate is a DEBT LEDGER, the pattern check-world-affordances uses: generator
+// facades are grandfathered at their measured count and may SHRINK (a re-author
+// drops them toward 0) but never GROW; a re-authored facade carries no entry and
+// must stay under CLEAN_MAX, so a regression that re-tore it fails; and a NEW
+// building placed torn fails loudly. Zero-area-UV faces are reported alongside
+// but NOT gated: on the buildings they broadly track the pair count and add no
+// signal it does not already carry (bldg-scaffold-run is the one inversion — 864
+// zero-UV on 855 pairs — which is a decal-heavy lattice, not a second term worth
+// a separate threshold).
+const CLEAN_MAX = 64;
+
+/** The gate ENFORCES only on building facades; everything else is measured and
+ * reported but not blocked (see the header on the elm/ropewalk false positives). */
+const weldInScope = (assetPath) => assetPath.startsWith("world/props/bldg-");
+
+// Measured `--weld-pairs` count per BUILDING asset (weldMetric, this file).
+// Recorded, may shrink never grow; an in-scope asset not listed must stay under
+// CLEAN_MAX. Authored facades (bldg-brick, the row facades) are deliberately
+// absent — they measure 0 and are held to CLEAN_MAX, which is how a regression is
+// caught. The rest is generator output, ranked, each a candidate for author-it.
+const WELD_DEBT = new Map([
+  ["world/props/bldg-townhouse-1713.glb", 6721],   // drum-patched, Meshy body
+  ["world/props/bldg-row-brick-a.glb", 5457],       // the owner's clean counter-example by sliver% (10.2%), but torn by pairs
+  ["world/props/bldg-row-shop.glb", 2530],
+  ["world/props/bldg-warehouse-street.glb", 2223],
+  ["world/props/bldg-meeting-hollis.glb", 1922],
+  ["world/props/bldg-printshop.glb", 1189],
+  ["world/props/bldg-scaffold-run.glb", 855],
+]);
+// A debt entry may drift down freely; it fails only if it GROWS past its record
+// (plus a hair, so a re-parse jitter is not a regression).
+const WELD_GROW_TOL = 8;
+
+/**
+ * Near-coincident, same-facing face pairs — the torn/doubled-facade signature.
+ *
+ * Two triangles whose centroids sit within a few mm of each other on nearly the
+ * same plane AND face the SAME way are two skins of one wall: the z-fight that
+ * reads as a pale ribbon. Same-facing is deliberate — a double-sided card (a leaf,
+ * a flag) is two coincident triangles facing OPPOSITE ways, which is intended and
+ * must not be flagged. Exact-coincident pairs (zero offset) are the card case too
+ * and are excluded; only a genuine small OFFSET z-fights.
+ *
+ * Scale-relative so it reads the same on a 1.3m module and a 16m tower. Measures
+ * the asset's own geometry (its GLB space), independent of how it is placed.
+ */
+function weldMetric(THREE, scene) {
+  scene.updateMatrixWorld(true);
+  const tris = [];
+  scene.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry;
+    const pos = g.attributes.position;
+    const uv = g.attributes.uv;
+    const idx = g.index;
+    const n = idx ? idx.count : pos.count;
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+    for (let i = 0; i < n; i += 3) {
+      const ia = idx ? idx.getX(i) : i, ib = idx ? idx.getX(i + 1) : i + 1, ic = idx ? idx.getX(i + 2) : i + 2;
+      a.fromBufferAttribute(pos, ia).applyMatrix4(o.matrixWorld);
+      b.fromBufferAttribute(pos, ib).applyMatrix4(o.matrixWorld);
+      c.fromBufferAttribute(pos, ic).applyMatrix4(o.matrixWorld);
+      const normal = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
+      const area = normal.length() * 0.5;
+      normal.normalize();
+      const cx = (a.x + b.x + c.x) / 3, cy = (a.y + b.y + c.y) / 3, cz = (a.z + b.z + c.z) / 3;
+      let zeroUv = false;
+      if (uv) {
+        const u0 = uv.getX(ia), v0 = uv.getY(ia), u1 = uv.getX(ib), v1 = uv.getY(ib), u2 = uv.getX(ic), v2 = uv.getY(ic);
+        zeroUv = Math.abs((u1 - u0) * (v2 - v0) - (u2 - u0) * (v1 - v0)) * 0.5 < 1e-8;
+      }
+      tris.push({ c: new THREE.Vector3(cx, cy, cz), n: normal, area, zeroUv });
+    }
+  });
+  const box = new THREE.Box3();
+  for (const t of tris) box.expandByPoint(t.c);
+  const sz = box.getSize(new THREE.Vector3());
+  const diag = Math.hypot(sz.x, sz.y, sz.z) || 1;
+  const EPS = diag * 1e-4;
+  const COINCIDE = diag * 0.004;      // ~a few mm at this asset's scale
+  const CELL = COINCIDE;
+  const grid = new Map();
+  for (let i = 0; i < tris.length; i++) {
+    const t = tris[i];
+    const key = `${Math.round(t.c.x / CELL)},${Math.round(t.c.y / CELL)},${Math.round(t.c.z / CELL)}`;
+    let bucket = grid.get(key);
+    if (!bucket) grid.set(key, (bucket = []));
+    bucket.push(i);
+  }
+  let pairs = 0;
+  // Compare within a cell and to +neighbours so a pair straddling a cell edge is
+  // still seen, without double-counting.
+  const neigh = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 1, 1]];
+  for (const [key, bucket] of grid) {
+    const [kx, ky, kz] = key.split(",").map(Number);
+    for (const [dx, dy, dz] of neigh) {
+      const other = dx || dy || dz ? grid.get(`${kx + dx},${ky + dy},${kz + dz}`) : bucket;
+      if (!other) continue;
+      for (const i of bucket) {
+        for (const j of other) {
+          if (j <= i && !(dx || dy || dz)) continue;   // same cell: ordered pairs only
+          const t1 = tris[i], t2 = tris[j];
+          const d = t1.c.distanceTo(t2.c);
+          if (d <= EPS || d > COINCIDE) continue;        // exclude exact (cards) + far
+          if (t1.n.dot(t2.n) > 0.985) pairs++;           // same-facing only
+        }
+      }
+    }
+  }
+  const zeroUv = tris.filter((t) => t.zeroUv).length;
+  return { tris: tris.length, pairs, zeroUv };
+}
+
+/** One measurement row per unique placed asset file, plus a debt verdict. */
+async function weldMeasure() {
+  const placements = sceneryPlacements(M1_EFFIGY_RUN);
+  const byPath = new Map();
+  for (const p of placements) if (!byPath.has(p.assetPath)) byPath.set(p.assetPath, p.asset);
+  const rows = [];
+  for (const [assetPath, asset] of byPath) {
+    const src = await meshOf(assetPath);
+    if (!src || src.error) { rows.push({ assetPath, asset, err: src?.error ?? "no file" }); continue; }
+    const m = weldMetric(THREE, await src.next());
+    const debt = WELD_DEBT.get(assetPath);
+    const scoped = weldInScope(assetPath);
+    let verdict;
+    if (!scoped) verdict = "unscoped";                 // measured, not gated
+    else if (debt === undefined) verdict = m.pairs > CLEAN_MAX ? "NEW-RED" : "clean";
+    else if (m.pairs > debt + WELD_GROW_TOL) verdict = "GROWN";
+    else verdict = m.pairs < debt - WELD_GROW_TOL ? "improved" : "held";
+    rows.push({ assetPath, asset, scoped, ...m, debt, verdict });
+  }
+  rows.sort((a, b) => (b.pairs ?? -1) - (a.pairs ?? -1));
+  return rows;
+}
+
+async function weldGate() {
+  const rows = await weldMeasure();
+  const scoped = rows.filter((r) => r.scoped && !r.err);
+  const seen = new Set(scoped.map((r) => r.assetPath));
+  const grown = scoped.filter((r) => r.verdict === "GROWN");
+  const newRed = scoped.filter((r) => r.verdict === "NEW-RED");
+  const improved = scoped.filter((r) => r.verdict === "improved");
+  const resolved = [...WELD_DEBT.keys()].filter((k) => !seen.has(k));
+
+  log(`\n==================== WELD GATE (near-coincident face pairs) ====================`);
+  log(`Enforced on building facades (world/props/bldg-*). CLEAN_MAX=${CLEAN_MAX}; ${WELD_DEBT.size} on the debt ledger (generator output, may shrink never grow).\n`);
+  log(`  ${"building".padEnd(30)} ${"tris".padStart(7)} ${"pairs".padStart(6)} ${"debt".padStart(6)} ${"0uv".padStart(5)}  verdict`);
+  for (const r of scoped.sort((a, b) => b.pairs - a.pairs)) {
+    const tag = { "NEW-RED": "NEW RED (FAIL)", GROWN: "GROWN (FAIL)", improved: "improved", held: "held", clean: "clean" }[r.verdict];
+    log(`  ${r.assetPath.replace("world/props/", "").padEnd(30)} ${String(r.tris).padStart(7)} ${String(r.pairs).padStart(6)} ${String(r.debt ?? "").padStart(6)} ${String(r.zeroUv).padStart(5)}  ${tag}`);
+  }
+  if (resolved.length) log(`\n  resolved (no longer placed): ${resolved.map((k) => k.replace("world/props/", "")).join(", ")}`);
+  // Context: the loudest UNSCOPED assets, to make the scoping decision visible.
+  const unscoped = rows.filter((r) => !r.scoped && !r.err).sort((a, b) => b.pairs - a.pairs).slice(0, 4);
+  log(`\n  measured, NOT gated (dense/overlapping geometry, not a facade — see header): ` +
+    unscoped.map((r) => `${r.assetPath.replace("world/props/", "")}=${r.pairs}`).join(", "));
+
+  const fails = [...newRed, ...grown];
+  if (fails.length) {
+    log(`\nWELD GATE: FAIL`);
+    for (const r of newRed) log(`  NEW RED  ${r.assetPath}: ${r.pairs} pairs > CLEAN_MAX ${CLEAN_MAX}, not on the ledger — a torn building shipped. Author it, or record it as debt with a reason.`);
+    for (const r of grown) log(`  GROWN    ${r.assetPath}: ${r.pairs} pairs > recorded ${r.debt} (+${WELD_GROW_TOL}) — a regression re-tore a facade.`);
+    return 1;
+  }
+  const held = scoped.filter((r) => r.verdict === "held").length;
+  const clean = scoped.filter((r) => r.verdict === "clean").length;
+  log(`\nWELD GATE: OK (${clean} authored facades clean under CLEAN_MAX, ${held} generator facades held, ${improved.length} improved; no new or grown tear).`);
+  return 0;
+}
+
+/** Prove the gate flags a torn mesh and clears a clean one, with synthetic scenes
+ * built here so the test needs no external file. A "clean" box has one skin per
+ * face; a "torn" box has a second skin of every face nudged 2mm out — the doubled
+ * facade, by construction. */
+function weldSelftest() {
+  // A 2m wall subdivided into an N×N grid of quads facing +Z. The clean wall is
+  // one skin; the torn wall adds a second skin of every cell nudged 2mm out — a
+  // doubled facade by construction, sized so its pair count lands in the same
+  // hundreds band as the real generator output rather than a toy count.
+  const wall = (N, dupOffset) => {
+    const scene = new THREE.Group();
+    const positions = [];
+    const cell = (x0, x1, y0, y1, off) => {
+      const z = off;
+      positions.push(x0, y0, z, x1, y0, z, x1, y1, z, x0, y0, z, x1, y1, z, x0, y1, z);
+    };
+    for (let ix = 0; ix < N; ix++) {
+      for (let iy = 0; iy < N; iy++) {
+        const x0 = (ix / N) * 2, x1 = ((ix + 1) / N) * 2;
+        const y0 = (iy / N) * 2, y1 = ((iy + 1) / N) * 2;
+        cell(x0, x1, y0, y1, 0);
+        if (dupOffset > 0) cell(x0, x1, y0, y1, dupOffset);   // a second skin, nudged out
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    scene.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial()));
+    return scene;
+  };
+  const clean = weldMetric(THREE, wall(10, 0));
+  const torn = weldMetric(THREE, wall(10, 0.002));   // 2mm doubled skin, 100 cells
+  let ok = true;
+  const check = (name, cond) => { log(`  ${cond ? "PASS" : "FAIL"}  ${name}`); if (!cond) ok = false; };
+  check(`clean wall has 0 near-coincident pairs (got ${clean.pairs})`, clean.pairs === 0);
+  check(`clean wall clears CLEAN_MAX (${clean.pairs} <= ${CLEAN_MAX}) → a NEW asset this clean passes`, clean.pairs <= CLEAN_MAX);
+  check(`torn wall (doubled skin) is flagged in the hundreds (got ${torn.pairs})`, torn.pairs > 100);
+  check(`torn wall trips the non-ledger gate (${torn.pairs} > CLEAN_MAX ${CLEAN_MAX}) → a NEW torn asset fails`, torn.pairs > CLEAN_MAX);
+  log(ok ? "\nweld-gate selftest: OK" : "\nweld-gate selftest: FAILED");
+  return ok ? 0 : 1;
+}
 
 // ---------------------------------------------------------------- static census
 const findings = [];
@@ -709,6 +967,18 @@ const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "
 
 // ---------------------------------------------------------------- main
 async function main() {
+  // The one numeric signal that blocks. These modes are self-contained (no
+  // browser, no full census) so CI can run the gate cheaply and often.
+  if (WELD_SELFTEST) { process.exit(weldSelftest()); }
+  if (WELD_PAIRS) {
+    const rows = await weldMeasure();
+    log(`\nnear-coincident face pairs per placed asset (ranked; the torn-facade signal):\n`);
+    log(`  ${"asset".padEnd(34)} ${"tris".padStart(7)} ${"pairs".padStart(6)} ${"0uv".padStart(5)}`);
+    for (const r of rows) log(`  ${r.assetPath.replace("world/props/", "").padEnd(34)} ${String(r.tris ?? "—").padStart(7)} ${String(r.pairs ?? r.err ?? "—").padStart(6)} ${String(r.zeroUv ?? "—").padStart(5)}`);
+    process.exit(0);
+  }
+  if (WELD_GATE) { process.exit(await weldGate()); }
+
   log(`check-world-visual-sweep → ${CENSUS_ONLY ? "census only" : SHOTS_ONLY ? "shots only" : "full sweep"}`);
   // The census both enumerates placements and computes the mechanisable findings.
   // --shots-only skips the findings but still needs the enumeration to know what
