@@ -17,8 +17,11 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 
 - **[x]** No transition drives the capsule through an authored solid. Swept, per-substep, no
   ignore list.
-- **[ ]** No transition drives the body through **drawn** geometry. Distinct from the above and
-  not yet checkable — the mover reads authored hulls and has never touched a GLB.
+- **[~]** No transition drives the body through **drawn** geometry. **Now measurable**
+  (`0aefc4c`): 10 of 32 transitions clip drawn geometry — the meeting-house ridge at 0.32 m is
+  "climbing through a church", caught at last. Five elm climbs bury the body ≤0.81 m in the trunk
+  and **survived two elm rebuilds**, so the anchors run up the bole's centreline by design: a
+  climb-authoring defect, not an asset one. Fixes in flight.
 - **[x]** A climb happens only where a visible means exists, and the means is **solid** — the
   body can no longer pass through a ladder (`381860f`). It stands a body-radius beside the climb
   foot so no invisible wall appears where the player must stand; the mover collides with it while
@@ -29,7 +32,11 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[ ]** A fall has a consequence proportional to its height. An 11 m drop onto cobbles
   currently ends in a harmless stand; the edge brake gates a run-off above 5.5 m but never a
   jump.
-- **[ ]** Nine traversal moments sit at or past a human threshold: three drops land 1.9–2.2 m
+- **[~]** Eight of nine traversal moments are adjudicated **legitimately hard and kept, with
+  reasons** — a 2.2 m stride off a roof is what the engine's own `runOffMaxDropM` encodes. The one
+  genuinely implausible moment is a 3.4 m drop that classifies as a *roll* onto a 1.6 m beam
+  barely wider than the body; a 0.2 m beam raise makes it a controlled hang-drop. In flight.
+  Original measurements: three drops land 1.9–2.2 m
   as a stride where a body would roll, one 5.2 m drop is at the roll ceiling, one 3.4 m drop
   lands on a 1.6 m beam, one 3.2 m hang-drop hits hard ground, two 3.0 m roof-pitch climbs are
   at the climb ceiling.
@@ -54,8 +61,10 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
     ladders leans in **mid-air** against the floating slab. It is geometrically correct — foot
     and top match the authored surfaces exactly. The drawn building is not where the authored
     solid is. Authored-versus-drawn divergence, in one image.
-- **[ ]** Five catch targets have acceptance radii reaching past the thing meant to catch you
-  (59%–88% overrun).
+- **[x]** All five catch targets land on the thing meant to catch them (`8e7e218`). Two were
+  already resolved by the elm rebuild; the three real overruns were each fixed with the right
+  lever — re-centring, a radius cut only where no solver consumes it, and a *bigger object* where
+  the radius is pinned by test. Debt 22 → 19.
 - **[ ]** Cover you can see is cover that stops a ball, everywhere — true in the arena, not yet
   true for the rope capstan and coils, which sit 0.64–0.99 m below their cover line.
 
@@ -73,8 +82,10 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[x]** One guided line, no backtracking: 164.5 m against 77.5 m straight.
 - **[x]** Every action names the verb it needs on the take-off.
 - **[x]** No encounter can arm across a surface it cannot reach, and no approach can hang.
-- **[ ]** No route reaches an objective while bypassing a mandatory beat. The ground-up buttress
-  line reaches the steeple without crossing the roof trigger.
+- **[x]** No route reaches the objective bypassing the mandatory beat (`8e7e218`). It *is*
+  mandatory — the duel is gated on every stop reaching a verdict — and the bypass was thin rather
+  than open: the buttress branch cleared the trigger by 0.1 m. Widened 3.6 → 5.0 m with margin,
+  bounded so the thin same-surface interaction with the elm crown does not worsen.
 - **[x]** A resolved encounter stays resolved.
 
 ## 5. The fight is a fight
