@@ -284,6 +284,7 @@ the orchestrator actually made, and the specific change made in response.
 | Granted a worker a path the enforced map assigned elsewhere, blocking it | Update the map *before* writing the brief that depends on it |
 | Loop reported instead of acting; work queued waiting to be asked | Loop launches on every tick; a tick producing only process is a failed tick |
 | Told a hunt not to spend long on two items — suppression in miniature | Hunts report everything and rank afterwards; filtering is a separate pass |
+| Inherited "three clips are unbaked" from an earlier worker's report and asserted it as fact; the rig had all three | A claim relayed from another worker is **untraced** until measured. Cite the measurement, not the report. |
 
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran

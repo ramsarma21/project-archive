@@ -70,11 +70,19 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 
 ## 3. Animation and motion agree
 
-- **[ ]** A climb puts hands and feet on the rungs that exist. Currently the generic clip plays,
-  looped, with a planted foot sliding up to 4.07 m/s.
+- **[~]** A climb plays a one-shot mantle rather than a looping ladder clip (`f9ef8e1`) — the
+  baked `mantle` was orphaned while `CLIMB_UP` played the cyclic `climbUp`. Planted-foot slide
+  4.07 → 2.94 m/s and the loop is gone. Hands still are not *on* the rungs: that needs IK.
 - **[ ]** Vault, climb-over, hang-drop and mantle stop sliding planted feet and pushing limbs
-  through walls (6.8 m/s slide, 13.5 cm and 30 cm penetration respectively).
-- **[ ]** Step-up has a clip at all. It currently plays the run cycle.
+  through walls. **One structural cause, now identified:** authored verbs assign the root from a
+  smoothstep anchor path while clips play root-neutral and un-retargeted with **no IK**. No
+  source clip can fix it — it needs end-effector IK onto the anchor geometry, or a per-window
+  re-bake. Separately, `climbOver` is simply too long for its 520 ms window (81% shown); showing
+  it whole needs ≥642 ms, which is a gameplay-tuning call nobody has made.
+- **[~]** Step-up plays the run cycle, and that is **declined on measurement**: run is
+  spatially clean on a curb (zero clip-through, zero slide), while the only Mixamo candidate
+  shows 28% of itself in the deliberate 200 ms window — a flag becoming a severe. The real need
+  is a sub-half-second curb absorb that does not exist in the library.
 - **[x]** Locomotion clips are chosen from state, not from aliased per-frame speed.
 
 ## 4. The route reads, and cannot trap you
