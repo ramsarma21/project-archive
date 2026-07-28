@@ -220,18 +220,14 @@ zero-evidence form pass (`1c4250f`).
 **Infrastructure and debt**
 - Ground support is a point query, so a body can float off a roof edge (audit P4,
   deliberately deferred).
-- **The motion path is bit-exact now** (`35ab20c`): perturbing `hypot/sin/cos/atan2` by 7 ulp
-  over 600 ticks leaves position and velocity bit-identical, and the netcode sweep's worst
-  end-of-round gap fell from 3.6e-14 m to 5.5e-15 m. **The duel is not** — 18 hashed
-  transcendentals remain in `packages/duel` (`combat.ts` ×8, `policy.ts` ×10), so combat and
-  policy can still diverge. Deliberately not sequenced yet; single-player M1 doesn't depend
-  on it.
-  - **A call worth remembering:** yaw was dropped from the client-facing digest (kept in the
-    full server hash) because `atan2` can't be made exact and nothing reads `motion.yaw` to
-    produce position, velocity, health or hits. If facing ever becomes load-bearing, a
-    desync in it will no longer be reported.
-- PvP still runs a different arena (12×12, 4 cover) from the duel's (11×11, 8 cover). Plan
-  written: `docs/process/PvP-Arena-Unification-Plan.md`.
+- **Simulation is bit-exact across browsers**, motion (`35ab20c`) and duel (`4a467eb`).
+  Perturbing the transcendentals by 16 ulp over 400 ticks leaves the predictable hash
+  bit-identical; end-of-round position gap and the hit/miss boundary shift are both 0.
+  - **A call worth remembering:** yaw is dropped from the client-facing digest (kept in the
+    full server hash) because `atan2` cannot be pinned and nothing reads `motion.yaw` to produce
+    position, velocity, health or hits. **Aim is different and was not dropped** — it is hashed
+    and a predicting client recomputes it, so it was made exact instead. If facing ever becomes
+    load-bearing, a desync in it will not be reported.
 - Residual mid-route frame spikes trace to GPU rasterisation, not compilation — hardware and
   load, not code. Needs the owner's machine to settle magnitude.
 - ~~Dead `MissionDuelBrief` fields~~ — **removed** (`8573c27`). Four fields were built and
