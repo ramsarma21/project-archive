@@ -543,18 +543,31 @@ function MissionWatch(props: { runtime: MissionRuntime; reducedMotion: boolean }
             : pose.id === read.secondaryId
               ? "SECONDARY"
               : null;
+      const moving =
+        role === "SPEAKER"
+          ? read?.speakerMoving === true
+          : role === "SECONDARY"
+            ? read?.secondaryMoving === true
+            : false;
       const directive =
         read && role
           ? encounterActorDirective({
               phase: read.phase,
               verdictKind: read.verdictKind,
               role,
+              moving,
             })
           : null;
       const wanted = directive?.clip ?? speedClip;
 
-      // The drawn officer holds the pose; a spoken idle is stride-matched at 0.
-      rateFor(pose.id).current = strideTimeScale(wanted, mps);
+      // Stride the forced clip at the machine's KNOWN ground speed when it gives
+      // one (the approach walk, paced by the true 2.0 m/s stride), else fall back
+      // to the measured per-frame speed. Using the aliased measurement for the
+      // approach is what flipped the clip idle↔run frame to frame — the glitch run.
+      rateFor(pose.id).current = strideTimeScale(
+        wanted,
+        directive?.strideMps ?? mps,
+      );
       if (clipsRef.current[pose.id] !== wanted) {
         clipsRef.current[pose.id] = wanted;
         changed = true;

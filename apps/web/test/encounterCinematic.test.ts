@@ -201,7 +201,7 @@ test("actor directives: speak on the question, draw on a wrong verdict, calm on 
     verdictKind: null,
     role: "SPEAKER",
   });
-  assert.deepEqual(speakQ, { clip: "idle", loopOnce: false, gesture: true });
+  assert.deepEqual(speakQ, { clip: "idle", loopOnce: false, gesture: true, strideMps: 0 });
 
   const secondaryQ = encounterActorDirective({
     phase: "QUESTION",
@@ -216,7 +216,7 @@ test("actor directives: speak on the question, draw on a wrong verdict, calm on 
     verdictKind: "WRONG",
     role: "SPEAKER",
   });
-  assert.deepEqual(wrong, { clip: "draw", loopOnce: true, gesture: false });
+  assert.deepEqual(wrong, { clip: "draw", loopOnce: true, gesture: false, strideMps: null });
 
   for (const kind of ["CORRECT", "GRANTED"] as const) {
     const reprieve = encounterActorDirective({
@@ -224,14 +224,40 @@ test("actor directives: speak on the question, draw on a wrong verdict, calm on 
       verdictKind: kind,
       role: "SPEAKER",
     });
-    assert.deepEqual(reprieve, { clip: "idle", loopOnce: false, gesture: false });
+    assert.deepEqual(reprieve, {
+      clip: "idle",
+      loopOnce: false,
+      gesture: false,
+      strideMps: 0,
+    });
   }
 
-  // Approach leaves the renderer's measured walk/idle selection alone.
-  assert.equal(
-    encounterActorDirective({ phase: "APPROACH", verdictKind: null, role: "SPEAKER" }).clip,
-    null,
+  // Approach DECLARES the walk from the machine's known state rather than leaving
+  // it to the renderer's aliased per-frame measurement (the "glitch run"): a
+  // moving actor walks, strided at the true approach speed; an arrived one stands.
+  const walkingUp = encounterActorDirective({
+    phase: "APPROACH",
+    verdictKind: null,
+    role: "SPEAKER",
+    moving: true,
+  });
+  assert.equal(walkingUp.clip, "walk");
+  assert.ok(
+    walkingUp.strideMps != null && walkingUp.strideMps > 0,
+    "the approach walk is strided at a real ground speed",
   );
+  const arrivedHold = encounterActorDirective({
+    phase: "APPROACH",
+    verdictKind: null,
+    role: "SPEAKER",
+    moving: false,
+  });
+  assert.deepEqual(arrivedHold, {
+    clip: "idle",
+    loopOnce: false,
+    gesture: false,
+    strideMps: 0,
+  });
 });
 
 test("isReprieveVerdict treats CORRECT and GRANTED as reprieve, WRONG as pursuit", () => {

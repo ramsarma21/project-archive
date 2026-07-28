@@ -179,21 +179,43 @@ export interface EncounterActorDirective {
   readonly loopOnce: boolean;
   /** Apply the restrained procedural speaking gesture this frame. */
   readonly gesture: boolean;
+  /**
+   * The ground speed, m/s, to stride the forced locomotion clip at — or null to
+   * keep the renderer's measured per-frame speed (for actors the machine is not
+   * driving). Set for the approach walk so the cycle is paced by the machine's
+   * true, known stride rather than the aliased per-frame measurement.
+   */
+  readonly strideMps: number | null;
 }
 
 const NO_DIRECTIVE: EncounterActorDirective = {
   clip: null,
   loopOnce: false,
   gesture: false,
+  strideMps: null,
 };
+
+/**
+ * The stride speed the approach walk is paced at. Mirrors the encounter machine's
+ * APPROACH_SPEED_MPS: the machine walks an approaching actor toward the player at
+ * this fixed rate, so this is the actor's true ground speed regardless of what a
+ * single render frame's position delta happens to measure.
+ */
+const APPROACH_STRIDE_MPS = 2.0;
 
 /**
  * What one actor should be doing this frame, by phase and role. Pure.
  *
- *   APPROACH   — nothing forced; the renderer's measured walk/idle selection
- *                already reads the machine's swept movement as a walk.
+ *   APPROACH   — the machine walks the actor at a fixed, KNOWN stride, so DECLARE
+ *                that walk instead of re-deriving it from the renderer's per-frame
+ *                speed. The actor's position only updates on the 60Hz fixed step,
+ *                so a render frame landing between steps measures ~0 m/s (idle)
+ *                and one catching a step measures several m/s (run): the clip
+ *                flips idle↔run every frame — the "glitch run". A moving actor
+ *                walks (strided at the true approach speed); one who has arrived
+ *                and is holding stands (`idle`).
  *   QUESTION / SUBMITTING — the SPEAKER stands (`idle`) and gets the speaking
- *                gesture; a SECONDARY just stands.
+ *                gesture; a SECONDARY just stands. Both stationary (stride 0).
  *   RESOLVED   — a reprieve stands calm (`idle`); a wrong answer draws (`draw`,
  *                once, clamped) so both officers visibly move to stop the player.
  */
@@ -201,20 +223,27 @@ export function encounterActorDirective(input: {
   readonly phase: EncounterPhase;
   readonly verdictKind: EncounterVerdictKind | null;
   readonly role: "SPEAKER" | "SECONDARY";
+  /** True while the machine is still walking this actor toward the player. */
+  readonly moving?: boolean;
 }): EncounterActorDirective {
   switch (input.phase) {
+    case "APPROACH":
+      return input.moving
+        ? { clip: "walk", loopOnce: false, gesture: false, strideMps: APPROACH_STRIDE_MPS }
+        : { clip: "idle", loopOnce: false, gesture: false, strideMps: 0 };
     case "QUESTION":
     case "SUBMITTING":
       return {
         clip: "idle",
         loopOnce: false,
         gesture: input.role === "SPEAKER",
+        strideMps: 0,
       };
     case "RESOLVED":
       if (isReprieveVerdict(input.verdictKind)) {
-        return { clip: "idle", loopOnce: false, gesture: false };
+        return { clip: "idle", loopOnce: false, gesture: false, strideMps: 0 };
       }
-      return { clip: "draw", loopOnce: true, gesture: false };
+      return { clip: "draw", loopOnce: true, gesture: false, strideMps: null };
     default:
       return NO_DIRECTIVE;
   }

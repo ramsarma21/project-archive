@@ -1323,6 +1323,14 @@ export interface EncounterCinematicRead {
    * the number that proves it.
    */
   readonly speakerSeparationM: number;
+  /**
+   * Whether the machine is still walking each actor toward the player this tick
+   * (APPROACH, not yet arrived). The renderer forces the walk/idle clip from this
+   * KNOWN state rather than from an aliased per-frame speed, which is what stops
+   * the approach clip flipping. False in every non-approach phase.
+   */
+  readonly speakerMoving: boolean;
+  readonly secondaryMoving: boolean;
 }
 
 export function encounterCinematicRead(
@@ -1344,6 +1352,10 @@ export function encounterCinematicRead(
             speakerPose.position.z - runtime.motion.pos.z,
           )
         : Number.POSITIVE_INFINITY;
+      // Approaching-and-not-yet-arrived is "walking" for the renderer's clip.
+      const approaching = enc.phase === "APPROACH";
+      const spkActor = enc.actors.find((a) => a.kind === "SPEAKER");
+      const secActor = enc.actors.find((a) => a.kind === "SECONDARY");
       return {
         encounterId: enc.def.id,
         phase: enc.phase,
@@ -1351,6 +1363,8 @@ export function encounterCinematicRead(
         speakerId: enc.def.speaker.watcherId,
         secondaryId: enc.def.speaker.secondaryWatcherId,
         speakerSeparationM: separation,
+        speakerMoving: approaching && spkActor != null && !spkActor.arrived,
+        secondaryMoving: approaching && secActor != null && !secActor.arrived,
       };
     }
   }
