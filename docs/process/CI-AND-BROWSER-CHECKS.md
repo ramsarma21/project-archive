@@ -15,7 +15,7 @@ covers only the harness around them.
 |---|---|---|
 | `verify` | yes | boundary lint, content verification, `pnpm typecheck`, `pnpm test`, the three asset mesh-vs-authoring guards, packages build, web production build |
 | `api-postgres` | yes | `@pa/api` persistence suite against a real `postgres:17-alpine` |
-| `playthrough` | yes | opens the real client with Playwright against a running stack (Postgres + API + web) and plays the mission: world renders, route advances, every encounter arms **and** resolves, no penetration, yard reached, duel loads a graded world |
+| `playthrough` | yes | opens the real client with Playwright against a running stack (Postgres + API + web) and plays the mission: world renders, route advances, every encounter arms **and** resolves, no penetration, yard reached, a climb refuses without a ladder and arms with one, the Liberty Elm crown is reached by climbing and its beat arms, duel loads a graded world and the grader runs on the real path |
 | `lockfile` | **advisory** | `pnpm install --frozen-lockfile` |
 | `api-image` | **advisory** | Dockerfile lint plus a real build of `apps/api/Dockerfile` |
 
@@ -70,8 +70,28 @@ name with no continue-on-error and no degrade-to-warning:
   encounter **arms *and* resolves** within a timeout that fails rather than hangs
   (arming alone is the soft-lock signature), with no body ever inside solid hull.
 - **YARD** — a driven run reaches the rope-walk yard, the route's end line.
-- **DUEL** — `verdict=live` loads a real arena (not the void), and a graded answer
-  discriminates right from wrong (a correct answer pays more balls than a wrong one).
+- **REFUSAL** — "no ladder, no climb", exercised in real play. At the foot of the
+  authored scaffold ladder (route node `C_SCAFF_FOOT`, the `SCAFFOLD_D1` climb
+  volume) a driven climb **arms**; with every ladder and grip stripped from the
+  live collision world the **same** climb volume **refuses** — nothing offered,
+  nothing performed. A controlled A/B whose only difference is the affordance, so
+  it isolates the refusal predicate itself. It reads observable behaviour
+  (`previewVerb` / `motion.phase` / `flow.verb` / `verbsUsed`), never the probe
+  internals, because the engine lane is actively editing `parkour/probe.ts`. This
+  is the runtime half of the fix the floating-ladder / climb-through bugs needed —
+  the one check here that would have caught that shipped class.
+- **BEAT** — the Liberty Elm crown is **reached by climbing**, not assumed by
+  spawning on the bough (which is exactly what `missionBeat.test.ts` does). A
+  drop-in on the low bough (`F_LOW`) climbs the authored elm grip to the crown
+  (`F_CROWN`) and the posting beat **arms** from where the climb arrives —
+  reachability against the widened stance (2.4 m, ±135°), not the old tight values.
+- **DUEL** — `verdict=live` loads a real arena (not the void), a graded answer
+  discriminates right from wrong (a correct answer pays more balls than a wrong
+  one), **and the grader ran on the real path**: a real answer submitted on the
+  live attempt advances the API's own grading window on `/v1/health`
+  (`roundsInWindow` / `gradeableInWindow`), which a client-minted fallback the
+  server never saw could not do. This is the wiring "grading never ran in play"
+  broke, and asserting "a verdict appeared" would not have caught it.
 
 **Why its own job, not a step in `verify`.** `verify` is deliberately the
 database-free, browser-free gate that goes green in seconds; a Postgres service, a
@@ -108,25 +128,50 @@ the first CI job to upload an artifact; there was no prior pattern to match.
 
 **It is unweakened, and stays that way.** No retries that would mask a real failure,
 no reduced timeouts that would skip the soft-lock check, nothing degraded to a
-warning. Measured flakiness is zero across repeated runs with the census values
-identical to the decimal (171 draw calls, 5,108,594 triangles, 147 textures,
-duel `botSky` 0.058, magazines 14 vs 7, penetration 0 m); the ~90 s runtime is
-mostly the deliberate route/soft-lock budget. If provisioning ever proves genuinely
-unreliable, the honest move is to make it report-only with the reason stated here —
-not to ship a flaky blocking gate. A gate people learn to ignore is worse than none.
+warning. Measured flakiness is zero across repeated runs with the decisive values
+stable to the decimal (177 draw calls, ~5,110,538 triangles, 147 textures, duel
+`botSky` 0.058, magazines 14 vs 7, penetration 0 m; and for the added checks:
+the ladder climb **arms** while the stripped-affordance climb **refuses** with
+`maxY` 1.23 m every run, the elm crown is reached and its beat reaches `ACTIVE`,
+and a live submit advances the grading window by exactly one gradeable round). The
+runtime is **~115 s** (up from ~90 s), the added ~17 s kept lean by folding the
+grader check onto the already-open live-duel page rather than a fresh boot. Two
+purely *informational* figures jitter harmlessly and feed no threshold: the
+positive climb's `maxY` (it breaks on the first climb, so it stops between ~0.05
+and ~0.2 m up) and the beat `maxY` (always past the 8.0 m crown line, 8.0–8.3 m).
+
+The added checks are deterministic by construction: they spawn via named route
+nodes (no long free-run to accumulate timing drift) and drive short, bounded
+inputs. That matters because the **ROUTE** stage — a long real-time free-run from
+spawn — is the one part sensitive to a heavily loaded host: under a load average
+near 30 (a dev box with the game also being played) its driven bot can stall and
+the stage fails on a starved sim, not a real regression. On CI's dedicated runner
+that does not happen, which is why the gate measured zero flakiness there; if
+provisioning ever proves genuinely unreliable, the honest move is to make it
+report-only with the reason stated here — not to ship a flaky blocking gate. A
+gate people learn to ignore is worse than none.
+
+**Each added check has been shown to FAIL on a broken state** (a check nobody has
+seen fail is not a check): removing the ladder in the positive refusal run drops
+`climbArmed` to false; leaving the ladder in place in the negative run makes the
+climb happen where it must refuse (the exact neutered-refusal symptom); skipping
+the climb in **BEAT** fails "reached by climbing"; shrinking the beat stance fails
+"the beat arms from where the climb arrives"; and suppressing the live submit
+leaves the grading window flat and fails "the grader ran on the real duel path".
 
 #### What this gate CANNOT see
 
 A green `playthrough` does **not** mean the game is correct. The check reads hull
-penetration, a render census, encounter state and route progress — nothing more —
-so it is structurally blind to a real class of defects, and anyone reading a green
-run should not conclude otherwise:
+penetration, a render census, encounter and beat state, climb affordances, route
+progress and the API's grading counters — so it is still blind to a real class of
+defects, and anyone reading a green run should not conclude otherwise:
 
-- **Climbing through *drawn* geometry.** It reads the collision hull penetration
-  ring, and the collision column is legitimately empty in places where the visible
-  mesh is not; a body can pass through geometry that is drawn but not collidable and
-  this gate sees nothing wrong. The mesh-vs-collision agreement is the job of
-  `assets:verify:collision`, not this.
+- **Climbing through *drawn* geometry when an affordance IS present.** It reads the
+  collision hull penetration ring, and the collision column is legitimately empty in
+  places where the visible mesh is not; a body can pass through geometry that is
+  drawn but not collidable and this gate sees nothing wrong. (What *is* now covered
+  in play: that a climb-volume with **no** ladder or grip refuses — see REFUSAL.)
+  The mesh-vs-collision agreement is the job of `assets:verify:collision`, not this.
 - **Whether animations put hands on holds.** It never inspects rig poses. A climb
   can complete with the hands nowhere near the hold and the gate still passes; that
   is `scripts/check-clip-fidelity.mjs`'s domain.
@@ -134,15 +179,117 @@ run should not conclude otherwise:
   (surfaces with no authored affordance). This gate does not evaluate whether a
   climbed surface *presents* the affordance it was authored against — that is
   `assets:verify:affordances` and its `KNOWN_DEBT` list.
-- **The terminal skill beat.** The autonomous driver deliberately does not play the
-  Liberty Elm posting beat and bough dismount; a bot that reliably executes that
-  skill beat would itself be a flaky dependency. Full `REACHED_DUEL` completion is
-  covered at the data level by mission-m1's route/traversability tests, not here.
+- **The terminal skill beat's RESOLUTION.** BEAT now proves the crown is reached by
+  climbing and the posting beat **arms** there; what it still does not play is the
+  flare-timing skill beat to `RESOLVED` and the bough dismount, because a bot that
+  reliably executes that skill beat would itself be a flaky dependency. Full
+  `REACHED_DUEL` completion is covered at the data level by mission-m1's
+  route/traversability tests, not here.
+- **A real model classification.** DUEL now proves the grader ran on the real duel
+  path (the server recorded a gradeable round), but not that a *model* graded it:
+  CI runs with no classifier credential (`configured:false`, status `UNGRADED`), so
+  `classifiedInWindow` cannot move and every round falls back to the max grant.
+  Asserting a real classification would need a live model call — a flaky, paid,
+  external dependency this gate refuses to take on. That the round reached the
+  server pipeline is the honest, deterministic proof available; the model itself is
+  covered by `apps/api/src/duels/verifyLive.ts` (run deliberately, with a key).
 
-In short: this gate proves the mission *renders and can be driven end to end with
-its encounters resolving and its duel gradeable*. It does not prove the climbing
-reads right, the hands land, or every surface is honest. Those have their own gates;
-keep reading them.
+**What closed, and why the list is shorter.** Three properties this gate used to be
+blind to are now covered: the climb refusal ("no ladder, no climb") holds in real
+play, the elm crown is reachable by climbing (not merely assumed by a spawn), and
+the grader genuinely runs on the live duel path (not a client-minted verdict). Each
+was a **runtime, cross-system** property — the exact category a unit suite cannot
+reach — and each was proven both to pass on the shipped world and to fail on a
+deliberately broken one. This gate proves the mission *renders and can be driven end
+to end with its encounters resolving, its climbs honestly gated, its elm reachable
+and its duel gradeable by the server*. It still does not prove the climbing reads
+right, the hands land, every surface is honest, or a model actually scored the
+answer. Those have their own gates; keep reading them.
+
+### Mutation testing (Stryker) — assessed with numbers, and recommended against as a gate
+
+The played-mission checks above exist because a **manual** mutation hunt found real
+gaps in one pass (neutering the climb refusal left 496/496 engine-world and 234/234
+mission-m1 tests green, and two more of the same shape). That the hunt was manual
+raises a fair question: should mutation testing be a standing, repeatable capability?
+[Stryker](https://stryker-mutator.io) is the usual TypeScript answer. This is the
+assessment, with measured costs. **The recommendation is: worth an occasional,
+scoped, on-demand run as a discovery aid — not a CI gate, and not a substitute for
+the runtime checks above.**
+
+**Could it run scoped to the load-bearing packages?** Yes. Stryker's `mutate` globs
+can scope to exactly the files that matter — `engine-world/src/collision.ts` and
+`parkour/*`, `contracts`, `grading`, `duel` — rather than the whole monorepo, and
+you would run it per-package because each needs its own test command.
+
+**What would that cost?** The blocker is the runner. This repo tests with Node's
+built-in `node --test`, and Stryker has **no official `node:test` runner** — support
+is an open, unmerged PR ([stryker-js#6020](https://github.com/stryker-mutator/stryker-js/pull/6020),
+opened 2026-06, itself a Claude-authored PoC). Until it lands you use the **command
+runner**, which by design does **no coverage analysis**: it cannot tell which tests
+cover which mutant, so it re-runs the *entire package suite for every mutant*. That
+turns the per-package suite time into the per-mutant cost. Measured suite times and
+source sizes for the scoped set:
+
+| package (scope) | src LOC | suite time | est. mutants (~1/4 LOC) | serial CPU cost |
+|---|---|---|---|---|
+| engine-world (`collision.ts` + `parkour/*`) | 7,546 | 10.0 s | ~1,900 | ~5.3 h |
+| duel | 6,171 | 27.0 s | ~1,540 | ~11.6 h |
+| grading | 4,468 | 1.65 s | ~1,120 | ~31 min |
+| contracts | 3,262 | 1.2 s | ~815 | ~16 min |
+| **scoped total** | **21,447** | — | **~5,400** | **~17.6 CPU-hours** |
+
+So one scoped run is on the order of **~17 CPU-hours — roughly 370× the ~170 s test
+suite** — dominated by the two slow suites (`duel` at 27 s and `engine-world` at 10 s
+re-run thousands of times). With Stryker's parallelism that is ~2–4.5 h wall-clock on
+a typical 8-core runner; the mutant count is an estimate (the true figure needs a dry
+run) but the order of magnitude is not sensitive to it. A supported runner with
+`coverageAnalysis: "perTest"` — which only runs the handful of tests covering each
+mutant and skips uncovered ones — would cut this by roughly 10–50×, into the tens of
+minutes; but that requires migrating 14 packages off `node --test` (large, invasive)
+or waiting for the `node:test` PR to merge and stabilise.
+
+**Viable in CI?** Not as a per-PR blocking gate — hours per run against a ~170 s
+suite and a ~115 s playthrough budget is a non-starter, and it would be the flaky,
+slow gate the whole playthrough philosophy warns against. At best it is a **periodic
+(nightly/weekly) or on-demand** job, and realistically an on-demand, single-file run
+(`stryker run --mutate packages/engine-world/src/collision.ts`) that someone triggers
+when they touch a load-bearing predicate — minutes-to-tens-of-minutes at that scope.
+
+**Would it have caught the refusal gap — the most important finding?** Partly, and the
+honest nuance matters more than the yes. Stryker mutating `probe.ts` **would** generate
+mutants equivalent to neutering the refusal (a conditional forced false, the guard's
+`return null` removed, `=== null` flipped), and because the manual hunt *proved* the
+unit tests stay green under exactly that change, those mutants would **survive and be
+reported**. In that narrow sense: yes, Stryker would have surfaced the refusal
+predicate as under-tested. But three caveats are the real answer:
+
+1. **It would drown the signal.** `probe.ts`/`collision.ts` are full of branches
+   intentionally exercised only in play (dev diagnostics, defensive guards, geometry
+   edge cases). A scoped run yields dozens-to-hundreds of survivors; the refusal one
+   is a needle a human must find in that haystack. Stryker points at the haystack.
+2. **Its notion of "fixed" is the fix that misses the bug.** Stryker is satisfied when
+   a mutant is *killed by any test*. A one-line unit test on the isolated predicate
+   kills it and raises the score — but that is precisely the isolated test the manual
+   hunt showed does **not** protect the runtime property (a body climbing through in
+   the real client). Stryker cannot distinguish "predicate is unit-tested" from
+   "the property holds in play"; it would mark the gap closed the moment a green unit
+   test exists, while the owner-facing bug could still ship.
+3. **It is blind to the other two gaps entirely.** The grader-wiring gap ("classifier
+   never invoked on the real duel path") and the beat-reachability gap ("crown assumed
+   reachable") live at the browser+API integration boundary that no unit test touches.
+   Stryker mutating that code produces `NoCoverage` mutants — never even executed,
+   indistinguishable from dead code — so it says nothing about them.
+
+The through-line: the manual hunt's most valuable finding was that these are
+**runtime, cross-system** properties a unit suite structurally cannot protect — and a
+unit-mutation score is exactly the wrong instrument to tell you that, because a green
+score is satisfied by unit tests. **Recommendation:** keep mutation testing in the
+toolbox as an occasional, scoped, on-demand *discovery* run over the pure-logic
+packages (`collision`, `parkour`, `grading`, `contracts`) to surface under-tested
+predicates like the refusal one; do **not** wire it into CI, and do **not** read a
+high mutation score as evidence the game is correct — the playthrough gate remains the
+only instrument for the runtime properties, which is why the work went there.
 
 ### Why two jobs are still advisory
 
