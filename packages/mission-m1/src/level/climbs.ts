@@ -69,15 +69,6 @@ export const CLIMBS: ClimbSpec[] = [
     halfZ: 0.9,
     note: "The foot of the tower, standing on the leads.",
   }),
-  climbVolume({
-    section: "C_ASCENT",
-    serves: "C_LANE_CRATES->C_LANE_PENTICE",
-    onto: "LANE_PENTICE",
-    at: [52.6, 1.9, -9.7],
-    halfX: 0.9,
-    halfZ: 0.9,
-    note: "Off the lane crates onto the pentice above them; the crates sit under its middle.",
-  }),
 
   // ---- E_LEAP: the meeting house and the steeple ---------------------------
   climbVolume({
@@ -135,14 +126,5 @@ export const CLIMBS: ClimbSpec[] = [
     halfX: 1.0,
     halfZ: 1.0,
     note: "Low bough to crown. The crown overhangs the standing spot on every side.",
-  }),
-  climbVolume({
-    section: "F_TREE",
-    serves: "F_CROWN_E->F_UPPER",
-    onto: "BOUGH_UPPER",
-    at: [82.6, 8.3, 2.6],
-    halfX: 1.0,
-    halfZ: 1.1,
-    note: "Crown to the upper bough, 2m in from the near edge of it.",
   }),
 ];

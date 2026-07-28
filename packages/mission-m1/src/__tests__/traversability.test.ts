@@ -144,7 +144,7 @@ test("no drop link lands in the band where the reader brakes at the lip", () => 
 test("every leap of faith clears the dive floor and has a target the solver picks", () => {
   const targets = receivingTargetsOf(level);
   const leaps = linkVerdicts.filter((v) => v.kind === "LEAP_OF_FAITH");
-  assert.ok(leaps.length >= 2, "the mission has more than one dive");
+  assert.ok(leaps.length >= 1, "the mission has its signature dive");
   for (const verdict of leaps) {
     assert.ok(
       verdict.dropM >= MOVEMENT_CAPABILITIES.leapMinDropM,

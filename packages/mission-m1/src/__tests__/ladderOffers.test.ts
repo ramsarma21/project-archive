@@ -182,8 +182,11 @@ function offeredAlong(
 }
 
 test("the level actually authors obstacle links to check", () => {
+  // M1 is a single guided SAFE route now, so the count is the obstacles on that
+  // one line rather than the old three crossing lines. This is a floor that
+  // proves the check has real work to do, not a census of the branches.
   assert.ok(
-    APPROACHES.length >= 40,
+    APPROACHES.length >= 30,
     `expected the route to author obstacle links; found ${APPROACHES.length}`,
   );
 });

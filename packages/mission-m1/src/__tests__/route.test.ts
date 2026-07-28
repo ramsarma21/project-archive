@@ -34,15 +34,6 @@ test("a player who never takes a risk still finishes", () => {
   assert.ok(safe!.nodes.includes(level.postNode), "the safe route posts the handbill");
 });
 
-test("the fast route is genuinely faster, not just different", () => {
-  const safe = viaPost(["SAFE"])!;
-  const fast = viaPost(["SAFE", "FAST", "EXPERT"])!;
-  assert.ok(
-    fast.seconds < safe.seconds,
-    `skill has to pay: safe ${safe.seconds.toFixed(1)}s vs fast ${fast.seconds.toFixed(1)}s`,
-  );
-});
-
 test("the vista is on the guaranteed path, because it is the only navigation", () => {
   const safe = viaPost(["SAFE"])!;
   assert.ok(
@@ -62,20 +53,15 @@ test("every section is on the guaranteed path", () => {
   }
 });
 
-test("every section offers more than one line", () => {
-  const bySection = new Map<string, Set<string>>();
+test("every link on the route is a SAFE link", () => {
+  // M1 is one guided route. The crossing FAST/EXPERT branches that used to give
+  // every section a second and third line have retired, so the only line left is
+  // the guaranteed one — a single, honest route rather than three that arbitrate.
   for (const link of level.links) {
-    const section = nodeById.get(link.from)!.section;
-    const lines = bySection.get(section) ?? new Set<string>();
-    lines.add(link.line);
-    bySection.set(section, lines);
-  }
-  for (const section of level.sections) {
-    if (section.id === "G_YARD") continue;
-    const lines = bySection.get(section.id) ?? new Set();
-    assert.ok(
-      lines.size >= 2,
-      `${section.id} only has ${[...lines].join("/")}; a section with one line is a corridor`,
+    assert.equal(
+      link.line,
+      "SAFE",
+      `${link.id} is a ${link.line} link; the collapsed route is SAFE only`,
     );
   }
 });
@@ -119,25 +105,61 @@ test("every node and every link is declared exactly once", () => {
   );
 });
 
-test("every node a link names exists, and every node has a way in and out", () => {
-  // Both halves of this have bitten. Three links pointed at `D2_FLOOR_E` and
+test("every node a link names exists, and the guided route strands nobody on it", () => {
+  // The first half has bitten: three links pointed at `D2_FLOOR_E` and
   // `D2_STAGE_E`, which were never authored, and that alone took the SAFE line
-  // through the ropewalk out of the graph. `B_SHED_W` had an entrance and no
-  // exit, which is a node the player can be stranded on.
+  // through the ropewalk out of the graph.
   const ids = new Set(level.nodes.map((n) => n.id));
   const missing = level.links
     .flatMap((link) => [link.from, link.to])
     .filter((id) => !ids.has(id));
   assert.deepEqual([...new Set(missing)], [], "a link names a node nothing authors");
 
+  // The second half is now scoped to the LIVE route. M1 collapsed to one guided
+  // SAFE line, and the nodes the old FAST/EXPERT branches used are kept as inert
+  // graph data (nothing guides along them) until they are pruned — so a stranded-
+  // node check over every node would fire on data the mission never touches. The
+  // guard that matters is that the route a player is actually guided down never
+  // strands them: every node reachable from the spawn that can still reach an
+  // objective has a way in and a way out.
+  const forward = new Map<string, string[]>();
+  const backward = new Map<string, string[]>();
+  for (const link of level.links) {
+    (forward.get(link.from) ?? forward.set(link.from, []).get(link.from)!).push(link.to);
+    (backward.get(link.to) ?? backward.set(link.to, []).get(link.to)!).push(link.from);
+  }
+  const reachable = (start: string, graph: Map<string, string[]>): Set<string> => {
+    const seen = new Set([start]);
+    const stack = [start];
+    while (stack.length > 0) {
+      const at = stack.pop()!;
+      for (const next of graph.get(at) ?? []) {
+        if (!seen.has(next)) {
+          seen.add(next);
+          stack.push(next);
+        }
+      }
+    }
+    return seen;
+  };
+  const fromSpawn = reachable(level.startNode, forward);
+  const toGoal = new Set([
+    ...reachable(level.postNode, backward),
+    ...reachable(level.arenaNode, backward),
+  ]);
+  const live = [...fromSpawn].filter((id) => toGoal.has(id));
+  assert.ok(
+    live.includes(level.postNode) && live.includes(level.arenaNode),
+    "the guided route does not connect the spawn to both objectives",
+  );
   const outbound = new Set(level.links.map((l) => l.from));
   const inbound = new Set(level.links.map((l) => l.to));
-  for (const node of level.nodes) {
-    if (node.id !== level.startNode) {
-      assert.ok(inbound.has(node.id), `${node.id} cannot be reached from anywhere`);
+  for (const id of live) {
+    if (id !== level.startNode) {
+      assert.ok(inbound.has(id), `${id} on the live route cannot be reached from anywhere`);
     }
-    if (node.id !== level.arenaNode) {
-      assert.ok(outbound.has(node.id), `${node.id} is somewhere the player cannot leave`);
+    if (id !== level.arenaNode) {
+      assert.ok(outbound.has(id), `${id} on the live route is somewhere the player cannot leave`);
     }
   }
 });
