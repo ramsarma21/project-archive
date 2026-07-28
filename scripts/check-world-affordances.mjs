@@ -136,8 +136,12 @@ const DEBT_CATEGORIES = {
 };
 
 const KNOWN_DEBT = new Map([
-  // --- genuinely missing geometry / too-short asset (3) ---
-  ["DECK:OLD_BRICK_WATCH", { category: "missing-or-short", rank: 3, band: 0.000, delta: -3.475, note: "watch deck at 13.6m sits ~3.5m above bldg-meeting-hollis's own roofline; owner decision on record." }],
+  // --- genuinely missing geometry / too-short asset (2) ---
+  // DECK:OLD_BRICK_WATCH resolved on branch workflow/mission-flow: the tower + watch
+  // now draw `belfry-old-brick` (a re-key of bldg-brick.glb) whose flat roof lands
+  // at 13.60m, so the posted guard stands on drawn geometry (satisfied, 100% at
+  // plane) instead of floating 3.4m over the church roofline. Entry removed rather
+  // than left describing a solved problem.
   ["MASS_TOP:ROPE_CAPSTAN", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.986, note: "rope-coil-large crown ~0.99m below its cover top; needs a taller vaultable asset through the pipeline." }],
   ["MASS_TOP:COVER_COILS_C", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.635, note: "rope-coil-large crown ~0.64m below its cover top; needs a taller vaultable asset through the pipeline." }],
   // --- catch radius exceeds its landing surface (5) — route-authoring lane ---

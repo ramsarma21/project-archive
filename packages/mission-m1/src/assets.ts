@@ -43,7 +43,29 @@ export const ASSETS: AssetRequirement[] = [
   { key: "stone-steps", status: "EXISTING", path: "world/props/stone-steps.glb", sizeM: [2.6, 1.8, 1.8], why: "Dressing over the stepped strips up to the stage." },
   { key: "effigy-oliver", status: "EXISTING", path: "world/props/effigy-oliver.glb", sizeM: [1.0, 2.0, 1.0], why: "The thing the whole mission is about." },
   { key: "effigy-boot", status: "EXISTING", path: "world/props/effigy-boot.glb", sizeM: [0.8, 1.0, 0.8], why: "The jackboot with the devil in it, hung beside Oliver." },
-  { key: "church-meetinghouse", status: "EXISTING", path: "world/props/church-meetinghouse.glb", sizeM: [16, 10.2, 14], why: "Old Brick, at the head of King Street. NOT the Hollis Street house any more: see bldg-meeting-hollis for why one mesh cannot be both." },
+  { key: "church-meetinghouse", status: "EXISTING", path: "world/props/church-meetinghouse.glb", sizeM: [16, 10.2, 14], why: "Old Brick's spire silhouette at the head of King Street. NOT the Hollis Street house (see bldg-meeting-hollis) and NOT the watch post any more (see belfry-old-brick): its steeple mesh is a point, so a watch deck authored on top of it stood on nothing. Kept declared for the body's spire read." },
+  {
+    key: "belfry-old-brick",
+    // A re-key of the existing brick building mesh, not a new asset. Old Brick is
+    // literally brick (First Church), so its tower is drawn from `bldg-brick.glb`
+    // — the same masonry the gaol uses — rather than from `church-meetinghouse`,
+    // whose mesh is a pointed steeple with no flat top at any height. The watch
+    // post (OLD_BRICK_WATCH) is authored at 13.60m; a pointed spire fitted to that
+    // height presents 0% standable surface there and the posted guard floated 3.4m
+    // over the church's own 10.2m roofline (owner saw it; check-world-affordances
+    // read it SEVERE). This box is solved so a contain-fit lands the mesh's own
+    // FLAT roof at 13.60m over the watch footprint: `bldg-brick`'s natural mesh is
+    // 1.28 x 1.90 x 1.11, so the y-ratio binds at 13.60/1.90 = 7.16 and the tower
+    // draws 9.2 x 13.6 x 7.9 — a square brick belfry rising from the church's south
+    // front, its leaded top the watch platform. Width/depth follow the mesh aspect
+    // once the height binds; they oversail the 4 x 4 collision plinth the way all
+    // the level's stonework oversails its footing (see runtime `sceneryPlacements`).
+    status: "EXISTING",
+    path: "world/props/bldg-brick.glb",
+    sizeM: [9.2, 13.6, 8.0],
+    standableAt: [13.6],
+    why: "Old Brick's brick watch tower. Carries OLD_BRICK_WATCH at 13.60m — the posted tower guard's platform, 8m above the Town House gallery, which is the sightline the reflex-time beat is built on (opposition WATCH_OLD_BRICK, unchanged). Re-keyed onto the existing gaol brick mesh because the church's own steeple mesh is a point with no deck to stand on; a compact square tower with a flat leaded top is what the watch needs and what a brick meeting house put over its entrance.",
+  },
   {
     key: "bldg-meeting-hollis",
     status: "EXISTING",

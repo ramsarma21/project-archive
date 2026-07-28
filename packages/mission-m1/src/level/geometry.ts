@@ -701,26 +701,33 @@ building({
   note: "First Church, 'Old Brick', at the head of King Street. Its tower is the watch post.",
 });
 
-// The tower keeps `church-meetinghouse` — now a dedicated key, since the body
-// above moved to `bldg-meeting-hollis` — because that mesh's steeple silhouette is
-// the belfry the watch stands on, and it draws up to its box top at 10.2m.
+// RESOLVED (was UNRESOLVED). The tower and its watch deck now draw with
+// `belfry-old-brick` — a re-key of the existing `bldg-brick.glb` masonry, not a
+// new asset — instead of `church-meetinghouse`.
 //
-// UNRESOLVED, deliberately left for a level-data decision rather than forced: the
-// watch post (OLD_BRICK_WATCH below) is authored at 13.60m, which is 3.4m ABOVE the
-// 10.2m roof the drawn building reaches. Re-keying the body fixed the invisible
-// wall and the roof deck (check-world-affordances: OLD_BRICK__ROOF SEVERE -> off
-// the red list), and the steeple here lifted the watch from CRITICAL (nothing
-// under it) to SEVERE (66% of the footprint now has stone, 3.4m below), but no
-// meeting-house mesh reaches 13.6m: church-meetinghouse contain-fit to that height
-// is 7.8m deep, and the only true tall steeple (steeple-meetinghouse-climbable) is
-// a 30m route asset. Landing geometry AT 13.6m therefore needs one of: lowering
-// the watch/tower to the ~10.2m roofline (a gameplay change to the reflex beat's
-// sightlines), a dedicated compact belfry asset, or a new GLB. That is a morning
-// decision, not something to silently move the affordance for.
+// Why the change. The watch post (OLD_BRICK_WATCH below) is authored at 13.60m,
+// 3.4m ABOVE the 10.2m roof `church-meetinghouse` reached, and that mesh is a
+// pointed steeple: fitted to 13.6m it presents 0% standable surface there, so the
+// posted tower guard stood on nothing and floated 3.4m over the church's own
+// roofline in the sky (the owner saw it; check-world-affordances read it SEVERE,
+// -3.48m, 0% at plane). Lowering the deck instead was rejected: the guard's height
+// lives in opposition `WATCH_OLD_BRICK` (waypoint y=13.60), and the deck does not
+// drive it, so dropping the deck alone would leave the guard floating AND the 13.6m
+// perch — 8m above the Town House gallery — is the deliberate sightline the reflex
+// beat is composed against. So the geometry rises to meet the authored deck, per
+// the level's own rule that the art moves to meet the collision.
+//
+// `belfry-old-brick`'s box is solved (see assets.ts) so a PROP contain-fit lands
+// the brick mesh's FLAT roof at 13.60m over the watch footprint — 100% standable
+// there (verified: check-world-affordances OLD_BRICK_WATCH satisfied). The tower's
+// 4x4 COLLISION plinth is unchanged; only the drawn asset key changed, and the
+// belfry mesh oversails that footing the way all the level's stonework oversails
+// its own base (see runtime `sceneryPlacements`), so no cover/stealth/route hull
+// moved. `church-meetinghouse` is kept declared for the spire silhouette read.
 masses.push({
   id: "OLD_BRICK_TOWER",
   section: "C_ASCENT",
-  asset: "church-meetinghouse",
+  asset: "belfry-old-brick",
   rect: rect(50, 54, -15.4, -11.4),
   baseY: 0,
   topY: 13.1,
@@ -732,7 +739,7 @@ decks.push(
   deck({
     id: "OLD_BRICK_WATCH",
     section: "C_ASCENT",
-    asset: "church-meetinghouse",
+    asset: "belfry-old-brick",
     rect: rect(49.3, 54.7, -16.1, -10.7),
     y: 13.6,
     carriedBy: ["OLD_BRICK_TOWER"],
