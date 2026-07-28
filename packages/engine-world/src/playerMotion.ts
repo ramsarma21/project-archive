@@ -439,7 +439,9 @@ export function motionPenetration(
   world: CollisionWorld,
   motion: MotionState,
 ): MotionPenetration {
-  const ignore = new Set<string>();
+  // The low kerbs the grounded solver legitimately steps through. These are the
+  // ONLY solids an embed is allowed to report against.
+  const lowIgnore = new Set<string>();
   const low = lowStepIds(
     world,
     motion.pos.x,
@@ -448,15 +450,29 @@ export function motionPenetration(
     motion.pos.y,
     STEP_UP,
   );
-  if (low) for (const id of low) ignore.add(id);
-  if (motion.action) for (const id of motion.action.ignore) ignore.add(id);
+  if (low) for (const id of low) lowIgnore.add(id);
+  // THE SIDE OF A CLIMBED SURFACE IS NOT EXEMPT ANY MORE. This invariant used to
+  // exclude `action.ignore` — the very surface an authored climb/vault is
+  // crossing — from the solid-embed test, which is exactly why it could never see
+  // the body rise a radius inside the wall it was climbing: the one collider that
+  // mattered was switched off. Now that `stepAuthored` holds the capsule outside
+  // that surface (see there), the embed test consults the FULL solid world, so a
+  // climb-through becomes a violation the always-on assertion and the fuzzer both
+  // catch. A landable top does not read as an embed (its span is below the feet
+  // once topped out), so a legitimate mantle is still clean.
   const embeds = capsuleEmbeddedIn(
     world,
     motion.pos,
     CAPSULE_RADIUS,
     motion.capsuleHeight,
-    ignore,
+    lowIgnore,
   );
+  // The deck-plane test keeps the authored exclusion: topping out onto a deck, or
+  // stepping off one, legitimately passes the head/feet through that ONE deck's
+  // plane, and those two surfaces are named in `action.ignore`. Every other deck
+  // the path meets is still a floor it may not pierce.
+  const deckIgnore = new Set(lowIgnore);
+  if (motion.action) for (const id of motion.action.ignore) deckIgnore.add(id);
   const deck = deckThroughBody(
     world,
     motion.pos.x,
@@ -464,7 +480,7 @@ export function motionPenetration(
     motion.pos.y,
     motion.capsuleHeight,
   );
-  const deckId = deck && !ignore.has(deck.id) ? deck.id : null;
+  const deckId = deck && !deckIgnore.has(deck.id) ? deck.id : null;
   return { embeds, deckId };
 }
 
@@ -1473,10 +1489,44 @@ function stepAuthored(world: CollisionWorld, state: MotionState, dt: number, red
     };
   }
 
+  // THE SOLVER OWNS FINAL POSITION, EVEN DURING AN AUTHORED TRANSITION.
+  //
+  // The anchored path is a PROPOSAL, not the final position. Until this call the
+  // interpolator wrote `sample` straight onto the body — a setPosition-style
+  // teleport along the spline — and because the surface being climbed is in
+  // `action.ignore` for the per-tick veto above, the spline was free to plant the
+  // capsule CENTRE on the obstacle's near face, i.e. a full radius inside the
+  // wall, for the whole rise. That is the "climbing through things" defect: the
+  // move validates because the one surface it would hit is switched off.
+  //
+  // Every kinematic controller resolves this the same way (PhysX CCT move() vs
+  // setPosition(); Avian move_and_slide's pre/post depenetration): the collision
+  // solver decides where the body actually ends the substep. So the proposed
+  // sample is pushed out of every solid it would enter — the climbed surface
+  // INCLUDED; only the low kerbs the grounded solver already steps through are
+  // excluded — which holds the capsule on the OUTSIDE of the face it is climbing
+  // and lets it move over the lip only once its feet clear the top (a landable
+  // top's solid span no longer overlaps the capsule at foot height, so topping
+  // out is never pushed back). This is climbing from the outside, by the same
+  // MTV depenetration the free mover uses, rather than a spline through the wall.
+  // No ignore set at all. A grounded body may step THROUGH a low landable top
+  // (that is `lowStepIds`, the step offset), but an authored climb is topping OUT
+  // over exactly such a top, and near the crest the crate/cart top is within a
+  // step of the rising foot — so exempting low steps here is what let the mantle
+  // keep its capsule a radius inside the crate for the last of the rise. The
+  // authored solver pushes out of every solid: the near face while the feet are
+  // below the top (climb from outside), and nothing once the feet reach the top,
+  // because a landable top's solid span no longer overlaps the capsule there.
+  const freed = resolveOverlapXZ(
+    world,
+    { x: sample.x, y: sample.y, z: sample.z },
+    CAPSULE_RADIUS,
+    state.capsuleHeight,
+  );
   return {
     state: {
       ...state,
-      pos: { x: sample.x, y: sample.y, z: sample.z },
+      pos: { x: freed.x, y: sample.y, z: freed.z },
       yaw: sample.yaw,
       grounded: false,
       action: { ...action, elapsedMs },
