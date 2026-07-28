@@ -1,0 +1,75 @@
+{
+  "_comment": "Enforced by .cursor/hooks/lane-guard.sh. docs/process/LANES.md is the human-readable companion; keep them in step. A lane may write only paths matching its own globs. Anything unclaimed is open. Editing the main checkout's source is denied outright - the owner plays there.",
+  "_contested": "Owned by no single lane and shared by several. Denied to everyone: these need the orchestrator to sequence a merge, because a silent parallel edit here is how work gets clobbered.",
+  "contested": [
+    "apps/web/src/mission/MissionRun.tsx",
+    "apps/web/src/mission/MissionStage.tsx",
+    "apps/web/src/mission/MissionHud.tsx",
+    "apps/web/src/mission/MissionBeatPanel.tsx",
+    "apps/web/src/mission/mission.css",
+    "apps/web/src/mission/missionInput.ts",
+    "apps/web/src/mission/traversal.ts",
+    "apps/web/src/mission/devEntry.tsx",
+    "apps/web/src/duel/ArenaView.tsx",
+    "apps/web/src/duel/MissionDuel.tsx",
+    "apps/web/src/duel/missionBrief.ts",
+    "pnpm-lock.yaml"
+  ],
+  "mainCheckoutDenied": [
+    "apps/**",
+    "packages/**",
+    "content/**",
+    "assets/**",
+    "scripts/**",
+    ".github/**"
+  ],
+  "lanes": {
+    "mission-world": [
+      "packages/engine-world/**",
+      "packages/mission-m1/**",
+      "apps/web/src/chapter/M1Scenery.tsx",
+      "scripts/check-world-affordances.mjs",
+      "assets/pipeline/*work_ladder*",
+      "assets/pipeline/*ladder*",
+      "apps/web/public/world/props/work-ladder*"
+    ],
+    "mission-flow": [
+      "apps/web/public/world/props/liberty-elm-hero.glb",
+      "assets/pipeline/*liberty_elm*"
+    ],
+    "boss-fight": [
+      "content/**",
+      "packages/grading/**",
+      "packages/curriculum/**",
+      "apps/web/src/codex/**",
+      "apps/web/src/duel/duelItems.ts"
+    ],
+    "mission-encounters": [
+      "packages/duel/**",
+      "packages/netcode/**"
+    ],
+    "mission-cinematic": [
+      "apps/web/src/mission/duelPort.ts",
+      "apps/web/src/mission/missionDuelSky.ts",
+      "apps/web/src/mission/bossCutscene.ts",
+      "apps/web/src/mission/BossChallenge.tsx",
+      "apps/web/src/mission/MissionEncounter.tsx",
+      "apps/web/src/mission/encounterCinematic.ts",
+      "apps/web/src/mission/missionEncounter.css",
+      "apps/web/src/chapter/m1Mission.ts"
+    ],
+    "mission-presentation": [
+      "scripts/**",
+      ".github/**",
+      "docs/**",
+      "package.json",
+      "packages/assessment/**",
+      "packages/contracts/**",
+      "packages/reporting/**",
+      "packages/abilities/**"
+    ],
+    "world-audit": [
+      "scripts/check-world-visual*"
+    ]
+  }
+}

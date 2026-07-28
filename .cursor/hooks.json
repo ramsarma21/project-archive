@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": ".cursor/hooks/lane-guard.sh",
+        "matcher": "Write|StrReplace|Delete|EditNotebook",
+        "timeout": 10
+      }
+    ]
+  }
+}
