@@ -93,59 +93,95 @@ def _fade(t):
 
 
 def tileable_noise(size, period, rng):
-    """Value noise on a lattice that wraps at `period`, so the image tiles."""
-    g = rng.random((period, period))
-    xs = np.linspace(0, period, size, endpoint=False)
+    """Isotropic value noise on a lattice that wraps at `period`, so it tiles."""
+    return aniso_noise(size, period, period, rng)
+
+
+def aniso_noise(size, px, py, rng):
+    """Value noise on a px-by-py wrapping lattice — anisotropic, so `px<<py`
+    stretches features vertically (bark furrows) and `px>>py` horizontally."""
+    g = rng.random((py, px))
+    xs = np.linspace(0, px, size, endpoint=False)
     xi = np.floor(xs).astype(int)
-    xf = xs - xi
-    fx = _fade(xf)
-    fy = fx
-    x0 = xi % period
-    x1 = (xi + 1) % period
-    # bilinear over the wrapped lattice
-    top = g[np.ix_(x0, x0)] * (1 - fx)[None, :] + g[np.ix_(x0, x1)] * fx[None, :]
-    bot = g[np.ix_(x1, x0)] * (1 - fx)[None, :] + g[np.ix_(x1, x1)] * fx[None, :]
+    fx = _fade(xs - xi)
+    x0, x1 = xi % px, (xi + 1) % px
+    ys = np.linspace(0, py, size, endpoint=False)
+    yi = np.floor(ys).astype(int)
+    fy = _fade(ys - yi)
+    y0, y1 = yi % py, (yi + 1) % py
+    top = g[np.ix_(y0, x0)] * (1 - fx)[None, :] + g[np.ix_(y0, x1)] * fx[None, :]
+    bot = g[np.ix_(y1, x0)] * (1 - fx)[None, :] + g[np.ix_(y1, x1)] * fx[None, :]
     return top * (1 - fy)[:, None] + bot * fy[:, None]
 
 
-def make_bark_image():
-    """Deep-furrowed gray-brown elm bark that tiles at true metre scale."""
+def _smoothstep(a, b, t):
+    t = np.clip((t - a) / (b - a), 0.0, 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def bark_height_field():
+    """A greyish elm-bark HEIGHT field in [0,1]: flat-topped interlacing plates cut
+    by deep, irregular, roughly-vertical furrows. Not a sine wave — furrows come
+    from multi-octave ridged noise stretched vertically, broken into plates by
+    cross-fractures, so the pattern is irregular and interlacing the way real
+    bark is. Tiles seamlessly (every octave wraps)."""
     n = TEX
-    y = np.linspace(0, 1, n, endpoint=False)[:, None] * np.ones((1, n))
-    x = np.linspace(0, 1, n, endpoint=False)[None, :] * np.ones((n, 1))
-
-    # Vertical furrows: sharp ridged valleys running up the trunk, slowly wandering
-    # left/right with height and twisting, the way an old elm's ridges do. Several
-    # integer frequencies keep it seamless across the wrap.
-    wander = 0.06 * np.sin(2 * math.pi * (2 * y)) + 0.03 * np.sin(2 * math.pi * (5 * y + 0.3))
-    furrow_phase = (x + wander) * 2 * math.pi
-    ridged = 0.0
-    for freq, amp in ((7, 0.55), (14, 0.28), (23, 0.17)):
-        v = np.abs(np.sin(freq * math.pi * (x + wander) + 0.7 * freq * 0))
-        ridged = ridged + amp * (1.0 - v) ** 1.6
-    ridged = ridged / 1.0
-    grain = (
-        0.6 * tileable_noise(n, 16, RNG)
-        + 0.3 * tileable_noise(n, 32, RNG)
-        + 0.1 * tileable_noise(n, 64, RNG)
+    NF = 15                                            # furrows around one 2.6m tile
+    X = np.broadcast_to(np.linspace(0, 1, n, endpoint=False)[None, :], (n, n))
+    # Each furrow is a CONTINUOUS near-vertical line — a triangle wave across the
+    # bark — but its phase is both WANDERED (so furrows meander up the trunk) and
+    # DISTORTED (so their spacing is uneven, not a comb). UV u wraps the trunk
+    # (across = furrows) and v climbs it; every term wraps so the sheet still tiles.
+    wander = (
+        (aniso_noise(n, 4, 5, RNG) - 0.5) * 0.06
+        + (aniso_noise(n, 9, 11, RNG) - 0.5) * 0.035
+        + (aniso_noise(n, 18, 20, RNG) - 0.5) * 0.02
     )
-    height_field = np.clip(0.65 * ridged + 0.55 * grain, 0, 1)
-    # Vertical streaking so the grain reads as bark, not stucco.
-    streak = 0.85 + 0.15 * np.sin(2 * math.pi * (3 * y)) * (0.5 + 0.5 * grain)
-    height_field = np.clip(height_field * streak, 0, 1)
+    distort = (aniso_noise(n, 5, 4, RNG) - 0.5) * 1.5   # bunch and spread the furrows
+    phase = (X + wander) * NF + distort
+    frac = phase - np.floor(phase)
+    tri = np.abs(2.0 * frac - 1.0)                     # 0 in a furrow, 1 on a ridge crest
+    depth_table = 0.5 + 0.5 * RNG.random(NF)           # some grooves deeper than others
+    fid = (np.floor(phase).astype(int)) % NF
+    fdepth = depth_table[fid]
+    ridge = _smoothstep(0.0, 0.34, tri)               # wide flat ridge, thin furrow
+    plate_v = 1.0 - (1.0 - ridge) * fdepth
+    # Cross-fractures: horizontal cracks that break the ridges into elongated
+    # flat-topped plates, so the bark interlaces the way an elm's does instead of
+    # reading as a row of flutes. Thin and recessed, not a full checker.
+    hfield = aniso_noise(n, 4, 13, RNG) + 0.5 * aniso_noise(n, 8, 26, RNG)
+    hfield /= 1.5
+    crack = _smoothstep(0.60, 0.72, hfield)           # 1 only on the crack lines
+    H = np.minimum(plate_v, 1.0 - 0.7 * crack)
+    # Fine grain on the plate tops so ridges are not glassy-smooth.
+    grain = 0.5 * tileable_noise(n, 96, RNG) + 0.5 * tileable_noise(n, 200, RNG)
+    H = np.clip(H + 0.05 * (grain - 0.5), 0.0, 1.0)
+    # Deepen the furrows so the grooves read as recessed under the normal map.
+    H = H ** 1.35
+    return H
 
-    groove = np.array([0.085, 0.070, 0.055])
-    ridge = np.array([0.46, 0.40, 0.33])
+
+def make_bark_image(height_field):
+    """Matte greyish-brown bark albedo from the height field: dark in the furrows,
+    a lighter grey-brown on the plate tops, with slow per-plate hue drift."""
+    n = TEX
+    # Greyish-brown, matte, with real value contrast so the furrow pattern reads
+    # even in low light: dark grooves, distinctly lighter flat-topped ridges.
+    groove = np.array([0.085, 0.075, 0.065])
+    plate = np.array([0.44, 0.39, 0.33])
     t = height_field[..., None]
-    rgb = groove[None, None, :] * (1 - t) + ridge[None, None, :] * t
-    # A touch of desaturated green-gray lichen in the lower grooves.
-    lichen = np.clip(0.4 - height_field, 0, 1)[..., None] * np.array([0.05, 0.08, 0.05])[None, None, :]
-    rgb = np.clip(rgb + 0.5 * lichen, 0, 1)
+    rgb = groove[None, None, :] * (1 - t) + plate[None, None, :] * t
+    # Slow, low-frequency mottling so plates are not one flat colour.
+    mottle = (aniso_noise(n, 6, 10, RNG) - 0.5)[..., None]
+    rgb = rgb * (1.0 + 0.14 * mottle)
+    # A little grey-green lichen down in the furrows only.
+    lichen = np.clip(0.32 - height_field, 0, 1)[..., None] * np.array([0.03, 0.05, 0.03])[None, None, :]
+    rgb = np.clip(rgb + lichen, 0, 1)
     rgba = np.concatenate([rgb, np.ones((n, n, 1))], axis=2)
     # Round-trip through a real JPEG on disk so the packed image is JPEG-backed and
     # the glTF AUTO exporter embeds it as JPEG, not a wasteful opaque PNG. (Setting
     # alpha_mode/file_format on a Blender-native image is not enough — the exporter
-    # re-encodes whatever it finds packed.) The leaf atlas stays PNG for its alpha.
+    # re-encodes whatever it finds packed.) The leaf atlas and normal map stay PNG.
     img = _to_image("elm-bark-src", rgba, has_alpha=False)
     scene = bpy.context.scene
     scene.render.image_settings.file_format = "JPEG"
@@ -160,6 +196,33 @@ def make_bark_image():
     except OSError:
         pass
     return baked
+
+
+def make_bark_normal(height_field, strength=3.4):
+    """A tangent-space normal map from the bark height field, so the furrows read
+    as genuinely RECESSED under shading — depth a flat albedo cannot give at 16m.
+    A diffuse-only bark is what read as painted-on/polished. Stored as PNG (a
+    normal map JPEG'd below q100 subsamples the R/G that hold X/Y); the texture
+    gate reports this as a PNG_DATA_TEXTURE observation, never a block."""
+    n = TEX
+    H = height_field
+    # Central differences, wrapped so the map tiles with the albedo.
+    gx = (np.roll(H, -1, axis=1) - np.roll(H, 1, axis=1)) * 0.5
+    gy = (np.roll(H, -1, axis=0) - np.roll(H, 1, axis=0)) * 0.5
+    nx = -gx * strength
+    ny = -gy * strength
+    nz = np.ones_like(H)
+    inv = 1.0 / np.sqrt(nx * nx + ny * ny + nz * nz)
+    nx *= inv
+    ny *= inv
+    nz *= inv
+    r = nx * 0.5 + 0.5
+    g = ny * 0.5 + 0.5
+    b = nz * 0.5 + 0.5
+    rgba = np.stack([r, g, b, np.ones_like(H)], axis=2)
+    img = _to_image("elm-bark-n", rgba, has_alpha=True)  # alpha channel -> stays PNG
+    img.colorspace_settings.name = "Non-Color"
+    return img
 
 
 def _leaf_mask(h, w, rng):
@@ -256,7 +319,7 @@ def _to_image(name, rgba, has_alpha=True):
     return img
 
 
-def make_material(name, image, cutout):
+def make_material(name, image, cutout, normal_image=None, roughness=None):
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     nt = mat.node_tree
@@ -267,8 +330,21 @@ def make_material(name, image, cutout):
     tex.image = image
     tex.interpolation = "Linear"
     bsdf.inputs["Metallic"].default_value = 0.0
-    bsdf.inputs["Roughness"].default_value = 0.78 if cutout else 0.88
+    # Bark is matte: a specular sheen is exactly what read as varnished timber.
+    bsdf.inputs["Roughness"].default_value = roughness if roughness is not None else (0.78 if cutout else 0.96)
+    if "Specular IOR Level" in bsdf.inputs:
+        bsdf.inputs["Specular IOR Level"].default_value = 0.2
+    elif "Specular" in bsdf.inputs:
+        bsdf.inputs["Specular"].default_value = 0.2
     nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+    if normal_image is not None:
+        ntex = nt.nodes.new("ShaderNodeTexImage")
+        ntex.image = normal_image
+        ntex.interpolation = "Linear"
+        nmap = nt.nodes.new("ShaderNodeNormalMap")
+        nmap.inputs["Strength"].default_value = 1.0
+        nt.links.new(ntex.outputs["Color"], nmap.inputs["Color"])
+        nt.links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
     if cutout:
         nt.links.new(tex.outputs["Alpha"], bsdf.inputs["Alpha"])
         mat.blend_method = "CLIP"          # -> glTF alphaMode MASK, no sorted draw
@@ -283,9 +359,11 @@ def make_material(name, image, cutout):
 
 log("generating textures")
 bpy.ops.wm.read_factory_settings(use_empty=True)
-BARK_IMG = make_bark_image()
+BARK_H = bark_height_field()
+BARK_IMG = make_bark_image(BARK_H)
+BARK_N = make_bark_normal(BARK_H)
 LEAF_IMG = make_leaf_image()
-BARK_MAT = make_material("elm-bark", BARK_IMG, cutout=False)
+BARK_MAT = make_material("elm-bark", BARK_IMG, cutout=False, normal_image=BARK_N)
 LEAF_MAT = make_material("elm-leaf", LEAF_IMG, cutout=True)
 
 # One mesh, two material slots: slot 0 bark (opaque), slot 1 leaf (cutout).
@@ -344,9 +422,11 @@ def bole_radius(z):
     return BOLE_R * taper + flare
 
 
-BOLE_NA = 48
-BOLE_ZS = [0.0, 0.2, 0.45, 0.8, 1.3, 2.0, 3.0, 4.2, 5.4, 6.4,
-           7.3, 8.3, 9.2, 10.2, 11.2, BOLE_TOP]
+BOLE_NA = 56
+# Dense enough that smooth-shaded ring facets do not read as horizontal banding
+# across the bark; the flute/normal detail carries the vertical furrows.
+BOLE_ZS = [round(0.4 * i, 2) for i in range(int(BOLE_TOP / 0.4) + 1)] + [BOLE_TOP]
+BOLE_ZS = sorted(set([0.0, 0.2] + BOLE_ZS))
 
 
 def bole_point(i, z):
@@ -355,7 +435,7 @@ def bole_point(i, z):
     # the bole is never fatter than the collision cylinder, plus a shallow outward
     # ridge (bark standing a little proud). Budget < 60mm inward keeps the
     # narrowest ridge inside a tenth of the girth (verify_liberty wants >= 0.9r).
-    flute = 0.032 * (0.5 - 0.5 * math.cos(6.0 * theta + 0.30 * z))
+    flute = 0.042 * (0.5 - 0.5 * math.cos(6.0 * theta + 0.30 * z))
     grain = 0.013 * (0.5 - 0.5 * math.cos(13.0 * theta - 0.55 * z + 1.1))
     ridge = 0.034 * (0.5 + 0.5 * math.sin(9.0 * theta + 0.8 * z + 2.2)) ** 2
     r = bole_radius(z) - flute - grain + ridge
@@ -530,8 +610,21 @@ for tier in TIERS:
     add_ring_tube(rings_top, MAT_BARK, uv_of=lambda j, i: bark_uv_world(*rings_top[j][i]))
     add_ring_tube(list(reversed(rings_bot)), MAT_BARK,
                   uv_of=lambda j, i: bark_uv_world(*rings_bot[len(rings_bot) - 1 - j][i]))
-    add_ring_tube([rings_top[-1], rings_bot[-1]], MAT_BARK,
-                  uv_of=lambda j, i: bark_uv_world(*rings_top[-1][i]))
+    # Roll the outer edge over instead of closing it with a straight wall: a rim
+    # ring bulged out and held at mid-height turns the raft's edge from a plank
+    # lip into a rounded, bark-clad limb. This lives at the OUTER radius, past the
+    # covered footprint, so it never touches the flat walkable top or its coverage.
+    rim_ring = []
+    for i in range(TIER_NA):
+        top = rings_top[-1][i]
+        bot = rings_bot[-1][i]
+        rad = math.hypot(top.x, top.y) or 1.0
+        bulge = 1.0 + 0.10 / rad
+        rim_ring.append(Vector((top.x * bulge, top.y * bulge, (top.z + bot.z) / 2.0)))
+    add_ring_tube([rings_top[-1], rim_ring], MAT_BARK,
+                  uv_of=lambda j, i: bark_uv_world(*(rings_top[-1][i] if j == 0 else rim_ring[i])))
+    add_ring_tube([rim_ring, rings_bot[-1]], MAT_BARK,
+                  uv_of=lambda j, i: bark_uv_world(*(rim_ring[i] if j == 0 else rings_bot[-1][i])))
     # Close the small centre hole so the raft top is a continuous disc to the axis
     # (hidden inside the bole). A triangle fan from the inner ring to a hub vertex.
     hub_z = rings_top[0][0].z
@@ -776,8 +869,9 @@ bpy.ops.export_scene.gltf(
     export_format="GLB",
     export_yup=True,
     export_animations=False,
-    export_image_format="AUTO",   # bark -> JPEG (opaque), leaf -> PNG (alpha)
+    export_image_format="AUTO",   # bark -> JPEG (opaque), leaf + normal -> PNG
     export_jpeg_quality=88,
+    export_tangents=True,          # the bark normal map needs a tangent basis
     use_selection=True,
 )
 log("WROTE", OUT_GLB, os.path.getsize(OUT_GLB))
