@@ -203,7 +203,9 @@ export interface MissionRuntimeEvent {
     /** A watcher left his post and started walking. */
     | "WATCH_MOVED"
     /** A perspective encounter reached a verdict. */
-    | "ENCOUNTER_RESOLVED";
+    | "ENCOUNTER_RESOLVED"
+    /** A talked-down guard's durable clear lifted (player left his vicinity). */
+    | "ENCOUNTER_CLEAR_LIFTED";
   readonly detail: string;
 }
 
@@ -426,6 +428,25 @@ export interface MissionRuntime {
   encounters: EncounterInstance[];
   /** Watcher-scoped perception reprieves. Applied to the field's watcher input. */
   suppression: PerceptionSuppression;
+  /**
+   * The guards a RESOLVED (correct/granted) stop has durably talked down.
+   *
+   * This is the state the old timed-only reprieve was missing, and its absence is
+   * the whole of the "answer the guard, then a few seconds later the bar climbs
+   * and he chases again" report. `suppression` is a countdown: it buys a bounded
+   * window, and the tick it lapses a guard who is still standing in the player's
+   * cone re-acquires and re-arms pursuit — punishing a player for having answered
+   * correctly and then not sprinted off. A talked-down guard is DURABLE state, not
+   * a countdown: he stays out of the field's input for as long as the player is in
+   * his vicinity, and only returns to ordinary perception once the player has
+   * genuinely LEFT (past `CLEAR_EXIT_RADIUS_M`, comfortably beyond his sight
+   * range) — which is what makes "he can chase again later" a fresh approach the
+   * player walks back into rather than an automatic re-detection of a man who
+   * never moved. Scoped strictly to the ids the stop involved; everyone else, and
+   * a WRONG answer's pursuit, is untouched. Deterministic and replay-stable: it is
+   * a pure function of the fixed-tick player and watcher positions.
+   */
+  encounterClears: Set<string>;
   /** The encounter the overlay should submit this frame, or null. Overlay-written. */
   encounterSubmit: string | null;
   /** The encounter the overlay dismissed this frame, or null. Overlay-written. */
@@ -579,6 +600,7 @@ export function createMissionRuntime(input: {
       createEncounterInstance(mount.def, mount.variant),
     ),
     suppression: NO_SUPPRESSION,
+    encounterClears: new Set<string>(),
     encounterSubmit: null,
     encounterDismiss: null,
     encounterVerdictInbox: new Map(),
@@ -601,6 +623,19 @@ export function createMissionRuntime(input: {
  */
 const NOTICE_RISE_PER_TICK = 0.09;
 const NOTICE_FALL_PER_TICK = 0.03;
+
+/**
+ * How far the player must get from a talked-down guard before that guard's
+ * durable clear lifts and he returns to ordinary perception.
+ *
+ * Set comfortably beyond the watchers' sight range (`STEALTH_TUNING.coneRangeM`
+ * is 16m) so a clear only ever lifts once the guard genuinely cannot see the
+ * player — the lift can therefore never itself be the thing that re-detects him.
+ * This is the spatial boundary of the encounter: inside it the answered guard
+ * stays talked down no matter how long the player lingers; step outside it and
+ * the encounter is over, and a later approach is a fresh one he may react to.
+ */
+const CLEAR_EXIT_RADIUS_M = STEALTH_TUNING.coneRangeM + 2;
 
 function noticeTargetFor(phase: EncounterPhase | null): number {
   switch (phase) {
@@ -1087,20 +1122,30 @@ function applyEncounterResolution(
     `${resolution.encounterId}:${resolution.verdictKind}`,
   );
   if (resolution.suppress) {
+    // The bounded ledger reprieve is retained as the immediate, telemetry-legible
+    // grace window (the HUD-readable "you have a moment" the reprieve seconds
+    // promise), but it is NO LONGER the thing that keeps a guard off the player.
     runtime.suppression = suppressWatchers(
       runtime.suppression,
       resolution.suppress.ids,
       runtime.clock.tick,
       resolution.suppress.durationTicks,
     );
-    // The talked-down guards drop out of any contact and head back to patrol;
-    // the suppression above is what keeps them from re-detecting meanwhile.
+    // The durable clear is. These guards are talked down: they leave any contact,
+    // head back to patrol, and stay out of the field's input until the player has
+    // left their vicinity — so the ledger lapsing under a player who never moved
+    // can no longer re-arm the pursuit that answering was supposed to end.
+    for (const id of resolution.suppress.ids) runtime.encounterClears.add(id);
     runtime.stealth = {
       ...runtime.stealth,
       watchers: calmWatchers(runtime.stealth.watchers, resolution.suppress.ids),
     };
   }
   if (resolution.pursue) {
+    // A wrong answer is a real, escapable threat and must NOT be durably cleared:
+    // if any of these guards were talked down by an earlier stop, that clear is
+    // spent the moment they are provoked again.
+    for (const id of resolution.pursue.ids) runtime.encounterClears.delete(id);
     runtime.stealth = {
       ...runtime.stealth,
       watchers: investigateWatchers(
@@ -1110,6 +1155,54 @@ function applyEncounterResolution(
       ),
     };
   }
+}
+
+/**
+ * Lift the durable clear on any talked-down guard the player has walked away
+ * from, measured against the guard's LIVE pose (post-pursuit, post-override).
+ *
+ * The boundary is `CLEAR_EXIT_RADIUS_M`, set beyond sight range, so a lift can
+ * never be the thing that re-detects a guard: by the time he leaves the set the
+ * player is already out of his cone. Monotonic per guard — a clear that lifts
+ * stays lifted — so there is no boundary flicker, and a later, genuinely fresh
+ * approach is handled by ordinary perception rather than by this reprieve.
+ */
+function pruneEncounterClears(runtime: MissionRuntime): void {
+  if (runtime.encounterClears.size === 0) return;
+  const player = runtime.motion.pos;
+  const poseById = new Map(runtime.watcherPoses.map((p) => [p.id, p.position]));
+  for (const id of [...runtime.encounterClears]) {
+    const pos = poseById.get(id);
+    // A guard with no live pose this tick (not authored on the level anymore)
+    // has nothing to be cleared FROM; drop him rather than pinning a dead id.
+    if (!pos) {
+      runtime.encounterClears.delete(id);
+      continue;
+    }
+    if (Math.hypot(player.x - pos.x, player.z - pos.z) > CLEAR_EXIT_RADIUS_M) {
+      runtime.encounterClears.delete(id);
+      note(runtime, "ENCOUNTER_CLEAR_LIFTED", id);
+    }
+  }
+}
+
+/**
+ * The watcher poses the stealth field should read this tick: the live poses
+ * minus the bounded ledger's suppressed ids AND minus the durably cleared ids.
+ *
+ * Two reprieve mechanisms compose here without either reaching into the field's
+ * private state: `posesWithoutSuppressed` drops the timed ledger, and the durable
+ * `encounterClears` set drops the answered guards for as long as they remain
+ * talked down. Returns the ledger result by reference when nothing is cleared.
+ */
+function fieldWatchers(runtime: MissionRuntime, tick: number): readonly WatcherPose[] {
+  const suppressed = posesWithoutSuppressed(
+    runtime.watcherPoses,
+    runtime.suppression,
+    tick,
+  );
+  if (runtime.encounterClears.size === 0) return suppressed;
+  return suppressed.filter((pose) => !runtime.encounterClears.has(pose.id));
 }
 
 /**
@@ -1520,16 +1613,24 @@ function stepOnce(
     if (event.type === "leftPost") note(runtime, "WATCH_MOVED", event.watcherId);
   }
 
+  // Lift the durable clear on any talked-down guard the player has now walked
+  // clear of, then drop everyone still cleared (and everyone in the bounded
+  // ledger) from the field's input. This is the fix for the re-arming bar: while
+  // a cleared guard stays in this set his cone accrues nothing no matter how long
+  // the player lingers, so an answered stop cannot silently reopen into a chase.
+  pruneEncounterClears(runtime);
+
   const fieldResult = stepStealthField(world, runtime.stealth, {
     dt: FIELD_DT,
     tick,
     seed: runtime.seed,
     // Suppressed watchers are dropped from the field's input, so their cones
     // accrue nothing — while they stay in `runtime.watcherPoses` and are drawn
-    // the whole time. Scoped by id and bounded by an expiry tick; see
-    // stealth/suppression.ts. An answered stop buys the player a reprieve from
-    // exactly the guards it involved, and no others, for exactly its window.
-    watchers: posesWithoutSuppressed(runtime.watcherPoses, runtime.suppression, tick),
+    // the whole time. Scoped by id; the bounded ledger (`suppression`) is the
+    // immediate grace window and the durable `encounterClears` set is what keeps
+    // an ANSWERED guard talked down until the player leaves. See
+    // stealth/suppression.ts and `pruneEncounterClears`.
+    watchers: fieldWatchers(runtime, tick),
     player: stealthRead(runtime, read, traversing, frame.sprintHeld),
     clusters: crowdClustersFor(runtime, runtime.civilians),
     // Civilians are absent from the CollisionWorld by design — they must not
@@ -2071,6 +2172,7 @@ export function disposeMissionRuntime(runtime: MissionRuntime): void {
   // fresh machines and an empty ledger in `createMissionRuntime`.
   runtime.encounters.length = 0;
   runtime.suppression = NO_SUPPRESSION;
+  runtime.encounterClears.clear();
   runtime.encounterVerdictInbox.clear();
   runtime.encounterSummaries.clear();
   runtime.encounterView = null;

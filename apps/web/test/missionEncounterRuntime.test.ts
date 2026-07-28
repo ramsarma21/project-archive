@@ -115,20 +115,21 @@ test("traversal cannot reach the duel until both encounters have verdicts; a wro
   assert.equal(runtime.encounters[0]!.phase, "RESOLVED");
   const reprieveTick = runtime.clock.tick;
 
-  // A correct answer buys a scoped, bounded reprieve: exactly WATCH_A, for
-  // exactly 10 world seconds, and nobody else.
+  // A correct answer buys a scoped, bounded LEDGER reprieve — exactly WATCH_A,
+  // for exactly its window, and nobody else — as the immediate grace beat.
   assert.equal(isPerceptionSuppressed(runtime.suppression, "WATCH_A", reprieveTick + 100), true);
   assert.equal(isPerceptionSuppressed(runtime.suppression, "WATCH_B", reprieveTick + 100), false);
   assert.equal(
     isPerceptionSuppressed(runtime.suppression, "WATCH_A", reprieveTick + 10 * FIELD_TICK_HZ - 1),
     true,
-    "still suppressed one tick before expiry",
+    "ledger still holds one tick before its expiry",
   );
-  assert.equal(
-    isPerceptionSuppressed(runtime.suppression, "WATCH_A", reprieveTick + 10 * FIELD_TICK_HZ),
-    false,
-    "normal detection returns exactly at the 10s expiry",
-  );
+  // ...but the LEDGER lapsing is no longer what re-detects a talked-down guard.
+  // A resolved-correct stop DURABLY clears its guards: WATCH_A stays cleared past
+  // the ledger's expiry, and WATCH_B (unanswered) was never cleared. This is the
+  // state whose absence caused the "answer him, wait, and he chases again" report.
+  assert.equal(runtime.encounterClears.has("WATCH_A"), true, "the answered guard is durably cleared");
+  assert.equal(runtime.encounterClears.has("WATCH_B"), false, "an unanswered guard is not cleared");
 
   // The route still cannot resolve: the second stop is unanswered.
   assert.equal(runtime.outcome, null);
@@ -155,6 +156,76 @@ test("traversal cannot reach the duel until both encounters have verdicts; a wro
   assert.equal(runtime.outcome?.kind, "REACHED_DUEL", "a wrong verdict still completes the gate");
 });
 
+// The regression the owner reported, driven end to end: "even after u answer the
+// guards, a few seconds later the bar goes back up and they start glitchy running
+// after you again." A correct answer must DURABLY clear those guards — not for a
+// countdown, but for as long as the player is still in their vicinity — so that
+// standing in plain sight after resolving does not silently re-arm the pursuit.
+//
+// This test FAILS on the old timed-only reprieve: the ledger lapsed at
+// `reprieveWorldSeconds`, and a guard whose cone still covered the motionless
+// player re-accrued suspicion, climbed the alert ladder, and re-entered pursuit.
+test("a resolved guard does not re-acquire a player who stays in plain sight after the reprieve window", () => {
+  const REPRIEVE_S = 2;
+  // The guard is posted two metres in front of the player, facing him: his cone
+  // squarely covers the spawn, so on the old code he would re-detect the instant
+  // the ledger lapsed. atan2(dx, dz) toward the origin from +z is exactly PI.
+  const SEER = encounter("SHAMBLES_STOP", "WATCH_SEER", [0, 0, 2.2], REPRIEVE_S, "ITEM.A");
+  const base = testInstance({
+    objectives: [tickObjective("obj", Number.MAX_SAFE_INTEGER)],
+    spawn: { pos: { x: 0, y: 0, z: 0 }, yaw: 0 },
+    watcherIds: ["WATCH_SEER"],
+    watcherPosesAtTick: () => [
+      { id: "WATCH_SEER", position: { x: 0, y: 0, z: 2.2 }, baseYaw: Math.PI, capsuleHeight: 1.55 },
+    ],
+  });
+  const instance: MissionInstance = {
+    ...base,
+    encounters: [{ def: SEER, variant: SEER.variants[0]! }],
+  };
+  const runtime = createMissionRuntime({ instance, seed: 0xa11ce });
+
+  // Arm, open, answer CORRECT.
+  until(runtime, () => runtime.encounters[0]!.phase === "QUESTION");
+  runtime.encounterSubmit = "SHAMBLES_STOP";
+  stepMissionRuntime(runtime, FRAME);
+  runtime.encounterVerdictInbox.set("SHAMBLES_STOP", "CORRECT");
+  until(runtime, () => runtime.encounters[0]!.phase === "RELEASED");
+  const detectionsAtRelease = runtime.detections;
+  assert.equal(runtime.encounterClears.has("WATCH_SEER"), true, "the answered guard is cleared on release");
+
+  // Stand in plain sight for well past the reprieve window — the exact thing the
+  // owner did when the bar climbed and the guard chased again.
+  for (let frame = 0; frame < Math.round((REPRIEVE_S + 6) * 60); frame += 1) {
+    stepMissionRuntime(runtime, FRAME);
+  }
+
+  const seer = runtime.stealth.watchers.find((w) => w.id === "WATCH_SEER")!;
+  assert.equal(seer.state, "UNAWARE", "a talked-down guard staring at a still player stays calm");
+  assert.equal(seer.suspicion, 0, "his suspicion never re-accrues while he is cleared");
+  const seerPursuit = runtime.pursuit.find((p) => p.id === "WATCH_SEER")!;
+  assert.ok(
+    seerPursuit.phase === "POST" || seerPursuit.phase === "RETURN",
+    `the pursuit never re-arms; phase is ${seerPursuit.phase}`,
+  );
+  assert.equal(
+    runtime.detections,
+    detectionsAtRelease,
+    "no new detection is registered after the stop was resolved",
+  );
+  assert.equal(runtime.encounterClears.has("WATCH_SEER"), true, "and he stays cleared while the player lingers");
+
+  // Leave his vicinity: the clear lifts, so a genuinely fresh approach later is
+  // handled by ordinary perception rather than by this reprieve.
+  runtime.motion.pos = { x: 0, y: 0, z: -40 };
+  stepMissionRuntime(runtime, FRAME);
+  assert.equal(runtime.encounterClears.has("WATCH_SEER"), false, "the clear lifts once the player has left");
+  assert.ok(
+    runtime.recentEvents.some((e) => e.kind === "ENCOUNTER_CLEAR_LIFTED"),
+    "and the lift is telemetry-legible",
+  );
+});
+
 test("teardown resets machines, suppression, summaries and overlay state", () => {
   const instance = instanceWithEncounters();
   const runtime = createMissionRuntime({ instance, seed: 0x99 });
@@ -165,10 +236,12 @@ test("teardown resets machines, suppression, summaries and overlay state", () =>
   stepMissionRuntime(runtime, FRAME);
   assert.ok(runtime.encounterSummaries.size > 0);
   assert.notEqual(runtime.suppression, NO_SUPPRESSION);
+  assert.ok(runtime.encounterClears.size > 0, "a correct answer left a durable clear");
 
   disposeMissionRuntime(runtime);
   assert.equal(runtime.encounters.length, 0);
   assert.equal(runtime.suppression, NO_SUPPRESSION);
+  assert.equal(runtime.encounterClears.size, 0, "and teardown clears it");
   assert.equal(runtime.encounterSummaries.size, 0);
   assert.equal(runtime.encounterView, null);
   assert.equal(runtime.encounterVerdictInbox.size, 0);
