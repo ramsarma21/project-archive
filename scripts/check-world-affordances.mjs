@@ -849,6 +849,15 @@ async function run(options) {
   const loadStatus = new Map();
   for (const pl of placed) loadStatus.set(pl.record.status, (loadStatus.get(pl.record.status) ?? 0) + 1);
 
+  // Climb LADDERS are not standable surfaces: they carry no collision, the mover
+  // never lands on them, and they lean (a rotation this flat-plane placement does
+  // not reproduce), so their upright rungs would poke a false surface over a real
+  // one — the leaning ladder standing on the Hollis buttress read its buttress
+  // top +0.47m PROUD. They are the thing the player GRIPS, never a floor, so they
+  // are excluded from the geometry that answers "is there stone under this
+  // affordance". Scored the same way the ground plates are (not sampled).
+  const sampleable = placed.filter((pl) => !pl.asset.startsWith("work-ladder"));
+
   const rows = [];
   for (const aff of affordances) {
     if (aff.unresolved || aff.h === null || aff.h === undefined) {
@@ -861,7 +870,7 @@ async function run(options) {
       rows.push({ ...aff, result: null, verdict: { rank: -2, label: "GROUND", reason: "street-level; carried by the ground plates, not a scenery GLB" } });
       continue;
     }
-    const candidates = placed.filter((pl) => pl.record.status === "OK" && placedAabbOverlapsColumn(pl.record, aff.rect, aff.h));
+    const candidates = sampleable.filter((pl) => pl.record.status === "OK" && placedAabbOverlapsColumn(pl.record, aff.rect, aff.h));
     // Annulus decks: the deck surrounds a solid rising core (a tower shaft, a
     // steeple lantern). The standable walkway is the RING around that core, so
     // the core footprint is punched out of the sample — a hole in the walkway,
@@ -894,7 +903,7 @@ async function run(options) {
     if (aff.kind === "CLIMB_TO" && verdict.rank >= 1 && aff.ontoRect) {
       const arrival = intersectRect(aff.rect, aff.ontoRect);
       if (rectValid(arrival)) {
-        const arrivalCands = placed.filter((pl) => pl.record.status === "OK" && placedAabbOverlapsColumn(pl.record, arrival, aff.h));
+        const arrivalCands = sampleable.filter((pl) => pl.record.status === "OK" && placedAabbOverlapsColumn(pl.record, arrival, aff.h));
         // If the onto is itself an annulus deck, punch its rising core out of the
         // arrival too, so a climb whose footprint fell over the hole cannot pass.
         const arrivalExclude = ontoCoreRects(aff.onto, compiled);

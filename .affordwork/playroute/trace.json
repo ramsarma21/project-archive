@@ -1,0 +1,326 @@
+[
+  {
+    "tick": 58,
+    "pos": {
+      "x": 3,
+      "y": 7.1,
+      "z": -11
+    },
+    "grounded": true,
+    "speed": 0,
+    "verb": "NONE",
+    "preview": "NONE",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 337.3,
+    "riseM": 0,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 7.3,
+      "y": 7.1,
+      "z": -11
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 83,
+    "pos": {
+      "x": 4.19,
+      "y": 7.1,
+      "z": -11
+    },
+    "grounded": true,
+    "speed": 4.12,
+    "verb": "NONE",
+    "preview": "NONE",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 338.5,
+    "riseM": 0,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 7.3,
+      "y": 7.1,
+      "z": -11
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 108,
+    "pos": {
+      "x": 6.03,
+      "y": 7.1,
+      "z": -11
+    },
+    "grounded": true,
+    "speed": 4.55,
+    "verb": "NONE",
+    "preview": "NONE",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 334.3,
+    "riseM": 0,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 12.9,
+      "y": 7.1,
+      "z": -11.6
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 133,
+    "pos": {
+      "x": 7.93,
+      "y": 7.1,
+      "z": -11.1
+    },
+    "grounded": true,
+    "speed": 4.59,
+    "verb": "NONE",
+    "preview": "NONE",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 333.6,
+    "riseM": 0,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 12.9,
+      "y": 7.1,
+      "z": -11.6
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 158,
+    "pos": {
+      "x": 9.84,
+      "y": 7.1,
+      "z": -11.28
+    },
+    "grounded": true,
+    "speed": 4.6,
+    "verb": "NONE",
+    "preview": "NONE",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 335.5,
+    "riseM": 0,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 12.9,
+      "y": 7.1,
+      "z": -11.6
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 183,
+    "pos": {
+      "x": 11.75,
+      "y": 7.1,
+      "z": -11.47
+    },
+    "grounded": true,
+    "speed": 4.6,
+    "verb": "NONE",
+    "preview": "NONE",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 328.5,
+    "riseM": -1.75,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 15,
+      "y": 5.35,
+      "z": -11.6
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 208,
+    "pos": {
+      "x": 13.66,
+      "y": 7.1,
+      "z": -11.6
+    },
+    "grounded": true,
+    "speed": 4.6,
+    "verb": "RUN_OFF",
+    "preview": "RUN_OFF",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 328.1,
+    "riseM": -1.75,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 15,
+      "y": 5.35,
+      "z": -11.6
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 233,
+    "pos": {
+      "x": 15.57,
+      "y": 6.54,
+      "z": -11.64
+    },
+    "grounded": false,
+    "speed": 4.6,
+    "verb": "RUN_OFF",
+    "preview": "NONE",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 330.1,
+    "riseM": -1.19,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 15,
+      "y": 5.35,
+      "z": -11.6
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 258,
+    "pos": {
+      "x": 16.41,
+      "y": 5.35,
+      "z": -11.62
+    },
+    "grounded": true,
+    "speed": 2.56,
+    "verb": "RUN_OFF",
+    "preview": "NONE",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 331.3,
+    "riseM": -1.5,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 15.2,
+      "y": 3.85,
+      "z": -8.6
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 283,
+    "pos": {
+      "x": 15.57,
+      "y": 5.35,
+      "z": -10.49
+    },
+    "grounded": true,
+    "speed": 4.24,
+    "verb": "RUN_OFF",
+    "preview": "RUN_OFF",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 330.7,
+    "riseM": -1.5,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 15.2,
+      "y": 3.85,
+      "z": -8.6
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 308,
+    "pos": {
+      "x": 14.98,
+      "y": 4.67,
+      "z": -8.79
+    },
+    "grounded": false,
+    "speed": 4.32,
+    "verb": "RUN_OFF",
+    "preview": "NONE",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 331.6,
+    "riseM": -0.82,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 15.2,
+      "y": 3.85,
+      "z": -8.6
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  },
+  {
+    "tick": 333,
+    "pos": {
+      "x": 15.22,
+      "y": 3.85,
+      "z": -7.17
+    },
+    "grounded": true,
+    "speed": 4.17,
+    "verb": "RUN_OFF",
+    "preview": "RUN_OFF",
+    "objId": "post-the-handbill",
+    "title": "The Liberty Elm",
+    "via": "Off the leads",
+    "rangeM": 322.7,
+    "riseM": -1.95,
+    "cap": null,
+    "gw": null,
+    "wp": {
+      "x": 15.1,
+      "y": 1.9,
+      "z": -5.4
+    },
+    "enc": null,
+    "encLocked": false,
+    "outcome": null
+  }
+]

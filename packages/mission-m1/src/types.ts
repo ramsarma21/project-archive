@@ -154,6 +154,29 @@ export interface LadderPlacementSpec {
   rungGapM?: number;
 }
 
+/**
+ * A placed climb GRIP: a climb up a VISIBLE STRUCTURE that is not a ladder, for
+ * the two ascents where a bolted ladder reads worse than the honest holds
+ * already drawn — masonry set-offs, a tree's boughs. It is the owner's "ladder
+ * OR grip", and it is not an exemption: it names the drawn `support` mass and is
+ * validated (`alignClimbToGrip`) that the structure spans the rise and tops out
+ * with clearance, exactly as a ladder is. `compile.ts` forwards it to
+ * `world.grips`, which the refusal predicate consults beside `world.ladders`.
+ */
+export interface GripPlacementSpec {
+  id: string;
+  /** Foot of the climb, on the ground the player stands on. */
+  at: Vec3Tuple;
+  /** Deck or landable mass id the top-out lands on; its Y is the grip top. */
+  onto: string;
+  /** Outward face normal in XZ (points from the structure toward the climber). */
+  faceX: number;
+  faceZ: number;
+  /** The drawn solid mass the body grips: a buttress, a tree bole. */
+  support: string;
+  kind: "STEPPED_MASONRY" | "BOUGHS";
+}
+
 /** A walkable slope, emitted as stepped strips because the mover snaps 6cm. */
 export interface RampSpec {
   id: string;
@@ -431,6 +454,8 @@ export interface MissionLevel {
   climbs: ClimbSpec[];
   /** Placed climb ladders. Optional and empty today (see LadderPlacementSpec). */
   ladders?: LadderPlacementSpec[];
+  /** Placed climb grips: the two ascents a ladder should not serve. */
+  grips?: GripPlacementSpec[];
   nodes: RouteNode[];
   links: RouteLink[];
   patrols: PatrolSpec[];

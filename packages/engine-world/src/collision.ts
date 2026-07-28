@@ -177,10 +177,17 @@ export interface CollisionWorld {
   // most tests): no volume simply means no ascent is exempted.
   climbVolumes?: ClimbVolume[];
   // Placed climb ladders, the self-describing affordance `alignClimbToLadder`
-  // consumes. Absent today: the compile pipe forwards them but nothing authors
-  // one yet (the GLBs and the refusal rule are sequenced behind this). Present so
-  // the moment a ladder is placed, the predicate has somewhere to read it from.
+  // consumes. The compile pipe forwards them from the authored
+  // LadderPlacementSpec; refusal (`climbAffordanceAt`) requires one of these — or
+  // a grip below — for every climb-volume ascent.
   ladders?: LadderSpec[];
+  // Placed climb GRIPS: a climb up a VISIBLE STRUCTURE that is not a ladder —
+  // stepped masonry set-offs, a tree's boughs — where bolting a ladder would read
+  // worse than the honest holds already drawn. A grip is not an exemption: it
+  // names the drawn `support` mass and is validated (`alignClimbToGrip`) that the
+  // structure genuinely spans the rise and tops out with clearance, exactly as a
+  // ladder is. "Ladder OR grip", the owner's own words.
+  grips?: GripSpec[];
 }
 
 /**
@@ -312,6 +319,123 @@ export function surfaceInteriorDir(
   const len = Math.sqrt(dx * dx + dz * dz);
   if (len < 1e-3) return null;
   return { x: dx / len, z: dz / len };
+}
+
+/**
+ * A placed climb GRIP — a climb up a visible structure that is not a ladder.
+ *
+ * The owner's law is "ladder OR grip": a bolted ladder on a tree crown, or over
+ * masonry set-offs already drawn as holds, reads worse than the honest structure
+ * there. A grip names that structure (`support`, a drawn solid mass) and its
+ * kind, and is validated exactly as a ladder is — it is NOT an exemption list.
+ * The merit test is that the named support genuinely spans the rise (there is
+ * something drawn to grip the whole way up) and the top-out has standing room.
+ */
+export interface GripSpec {
+  id: string;
+  /** Foot, on the ground the player stands on. */
+  base: Vec3;
+  /** Deck / landable mass top the top-out lands on; its Y is the grip top. */
+  topY: number;
+  /** Outward face normal in XZ (points from the structure toward the climber). */
+  faceX: number;
+  faceZ: number;
+  toSurface: string;
+  /** The drawn solid the body grips — masonry buttress, tree bole. */
+  support: string;
+  kind: "STEPPED_MASONRY" | "BOUGHS";
+}
+
+/**
+ * Validate a grip: the served surface exists, the named support is a drawn solid
+ * that spans from the foot up to the served height (so there is a visible thing
+ * to grip the whole way up, not a bare face), and the top-out accepts a standing
+ * body. Produces the same ascent path a ladder does, so the mover treats a grip
+ * climb and a ladder climb identically.
+ */
+export function alignClimbToGrip(
+  world: CollisionWorld,
+  grip: GripSpec,
+): LadderClimb | null {
+  const faceLen = Math.sqrt(grip.faceX * grip.faceX + grip.faceZ * grip.faceZ);
+  if (faceLen < 1e-6) return null;
+  const fX = grip.faceX / faceLen;
+  const fZ = grip.faceZ / faceLen;
+
+  const rect = surfaceRectById(world, grip.toSurface);
+  if (!rect) return null;
+
+  // The named support must be a real solid whose vertical span reaches from the
+  // foot up to (near) the served height — the honest "there is a structure to
+  // grip the whole rise" merit. A bare wall has no such AUTHORED grip pointing at
+  // it; this is what a masonry set-off or a bole provides and a blank face does
+  // not claim.
+  const support = world.blockers.find((b) => b.id === grip.support);
+  if (!support) return null;
+  const spansFoot = support.baseY <= grip.base.y + 0.25;
+  const spansTop = support.topY >= grip.topY - 0.35;
+  if (!spansFoot || !spansTop) return null;
+
+  const riseFoot: Vec3 = {
+    x: grip.base.x + fX * CAPSULE_RADIUS,
+    y: grip.base.y,
+    z: grip.base.z + fZ * CAPSULE_RADIUS,
+  };
+  const riseTop: Vec3 = { x: riseFoot.x, y: grip.topY, z: riseFoot.z };
+
+  // The top-out is on the served surface itself — a stepped set-off or a bough is
+  // often shallow, so a fixed inward inset can overshoot its far edge. Land where
+  // the surface actually is: the base's XZ clamped INTO the served footprint (a
+  // capsule radius clear of the near lip), which is the point a body pulling onto
+  // the structure comes to rest on.
+  const clampInto = (v: number, lo: number, hi: number): number =>
+    Math.min(Math.max(v, lo + CAPSULE_RADIUS), hi - CAPSULE_RADIUS);
+  const topOut: Vec3 = {
+    x: rect.maxX - rect.minX > 2 * CAPSULE_RADIUS ? clampInto(grip.base.x, rect.minX, rect.maxX) : (rect.minX + rect.maxX) / 2,
+    y: grip.topY,
+    z: rect.maxZ - rect.minZ > 2 * CAPSULE_RADIUS ? clampInto(grip.base.z, rect.minZ, rect.maxZ) : (rect.minZ + rect.maxZ) / 2,
+  };
+  const ignoreDest = new Set<string>([grip.toSurface, grip.support]);
+  if (
+    !landingValid(world, topOut.x, topOut.z, CAPSULE_RADIUS, grip.topY, STAND_HEIGHT, ignoreDest)
+  ) {
+    return null;
+  }
+  return { riseFoot, riseTop, topOut, faceX: fX, faceZ: fZ };
+}
+
+/**
+ * The visible climb means at a foot standing on `toSurface`'s ascent, or null.
+ *
+ * THE REFUSAL PREDICATE, in one place: a climb-volume ascent may arm ONLY where a
+ * ladder or a grip validates against the world at this foot. Matches by served
+ * surface and by proximity of the affordance's own base to the foot (a surface
+ * with two ladders — the meeting-house ridge has two — picks the near one), then
+ * requires it to arm. No ladder and no grip means no climb.
+ */
+export function climbAffordanceAt(
+  world: CollisionWorld,
+  x: number,
+  y: number,
+  z: number,
+  toSurface: string,
+  maxBaseDistM = 3,
+): LadderClimb | null {
+  const near = (bx: number, bz: number) =>
+    Math.sqrt((bx - x) * (bx - x) + (bz - z) * (bz - z)) <= maxBaseDistM;
+  for (const ladder of world.ladders ?? []) {
+    if (ladder.toSurface !== toSurface) continue;
+    if (!near(ladder.base.x, ladder.base.z)) continue;
+    const climb = alignClimbToLadder(world, ladder);
+    if (climb) return climb;
+  }
+  for (const grip of world.grips ?? []) {
+    if (grip.toSurface !== toSurface) continue;
+    if (!near(grip.base.x, grip.base.z)) continue;
+    const climb = alignClimbToGrip(world, grip);
+    if (climb) return climb;
+  }
+  return null;
 }
 
 /**

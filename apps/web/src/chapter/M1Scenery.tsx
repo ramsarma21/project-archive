@@ -98,6 +98,7 @@ function sortScenery(placements: readonly SceneryPlacement[]): ScenerySorted {
         pos: placement.pos,
         size: placement.size,
         yaw: placement.yaw,
+        pitch: placement.pitch ?? 0,
         // One tile of a run fills its box; the level already cut the box to the
         // module, so filling is what keeps the run continuous. A PROP contain-
         // fits inside its box instead.
@@ -124,7 +125,7 @@ function SceneryProps() {
         <group
           key={placement.id}
           position={placement.pos}
-          rotation={[0, placement.yaw, 0]}
+          rotation={[placement.pitch ?? 0, placement.yaw, 0, "YXZ"]}
         >
           <FittedGlb
             glbKey={placement.asset}

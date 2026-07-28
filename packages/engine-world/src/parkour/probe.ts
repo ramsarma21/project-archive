@@ -17,6 +17,7 @@ import {
   type Vec3,
   blockerIdsAt,
   canStand,
+  climbAffordanceAt,
   climbVolumeAt,
   headClearance,
   landingValid,
@@ -498,6 +499,16 @@ function readRaisedSurface(
   if (!hit) return null;
 
   const hitId = hit.id;
+  // REFUSAL. A climb-volume ascent onto this surface may arm only where a visible
+  // means — a ladder or an honest grip — validates at this foot. Everywhere else
+  // (an ordinary ledge with a lip the body pulls onto) is untouched, so this
+  // refuses walking up a bare authored face without pulling any normal parkour.
+  if (
+    climbVolumeAt(world, origin.x, origin.y, origin.z, hitId) !== null &&
+    climbAffordanceAt(world, origin.x, origin.y, origin.z, hitId) === null
+  ) {
+    return null;
+  }
   const topY = hit.y;
   let low = clearDistance;
   let high = hitDistance;
@@ -649,6 +660,17 @@ function readOverhead(
   if (ignore?.has(above.id)) return null;
   // Above the crown of the head, or it is something in front rather than over.
   if (above.y <= origin.y + STAND_HEIGHT + 0.05) return null;
+
+  // REFUSAL. A pure vertical ascent authored as a climb volume may arm only where
+  // a ladder or grip validates. This is the "no ladder, no climb" the owner asked
+  // for, at the one read that offers the deep-set climbs (clock, cornice) which
+  // have no lip to infer and are therefore ALWAYS climb-volume authorised.
+  if (
+    climbVolumeAt(world, origin.x, origin.y, origin.z, above.id) !== null &&
+    climbAffordanceAt(world, origin.x, origin.y, origin.z, above.id) === null
+  ) {
+    return null;
+  }
 
   const topY = above.y;
   const step = tuning.probeStepM;

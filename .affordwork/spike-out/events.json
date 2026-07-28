@@ -1,0 +1,314 @@
+[
+  {
+    "name": "RunTask",
+    "sumUs": 290522543,
+    "count": 17200,
+    "maxUs": 77292
+  },
+  {
+    "name": "Scheduler::RunTask",
+    "sumUs": 277788589,
+    "count": 14882,
+    "maxUs": 77288
+  },
+  {
+    "name": "IOSurfaceImageBacking::WaitForCommandsToBeScheduled",
+    "sumUs": 269561418,
+    "count": 14864,
+    "maxUs": 76735
+  },
+  {
+    "name": "IOSurfaceImageBacking::WaitForCommandsToBeScheduled::Dawn",
+    "sumUs": 269488186,
+    "count": 14864,
+    "maxUs": 76731
+  },
+  {
+    "name": "FireAnimationFrame",
+    "sumUs": 5436830,
+    "count": 1006,
+    "maxUs": 69318
+  },
+  {
+    "name": "v8.callFunction",
+    "sumUs": 5656064,
+    "count": 1045,
+    "maxUs": 69300
+  },
+  {
+    "name": "FunctionCall",
+    "sumUs": 5584867,
+    "count": 1031,
+    "maxUs": 69290
+  },
+  {
+    "name": "GLES2Implementation::GetProgramiv",
+    "sumUs": 157475,
+    "count": 4,
+    "maxUs": 44275
+  },
+  {
+    "name": "ImplementationBase::WaitForCmd",
+    "sumUs": 214604,
+    "count": 8,
+    "maxUs": 44266
+  },
+  {
+    "name": "CommandBufferHelper::Finish",
+    "sumUs": 214580,
+    "count": 8,
+    "maxUs": 44264
+  },
+  {
+    "name": "CommandBufferProxyImpl::WaitForGetOffset",
+    "sumUs": 214452,
+    "count": 8,
+    "maxUs": 44252
+  },
+  {
+    "name": "V8.GC_MC_BACKGROUND_MARKING",
+    "sumUs": 1259037,
+    "count": 112,
+    "maxUs": 22103
+  },
+  {
+    "name": "GpuChannel::ExecuteDeferredRequest",
+    "sumUs": 170264,
+    "count": 19,
+    "maxUs": 17137
+  },
+  {
+    "name": "GPUTask",
+    "sumUs": 170121,
+    "count": 19,
+    "maxUs": 17112
+  },
+  {
+    "name": "RendererRasterWorker",
+    "sumUs": 154570,
+    "count": 17,
+    "maxUs": 17101
+  },
+  {
+    "name": "CommandBuffer::Flush",
+    "sumUs": 165286,
+    "count": 18,
+    "maxUs": 17099
+  },
+  {
+    "name": "CommandBufferStub::OnAsyncFlush",
+    "sumUs": 165271,
+    "count": 18,
+    "maxUs": 17099
+  },
+  {
+    "name": "CommandBufferService:PutChanged",
+    "sumUs": 165221,
+    "count": 18,
+    "maxUs": 17096
+  },
+  {
+    "name": "RasterDecoderImpl::DoEndRasterCHROMIUM",
+    "sumUs": 138579,
+    "count": 16,
+    "maxUs": 16712
+  },
+  {
+    "name": "RasterDecoderImpl::DoEndRasterCHROMIUM::Flush",
+    "sumUs": 138187,
+    "count": 16,
+    "maxUs": 16690
+  },
+  {
+    "name": "GLES2Implementation::GetShaderiv",
+    "sumUs": 57254,
+    "count": 4,
+    "maxUs": 20436
+  },
+  {
+    "name": "RasterDecoderImpl::DoRasterCHROMIUM",
+    "sumUs": 9595,
+    "count": 1,
+    "maxUs": 9595
+  },
+  {
+    "name": "RasterDecoderImpl::DoRasterCHROMIUM::Deserializing",
+    "sumUs": 9592,
+    "count": 1,
+    "maxUs": 9592
+  },
+  {
+    "name": "MajorGC",
+    "sumUs": 49860,
+    "count": 6,
+    "maxUs": 20364
+  },
+  {
+    "name": "V8.GCFinalizeMC",
+    "sumUs": 49709,
+    "count": 6,
+    "maxUs": 20342
+  },
+  {
+    "name": "V8.GC_MARK_COMPACTOR",
+    "sumUs": 49634,
+    "count": 6,
+    "maxUs": 20322
+  },
+  {
+    "name": "Commit",
+    "sumUs": 6754,
+    "count": 1,
+    "maxUs": 6754
+  },
+  {
+    "name": "RasterTask",
+    "sumUs": 85720,
+    "count": 15,
+    "maxUs": 7898
+  },
+  {
+    "name": "RasterImplementation::RasterCHROMIUM",
+    "sumUs": 85093,
+    "count": 15,
+    "maxUs": 7602
+  },
+  {
+    "name": "V8.GC_MC_BACKGROUND_SWEEPING",
+    "sumUs": 54832,
+    "count": 11,
+    "maxUs": 5880
+  },
+  {
+    "name": "EventDispatch",
+    "sumUs": 34160,
+    "count": 6,
+    "maxUs": 6552
+  },
+  {
+    "name": "EvaluateScript",
+    "sumUs": 27706,
+    "count": 6,
+    "maxUs": 5146
+  },
+  {
+    "name": "MinorGC",
+    "sumUs": 67087,
+    "count": 12,
+    "maxUs": 7929
+  },
+  {
+    "name": "V8.GCScavenger",
+    "sumUs": 66711,
+    "count": 12,
+    "maxUs": 7901
+  },
+  {
+    "name": "V8.GC_SCAVENGER",
+    "sumUs": 65488,
+    "count": 12,
+    "maxUs": 7894
+  },
+  {
+    "name": "V8.GC_SCAVENGER_SCAVENGE",
+    "sumUs": 65337,
+    "count": 12,
+    "maxUs": 7879
+  },
+  {
+    "name": "Layout",
+    "sumUs": 17382,
+    "count": 2,
+    "maxUs": 13147
+  },
+  {
+    "name": "V8.GC_MC_EVACUATE",
+    "sumUs": 4094,
+    "count": 1,
+    "maxUs": 4094
+  },
+  {
+    "name": "V8.GCIncrementalMarkingStart",
+    "sumUs": 23001,
+    "count": 3,
+    "maxUs": 11557
+  },
+  {
+    "name": "V8.GC_MC_INCREMENTAL_START",
+    "sumUs": 22928,
+    "count": 3,
+    "maxUs": 11522
+  },
+  {
+    "name": "V8.GC_BACKGROUND_SAFEPOINT",
+    "sumUs": 20517,
+    "count": 4,
+    "maxUs": 6416
+  },
+  {
+    "name": "V8.GC_SCAVENGER_SCAVENGE_PARALLEL_PHASE",
+    "sumUs": 10675,
+    "count": 2,
+    "maxUs": 5863
+  },
+  {
+    "name": "WidgetBase::WillBeginMainFrame",
+    "sumUs": 8661,
+    "count": 2,
+    "maxUs": 4492
+  },
+  {
+    "name": "V8.GC_SCAVENGER_BACKGROUND_SCAVENGE_PARALLEL",
+    "sumUs": 47936,
+    "count": 9,
+    "maxUs": 5723
+  },
+  {
+    "name": "PrePaint",
+    "sumUs": 4150,
+    "count": 1,
+    "maxUs": 4150
+  },
+  {
+    "name": "UpdateLayoutTree",
+    "sumUs": 4098,
+    "count": 1,
+    "maxUs": 4098
+  },
+  {
+    "name": "V8.GC_MC_MARK",
+    "sumUs": 13774,
+    "count": 1,
+    "maxUs": 13774
+  },
+  {
+    "name": "V8.GC_MC_MARK_FULL_CLOSURE_PARALLEL",
+    "sumUs": 13341,
+    "count": 1,
+    "maxUs": 13341
+  },
+  {
+    "name": "V8.GC_MC_MARK_WEAK_CLOSURE_EPHEMERON_MARKING",
+    "sumUs": 12914,
+    "count": 1,
+    "maxUs": 12914
+  },
+  {
+    "name": "WebGL",
+    "sumUs": 10752,
+    "count": 1,
+    "maxUs": 10752
+  },
+  {
+    "name": "V8.GC_SCAVENGER_SCAVENGE_PARALLEL",
+    "sumUs": 5772,
+    "count": 1,
+    "maxUs": 5772
+  },
+  {
+    "name": "V8.GC_BACKGROUND_UNPARK",
+    "sumUs": 4255,
+    "count": 1,
+    "maxUs": 4255
+  }
+]

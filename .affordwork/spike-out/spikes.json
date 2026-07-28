@@ -1,0 +1,19 @@
+[
+  {
+    "run": 4,
+    "tick": 134,
+    "deltaMs": 85.5,
+    "steps": 5,
+    "droppedTotal": 41,
+    "droppedThisFrame": 1,
+    "timeScale": 1,
+    "speed": 1.6669105025398427,
+    "verb": "NONE",
+    "phase": "GROUNDED",
+    "pos": {
+      "x": 3.088328788398734,
+      "y": 7.1,
+      "z": -11
+    }
+  }
+]

@@ -1,0 +1,1708 @@
+[
+  {
+    "name": "lane-run-stand",
+    "advanced": 1.23,
+    "verbs": [
+      "SLIDE"
+    ],
+    "stall": null,
+    "trace": [
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 21,
+        "x": 23.46,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.16
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 26,
+        "x": 23.63,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.41
+      },
+      {
+        "t": 31,
+        "x": 23.87,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "SLIDE",
+        "speed": 0
+      },
+      {
+        "t": 31,
+        "x": 23.87,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "SLIDE",
+        "speed": 0
+      },
+      {
+        "t": 31,
+        "x": 23.87,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "SLIDE",
+        "speed": 0
+      },
+      {
+        "t": 31,
+        "x": 23.87,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "SLIDE",
+        "speed": 0
+      },
+      {
+        "t": 31,
+        "x": 23.87,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "SLIDE",
+        "speed": 0
+      },
+      {
+        "t": 31,
+        "x": 23.87,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "SLIDE",
+        "speed": 0
+      },
+      {
+        "t": 31,
+        "x": 23.87,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "SLIDE",
+        "speed": 0
+      },
+      {
+        "t": 31,
+        "x": 23.87,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "SLIDE",
+        "speed": 0
+      },
+      {
+        "t": 31,
+        "x": 23.87,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "SLIDE",
+        "speed": 0
+      },
+      {
+        "t": 36,
+        "x": 24.1,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 36,
+        "x": 24.1,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 36,
+        "x": 24.1,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 36,
+        "x": 24.1,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 36,
+        "x": 24.1,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 36,
+        "x": 24.1,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 36,
+        "x": 24.1,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 36,
+        "x": 24.1,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 36,
+        "x": 24.1,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 41,
+        "x": 24.69,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      }
+    ]
+  },
+  {
+    "name": "lane-run-crouch",
+    "advanced": 0.5,
+    "verbs": [
+      "SLIDE"
+    ],
+    "stall": {
+      "t": 37,
+      "x": 23.4,
+      "y": 0,
+      "z": -0.6,
+      "grounded": true,
+      "verb": "NONE",
+      "prev": "NONE",
+      "speed": 0
+    },
+    "trace": [
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 37,
+        "x": 23.4,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 42,
+        "x": 23.49,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 1.67
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 47,
+        "x": 23.68,
+        "y": 0,
+        "z": -0.6,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "BLOCKED",
+        "speed": 2.73
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 52,
+        "x": 23.9,
+        "y": 0,
+        "z": -0.59,
+        "grounded": false,
+        "verb": "SLIDE",
+        "prev": "NONE",
+        "speed": 0
+      }
+    ]
+  },
+  {
+    "name": "mid-to-dock",
+    "advanced": 4.17,
+    "verbs": [],
+    "stall": {
+      "t": 24,
+      "x": 28.4,
+      "y": 0,
+      "z": -0.4,
+      "grounded": true,
+      "verb": "NONE",
+      "prev": "NONE",
+      "speed": 0
+    },
+    "trace": [
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 24,
+        "x": 28.4,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 0
+      },
+      {
+        "t": 29,
+        "x": 28.49,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 1.67
+      },
+      {
+        "t": 29,
+        "x": 28.49,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 1.67
+      },
+      {
+        "t": 29,
+        "x": 28.49,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 1.67
+      },
+      {
+        "t": 29,
+        "x": 28.49,
+        "y": 0,
+        "z": -0.4,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 1.67
+      },
+      {
+        "t": 34,
+        "x": 28.68,
+        "y": 0,
+        "z": -0.41,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 2.73
+      },
+      {
+        "t": 34,
+        "x": 28.68,
+        "y": 0,
+        "z": -0.41,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 2.73
+      },
+      {
+        "t": 34,
+        "x": 28.68,
+        "y": 0,
+        "z": -0.41,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 2.73
+      },
+      {
+        "t": 34,
+        "x": 28.68,
+        "y": 0,
+        "z": -0.41,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 2.73
+      },
+      {
+        "t": 39,
+        "x": 28.95,
+        "y": 0,
+        "z": -0.42,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 3.41
+      },
+      {
+        "t": 39,
+        "x": 28.95,
+        "y": 0,
+        "z": -0.42,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 3.41
+      },
+      {
+        "t": 39,
+        "x": 28.95,
+        "y": 0,
+        "z": -0.42,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 3.41
+      },
+      {
+        "t": 39,
+        "x": 28.95,
+        "y": 0,
+        "z": -0.42,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 3.41
+      },
+      {
+        "t": 44,
+        "x": 29.25,
+        "y": 0,
+        "z": -0.44,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 3.84
+      },
+      {
+        "t": 44,
+        "x": 29.25,
+        "y": 0,
+        "z": -0.44,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 3.84
+      },
+      {
+        "t": 44,
+        "x": 29.25,
+        "y": 0,
+        "z": -0.44,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 3.84
+      },
+      {
+        "t": 49,
+        "x": 29.59,
+        "y": 0,
+        "z": -0.45,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.12
+      },
+      {
+        "t": 49,
+        "x": 29.59,
+        "y": 0,
+        "z": -0.45,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.12
+      },
+      {
+        "t": 49,
+        "x": 29.59,
+        "y": 0,
+        "z": -0.45,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.12
+      },
+      {
+        "t": 49,
+        "x": 29.59,
+        "y": 0,
+        "z": -0.45,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.12
+      },
+      {
+        "t": 54,
+        "x": 29.94,
+        "y": 0,
+        "z": -0.47,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.29
+      },
+      {
+        "t": 54,
+        "x": 29.94,
+        "y": 0,
+        "z": -0.47,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.29
+      },
+      {
+        "t": 54,
+        "x": 29.94,
+        "y": 0,
+        "z": -0.47,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.29
+      },
+      {
+        "t": 54,
+        "x": 29.94,
+        "y": 0,
+        "z": -0.47,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.29
+      },
+      {
+        "t": 59,
+        "x": 30.3,
+        "y": 0,
+        "z": -0.48,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.4
+      },
+      {
+        "t": 59,
+        "x": 30.3,
+        "y": 0,
+        "z": -0.48,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.4
+      },
+      {
+        "t": 59,
+        "x": 30.3,
+        "y": 0,
+        "z": -0.48,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.4
+      },
+      {
+        "t": 64,
+        "x": 30.67,
+        "y": 0,
+        "z": -0.5,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.47
+      },
+      {
+        "t": 64,
+        "x": 30.67,
+        "y": 0,
+        "z": -0.5,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.47
+      },
+      {
+        "t": 64,
+        "x": 30.67,
+        "y": 0,
+        "z": -0.5,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.47
+      },
+      {
+        "t": 69,
+        "x": 31.05,
+        "y": 0,
+        "z": -0.51,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.52
+      },
+      {
+        "t": 69,
+        "x": 31.05,
+        "y": 0,
+        "z": -0.51,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.52
+      },
+      {
+        "t": 69,
+        "x": 31.05,
+        "y": 0,
+        "z": -0.51,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.52
+      },
+      {
+        "t": 69,
+        "x": 31.05,
+        "y": 0,
+        "z": -0.51,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.52
+      },
+      {
+        "t": 69,
+        "x": 31.05,
+        "y": 0,
+        "z": -0.51,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.52
+      },
+      {
+        "t": 74,
+        "x": 31.43,
+        "y": 0,
+        "z": -0.53,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.55
+      },
+      {
+        "t": 74,
+        "x": 31.43,
+        "y": 0,
+        "z": -0.53,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.55
+      },
+      {
+        "t": 74,
+        "x": 31.43,
+        "y": 0,
+        "z": -0.53,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.55
+      },
+      {
+        "t": 79,
+        "x": 31.81,
+        "y": 0,
+        "z": -0.54,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.57
+      },
+      {
+        "t": 79,
+        "x": 31.81,
+        "y": 0,
+        "z": -0.54,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.57
+      },
+      {
+        "t": 79,
+        "x": 31.81,
+        "y": 0,
+        "z": -0.54,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.57
+      },
+      {
+        "t": 84,
+        "x": 32.19,
+        "y": 0,
+        "z": -0.56,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.58
+      },
+      {
+        "t": 84,
+        "x": 32.19,
+        "y": 0,
+        "z": -0.56,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.58
+      },
+      {
+        "t": 84,
+        "x": 32.19,
+        "y": 0,
+        "z": -0.56,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.58
+      },
+      {
+        "t": 89,
+        "x": 32.57,
+        "y": 0,
+        "z": -0.58,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.59
+      },
+      {
+        "t": 89,
+        "x": 32.57,
+        "y": 0,
+        "z": -0.58,
+        "grounded": true,
+        "verb": "NONE",
+        "prev": "NONE",
+        "speed": 4.59
+      }
+    ]
+  }
+]

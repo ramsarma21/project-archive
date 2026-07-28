@@ -21,6 +21,7 @@ import {
 import {
   ascent,
   box,
+  ladder,
   overhead,
   probeFor,
   roof,
@@ -475,30 +476,51 @@ test("a deck overhead is climbed onto from its lip, and not from its middle", ()
   );
 });
 
-test("an authored climb volume grants the ascent inference cannot find", () => {
+test("an authored climb volume needs a visible means, and grants only its own footprint", () => {
   // The other half, and the reason the bound above is shippable. M1's clock
   // ledge and cornice are pure vertical ascents whose standing point is 3.5m
   // and 5.7m inside its own deck: no reading of "you are at a lip" reaches
-  // them, because they are not at one. The level declares those, and a body
-  // standing in a declared volume skips the reachability bound.
+  // them, because they are not at one. The level declares those.
+  //
+  // But a declared volume is not enough on its own any more: the owner's law is
+  // "only where there is a ladder can u climb". A climb volume with NO ladder or
+  // grip REFUSES — the reader offers nothing rather than walking a body up a bare
+  // authored face. A ladder at the foot arms exactly the same ascent.
   const decks = [roof("lower", -6, 6, 2.9), roof("upper", -6, 6, 5.6)];
-  const declared = world([], decks, [ascent("upper", -2, 2, 2.9)]);
+  const bareVolume = world([], decks, [ascent("upper", -2, 2, 2.9)]);
   const motion = runningNorth(0, RUN_SPEED, 2.9);
-  const probe = probeFor(declared, motion);
-  assert.ok(probe.obstacle, "inside the volume the ascent must be offered");
+  assert.equal(
+    probeFor(bareVolume, motion).obstacle,
+    null,
+    "a climb volume with no ladder or grip must refuse: no visible means, no climb",
+  );
+
+  const armed = world(
+    [],
+    decks,
+    [ascent("upper", -2, 2, 2.9)],
+    [ladder("upper", { x: 0, y: 2.9, z: 0 }, 5.6)],
+  );
+  const probe = probeFor(armed, motion);
+  assert.ok(probe.obstacle, "with a ladder at the foot the ascent is offered");
   assert.equal(probe.obstacle!.id, "upper");
   assert.equal(classifyVerb(probe, selectContext()), "CLIMB_UP");
 
   // And it grants exactly its own footprint: a stride outside it, nothing.
   assert.equal(
-    probeFor(declared, runningNorth(3, RUN_SPEED, 2.9)).obstacle,
+    probeFor(armed, runningNorth(3, RUN_SPEED, 2.9)).obstacle,
     null,
     "a volume must not authorise the whole deck it points at",
   );
   // ...its own storey: the same spot one lift down is a different climb.
   assert.equal(
     probeFor(
-      world([], [roof("upper", -6, 6, 2.7)], [ascent("upper", -2, 2, 2.9)]),
+      world(
+        [],
+        [roof("upper", -6, 6, 2.7)],
+        [ascent("upper", -2, 2, 2.9)],
+        [ladder("upper", { x: 0, y: 2.9, z: 0 }, 2.7)],
+      ),
       runningNorth(0, RUN_SPEED, 0),
     ).obstacle,
     null,

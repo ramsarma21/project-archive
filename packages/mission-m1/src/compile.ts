@@ -10,6 +10,7 @@ import type {
   Blocker,
   ClimbVolume,
   CollisionWorld,
+  GripSpec,
   LadderSpec,
   Platform,
 } from "@pa/engine-world/collision";
@@ -18,6 +19,7 @@ import type { CrowdCluster } from "@pa/engine-world/stealth";
 import type {
   ClimbSpec,
   DeckSpec,
+  GripPlacementSpec,
   LadderPlacementSpec,
   MassSpec,
   MissionLevel,
@@ -120,6 +122,29 @@ function ladderFrom(
   };
 }
 
+/**
+ * Resolve a placed grip into the engine's GripSpec, reading the top off the
+ * served surface. Returns null when the surface is unknown, so a misplaced grip
+ * drops out rather than arming a climb onto nothing.
+ */
+function gripFrom(
+  spec: GripPlacementSpec,
+  topYOf: (id: string) => number | null,
+): GripSpec | null {
+  const topY = topYOf(spec.onto);
+  if (topY === null) return null;
+  return {
+    id: spec.id,
+    base: { x: spec.at[0], y: spec.at[1], z: spec.at[2] },
+    topY,
+    faceX: spec.faceX,
+    faceZ: spec.faceZ,
+    toSurface: spec.onto,
+    support: spec.support,
+    kind: spec.kind,
+  };
+}
+
 export interface CompiledLevel {
   world: CollisionWorld;
   /** Every deck including the strips a ramp expands into. */
@@ -154,6 +179,12 @@ export function compileLevel(level: MissionLevel): CompiledLevel {
     const ladder = ladderFrom(placement, surfaceY);
     return ladder ? [ladder] : [];
   });
+  // Grips resolve their top off the served surface too, so a masonry set-off or
+  // a bough climb is measured from the object like a ladder.
+  const grips = (level.grips ?? []).flatMap((placement) => {
+    const grip = gripFrom(placement, surfaceY);
+    return grip ? [grip] : [];
+  });
 
   const world: CollisionWorld = {
     blockers: level.masses.map(blockerFrom),
@@ -166,6 +197,7 @@ export function compileLevel(level: MissionLevel): CompiledLevel {
     },
     climbVolumes: level.climbs.map(climbVolumeFrom),
     ladders,
+    grips,
   };
 
   return {

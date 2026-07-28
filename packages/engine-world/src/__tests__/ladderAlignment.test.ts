@@ -3,8 +3,11 @@ import assert from "node:assert/strict";
 
 import {
   type CollisionWorld,
+  type GripSpec,
   type LadderSpec,
+  alignClimbToGrip,
   alignClimbToLadder,
+  climbAffordanceAt,
   surfaceInteriorDir,
   surfaceRectById,
   wallFromRect,
@@ -100,6 +103,93 @@ test("a ladder onto no known surface does not arm", () => {
   const climb = alignClimbToLadder(world, { ...LADDER, toSurface: "NOWHERE" });
   // The top-out landing check fails because there is no deck to land on.
   assert.equal(climb, null);
+});
+
+// ---------------------------------------------------------------------------
+// THE GRIP: a climb up a visible STRUCTURE that is not a ladder.
+//
+// The owner's law is "ladder OR grip". Two M1 ascents (the elm crown, the stone
+// buttress) should not carry a bolted ladder, so they are authored as grips: a
+// climb up a drawn solid whose set-offs / boughs are the holds. A grip is
+// validated exactly as a ladder is — not exempted — and the merit is that the
+// named support genuinely spans the rise.
+// ---------------------------------------------------------------------------
+
+/** A solid buttress mass (top at 2.6) with the ground it is climbed from. */
+function buttressWorld(): CollisionWorld {
+  return {
+    blockers: [wallFromRect("BUTTRESS", 0, 0.5, 3, 0.6, { topY: 2.6, landable: true })],
+    platforms: [],
+    bounds: OPEN_BOUNDS,
+  };
+}
+
+const BUTTRESS_GRIP: GripSpec = {
+  id: "G_BUTTRESS",
+  base: { x: 0, y: 0, z: 1.6 }, // north of the buttress (which ends at z ~1.1)
+  topY: 2.6,
+  faceX: 0,
+  faceZ: 1,
+  toSurface: "BUTTRESS",
+  support: "BUTTRESS",
+  kind: "STEPPED_MASONRY",
+};
+
+test("a grip up a solid that spans the rise arms a climb", () => {
+  const world = buttressWorld();
+  const climb = alignClimbToGrip(world, BUTTRESS_GRIP);
+  assert.ok(climb, "stepped masonry that reaches the served top is a climbable grip");
+  assert.equal(+climb!.riseTop.y.toFixed(3), 2.6);
+});
+
+test("a grip whose support does not reach the served top refuses", () => {
+  // A support that stops a metre short of the served height is a bare face for
+  // the top of the rise: there is nothing drawn to grip up there.
+  const world: CollisionWorld = {
+    blockers: [wallFromRect("STUB", 0, 0.5, 3, 0.6, { topY: 1.5, landable: true })],
+    platforms: [platformFromRect("LEDGE", -3, 3, 0, 1, 2.6)],
+    bounds: OPEN_BOUNDS,
+  };
+  const climb = alignClimbToGrip(world, {
+    ...BUTTRESS_GRIP,
+    toSurface: "LEDGE",
+    support: "STUB",
+  });
+  assert.equal(climb, null, "a support that does not span the rise is not a grip");
+});
+
+test("a grip naming a support the world does not have refuses", () => {
+  const world = buttressWorld();
+  const climb = alignClimbToGrip(world, { ...BUTTRESS_GRIP, support: "NOWHERE" });
+  assert.equal(climb, null);
+});
+
+test("climbAffordanceAt requires a ladder or grip at the foot — no means, no climb", () => {
+  // A bare climb volume surface with no affordance: refuse.
+  const bare = wallWithDeck();
+  assert.equal(
+    climbAffordanceAt(bare, 0, 0, -0.3, "DECK"),
+    null,
+    "no ladder and no grip means climbAffordanceAt refuses",
+  );
+  // With the ladder placed, the same foot arms.
+  const withLadder: CollisionWorld = { ...bare, ladders: [LADDER] };
+  assert.ok(
+    climbAffordanceAt(withLadder, 0, 0, -0.1, "DECK"),
+    "a ladder at the foot arms the climb",
+  );
+  // A grip arms it too.
+  const withGrip: CollisionWorld = { ...buttressWorld(), grips: [BUTTRESS_GRIP] };
+  assert.ok(
+    climbAffordanceAt(withGrip, 0, 0, 1.6, "BUTTRESS"),
+    "a grip at the foot arms the climb",
+  );
+  // But only near the foot: a ladder metres away does not arm this spot.
+  assert.equal(
+    climbAffordanceAt(withLadder, 20, 0, 20, "DECK"),
+    null,
+    "an affordance far from the foot does not arm a distant climb",
+  );
 });
 
 test("surfaceRectById / surfaceInteriorDir read a surface off its footprint", () => {
