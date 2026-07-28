@@ -269,13 +269,21 @@ All three of 28 Jul's regressions were introduced by the previous night's fixes.
 | Boss ignored all cover | arena swap exposing a missing opt-in | parity assertions in `missionDuel.test.ts` |
 | Ladders drawn floating, upright, ghosted | the ladder placement itself | *nothing yet — see Open* |
 
-**A fourth failure, and it was mine.** The ladder work was merged on a worker's report of
-"flush to the face and reaching each surface," supported by brightened screenshots — three of
-which the worker itself described as too cramped to read. I merged anyway. The owner found
-the defect in one frame. **A screenshot that does not plainly show the thing being claimed is
-a failed check, not a caption to write around**, and a green gate beside an illegible capture
-is worth nothing. Every asset or placement claim from here needs a frame where the contact
-is visible at a brightness where geometry is legible.
+### Process errors, and the change that prevents each
+
+Kept because catching an error is worth less than removing its source. Each row is a mistake
+the orchestrator actually made, and the specific change made in response.
+
+| Error | Change made |
+|---|---|
+| Merged the ladder facade on captures the worker itself called too dark to read | Open the artifact, never the caption. An illegible frame is a failed check. |
+| Two workers in one worktree; an interrupt swept a sibling's files into a stray commit | `subagentStart` lock: one worker per worktree, `--status` makes activity visible |
+| Cross-lane writes prevented only by prose in briefs, which drifted every time | `preToolUse` lane guard reads one enforced map; ownership stopped being retyped |
+| Asserted a mechanism from adjacent code three times; twice wrong, one proposed fix would have worsened the defect | Briefs give **candidates to distinguish**, never conclusions, and say when untraced |
+| Ten of fifteen open conditions serialised behind one lane's files | Split `mission-world`; ownership now sized to the work, not to a theme |
+| Granted a worker a path the enforced map assigned elsewhere, blocking it | Update the map *before* writing the brief that depends on it |
+| Loop reported instead of acting; work queued waiting to be asked | Loop launches on every tick; a tick producing only process is a failed tick |
+| Told a hunt not to spend long on two items — suppression in miniature | Hunts report everything and rank afterwards; filtering is a separate pass |
 
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran

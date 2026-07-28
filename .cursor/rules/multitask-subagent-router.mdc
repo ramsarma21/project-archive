@@ -15,6 +15,26 @@ Assumes the root session runs GPT-5.6 Sol (a repo rule cannot force/switch the r
 - **Tier 2 — Sol diagnoses, Opus implements**: ambiguous/medium work, or any non-obvious bug. Sol reproduces/determines root cause/approach, exact constraints/files, acceptance criteria, and verification, then hands ONE background Opus worker (`claude-opus-4-8-thinking-high`) a precise bounded brief. **Sol still does not write the code** — it reviews Opus's result against the gate. This is the default whenever a task is tricky.
 - **Tier 3 — Sol end-to-end (rare)**: reserved for genuinely coupled work where diagnosis and implementation cannot be separated safely (deep cross-system determinism/data-integrity/security failures). **Do not open at Tier 3.** Escalate a task to "Sol codes" only after an Opus attempt AND a Sol diagnosis brief have both failed to land it. Even then, Sol delegates every independent mechanical subtask to Opus.
 
+## Diagnosis in a brief: candidates, never conclusions
+
+The orchestrator's most damaging failure mode is asserting a mechanism it has not traced.
+Dispatching many lanes means writing briefs faster than code paths can be read, so the
+temptation is to infer architecture from adjacent files. Three times in one afternoon that
+produced a confident, wrong diagnosis, and one of the proposed "fixes" would have made the
+defect worse.
+
+The pattern that works, evidenced by the case that went right:
+
+- **Give the symptom and the evidence.** Always. That is what the worker cannot get elsewhere.
+- **Give hypotheses as a list of candidates to distinguish**, labelled as untraced, with what
+  would tell them apart. The Town House brief did this — three candidates, "say which it is,
+  with evidence, before changing anything" — and the worker found a **fourth** and named it
+  precisely. The elm and card-taxonomy briefs instead asserted a cause; both were wrong.
+- **Never state a mechanism as fact without having read the path the feature takes.** If it has
+  been traced, say so and cite the file. If not, say "I have not traced this."
+- **Ask for the brief to be challenged.** Correcting the brief outranks executing it, and a
+  worker that says "your premise is stale" has done the more valuable job.
+
 ## Policy
 - In Multitask mode, use background subagents for non-trivial work; do not duplicate delegated investigation/implementation in the foreground.
 - Sol's foreground contribution is orchestration/diagnosis/brief-writing/review, not code edits. Route implementation to Opus.
