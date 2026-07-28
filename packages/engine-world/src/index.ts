@@ -29,6 +29,7 @@ export * from "./qaChaseContract.js";
 export * from "./qaEnvironment.js";
 export * from "./QuestMarkerHud.js";
 export * from "./questArrivalLatch.js";
+export * from "./parkourIk.js";
 export * from "./RiggedCharacter.js";
 export * from "./RunnerMap.js";
 export * from "./stamina.js";

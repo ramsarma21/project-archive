@@ -386,19 +386,28 @@ export const PARKOUR_TUNING: ParkourTuning = {
   // 31.3s of ~74s and pays 8.5s. There was never a pacing problem here; there
   // was an assumption that there might be.
   //
-  // STEP_UP, SLIDE, CLIMB_OVER and CLIMB_UP are left alone: they overrun by 1.2x
-  // or less, or not at all, and 520-900ms is already a long commit. The two
-  // LANDING windows that also overrun are deliberately not touched — a landing
-  // window is recovery the player feels as sluggishness rather than a slot for a
-  // performance, so stretching it buys a nicer picture with a worse control
-  // feel. Those two want a shorter re-baked take instead; see the handoff.
+  // STEP_UP, SLIDE and CLIMB_UP are left alone: they overrun by 1.2x or less, or
+  // not at all, and 550-900ms is already a long commit. The two LANDING windows
+  // that also overrun are deliberately not touched — a landing window is recovery
+  // the player feels as sluggishness rather than a slot for a performance, so
+  // stretching it buys a nicer picture with a worse control feel. Those two want
+  // a shorter re-baked take instead; see the handoff.
+  //
+  // CLIMB_OVER was widened 520 -> 650ms (2026-07-28, owner call). The `climbOver`
+  // take is 2567ms of content; at 520ms it needed 4.94x, capped at the 4.0x
+  // ceiling, so only 81% of the performance played and the body arrived on the
+  // far side mid-clip. 650ms needs 3.95x (2567/650), under the ceiling, so the
+  // whole crossing reads. The same clock analysis as the vault/mantle widening
+  // holds: a handful of climb-overs on the guaranteed line cost ~1s against ~135s
+  // of unspent budget, and check-playthrough confirms the route still flows.
   durationsMs: {
     NONE: 0,
     STEP_UP: 200,
     SLIDE: 550,
     // 45 fixed steps. The `vault` take is ~3.0s of content and needs 4.0x.
     VAULT: 750,
-    CLIMB_OVER: 520,
+    // 2567ms of content over 650ms is 3.95x, under the 4.0x ceiling (100% shown).
+    CLIMB_OVER: 650,
     CLIMB_UP: 900,
     // Ballistic and burst verbs are timed by the integrator, not authored.
     JUMP: 0,
