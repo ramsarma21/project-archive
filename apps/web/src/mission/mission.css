@@ -295,6 +295,45 @@
   box-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
 }
 
+/* The imminent-move cue: names the climb/vault/leap the moment the guidance
+   arms its gateway, in the System's own cyan, so the corner HUD reinforces the
+   verb the in-street mark is posting on the take-off. This is the wayfinding
+   half of mission one — a first-time player is TOLD "climb up" before they run
+   at what looks like a wall. */
+.msn-hud-actioncue {
+  align-self: flex-start;
+  margin-top: 0.1rem;
+  padding: 0.14rem 0.55rem;
+  border-radius: 0.5rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  color: #061319;
+  background: linear-gradient(90deg, #d6f2ff, #7ec8f0);
+  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
+}
+
+/* The signature leap is the one move the geometry cannot teach — a gap and a
+   fall with a tree on the far side — so its cue is warmer and pulses once, to
+   read as "commit" rather than "step". Calmed to a static fill under reduced
+   motion, like the exposure surge. */
+.msn-hud-actioncue.is-leap {
+  color: #1a0b06;
+  background: linear-gradient(90deg, #ffd9a8, #ff9e6b);
+  animation: msn-actioncue-pulse 1.15s ease-in-out infinite;
+}
+
+@keyframes msn-actioncue-pulse {
+  0%, 100% { box-shadow: 0 1px 10px rgba(0, 0, 0, 0.6); }
+  50% { box-shadow: 0 0 14px rgba(255, 158, 107, 0.85); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msn-hud-actioncue.is-leap {
+    animation: none;
+  }
+}
+
 .msn-hud-meter {
   position: relative;
   display: block;

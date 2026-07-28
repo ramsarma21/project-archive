@@ -1898,6 +1898,37 @@ export interface MissionStandingRead {
   readonly optionalTotal: number;
 }
 
+/**
+ * The imminent authored move on the committed leg, when the guidance is holding
+ * a directed action gateway (a climb, a vault, a leap, a directed drop) — else
+ * null on an ordinary run.
+ *
+ * WHY THE MARK NEEDS THIS. The run-mark plate names WHERE (the elm) and recedes
+ * as the player reaches the next step, which is right for a stroll between
+ * rooftops and wrong at the one moment that decides a first mission: the foot of
+ * a climb. There the "next place" is the hold two metres up, the plate has
+ * retired into it, and what is left on screen is a subtle edge band on a wall
+ * that at full dark reads as scenery. A player who cannot tell the Town House
+ * scaffold from the Town House wall is not failing to read the architecture —
+ * they were never told the wall is a climb. This carries the verb the geometry
+ * is about to perform so the mark can SAY it, in the player's words, on the
+ * take-off, before they commit — which is the whole of the wayfinding ask for
+ * mission one. The label and direction are derived here from the authored kind
+ * and the directed rise so the drawing surface stays dumb.
+ */
+export interface MissionMarkAction {
+  /** The authored action kind (CLIMB / VAULT / JUMP / LEAP_OF_FAITH / DROP …). */
+  readonly kind: string;
+  /** The player-facing imperative for it, e.g. "CLIMB UP", "VAULT", "LEAP". */
+  readonly label: string;
+  /** Which way the move goes, for a directional glyph: up a climb, across a gap. */
+  readonly direction: "UP" | "OVER" | "ACROSS" | "DOWN";
+  /** APPROACH while running in; RECEIVER once on the take-off, mid-move. */
+  readonly phase: "APPROACH" | "RECEIVER";
+  /** Directed receiver elevation, receiver Y minus take-off Y. */
+  readonly riseM: number;
+}
+
 export interface MissionMarkRead {
   readonly pos: Vec3;
   readonly title: string;
@@ -1913,6 +1944,73 @@ export interface MissionMarkRead {
    * run, else null. The HUD reads it to post a walk cue before the roof lip.
    */
   readonly speedCapMps: number | null;
+  /**
+   * The imminent authored move, when the committed leg is a directed action
+   * gateway, else null. See MissionMarkAction — this is what lets the mark name
+   * the climb/vault/leap on the take-off instead of receding into it.
+   */
+  readonly action: MissionMarkAction | null;
+}
+
+/**
+ * Name and aim the imminent action from the authored gateway. Pure.
+ *
+ * Kept beside `markRead` rather than in the drawing surface so the HUD plate and
+ * the in-canvas mark say the identical word for the identical move — two
+ * surfaces disagreeing about whether the next thing is a vault or a climb is the
+ * exact confusion the cue exists to remove. A CLIMB is the one kind that is not
+ * self-describing (the same authored kind covers a reach up, a step over a gate,
+ * and a lowering off a rim), so the directed rise disambiguates it; every other
+ * kind names itself.
+ */
+export function markActionOf(gateway: {
+  readonly kind: string;
+  readonly phase: "APPROACH" | "RECEIVER";
+  readonly riseM: number;
+}): MissionMarkAction {
+  const { kind, phase, riseM } = gateway;
+  let label: string;
+  let direction: MissionMarkAction["direction"];
+  switch (kind) {
+    case "VAULT":
+      label = "VAULT";
+      direction = "OVER";
+      break;
+    case "JUMP":
+    case "DASH_JUMP":
+      label = "JUMP THE GAP";
+      direction = "ACROSS";
+      break;
+    case "LEAP_OF_FAITH":
+      label = "LEAP";
+      direction = "ACROSS";
+      break;
+    case "DROP":
+      label = "DROP DOWN";
+      direction = "DOWN";
+      break;
+    case "MANTLE":
+      label = "CLIMB UP";
+      direction = "UP";
+      break;
+    case "CLIMB":
+    default:
+      // One authored kind, three geometries: a reach up, a step over something
+      // at your own level, a controlled climb-down off a rim. The directed rise
+      // tells them apart so the word matches the move.
+      if (riseM > 0.6) {
+        label = "CLIMB UP";
+        direction = "UP";
+      } else if (riseM < -0.6) {
+        label = "CLIMB DOWN";
+        direction = "DOWN";
+      } else {
+        label = "OVER THE TOP";
+        direction = "OVER";
+      }
+      break;
+  }
+  return { kind, label, direction, phase, riseM };
 }
 
 /**
@@ -1997,6 +2095,7 @@ export function markRead(
   const walked = mark.rangeM?.(from) ?? null;
   const waypoint = mark.waypoint?.(from) ?? null;
   const pos = waypoint?.pos ?? mark.pos;
+  const gateway = mark.gateway?.() ?? null;
   return {
     pos,
     title: mark.title,
@@ -2006,6 +2105,7 @@ export function markRead(
     viaRoute: walked?.viaRoute ?? false,
     riseM: pos.y - from.y,
     speedCapMps: mark.speedCapMps?.(from) ?? null,
+    action: gateway ? markActionOf(gateway) : null,
   };
 }
 

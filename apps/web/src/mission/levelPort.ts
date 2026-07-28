@@ -164,6 +164,15 @@ export interface MissionObjectiveMark {
     readonly phase: "APPROACH" | "RECEIVER";
     readonly allowedVerbs: readonly TraversalVerb[];
     /**
+     * The authored action kind (VAULT / CLIMB / JUMP / DASH_JUMP /
+     * LEAP_OF_FAITH / DROP / …), so a reader can NAME the imminent move — the
+     * "CLIMB UP" / "VAULT" / "LEAP" cue the run-mark posts on the take-off. It
+     * is the WayGateway's own `kind`, carried through unchanged; a string rather
+     * than a coupled enum so the generic port stays decoupled from one level's
+     * link vocabulary.
+     */
+    readonly kind: string;
+    /**
      * Directed receiver elevation, receiver Y minus take-off Y off the authored
      * link. Positive is a climb. Exposed so a HUD/reader can post the upward
      * affordance — the SPACE·CLIMB cue at the clock — even when the waypoint is
