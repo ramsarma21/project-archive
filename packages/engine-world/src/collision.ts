@@ -204,6 +204,165 @@ export function climbVolumeAt(
   return null;
 }
 
+// ---- ladder-aligned climb --------------------------------------------------
+//
+// The owner's rule: a climb-up is only real when it runs up a VISIBLE LADDER,
+// and the ascent must read as the body ON the ladder's outer face with hands on
+// the rungs — not sliding up a surface near one. A ladder is a self-describing
+// affordance: a base, a top, an outward face and fixed rungs, every one of them
+// MEASURED FROM THE OBJECT rather than typed as a coordinate and trusted. This
+// is the engine half of that rule. It answers two questions off the object and
+// the world alone — "may a climb arm here?" and "where does the body ride?" —
+// so the arming test is decidable and cheap, not a swept-spline residual check.
+
+/**
+ * A placed climb affordance. The base sits on the ground the player stands on;
+ * the top is the deck it tops out onto; the face normal (unit, XZ) points away
+ * from the wall, back at the climber, and is the side the body grabs and rides.
+ * Rung spacing is the fixed geometry hand and foot placement read off.
+ */
+export interface LadderSpec {
+  id: string;
+  base: Vec3;
+  topY: number;
+  /** Outward face normal in XZ (points from the wall toward the climber). */
+  faceX: number;
+  faceZ: number;
+  /** Deck / landable mass id the top-out lands on. */
+  toSurface: string;
+  /** Rail-to-rail width; the body must be within it to be on the ladder. */
+  widthM: number;
+  /** Fixed rung spacing, for hand/foot placement. */
+  rungGapM: number;
+}
+
+/**
+ * A validated ascent off a ladder. The rise runs up the ladder's OUTER FACE —
+ * the capsule centre held a radius out along the face normal so the body is
+ * tangent to the rungs and never inside them — and the top-out steps INWARD
+ * onto the served surface once the feet are at the top. Both ends are derived
+ * from the ladder, so the path is identical from every approach heading.
+ */
+export interface LadderClimb {
+  riseFoot: Vec3;
+  riseTop: Vec3;
+  topOut: Vec3;
+  faceX: number;
+  faceZ: number;
+}
+
+/** Footprint + height of a standable surface (deck platform or landable box top). */
+export function surfaceRectById(
+  world: CollisionWorld,
+  id: string,
+): { minX: number; maxX: number; minZ: number; maxZ: number; y: number } | null {
+  for (const platform of world.platforms) {
+    if (platform.id === id) {
+      return {
+        minX: platform.minX,
+        maxX: platform.maxX,
+        minZ: platform.minZ,
+        maxZ: platform.maxZ,
+        y: platform.y,
+      };
+    }
+  }
+  for (const blocker of world.blockers) {
+    if (blocker.id === id && blocker.landable && Number.isFinite(blocker.topY)) {
+      return {
+        minX: blocker.minX,
+        maxX: blocker.maxX,
+        minZ: blocker.minZ,
+        maxZ: blocker.maxZ,
+        y: blocker.topY,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * The inward direction from a foot standing under (or beside) a served surface
+ * toward that surface's interior — the way the top-out steps once the feet clear
+ * the top. Read off the surface footprint, so it does not depend on which way
+ * the player happened to walk in: the defect behind "from any other angle it
+ * goes through the ceiling" was a top-out projected along the APPROACH heading,
+ * which lands off the deck when the approach is off-axis. Returns null when the
+ * surface is unknown or the foot is already at its centre (nothing to derive).
+ */
+export function surfaceInteriorDir(
+  world: CollisionWorld,
+  toSurface: string,
+  footX: number,
+  footZ: number,
+): { x: number; z: number } | null {
+  const rect = surfaceRectById(world, toSurface);
+  if (!rect) return null;
+  const cx = (rect.minX + rect.maxX) / 2;
+  const cz = (rect.minZ + rect.maxZ) / 2;
+  const dx = cx - footX;
+  const dz = cz - footZ;
+  const len = Math.hypot(dx, dz);
+  if (len < 1e-3) return null;
+  return { x: dx / len, z: dz / len };
+}
+
+/**
+ * Validate a ladder against the world and produce the ascent path, or null when
+ * the object does not support a climb. This is the arming predicate: NO LADDER,
+ * NO CLIMB. A ladder fails to arm when its top-out has no standing clearance (it
+ * points into a ceiling — the "forced straight up and through" the owner saw
+ * cannot happen, because a ladder into a ceiling refuses), or when its outer
+ * face is buried in solid (there is nothing to climb on the outside of).
+ */
+export function alignClimbToLadder(
+  world: CollisionWorld,
+  ladder: LadderSpec,
+): LadderClimb | null {
+  const faceLen = Math.hypot(ladder.faceX, ladder.faceZ);
+  if (faceLen < 1e-6) return null;
+  const fX = ladder.faceX / faceLen;
+  const fZ = ladder.faceZ / faceLen;
+
+  // The rise rides a radius OUT along the face normal so the capsule is tangent
+  // to the rungs, never inside them. This is last night's tangent-rise principle
+  // taken off the probe heading and put on the ladder's own normal, which is why
+  // it holds from any approach angle rather than only head-on.
+  const riseFoot: Vec3 = {
+    x: ladder.base.x + fX * CAPSULE_RADIUS,
+    y: ladder.base.y,
+    z: ladder.base.z + fZ * CAPSULE_RADIUS,
+  };
+  const riseTop: Vec3 = { x: riseFoot.x, y: ladder.topY, z: riseFoot.z };
+
+  // Step inward (−face) far enough to plant the whole capsule a radius clear of
+  // the top edge, so the body finishes standing ON the deck, not teetering on it.
+  const inset = CAPSULE_RADIUS + 0.05;
+  const topOut: Vec3 = {
+    x: riseTop.x - fX * inset,
+    y: ladder.topY,
+    z: riseTop.z - fZ * inset,
+  };
+
+  // The top-out must accept a standing body — the destination surface itself is
+  // exempt (topping onto it is not piercing it), everything else is a ceiling.
+  const ignoreDest = new Set<string>([ladder.toSurface]);
+  if (
+    !landingValid(
+      world,
+      topOut.x,
+      topOut.z,
+      CAPSULE_RADIUS,
+      ladder.topY,
+      STAND_HEIGHT,
+      ignoreDest,
+    )
+  ) {
+    return null;
+  }
+  return { riseFoot, riseTop, topOut, faceX: fX, faceZ: fZ };
+}
+
 // ---- deterministic semantic broad phase -----------------------------------
 // A uniform XZ grid indexes conservative blocker AABBs only. Query results are
 // restored to authored blocker order before exact AABB/OBB/capsule tests, so

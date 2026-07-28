@@ -21,6 +21,7 @@ import {
   headClearance,
   landingValid,
   supportBelow,
+  surfaceInteriorDir,
 } from "../collision.js";
 import {
   STEP_DOWN,
@@ -702,7 +703,19 @@ function readOverhead(
   }
 
   const inset = Math.min(tuning.topLandingInsetM, Math.max(0.12, runsFor * 0.5));
-  const candidate = pointAt(origin, dirX, dirZ, inset, topY);
+  // A vertical ascent authored as a climb volume is a canopy climb: the body
+  // stands UNDER the deck and tops out onto its interior, so the top-out steps
+  // toward the surface's own centre, read off its footprint — NOT along however
+  // the player happened to walk in. Projecting the landing along the approach
+  // heading is what put the top-out off the deck on an off-axis approach ("from
+  // any other angle it goes through the ceiling"). An inferred overhead (a body
+  // at a lip reaching onto a floor in front of it) keeps the forward heading.
+  const interior = authorised
+    ? surfaceInteriorDir(world, above.id, origin.x, origin.z)
+    : null;
+  const outX = interior ? interior.x : dirX;
+  const outZ = interior ? interior.z : dirZ;
+  const candidate = pointAt(origin, outX, outZ, inset, topY);
   const topStandable =
     canStand(world, candidate.x, candidate.z, CAPSULE_RADIUS, topY) &&
     landingValid(
