@@ -8,6 +8,7 @@ import { M1_MISSION_ID, m1Instance } from "../chapter/m1Mission.js";
 // Imported through the visor's index so M1's annotation source is registered by
 // the same import-time seam the container relies on.
 import { VisorHold } from "../visor/index.js";
+import { MissionBeatPanel } from "./MissionBeatPanel.js";
 import { MissionEncounter } from "./MissionEncounter.js";
 import { MissionHud } from "./MissionHud.js";
 import { MissionStage } from "./MissionStage.js";
@@ -243,6 +244,20 @@ function Harness() {
           attemptOrdinal={1}
           presentation={hud}
           onAbandon={again}
+        />
+      )}
+      {/* The beat panel, composed exactly as the container composes it (see
+          MissionRun's TRAVERSAL branch). The harness used to omit it, so the one
+          surface the mission "has actually been played on" showed no elm beat at
+          all — a player could stand in stance and never see the panel the real
+          container would have raised. Rendered here so the floor plays the beat
+          the way the mission does, panel and HUD and scene together. */}
+      {hud?.beat && (
+        <MissionBeatPanel
+          beat={hud.beat}
+          inStance={hud.inBeatStance}
+          input={input}
+          reducedMotion={reducedMotion}
         />
       )}
       <MissionEncounter

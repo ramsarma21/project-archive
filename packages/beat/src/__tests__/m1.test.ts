@@ -86,6 +86,42 @@ test("the facing arc is generous but not a full circle", () => {
   assert.equal(inFacingArc(SPEC, facing + Math.PI * 2), true);
 });
 
+test("the beat arms from the pose the player actually arrives in, not just the authored spot", () => {
+  // MEASURED IN REAL PLAY, not assumed. The leap onto the elm leaves the player
+  // on the crown at the F_CROWN route node — (79.6, 8.3, 1.9), a body-length
+  // (1.5m) back from the nail spot at (79.6, 8.3, 0.4) — and they come down the
+  // limb moving SOUTH toward the bole, so the heading they carry in is ~π (180°),
+  // which is ~105° off the ~75° facing to the nail. That is the pose a player is
+  // standing in when they expect the act to start.
+  //
+  // The old arming test (1.1m circle on the tip, ±60° facing) rejected this pose
+  // on BOTH counts — 1.5m > 1.1m and 105° > 60° — so the panel never came up
+  // where the player had plainly arrived, and if their look swung through the
+  // arc it armed for a frame and disarmed again. That is the owner's "hard to
+  // start / doesn't appear" report, and this is the regression that pins it.
+  const arrival = { x: 79.6, y: 8.3, z: 1.9 }; // F_CROWN, where the leap rests them
+  // Heading down the limb toward the post: atan2(F_POST.x-F_CROWN.x, .z-.z) =
+  // atan2(0, 0.4 - 1.9) = π. ~105° off the ~75° facing to the nail.
+  const headingSouth = Math.atan2(0, 0.4 - 1.9);
+  assert.equal(
+    inBeatStance(SPEC, { pos: arrival, yaw: headingSouth }),
+    true,
+    "a player who has plainly reached the crown, facing the way they walked in, must be in stance",
+  );
+  // Still not the whole tree: the far end of the limb and the low bough a tier
+  // down are correctly out of stance.
+  assert.equal(
+    inBeatStance(SPEC, { pos: { x: 82.6, y: 8.3, z: 2.6 }, yaw: SPEC.facingYaw }),
+    false,
+    "the far limb end (F_CROWN_E) is out along the branch, not at the work",
+  );
+  assert.equal(
+    inBeatStance(SPEC, { pos: { x: 79.6, y: 6.4, z: 0.4 }, yaw: SPEC.facingYaw }),
+    false,
+    "the low bough a tier down is not the crown",
+  );
+});
+
 test("the objective is met by doing the work, not by arriving at it", () => {
   let posted = false;
   const objective = beatObjective({

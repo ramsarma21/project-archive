@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   BEAT_MOUNT_CONTRACT,
   beatObjective,
@@ -385,6 +386,55 @@ test("a torn sheet is a terminal failure the level can act on", () => {
   assert.equal(outcome.grade, "TORN");
   assert.equal(outcome.posted, false);
   assert.equal(isTerminalPrecisionFailure(outcome), true);
+});
+
+// ---- arming from the real arrival pose, through the composed presentation ----
+
+test("the beat arms from the pose the player arrives in, and the panel the HUD mounts is present", () => {
+  // The two props MissionRun feeds MissionBeatPanel are `presentation.beat` and
+  // `presentation.inBeatStance`; the panel shows when both are truthy. So the
+  // question "does the panel come up where the player actually is" is exactly
+  // "are both of these true from the arrival pose" — checked here through the
+  // real runtime and the real `missionPresentation`, not a hand-placed spec.
+  //
+  // Arrival: a body-length back from the nail (flat 1.6m, outside the old 1.1m
+  // circle) and looking ~105° off the work (the heading carried down the limb,
+  // outside the old ±60° arc). The old gate answered false to both and the panel
+  // never mounted; this pins that it now does.
+  const mounted = mount();
+  mounted.runtime.motion = {
+    ...mounted.runtime.motion,
+    pos: { x: 0, y: BOUGH_Y, z: 1.6 },
+    yaw: SPEC.facingYaw + (105 * Math.PI) / 180,
+  };
+  const pres = missionPresentation(mounted.runtime);
+  assert.equal(pres.inBeatStance, true, "a player who has reached the crown is in stance");
+  assert.ok(pres.beat, "and the panel the HUD mounts is present");
+  // And it arms on the next step from that pose — the panel goes live, not just
+  // shown-but-idle.
+  step(mounted.runtime);
+  assert.equal(mounted.runtime.beat?.phase, "ACTIVE", "the beat arms from the arrival pose");
+});
+
+test("the shipped panel is the big centred plate, composed into the HUD — not a fiddly strip in isolation", () => {
+  // The owner already asked for it BIGGER once, and the QA page (beat-qa.html)
+  // draws the panel alone on a dark gradient — so "it's big" being true there
+  // proves nothing about the HUD the player sees. Pin it where it ships: the
+  // stylesheet the container loads, and the composition that mounts it.
+  const here = new URL(".", import.meta.url);
+  const css = readFileSync(new URL("../src/mission/mission.css", here), "utf8");
+  // Scale: a wide, centred, above-the-scene plate.
+  assert.match(css, /\.msn-wam\s*\{[^}]*width:\s*min\(48rem/, "the panel is a wide plate");
+  assert.match(css, /\.msn-wam\s*\{[^}]*left:\s*50%/, "centred horizontally");
+  assert.match(css, /\.msn-wam\s*\{[^}]*z-index/, "above the scene");
+  // Presence: BOTH the container and the floor harness compose the panel. The
+  // harness omitted it entirely once — the one surface the mission "has actually
+  // been played on" showed no beat at all — so this guards that gap from
+  // reopening.
+  for (const file of ["MissionRun.tsx", "devEntry.tsx"]) {
+    const src = readFileSync(new URL(`../src/mission/${file}`, here), "utf8");
+    assert.match(src, /<MissionBeatPanel/, `${file} composes MissionBeatPanel`);
+  }
 });
 
 test("the run's result reaches the presentation the HUD reads", () => {
