@@ -668,16 +668,55 @@ decks.push(
   }),
 );
 
+// The body is `bldg-meeting-hollis`, not `church-meetinghouse`, and the collision
+// rect is untouched: only the asset the mass is drawn with changed.
+//
+// `church-meetinghouse` is a narrow tall mesh — mostly steeple — so contain-fitting
+// it into this 16 x 10.2 x 14 block drew a 3.65m-wide church inside a 16m footprint:
+// ~90% of the mass the solver collides had no building in it (an invisible wall on
+// the square's north edge) and the roof plane at 10.2m had drawn stone under only
+// 10% of it, 6.6m low. `scripts/check-world-affordances.mjs` flagged OLD_BRICK__ROOF
+// SEVERE for exactly that. The cure the repo has used twice — for the Town House and
+// the steeple — is to make the drawn thing fill its box rather than to move the box.
+//
+// `bldg-meeting-hollis.glb` is a real-scale meeting-house BODY (12 x 8.2 x 8.6),
+// the same broad hall the Hollis Street house is drawn with, and its aspect fits
+// this block: a single-entry contain-fit draws 14.9 x 10.2 x 10.7, filling the
+// footprint and reaching the roof plane at 10.2m. Pointing OLD_BRICK at its own
+// key (distinct from the tower/watch below) makes it a single-entry cluster, which
+// takes its draw box from THIS rect rather than from a shared declared size, so no
+// new asset declaration is needed and Old Brick and Hollis share one broad-hall
+// mesh the way two Boston meeting houses plausibly would.
+//
+// The tower and its watch post stay `church-meetinghouse` (below): its steeple
+// silhouette is what draws the belfry the watch stands on. See the note there on
+// why the watch at 13.6m still needs its own resolution.
 building({
   id: "OLD_BRICK",
   section: "C_ASCENT",
-  asset: "church-meetinghouse",
+  asset: "bldg-meeting-hollis",
   rect: rect(44, 60, -25.2, -11.2),
   roofY: BAND.CORNICE,
   tags: ["north-row", "landmark"],
   note: "First Church, 'Old Brick', at the head of King Street. Its tower is the watch post.",
 });
 
+// The tower keeps `church-meetinghouse` — now a dedicated key, since the body
+// above moved to `bldg-meeting-hollis` — because that mesh's steeple silhouette is
+// the belfry the watch stands on, and it draws up to its box top at 10.2m.
+//
+// UNRESOLVED, deliberately left for a level-data decision rather than forced: the
+// watch post (OLD_BRICK_WATCH below) is authored at 13.60m, which is 3.4m ABOVE the
+// 10.2m roof the drawn building reaches. Re-keying the body fixed the invisible
+// wall and the roof deck (check-world-affordances: OLD_BRICK__ROOF SEVERE -> off
+// the red list), and the steeple here lifted the watch from CRITICAL (nothing
+// under it) to SEVERE (66% of the footprint now has stone, 3.4m below), but no
+// meeting-house mesh reaches 13.6m: church-meetinghouse contain-fit to that height
+// is 7.8m deep, and the only true tall steeple (steeple-meetinghouse-climbable) is
+// a 30m route asset. Landing geometry AT 13.6m therefore needs one of: lowering
+// the watch/tower to the ~10.2m roofline (a gameplay change to the reflex beat's
+// sightlines), a dedicated compact belfry asset, or a new GLB. That is a morning
+// decision, not something to silently move the affordance for.
 masses.push({
   id: "OLD_BRICK_TOWER",
   section: "C_ASCENT",

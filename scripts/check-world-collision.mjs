@@ -25,8 +25,11 @@
 //     whether the church actually fills its 16x14m footprint.
 //   * verify_m1_placements.mjs measures exactly this per axis, but only FAILS on
 //     surfaces a route NODE stands on, and reports the rest. `church-meetinghouse`
-//     draws 3.65 x 5.85 inside a 16 x 14 solid block — a ~90% invisible wall — and
-//     it is reported, not failed, because no route node stands on Old Brick.
+//     drew 3.65 x 5.85 inside a 16 x 14 solid block — a ~90% invisible wall — and
+//     was reported, not failed, because no route node stands on Old Brick. That was
+//     the defect this gate was built to catch; OLD_BRICK's body has since been
+//     re-keyed to a meeting-house mesh that fills the box (geometry.ts) and this
+//     gate now holds it.
 //
 // So this is the guard that closes the process: it places the SHIPPED GLB exactly
 // as the renderer does and asks whether the SOLID a player collides with is
@@ -121,21 +124,7 @@ const OCCUPANCY_GRID = 7;
  *
  * Keyed by mass id.
  */
-const KNOWN_DEBT = new Map([
-  [
-    "OLD_BRICK",
-    "church-meetinghouse.glb draws a 3.65 x 5.85m church inside a 16 x 14m solid " +
-      "collision block: ~90% of the footprint the player collides with has no " +
-      "building in it, an invisible wall on the north edge of the Town House " +
-      "square. The mesh aspect (0.68 x 1.90 x 1.09, mostly steeple) cannot fill a " +
-      "16 x 10.2 x 14 box at any scale — an aspect is not a scale. FIX (cross-lane, " +
-      "cannot be done from assets/** alone): either the level owner shrinks the " +
-      "OLD_BRICK collision rect in packages/mission-m1/src/level to the visible " +
-      "church, or church-meetinghouse.glb is regenerated through the Gemini -> " +
-      "Meshy -> Blender pipeline to a 16:10.2:14 footprint. Old Brick is the " +
-      "enemy watch post, not a surface the player climbs, which is why it survived.",
-  ],
-]);
+const KNOWN_DEBT = new Map([]);
 
 // ---------------------------------------------------------------- geometry
 const OPEN_MASS_HEIGHT_M = 12;
