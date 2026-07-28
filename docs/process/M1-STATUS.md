@@ -12,6 +12,23 @@ visibly broken.
 node scripts/check-playthrough.mjs`. After merging: update this file. A fix is not "done"
 because a worker reported it — it is done when it is merged, gated, and recorded here.
 
+**The standing loop**, every 15 minutes, in this order:
+1. **Merge** every finished lane; verify `main` green; hunt for stranded or unmerged lane work.
+2. **Fix** — launch a worker on the highest-value open item no active lane is blocking.
+   Player-facing before infrastructure. Launch, don't queue.
+3. **Hunt** a new area, rotating so coverage accumulates: mutation-test a package not yet
+   hunted; visually sweep authored surfaces; architecturally review an old system; audit a dev
+   path for preconditions it hands itself; hunt guards that report instead of failing.
+4. **Verify** one previously-claimed fix by reading code, not its commit message.
+5. **Track** everything found, here.
+
+**Why step 3 exists.** Both of 28 Jul's visible defects — the elm rendering as glass shards
+and the ladders floating in air — were found by the **owner, playing**, and by no instrument
+we have. A blocking played-mission gate, a collision-vs-visible gate, a placement verifier, an
+affordance verifier, a texture check and a scale check all passed. The render census counts
+draw calls, triangles, textures and untextured white-boxes; a *badly shaped* mesh is none of
+those. Waiting to be told is not a verification strategy.
+
 ---
 
 ## Fixed and merged
