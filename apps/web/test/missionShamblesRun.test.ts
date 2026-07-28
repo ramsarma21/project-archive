@@ -78,7 +78,7 @@ function steerToward(runtime: MissionRuntime): { moveX: number; moveZ: number } 
   return { moveX: dx / len, moveZ: dz / len };
 }
 
-test("a first run steers the SAFE mark clean through the Shambles into Dock Square", () => {
+test("a first run steers the SAFE mark clean through the Shambles to the Town House approach", () => {
   const runtime = firstAttemptRuntime();
 
   let reachedSquareTick = -1;
@@ -130,25 +130,27 @@ test("a first run steers the SAFE mark clean through the Shambles into Dock Squa
     stall = moved < STALL_EPSILON_M ? stall + 1 : 0;
     prev = { x: runtime.motion.pos.x, z: runtime.motion.pos.z };
 
-    // Into Dock Square: south of the stall gap and out of the market's x band,
-    // which the SAFE line only reaches by climbing the awning, running the canopy
-    // chain and dropping down — not by cutting through a stall.
-    const inSquare =
-      runtime.motion.pos.z >= 5.0 &&
-      runtime.motion.pos.x >= 30 &&
-      runtime.motion.pos.x <= 42;
+    // To the Town House approach: east of the Shambles into the square's
+    // north-west corner (C_SQUARE_N / the scaffold foot at x~43-45, z~-3..-6.4).
+    // The guided line reaches it by climbing the awning, running the canopy
+    // chain, dropping to the street and heading straight for the building — not
+    // by cutting through a stall or looping south into Dock Square.
+    const atApproach =
+      runtime.motion.pos.x >= 42.5 &&
+      runtime.motion.pos.x <= 46 &&
+      runtime.motion.pos.z <= -1.0;
     if (reachedSquareTick < 0) {
-      if (inSquare) reachedSquareTick = tick;
+      if (atApproach) reachedSquareTick = tick;
       else maxStallBeforeSquare = Math.max(maxStallBeforeSquare, stall);
     } else {
-      break; // the Shambles is cleared; the Dock Square blocker is downstream
+      break; // the Shambles is cleared; the Town House climb is downstream
     }
   }
 
   assert.ok(
     reachedSquareTick >= 0,
-    "steering the SAFE mark never cleared the Shambles into Dock Square — the " +
-      "advertised route is not control-executable",
+    "steering the SAFE mark never cleared the Shambles to the Town House approach — " +
+      "the advertised route is not control-executable",
   );
   assert.ok(
     maxStallBeforeSquare < MAX_STALL_TICKS,

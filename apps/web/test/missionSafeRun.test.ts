@@ -103,6 +103,7 @@ function driveLinkAware(
   hz: number,
   reachedAt: (p: Vec3, runtime: MissionRuntime) => boolean,
   maxSeconds = 40,
+  startNode?: string,
 ): LinkAwareResult {
   const runtime = firstAttemptRuntime();
   const world = runtime.instance.world;
@@ -111,6 +112,17 @@ function driveLinkAware(
   const frames = Math.round(maxSeconds * hz);
   const goodsOut = M1_EFFIGY_RUN.nodes.find((n) => n.id === "B2_GOODS_OUT")!.pos;
   const b2Exit = M1_EFFIGY_RUN.nodes.find((n) => n.id === "B2_EXIT")!.pos;
+  // Optional checkpoint: drop the body at a node (used to reach an OFF-LINE space
+  // like Dock Square, which the guided line no longer threads, and drive the
+  // recovery mark from there). Faces the goods-vault approach.
+  if (startNode) {
+    const s = M1_EFFIGY_RUN.nodes.find((n) => n.id === startNode)!.pos;
+    const toward = M1_EFFIGY_RUN.nodes.find((n) => n.id === "B2_GOODS_IN")!.pos;
+    runtime.motion = createGroundedState(
+      { x: s[0], y: s[1], z: s[2] },
+      Math.atan2(toward[0] - s[0], toward[2] - s[2]),
+    );
+  }
 
   let pendingJump = false;
   let jumpCooldown = 0;
@@ -356,13 +368,18 @@ function pastB2Exit(_p: Vec3, runtime: MissionRuntime): boolean {
 }
 
 test("the Dock Square goods VAULT commits once on the IN->OUT axis, then the mark advances past B2_EXIT", () => {
-  // The directed-gateway repair, on the real runtime. B2_GOODS_IN -> B2_GOODS_OUT
-  // is a SAFE VAULT over DOCK_BARRELS, ~2.4m apart — inside the 4m lead. Before,
-  // the mark skipped to B2_EXIT and the body chased that intent ~15 degrees off
-  // the vault axis, probed ARCADE_PIER_N and wedged. The gateway now holds the
-  // take-off then the receiver until the vault completes, and hands the reader the
-  // authored axis so it probes IN->OUT and commits the VAULT there.
-  const run = driveLinkAware(60, pastB2Exit, 55);
+  // The directed-gateway repair, on the real runtime. Dock Square is now OFF the
+  // guided line (the line goes straight from the Shambles to the Town House), but
+  // it stays authored and reachable, and a player who deviates south into the
+  // square must still get a clean crossing out of it. So this checkpoints the
+  // body at the square's north-east corner and drives the RECOVERY mark, which
+  // leads out through the goods vault: B2_GOODS_IN -> B2_GOODS_OUT is a SAFE VAULT
+  // over DOCK_BARRELS, ~2.4m apart — inside the 4m lead. The bug this guards
+  // against: the mark skipping to B2_EXIT so the body chased that intent ~15
+  // degrees off the vault axis, probed ARCADE_PIER_N and wedged. The gateway
+  // holds the take-off then the receiver until the vault completes, and hands the
+  // reader the authored axis so it probes IN->OUT and commits the VAULT there.
+  const run = driveLinkAware(60, pastB2Exit, 55, "B2_SQUARE_NE");
   assert.equal(run.fatal, null, `the run failed before clearing the goods vault: ${run.fatal}`);
   assert.equal(
     run.penetrated,
