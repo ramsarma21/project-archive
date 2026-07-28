@@ -57,6 +57,7 @@ import {
 import { parseDuelRound, parseDuelVerdictRequest } from "../duels/request.js";
 import { receiptEnforcement } from "../duels/commitReceipts.js";
 import type { DuelVerdictStore } from "../duels/verdictStore.js";
+import type { ConceptRetrievalStore } from "../progression/retrievalStore.js";
 import { evaluateEvidence, m1EvidencePolicyFor } from "../duels/evidence.js";
 import { M1_CODEX_CARD_IDS } from "@pa/mission-m1";
 
@@ -90,6 +91,17 @@ export type DuelAttemptResolver = (
 export interface DuelQuestionAuthority {
   duelId(attempt: DuelAttempt): string;
   expectedItemId(attempt: DuelAttempt, round: number): string;
+  /**
+   * The duel lane's repeat marker for this round, for the retrieval ledger.
+   *
+   * When the bank is exhausted the duel recycles items and marks the repeat
+   * (`@pa/duel`'s `askQuestion`). Optional so an older wiring keeps working; a
+   * missing implementation records the round as a fresh first appearance.
+   */
+  roundAppearance?(
+    attempt: DuelAttempt,
+    round: number,
+  ): { recycled: boolean; appearance: number };
 }
 
 /** A duel id is an HMAC input and a log field. Bounded like every other id. */
@@ -125,6 +137,12 @@ export interface DuelRouteOptions extends DuelGradingOptions {
   readonly questionAuthority?: DuelQuestionAuthority;
   /** The first-answer ledger. A key grades once and is returned verbatim after. */
   readonly verdictStore?: DuelVerdictStore;
+  /**
+   * The formative retrieval ledger. Optional and never on the grading path: a
+   * failure to record is logged and swallowed, because a teacher-report ledger
+   * must never be able to fail a student's round.
+   */
+  readonly retrieval?: ConceptRetrievalStore;
   /**
    * The Codex cards the boss-duel player is entitled to place as evidence. Defaults
    * to the full nine-card M1 deck: the boss is the mission capstone, so a player who
@@ -188,7 +206,7 @@ export async function registerDuelRoutes(
       return user ? { profileId: user.profileId } : null;
     });
   const requireOwner = makeRequireOwner(authenticate);
-  const { resolveAttempt, questionAuthority, verdictStore } = options;
+  const { resolveAttempt, questionAuthority, verdictStore, retrieval } = options;
   const evidenceAuthorized = options.evidenceAuthorizedCardIds ?? M1_CODEX_CARD_IDS;
 
   app.post<{ Params: { duelId: string; round: string } }>(
@@ -369,7 +387,7 @@ export async function registerDuelRoutes(
       // submission — a changed answer, a reload, a double-fire, or a concurrent
       // racer — returns the first stored envelope, receipt and evidence and never
       // re-grades, so a second submission cannot change the cards either.
-      const { record } = await verdictStore.resolve(
+      const { record, firstMinted } = await verdictStore.resolve(
         {
           profileId: owner.profileId,
           duelId: canonicalDuelId,
@@ -401,6 +419,45 @@ export async function registerDuelRoutes(
           };
         },
       );
+
+      // Fold the graded round into the formative retrieval ledger — once, on the
+      // first mint, because that is the moment the server knows the concept, the
+      // verdict and the repeat marker together. A repeat submission returns the
+      // stored verdict (firstMinted false) and records nothing new, exactly as the
+      // verdict store's "first answer is final" already guarantees. This is a
+      // teacher-report ledger, never a gate, so a failure here is logged and
+      // swallowed and can never fail the student's round.
+      if (firstMinted && retrieval) {
+        const appearance = questionAuthority.roundAppearance?.(attempt, round.round) ?? {
+          recycled: false,
+          appearance: 1,
+        };
+        try {
+          await retrieval.record({
+            profileId: owner.profileId,
+            chapterId: attempt.chapterId,
+            missionId: attempt.missionId,
+            attemptId: attempt.attemptId,
+            // The server-selected item's concept, never the client's claim.
+            conceptId: item.conceptId,
+            itemId: item.itemId,
+            source: "DUEL",
+            duelId: canonicalDuelId,
+            roundIndex: round.round,
+            correct: record.envelope.kind === "CORRECT",
+            // A generous infrastructure grant is not evidence of retrieval.
+            graded: record.envelope.source !== "GRADING_TIMEOUT",
+            recycled: appearance.recycled,
+            appearance: appearance.appearance,
+            seenAt: new Date().toISOString(),
+          });
+        } catch (cause) {
+          request.log.warn(
+            { cause, profileId: owner.profileId, duelId: canonicalDuelId, round: round.round },
+            "retrieval ledger: failed to record a graded duel round",
+          );
+        }
+      }
 
       // Headers carry the receipt and the provenance; the body carries exactly the
       // five envelope keys the duel's parser accepts and nothing else. A repeat

@@ -33,6 +33,13 @@
 -- asks, so "asked five times inside one match" reads differently from the same
 -- spread across three attempts. Sessions/days are not yet distinguished (see the
 -- store's docs) — but recording WHEN is cheap and makes the record meaningful later.
+--
+-- REPEATS ARE MARKED, NOT HIDDEN. When the duel bank is exhausted it recycles items
+-- openly (`@pa/duel`'s `askQuestion` returns `recycled`/`appearance`), so the same
+-- item can appear several times in one match. `recycled` and `appearance` carry that
+-- marker through, so a report is not fooled into reading one match's reuse as five
+-- sessions' worth of independent evidence — the same disclosure `@pa/reporting`
+-- makes for a recycled assessment item, one layer down.
 create table if not exists concept_retrieval (
   profile_id uuid not null references profiles(id) on delete cascade,
   chapter_id text not null,
@@ -41,6 +48,10 @@ create table if not exists concept_retrieval (
   mission_id text not null,
   attempt_id uuid not null,
   concept_id text not null,
+  -- The server-selected item id (never the client's claim). An id, never answer
+  -- text — the same rule `duel_verdicts` keeps. Lets a report count distinct items
+  -- and name what a student consistently misses.
+  item_id text not null,
   source text not null check (source in ('DUEL', 'ENCOUNTER')),
   -- The canonical verdict id and round this row mirrors in `duel_verdicts`. A duel
   -- round's is `<levelId>#duel@<ordinal>` at round 1..N; an encounter's is
@@ -51,8 +62,14 @@ create table if not exists concept_retrieval (
   correct boolean not null,
   -- False when the verdict was the generous infrastructure grant (source
   -- GRADING_TIMEOUT), which is not evidence of retrieval. A reader counts
-  -- correctness over graded rows only, so a grading outage cannot inflate mastery.
+  -- correctness over graded rows only, so a grading outage cannot inflate a report.
   graded boolean not null,
+  -- The duel lane's repeat marker, consumed verbatim. `recycled` is true when the
+  -- item was already asked earlier in the SAME match; `appearance` is the 1-based
+  -- count of how many times it has been asked in that match. An encounter is asked
+  -- once per attempt, so it is always fresh (false / 1).
+  recycled boolean not null default false,
+  appearance integer not null default 1 check (appearance >= 1),
   seen_at timestamptz not null default now(),
   primary key (profile_id, duel_id, round_index)
 );

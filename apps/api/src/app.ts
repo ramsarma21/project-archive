@@ -47,6 +47,7 @@ import {
 } from "./progression/content.js";
 import { pvpCardResolver } from "./pvp/cardAccess.js";
 import { postgresProgressionStore } from "./progression/postgresStore.js";
+import { postgresConceptRetrievalStore } from "./progression/retrievalStore.js";
 import { ProgressionService } from "./progression/service.js";
 
 const SESSION_COOKIE = "pa_session";
@@ -149,6 +150,11 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
   // mean anything. Sharing the instance is what makes that true by construction
   // instead of by two files agreeing about an environment variable.
   const duelGrading = createDuelGrading(app.log);
+  // The formative retrieval ledger, shared by the duel and encounter routes (which
+  // WRITE it at grade time) and the dev-reset (which clears it). It moves no gate:
+  // nothing here writes concept_mastery or touches PvP card legality. See
+  // progression/retrievalStore.ts.
+  const retrieval = postgresConceptRetrievalStore();
   await registerProgressionRoutes(app, progression, {
     verifyVerdictReceipt: duelGrading.verifyReceipt,
   });
@@ -186,8 +192,19 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
           attemptOrdinal: attempt.attemptOrdinal,
           round,
         }).item.itemId,
+      // The repeat marker for the retrieval ledger: the same seeded selection the
+      // client and grader use already reports whether this round recycles an item.
+      roundAppearance: (attempt, round) => {
+        const asked = m1ExpectedDuelItem({
+          attemptSeedHex: attempt.attemptSeedHex,
+          attemptOrdinal: attempt.attemptOrdinal,
+          round,
+        });
+        return { recycled: asked.recycled, appearance: asked.appearance };
+      },
     },
     verdictStore: postgresDuelVerdictStore(),
+    retrieval,
     // The boss is the mission capstone: a player who reaches it holds the whole M1
     // deck, and the evidence hand is drawn from exactly these nine. Server-derived
     // from the card map, never hand-listed.
@@ -219,6 +236,7 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
       }
     },
     verdictStore: postgresDuelVerdictStore(),
+    retrieval,
   });
   // PvP holds its lobbies and live matches in memory, so a restart loses a code and
   // at most one fight. Standing is durable in pvp_standing (migration 007): a
@@ -430,6 +448,9 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
   // duel can still grade the fresh attempt. See routes/devReset.ts.
   registerDevResetRoute(app, {
     service: progression,
+    // A reset clears the mission's formative retrieval ledger and stale duel
+    // verdicts too, so the replay re-grades from a clean slate.
+    retrieval,
     defaultChapterId: BOSTON_RUNTIME_CHAPTER_ID,
     defaultMissionId: M1_MISSION_ID,
     allowedOrigin: WEB_ORIGIN,

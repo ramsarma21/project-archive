@@ -26,6 +26,13 @@
 // canonical attempt, so wiping it would lock the player out of what they are testing.
 // The response returns the resulting progression so a caller can CONFIRM the reset
 // rather than assume it.
+//
+// CLEARS THE FORMATIVE RETRIEVAL LEDGER TOO. A reset returns ONE mission's RUN
+// state to replayable; the retrieval ledger is that mission's run-history, so it is
+// cleared alongside the attempts (progress-to-clear), scoped to the mission. It also
+// clears the mission's duel verdicts, so the replayed duel genuinely re-grades and
+// re-records rather than replaying the prior run's stored verdicts. The DURABLE
+// learning — concept_mastery and the module gate — is preserved, exactly as before.
 
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -33,6 +40,7 @@ import { getSessionUser } from "../auth.js";
 import { effectiveSessionId } from "../devSession.js";
 import { validAssessmentMutationRequest } from "../assessment/requestPolicy.js";
 import type { ResetMissionAttemptsResult } from "../progression/service.js";
+import type { ClearMissionResult } from "../progression/retrievalStore.js";
 import type { ProgressionSnapshot } from "@pa/contracts";
 
 /**
@@ -59,8 +67,23 @@ export interface DevResetProgressionPort {
   snapshot(profileId: string): Promise<ProgressionSnapshot>;
 }
 
+/** The retrieval ledger's mission-scoped clear. See progression/retrievalStore.ts. */
+export interface DevResetRetrievalPort {
+  clearMission(
+    profileId: string,
+    chapterId: string,
+    missionId: string,
+  ): Promise<ClearMissionResult>;
+}
+
 export interface DevResetDeps {
   readonly service: DevResetProgressionPort;
+  /**
+   * The formative retrieval ledger. Cleared for the reset mission after the
+   * attempt reset succeeds, so a replay starts from a clean, re-gradeable slate.
+   * Optional so a test can omit it; a real app always wires it.
+   */
+  readonly retrieval?: DevResetRetrievalPort;
   /**
    * Non-production only. When omitted, evaluated per request as
    * `NODE_ENV !== "production"`. Injected as `false` by a test to assert the
@@ -136,8 +159,18 @@ export function registerDevResetRoute(app: FastifyInstance, deps: DevResetDeps):
       return reply.code(status).send({ error: result.error });
     }
 
+    // The attempt reset succeeded, so the mission is UNSTARTED again. Clear the
+    // formative retrieval ledger and the stale duel verdicts for THIS mission, so
+    // the replay re-grades and re-records rather than replaying the prior run.
+    // Sequenced after the reset (which discarded any live attempt), so no open
+    // attempt exists to record a stray retrieval into the window between the two.
+    let retrieval: ClearMissionResult | undefined;
+    if (deps.retrieval) {
+      retrieval = await deps.retrieval.clearMission(user.profileId, chapterId, missionId);
+    }
+
     // Return the resulting progression so a caller can confirm, not assume.
     const progression = await service.snapshot(user.profileId);
-    return { ok: true, reset: result.value, progression };
+    return { ok: true, reset: result.value, retrieval, progression };
   });
 }
