@@ -1,0 +1,321 @@
+[
+  {
+    "foot": "C_SCAFF_FOOT",
+    "top": "C_SCAFF_1",
+    "from": {
+      "x": 44.8,
+      "y": 0,
+      "z": -6.4
+    },
+    "to": {
+      "x": 44.8,
+      "y": 2.9,
+      "z": -6.18
+    },
+    "rose": 2.9,
+    "verbs": [
+      "CLIMB_UP"
+    ],
+    "authoredTicks": 61,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "CLIMB_UP",
+    "finalPhase": "CLIMB_UP"
+  },
+  {
+    "foot": "C_SCAFF_1",
+    "top": "C_SCAFF_2",
+    "from": {
+      "x": 44.8,
+      "y": 2.9,
+      "z": -6.4
+    },
+    "to": {
+      "x": 44.8,
+      "y": 5.6,
+      "z": -5.53
+    },
+    "rose": 2.7,
+    "verbs": [
+      "CLIMB_UP"
+    ],
+    "authoredTicks": 73,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "C_GALLERY_EMID",
+    "top": "C_CLOCK",
+    "from": {
+      "x": 58.3,
+      "y": 5.6,
+      "z": -4
+    },
+    "to": {
+      "x": 58.3,
+      "y": 10.2,
+      "z": 0.62
+    },
+    "rose": 4.6,
+    "verbs": [
+      "CLIMB_UP"
+    ],
+    "authoredTicks": 128,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "C_CLOCK",
+    "top": "C_CORNICE_E",
+    "from": {
+      "x": 58.3,
+      "y": 7.9,
+      "z": 0
+    },
+    "to": {
+      "x": 58.3,
+      "y": 10.2,
+      "z": 5.96
+    },
+    "rose": 2.3,
+    "verbs": [
+      "CLIMB_UP"
+    ],
+    "authoredTicks": 73,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "C_LEADS_TOWERFOOT",
+    "top": "C_TOWER_PLINTH",
+    "from": {
+      "x": 52,
+      "y": 12.4,
+      "z": 2.9
+    },
+    "to": {
+      "x": 52,
+      "y": 15.2,
+      "z": 2.35
+    },
+    "rose": 2.8,
+    "verbs": [
+      "CLIMB_UP"
+    ],
+    "authoredTicks": 73,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "D2_OUTSIDE",
+    "top": "E_BUTTRESS",
+    "from": {
+      "x": 75.4,
+      "y": 0,
+      "z": 17.4
+    },
+    "to": {
+      "x": 75.4,
+      "y": 2.6,
+      "z": 15.95
+    },
+    "rose": 2.6,
+    "verbs": [
+      "CLIMB_UP"
+    ],
+    "authoredTicks": 73,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "E_BUTTRESS",
+    "top": "E_LEANTO",
+    "from": {
+      "x": 75.4,
+      "y": 2.6,
+      "z": 16.2
+    },
+    "to": {
+      "x": 75.4,
+      "y": 0,
+      "z": 24
+    },
+    "rose": -2.6,
+    "verbs": [
+      "CLIMB_UP"
+    ],
+    "authoredTicks": 73,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "D_MEETING_ROOF",
+    "top": "E_RIDGE",
+    "from": {
+      "x": 76.5,
+      "y": 8.2,
+      "z": 9
+    },
+    "to": {
+      "x": 83.64,
+      "y": 14,
+      "z": 8.86
+    },
+    "rose": 5.8,
+    "verbs": [
+      "CLIMB_UP"
+    ],
+    "authoredTicks": 128,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "E_GAMBREL_S",
+    "top": "E_RIDGE_W",
+    "from": {
+      "x": 78,
+      "y": 8.2,
+      "z": 10.2
+    },
+    "to": {
+      "x": 78,
+      "y": 6.4,
+      "z": -1.74
+    },
+    "rose": -1.8,
+    "verbs": [],
+    "authoredTicks": 0,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "E_RIDGE",
+    "top": "E_LOUVRE",
+    "from": {
+      "x": 79.5,
+      "y": 11.2,
+      "z": 8.6
+    },
+    "to": {
+      "x": 85.79,
+      "y": 8.2,
+      "z": 10.24
+    },
+    "rose": -3,
+    "verbs": [
+      "HANG_DROP"
+    ],
+    "authoredTicks": 26,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "F_LOW",
+    "top": "F_CROWN",
+    "from": {
+      "x": 79,
+      "y": 6.4,
+      "z": 2.6
+    },
+    "to": {
+      "x": 81.56,
+      "y": 6.4,
+      "z": -1.99
+    },
+    "rose": 0,
+    "verbs": [],
+    "authoredTicks": 0,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "B_CRATES_FOOT",
+    "top": "B_CRATES_A",
+    "from": {
+      "x": 29.4,
+      "y": 0,
+      "z": -0.8
+    },
+    "to": {
+      "x": 29.4,
+      "y": 1.9,
+      "z": -2.85
+    },
+    "rose": 1.9,
+    "verbs": [
+      "CLIMB_UP"
+    ],
+    "authoredTicks": 73,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  },
+  {
+    "foot": "C_LANE_FOOT",
+    "top": "C_LANE_HAY",
+    "from": {
+      "x": 49.5,
+      "y": 0,
+      "z": -7.4
+    },
+    "to": {
+      "x": 49.5,
+      "y": 0,
+      "z": -7.85
+    },
+    "rose": 0,
+    "verbs": [],
+    "authoredTicks": 0,
+    "maxDivergenceM": 0,
+    "maxAuthoredEmbedM": 0,
+    "authoredEmbedId": null,
+    "strictEmbeds": [],
+    "finalVerb": "NONE",
+    "finalPhase": "GROUNDED"
+  }
+]

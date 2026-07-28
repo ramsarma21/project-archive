@@ -1,0 +1,4454 @@
+[
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 11,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.6
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 16,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.64
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0.83,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 22,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.77
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.45,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 27,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 18.9
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.76,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 32,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 19.05
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.67,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 37,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 19.19
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.68,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 42,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 19.33
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.68,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 46,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 19.45
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.69,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 51,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 19.59
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.69,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 56,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 19.73
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.69,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 61,
+    "pos": {
+      "x": 76.1,
+      "y": 8.6,
+      "z": 19.87
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 66,
+    "pos": {
+      "x": 76.1,
+      "y": 8.59,
+      "z": 20.01
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 70,
+    "pos": {
+      "x": 76.1,
+      "y": 8.54,
+      "z": 20.12
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 75,
+    "pos": {
+      "x": 76.1,
+      "y": 8.41,
+      "z": 20.27
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 80,
+    "pos": {
+      "x": 76.1,
+      "y": 8.2,
+      "z": 20.41
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 80,
+    "pos": {
+      "x": 76.1,
+      "y": 8.2,
+      "z": 20.41
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 89,
+    "pos": {
+      "x": 76.1,
+      "y": 7.64,
+      "z": 20.66
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 89,
+    "pos": {
+      "x": 76.1,
+      "y": 7.64,
+      "z": 20.66
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 94,
+    "pos": {
+      "x": 76.1,
+      "y": 7.23,
+      "z": 20.8
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 103,
+    "pos": {
+      "x": 76.1,
+      "y": 6.29,
+      "z": 21.06
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 107,
+    "pos": {
+      "x": 76.1,
+      "y": 5.79,
+      "z": 21.17
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 111,
+    "pos": {
+      "x": 76.1,
+      "y": 5.25,
+      "z": 21.29
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.7,
+    "verb": "RUN_OFF",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 76.1,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 116,
+    "pos": {
+      "x": 76.06,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0.76,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 116,
+    "pos": {
+      "x": 76.06,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0.76,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 121,
+    "pos": {
+      "x": 75.97,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.32,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 126,
+    "pos": {
+      "x": 75.84,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.68,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 126,
+    "pos": {
+      "x": 75.84,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.68,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 131,
+    "pos": {
+      "x": 75.69,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.9,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 131,
+    "pos": {
+      "x": 75.69,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.9,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 131,
+    "pos": {
+      "x": 75.69,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.9,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 136,
+    "pos": {
+      "x": 75.52,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.05,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 141,
+    "pos": {
+      "x": 75.35,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.14,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 146,
+    "pos": {
+      "x": 75.17,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.2,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 146,
+    "pos": {
+      "x": 75.17,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.2,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 151,
+    "pos": {
+      "x": 74.98,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.23,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 156,
+    "pos": {
+      "x": 74.79,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.26,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 161,
+    "pos": {
+      "x": 74.61,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.27,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 166,
+    "pos": {
+      "x": 74.42,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.28,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 171,
+    "pos": {
+      "x": 74.22,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.29,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 176,
+    "pos": {
+      "x": 74.03,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.29,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 181,
+    "pos": {
+      "x": 73.84,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 181,
+    "pos": {
+      "x": 73.84,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 186,
+    "pos": {
+      "x": 73.65,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 191,
+    "pos": {
+      "x": 73.46,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 196,
+    "pos": {
+      "x": 73.27,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 201,
+    "pos": {
+      "x": 73.08,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 201,
+    "pos": {
+      "x": 73.08,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 206,
+    "pos": {
+      "x": 72.89,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 206,
+    "pos": {
+      "x": 72.89,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 211,
+    "pos": {
+      "x": 72.69,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 216,
+    "pos": {
+      "x": 72.5,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 221,
+    "pos": {
+      "x": 72.31,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 226,
+    "pos": {
+      "x": 72.12,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 226,
+    "pos": {
+      "x": 72.12,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 231,
+    "pos": {
+      "x": 71.93,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 236,
+    "pos": {
+      "x": 71.74,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 241,
+    "pos": {
+      "x": 71.54,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 241,
+    "pos": {
+      "x": 71.54,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 246,
+    "pos": {
+      "x": 71.35,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 251,
+    "pos": {
+      "x": 71.16,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 256,
+    "pos": {
+      "x": 70.97,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 256,
+    "pos": {
+      "x": 70.97,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 261,
+    "pos": {
+      "x": 70.78,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 261,
+    "pos": {
+      "x": 70.78,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 266,
+    "pos": {
+      "x": 70.59,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 271,
+    "pos": {
+      "x": 70.39,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 271,
+    "pos": {
+      "x": 70.39,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 276,
+    "pos": {
+      "x": 70.2,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 276,
+    "pos": {
+      "x": 70.2,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 281,
+    "pos": {
+      "x": 70.01,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 286,
+    "pos": {
+      "x": 69.82,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 286,
+    "pos": {
+      "x": 69.82,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 291,
+    "pos": {
+      "x": 69.63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 296,
+    "pos": {
+      "x": 69.44,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 301,
+    "pos": {
+      "x": 69.24,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 301,
+    "pos": {
+      "x": 69.24,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 306,
+    "pos": {
+      "x": 69.05,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 311,
+    "pos": {
+      "x": 68.86,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 311,
+    "pos": {
+      "x": 68.86,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 316,
+    "pos": {
+      "x": 68.67,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 321,
+    "pos": {
+      "x": 68.48,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 326,
+    "pos": {
+      "x": 68.29,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 326,
+    "pos": {
+      "x": 68.29,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 331,
+    "pos": {
+      "x": 68.09,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 336,
+    "pos": {
+      "x": 67.9,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 336,
+    "pos": {
+      "x": 67.9,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 341,
+    "pos": {
+      "x": 67.71,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 346,
+    "pos": {
+      "x": 67.52,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 346,
+    "pos": {
+      "x": 67.52,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 351,
+    "pos": {
+      "x": 67.33,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 356,
+    "pos": {
+      "x": 67.14,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 356,
+    "pos": {
+      "x": 67.14,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 361,
+    "pos": {
+      "x": 66.94,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 361,
+    "pos": {
+      "x": 66.94,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 366,
+    "pos": {
+      "x": 66.75,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 371,
+    "pos": {
+      "x": 66.56,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 371,
+    "pos": {
+      "x": 66.56,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 376,
+    "pos": {
+      "x": 66.37,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 381,
+    "pos": {
+      "x": 66.18,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": 2.3,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 386,
+    "pos": {
+      "x": 65.99,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 386,
+    "pos": {
+      "x": 65.99,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.3,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 391,
+    "pos": {
+      "x": 65.75,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 3.13,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 396,
+    "pos": {
+      "x": 65.46,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 3.66,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 396,
+    "pos": {
+      "x": 65.46,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 3.66,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 401,
+    "pos": {
+      "x": 65.14,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 401,
+    "pos": {
+      "x": 65.14,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 406,
+    "pos": {
+      "x": 64.79,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.22,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 411,
+    "pos": {
+      "x": 64.43,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.36,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 411,
+    "pos": {
+      "x": 64.43,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.36,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 416,
+    "pos": {
+      "x": 64.06,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.45,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 416,
+    "pos": {
+      "x": 64.06,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.45,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 421,
+    "pos": {
+      "x": 63.69,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.5,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 426,
+    "pos": {
+      "x": 63.31,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.54,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 426,
+    "pos": {
+      "x": 63.31,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.54,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 426,
+    "pos": {
+      "x": 63.31,
+      "y": 5.2,
+      "z": 21.3
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.54,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 431,
+    "pos": {
+      "x": 62.94,
+      "y": 5.2,
+      "z": 21.31
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.55,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 431,
+    "pos": {
+      "x": 62.94,
+      "y": 5.2,
+      "z": 21.31
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.55,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 436,
+    "pos": {
+      "x": 62.56,
+      "y": 5.2,
+      "z": 21.34
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.56,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 436,
+    "pos": {
+      "x": 62.56,
+      "y": 5.2,
+      "z": 21.34
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.56,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 441,
+    "pos": {
+      "x": 62.18,
+      "y": 5.2,
+      "z": 21.38
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.57,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 441,
+    "pos": {
+      "x": 62.18,
+      "y": 5.2,
+      "z": 21.38
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.57,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 446,
+    "pos": {
+      "x": 61.8,
+      "y": 5.2,
+      "z": 21.42
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.58,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 446,
+    "pos": {
+      "x": 61.8,
+      "y": 5.2,
+      "z": 21.42
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.58,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 451,
+    "pos": {
+      "x": 61.42,
+      "y": 5.2,
+      "z": 21.48
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.59,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 456,
+    "pos": {
+      "x": 61.04,
+      "y": 5.2,
+      "z": 21.53
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.59,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 456,
+    "pos": {
+      "x": 61.04,
+      "y": 5.2,
+      "z": 21.53
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.59,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 456,
+    "pos": {
+      "x": 61.04,
+      "y": 5.2,
+      "z": 21.53
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.59,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 461,
+    "pos": {
+      "x": 60.67,
+      "y": 5.2,
+      "z": 21.59
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.59,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 466,
+    "pos": {
+      "x": 60.29,
+      "y": 5.2,
+      "z": 21.66
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.6,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 466,
+    "pos": {
+      "x": 60.29,
+      "y": 5.2,
+      "z": 21.66
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.6,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 471,
+    "pos": {
+      "x": 59.91,
+      "y": 5.2,
+      "z": 21.73
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.6,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 471,
+    "pos": {
+      "x": 59.91,
+      "y": 5.2,
+      "z": 21.73
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.6,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 476,
+    "pos": {
+      "x": 59.54,
+      "y": 5.2,
+      "z": 21.8
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.6,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 476,
+    "pos": {
+      "x": 59.54,
+      "y": 5.2,
+      "z": 21.8
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 4.6,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 481,
+    "pos": {
+      "x": 59.33,
+      "y": 5.2,
+      "z": 21.86
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 481,
+    "pos": {
+      "x": 59.33,
+      "y": 5.2,
+      "z": 21.86
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 486,
+    "pos": {
+      "x": 59.24,
+      "y": 5.16,
+      "z": 21.92
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 486,
+    "pos": {
+      "x": 59.24,
+      "y": 5.16,
+      "z": 21.92
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 491,
+    "pos": {
+      "x": 59.15,
+      "y": 5.04,
+      "z": 21.98
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 491,
+    "pos": {
+      "x": 59.15,
+      "y": 5.04,
+      "z": 21.98
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 496,
+    "pos": {
+      "x": 59.07,
+      "y": 4.85,
+      "z": 22.07
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 501,
+    "pos": {
+      "x": 59.02,
+      "y": 4.58,
+      "z": 22.16
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 501,
+    "pos": {
+      "x": 59.02,
+      "y": 4.58,
+      "z": 22.16
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 506,
+    "pos": {
+      "x": 58.99,
+      "y": 4.24,
+      "z": 22.27
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 506,
+    "pos": {
+      "x": 58.99,
+      "y": 4.24,
+      "z": 22.27
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 511,
+    "pos": {
+      "x": 59,
+      "y": 3.83,
+      "z": 22.38
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 516,
+    "pos": {
+      "x": 59.05,
+      "y": 3.34,
+      "z": 22.48
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 516,
+    "pos": {
+      "x": 59.05,
+      "y": 3.34,
+      "z": 22.48
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 521,
+    "pos": {
+      "x": 59.13,
+      "y": 2.77,
+      "z": 22.55
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 521,
+    "pos": {
+      "x": 59.13,
+      "y": 2.77,
+      "z": 22.55
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 526,
+    "pos": {
+      "x": 59.24,
+      "y": 2.13,
+      "z": 22.57
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 526,
+    "pos": {
+      "x": 59.24,
+      "y": 2.13,
+      "z": 22.57
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 531,
+    "pos": {
+      "x": 59.35,
+      "y": 1.41,
+      "z": 22.56
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 531,
+    "pos": {
+      "x": 59.35,
+      "y": 1.41,
+      "z": 22.56
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 1.34,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 63,
+      "y": 3.2,
+      "z": 23.7
+    },
+    "outcome": null
+  },
+  {
+    "tick": 536,
+    "pos": {
+      "x": 59.45,
+      "y": 1.1,
+      "z": 22.49
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.79,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 541,
+    "pos": {
+      "x": 59.54,
+      "y": 1.09,
+      "z": 22.21
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 2.39,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 546,
+    "pos": {
+      "x": 59.62,
+      "y": 1.02,
+      "z": 22.03
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 2.39,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 546,
+    "pos": {
+      "x": 59.62,
+      "y": 1.02,
+      "z": 22.03
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 2.39,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 551,
+    "pos": {
+      "x": 59.68,
+      "y": 0.88,
+      "z": 21.84
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 2.39,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 551,
+    "pos": {
+      "x": 59.68,
+      "y": 0.88,
+      "z": 21.84
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 2.39,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 556,
+    "pos": {
+      "x": 59.71,
+      "y": 0.65,
+      "z": 21.65
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 2.39,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 556,
+    "pos": {
+      "x": 59.71,
+      "y": 0.65,
+      "z": 21.65
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 2.39,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 561,
+    "pos": {
+      "x": 59.71,
+      "y": 0.36,
+      "z": 21.45
+    },
+    "grounded": false,
+    "phase": "FALLING",
+    "speed": 2.39,
+    "verb": "RUN_OFF",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 566,
+    "pos": {
+      "x": 59.68,
+      "y": 0,
+      "z": 21.25
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.39,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 571,
+    "pos": {
+      "x": 59.63,
+      "y": 0,
+      "z": 21.19
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0.56,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 571,
+    "pos": {
+      "x": 59.63,
+      "y": 0,
+      "z": 21.19
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0.56,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 576,
+    "pos": {
+      "x": 59.59,
+      "y": 0,
+      "z": 21.29
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.82,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 581,
+    "pos": {
+      "x": 59.57,
+      "y": 0,
+      "z": 21.49
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.8,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 584,
+    "pos": {
+      "x": 59.56,
+      "y": 0,
+      "z": 21.64
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 3.22,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 589,
+    "pos": {
+      "x": 59.58,
+      "y": 0,
+      "z": 21.94
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 3.68,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 596,
+    "pos": {
+      "x": 59.63,
+      "y": 0,
+      "z": 22.08
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0.52,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 600,
+    "pos": {
+      "x": 59.65,
+      "y": 0,
+      "z": 22.01
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.52,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 603,
+    "pos": {
+      "x": 59.65,
+      "y": 0,
+      "z": 21.92
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.21,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 608,
+    "pos": {
+      "x": 59.61,
+      "y": 0,
+      "z": 21.69
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 3.03,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 608,
+    "pos": {
+      "x": 59.61,
+      "y": 0,
+      "z": 21.69
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 3.03,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 613,
+    "pos": {
+      "x": 59.56,
+      "y": 0,
+      "z": 21.59
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 0.64,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 618,
+    "pos": {
+      "x": 59.53,
+      "y": 0,
+      "z": 21.66
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.5,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 618,
+    "pos": {
+      "x": 59.53,
+      "y": 0,
+      "z": 21.66
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.5,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 623,
+    "pos": {
+      "x": 59.57,
+      "y": 0,
+      "z": 21.84
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.54,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 623,
+    "pos": {
+      "x": 59.57,
+      "y": 0,
+      "z": 21.84
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 2.54,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 631,
+    "pos": {
+      "x": 59.75,
+      "y": 0,
+      "z": 21.91
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.89,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 635,
+    "pos": {
+      "x": 59.79,
+      "y": 0,
+      "z": 21.83
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.31,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  },
+  {
+    "tick": 639,
+    "pos": {
+      "x": 59.74,
+      "y": 0,
+      "z": 21.75
+    },
+    "grounded": true,
+    "phase": "GROUNDED",
+    "speed": 1.72,
+    "verb": "NONE",
+    "cap": null,
+    "objId": "post-the-handbill",
+    "via": "Through the ropewalk",
+    "wp": {
+      "x": 59.8,
+      "y": 0,
+      "z": 19.3
+    },
+    "outcome": null
+  }
+]

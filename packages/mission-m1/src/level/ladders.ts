@@ -29,7 +29,7 @@
 //     already draws as masonry set-offs the body grips. A bolted ladder would
 //     read worse than the stone that is already there, so it keeps its stone.
 
-import type { LadderPlacementSpec } from "../types.js";
+import type { GripPlacementSpec, LadderPlacementSpec } from "../types.js";
 
 export const LADDERS: LadderPlacementSpec[] = [
   // ---- C_ASCENT: the Town House, under repair -----------------------------
@@ -120,5 +120,38 @@ export const LADDERS: LadderPlacementSpec[] = [
     onto: "LOUVRE_SILL",
     faceX: -0.45,
     faceZ: -0.89,
+  },
+];
+
+// The two ascents a ladder should NOT serve, authored as GRIPS instead. Each
+// names a DRAWN solid the body genuinely grips, and the arming predicate
+// (`alignClimbToGrip`) checks the structure spans the rise and tops out with
+// clearance — the same gate a ladder passes, not an exemption keyed on the link.
+export const GRIPS: GripPlacementSpec[] = [
+  // D2_OUTSIDE -> E_BUTTRESS: the body climbs the solid `buttress-stepped-stone`
+  // (HOLLIS_BUTTRESS), whose set-offs read as masonry holds. A bolted ladder up
+  // it would read worse than the stone already drawn. The foot stands north of
+  // the buttress (z=17.4, the buttress ends at z=16.8), so the outward face is +Z.
+  {
+    id: "GRIP_BUTTRESS",
+    at: [75.4, 0, 17.4],
+    onto: "HOLLIS_BUTTRESS",
+    faceX: 0,
+    faceZ: 1,
+    support: "HOLLIS_BUTTRESS",
+    kind: "STEPPED_MASONRY",
+  },
+  // F_LOW -> F_CROWN (the Liberty Elm): honest holds up the bole/boughs. It will
+  // not bolt a ladder to a tree, and the elm's own trunk (LIBERTY_ELM_TRUNK,
+  // solid to 12 m) is the structure gripped. The foot sits under the crown at
+  // (79, 2.6); the outward face points from the bole back at the climber.
+  {
+    id: "GRIP_ELM_CROWN",
+    at: [79.0, 6.4, 2.6],
+    onto: "BOUGH_CROWN",
+    faceX: -0.74,
+    faceZ: 0.67,
+    support: "LIBERTY_ELM_TRUNK",
+    kind: "BOUGHS",
   },
 ];

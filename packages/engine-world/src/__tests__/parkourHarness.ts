@@ -12,6 +12,7 @@ import {
   type Blocker,
   type ClimbVolume,
   type CollisionWorld,
+  type LadderSpec,
   type Platform,
 } from "../collision.js";
 import { createFlowState, type FlowInput, type FlowState } from "../parkour/flow.js";
@@ -24,8 +25,28 @@ export function world(
   blockers: Blocker[] = [],
   platforms: Platform[] = [],
   climbVolumes: ClimbVolume[] = [],
+  ladders: LadderSpec[] = [],
 ): CollisionWorld {
-  return { blockers, platforms, bounds: { ...ARENA_BOUNDS }, climbVolumes };
+  return { blockers, platforms, bounds: { ...ARENA_BOUNDS }, climbVolumes, ladders };
+}
+
+/** A visible climb ladder at the foot of an ascent, leaning on `onto`. */
+export function ladder(
+  onto: string,
+  base: { x: number; y: number; z: number },
+  topY: number,
+  faceZ = -1,
+): LadderSpec {
+  return {
+    id: `ladder-${onto}`,
+    base,
+    topY,
+    faceX: 0,
+    faceZ,
+    toSurface: onto,
+    widthM: 0.6,
+    rungGapM: 0.3,
+  };
 }
 
 /** An authored vertical ascent: stand in here, and going up onto `onto` is legal. */

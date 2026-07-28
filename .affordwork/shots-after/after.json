@@ -1,0 +1,128 @@
+[
+  {
+    "name": "05-canopy-climb",
+    "at": "B_CRATES_FOOT",
+    "toward": "B_CANOPY_2_S",
+    "tick": 29,
+    "via": "The shambles",
+    "rangeM": 299,
+    "action": {
+      "kind": "CLIMB",
+      "phase": "RECEIVER",
+      "riseM": 2.5
+    }
+  },
+  {
+    "name": "09-dock-vault",
+    "at": "B2_GOODS_IN",
+    "toward": "B2_GOODS_OUT",
+    "tick": 28,
+    "via": "Dock Square",
+    "rangeM": 229,
+    "action": null
+  },
+  {
+    "name": "10-townhouse-scaffold",
+    "at": "C_SCAFF_FOOT",
+    "toward": "C_SCAFF_1",
+    "tick": 27,
+    "via": "The Town House",
+    "rangeM": 180,
+    "action": {
+      "kind": "CLIMB",
+      "phase": "RECEIVER",
+      "riseM": 2.9
+    }
+  },
+  {
+    "name": "12-gallery-clock",
+    "at": "C_GALLERY_EMID",
+    "toward": "C_CLOCK",
+    "tick": 29,
+    "via": "The Town House",
+    "rangeM": 158,
+    "action": {
+      "kind": "CLIMB",
+      "phase": "RECEIVER",
+      "riseM": 2.3
+    }
+  },
+  {
+    "name": "13-cornice-tower",
+    "at": "C_LEADS_TOWERFOOT",
+    "toward": "C_TOWER_PLINTH",
+    "tick": 29,
+    "via": "The Town House",
+    "rangeM": 134,
+    "action": {
+      "kind": "CLIMB",
+      "phase": "RECEIVER",
+      "riseM": 2.8
+    }
+  },
+  {
+    "name": "16-roof-vaults",
+    "at": "D_VAULT_IN_0",
+    "toward": "D_VAULT_OUT_0",
+    "tick": 33,
+    "via": "The Orange Street roofline",
+    "rangeM": 112,
+    "action": {
+      "kind": "VAULT",
+      "phase": "APPROACH",
+      "riseM": 0
+    }
+  },
+  {
+    "name": "18-ropewalk-hatch",
+    "at": "D2_ROOF_N",
+    "toward": "D2_BEAM_MID",
+    "tick": 29,
+    "via": "Through the ropewalk",
+    "rangeM": 81,
+    "action": {
+      "kind": "DROP",
+      "phase": "RECEIVER",
+      "riseM": -3.4
+    }
+  },
+  {
+    "name": "23-south-face-climb",
+    "at": "D2_OUTSIDE",
+    "toward": "E_BUTTRESS",
+    "tick": 31,
+    "via": "The leap of faith",
+    "rangeM": 36,
+    "action": {
+      "kind": "CLIMB",
+      "phase": "RECEIVER",
+      "riseM": 2.6
+    }
+  },
+  {
+    "name": "25-steeple-leap",
+    "at": "E_GALLERY",
+    "toward": "F_CROWN",
+    "tick": 31,
+    "via": "Nailed to the tree",
+    "rangeM": 12,
+    "action": {
+      "kind": "LEAP_OF_FAITH",
+      "phase": "RECEIVER",
+      "riseM": -7.5
+    }
+  },
+  {
+    "name": "10b-scaffold-approach",
+    "at": "C_SCAFF_FOOT",
+    "toward": "C_SCAFF_1",
+    "tick": 34,
+    "via": "The Town House",
+    "rangeM": 180,
+    "action": {
+      "kind": "CLIMB",
+      "phase": "RECEIVER",
+      "riseM": 2.9
+    }
+  }
+]

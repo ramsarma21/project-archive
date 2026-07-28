@@ -40,6 +40,13 @@ export interface PropInstance {
   /** Box the GLB is fitted into. Matches `SceneryPlacement.size`. */
   readonly size: readonly [number, number, number];
   readonly yaw: number;
+  /**
+   * Lean about the object's own local X axis, applied at its foot AFTER yaw:
+   * `place = T(pos) · Ry(yaw) · Rx(pitch)`. Matches `SceneryPlacement.pitch`.
+   * Zero (or omitted) for every ordinary upright prop; only a leaning ladder
+   * uses it.
+   */
+  readonly pitch?: number;
   /** Fill the box on every axis (a MODULE tile) instead of contain-fitting. */
   readonly fill: boolean;
 }
@@ -87,10 +94,14 @@ function instanceMatrix(
     new THREE.Quaternion(),
     new THREE.Vector3(sx, sy, sz),
   );
-  // place = translate(pos) · rotateY(yaw)
+  // place = translate(pos) · rotateY(yaw) · rotateX(pitch). The pitch leans the
+  // object about its own foot (the fit grounds Y at the base), which is how a
+  // leaning ladder stands on its feet and tips its top against the face.
   const place = new THREE.Matrix4().compose(
     new THREE.Vector3(instance.pos[0], instance.pos[1], instance.pos[2]),
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(0, instance.yaw, 0)),
+    new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(instance.pitch ?? 0, instance.yaw, 0, "YXZ"),
+    ),
     new THREE.Vector3(1, 1, 1),
   );
   return place.multiply(fit);
