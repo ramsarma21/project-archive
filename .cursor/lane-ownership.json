@@ -70,6 +70,10 @@
     ],
     "world-audit": [
       "scripts/check-world-visual*"
+    ],
+    "api-hunt": [
+      "apps/api/**",
+      "packages/pvp/**"
     ]
   }
 }
