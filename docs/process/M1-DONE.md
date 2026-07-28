@@ -82,9 +82,10 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   facet each, the tightest pair separates on the question, and the two over-crediting rubrics
   are fixed: false positives 1.73% → 0.58%, `AUTHORED_REJECT` 97.9% → 100%, false negatives
   held at 0.00% (`7e02bf2`).
-- **[~]** False positives are gated. Approved design in flight: a 2.0% ceiling for gross drift
-  **plus** a named-exception list, because a ceiling alone would not have caught this bug — it
-  began at 1.73%. One keyword-salad false positive remains.
+- **[x]** False positives are gated (`fcd7fbf`): a 2.0% ceiling for gross drift **plus** a
+  named-exception list that fails on any un-tolerated over-credit at any rate, shipping **empty**,
+  with a mandatory reason a test enforces. Majority mode defends the gate against a
+  temperature-zero flip. False positives 0.58% → 0.00%, false negatives held at 0.00%.
 
 ## 6. It runs
 
