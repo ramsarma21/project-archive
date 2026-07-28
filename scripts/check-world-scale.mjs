@@ -131,7 +131,12 @@ const DEGENERATE_M = 1e-4;
 const KNOWN_DEBT = new Set([]);
 
 // ---------------------------------------------------------------- GLB container
-function glbDocument(data) {
+// Exported so a sibling diagnostic (scripts/check-world-affordances.mjs) can
+// reuse this proven, three.js-cross-checked GLB decode instead of keeping a
+// second copy of the subtle skinning/accessor/matrix maths — the exact class of
+// duplication this file's own header warns produces confident false reports.
+// These exports add no behaviour and change nothing the gate runs.
+export function glbDocument(data) {
   if (data.length < 20 || data.readUInt32LE(0) !== 0x46546c67) return null;
   const jsonLength = data.readUInt32LE(12);
   let json;
@@ -166,7 +171,7 @@ const COMPONENT = {
 const TYPE_COUNT = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT2: 4, MAT3: 9, MAT4: 16 };
 
 /** Decode an accessor into a flat Float64Array. Handles stride and normalisation. */
-function readAccessor(document, index) {
+export function readAccessor(document, index) {
   const accessor = document.json.accessors?.[index];
   if (!accessor) return null;
   if (accessor.sparse) return null; // never emitted by this pipeline; do not guess
@@ -250,7 +255,7 @@ function compose(translation, rotation, scale) {
   return m;
 }
 
-function transformPoint(m, x, y, z) {
+export function transformPoint(m, x, y, z) {
   const w = m[3] * x + m[7] * y + m[11] * z + m[15] || 1;
   return [
     (m[0] * x + m[4] * y + m[8] * z + m[12]) / w,
@@ -269,7 +274,7 @@ function localMatrix(node) {
 }
 
 /** World matrix per node index, walking every scene root. */
-function worldMatrices(document) {
+export function worldMatrices(document) {
   const nodes = document.json.nodes ?? [];
   const world = new Array(nodes.length).fill(null);
   const roots = new Set();
