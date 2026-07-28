@@ -49,6 +49,9 @@ for (const draw of GEOM) {
   if (!up) { console.log(`${key}: no runtime`); continue; }
   await sleep(2500);
 
+  // Hide the HUD DOM so the geometry is not covered by objective/encounter cards.
+  await page.addStyleTag({ content: ".msn-hud, .msn-encounter, .msn-curtain { display:none !important; }" }).catch(() => {});
+
   const ok = await page.evaluate((d) => {
     const st = window.__stage;
     if (!st?.camera || !st.gl) return false;
@@ -59,11 +62,14 @@ for (const draw of GEOM) {
     let dx = top.x - foot.x, dz = top.z - foot.z;
     let len = Math.hypot(dx, dz);
     if (len < 0.05) { dx = 1; dz = 0; len = 1; } // pure vertical fallback
-    const sx = -dz / len, sz = dx / len; // side
-    const dist = 4.2;
-    const cam = { x: mid.x + sx * dist, y: mid.y + 1.2, z: mid.z + sz * dist };
-    st.gl.toneMappingExposure = 2.8;
+    const sx = -dz / len, sz = dx / len; // side, in the lean plane
+    const dist = 5.5;
+    // Slightly above the mid and a touch back along the lean, so both the foot
+    // (on the ground) and the top (on the surface) are in frame.
+    const cam = { x: mid.x + sx * dist + (dx / len) * 0.5, y: mid.y + 1.0, z: mid.z + sz * dist + (dz / len) * 0.5 };
+    st.gl.toneMappingExposure = 3.4;
     const c = st.camera;
+    if (c.fov) { c.fov = 55; c.updateProjectionMatrix?.(); }
     window.__ladderCam = () => { c.position.set(cam.x, cam.y, cam.z); c.lookAt(mid.x, mid.y, mid.z); c.updateMatrixWorld(); };
     if (!st.__patched) {
       const orig = st.gl.render.bind(st.gl);
