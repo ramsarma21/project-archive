@@ -37,9 +37,17 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[x]** Every collision solid is filled by the mesh drawn in it, gated and ratcheted.
 - **[~]** Every affordance has real geometry under it. 22 itemised debt entries remain, down
   from 25; three retired when the elm was rebuilt.
-- **[~]** Every asset reads as the object it represents. The elm is a tree again but its bark
-  reads as polished timber; a systematic visual sweep of the world is being built because both
-  visible defects so far were found by the owner, not by any instrument.
+- **[~]** Every asset reads as the object it represents. A visual sweep now exists
+  (`c3afd4a`) — it drives the real client, enumerates all 170 placements, and emits a legible
+  contact sheet. It immediately found **the Town House rendering with its cornice, leads and
+  cupola tower floating detached in open sky**, on the climb route, having passed all six
+  existing gates because its bounding box is continuous and the defect is the air in the middle.
+  Also open: the elm's bark reads as polished timber; the Gaol facade may be z-fighting. Both
+  in flight.
+  - **The sharpest illustration of the root problem yet:** in the same frame, one of the nine
+    ladders leans in **mid-air** against the floating slab. It is geometrically correct — foot
+    and top match the authored surfaces exactly. The drawn building is not where the authored
+    solid is. Authored-versus-drawn divergence, in one image.
 - **[ ]** Five catch targets have acceptance radii reaching past the thing meant to catch you
   (59%–88% overrun).
 - **[ ]** Cover you can see is cover that stops a ball, everywhere — true in the arena, not yet
