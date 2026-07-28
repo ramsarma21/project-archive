@@ -105,6 +105,11 @@ replay harness.
     spot, not occupy it.
   - The asset may be the wrong object outright — described as "a braced leaning ladder,"
     renders as a splayed four-legged trestle.
+  - **The predicate is not wired to the mover at all.** `alignClimbToLadder` is defined,
+    compiled into `world.ladders` and unit-tested, but `select.ts`, `flow.ts` and
+    `playerMotion.ts` never call it — `CLIMB_UP` is still ranked purely on geometry. So the
+    pipe is inert end to end, not merely switched off. (`collision.ts` still carries a stale
+    comment saying ladders are "absent today … nothing authors one yet.")
   Refusal is still off. Asset, placement, lean, collision, animation and refusal are being
   redone as one task, because the owner is right that they only work together.
 - **Animations do not match motion.** Vault: planted foot slides 6.8 m/s and pokes 11 cm
@@ -175,7 +180,7 @@ replay harness.
   load, not code. Needs the owner's machine to settle magnitude.
 - `MissionDuelBrief.world`/`.placement` are assembled but unused. The M1 yard's duel-cover
   props are now purely decorative, including the yard stage fixed on 28 Jul.
-- 26 itemised affordance debt entries, gated so the list can shrink but never grow silently.
+- 25 itemised affordance debt entries, gated so the list can shrink but never grow silently.
 
 ---
 
@@ -220,7 +225,7 @@ Read this before concluding a green run means the game is correct.
 
 | Gate | Sees | Blind to |
 |---|---|---|
-| `lint`, `typecheck`, `build`, ~2,712 tests | logic, types, contracts | anything about the rendered game |
+| `lint`, `typecheck`, `build`, ~2,719 tests | logic, types, contracts | anything about the rendered game |
 | `verify:content` | authored content against its own contracts | geometry, rendering, feel |
 | `assets:verify:collision` | a collision solid that isn't drawn (invisible walls) | whether a surface exists at an authored height |
 | `assets:verify:placement` | route surfaces having their asset's shape | non-route geometry |
@@ -228,6 +233,13 @@ Read this before concluding a green run means the game is correct.
 | `check-playthrough` — **blocking in CI** (`8eb2393`) | world renders, route advances, stops resolve, no hang, no hull penetration | climbing through *drawn* geometry, animation fidelity, the terminal elm beat (deliberately unplayed — a bot that could reliably hit it would itself be flaky) |
 | `check-clip-fidelity` | hands/feet vs surfaces, plant slide, clip timing | not yet a gate — red by construction |
 
-**The gap that cost the most:** every collision gate reads authored hulls. The mover has
-never touched a GLB. So a body can be provably outside every hull while visibly inside a
-building — which is why "0 of 44 transitions phase" was true and useless at the same time.
+**The gap that cost the most:** every collision *invariant* reads authored hulls, and the
+mover has never touched a GLB — `collision.ts`, `playerMotion.ts` and `traversalResolver.ts`
+are THREE-free and work on analytic rects. So a body can be provably outside every hull while
+visibly inside a building, which is why "0 of 44 transitions phase" was true and useless at
+the same time.
+
+The three `assets:verify:*` gates are the exception, and the reason they exist: they load the
+published GLB and compare it against the authored hull. They are the only checks in the repo
+that can see the picture diverging from the solid. Do not read the sentence above as
+distrusting them — it is the invariant and replay suite that cannot see a drawn building.
