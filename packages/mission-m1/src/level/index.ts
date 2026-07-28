@@ -1,5 +1,6 @@
 import type { MissionLevel, SectionSpec } from "../types.js";
 import { CLIMBS } from "./climbs.js";
+import { LADDERS } from "./ladders.js";
 import { GEOMETRY, LEVEL_BOUNDS } from "./geometry.js";
 import { LINKS, NODES } from "./route.js";
 import {
@@ -127,6 +128,7 @@ export const M1_EFFIGY_RUN: MissionLevel = {
   ],
   ramps: [...GEOMETRY.ramps],
   climbs: CLIMBS,
+  ladders: LADDERS,
   nodes: [...NODES, ...NODES_2],
   links: [...LINKS, ...LINKS_2],
   patrols: PATROLS,

@@ -299,6 +299,26 @@ export const ASSETS: AssetRequirement[] = [
     why: "Repair scaffolding the length of the Town House's west front, and the safe way up it: putlog staging at 2.90 and 5.60 over an 11.3m run, 2.5m out from the wall. `bldg-scaffold` was standing in and cannot, and the reason is a run rather than a shape: that mesh is 1.90 x 1.34 x 1.90, which at this height is a single 2.5m square section, so a contain-fit into the run draws 2.50 x 1.77 x 2.50 — one bay of scaffolding under one end of eleven metres of staging the route walks. It is not squashed art, it is a quarter of the object. What is here now is six bays of standards, ledgers and putlogs over the 11.3m frontage with boarded staging at both authored planes, the top staging flush with the box top at 5.60.",
   },
   {
+    key: "work-ladder",
+    status: "EXISTING",
+    path: "world/props/work-ladder.glb",
+    // A re-fit of the Meshy-delivered standalone work ladder, not new art: the
+    // sibling re-fitted `bldg-brick` into `belfry-old-brick` the same way. The
+    // delivered mesh was a braced leaning ladder normalised to 1.90m on its
+    // longest (vertical) axis with a 0.78 x 1.90 x 1.14m box — too wide to draw
+    // as a 3m climb ladder under a uniform contain-fit (it would draw a 1.2m-wide
+    // gate) and too splayed to lash flush to a wall. `refit_work_ladder.mjs`
+    // thins it on X and Z about its centre to 0.43 x 1.90 x 0.57m, KEEPING the
+    // 1.90m height so its longest axis stays in the generator-normalised band
+    // check-world-scale exempts and it still contain-fits to any rise by its
+    // vertical axis. Placed per climb by `ladderPlacements` in runtime.ts, sized
+    // to the rise it serves; it carries NO collision (the climb affordance is the
+    // authored LadderPlacementSpec / climb volume), so it never becomes an
+    // invisible wall at a standing spot.
+    sizeM: [0.43, 1.9, 0.57],
+    why: "The tradesman's climb ladder. Boston, 1765: a mason's repair ladder up the Town House scaffold and tower faces (the building is under repair), and a leaning work ladder up the Hollis Street meeting-house roof and belfry. One re-fit mesh, drawn once per authored climb ascent so the player can see the thing they grip.",
+  },
+  {
     key: "yard-kerb-stone",
     status: "EXISTING",
     path: "world/props/yard-kerb-stone.glb",
