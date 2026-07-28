@@ -372,12 +372,14 @@ export function m1Instance(input: {
     objectives: objectives(
       beatSpec,
       post,
-      createWayfinder(M1_EFFIGY_RUN, {
-        guidanceLines:
-          input.attemptOrdinal <= 1
-            ? ["SAFE"]
-            : ["SAFE", "FAST", "EXPERT"],
-      }),
+      // ONE ROUTE. Owner: "all i want is one real route in m1." Guidance and the
+      // visor (which draws off the wayfinder's committed path) always point at the
+      // single canopy/rooftop SAFE line, on every attempt — never widening to the
+      // FAST/EXPERT branches. A retry no longer gets alternate marks; there is one
+      // canonical route and the mission is guided down exactly it. The FAST/EXPERT
+      // route DATA and the multi-line wayfinder machinery are retired separately
+      // (they are inert once nothing ever guides along them); see the report.
+      createWayfinder(M1_EFFIGY_RUN, { guidanceLines: ["SAFE"] }),
     ),
     beat,
     receivingTargets: receivingTargetsOf(M1_EFFIGY_RUN),
