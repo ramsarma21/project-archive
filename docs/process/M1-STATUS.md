@@ -234,12 +234,11 @@ zero-evidence form pass (`1c4250f`).
   written: `docs/process/PvP-Arena-Unification-Plan.md`.
 - Residual mid-route frame spikes trace to GPU rasterisation, not compilation — hardware and
   load, not code. Needs the owner's machine to settle magnitude.
-- `MissionDuelBrief.world`/`.placement`/`.rounds`/`.conceptIds` are assembled but unused —
-  `duelBrief()` builds a whole collision world and placement that the only consumer
-  deliberately ignores, and a test asserts the descriptor's arena is *not* the brief's world.
-  The hazard is a future author assuming they're load-bearing. Narrow the brief to
-  `{ duelId, seed, opponent, questions }`, after proving `arenaWorld()`/`arenaPlacement()`
-  aren't still feeding the traversal level. Queued.
+- ~~Dead `MissionDuelBrief` fields~~ — **removed** (`8573c27`). Four fields were built and
+  never read, and `duelBrief()` was constructing a whole collision world and placement on every
+  mission start for nobody. Verified across the seam with the full playthrough gate on an
+  isolated stack. Residue: `arenaPlacement()` in `packages/mission-m1/src/runtime.ts` now has no
+  app callers (`arenaWorld()` still has a real test caller); worth a look when that lane frees.
 - Two `check-world-scale` findings print as observations and gate nothing:
   `playerboy-rigged.glb` is 1.2× off its declared size and `flintlock-pistol.glb` 1.5×.
   Deliberately non-blocking, so nothing enforces them.
