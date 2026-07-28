@@ -173,6 +173,15 @@ masses.push(
     asset: "well-pump",
     rect: rect(28.6, 30.4, 9.4, 11.2),
     topY: 1.9,
+    // Not landable: a town pump is not footing. The mesh is a tall, narrow pump
+    // (0.93 x 1.90 x 1.09 as placed) whose only flat horizontal surface is the
+    // trough at 0.57m; there is nothing to stand on at the 1.90m top, and nothing
+    // in the route stands here — B2_WELL is a ground node beside it, not on it.
+    // The 1.90m top was `prop()`'s default `landable: true` misapplied to cover,
+    // the same correction the arcade casks two entries up already carry. Its job
+    // is sight-break/blend-entry, which `coverAt` measures off the blocker
+    // regardless of landable, so this changes nothing the pump was doing.
+    landable: false,
     tags: ["sight-break", "blend-entry"],
     note: "The town pump. Chest-high and solid: the sightline break that lets the blend take.",
   }),

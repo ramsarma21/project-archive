@@ -744,7 +744,11 @@ masses.push(
   prop({
     id: "LANE_HAY",
     section: "C_ASCENT",
-    asset: "hay-cart",
+    // hay-wain-loaded, not hay-cart: this is a dive/bail-out catch, and the cart
+    // mesh's heaped load crowns 0.21m above its flat area, so the flat a diver
+    // meets sat 0.21m under the authored 2.2m catch. The wain's load is flat to
+    // 0.08m. Both fill their blocker; only the top the diver lands on changed.
+    asset: "hay-wain-loaded",
     rect: rect(48.0, 51.0, -10.4, -8.2),
     topY: 2.2,
     tags: ["catch", "hay", "fast-line"],
@@ -1250,7 +1254,10 @@ masses.push(
   prop({
     id: "COVER_HAY_NW",
     section: "G_YARD",
-    asset: "hay-cart",
+    // hay-wain-loaded for the same reason as LANE_HAY: this carries the yard-hay
+    // leap catch (LEAP_YARD_HAY), and the wain's flat load meets the diver at the
+    // authored 2.2m where the heaped cart's flat area sat 0.2m under it.
+    asset: "hay-wain-loaded",
     rect: rect(89.4, 92.2, -5.0, -2.4),
     topY: 2.2,
     tags: ["cover", "high", "catch", "hay"],
