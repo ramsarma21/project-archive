@@ -364,10 +364,27 @@ test("question freezes time and owns input; correct answer grants a scoped, boun
   );
   assert.equal(resolution!.suppress!.durationTicks, Math.round(10 * FIELD_TICK_HZ));
 
-  // Control returns immediately at RESOLVED, and the resolution is emitted once.
-  assert.equal(resolved.result.locksLocomotion, false);
+  // The resolution is emitted once.
   const nextTick = drive(instance, world, opened.tick + 3, {});
   assert.equal(nextTick.result.resolution, null);
+
+  // A reprieve gets a short RECOVERY beat: locomotion is held at the top of
+  // RESOLVED so the player is handed back gently rather than dropped into a run
+  // under the still-easing two-shot. It is bounded and unlocks on its own while
+  // the stop is still RESOLVED (no dismiss), so it is a beat and never a trap.
+  assert.equal(resolved.result.locksLocomotion, true, "reprieve gave no recovery beat");
+  const recovered = driveUntil(
+    instance,
+    world,
+    opened.tick + 4,
+    (r) => !r.locksLocomotion,
+  );
+  assert.equal(recovered.result.phase, "RESOLVED", "recovery outlasted the RESOLVED hold");
+  const recoveryTicks = recovered.tick - (opened.tick + 2);
+  assert.ok(
+    recoveryTicks <= Math.round(1 * FIELD_TICK_HZ),
+    `the recovery beat ran ${recoveryTicks} ticks — longer than a beat`,
+  );
 });
 
 test("a wrong answer emits scoped pursuit toward the confrontation and never soft-locks", () => {

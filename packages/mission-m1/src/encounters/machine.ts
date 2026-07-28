@@ -27,8 +27,16 @@
 //   RESOLVED    The verdict is in. Participation is recorded and the CONSEQUENCE
 //               is emitted once — a scoped, bounded reprieve on a correct answer,
 //               or a scoped pursuit toward the confrontation position on a wrong
-//               one. Control returns to the player immediately so a wrong answer
-//               can be run from; the world is no longer frozen.
+//               one. On a WRONG answer control returns to the player IMMEDIATELY,
+//               because a pursuit has fired and the whole point is that it can be
+//               run from. On a REPRIEVE there is no such urgency, so instead of
+//               dropping the player straight back into a run under a camera still
+//               eased into the conversation two-shot — the "no recovery beat"
+//               abruptness — the machine holds locomotion for a short bounded
+//               RECOVERY window (`RECOVERY_HOLD_TICKS`) while the reprieve line
+//               reads and control is handed back gently. The world is no longer
+//               frozen either way; the recovery hold is bounded and dismissible,
+//               so it can never trap the player.
 //   RELEASED    Terminal. The machine stops overriding the actors and hands them
 //               back to the ordinary patrol/pursuit systems.
 //
@@ -179,6 +187,20 @@ const ANCHOR_BEARINGS_RAD: readonly number[] = [
 ];
 /** How long the in-character result card holds before the machine releases. */
 const RESOLVED_HOLD_TICKS = ticks(3);
+/**
+ * The recovery beat after a REPRIEVE: how long locomotion stays held at the top
+ * of RESOLVED before control is handed back, on a correct/granted answer only.
+ *
+ * The owner's "the release dropping you back into motion with no recovery beat":
+ * on a reprieve there is no pursuit to run from, so returning control on the very
+ * tick the verdict lands drops the player into a run while the camera is still
+ * eased into the two-shot and the "he stands aside" line is only beginning to
+ * read. A short hold lets the reprieve land and the camera begin its return
+ * before the player is moving again. Bounded well under `RESOLVED_HOLD_TICKS` and
+ * always dismissible, so it is a beat, never a trap; a WRONG answer is never held
+ * (see `stepEncounter`). Kept short deliberately — a recovery beat, not a pause.
+ */
+const RECOVERY_HOLD_TICKS = ticks(0.6);
 /** How fast a walking actor's body turns to face where it is going / the player. */
 const TURN_RAD_PER_SECOND = 5;
 
@@ -992,8 +1014,20 @@ export function stepEncounter(
   }
 
   const phase = instance.phase;
+  // The reprieve recovery beat: hold locomotion for a short bounded window at the
+  // top of RESOLVED on a correct/granted answer, so control is handed back gently
+  // instead of dropping the player into a run under the still-easing two-shot. A
+  // WRONG answer is never held — its pursuit is a threat to be run from at once.
+  const inReprieveRecovery =
+    phase === "RESOLVED" &&
+    instance.verdictKind !== null &&
+    isReprieve(instance.verdictKind) &&
+    instance.resolvedHoldTicks < RECOVERY_HOLD_TICKS;
   const locksLocomotion =
-    phase === "APPROACH" || phase === "QUESTION" || phase === "SUBMITTING";
+    phase === "APPROACH" ||
+    phase === "QUESTION" ||
+    phase === "SUBMITTING" ||
+    inReprieveRecovery;
   const ownsInput = phase === "QUESTION" || phase === "SUBMITTING";
   const controlling =
     phase === "APPROACH" ||

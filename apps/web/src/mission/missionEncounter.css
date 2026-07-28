@@ -35,6 +35,15 @@
   animation: none;
 }
 
+/* The release beat: once the stop hands control back, the subtitle lingers and
+   fades rather than popping out against the camera's easing return to gameplay.
+   Non-interactive throughout (the dock is gone by now). Only ever applied with
+   motion allowed — under reduced motion the surface unmounts at once. */
+.msn-enc.is-leaving {
+  pointer-events: none;
+  animation: msn-enc-fade-out 260ms ease-in forwards;
+}
+
 /* ---- the spoken beat: an in-scene subtitle ---- */
 
 .msn-enc-say {
@@ -339,6 +348,17 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes msn-enc-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
   }
 }
 
