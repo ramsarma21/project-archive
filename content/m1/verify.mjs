@@ -11,12 +11,19 @@
 // and the answerable-from-the-module claim is an assertion here rather than a
 // promise there.
 //
-// Zero dependencies, reads only this directory plus content/staar (read-only).
-// Run:  node content/m1/verify.mjs
+// Reads only this directory plus content/staar (read-only), and RESOLVES every
+// value it must not restate — @pa/duel's DUEL_ROUND_CEILING, @pa/contracts'
+// LEARNING_MODULE_SECONDS, @pa/curriculum's CONCEPT_ID_PATTERN, and the shapes of
+// the module interfaces — from the source that owns each, never from a scraped
+// literal. Constants and patterns are imported and executed; interface shapes are
+// read from the actual declaration through the TypeScript compiler. All of that
+// needs the repo's TypeScript loader, so this runs under tsx.
+// Run:  node --import tsx content/m1/verify.mjs
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import ts from "typescript";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (rel) => JSON.parse(readFileSync(join(here, rel), "utf8"));
@@ -33,20 +40,41 @@ const fail = (m) => failures.push(m);
 const warn = (m) => warnings.push(m);
 
 // ---------------------------------------------------------------------------
-// Values that belong to another package are READ FROM IT, never copied.
+// Values that belong to another package are RESOLVED FROM IT, never copied.
 //
 // A constant copied into a second file drifts silently, and a checker that
-// passes against a number the engine stopped using is worse than no checker. So
-// the module length, the concept-id pattern, the round ceiling and the shape of
-// ModuleCard are all parsed out of the source that declares them, and anything
-// that cannot be read is reported as unverified rather than assumed.
+// passes against a number the engine stopped using is worse than no checker. The
+// original sin here was text-scraping: a `NAME = <digits>` or `NAME = /…/` regex
+// against the source, falling back to a hardcoded copy of the expected value on a
+// miss and carrying on "checking" against the stale copy. That is exactly how
+// DUEL_ROUND_CEILING broke — it moved from tuning.ts into structure.ts and left a
+// bare re-export the regex could not match, so the check quietly warned and
+// stopped verifying while still exiting 0.
+//
+// So nothing is scraped. The module length and the concept-id pattern are
+// IMPORTED and executed from the modules that own them. The three module
+// interfaces have no runtime representation, so their property sets are read from
+// the actual `interface` declaration through the TypeScript compiler — which
+// fails loudly if the interface is renamed or moved, rather than matching a
+// weaker set of lines. The round ceiling is imported the same way (see below).
+//
+// In every case an UNRESOLVABLE value is a HARD FAILURE, never a warning: a
+// missing contract, pattern or shape must never pass as a clean run. The only
+// values still read as source TEXT are existence probes for a named field, and
+// those already fail (not warn) when the text is absent.
 // ---------------------------------------------------------------------------
 
 const repoRoot = join(here, "..", "..");
 const CONTRACTS = "packages/contracts/src/progression.ts";
 const CURRICULUM_TYPES = "packages/curriculum/src/types.ts";
 const MODULE_FORMAT = "apps/web/src/module/moduleFormat.ts";
-const DUEL_TUNING = "packages/duel/src/tuning.ts";
+
+// The leaf module @pa/duel exports the ceiling from — it has no imports of its
+// own, so loading it drags in nothing else. Imported by file path rather than by
+// the `@pa/duel/structure` specifier so resolution does not depend on where this
+// script is run from; a move of the file surfaces as a loud import failure, which
+// is the correct outcome. The other imports below follow the same file-path rule.
+const DUEL_STRUCTURE = "packages/duel/src/structure.ts";
 
 function sourceText(relPath) {
   try {
@@ -56,49 +84,141 @@ function sourceText(relPath) {
   }
 }
 
-function numberFrom(relPath, name, fallback) {
-  const match = sourceText(relPath)?.match(new RegExp(`${name}\\s*(?::[^=]+)?=\\s*(\\d+)`));
-  if (match) return Number(match[1]);
-  warn(`${name} could not be read from ${relPath}; ${fallback} is unverified`);
-  return fallback;
+/** A named export, imported and executed from the module that owns it by file path. */
+async function importNamed(relPath, name) {
+  const mod = await import(pathToFileURL(join(repoRoot, relPath)).href);
+  if (!(name in mod)) {
+    throw new Error(`${relPath} does not export ${name}`);
+  }
+  return mod[name];
 }
 
-function regexFrom(relPath, name, fallback) {
-  const match = sourceText(relPath)?.match(new RegExp(`${name}\\s*=\\s*/(.+?)/;`));
-  if (match) return new RegExp(match[1]);
-  warn(`${name} could not be read from ${relPath}; the fallback pattern is unverified`);
-  return fallback;
+async function importRoundCeiling() {
+  const value = await importNamed(DUEL_STRUCTURE, "DUEL_ROUND_CEILING");
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(
+      `DUEL_ROUND_CEILING imported as ${JSON.stringify(value)}, not a positive integer`,
+    );
+  }
+  return value;
+}
+
+/** A positive-integer constant, imported (never scraped) from its owning module. */
+async function positiveIntFrom(relPath, name) {
+  const value = await importNamed(relPath, name);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(
+      `${name} imported from ${relPath} as ${JSON.stringify(value)}, not a positive integer`,
+    );
+  }
+  return value;
+}
+
+/** A RegExp constant, imported (never scraped) from its owning module. */
+async function regexpFrom(relPath, name) {
+  const value = await importNamed(relPath, name);
+  if (!(value instanceof RegExp)) {
+    throw new Error(
+      `${name} imported from ${relPath} is ${JSON.stringify(String(value))}, not a RegExp`,
+    );
+  }
+  return value;
 }
 
 /**
- * Property names of a TypeScript interface. The module player is another
- * agent's file, so a field added there should surface here as a check that
- * noticed rather than as a payload that silently lacks it.
+ * The property names of a TypeScript interface, read from the ACTUAL declaration
+ * through the compiler rather than by matching indented lines. The module player
+ * is another agent's file, so a field added there should surface here as a check
+ * that noticed rather than as a payload that silently lacks it — and, just as
+ * importantly, an interface that is renamed or moved out from under this check
+ * must make the check FAIL, not fall back to a hardcoded key list that no longer
+ * describes anything. Parsing the declaration is what gives that property: an
+ * interface the compiler cannot find throws here, and the run fails.
  */
-function interfaceKeys(relPath, name, fallback) {
+function interfaceKeys(relPath, name) {
   const text = sourceText(relPath);
-  const start = text?.indexOf(`export interface ${name} {`);
-  if (text === null || start === undefined || start < 0) {
-    warn(`interface ${name} could not be read from ${relPath}; the fallback key list is unverified`);
-    return fallback;
+  if (text === null) {
+    throw new Error(`cannot read ${relPath} to resolve interface ${name}`);
+  }
+  const source = ts.createSourceFile(relPath, text, ts.ScriptTarget.Latest, false);
+  let members = null;
+  const visit = (node) => {
+    if (ts.isInterfaceDeclaration(node) && node.name.text === name) {
+      members = node.members;
+    } else {
+      ts.forEachChild(node, visit);
+    }
+  };
+  visit(source);
+  if (members === null) {
+    throw new Error(`interface ${name} not found in ${relPath}`);
   }
   const keys = [];
-  let depth = 0;
-  for (const line of text.slice(start).split("\n").slice(1)) {
-    if (depth === 0 && line.startsWith("}")) break;
-    const property = line.match(/^\s{2}(?:readonly\s+)?([A-Za-z_]\w*)\??\s*:/);
-    if (depth === 0 && property) keys.push(property[1]);
-    depth += (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+  for (const member of members) {
+    if (ts.isPropertySignature(member) && member.name) {
+      if (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name)) {
+        keys.push(member.name.text);
+      }
+    }
   }
-  return keys.length > 0 ? keys : fallback;
+  if (keys.length === 0) {
+    throw new Error(`interface ${name} in ${relPath} declares no property members`);
+  }
+  return keys;
 }
 
-const CONCEPT_ID = regexFrom(
-  CURRICULUM_TYPES,
-  "CONCEPT_ID_PATTERN",
-  /^[A-Z]{3}\.CONCEPT\.[A-Z][A-Z0-9_]*\.v\d+$/,
+// ---------------------------------------------------------------------------
+// Resolve everything owned elsewhere, up front. Any value that cannot be
+// resolved is recorded as a hard failure and the run stops here: the checks
+// below are meaningless against a value this script had to guess, and a run that
+// could not read what it guards is not a pass. (The round ceiling is resolved in
+// its own section further down, the same way and under the same rule.)
+// ---------------------------------------------------------------------------
+
+const resolutionFailures = [];
+async function resolveOrFail(label, resolver) {
+  try {
+    return await resolver();
+  } catch (error) {
+    resolutionFailures.push(`${label}: ${error.message}`);
+    return null;
+  }
+}
+
+const CONCEPT_ID = await resolveOrFail(
+  `CONCEPT_ID_PATTERN from ${CURRICULUM_TYPES}`,
+  () => regexpFrom(CURRICULUM_TYPES, "CONCEPT_ID_PATTERN"),
 );
-const MODULE_SECONDS = numberFrom(CONTRACTS, "LEARNING_MODULE_SECONDS", 180);
+const MODULE_SECONDS = await resolveOrFail(
+  `LEARNING_MODULE_SECONDS from ${CONTRACTS}`,
+  () => positiveIntFrom(CONTRACTS, "LEARNING_MODULE_SECONDS"),
+);
+const MODULE_KEYS = await resolveOrFail(
+  `interface LearningModuleDefinition from ${MODULE_FORMAT}`,
+  () => interfaceKeys(MODULE_FORMAT, "LearningModuleDefinition"),
+);
+const CARD_KEYS = await resolveOrFail(
+  `interface ModuleCard from ${MODULE_FORMAT}`,
+  () => interfaceKeys(MODULE_FORMAT, "ModuleCard"),
+);
+const EXCERPT_KEYS = await resolveOrFail(
+  `interface ModuleSourceExcerpt from ${MODULE_FORMAT}`,
+  () => interfaceKeys(MODULE_FORMAT, "ModuleSourceExcerpt"),
+);
+
+if (resolutionFailures.length > 0) {
+  console.error(
+    `\n  ${resolutionFailures.length} value(s) this checker guards could not be ` +
+      `resolved from source. It cannot verify content against a guess, so this ` +
+      `run is a FAILURE, not a pass:\n`,
+  );
+  for (const message of resolutionFailures) console.error(`    × ${message}`);
+  console.error(
+    `\n  Run under the TypeScript loader: node --import tsx content/m1/verify.mjs\n`,
+  );
+  process.exit(1);
+}
+
 const words = (s) => s.trim().split(/\s+/).filter(Boolean).length;
 /** Lower-cased, punctuation-stripped, whitespace-collapsed. For dedup only. */
 const norm = (s) =>
@@ -119,32 +239,9 @@ const excerptRate = moduleFile.budget.excerptRateWpm.planning;
 // The payload has to be exactly what the player's type declares. An extra key
 // is harmless when a consumer casts a parsed object and fatal when one validates
 // it, and the module player is being built concurrently by someone else — so the
-// conservative rule is that nothing unknown appears inside `module`.
-const MODULE_KEYS = interfaceKeys(MODULE_FORMAT, "LearningModuleDefinition", [
-  "moduleId",
-  "chapterId",
-  "missionId",
-  "title",
-  "subtitle",
-  "cards",
-]);
-const CARD_KEYS = interfaceKeys(MODULE_FORMAT, "ModuleCard", [
-  "id",
-  "cueId",
-  "throughSeconds",
-  "kicker",
-  "body",
-  "excerpt",
-  "conceptIds",
-  "codexCardIds",
-  "advanceLabel",
-]);
-const EXCERPT_KEYS = interfaceKeys(MODULE_FORMAT, "ModuleSourceExcerpt", [
-  "sourceId",
-  "title",
-  "attribution",
-  "lines",
-]);
+// conservative rule is that nothing unknown appears inside `module`. The three
+// key sets (MODULE_KEYS, CARD_KEYS, EXCERPT_KEYS) were read from the interfaces
+// themselves in the resolution phase above.
 const strayKeys = (object, allowed) => Object.keys(object).filter((k) => !allowed.includes(k));
 
 for (const key of strayKeys(deck, MODULE_KEYS)) {
@@ -382,23 +479,45 @@ if (hardening.length > 0 && bank.items.length !== bank.depth.itemsTotal) {
 // ---------------------------------------------------------------------------
 
 const pvp = bank.pvpPool;
-let capstoneProse = [];
+
+// The PvP pool BORROWS the capstone's nine open-response items, so the file that
+// holds them is a required input to the pool-size invariant, not an optional
+// cross-reference. When it could not be read this check used to skip its size and
+// composition assertions behind a warning and still pass — the same silent
+// degradation the round ceiling lives in a leaf module to prevent, in a different
+// costume. So an unreadable capstone file is a FAILURE for the size claims that
+// depend on it (below), not a skip. The genuinely optional reads off this file —
+// the guard RESTATEMENT and the per-item advisories — stay warnings, because a
+// missing restatement of a rule stated in full elsewhere is not a broken pool.
+const CAPSTONE_OPEN_RESPONSE = join(
+  here,
+  "..",
+  "capstone",
+  "boston-1765",
+  "items",
+  "open-response.json",
+);
+let capstone = null;
 try {
-  const capstone = JSON.parse(
-    readFileSync(
-      join(here, "..", "capstone", "boston-1765", "items", "open-response.json"),
-      "utf8",
-    ),
-  );
-  capstoneProse = capstone.entries.map((e) => e.descriptor);
+  capstone = JSON.parse(readFileSync(CAPSTONE_OPEN_RESPONSE, "utf8"));
 } catch {
-  warn("the capstone open-response items are not readable; the PvP pool size is unverified");
+  capstone = null;
 }
+// null (not []) means UNREAD, which the checks below treat as a failure rather
+// than as "held zero capstone items".
+const capstoneProse = capstone ? capstone.entries.map((e) => e.descriptor) : null;
 
 if (pvp) {
-  const counted =
-    bank.items.length + hardening.length + capstoneProse.length;
-  if (capstoneProse.length > 0 && counted !== pvp.size) {
+  if (capstoneProse === null) {
+    fail(
+      `pvpPool composes in the capstone's open-response items, but ` +
+        `content/capstone/boston-1765/items/open-response.json could not be read; ` +
+        `pvp.size (${pvp.size}) and its composition are unverified and this run is not a pass.`,
+    );
+  }
+  const capstoneCount = capstoneProse?.length ?? 0;
+  const counted = bank.items.length + hardening.length + capstoneCount;
+  if (capstoneProse !== null && counted !== pvp.size) {
     fail(`pvpPool claims ${pvp.size} items; the three sources hold ${counted}`);
   }
   for (const part of pvp.composition) {
@@ -407,8 +526,8 @@ if (pvp) {
         ? bank.items.length
         : part.source.includes("hardening")
           ? hardening.length
-          : capstoneProse.length;
-    if (capstoneProse.length > 0 && part.count !== actual) {
+          : capstoneCount;
+    if (capstoneProse !== null && part.count !== actual) {
       fail(`pvpPool: "${part.source}" claims ${part.count}, holds ${actual}`);
     }
   }
@@ -420,37 +539,47 @@ if (pvp) {
   if (!guard?.rule?.trim()) {
     fail("pvpPool: capstone items are shared with no guard on their reuse");
   } else {
-    let capstoneGuardCopy = null;
-    try {
-      const capstone = JSON.parse(
-        readFileSync(
-          join(here, "..", "capstone", "boston-1765", "items", "open-response.json"),
-          "utf8",
-        ),
-      );
-      capstoneGuardCopy = capstone.gradingPolicy?.theseItemsAlsoPvPContent
+    // The guard is stated in two files so that a reader of either finds it; the
+    // cost of that is exactly the drift this checks for, so the two copies must
+    // be identical strings. This is a redundancy cross-check, not the pool-size
+    // invariant: when the file is genuinely unreadable the size check above has
+    // already failed, so here a missing restatement only WARNS. It is read from
+    // the single parse above rather than re-opening the file.
+    if (capstone !== null) {
+      const capstoneGuardCopy =
+        capstone.gradingPolicy?.theseItemsAlsoPvPContent
         ?? capstone.gradingPolicy?.theseItemsAreAlsoPvPContent
         ?? null;
-    } catch {
-      /* already warned above */
-    }
-    if (capstoneGuardCopy === null) {
-      warn("the capstone items file does not restate the PvP guard");
-    } else {
-      if (capstoneGuardCopy.rule !== guard.rule) {
-        fail(
-          `the PvP guard is worded differently in the two files:\n` +
-            `      duel:     ${guard.rule}\n` +
-            `      capstone: ${capstoneGuardCopy.rule}`,
-        );
-      }
-      if (capstoneGuardCopy.guardedBy !== guard.predicateId) {
-        fail(`the capstone file names guard ${capstoneGuardCopy.guardedBy}, not ${guard.predicateId}`);
+      if (capstoneGuardCopy === null) {
+        warn("the capstone items file does not restate the PvP guard");
+      } else {
+        if (capstoneGuardCopy.rule !== guard.rule) {
+          fail(
+            `the PvP guard is worded differently in the two files:\n` +
+              `      duel:     ${guard.rule}\n` +
+              `      capstone: ${capstoneGuardCopy.rule}`,
+          );
+        }
+        if (capstoneGuardCopy.guardedBy !== guard.predicateId) {
+          fail(`the capstone file names guard ${capstoneGuardCopy.guardedBy}, not ${guard.predicateId}`);
+        }
       }
     }
-    // The predicate has to read a field that exists, or it is a comment.
-    const contracts = sourceText(CONTRACTS) ?? "";
-    if (!contracts.includes("masteredAt")) {
+    // The predicate has to read a field that exists on ConceptMastery, or it is a
+    // comment. The field is resolved from the SCHEMA that declares it — imported,
+    // not grepped — so the string appearing only in a comment cannot satisfy the
+    // check and a rename of the field fails here.
+    let masteryDeclaresMasteredAt = null;
+    try {
+      const schema = await importNamed(CONTRACTS, "ConceptMasterySchema");
+      masteryDeclaresMasteredAt = Boolean(schema?.shape) && "masteredAt" in schema.shape;
+    } catch (error) {
+      fail(
+        `the PvP guard reads ConceptMastery.masteredAt, but ConceptMasterySchema ` +
+          `could not be imported from ${CONTRACTS}: ${error.message}`,
+      );
+    }
+    if (masteryDeclaresMasteredAt === false) {
       fail("the PvP guard reads ConceptMastery.masteredAt, which @pa/contracts no longer declares");
     }
     if (!(guard.pseudocode ?? []).join(" ").includes("masteredAt")) {
@@ -459,9 +588,10 @@ if (pvp) {
   }
 
   // Every shared capstone item must be on an M1 concept, or PvP would ask a
-  // question the M1 module never taught.
+  // question the M1 module never taught. (Skipped when the file is unread — the
+  // size check above has already failed for that.)
   const m1Concepts = new Set(bank.pools.map((p) => p.conceptId));
-  for (const item of capstoneProse) {
+  for (const item of capstoneProse ?? []) {
     if (!m1Concepts.has(item.conceptId)) {
       fail(`pvpPool: capstone item ${item.itemId} is on ${item.conceptId}, which M1 does not teach`);
     }
@@ -472,13 +602,23 @@ if (pvp) {
 
   // THE INVARIANT. While the pool is larger than the hard round ceiling, no
   // single match can repeat a question — tier 3 of the draw policy is
-  // unreachable. It is read out of @pa/duel rather than restated, so raising the
-  // ceiling there fails here instead of silently repeating questions at play.
-  const ceiling = sourceText(DUEL_TUNING) === null
-    ? null
-    : numberFrom(DUEL_TUNING, "DUEL_ROUND_CEILING", 0) || null;
+  // unreachable. It is IMPORTED from @pa/duel rather than restated, so raising the
+  // ceiling there fails here instead of silently repeating questions at play. An
+  // unresolvable value is a FAILURE, never a warning: the whole reason this check
+  // exists is defeated the moment it cannot read the number it guards.
+  let ceiling = null;
+  try {
+    ceiling = await importRoundCeiling();
+  } catch (error) {
+    fail(
+      `DUEL_ROUND_CEILING could not be imported from ${DUEL_STRUCTURE}: ${error.message}. ` +
+        `The round-ceiling invariant cannot be checked and this run is not a pass. ` +
+        `Run under the TypeScript loader: node --import tsx content/m1/verify.mjs`,
+    );
+  }
   if (ceiling === null) {
-    warn("packages/duel tuning is not readable; the round-ceiling invariant is unverified");
+    // Recorded as a FAILURE above; without the real value none of the checks
+    // below mean anything, so they are skipped rather than run against a guess.
   } else {
     if (pvp.size <= ceiling) {
       fail(
@@ -698,9 +838,11 @@ console.log(
     `(${tally.CORRECT} correct, ${tally.WRONG} wrong)`,
 );
 if (pvp) {
+  const capstoneCount = capstoneProse?.length ?? 0;
+  const capstoneNote = capstoneProse === null ? " (unread)" : "";
   console.log(
-    `  PvP pool ${bank.items.length} + ${hardening.length} + ${capstoneProse.length} capstone prose = ` +
-      `${bank.items.length + hardening.length + capstoneProse.length}`,
+    `  PvP pool ${bank.items.length} + ${hardening.length} + ${capstoneCount}${capstoneNote} capstone prose = ` +
+      `${bank.items.length + hardening.length + capstoneCount}`,
   );
 }
 

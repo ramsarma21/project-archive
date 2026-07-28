@@ -198,6 +198,21 @@ function ObjectiveSpine(props: { standing: MissionStandingRead }) {
         </span>
       )}
 
+      {/* The imminent authored move, named the moment the guidance arms its
+          gateway. This is the corner half of the wayfinding fix: the in-street
+          mark posts the verb on the take-off, and this says the same word where
+          a HUD-watching player is already looking, so "that scaffold is a
+          climb" arrives before the run at it rather than after braking at it. */}
+      {mark?.action && (
+        <span
+          className={`msn-hud-actioncue${mark.action.kind === "LEAP_OF_FAITH" ? " is-leap" : ""}`}
+          role="status"
+          aria-label="Your next move"
+        >
+          {mark.action.label}
+        </span>
+      )}
+
       {/* The current SAFE leg is authored below a run — a narrow ledge or beam —
           so a held sprint is capped to it. Said BEFORE the lip, not after the
           reader has already braked the body, so a player knows to ease off. */}

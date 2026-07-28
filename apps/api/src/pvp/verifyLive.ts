@@ -14,7 +14,7 @@
 
 import "../config.js";
 import { randomBytes } from "node:crypto";
-import { m1ContentBank } from "@pa/grading";
+import { DUEL_ROUND_CEILING, m1ContentBank } from "@pa/grading";
 import { buildApp } from "../app.js";
 import { csrfTokenForSession } from "../auth.js";
 import { query } from "../db.js";
@@ -115,7 +115,7 @@ async function main(): Promise<void> {
     // ---- the pool, and the invariant it exists to hold --------------------
     console.log("Question pool");
     const health = poolHealth();
-    const ceiling = 24; // @pa/duel DUEL_ROUND_CEILING
+    const ceiling = DUEL_ROUND_CEILING; // imported, never copied — see @pa/duel
     console.log(
       `      ${health.total} composed, ${health.unguarded} under the capstone guard, ${health.gradable} gradable, ${health.capstoneShared} shared from the capstone`,
     );

@@ -8,6 +8,7 @@ import { M1_MISSION_ID, m1Instance } from "../src/chapter/m1Mission.js";
 import {
   advanceWayfinding,
   createMissionRuntime,
+  markActionOf,
   markRead,
   missionPresentation,
   standingObjective,
@@ -235,6 +236,79 @@ test("the rise is about the place the mark is on", () => {
     "off the steeple gallery the work is below, and a marker that cannot say so " +
       "is a marker that sends the player up",
   );
+});
+
+// ---- the mark names the imminent move --------------------------------------
+//
+// The plate names WHERE and recedes as the player reaches the next step, which
+// is right for a stroll and wrong at the one place that decides a first mission:
+// the foot of a climb, where the "next place" is the hold overhead, the plate
+// has retired into it, and what is left is an edge band on a wall the player
+// cannot tell from scenery. These pin the fix — the mark carries the authored
+// verb so it can SAY "climb up" / "vault" / "leap" on the take-off, in the
+// player's words, before they commit.
+
+test("the authored kind is named as the move the body is about to make", () => {
+  // Pure mapping, so the plate and the HUD say one word for one move. A CLIMB is
+  // the one kind that is not self-describing — the same authored kind is a reach
+  // up, a step over, and a lowering off a rim — so the directed rise disambiguates.
+  assert.deepEqual(
+    { l: markActionOf({ kind: "VAULT", phase: "APPROACH", riseM: 0 }).label,
+      d: markActionOf({ kind: "VAULT", phase: "APPROACH", riseM: 0 }).direction },
+    { l: "VAULT", d: "OVER" },
+  );
+  assert.equal(
+    markActionOf({ kind: "LEAP_OF_FAITH", phase: "RECEIVER", riseM: -7.5 }).label,
+    "LEAP",
+  );
+  assert.equal(
+    markActionOf({ kind: "DROP", phase: "APPROACH", riseM: -3.4 }).direction,
+    "DOWN",
+  );
+  assert.equal(
+    markActionOf({ kind: "CLIMB", phase: "APPROACH", riseM: 2.9 }).label,
+    "CLIMB UP",
+  );
+  assert.equal(
+    markActionOf({ kind: "CLIMB", phase: "APPROACH", riseM: 0.1 }).label,
+    "OVER THE TOP",
+    "an authored CLIMB at your own level is a step over, not a reach up",
+  );
+  assert.equal(
+    markActionOf({ kind: "CLIMB", phase: "APPROACH", riseM: -1.5 }).label,
+    "CLIMB DOWN",
+  );
+});
+
+test("at the foot of the scaffold the mark says CLIMB UP, not a distance to a tree", () => {
+  // The wayfinding failure this whole change is written against: a first-time
+  // player stands at the Town House scaffold and sees a scaffold that nothing on
+  // screen distinguishes from a wall. The mark now names the move on the take-off.
+  const runtime = runtimeAt(nodePos("C_SCAFF_FOOT"));
+  advanceWayfinding(runtime);
+  const mark = missionPresentation(runtime).standing!.mark!;
+  assert.ok(mark.action, "the scaffold foot is a climb and the mark must name it");
+  assert.equal(mark.action!.label, "CLIMB UP");
+  assert.equal(mark.action!.direction, "UP");
+});
+
+test("on the steeple gallery the mark says LEAP — the one move geometry cannot teach", () => {
+  const runtime = runtimeAt(nodePos("E_GALLERY"));
+  advanceWayfinding(runtime);
+  const mark = missionPresentation(runtime).standing!.mark!;
+  assert.ok(mark.action, "the gallery is the leap take-off and the mark must name it");
+  assert.equal(mark.action!.kind, "LEAP_OF_FAITH");
+  assert.equal(mark.action!.label, "LEAP");
+});
+
+test("an ordinary run carries no action cue", () => {
+  // The cue is for actions only: on a plain run between rooftops the plate goes
+  // back to naming the elm and receding, which is the restraint the run is meant
+  // to feel. B_STREET_MID is a walked stretch with no gateway armed at it.
+  const runtime = runtimeAt(nodePos("B_STREET_E"));
+  advanceWayfinding(runtime);
+  const mark = missionPresentation(runtime).standing!.mark!;
+  assert.equal(mark.action, null, "a run must not raise a climb/vault/leap cue");
 });
 
 test("a level whose objective is a condition draws no mark at all", () => {
