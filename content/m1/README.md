@@ -21,8 +21,12 @@ verify.mjs                         every number below is this script's output
 ```
 
 ```
-$ node content/m1/verify.mjs
+$ node --import tsx content/m1/verify.mjs
 ```
+
+It runs under `tsx` because it imports `DUEL_ROUND_CEILING` from `@pa/duel`'s
+source rather than scraping it out of a file; if that value cannot be resolved the
+check fails rather than warning, so it can never pass while silently unverified.
 
 ---
 
