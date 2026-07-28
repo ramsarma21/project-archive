@@ -170,10 +170,19 @@ replay harness.
   pointless — the panel is a screen-space overlay centred regardless of heading — so it was
   an invisible precision test inside a mechanic rebuilt to stop being one. Now 2.4 m and
   ±135°; the act's own difficulty untouched.
-- **No staging into the boss fight.** Walking into the yard cuts straight to the duel. Wants
-  a cinematic: the officer there again, stopping the player, issuing the challenge, subtitled.
-  Being built on the existing `encounterCinematic` machinery rather than a second system.
-  In flight.
+- ~~No staging into the boss fight~~ — **fixed** (`067adc8`, `77e6167`). The officer bars the
+  way, names the ink on the player's hands, and calls the reckoning, subtitled in the encounter
+  cinematic's own voice, staged on the player's live arrival surface so it cannot teleport, and
+  structurally unhangable (completion, a 16 s cap independent of the render loop, or a skip —
+  none depending on the officer's rig loading).
+  - A **continuity break** was found by putting its own two frames side by side: the officer
+    stopped the player before dawn and the fight opened at midday, because the arena's light
+    rig was hardcoded to a stand-alone afternoon with no parameter for time of day. The dawn
+    lift at yard arrival is now threaded through the `duelPort` seam; the arena takes dawn's
+    colours verbatim and maps intensity into its own ACES range. Sun direction and shadow
+    frustum deliberately unchanged — cover shadows are how a player reads where cover is.
+  - **Watch item:** on a very fast arrival the dawn lift is low and the yard is dim. Legible in
+    capture, but lit braziers would be the in-fiction floor if it reads badly in play.
 - **"Cannot run"** — unexplained. Every in-lane mechanism ruled out by two systematic
   passes; the per-leg speed cap is disproven (it releases ~3 m *early*). Needs a location
   or a live capture from the owner.
