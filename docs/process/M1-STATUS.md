@@ -90,10 +90,24 @@ replay harness.
 ## Open
 
 **Would affect play now**
-- **Bare-wall climbs — the ladders are a facade. Do not count this as progress.** Nine are
-  authored and drawn (`025ad65`) and the owner found them broken in one screenshot: a ladder
-  standing in open air under a deck it never reaches, leaning on nothing, climbed *through*.
-  Three defects, all structural:
+- **Ladders rebuilt and refusal is on (`8686ae6`) — but you can still walk through them.**
+  The old GLB was a braced trestle (back tapering 0.57 m → 0.06 m), drawn bolt upright; new
+  art gives two rails and N rungs at a fixed 0.30 m gauge, one GLB per rung count, so height
+  comes from more rungs rather than bigger ones (measured 0.287–0.315 m across all nine).
+  `SceneryPlacement` gained a **pitch** composed about the foot, so ladders lean at 72°;
+  `geom.json` confirms every foot on its standing surface and every top on the served one.
+  Refusal is authoritative — a climb-volume ascent arms only where a validated ladder or grip
+  exists, and the elm crown and stone buttress pass as **grips** validated on real geometry
+  (the named support must be a solid spanning the rise with clearance above) rather than by
+  exemption. Route completable, `check-playthrough` ALL PASS, 0 m penetration.
+  **Still open, and it is the owner's original complaint verbatim:** the ladders carry **no
+  collision**, so the body passes through them. Also open: the climb clip is the generic
+  root-neutral animation, looped, with a planted foot sliding 4.07 m/s and no tie to the
+  rungs. Both in flight.
+  <details><summary>What the facade was, for the record</summary>
+
+  The first pass (`025ad65`) drew nine ladders that satisfied a placement spec and nothing a
+  body could do. The owner found it in one frame. Four structural defects:
   - `SceneryPlacement` has only `yaw` — **no pitch** — so a leaning ladder cannot lean.
     Every one is drawn bolt upright.
   - The draw uniformly scales one 1.90 m mesh to each rise (2.3–3.0 m), so rung spacing
@@ -110,6 +124,7 @@ replay harness.
     `playerMotion.ts` never call it — `CLIMB_UP` is still ranked purely on geometry. So the
     pipe is inert end to end, not merely switched off. (`collision.ts` still carries a stale
     comment saying ladders are "absent today … nothing authors one yet.")
+  </details>
   Refusal is still off. Asset, placement, lean, collision, animation and refusal are being
   redone as one task, because the owner is right that they only work together.
 - **Animations do not match motion.** Vault: planted foot slides 6.8 m/s and pokes 11 cm
