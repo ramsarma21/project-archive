@@ -365,6 +365,14 @@ export const LINKS: RouteLink[] = [
   link("C_CORNICE_SE", "C_CORNICE_S", "RUN", "SAFE", "RUN"),
   link("C_CORNICE_S", "C_LEADS_S", "CLIMB", "SAFE", "CLIMB", { ignore: ["TOWNHOUSE"] }),
   link("C_LEADS_S", "C_LEADS_TOWERFOOT", "RUN", "SAFE", "RUN"),
+  // Straight on across the leads to the east side and off onto the roofline.
+  // Topping out on the broad leads with the elm already in sight is enough; the
+  // tower gallery above is 5m of climb and 5m of drop for a look at a place the
+  // visor already points at, so the guided line no longer detours up it. The
+  // tower stays a reachable set piece from here (the CLIMB links below).
+  link("C_LEADS_TOWERFOOT", "C_LEADS_E", "RUN", "SAFE", "RUN", {
+    note: "East over the Town House roof to the descent onto the Orange Street roofline. The elm is downhill from here in a straight line.",
+  }),
   link("C_LEADS_TOWERFOOT", "C_TOWER_PLINTH", "CLIMB", "SAFE", "CLIMB", {
     ignore: ["TOWNHOUSE_TOWER"],
   }),
