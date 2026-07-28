@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef } from "react";
 import type { DuelEvent, DuelOutcome } from "@pa/duel";
 import type { MissionDuelViewProps } from "../mission/duelPort.js";
 import { DuelScreen } from "./DuelScreen.js";
-import { MissionArenaView } from "./missionArena.js";
 import {
   missionCast,
   missionDuelDescriptor,
@@ -15,9 +14,16 @@ import "./duel.css";
 // The mission's duel, on screen.
 //
 // The translation both ways lives in missionBrief.ts, which is pure. What is left
-// here is the shell around it: build the descriptor from the brief, hand the screen
-// the arena the mission actually fights in, and turn the screen's resolution into
-// the report the container is waiting for.
+// here is the shell around it: build the descriptor from the brief and turn the
+// screen's resolution into the report the container is waiting for.
+//
+// The arena is NO LONGER passed here. Entering the duel is a transition into the
+// shared rope-walk yard, so `missionDuelDescriptor` builds the descriptor from
+// `yardArena()` and this screen lets `DuelStage` fall back to its default
+// `ArenaView` — the stand-alone yard's own visible form, drawn from the same
+// `YARD_COVER` its blockers are compiled from. That is what makes the fight entered
+// from the mission look like the scripted `?verdict=live` modes rather than a slice
+// of Boston carved around the fight.
 //
 // Everything that matters about the fight is `DuelScreen`'s and unchanged — the
 // runtime, the input, the round of asking and committing, the grading authority —
@@ -71,17 +77,6 @@ export function MissionDuel(props: MissionDuelViewProps) {
     [brief, cast],
   );
 
-  // The arena's visible form, bound to the brief's own world. A component rather
-  // than an element because that is what the stage takes, and memoised because
-  // `DuelScreen` rebuilds its runtime whenever the descriptor changes and
-  // re-renders on every HUD change.
-  const Scenery = useMemo(() => {
-    const world = brief.world;
-    return function ArenaScenery(scenery: { reducedMotion: boolean }) {
-      return <MissionArenaView world={world} reducedMotion={scenery.reducedMotion} />;
-    };
-  }, [brief.world]);
-
   // Held so the report can read the core's own engagement clock at the moment the
   // duel resolves. `DuelScreen` hands the runtime over once.
   const runtime = useRef<DuelRuntime | null>(null);
@@ -124,10 +119,13 @@ export function MissionDuel(props: MissionDuelViewProps) {
   // No `onExit` and no `onAgain`. The container takes the screen the moment the
   // report lands, and a retry is a fresh attempt through the module rather than a
   // button on an outcome panel.
+  //
+  // No `Scenery`: the descriptor's arena is the shared yard, so `DuelStage` draws
+  // its default `ArenaView`, whose cover is the very list the arena's blockers were
+  // built from.
   return (
     <DuelScreen
       descriptor={descriptor}
-      Scenery={Scenery}
       reducedMotion={props.reducedMotion}
       onRuntime={onRuntime}
       onResolved={resolve}

@@ -82,12 +82,6 @@ export {
   missionDuelRounds,
   type MissionCast,
 } from "./missionBrief.js";
-export {
-  ARENA_CONTEXT_M,
-  MissionArenaView,
-  arenaGround,
-  arenaScenery,
-} from "./missionArena.js";
 
 export {
   YARD_COVER,
