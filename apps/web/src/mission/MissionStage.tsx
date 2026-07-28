@@ -286,6 +286,11 @@ function MissionDriver(props: {
         speed: Math.hypot(runtime.motion.vel.x, runtime.motion.vel.z),
         verb: runtime.flow.verb,
         phase: runtime.motion.phase,
+        pos: {
+          x: runtime.motion.pos.x,
+          y: runtime.motion.pos.y,
+          z: runtime.motion.pos.z,
+        },
       });
     }
     // Each latch survives until a fixed step actually took it. A frame that
@@ -765,6 +770,52 @@ function SceneryMount(props: {
   return <Scenery reducedMotion={props.reducedMotion} dawn={dawn} />;
 }
 
+/**
+ * Warm the shaders during the opening, so the FIRST-SIGHT program compile does
+ * not land mid-route.
+ *
+ * Attributed in the running game (.affordwork/spike-hunt.mjs, a CDP trace over
+ * the accelerated client): the "random lurch" is a rare, front-loaded frame of
+ * ~40-120ms in which the render callback blocks on `GetProgramiv` — the CPU
+ * waiting on a WebGL program LINK. That is three.js compiling a material's
+ * program the first time it is drawn, and when it lands above the 83ms five-step
+ * catch-up window it discards sim ticks, which is the slow-motion lurch. It is
+ * not GC, not resource streaming, and not the crowd (the trace ruled those out).
+ *
+ * The standard remedy is to compile ahead of time. `compileAsync` uses
+ * KHR_parallel_shader_compile where the driver has it, so the warm-up itself does
+ * not stall the frame; on a driver without it, `compile` runs during the opening
+ * (behind the settle / camera ease) rather than mid-route. It is re-run a few
+ * times across the first frames because the scenery, crowd and watch rigs mount
+ * under Suspense and appear over the opening, so a single early pass would miss
+ * the ones that arrive after it. Bounded to a handful of passes; presentation
+ * only, and it reads the scene the level already mounted rather than authoring
+ * anything (it never touches M1Scenery or any asset).
+ */
+const WARMUP_FRAMES = [4, 16, 34, 60, 100, 160] as const;
+
+function ShaderWarmup() {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  const camera = useThree((state) => state.camera);
+  const frame = useRef(0);
+  useFrame(() => {
+    const n = (frame.current += 1);
+    if (n > WARMUP_FRAMES[WARMUP_FRAMES.length - 1]!) return;
+    if (!WARMUP_FRAMES.includes(n as (typeof WARMUP_FRAMES)[number])) return;
+    const renderer = gl as unknown as {
+      compileAsync?: (scene: unknown, camera: unknown) => Promise<unknown>;
+      compile: (scene: unknown, camera: unknown) => unknown;
+    };
+    if (typeof renderer.compileAsync === "function") {
+      void renderer.compileAsync(scene, camera);
+    } else {
+      renderer.compile(scene, camera);
+    }
+  });
+  return null;
+}
+
 /** The imported rig, driven by motion. Motion owns the transform; this reads it. */
 function MissionPlayer(props: { runtime: MissionRuntime }) {
   const group = useRef<THREE.Group>(null);
@@ -1137,6 +1188,7 @@ export function MissionStage(props: {
       gl={{ antialias: true, powerPreference: "high-performance" }}
     >
       <ToneCurve onStage={props.onStage} />
+      <ShaderWarmup />
       <DawnSky runtime={props.runtime} />
 
       <MissionDriver
