@@ -671,13 +671,26 @@ export function planVerb(
       const top = Number.isFinite(obstacle.topY)
         ? obstacle.topY
         : start.y + tuning.vaultMaxHeightM;
-      const nearTop = ahead(start, probe, obstacle.faceDistanceM, top);
-      const farTop = ahead(
-        start,
-        probe,
-        obstacle.faceDistanceM + obstacle.depthM,
-        top,
-      );
+      // THE OVER-THE-TOP ANCHORS ARE THE CAPSULE-CENTRE PATH, NOT THE TWO FACES.
+      //
+      // Same defect as the CLIMB_UP rise, measured the same way in the running
+      // game (D_VAULT/F_VAULT/D2_VENT ~0.31-0.34m, the KING_LANE_GATE climb-over
+      // 0.218m): `faceDistanceM` is centre-to-near-face, so a near-top anchor
+      // AT the face plants the capsule centre a radius inside the obstacle for
+      // the whole rise, and the far-top anchor at the far face does the same on
+      // the way down. The per-substep depenetration then fights the spline by a
+      // radius across the vault. Insetting the rise anchor a radius SHORT of the
+      // near face and the descent anchor a radius PAST the far face makes both
+      // ends of the arc tangent to the obstacle — the path the solver would
+      // already hold — so the body crosses with nothing to depenetrate and the
+      // far-side landing (`obstacle.farSide.point`, itself already a radius clear
+      // of the far face) is unchanged. The loft (`arcHeight`) rides on top of
+      // this exactly as before.
+      const nearAlong = Math.max(0, obstacle.faceDistanceM - CAPSULE_RADIUS);
+      const farAlong =
+        obstacle.faceDistanceM + obstacle.depthM + CAPSULE_RADIUS;
+      const nearTop = ahead(start, probe, nearAlong, top);
+      const farTop = ahead(start, probe, farAlong, top);
       return authored(
         "VAULT",
         [
