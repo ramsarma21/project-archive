@@ -82,8 +82,13 @@
       "scripts/check-world-visual*",
       "apps/web/public/world/props/bldg-townhouse-1713.glb",
       "apps/web/public/world/props/bldg-brick.glb",
+      "apps/web/public/world/props/bldg-row-brick-b.glb",
+      "apps/web/public/world/props/bldg-row-clapboard-a.glb",
+      "apps/web/public/world/props/bldg-row-clapboard-b.glb",
+      "apps/web/public/world/props/bldg-row-clapboard-c.glb",
       "assets/pipeline/*townhouse*",
-      "assets/pipeline/*brick*"
+      "assets/pipeline/*brick*",
+      "assets/pipeline/*facade*"
     ],
     "api-hunt": [
       "apps/api/**",
