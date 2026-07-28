@@ -88,6 +88,22 @@ jobs:
         if: ${{ !cancelled() }}
         run: node --test 'assets/pipeline/*.test.mjs'
 
+      # The world's COLLISION and its VISIBLE MESH are produced by different steps
+      # — collision authored in the level, the GLB contain-fitted into a box
+      # derived from it — and nothing forced them to agree. That is how the owner
+      # phased through ceilings and hit invisible walls while every invariant
+      # reported zero penetrations: the invariants validate the collision, and
+      # nothing validated that the SHIPPED GLB fills it. These two guards close
+      # that gap, on the published bytes, and each proves it catches an offset or a
+      # shrunk hull before it measures anything. Blocking, beside verify:content.
+      - name: World collision vs visible mesh
+        if: ${{ !cancelled() }}
+        run: pnpm assets:verify:collision
+
+      - name: M1 placement fit
+        if: ${{ !cancelled() }}
+        run: pnpm assets:verify:placement
+
       - name: Build packages
         if: ${{ !cancelled() }}
         run: pnpm build
