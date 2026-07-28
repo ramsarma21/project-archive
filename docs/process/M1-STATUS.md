@@ -181,10 +181,21 @@ replay harness.
   `LAWFUL_NOT_CONSENTED` are a principle and its rebuttal, separable only when the question
   explicitly invokes virtual representation — being closed by moving the discriminator into the
   question. In flight.
+- **The grader credits wrong answers, and nothing gates that.** Two false positives reproduce
+  across runs and pre-date the card work: `NAME_TWO` credits "a letter to my sister and a
+  newspaper," and `WHAT_RIGHT` credits "the right to not pay taxes" — which is not a right, it
+  is the misconception the mission exists to correct. False negatives are gated; false
+  positives are **not**, so every pressure in the system points toward leniency, which is why
+  these survived. This is the owner's own complaint ("it keeps … granting right") in another
+  form. In flight, with the hard constraint that FN must not leave 0.00% to fix it.
 - **The false-negative gate is not automated.** The real classifier evaluation runs a live
   model behind `pnpm grading:eval`, outside CI, so it only runs when someone remembers. It
-  previously sat at 3.4% against stale hand-labels while appearing healthy. A gate that
-  depends on memory will be wrong exactly when it matters.
+  previously sat at 3.4% against stale hand-labels while appearing healthy. To automate it:
+  a dedicated credential (the shared dev key contends with the owner's own session — 299 of
+  313 calls fell back during one measurement), a ~20 s timeout since the 1.5 s production cap
+  is a *play* cap not a *measurement* cap, low concurrency, a gate on FN ≤ ceiling plus
+  coverage ≥ 90% rather than exact zero because the live model varies run to run at
+  temperature 0, and nightly rather than per-PR. Queued for the CI lane.
 - ~~The elm beat is finicky and hard to start~~ — **fixed** (`27ec2b5`). It was failing to
   arm, not rendering wrong: a 1.1 m circle on the crown tip plus a ±60° facing arc rejected
   the exact pose a player arrives in off the leap (1.5 m back, ~105° off, moving south down
