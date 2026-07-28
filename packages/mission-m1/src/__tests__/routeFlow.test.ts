@@ -206,11 +206,12 @@ test("driving real stepFlow down every SAFE descent lands the body on the author
   );
 });
 
-test("no SAFE or FAST descent driven at sprint takes a fall past the roll ceiling", () => {
+test("no SAFE descent driven at sprint takes a fall past the roll ceiling", () => {
   // The whole point of the landing-prediction fix: a body coming down the route
-  // at speed is braked or caught before any single fall is unsurvivable.
+  // at speed is braked or caught before any single fall is unsurvivable. The
+  // route is one SAFE line now, so there are no FAST descents left to check.
   const overThreshold: string[] = [];
-  for (const descent of descents(new Set(["SAFE", "FAST"]))) {
+  for (const descent of descents(new Set(["SAFE"]))) {
     const outcome = drive(descent, RUN_SPEED);
     if (outcome.worstFall > PARKOUR_TUNING.rollMaxDropM + 1e-6) {
       overThreshold.push(

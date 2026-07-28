@@ -106,9 +106,6 @@ export const NODES_2: RouteNode[] = [
 
 export const LINKS_2: RouteLink[] = [
   // -- into and across Dock Square ------------------------------------------
-  link("B_STREET_MID", "B_GAP_N", "RUN", "FAST", "RUN", {
-    note: "Straight along the street to the stall gap. It is the shortest thing in the Shambles and it keeps you at ground level in front of the watch for the whole length of it.",
-  }),
   link("B_GAP_N", "B_STALL_GAP", "RUN", "SAFE", "RUN"),
   link("B_STALL_GAP", "B2_ENTER", "RUN", "SAFE", "RUN", {
     note: "Out of the Shambles and south into the square. The roofline does not come with you.",
@@ -151,49 +148,6 @@ export const LINKS_2: RouteLink[] = [
     note: "1.10m high and 1.10m deep, which is inside the vault envelope on every face — the same numbers as the barrels rolled out of the gaol door twenty metres back, so the verb is one the player already met.",
   }),
   link("B2_GOODS_OUT", "B2_EXIT", "RUN", "SAFE", "RUN", { speedMps: 2.3 }),
-  link("B2_THRONG_W", "B2_THRONG_E", "RUN", "FAST", "RUN", {
-    note: "The same ground at a sprint. Above 2.4 m/s the crowd parts around you instead of closing over you, so this is the fast line and it is fully exposed.",
-  }),
-
-  // The arcade: unlit, no ramp-in, but the sentry lives there.
-  //
-  // Twelve metres in four moves instead of one, because the colonnade is what
-  // the section spends: the walk threads east of the goods stacked in it, so
-  // hard cover comes and goes as the piers and the casks pass between the
-  // player and the post. The 0.45 dark factor was doing all of the work here and
-  // now it is doing half of it.
-  //
-  // Both ways out of the throng converge on the same bay before going in, because
-  // the colonnade only opens in five places and this is the one south of the
-  // sentry. The approach is free either way: he faces north and cannot turn far
-  // enough to see his own back.
-  link("B2_THRONG_S", "B2_ARCADE_MOUTH", "RUN", "FAST", "RUN", { speedMps: 2.3 }),
-  link("B2_THRONG_E", "B2_ARCADE_MOUTH", "RUN", "FAST", "RUN"),
-  link("B2_ARCADE_MOUTH", "B2_ARCADE_S", "RUN", "FAST", "RUN", { speedMps: 2.3 }),
-  link("B2_ARCADE_S", "B2_ARCADE_STOCK", "RUN", "FAST", "RUN", {
-    speedMps: 2.3,
-    note: "In at the south mouth and behind the crates. The approach is free: he faces north and cannot turn far enough to see his own back.",
-  }),
-  link("B2_ARCADE_STOCK", "B2_ARCADE_PIER", "RUN", "FAST", "RUN", {
-    speedMps: 2.3,
-    note: "Past the post itself. Nothing screens this metre and the dark is 0.45, not zero, so this is where the arcade is paid for.",
-  }),
-  link("B2_ARCADE_PIER", "B2_ARCADE_CASKS", "RUN", "FAST", "RUN", {
-    speedMps: 1.15,
-    note: "Down behind the hogsheads at a crouch. Slower than walking it upright and the difference is the difference between 0.3 of a read and all of it.",
-  }),
-  link("B2_ARCADE_CASKS", "B2_ARCADE_LANE", "RUN", "FAST", "RUN", { speedMps: 1.15 }),
-  link("B2_ARCADE_LANE", "B2_ARCADE_N", "RUN", "FAST", "RUN", {
-    speedMps: 1.15,
-    note: "Half a metre of detour round the crates rather than through their corner, still crouched. The head-high stack is the last thing between you and the post.",
-  }),
-  link("B2_ARCADE_N", "B2_EXIT", "RUN", "FAST", "RUN"),
-
-  // The trap line, authored so it exists to be rejected.
-  link("B2_THRONG_W", "B2_STALL_TOP", "CLIMB", "EXPERT", "CLIMB", {
-    ignore: ["DOCK_STALLS"],
-  }),
-  link("B2_STALL_TOP", "B2_THRONG_E", "DROP", "EXPERT", "CHAIN_DROP", { speedMps: 2.3 }),
 
   link("B2_EXIT", "C_SQUARE_W", "RUN", "SAFE", "RUN"),
 
@@ -235,17 +189,6 @@ export const LINKS_2: RouteLink[] = [
   }),
   link("D2_BALES_HIGH", "D2_BALES_LOW", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 2.3 }),
   link("D2_BALES_LOW", "D2_FLOOR_W", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 2.3 }),
-
-  // The loud way down, off the east end, four metres from the post. One roll
-  // landing at 0.5 intensity against three run-offs at 0.2, and it skips every
-  // authored verb on the tarring floor.
-  link("D2_BEAM_E", "D2_FLOOR_MID", "DROP", "FAST", "CHAIN_DROP", {
-    speedMps: 2.3,
-    note: "5.2m straight to the floor beside the night man. It is a roll, it is the loudest thing in the building, and it saves four seconds by cutting out the capstan, the stretcher frame and the tarring partition.",
-  }),
-  link("D2_FLOOR_MID", "D2_STAGE", "RUN", "FAST", "STEP_UP", {
-    note: "Straight up onto the laying stage and east to the door. This is what the four seconds buy, and it is the only stretch of the interior that is walked in a straight line.",
-  }),
 
   // The tarring floor, walked back east. This is the guaranteed line: the
   // section is built around SLIDE, so the slide cannot live on the shortcut.

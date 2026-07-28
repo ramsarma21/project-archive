@@ -250,7 +250,6 @@ export const LINKS: RouteLink[] = [
   link("A_SHEETS", "A_EAVE_S", "RUN", "SAFE", "RUN"),
   link("A_SHEETS", "A_ALLEY_LIP", "RUN", "SAFE", "RUN"),
 
-  link("A_SHEETS", "A_EAVE_SE", "RUN", "FAST", "RUN"),
   link("A_EAVE_S", "A_SIGN", "DROP", "SAFE", "CHAIN_DROP", {
     speedMps: 2.3,
     note: "0.90m onto the printer's sign board. Every rung of this chain is inside the 2.2m run-off ceiling, so the descent is four strides rather than four hangs.",
@@ -258,25 +257,7 @@ export const LINKS: RouteLink[] = [
   link("A_SIGN", "A_PENTICE", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 2.3 }),
   link("A_PENTICE", "A_HAY_W", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 2.3 }),
   link("A_HAY_W", "A_HAY", "RUN", "SAFE", "RUN"),
-  link("A_EAVE_SE", "A_HAY", "DROP", "FAST", "CHAIN_DROP", {
-    speedMps: 4.6,
-    note: "Sprint off the corner instead and you clear the sign and the pentice entirely: 4.9m straight into the hay wain. It is also a roll landing, which the market watch can hear from thirty paces — the whole game's grammar in one action, eight seconds in.",
-  }),
   link("A_HAY", "A_STREET", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 3.0 }),
-
-  // The second dash spend, and the biggest single shortcut in the mission: hold
-  // the south eave flat, burst, and cross Queen Street at roof height onto the
-  // market shed. 5.00m of gap against the 4.40m a running jump may be authored
-  // for at this 1.50m drop, so it genuinely needs the burst.
-  //
-  // What it skips is the entire opening descent — sign, pentice, hay, street, and
-  // the whole length of the Shambles at ground level — and what it costs if you
-  // miss is nothing you were not already going to do: short off this lip is the
-  // printer's sign board at 6.20m, then the pentice, then the hay. The authored
-  // miss is the authored route.
-  link("A_EAVE_S", "B_SHED_W", "DASH_JUMP", "EXPERT", "DASH", {
-    note: "Straight over Queen Street from the printshop leads onto the market shed roof. It puts a player who can do it on the high line before the market watch has walked ten metres, and the chain drop they skipped is what catches them if they cannot.",
-  }),
 
   link("A_ALLEY_LIP", "A_PLANK", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 2.3 }),
   link("A_PLANK", "A_LEANTO", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 2.6 }),
@@ -297,21 +278,9 @@ export const LINKS: RouteLink[] = [
   link("B_DUCK", "B_STREET_MID", "DUCK_UNDER", "SAFE", "DUCK_UNDER", {
     ignore: ["PASSAGE_HOIST"],
   }),
-  link("B_STREET_MID", "B_STREET_E", "BLEND", "FAST", "BLEND", {
-    speedMps: 2.3,
-    note: "Straight down the Shambles instead of turning into Dock Square. Shorter, thinner crowd, and it puts you past the watch rather than through him.",
-  }),
   link("B_STREET_E", "B_EXIT", "RUN", "SAFE", "RUN"),
 
-  link("B_STREET_W", "B_CART_FOOT", "RUN", "FAST", "RUN"),
-  link("B_CART_FOOT", "B_CART_0", "CLIMB", "FAST", "CLIMB", { ignore: ["CART_0"] }),
-  link("B_CART_0", "B_VAULT_OUT", "DROP", "FAST", "CHAIN_DROP", { speedMps: 3.4 }),
-
   // -- B: mid line ----------------------------------------------------------
-  link("B_STREET_W", "B_CANOPY_FOOT", "RUN", "FAST", "RUN"),
-  link("B_CANOPY_FOOT", "B_CANOPY_0", "CLIMB", "FAST", "CLIMB", { ignore: ["STALL_0"] }),
-  link("B_CANOPY_0", "B_CANOPY_1", "JUMP", "FAST", "LEAP"),
-  link("B_CANOPY_1", "B_CANOPY_2", "JUMP", "FAST", "LEAP"),
   link("B_CANOPY_2", "B_CANOPY_3", "JUMP", "SAFE", "LEAP"),
   link("B_CANOPY_3", "B_CANOPY_4", "JUMP", "SAFE", "LEAP"),
   link("B_CANOPY_4", "B_CRATES_B", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 4.0 }),
@@ -326,47 +295,17 @@ export const LINKS: RouteLink[] = [
   // the reader offers and auto-commits.
   link("B_CRATES_FOOT", "B_CANOPY_2_S", "CLIMB", "SAFE", "CLIMB"),
   link("B_CANOPY_2_S", "B_CANOPY_2", "RUN", "SAFE", "RUN"),
-  // The crates are kept as visible optional scenery and a dev-inspection node,
-  // OFF the SAFE progression. The climb-and-leap over them is a real but brutal
-  // trick — the unprompted Space window above — so it is authored EXPERT, not
-  // SAFE and not a FAST relabel of the SAFE line.
-  link("B_CRATES_FOOT", "B_CRATES_A", "CLIMB", "EXPERT", "CLIMB", {
-    ignore: ["SHAMBLES_CRATES_A"],
-    note: "Optional crate climb. The awning south edge is the SAFE way up; this is the harder line onto the crate top.",
-  }),
-  link("B_CRATES_A", "B_CANOPY_2", "JUMP", "EXPERT", "LEAP"),
 
   // -- B: high line ---------------------------------------------------------
   link("B_PENTICE_FOOT", "B_PENTICE", "CLIMB", "SAFE", "CLIMB"),
   link("B_PENTICE", "B_SHED_E", "CLIMB", "SAFE", "CLIMB", { ignore: ["MARKET_SHED"] }),
-  link("B_SHED_E", "B_SHED_MID", "RUN", "FAST", "RUN"),
-  link("B_SHED_MID", "B_CANOPY_1", "DROP", "FAST", "CHAIN_DROP", {
-    speedMps: 2.6,
-    note: "The third height. Off the shambles roof onto the canopies, which is the only way the roof line rejoins anything.",
-  }),
-  link("B_SHED_E", "B_SHED_W", "RUN", "FAST", "RUN"),
-  link("B_SHED_W", "B_SHED_E", "RUN", "FAST", "RUN", {
-    note: "The shed roof is walked both ways, because it is now arrived at from the west as well as the east: the burst across Queen Street lands here.",
-  }),
-  link("B_SHED_E", "B_CANOPY_1", "DROP", "FAST", "CHAIN_DROP", {
-    speedMps: 4.0,
-    note: "The shambles roof dies against the sugar house, so it has to come down onto the canopies here.",
-  }),
 
   // -- C --------------------------------------------------------------------
   // The Shambles does not connect to the Town House square directly. Dock
-  // Square is between them, so the fast line through the market is a faster way
-  // to the square rather than a way to skip it.
+  // Square is between them, so the SAFE line through the market threads the
+  // stall gap into the square.
   link("B_EXIT", "B_GAP_N", "RUN", "SAFE", "RUN", {
-    note: "Back west to the stall gap. Even the fast line through the Shambles has to thread the same slot into the square.",
-  }),
-  // Straight across the open square, and now a FAST line rather than the
-  // guaranteed one. Twenty-two metres of lit granite with nothing on it, in front
-  // of a posted watch who reads the scaffold foot for a quarter of his cycle: it
-  // is the shortest way to the ascent and it is the most exposed thing in the
-  // section. The cautious answer is the lane behind the building.
-  link("C_SQUARE_W", "C_SQUARE_NW", "RUN", "FAST", "RUN", {
-    note: "The direct crossing. Eight seconds quicker than the circuit and it spends the whole of them in the tower's sweep.",
+    note: "Back west to the stall gap, and the slot into the square.",
   }),
   link("C_SQUARE_NW", "C_SCAFF_FOOT", "RUN", "SAFE", "RUN"),
 
@@ -391,36 +330,14 @@ export const LINKS: RouteLink[] = [
   }),
   link("C_KING_MID", "C_LANE_N_E", "RUN", "SAFE", "RUN"),
   link("C_LANE_N_E", "C_LANE_FOOT", "RUN", "SAFE", "RUN", {
-    note: "West down the north lane at 0.15 of full light, past the hay and the crates the fast line climbs, to the foot of the scaffold.",
+    note: "West down the north lane at 0.15 of full light, past the hay and the crates, to the foot of the scaffold.",
   }),
   link("C_LANE_FOOT", "C_SCAFF_FOOT", "RUN", "SAFE", "RUN"),
 
-  // The lane's own fast line: over the lean-to instead of through the gate.
-  link("C_KING_CRATES_FOOT", "C_KING_CRATES", "CLIMB", "FAST", "CLIMB", {
-    ignore: ["KING_LANE_CRATES"],
-  }),
-  link("C_KING_CRATES", "C_KING_PENTICE_W", "CLIMB", "FAST", "CLIMB", {
-    ignore: ["KING_LANE_CRATES"],
-  }),
-  link("C_KING_PENTICE_W", "C_KING_PENTICE_E", "RUN", "FAST", "RUN"),
-  link("C_KING_PENTICE_E", "C_KING_HEAD", "DROP", "FAST", "CHAIN_DROP", {
-    speedMps: 4.0,
-    note: "Off the lean-to into the head of King Street: 3.85m, which is a roll rather than a hang, and the loudest thing available in this section. The constable's beat turns five metres away, so the lane's fast line is paid for in exactly the currency section A taught in its first eight seconds.",
-  }),
   link("C_SCAFF_FOOT", "C_SCAFF_1", "CLIMB", "SAFE", "CLIMB"),
   link("C_SCAFF_1", "C_SCAFF_2", "CLIMB", "SAFE", "CLIMB"),
   link("C_SCAFF_2", "C_GALLERY_W", "JUMP", "SAFE", "LEAP"),
 
-  link("C_SQUARE_NW", "C_LANE_FOOT", "RUN", "FAST", "RUN"),
-  link("C_LANE_FOOT", "C_LANE_HAY", "CLIMB", "FAST", "CLIMB", { ignore: ["LANE_HAY"] }),
-  link("C_LANE_HAY", "C_LANE_CRATES", "DROP", "FAST", "CHAIN_DROP", {
-    speedMps: 3.0,
-    note: "Off the wain onto the crates: 0.30m down over a 0.60m gap, which lands at any pace from a walk to a sprint.",
-  }),
-  link("C_LANE_CRATES", "C_LANE_PENTICE", "CLIMB", "FAST", "CLIMB", {
-    ignore: ["LANE_CRATES"],
-  }),
-  link("C_LANE_PENTICE", "C_GALLERY_STAIRHEAD", "JUMP", "FAST", "LEAP"),
   link("C_GALLERY_STAIRHEAD", "C_LANE_PENTICE", "DROP", "SAFE", "CHAIN_DROP", {
     speedMps: 2.3,
     note: "The reflex-time bail-out: back down the stair opening, give up the height, keep the attempt.",
@@ -458,106 +375,33 @@ export const LINKS: RouteLink[] = [
     speedMps: 3.4,
     note: "Off the tower: 5.2m onto the broad leads, a roll landing and the loudest thing you have done since the market. The descent starts here and does not stop until the tree.",
   }),
-  link("C_TOWER_GALLERY", "C_LEADS_TOWERFOOT", "DROP", "FAST", "CHAIN_DROP", {
-    speedMps: 2.3,
-  }),
-  link("C_LEADS_TOWERFOOT", "C_LEADS_E", "RUN", "FAST", "RUN", {
-    note: "Straight across the leads without topping out. Quicker, and you never see where you are going.",
-  }),
-  // Deliberately not a SAFE link. The tower is the mission's only navigation —
-  // it is where the effigy first comes into sight — so the guaranteed route goes
-  // over the top and the shortcut across the leads is a FAST choice.
-  link("C_LEADS_S", "C_LEADS_E", "RUN", "FAST", "RUN"),
   link("C_LEADS_E", "C_LEADS_NE", "RUN", "SAFE", "RUN"),
-  // The cornice walk exits straight to the leads for anyone skipping the tower.
-  link("C_CORNICE_SE", "C_LEADS_SE", "CLIMB", "FAST", "CLIMB", { ignore: ["TOWNHOUSE"] }),
-  link("C_LEADS_SE", "C_LEADS_E", "RUN", "FAST", "RUN"),
 
   // -- D --------------------------------------------------------------------
   link("C_LEADS_E", "D_GANTRY", "RUN", "SAFE", "RUN"),
   link("D_GANTRY", "D_SROOF_W", "RUN", "SAFE", "RUN"),
   link("D_SROOF_W", "D_SROOF_N", "RUN", "SAFE", "RUN"),
-  link("C_LEADS_NE", "D_SROOF_N", "JUMP", "FAST", "LEAP", {
-    note: "2.8m over the lane beside the fire board. Same destination, a second cheaper.",
-  }),
 
   link("D_SROOF_N", "D_VAULT_IN_0", "RUN", "SAFE", "RUN"),
   link("D_VAULT_IN_0", "D_VAULT_OUT_0", "VAULT", "SAFE", "VAULT", { ignore: ["CHIMNEY_0"] }),
   link("D_VAULT_OUT_0", "D_VAULT_IN_1", "RUN", "SAFE", "RUN"),
   link("D_VAULT_IN_1", "D_VAULT_OUT_1", "VAULT", "SAFE", "VAULT", { ignore: ["CHIMNEY_1"] }),
   link("D_VAULT_OUT_1", "D_SROOF_E", "RUN", "SAFE", "RUN"),
-  link("D_SROOF_W", "D_SROOF_DIVE", "RUN", "FAST", "RUN"),
-  link("D_SROOF_DIVE", "D_NROOF_W", "JUMP", "FAST", "LEAP", {
-    note: "Orange Street: 5.0m across and 5.3m down. The only crossing on the block, and it only works downhill.",
-  }),
-  link("D_NROOF_W", "D_NROOF_E", "RUN", "FAST", "RUN"),
-  link("D_NROOF_E", "E_ELLIOT_ROOF", "JUMP", "FAST", "LEAP", {
-    note: "1.6m over the lane with 1.10m of rise: right on the hop-up ceiling, and the last move of the quiet line.",
-  }),
-  link("E_ELLIOT_ROOF", "E_ELLIOT_LIP", "RUN", "FAST", "RUN"),
-
-  // AUTHORED AS A CHAIN DROP UNTIL TODAY, AND IT NEVER WAS ONE.
-  //
-  // A chain drop is passive: hold forward, leave the lip, land a tier lower.
-  // There is no tier here. The south row's roof ends at x=71.6 and the meeting
-  // house's begins at 73.3, so what is between the two nodes is 1.8m of open
-  // air with a 12.4m fall to Orange Street underneath it. The link priced
-  // itself node-to-node at 4.2m and passed every check; the reader, standing at
-  // the actual lip, measured the actual fall and braked, which is exactly what
-  // a safety brake is for. So the leg was takeable only by deliberately
-  // pressing jump — the definition of a JUMP link and not of a drop — and two
-  // readings of this route in a row called it a defect.
-  //
-  // It is a leap, and the ridge is where a leap lands. A full-speed running
-  // jump off this lip flies 6.8m before it comes down, which overflies the
-  // meeting house's eave and the three metres of roof behind it: aiming this at
-  // D_MEETING_ROOF was authoring an arc the body does not fly. Measured from
-  // the lip the ridge is 3.7m out against a 4.26m budget for a 1.2m drop.
-  //
-  // It stays FAST, so the guaranteed line still goes through the ropewalk, and
-  // it is now a bigger shortcut than it was — it skips the gambrel climb as
-  // well — which is the honest price of the most exposed move in the section.
-  link("D_SROOF_E", "E_RIDGE", "JUMP", "FAST", "LEAP", {
-    note: "Over the ropewalk rather than through it: across Orange Street onto the meeting-house ridge, with a 12.4m fall to the cobbles under it if it is misjudged. Four seconds cheaper than the ropewalk and fully exposed to the street below, which is where the constable now is.",
-  }),
 
   // -- E --------------------------------------------------------------------
   link("D_MEETING_ROOF", "E_RIDGE", "CLIMB", "SAFE", "CLIMB", { ignore: ["HOLLIS_MEETING"] }),
   link("E_RIDGE", "E_LOUVRE", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),
   link("E_LOUVRE", "E_GALLERY", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),
-  link("E_GALLERY", "E_CROCKETS", "CLIMB", "EXPERT", "CLIMB", { ignore: ["STEEPLE_LANTERN"] }),
-  link("E_CROCKETS", "E_VANE", "CLIMB", "EXPERT", "CLIMB", { ignore: ["STEEPLE_LANTERN"] }),
 
   link("E_GALLERY", "F_CROWN", "LEAP_OF_FAITH", "SAFE", "LEAP_OF_FAITH", {
     target: "LEAP_CROWN",
     speedMps: 4.6,
     note: "The signature: 5.7m of gap and 7.5m of fall, off the steeple gallery into the crown of the Liberty Tree. Leave short and the low bough catches you a tier down.",
   }),
-  // The third dash spend. Level with the elm's top limb across 4.00m of air, off
-  // the gambrel ridge instead of going up the steeple for it: a running jump
-  // reaches 3.65m flat and this is 4.00m, so the burst is the whole difference.
-  // It trades the six-hold climb and the signature dive for one committed metre
-  // of ground, which is the right shape for the ceiling of a level.
-  link("E_RIDGE", "F_UPPER", "DASH_JUMP", "EXPERT", "DASH", {
-    note: "From the meeting house ridge straight into the crown of the tree, skipping the louvre, the gallery and the leap of faith. The upper limb is also the only place the yard dive is offered from, so the burst does not shorten the mission — it changes which ending is available.",
-  }),
-  link("E_VANE", "F_UPPER", "LEAP_OF_FAITH", "EXPERT", "LEAP_OF_FAITH", {
-    target: "LEAP_UPPER",
-    speedMps: 4.6,
-    note: "From the weathervane balcony: 6.7m of gap and 9.4m of fall, onto the upper limb above the nail point. The gap grew 0.4m and the fall 1.2m when the balcony narrowed to 2.6m and rose to 20.6 — both of which the drop pays for, since a longer fall buys airtime.",
-  }),
-  link("E_ELLIOT_LIP", "F_LOW", "JUMP", "FAST", "LEAP", {
-    note: "Off Elliot's gambrel into the lowest tier of boughs: 3.5m across and 1.8m down. It is a jump, not a dive — 1.8m is nowhere near the 6m the reader needs to offer one.",
-  }),
-  link("E_ELLIOT_LIP", "F_CROWN", "DASH_JUMP", "EXPERT", "DASH", {
-    note: "The same lip, held flat and taken out of a burst: 4.71m across and level, straight onto the crown limb where the nail is. It is the only place in the mission a dash is the answer, and it is authored so that failing it costs nothing — a running jump off this lip carries 3.65m, lands a metre short, and the low bough catches you exactly where the FAST line was going to put you anyway. So the burst does not buy access, it buys the climb: you arrive at the nail height already, with the seconds the F_LOW->F_CROWN pull would have cost still in hand. Those seconds are the point, because they are spent standing still on the bough with the constable coming up Orange Street underneath, and the beat is longer than the gap in his patrol is generous.",
-  }),
 
   // -- F --------------------------------------------------------------------
   link("F_LOW", "F_CROWN", "CLIMB", "SAFE", "CLIMB", { ignore: ["LIBERTY_ELM_TRUNK"] }),
   link("F_CROWN", "F_CROWN_E", "RUN", "SAFE", "RUN"),
-  link("F_CROWN_E", "F_UPPER", "CLIMB", "EXPERT", "CLIMB", { ignore: ["LIBERTY_ELM_TRUNK"] }),
-  link("F_UPPER", "F_CROWN", "DROP", "EXPERT", "CHAIN_DROP", { speedMps: 2.3 }),
   link("F_CROWN", "F_POST", "RUN", "SAFE", "RUN"),
   link("F_POST", "F_CROWN", "RUN", "SAFE", "RUN"),
   // Down off the objective: a controlled climb-down at the crown's northern rim
@@ -592,19 +436,7 @@ export const LINKS: RouteLink[] = [
   }),
 
   // -- G --------------------------------------------------------------------
-  // The same ground at a sprint, which is exactly what the crowd stops working
-  // at: above 2.4 m/s the throng parts around you instead of closing over you.
-  // Eight metres shorter, across the brightest ground in the mission.
-  link("F_GROUND", "G_GATE", "RUN", "FAST", "RUN", {
-    note: "Straight across the corner from the foot of the tree, at a sprint and in torchlight. It saves three seconds and spends the last of the mission's concealment doing it.",
-  }),
   link("G_GATE", "G_SPAWN", "RUN", "SAFE", "RUN"),
-  link("F_UPPER", "G_HAY", "LEAP_OF_FAITH", "EXPERT", "LEAP_OF_FAITH", {
-    target: "LEAP_YARD_HAY",
-    speedMps: 4.6,
-    note: "Straight off the upper limb, over 3.6m of yard wall, into the fodder wain and the duel. Only that limb clears the brick, which is the whole reward for taking the weathervane.",
-  }),
-  link("G_HAY", "G_SPAWN", "DROP", "EXPERT", "CHAIN_DROP", { speedMps: 3.0 }),
 ];
 
 /** Nodes the reflex-time set piece is authored around. */
