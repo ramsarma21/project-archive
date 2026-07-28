@@ -1,6 +1,16 @@
 import { memo, useMemo } from "react";
-import { FittedGlb, GroundSurfaces, ImportedStructure } from "@pa/engine-world";
-import { groundPlacements, sceneryPlacements } from "@pa/mission-m1";
+import {
+  FittedGlb,
+  GroundSurfaces,
+  ImportedStructure,
+  InstancedFittedGlb,
+  type PropInstance,
+} from "@pa/engine-world";
+import {
+  groundPlacements,
+  sceneryPlacements,
+  type SceneryPlacement,
+} from "@pa/mission-m1";
 import type { DawnRead } from "../mission/dawn.js";
 import { M1Lanterns } from "./M1Lanterns.js";
 
@@ -40,34 +50,102 @@ function SceneryGround() {
   return <GroundSurfaces plates={plates} />;
 }
 
+/**
+ * The scenery, sorted into the three ways it is drawn.
+ *
+ * A SHELL is a structural module stretched per-axis onto its room and stays on
+ * `ImportedStructure`. Everything else is fitted from its GLB — and where the
+ * same asset is placed more than once (six arcade piers, fourteen awnings,
+ * eighteen shop bays), every copy is drawn from ONE instanced batch per mesh
+ * primitive instead of one cloned scene graph per copy. A prop placed exactly
+ * once has nothing to instance and keeps the plain fitted path.
+ */
+interface ScenerySorted {
+  readonly shells: readonly SceneryPlacement[];
+  readonly singles: readonly SceneryPlacement[];
+  readonly instanced: ReadonlyArray<{
+    readonly src: string;
+    readonly asset: string;
+    readonly instances: readonly PropInstance[];
+  }>;
+}
+
+function sortScenery(placements: readonly SceneryPlacement[]): ScenerySorted {
+  const shells: SceneryPlacement[] = [];
+  const byAsset = new Map<string, SceneryPlacement[]>();
+  for (const placement of placements) {
+    if (placement.fit === "SHELL") {
+      shells.push(placement);
+      continue;
+    }
+    const group = byAsset.get(placement.assetPath);
+    if (group) group.push(placement);
+    else byAsset.set(placement.assetPath, [placement]);
+  }
+
+  const singles: SceneryPlacement[] = [];
+  const instanced: ScenerySorted["instanced"][number][] = [];
+  for (const [src, group] of byAsset) {
+    if (group.length < 2) {
+      singles.push(group[0]!);
+      continue;
+    }
+    instanced.push({
+      src,
+      asset: group[0]!.asset,
+      instances: group.map((placement) => ({
+        id: placement.id,
+        pos: placement.pos,
+        size: placement.size,
+        yaw: placement.yaw,
+        // One tile of a run fills its box; the level already cut the box to the
+        // module, so filling is what keeps the run continuous. A PROP contain-
+        // fits inside its box instead.
+        fill: placement.fit === "MODULE",
+      })),
+    });
+  }
+  return { shells, singles, instanced };
+}
+
 function SceneryProps() {
-  const placements = useMemo(() => sceneryPlacements(), []);
+  const sorted = useMemo(() => sortScenery(sceneryPlacements()), []);
   return (
     <group name="m1-scenery">
-      {placements.map((placement) => (
+      {sorted.instanced.map((group) => (
+        <InstancedFittedGlb
+          key={group.src}
+          src={group.src}
+          instances={group.instances}
+          fallback={null}
+        />
+      ))}
+      {sorted.singles.map((placement) => (
         <group
           key={placement.id}
           position={placement.pos}
           rotation={[0, placement.yaw, 0]}
         >
-          {placement.fit === "SHELL" ? (
-            <ImportedStructure
-              glbKey={placement.asset}
-              src={placement.assetPath}
-              size={placement.size}
-            />
-          ) : (
-            <FittedGlb
-              glbKey={placement.asset}
-              src={placement.assetPath}
-              size={placement.size}
-              // One tile of a run. The level already cut the box to the module,
-              // so filling it is what keeps the run continuous; contain-fitting
-              // it would leave a gap at every seam.
-              fill={placement.fit === "MODULE"}
-              fallback={null}
-            />
-          )}
+          <FittedGlb
+            glbKey={placement.asset}
+            src={placement.assetPath}
+            size={placement.size}
+            fill={placement.fit === "MODULE"}
+            fallback={null}
+          />
+        </group>
+      ))}
+      {sorted.shells.map((placement) => (
+        <group
+          key={placement.id}
+          position={placement.pos}
+          rotation={[0, placement.yaw, 0]}
+        >
+          <ImportedStructure
+            glbKey={placement.asset}
+            src={placement.assetPath}
+            size={placement.size}
+          />
         </group>
       ))}
     </group>
