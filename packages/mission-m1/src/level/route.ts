@@ -86,6 +86,13 @@ export const NODES: RouteNode[] = [
 
   // -- C: the Town House ----------------------------------------------------
   node("C_SQUARE_W", "C_ASCENT", [42.6, 0.0, -1.0], "GROUND", []),
+  // A stepping stone on the direct approach from the Shambles to the scaffold,
+  // collinear with B_EXIT -> C_SCAFF_FOOT so the guided line crosses the square's
+  // north-west corner in two short hops rather than one long diagonal — which
+  // keeps the objective-distance plate stepping smoothly instead of inflating
+  // over an eight-metre edge and snapping when the anchor catches up.
+  node("C_SQUARE_N", "C_ASCENT", [43.2, 0.0, -3.4], "GROUND", [],
+    "The open ground north-west of the Town House, on the line to the scaffold."),
   node("C_SQUARE_NW", "C_ASCENT", [43.0, 0.0, -8.6], "GROUND", [],
     "Round the Town House's north-west corner. The island forces the choice: this lane, the south lane, or over the top."),
   node("C_SCAFF_FOOT", "C_ASCENT", [44.8, 0.0, -6.4], "GROUND", ["safe-line"]),
@@ -312,13 +319,29 @@ export const LINKS: RouteLink[] = [
   link("B_PENTICE", "B_SHED_E", "CLIMB", "SAFE", "CLIMB", { ignore: ["MARKET_SHED"] }),
 
   // -- C --------------------------------------------------------------------
-  // The Shambles does not connect to the Town House square directly. Dock
-  // Square is between them, so the SAFE line through the market threads the
-  // stall gap into the square.
-  link("B_EXIT", "B_GAP_N", "RUN", "SAFE", "RUN", {
-    note: "Back west to the stall gap, and the slot into the square.",
+  // The guided line goes straight from the Shambles to the foot of the Town
+  // House scaffold: the market's east end and the building's north-west corner
+  // are the same few metres of open square ground, so a sensible first mission
+  // heads for the way up over the building blocking the road rather than walking
+  // a lap of Dock Square and the south lane first. The lane loop existed only to
+  // manufacture a westward run-up for the scaffold-to-gallery leap; the solver
+  // fix (EDGE_BRAKE now defers to the exact ballistic planner) makes that leap
+  // commit straight off the short direct approach, so the loop is no longer
+  // load-bearing. Dock Square stays authored and reachable off the guided line.
+  link("B_EXIT", "C_SQUARE_N", "RUN", "SAFE", "RUN", {
+    note: "Out of the Shambles into the Town House square, heading for the scaffold at its north-west corner.",
   }),
+  link("C_SQUARE_N", "C_SCAFF_FOOT", "RUN", "SAFE", "RUN", {
+    note: "To the foot of the mason's scaffold, the way up over the building blocking the road.",
+  }),
+  // Kept so a player who deviates south into Dock Square and comes back up its
+  // north-west corner still has a way onto the scaffold.
   link("C_SQUARE_NW", "C_SCAFF_FOOT", "RUN", "SAFE", "RUN"),
+  // Kept so Dock Square remains reachable off the guided line: the market crowd
+  // and its blend beat survive as an optional space, not deleted.
+  link("B_EXIT", "B_GAP_N", "RUN", "SAFE", "RUN", {
+    note: "West to the stall gap and the slot into Dock Square — off the guided line now, but the crowd crossing is still there for a player who takes it.",
+  }),
 
   // -- C: the south lane ----------------------------------------------------
   link("B2_EXIT", "C_LANE_S_W", "RUN", "SAFE", "RUN", {

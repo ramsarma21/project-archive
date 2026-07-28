@@ -406,14 +406,36 @@ function sweepMaxJump(
   return { maxJump, allWalked };
 }
 
-test("the SAFE distance moves continuously across Dock Square, never jumping branches", () => {
-  // ~10cm steps across the west crossing — the exact region the anchor flipped
-  // on. A jump of a few metres is an anchor advancing one node along the route;
-  // ~97m is the branch swap this defends against.
+test("the SAFE distance never swings upward along the guided Town House approach", () => {
+  // Dock Square's west crossing once flipped the plate ~97m between a short
+  // branch and a hundred-metre detour — a SWING, up as much as down. The guided
+  // line no longer runs through the square; it goes straight from the Shambles
+  // exit to the foot of the Town House scaffold. Sweeping that approach, the plate
+  // must never spike UPWARD between adjacent samples (the branch-flip signature).
+  // It DOES step down in a discrete jump as the committed anchor advances a whole
+  // node's worth of route at the tight scaffold cluster — that is forward
+  // progress, not a swing, and the real run (fed node-to-node from the spawn with
+  // forward history) only ever drifts up by a few metres of anchor lag, which
+  // this bounds. (A player who deviates south onto Dock Square recovers via the
+  // deviation test below.)
   const safe = createWayfinder(level, { guidanceLines: ["SAFE"] });
-  const { maxJump, allWalked } = sweepMaxJump(safe, "C_SQUARE_W", "C_SQUARE_NW", level.postNode, 80);
-  assert.ok(allWalked, "the distance stayed a walked figure across the square");
-  assert.ok(maxJump < 5, `the range jumped ${maxJump.toFixed(1)}m between adjacent 10cm samples`);
+  const a = at("B_EXIT");
+  const b = at("C_SCAFF_FOOT");
+  const steps = 80;
+  let prev: number | null = null;
+  let maxUp = 0;
+  let allWalked = true;
+  for (let s = 0; s <= steps; s += 1) {
+    const t = s / steps;
+    const from = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
+    safe.advanceWaypoint(from, level.postNode);
+    const range = safe.rangeTo(from, level.postNode);
+    if (!range.viaRoute) allWalked = false;
+    if (prev !== null) maxUp = Math.max(maxUp, range.metres - prev);
+    prev = range.metres;
+  }
+  assert.ok(allWalked, "the distance stayed a walked figure along the approach");
+  assert.ok(maxUp < 5, `the range swung up ${maxUp.toFixed(1)}m between adjacent samples`);
 });
 
 // ---- the Shambles: guidance a body can actually execute --------------------
@@ -567,11 +589,13 @@ test("the Shambles mark never sends a first run east through a solid stall", () 
   );
 });
 
-test("the Shambles mark reaches the gap once the body has walked the SAFE route", () => {
+test("the Shambles mark reaches the Town House approach once the body has walked the SAFE route", () => {
   // The fix is route-contiguity, not a blacklist. Walk the body along the actual
   // SAFE line — up the awning, across the canopies, down to the street and east
   // to the exit — and the mark it refused from the stall front is offered once
-  // the body has genuinely arrived at the east exit and gap approach.
+  // the body has genuinely arrived at the east exit. The guided line no longer
+  // doubles back into Dock Square from here; it heads straight for the foot of
+  // the Town House scaffold, so that is where the mark advances to.
   const safe = createWayfinder(level, { guidanceLines: ["SAFE"] });
   const route = [
     "B_STREET_MID",
@@ -583,13 +607,13 @@ test("the Shambles mark reaches the gap once the body has walked the SAFE route"
     "B_CRATES_B",
     "B_STREET_E",
     "B_EXIT",
-    "B_GAP_N",
+    "C_SQUARE_N",
   ] as const;
   const arrived = walkMarkLive(safe, route, level.postNode);
-  assert.ok(arrived, "a mark is committed at the gap approach");
+  assert.ok(arrived, "a mark is committed at the Town House approach");
   assert.ok(
-    SHAMBLES_PAST_GAP.has(arrived!.nodeId),
-    `at the east gap the mark should advance to the square, not stay behind: ${arrived!.nodeId}`,
+    ["C_SQUARE_N", "C_SCAFF_FOOT", "C_SCAFF_1"].includes(arrived!.nodeId),
+    `at the east exit the mark should advance to the Town House scaffold approach, not stay behind: ${arrived!.nodeId}`,
   );
 });
 

@@ -52,22 +52,24 @@ test("the tower vista is authored and reachable, but the guided line no longer d
   );
 });
 
-test("the guided line covers its sections in order, and the off-line ropewalk stays reachable", () => {
-  // The guided line runs A -> Shambles -> Dock Square -> the Town House -> the
-  // roofline -> the steeple -> the elm -> the yard. The ropewalk (D2) sits SOUTH
-  // of the roofline: the line now leaps straight from the south row onto the
-  // Hollis meeting-house roof (D_SROOF_E -> D_MEETING_W -> D_MEETING_ROOF) rather
-  // than dropping into the shed and climbing its far face back up, so D2 is off
-  // the guided line. It is kept as authored, reachable content — a dark-interior
-  // alternate a deviating player can still take — not deleted, and the relocated
-  // STAMP_SCOPE bill-sticker stop now sits on the meeting-house leads the line
-  // crosses, so the mandatory beat did not leave the guided route with the shed.
+test("the guided line is the direct west-east march, and the off-line spaces stay reachable", () => {
+  // M1 is now a single direct line: A -> the Shambles -> up and over the Town
+  // House -> the roofline -> the steeple leap -> the elm -> the yard. The two
+  // south-of-the-street spaces are OFF the guided line: Dock Square (B2), because
+  // the line goes straight from the Shambles to the foot of the Town House
+  // scaffold rather than looping through the market and the south lane; and the
+  // ropewalk (D2), because the line leaps straight from the south row onto the
+  // Hollis meeting-house roof rather than dropping into the shed. Both are kept
+  // as authored, reachable content — a crowd crossing and a dark interior a
+  // deviating player can still take — not deleted. Their mandatory beats did not
+  // leave the guided route: the Old Brick reflex beat is on the Town House
+  // gallery the line climbs, and the relocated STAMP_SCOPE bill-sticker sits on
+  // the meeting-house leads the line crosses.
   const safe = viaPost(["SAFE"])!;
   const order = safe.nodes.map((id) => nodeById.get(id)!.section);
   const guided = [
     "A_LEADS",
     "B_SHAMBLES",
-    "B2_THRONG",
     "C_ASCENT",
     "D_ROOFLINE",
     "E_LEAP",
@@ -81,12 +83,18 @@ test("the guided line covers its sections in order, and the off-line ropewalk st
     assert.ok(idx > cursor, `${section} is out of order on the guided line`);
     cursor = idx;
   }
-  // The off-line ropewalk is not stranded: it has a way in and a way out.
+  // The guided line does NOT thread the two off-line spaces.
+  for (const off of ["B2_THRONG", "D2_ROPEWALK"]) {
+    assert.ok(!order.includes(off), `${off} should be off the guided line, but the route threads it`);
+  }
+  // Neither off-line space is stranded: each has a way in and a way out.
   const inbound = new Set(level.links.map((l) => l.to));
   const outbound = new Set(level.links.map((l) => l.from));
-  const d2 = level.nodes.filter((n) => n.section === "D2_ROPEWALK").map((n) => n.id);
-  assert.ok(d2.some((id) => inbound.has(id)), "nothing leads into the ropewalk");
-  assert.ok(d2.some((id) => outbound.has(id)), "there is no way out of the ropewalk");
+  for (const off of ["B2_THRONG", "D2_ROPEWALK"]) {
+    const nodes = level.nodes.filter((n) => n.section === off).map((n) => n.id);
+    assert.ok(nodes.some((id) => inbound.has(id)), `nothing leads into ${off}`);
+    assert.ok(nodes.some((id) => outbound.has(id)), `there is no way out of ${off}`);
+  }
 });
 
 test("every link on the route is a SAFE link", () => {
