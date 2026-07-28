@@ -19,9 +19,13 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   ignore list.
 - **[ ]** No transition drives the body through **drawn** geometry. Distinct from the above and
   not yet checkable — the mover reads authored hulls and has never touched a GLB.
-- **[~]** A climb happens only where a visible means exists. Refusal is on and validated
-  against ladders and grips; **the ladders are still non-colliding, so the body passes through
-  them.**
+- **[x]** A climb happens only where a visible means exists, and the means is **solid** — the
+  body can no longer pass through a ladder (`381860f`). It stands a body-radius beside the climb
+  foot so no invisible wall appears where the player must stand; the mover collides with it while
+  the reader and arming predicate see through it. Route completes, 0 m penetration.
+  - **Remaining, honestly:** because the ladder stands beside the foot, the body climbs
+    *alongside* the rungs rather than on them. True rung contact needs the climb volume moved
+    onto the ladder line, which re-opens the invisible-wall problem it was placed beside to avoid.
 - **[ ]** A fall has a consequence proportional to its height. An 11 m drop onto cobbles
   currently ends in a harmless stand; the edge brake gates a run-off above 5.5 m but never a
   jump.
