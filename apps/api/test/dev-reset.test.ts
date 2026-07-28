@@ -23,7 +23,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import Fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
-import { LEARNING_MODULE_SECONDS } from "@pa/contracts";
+import {
+  LEARNING_MODULE_SECONDS,
+  type CampaignProgression,
+  type ChapterProgression,
+} from "@pa/contracts";
 
 process.env.CSRF_SECRET = "test-secret-for-dev-reset";
 
@@ -355,4 +359,178 @@ test("the happy path resets and returns the resulting progression to confirm", a
   } finally {
     await app.close();
   }
+});
+
+// ---------------------------------------------------------------------------
+// The double's snapshot scoping — pinned directly against the leak
+// ---------------------------------------------------------------------------
+//
+// The dev-reset tests above lean on MemoryStore being multi-profile safe. That
+// safety is only as good as `snapshot()`'s scoping, and four collections — codex,
+// the PvP loadout, chapter abilities and concept mastery — once returned EVERY
+// profile's and EVERY chapter's rows regardless of the argument. Postgres scopes
+// codex and the PvP loadout by profile, and chapter abilities and concept mastery
+// by profile AND the active chapter; these tests pin the double to match, so a
+// future two-profile test cannot pass on data it never wrote.
+
+const SNAP_ACTIVE = "CH.ONE";
+const SNAP_OTHER = "CH.TWO";
+const SNAP_AT = "2026-07-28T00:00:00.000Z";
+
+function snapCampaign(profileId: string): CampaignProgression {
+  return {
+    profileId,
+    modelVersion: 1,
+    rank: 1,
+    cumulativeLevels: 0,
+    activeChapterId: SNAP_ACTIVE,
+    revision: 0,
+    createdAt: SNAP_AT,
+    updatedAt: SNAP_AT,
+  };
+}
+
+function snapChapter(profileId: string, chapterId: string): ChapterProgression {
+  return {
+    profileId,
+    chapterId,
+    level: 0,
+    xp: 0,
+    levelsAtChapterStart: 0,
+    status: "ACTIVE",
+    assessmentPassedAt: null,
+    startedAt: SNAP_AT,
+    completedAt: null,
+    updatedAt: SNAP_AT,
+  };
+}
+
+// Seed one profile with rows in BOTH the active chapter and another chapter, so
+// snapshot must discriminate on chapter as well as on profile.
+async function seedForSnapshot(store: Store, profileId: string, tag: string): Promise<void> {
+  await store.transact(profileId, async (tx) => {
+    await tx.putCampaign(snapCampaign(profileId));
+    await tx.putChapter(snapChapter(profileId, SNAP_ACTIVE));
+    await tx.putChapter(snapChapter(profileId, SNAP_OTHER));
+
+    await tx.learnCodexCard({
+      profileId,
+      cardId: `CARD.${tag}`,
+      conceptId: `C.${tag}`,
+      learnedChapterId: SNAP_ACTIVE,
+      learnedAt: SNAP_AT,
+    });
+
+    await tx.unlockChapterAbility({
+      profileId,
+      chapterId: SNAP_ACTIVE,
+      abilityId: `AB.${tag}.ACTIVE`,
+      unlockedAtLevel: 1,
+      unlockedAt: SNAP_AT,
+    });
+    await tx.unlockChapterAbility({
+      profileId,
+      chapterId: SNAP_OTHER,
+      abilityId: `AB.${tag}.OTHER`,
+      unlockedAtLevel: 1,
+      unlockedAt: SNAP_AT,
+    });
+
+    await tx.unlockPvpAbility({
+      profileId,
+      abilityId: `PVP.${tag}`,
+      firstUnlockedChapterId: SNAP_ACTIVE,
+      firstUnlockedAtLevel: 1,
+      firstUnlockedAt: SNAP_AT,
+    });
+
+    const mastery = (chapterId: string, conceptId: string) => ({
+      profileId,
+      chapterId,
+      conceptId,
+      itemsServed: 6,
+      itemsCorrect: 6,
+      firstAttemptServed: 6,
+      firstAttemptCorrect: 6,
+      masteredAt: SNAP_AT,
+      updatedAt: SNAP_AT,
+    });
+    await tx.putConceptMastery(mastery(SNAP_ACTIVE, `C.${tag}.ACTIVE`), {
+      masteredOnAttempt: 1,
+      masteredWithRecycledItems: false,
+    });
+    await tx.putConceptMastery(mastery(SNAP_OTHER, `C.${tag}.OTHER`), {
+      masteredOnAttempt: 1,
+      masteredWithRecycledItems: false,
+    });
+  });
+}
+
+test("SCOPING: snapshot scopes codex and the PvP loadout by profile — never another profile's", async () => {
+  const store = new MemoryStore();
+  await seedForSnapshot(store, ALICE, "A");
+  await seedForSnapshot(store, BOB, "B");
+
+  const snap = await store.snapshot(ALICE);
+  assert.ok(snap, "Alice has a snapshot");
+  if (!snap) throw new Error("no snapshot");
+
+  assert.deepEqual(
+    snap.codex.map((c) => c.cardId),
+    ["CARD.A"],
+    "codex is Alice's alone; Bob's card must not leak in",
+  );
+  assert.deepEqual(
+    snap.pvpAbilities.map((p) => p.abilityId),
+    ["PVP.A"],
+    "the PvP loadout is Alice's alone",
+  );
+  for (const card of snap.codex) assert.equal(card.profileId, ALICE);
+  for (const ability of snap.pvpAbilities) assert.equal(ability.profileId, ALICE);
+});
+
+test("SCOPING: snapshot scopes chapter abilities and concept mastery by profile AND active chapter", async () => {
+  const store = new MemoryStore();
+  await seedForSnapshot(store, ALICE, "A");
+  await seedForSnapshot(store, BOB, "B");
+
+  const snap = await store.snapshot(ALICE);
+  assert.ok(snap, "Alice has a snapshot");
+  if (!snap) throw new Error("no snapshot");
+
+  // Only Alice's rows, and only for the active chapter — the OTHER chapter's
+  // rows, though Alice's own, are not part of the active snapshot.
+  assert.deepEqual(
+    snap.chapterAbilities.map((a) => a.abilityId),
+    ["AB.A.ACTIVE"],
+    "chapter abilities exclude the other chapter and the other profile",
+  );
+  assert.deepEqual(
+    snap.conceptMastery.map((m) => m.conceptId),
+    ["C.A.ACTIVE"],
+    "concept mastery excludes the other chapter and the other profile",
+  );
+  for (const ability of snap.chapterAbilities) {
+    assert.equal(ability.profileId, ALICE);
+    assert.equal(ability.chapterId, SNAP_ACTIVE);
+  }
+  for (const mastery of snap.conceptMastery) {
+    assert.equal(mastery.profileId, ALICE);
+    assert.equal(mastery.chapterId, SNAP_ACTIVE);
+  }
+});
+
+test("SCOPING: each profile's snapshot is symmetric — Bob sees only Bob", async () => {
+  const store = new MemoryStore();
+  await seedForSnapshot(store, ALICE, "A");
+  await seedForSnapshot(store, BOB, "B");
+
+  const snap = await store.snapshot(BOB);
+  assert.ok(snap, "Bob has a snapshot");
+  if (!snap) throw new Error("no snapshot");
+
+  assert.deepEqual(snap.codex.map((c) => c.cardId), ["CARD.B"]);
+  assert.deepEqual(snap.pvpAbilities.map((p) => p.abilityId), ["PVP.B"]);
+  assert.deepEqual(snap.chapterAbilities.map((a) => a.abilityId), ["AB.B.ACTIVE"]);
+  assert.deepEqual(snap.conceptMastery.map((m) => m.conceptId), ["C.B.ACTIVE"]);
 });
