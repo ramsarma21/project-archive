@@ -68,10 +68,15 @@ export function hasCharacterClips(glbKey: string): boolean {
  * `leapOfFaith` did stop being frozen 2.39m downrange, which had been detaching
  * the body from the capsule for the whole descent.
  *
- * `dash` is in the parkour contract but is NOT baked here, and deliberately so:
- * Mixamo carries no dash performance. Its nearest neighbours are all rolls,
- * which is the one thing the rig already has, so `dash` takes its authored
- * `run` fallback until a non-Mixamo source is found.
+ * `dash` is now baked here (appended 2026-07-27). Mixamo files no card under
+ * "dash" — the whole query is cyclic runs, strafes and falls — so the search
+ * was for the launch the verb actually asks for, "an explosive directed push
+ * off one foot, low and forward, recovering into a run". Mixamo's "Idle To
+ * Sprint" (Start Sprint From Action Idle) is that performance: a low
+ * action-ready load driving off the plant into a sprint, a committed burst
+ * rather than a faster stride. It was appended with append_clips.py and baked
+ * root-neutral in the horizontal plane (the dash's displacement is code-driven)
+ * while keeping the ~13cm vertical drive that reads as the push.
  *
  * This is the rig's own manifest and the authority on what it carries. It lives
  * here rather than in a chapter package because the chapter that used to own it
@@ -97,6 +102,9 @@ export const PLAYER_CLIPS = [
   // long the fall lasts, leapOfFaithLand receives it. Only the middle one is in
   // parkour/clips.ts today; the dive is additive and safe to ignore until wired.
   "leapOfFaithDive", "leapOfFaith", "leapOfFaithLand", "throwLight",
+  // Directed movement burst: an explosive push off one foot, low and forward,
+  // recovering into a run. Mixamo "Idle To Sprint", appended 2026-07-27.
+  "dash",
   // Stealth.
   "crouchIdle", "crouchWalk", "crouchToStand", "blendWalk",
   // Handbill precision beat: knock is the nailing strike, reach the placement.
@@ -122,6 +130,9 @@ export const PLAYER_ACTION_CLIPS: ReadonlySet<string> = new Set([
   // must loop for an arbitrary fall duration.
   "mantle", "slide", "climbOver", "landRun", "hangDrop", "leapOfFaithDive",
   "leapOfFaithLand", "throwLight",
+  // The dash is a one-shot burst: it fires on a cooldown, plays out its launch,
+  // and clamps into the run the motion layer is already driving.
+  "dash",
 ]);
 
 /**
@@ -161,6 +172,9 @@ export const CLIP_AUTHORED_MS: Readonly<Record<string, number>> = {
   dodge: 1200,
   dropRoll: 1200,
   draw: 7133,
+  // Mixamo "Idle To Sprint", 25 frames at 30fps, measured off the baked rig by
+  // measure_clip_rates.mjs.
+  dash: 833,
 };
 
 /**
@@ -195,6 +209,11 @@ export const CLIP_CONTENT_MS: Readonly<Record<string, number>> = {
   leapOfFaithDive: 696,
   throwLight: 1667,
   dodge: 1163,
+  // The whole launch is a performance — no settle lead, no held tail — so the
+  // content is nearly the full 833ms file (measure_clip_rates.mjs: lead 33ms,
+  // tail 0). Fitted to the 320ms dash window this rides just under 2.5x, below
+  // the MAX_VERB_TIME_SCALE ceiling.
+  dash: 796,
 };
 
 /**
@@ -407,12 +426,12 @@ export const OFFICER_CLIP_SPEC: CharacterClipSpec = {
 export const PLAYER_CLIP_SPEC: CharacterClipSpec = {
   fallback: "idle",
   expected: PLAYER_CLIPS,
-  // The two clips this rig does not carry are `dash` and `stepUp`, and the
-  // contract answers both with `run`. Without this line they answered `idle`
-  // instead: a burst and a curb absorb both dropped the body into a standing
-  // pose while it was still crossing ground at speed. The manifest above has
-  // claimed "dash takes its authored run fallback" since the rebake; this is
-  // the wiring that makes the claim true.
+  // `dash` is now baked (see PLAYER_CLIPS), so the one clip this rig still does
+  // not carry is `stepUp`, which the contract answers with `run`. Without this
+  // line it answered `idle` instead: a curb absorb dropped the body into a
+  // standing pose while it was still crossing ground at speed. The fallbacks
+  // also still name dash -> run, harmlessly: chooseAvailableClip returns the
+  // real dash before it ever consults the substitution table.
   fallbacks: PARKOUR_CLIP_FALLBACKS,
 };
 

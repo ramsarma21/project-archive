@@ -87,10 +87,18 @@ for (const [src, dst] of pairs) {
 // Never copy characters-opt here: those files are optimized meshes with zero
 // animation clips and would silently replace the working self-contained cast.
 const cast = {
+  // v11 (2026-07-27): a real `dash` clip appended via append_clips.py — Mixamo's
+  // "Idle To Sprint" (Start Sprint From Action Idle), the explosive launch the
+  // dash verb wanted, baked root-neutral (horizontal frozen, 13.3cm vertical
+  // drive kept) onto the v10 rig. The other 37 clips are untouched. Built from
+  // the deployed playerboy-rigged.glb because the skinned FBX is not in the repo
+  // (see bake_native_mixamo_character.py header), so the v10 native source is a
+  // no-op here; this v11 key is what actually publishes.
+  //
   // v10 (2026-07-26): dropRoll given its own "Falling To Roll" instead of
   // aliasing dodge, and leapOfFaith un-pinned from 2.39m downrange. 35 of 37
   // clips are bit-identical to v9.
-  "playerboy-v10-native.glb": "playerboy-rigged.glb",
+  "playerboy-v11-native.glb": "playerboy-rigged.glb",
   "abigail-production.glb": "abigail-rigged.glb",
   // v2 (2026-07-26): PNG albedo -> JPEG q95. See the texture note below.
   "thomas-v2-native.glb": "thomas-rigged.glb",
