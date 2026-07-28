@@ -42,9 +42,10 @@ import type { DuelDescriptor } from "./DuelScreen.js";
 // cc3de7d, which drew the mission's own yard around a fight sitting at the level's
 // coordinates: the bug it fixed (a fight rendered over empty ground ninety metres
 // from the drawn arena) is fixed the other way here, by moving the fight to the
-// arena instead of the arena to the fight. The brief's `world`/`placement` are the
-// mission's carved yard and are now unused by the duel; see the cost note in the
-// report the boss-fight ticket asks for.
+// arena instead of the arena to the fight. The brief used to carry a `world` and a
+// `placement` (the mission's carved yard) that this file never read; they have been
+// removed, because a field named `world` sitting next to a real arena reads as
+// load-bearing when it is not.
 //
 // The invariant this move must not lose — THE COVER YOU SEE IS THE COVER THAT STOPS
 // A BALL — is carried by the arena itself: `yardArena()` derives every blocker and
@@ -60,17 +61,17 @@ import type { DuelDescriptor } from "./DuelScreen.js";
 //
 // FRICTION FOUND, recorded rather than papered over:
 //
-//   * `brief.rounds` is read by nothing here and cannot be. A duel runs until a
-//     health bar empties, so the core takes a round CEILING and not a length, and
-//     `DuelRuntimeInput` deliberately omits both. The mission's `ARENA.rounds: 6`
-//     is a number the container carries and the duel cannot honour.
+//   * A duel runs until a health bar empties, so the core takes a round CEILING and
+//     not a length, and `DuelRuntimeInput` deliberately omits both. The brief used
+//     to carry `rounds` (the mission's `ARENA.rounds: 6`); it could not travel to
+//     the core and nothing here read it, so it was removed.
 //   * The brief has no field for the player's abilities. M1 is Level 0 and holds
 //     none, so nothing is lost today, but a later mission's loadout has nowhere to
 //     travel and `CreateDuelInput.playerLoadout` is where it would land.
-//   * `brief.conceptIds` is the mission's authored concept order and is NOT what
-//     the rounds actually asked, so the round reports below take their concepts
-//     from `brief.questions` instead — the only list that pairs an item with a
-//     concept.
+//   * The round reports below take each round's concept from `brief.questions` —
+//     the only list that pairs an item with a concept. The brief used to also carry
+//     a `conceptIds` array (the mission's authored concept order), but it was NOT
+//     what the rounds actually asked and nothing read it, so it was removed.
 //   * The brief carries no dawn state. It no longer needs to: the duel opens in
 //     the shared arena, which lights itself (ArenaView's late-afternoon key), so
 //     there is no traversal sky to carry across the transition.
@@ -129,10 +130,10 @@ export function missionDuelDescriptor(
 ): DuelDescriptor {
   // Entering the duel is a transition INTO the shared arena. The world and the
   // placement come from `yardArena()` — the origin-built rope-walk yard the
-  // stand-alone descriptor and PvP already fight in — and NOT from the brief's
-  // carved slice of the mission level. Destructured to the `world`/`placement`
-  // pair the descriptor's narrowed `arena` takes, so no `ArenaSpec` is carried
-  // past a screen that never reads it.
+  // stand-alone descriptor and PvP already fight in. The brief carries neither (it
+  // once did, and this file never read them, so they were removed). Destructured to
+  // the `world`/`placement` pair the descriptor's narrowed `arena` takes, so no
+  // `ArenaSpec` is carried past a screen that never reads it.
   const { world, placement } = yardArena();
   return {
     duelId: brief.duelId,
