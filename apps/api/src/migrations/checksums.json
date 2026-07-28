@@ -9,5 +9,6 @@
   "008_reporting_audit.sql": "67c763f34a3a36e0ee2fb89c82a7ef3ca81fa558de55f65e3d786b7dbc453962",
   "009_drop_retired_tables.sql": "90ca7cf55fcbf74dc8be96d5a46c21c104e8b0974c9f90541e924c12a6a1b72f",
   "010_duel_verdicts.sql": "46def945b55ed922ea7541a2e9a8536963f296a6b1f10476ec4008cf6f8a5d07",
-  "011_duel_evidence.sql": "1b80188b9d4c4aa715af936919485e38b5c54f5432078c9933fc0a7d548c166e"
+  "011_duel_evidence.sql": "1b80188b9d4c4aa715af936919485e38b5c54f5432078c9933fc0a7d548c166e",
+  "012_concept_retrieval.sql": "026e766857aca38129af7a51a0e70f4c4085b9847dac6177aedad2b84429a863"
 }
