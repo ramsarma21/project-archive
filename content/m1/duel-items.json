@@ -337,26 +337,26 @@
       "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
       "codexCardIds": ["BOS.MD01.CARD.STAMP_DATE.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "From what date must the stamp be paid?",
-      "referenceAnswer": "The first of November — 1 November 1765.",
+      "question": "Parliament passed this Act back in the spring, so the law is already made. Then why is this town still free to stand at my board and argue about it tonight, instead of already paying the stamp? What has not happened yet?",
+      "referenceAnswer": "Because the stamp is not owed yet. The Act became law in the spring, but the duty does not begin until the first of November, so tonight there is still time to fight it before it takes hold.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.FROM_WHEN.v1",
-        "requiredCore": "1 November, in any format. The month alone is enough.",
-        "line": "This is the one item in the bank where a bare fact is the whole answer and where date precision is the point, so the policy's ignore-unasked-dates rule does not apply to the month. The author's decision is that the month alone earns it: the taught proposition is 'from 1 November', there is no competing November date anywhere in the module, and losing a gunfight over one digit is exactly the failure this bank is written to avoid. The year is not required, and a wrong year is not penalised, because the question asks for a date and not a year.",
+        "requiredCore": "The tax has not taken effect yet: the stamp is not owed until later this year (the first of November), so there is still time to resist it before it begins. A law already passed has not yet begun to bite.",
+        "line": "The rewrite of this item. It was a bare date-recall question, which the owner's new direction retired as trivia; it now asks the student to reason from a fact they were taught (the duty begins 1 November) to why the mission is happening at all tonight. The answer has to say the duty has not started yet, which is why the argument is still live. Any wording that the stamp is not owed until November, that the tax has not taken effect, or that there is still time before it begins earns it, and the exact date need not be named because 'it hasnt started yet' already locates the duty in the future. What does not earn it is a bare date with no claim attached, since the question asks what has not happened rather than when the duty starts, and a grievance about the tax that never touches the timing. The date fact is still tested, but as the ground of a causal claim rather than as a string to recall.",
         "acceptExamples": [
-          { "text": "november 1", "why": "The answer." },
-          { "text": "nov 1st", "why": "Same." },
-          { "text": "the first of november 1765", "why": "Same, complete." },
-          { "text": "november", "why": "Month alone. Accepted on purpose; see `line`." },
-          { "text": "november 1 1766", "why": "Right date, wrong year. The year is not what was asked." }
+          { "text": "the tax hasnt even started yet, it doesnt kick in till november so we still got time", "why": "The window, with the date and the stakes." },
+          { "text": "the stamp isnt owed until the first of november, so right now theres still a chance to stop it", "why": "Not-yet-in-force plus the date." },
+          { "text": "it doesnt begin yet. the law passed but you dont have to pay until later this year", "why": "The not-yet idea without naming the month, which is enough." },
+          { "text": "nobody has to buy a stamp until november, so tonight its still worth fighting", "why": "The window and the stakes, own words." }
         ],
         "rejectExamples": [
-          { "text": "1765", "why": "A year is not a date, and 1765 is when the Act passed rather than when the stamp is due." },
-          { "text": "march 22", "why": "The day the Act passed. A real and plausible confusion, and not the answer." },
-          { "text": "right away", "why": "Wrong: the Act is dated August and the duty begins in November, which is the whole reason this run happens tonight." },
-          { "text": "december 1", "why": "Wrong month." },
-          { "text": "when the ships bring the stamps", "why": "Invented." }
-        ]
+          { "text": "november 1", "why": "The bare date. It names when the duty starts and asserts nothing about what has not yet happened, which is what the question asks. This is the old recall answer, and naming a date is no longer the whole of this item." },
+          { "text": "because the tax is unfair and we never agreed to it", "why": "A representation grievance with no timing in it. It never says the duty has yet to begin." },
+          { "text": "it already started, were breaking the law by not paying it", "why": "Reverses the timing. The duty has not begun; that is the point." },
+          { "text": "the act passed back in march", "why": "A past date. It names when the law was made, not what has yet to happen, and the point is that the duty is still ahead." },
+          { "text": "because parliament is thousands of miles away in london", "why": "Distance, and nothing about the window before the tax bites." }
+        ],
+        "ignoreForThisItem": ["The exact date. 'November', 'the first of November', 'later this year' or simply 'not yet' all locate the duty in the future, and a wrong year is not penalised. What matters is that the tax has not yet begun."]
       }
     },
 
@@ -697,9 +697,9 @@
     "conflicts": [
       {
         "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1",
-        "thisBank": "Bare \"November\" is CORRECT.",
-        "thatBank": "`wrongIfSays` lists \"November with no day, since the question asks for a date\".",
-        "argument": "There is no competing November date anywhere in the module, the item still rejects five named wrong answers — March 22, August 14, December, a bare year, 'immediately' — and losing a gunfight over one digit is the false negative this whole bank is written against. The counter-argument is real: if month-only passes, the item measures very little. **This is the one place the two banks give opposite verdicts on the same answer and it wants an owner decision.** If the strict line wins, change the question to ask for the day rather than the date, so the student is told what precision is wanted."
+        "thisBank": "The question no longer asks for the date at all.",
+        "thatBank": "`wrongIfSays` listed \"November with no day, since the question asks for a date\".",
+        "argument": "This conflict is settled, and neither side of it won. The old item asked 'From what date must the stamp be paid?', and the two banks disagreed on whether a bare month was correct — a disagreement about grading strictness on a recall question. The owner's later direction ('more complex questions that require actual creative thinking rather than trivia') retired the recall question itself: FROM_WHEN now asks why the town is still free to argue tonight when the Act is already law, which the student can only answer by reasoning from the taught fact that the duty does not begin until 1 November. The date is still tested, as the ground of a causal claim rather than as a string to recall, so the month-versus-day question no longer arises. A bare date is now WRONG for a reason that has nothing to do with precision: it asserts nothing about what has not yet happened."
       },
       {
         "itemId": "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1",
@@ -734,9 +734,9 @@
       },
       "stampScope": {
         "sentence": "The Act taxes printed and legal paper, not ordinary goods, from 1 November.",
-        "passes": "3 of 6. DEED_OR_CLOTH, WHY_A_PRINTER and PRIVATE_LETTER all resist, because each demands a decision about a specific object the sentence says nothing about."
+        "passes": "2 of 6, down from 3 once FROM_WHEN was rewritten. DEED_OR_CLOTH, WHY_A_PRINTER and PRIVATE_LETTER already resisted, because each demands a decision about a specific object the sentence says nothing about. FROM_WHEN now resists too: it no longer asks for the date the sentence recites, but for why the duty has not yet taken effect, which the sentence does not address. Only NAME_TWO and CORRECT_THE_APPRENTICE still fall to it."
       },
-      "netEffect": "Three memorised sentences carry roughly 14 of 18 items — about five rounds in six at the full fourteen balls, from a player who copied them from a friend and has demonstrated nothing. With the round count open this compounds: the advantage is no longer capped at six rounds' worth, it runs for the length of the match.",
+      "netEffect": "Three memorised sentences carry roughly 13 of 18 items (14 before FROM_WHEN was rewritten out of the stamp sentence's reach) — the better part of six rounds at the full fourteen balls, from a player who copied them from a friend and has demonstrated nothing. With the round count open this compounds: the advantage is no longer capped at six rounds' worth, it runs for the length of the match.",
       "whatItIsNot": "It is not a rubric defect that could be fixed by tightening a line. Every one of those rubrics is correctly generous: a student who can write that postwar sentence unprompted does hold the concept, and refusing them would be the false negative this whole bank is written against. Tightening here would trade a real exploit for a toxic one."
     },
 
@@ -962,7 +962,7 @@
     ],
 
     "whatIWouldNotChange": [
-      "The bare-'November' acceptance on FROM_WHEN. Under adversarial use the answer space is twelve months, so accepting the month adds no exploit a full date would not also allow — a player who is guessing gains nothing from the looser line.",
+      "The generosity that survives FROM_WHEN's rewrite. The item stopped being a date-recall question, but the new version still does not require the exact date: 'the tax hasnt started yet' locates the duty in the future and is the whole idea. Only a bare date with no claim attached is refused now, and only because it answers a different question than the one asked.",
       "The generosity in the postwar rubrics. It is the source of the universal-sentence exploit and it is still correct: the alternative denies a bullet to a student who understands the concept and says so in one sentence, which is the failure mode this bank exists to avoid.",
       "The distance rejection on SPEAKS_FOR_ALL. Adversarially it is the one rejection a player might argue with, and it is the one that most needs holding: crediting 'he has never been here' would credit the grievance without the principle."
     ]
@@ -993,9 +993,9 @@
     ],
 
     "shapeOfTheResult": {
-      "decisionShaped": 18,
-      "recallShaped": 16,
-      "why": "The exploit is that one memorised sentence per concept satisfies items whose required core is a general statement of the concept. Just over half the expanded pool now asks the player to decide something specific instead, against a third of the original eighteen."
+      "decisionShaped": 19,
+      "recallShaped": 15,
+      "why": "The exploit is that one memorised sentence per concept satisfies items whose required core is a general statement of the concept. Just over half the expanded pool now asks the player to decide or reason about something specific instead, against seven of the original eighteen — up from six once FROM_WHEN's date recall became a question about why the duty has not yet taken effect."
     },
 
     "capstoneSharingGuard": {

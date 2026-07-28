@@ -75,30 +75,40 @@ export const HAND_LABELLED_CASES: readonly EvalCase[] = [
   {
     itemId: `${POSTWAR}.WHAT_IT_LEFT.v1`,
     answer: "cuz they spent all there money on the war and now they in dept",
-    expect: "CORRECT",
-    category: "UNUSUAL_PHRASING",
-    why: "'dept' for debt, 'there' for their. The idea is unambiguous.",
+    expect: "WRONG",
+    category: "NEAR_MISS",
+    // Relabelled. WHAT_IT_LEFT was promoted to a two-part core (the money
+    // problem AND Parliament's fix of raising it from the colonies), and the
+    // content's own labelled set marks money-only answers WRONG. This case still
+    // labelled it CORRECT from the single-core era, so the real grader read it as
+    // a false negative that was really a stale label. The debt half is here; the
+    // colonial-fix half is not.
+    why: "Only the money problem. WHAT_IT_LEFT's two-part core also needs Parliament's fix, that the colonies pay part of it.",
   },
   {
     itemId: `${POSTWAR}.WHAT_IT_LEFT.v1`,
     answer: "they were left owing a load of cash",
-    expect: "CORRECT",
-    category: "UNUSUAL_PHRASING",
-    why: "Register far from the reference, meaning identical.",
+    expect: "WRONG",
+    category: "NEAR_MISS",
+    why: "The debt half only; the two-part core also needs the colonial fix. Stale CORRECT label from before the promotion.",
   },
   {
     itemId: `${POSTWAR}.WHO_PAYS.v1`,
     answer: "us lot over here",
-    expect: "CORRECT",
-    category: "UNUSUAL_PHRASING",
-    why: "In-fiction first person. §4.9 authored 'to us' and 'the colonies over here'.",
+    expect: "WRONG",
+    category: "NEAR_MISS",
+    // Relabelled. WHO_PAYS was promoted to a two-part core (the payer AND what the
+    // money clears, the war debt), and the content's labelled set marks
+    // payer-only answers ("we do, over here", "the thirteen colonies") WRONG. The
+    // payer is here; what it clears is not.
+    why: "The payer alone. WHO_PAYS's two-part core also needs what the money clears, Britain's war debt.",
   },
   {
     itemId: `${POSTWAR}.WHO_PAYS.v1`,
     answer: "the 13 colonies",
-    expect: "CORRECT",
-    category: "UNUSUAL_PHRASING",
-    why: "A numeral and a phrase the module never uses, naming exactly the right payer.",
+    expect: "WRONG",
+    category: "NEAR_MISS",
+    why: "Names the payer and nothing it clears; the two-part core needs the war debt too. Stale CORRECT label.",
   },
   {
     itemId: `${POSTWAR}.WHICH_CAME_FIRST.v1`,
@@ -137,17 +147,17 @@ export const HAND_LABELLED_CASES: readonly EvalCase[] = [
   },
   {
     itemId: `${STAMP}.FROM_WHEN.v1`,
-    answer: "nov 1",
+    answer: "it aint even started yet, nobody pays till november",
     expect: "CORRECT",
     category: "UNUSUAL_PHRASING",
-    why: "Abbreviated month, no year. The date is unambiguous.",
+    why: "Dialect and no apostrophe; carries the not-yet-in-force window the rewritten item asks for.",
   },
   {
     itemId: `${STAMP}.FROM_WHEN.v1`,
-    answer: "novemeber 1st",
+    answer: "the law passed but the stamp isnt owed till later this year so we still got time",
     expect: "CORRECT",
     category: "UNUSUAL_PHRASING",
-    why: "Misspelled month. A spelling check is not a history grade.",
+    why: "The window without naming the month, in a student's own words.",
   },
   {
     itemId: `${STAMP}.WHY_A_PRINTER.v1`,
@@ -202,9 +212,14 @@ export const HAND_LABELLED_CASES: readonly EvalCase[] = [
   {
     itemId: `${REP}.NOT_THE_MONEY.v1`,
     answer: "its not the money its whos doing the taxing",
-    expect: "CORRECT",
-    category: "UNUSUAL_PHRASING",
-    why: "Both ideas with every apostrophe missing.",
+    expect: "WRONG",
+    category: "NEAR_MISS",
+    // Relabelled. NOT_THE_MONEY is two-part: move the objection off cost onto who
+    // laid the tax, AND give the town's standing (Boston elected none of them).
+    // This moves off cost but supplies no standing, and the content's own line
+    // rejects exactly that ("Moves off cost but gives no standing"). The old
+    // "both ideas" label predates the two-part promotion.
+    why: "Moves off cost but gives no standing; the two-part core also needs that Boston elected none of them.",
   },
   {
     itemId: `${REP}.FINISH_THE_CLAIM.v1`,
@@ -437,14 +452,16 @@ export const HAND_LABELLED_CASES: readonly EvalCase[] = [
   {
     itemId: `${POSTWAR}.WHAT_IT_LEFT.v1`,
     answer: "the war was really expensive",
-    expect: "CORRECT",
-    category: "UNUSUAL_PHRASING",
-    // Relabelled when the production bank was adopted. §4.9's draft put cost
-    // without an outstanding obligation below the line; the adopted core is
-    // "owing money, short of money, OR HAVING SPENT MORE THAN IT COULD AFFORD",
-    // and its accept list carries "the war cost way more than they had". The
-    // authority moved, so the label moved.
-    why: "Cost, which the adopted core admits explicitly. Was WRONG under §4.9's draft line.",
+    expect: "WRONG",
+    category: "NEAR_MISS",
+    // Relabelled again. The adoption pass moved this to CORRECT on the grounds
+    // that the adopted core "admits cost explicitly" — but it missed that
+    // WHAT_IT_LEFT is a two-part core (the money problem AND Parliament's fix of
+    // raising it from the colonies). Cost is the money-problem half only, so the
+    // shipped rubric and the content's labelled set both mark it WRONG, and the
+    // real grader agrees. This was a genuine false negative only against a stale
+    // label.
+    why: "The cost (money-problem) half only; WHAT_IT_LEFT's two-part core also needs Parliament's colonial fix.",
   },
   {
     itemId: `${POSTWAR}.CAME_FROM_NOWHERE.v1`,

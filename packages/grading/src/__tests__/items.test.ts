@@ -151,18 +151,23 @@ describe("the line every item draws", () => {
     assert.match(item?.ideas[0]?.text ?? "", /two distinct/i);
   });
 
-  it("makes a bare month earn the date item", () => {
-    // The owner's ruling, and the content's. The item exists to establish that a
-    // deadline was bearing down, not to test recall of a date string, and there is
-    // no competing November date anywhere in the module.
+  it("turns the date item into reasoning about the resistance window, not date recall", () => {
+    // Rewritten from "From what date must the stamp be paid?" — a bare recall
+    // question the owner's later direction retired as trivia — into one that asks
+    // why the town is still free to argue tonight when the Act is already law. The
+    // student can only answer by reasoning from the taught fact (the duty begins
+    // 1 November) that the tax has not yet taken effect. The date is still tested,
+    // as the ground of a causal claim rather than as a string to recall.
     const item = bank.get("BOS.MD01.DUEL.STAMP.FROM_WHEN.v1");
     assert.ok(item !== undefined);
-    assert.match(item.ideas[0]?.text ?? "", /month alone is enough/i);
-    const prompt = buildSystemPrompt(item);
-    assert.ok(
-      !/November with no day/i.test(prompt),
-      "the superseded strict line is still in the prompt",
+    assert.equal(item.ideas.length, 1, "still a single-core item");
+    assert.match(
+      item.ideas[0]?.text ?? "",
+      /not taken effect|not yet|still time|not owed until/i,
     );
+    assert.match(item.ask, /what has not happened yet|why is this town still/i);
+    // The bare-recall answer is no longer the whole item.
+    assert.doesNotMatch(item.ask, /from what date must the stamp be paid/i);
   });
 });
 
