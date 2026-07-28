@@ -1,5 +1,4 @@
 import type { ComponentType } from "react";
-import type { CollisionWorld, Vec3 } from "@pa/engine-world";
 
 // ---------------------------------------------------------------------------
 // The duel boundary.
@@ -26,14 +25,23 @@ import type { CollisionWorld, Vec3 } from "@pa/engine-world";
 
 export type DuelSideId = "A" | "B";
 
-/** Everything the duel view needs to construct the duel. Mirrors CreateDuelInput. */
+/**
+ * Everything the duel view needs to construct the duel. Mirrors CreateDuelInput.
+ *
+ * Narrowed to the four fields the consumer (apps/web/src/duel/missionBrief.ts)
+ * actually reads. It once carried `world`, `placement`, `rounds` and `conceptIds`
+ * too, but the duel is fought in the shared origin arena (`yardArena()`), not on a
+ * slice carved out of the mission level — so the world and placement were built
+ * every mission start and read by nothing, `rounds` cannot travel to a core that
+ * ends on health rather than a length, and the round reports take their concepts
+ * from `questions` (the only list that pairs an item with a concept). Those four
+ * were dead-but-plausible: a field named `world` sitting next to a real arena
+ * invites the next author to assume it is load-bearing. Removed.
+ */
 export interface MissionDuelBrief {
   readonly duelId: string;
   /** Projected from the attempt seed. The duel must not seed itself. */
   readonly seed: number;
-  readonly rounds: number;
-  /** The arena's collision world. The same representation as the floor's. */
-  readonly world: CollisionWorld;
   /**
    * @pa/duel `OpponentSource`, narrowed to the PvE case a mission can produce.
    * `profile` is a `BossProfile`; see the note above.
@@ -41,11 +49,6 @@ export interface MissionDuelBrief {
   readonly opponent: { readonly kind: "BOSS"; readonly profile: unknown };
   /** @pa/duel `DuelQuestionRef[]`, one per round. Opaque here. */
   readonly questions: readonly unknown[];
-  readonly placement: Readonly<
-    Record<DuelSideId, { readonly pos: Vec3; readonly yaw: number }>
-  >;
-  /** Concepts the six rounds cover, in authored order, for the result screen. */
-  readonly conceptIds: readonly string[];
 }
 
 /**

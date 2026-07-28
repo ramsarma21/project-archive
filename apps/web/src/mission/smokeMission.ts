@@ -106,15 +106,6 @@ function smokeDuel(seed: number): MissionDuelBrief {
   return {
     duelId: `smoke-duel-${seed >>> 0}`,
     seed,
-    rounds: 6,
-    world: {
-      blockers: [
-        wallFromRect("arena-cover-a", -2.4, 0, 0.9, 0.5, { topY: 1.2, landable: true }),
-        wallFromRect("arena-cover-b", 2.4, 2, 0.9, 0.5, { topY: 1.2, landable: true }),
-      ],
-      platforms: [platformFromRect("arena-floor", -9, 9, -9, 9, 0)],
-      bounds: { minX: -9, maxX: 9, minZ: -9, maxZ: 9 },
-    },
     // Placeholders. Shaped like @pa/duel's BossProfile so a view can read them,
     // and authored by nobody — a real mission supplies bossProfileForTier.
     opponent: {
@@ -142,11 +133,6 @@ function smokeDuel(seed: number): MissionDuelBrief {
       itemVersion: "v0",
       conceptId: "SMOKE.CONCEPT",
     })),
-    placement: {
-      A: { pos: { x: 0, y: 0, z: -4 }, yaw: 0 },
-      B: { pos: { x: 0, y: 0, z: 4 }, yaw: Math.PI },
-    },
-    conceptIds: ["SMOKE.CONCEPT"],
   };
 }
 

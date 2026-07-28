@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { M1_POST_OBJECTIVE_ID, beatSpecDefects } from "@pa/beat";
-import { PRECISION, PRECISION_BEAT_SECONDS } from "@pa/mission-m1";
+import { ARENA, PRECISION, PRECISION_BEAT_SECONDS } from "@pa/mission-m1";
 import { missionInstanceDefects } from "../src/mission/levelPort.js";
 import { missionDefinitionDefects } from "../src/mission/missionFormat.js";
 import {
@@ -252,7 +252,10 @@ test("the duel gets six questions, two per concept, and no repeats across attemp
   const seen = new Set<string>();
   for (const ordinal of [1, 2, 3]) {
     const brief = instance(4242, ordinal).duel;
-    assert.equal(brief.questions.length, brief.rounds);
+    // The brief no longer carries a `rounds` field (a duel ends on health, not a
+    // length, so it never travelled), but the bank is still the arena's authored
+    // round count — six — with two items per concept.
+    assert.equal(brief.questions.length, ARENA.rounds);
     const refs = brief.questions as ReadonlyArray<{
       itemId: string;
       conceptId: string;
@@ -273,18 +276,13 @@ test("the duel gets six questions, two per concept, and no repeats across attemp
   }
 });
 
-test("the duel arena is the yard the player dropped into", () => {
-  const brief = instance().duel;
-  assert.ok(brief.world.blockers.length >= 8, "the arena has its cover");
-  assert.ok(brief.world.platforms.length >= 1, "the arena has a floor");
-  for (const side of ["A", "B"] as const) {
-    const { pos } = brief.placement[side];
-    assert.ok(
-      pos.x > brief.world.bounds.minX && pos.x < brief.world.bounds.maxX,
-      `${side} spawns outside the arena`,
-    );
-  }
-});
+// The duel arena is no longer the yard the player dropped into: entering a duel
+// is a transition into the shared origin arena (`yardArena()`), and the brief no
+// longer carries a `world`/`placement` for a mission-carved slice at all. The test
+// that used to assert `brief.world`/`brief.placement` here was pinning exactly
+// that dead, unconsumed arena, so it was removed with the fields. The arena the
+// fight actually happens in is proven in apps/web/test/duelArena.test.ts and in
+// missionDuel.test.ts's "fought in the shared arena, at the origin".
 
 test("the chapter declares fourteen missions and builds one", () => {
   assert.deepEqual(bostonSlateDefects(), []);

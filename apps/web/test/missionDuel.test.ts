@@ -134,12 +134,10 @@ test("the descriptor carries the brief's scoring input unaltered", () => {
   assert.equal(descriptor.opponent, brief.opponent);
   assert.equal(descriptor.questionBank, brief.questions);
 
-  // WHERE the fight happens is NOT the brief's. It is the shared arena, so the
-  // descriptor's world and placement are the arena's, NOT the mission's carved
-  // slice. This is the reversal of cc3de7d — asserted explicitly so a future edit
-  // that quietly re-carves the mission's yard fails here.
-  assert.notEqual(descriptor.arena.world, brief.world);
-  assert.notEqual(descriptor.arena.placement, brief.placement);
+  // WHERE the fight happens is NOT the brief's. The brief no longer carries a
+  // world or a placement at all — the duel is fought in the shared arena — so the
+  // descriptor's arena is `yardArena()`'s, proven against its bounds in "the
+  // mission's duel is fought in the shared arena, at the origin" below.
 });
 
 test("the mission boss is the symmetric-complement officer, and a wrong answer arms HIM", () => {
@@ -224,8 +222,9 @@ test("the mission's duel is fought in the shared arena, at the origin", () => {
 
 test("the descriptor still cannot express a duel length, brief or not", () => {
   const brief = missionBrief();
-  // The brief carries `rounds: 6`. It must not come out the other side, because a
-  // duel ends on health and a round count would become "of 6" in a kicker.
+  // A duel ends on health, not a length, so no round count may come out the other
+  // side and become "of 6" in a kicker. The brief no longer even carries `rounds`
+  // (it could not travel to the core), and the descriptor must still not grow one.
   const descriptor = missionDuelDescriptor(brief, missionCast(M1_MISSION_ID)!) as unknown as Record<
     string,
     unknown
@@ -321,7 +320,15 @@ test("every reported round names the concept its item evidences", () => {
   const brief = missionBrief();
   const fought = fightDuel(brief, "WRONG");
   const report = missionDuelReport({ brief, ...fought });
-  const authored = new Set(brief.conceptIds);
+  // The authored concepts, taken from the only list that pairs an item with a
+  // concept — the question bank. The brief used to carry a separate `conceptIds`
+  // array, but the round reports never read it (they derive concepts from the
+  // items actually asked), so it was removed and this derives the same set here.
+  const authored = new Set(
+    (brief.questions as ReadonlyArray<{ conceptId: string }>).map(
+      (question) => question.conceptId,
+    ),
+  );
 
   for (const round of report.rounds) {
     assert.ok(round.conceptId.length > 0, `round ${round.round} has a concept`);
