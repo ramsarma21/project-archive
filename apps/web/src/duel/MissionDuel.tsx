@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import type { DuelEvent, DuelOutcome } from "@pa/duel";
 import type { MissionDuelViewProps } from "../mission/duelPort.js";
+import { ArenaView } from "./ArenaView.js";
 import { DuelScreen } from "./DuelScreen.js";
 import {
   missionCast,
@@ -77,6 +78,23 @@ export function MissionDuel(props: MissionDuelViewProps) {
     [brief, cast],
   );
 
+  // When the container passes a time of day, light the yard from it via the
+  // arena's own `ArenaView` through DuelStage's existing `Scenery` seam — the
+  // one built for "a mission whose arena is not the stand-alone yard". This
+  // draws the identical yard (ground, wall, dressing, default cover) in the
+  // mission's pre-dawn palette, so cutscene→duel is continuous. Absent, no
+  // Scenery is passed and the stand-alone daylight arena is unchanged.
+  const sky = props.sky;
+  const MissionArena = useMemo(
+    () =>
+      sky
+        ? function MissionArena({ reducedMotion }: { reducedMotion: boolean }) {
+            return <ArenaView sky={sky} reducedMotion={reducedMotion} />;
+          }
+        : undefined,
+    [sky],
+  );
+
   // Held so the report can read the core's own engagement clock at the moment the
   // duel resolves. `DuelScreen` hands the runtime over once.
   const runtime = useRef<DuelRuntime | null>(null);
@@ -127,6 +145,7 @@ export function MissionDuel(props: MissionDuelViewProps) {
     <DuelScreen
       descriptor={descriptor}
       reducedMotion={props.reducedMotion}
+      {...(MissionArena ? { Scenery: MissionArena } : {})}
       onRuntime={onRuntime}
       onResolved={resolve}
     />
