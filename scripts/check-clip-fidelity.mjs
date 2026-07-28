@@ -106,6 +106,7 @@ const flow = await imp("packages/engine-world/src/parkour/flow.ts");
 const motion = await imp("packages/engine-world/src/playerMotion.ts");
 const collision = await imp("packages/engine-world/src/collision.ts");
 const fieldSim = await imp("packages/engine-world/src/fieldSimulation.ts");
+const parkourIk = await imp("packages/engine-world/src/parkourIk.ts");
 const worldScale = await imp("./scripts/check-world-scale.mjs");
 
 const { PARKOUR_TUNING, AUTHORABLE_VERBS } = tuning;
@@ -237,7 +238,9 @@ async function loadRig(file) {
   for (const [group, names] of Object.entries(TRACKED)) {
     bones[group] = names.map((n) => boneNamed(root, n)).filter(Boolean);
   }
-  return { gltf, root, bones, naturalHeight, clips: gltf.animations };
+  // The exact chains the renderer's IK drives (RiggedCharacter → applyParkourIkToRig).
+  const parkourLimbs = parkourIk.resolveParkourLimbs(root);
+  return { gltf, root, bones, parkourLimbs, naturalHeight, clips: gltf.animations };
 }
 
 /**
@@ -246,12 +249,24 @@ async function loadRig(file) {
  * facing the rig's native forward. This IS the local pose the runtime overlays
  * on the motion path; the caller adds the path position and yaw.
  */
-function poseBones(rig, clip, clipTimeS) {
+function poseBones(rig, clip, clipTimeS, ik) {
   const mixer = new THREE.AnimationMixer(rig.root);
   const action = mixer.clipAction(clip);
   action.play();
   mixer.setTime(Math.max(0, Math.min(clipTimeS, clip.duration)));
   rig.root.updateMatrixWorld(true);
+  // IK LIVE: run the SAME engine call the renderer runs each frame, on the posed
+  // rig, before reading — so this instrument measures what is actually drawn.
+  if (ik && rig.parkourLimbs) {
+    parkourIk.applyParkourIkToRig(rig.parkourLimbs, {
+      boxes: ik.boxes,
+      gripHands: ik.gripHands,
+      gripReachM: 0.45,
+      skinM: 0.01,
+      footPins: ik.footPins,
+    });
+    rig.root.updateMatrixWorld(true);
+  }
   const read = (arr) => arr.map((b) => {
     const p = new THREE.Vector3();
     b.getWorldPosition(p);
@@ -462,7 +477,7 @@ function timingFor(verb, clipName, windowMs) {
  * authored verb and measure contact / sliding / clipping. Pure over (rig,
  * move, window, rate); reads the engine's own path sampler for the root.
  */
-function sampleVerb(rig, move, clipName, windowMs, rate, startOffsetMs) {
+function sampleVerb(rig, move, clipName, windowMs, rate, startOffsetMs, useIk, plants) {
   const clip = rig.clips.find((c) => c.name === clipName);
   if (!clip) return { error: `rig has no clip '${clipName}'` };
   const action = actionFor(move, windowMs);
@@ -490,7 +505,23 @@ function sampleVerb(rig, move, clipName, windowMs, rate, startOffsetMs) {
     let clipTimeS = (startOffsetMs + elapsedMs * (rate ?? 1)) / 1000;
     if (isCyclic) clipTimeS = clip.duration > 0 ? clipTimeS % clip.duration : 0;
     else clipTimeS = Math.min(clipTimeS, clip.duration);
-    const local = poseBones(rig, clip, clipTimeS);
+    // In the fitted frame the posed bones ARE the local overlay, so the boxes and
+    // plant pins are the world geometry minus this frame's root path.
+    let ik = null;
+    if (useIk && rig.parkourLimbs) {
+      ik = {
+        boxes: move.boxes.map((b) => ({
+          min: [b.min[0] - root.x, b.min[1] - root.y, b.min[2] - root.z],
+          max: [b.max[0] - root.x, b.max[1] - root.y, b.max[2] - root.z],
+        })),
+        gripHands: move.gripHands,
+        footPins: [0, 1].map((k) => {
+          const pw = plants?.[k]?.pinAt(i);
+          return pw ? { x: pw.x - root.x, y: pw.y - root.y, z: pw.z - root.z } : null;
+        }),
+      };
+    }
+    const local = poseBones(rig, clip, clipTimeS, ik);
     // World = root path position + local bone offset (travel yaw is 0 here).
     const toWorld = (p) => ({ x: root.x + p.x, y: root.y + p.y, z: root.z + p.z });
 
@@ -621,8 +652,53 @@ function verdictForSurfaceVerb(verb, move, timing, s) {
   return { rank, label: rank === 0 ? "OK" : rank === 1 ? "FLAGGED" : "SEVERE", flags };
 }
 
+// Detect each foot's longest clip-planted run (pre-IK, off the clip itself) and
+// record the world position where the plant begins, so the IK can hold the foot
+// there and cancel the world slide — the same thing a stateful renderer latch
+// does live, computed here from the whole clip because this tool has every frame.
+function detectPlants(rig, move, clipName, windowMs, rate, startOffsetMs) {
+  const clip = rig.clips.find((c) => c.name === clipName);
+  if (!clip) return [null, null];
+  const action = actionFor(move, windowMs);
+  const frames = Math.max(2, Math.round(windowMs / 1000 / SAMPLE_DT));
+  const isCyclic = CYCLIC_VERB_CLIPS.has(clipName);
+  const localY = [[], []];
+  const world = [[], []];
+  for (let i = 0; i < frames; i++) {
+    const elapsedMs = (i / (frames - 1)) * windowMs;
+    const root = sampleAuthoredPath(action, Math.min(1, elapsedMs / windowMs));
+    let clipTimeS = (startOffsetMs + elapsedMs * (rate ?? 1)) / 1000;
+    if (isCyclic) clipTimeS = clip.duration > 0 ? clipTimeS % clip.duration : 0;
+    else clipTimeS = Math.min(clipTimeS, clip.duration);
+    // Read the pose from poseBones' RETURN (computed while the rig is still
+    // posed); reading the bones afterward would see the pose stopAllAction left.
+    const local = poseBones(rig, clip, clipTimeS);
+    local.feet.forEach((f, k) => {
+      localY[k].push(f.y);
+      world[k].push({ x: root.x + f.x, y: root.y + f.y, z: root.z + f.z });
+    });
+  }
+  const plants = [null, null];
+  for (let k = 0; k < 2; k++) {
+    const ly = localY[k];
+    if (ly.length < 3) continue;
+    const low = Math.min(...ly);
+    const planted = ly.map((y) => y <= low + CLIP_CONTACT_BAND_M);
+    let bestS = -1, bestE = -1, s = null;
+    for (let i = 0; i <= planted.length; i++) {
+      if (i < planted.length && planted[i]) { if (s === null) s = i; continue; }
+      if (s !== null) { if (bestS < 0 || i - s > bestE - bestS) { bestS = s; bestE = i; } s = null; }
+    }
+    if (bestS >= 0 && bestE - bestS >= 2) {
+      const anchor = world[k][bestS];
+      plants[k] = { pinAt: (i) => (i >= bestS && i < bestE ? anchor : null) };
+    }
+  }
+  return plants;
+}
+
 // ---------------------------------------------------------------- run
-async function run(rigFile) {
+async function run(rigFile, useIk) {
   const rig = await loadRig(rigFile);
   const clipNames = new Set(rig.clips.map((c) => c.name));
 
@@ -654,8 +730,16 @@ async function run(rigFile) {
     const timing = timingFor(verb, clipName, windowMs);
     const rate = timing.actualRate ?? 1; // locomotion fallback plays ~stride; use 1 for the overlay
     const startOffset = CLIP_CONTENT_START_MS[clipName] ?? 0;
+    const applyIk = useIk && rig.parkourLimbs && move.gripHands !== undefined;
+    // Foot pins hold a genuinely PLANTED foot still (the vault/mantle push-off).
+    // A slide's feet are MEANT to travel the ground (feetSlideExpected) and a
+    // locomotion substitute has no authored plant, so those get no pin.
+    const plants =
+      applyIk && move.gripHands && !move.feetSlideExpected
+        ? detectPlants(rig, move, clipName, windowMs, rate, startOffset)
+        : null;
     const s = onRig
-      ? sampleVerb(rig, move, clipName, windowMs, rate, startOffset)
+      ? sampleVerb(rig, move, clipName, windowMs, rate, startOffset, applyIk, plants)
       : { error: `clip '${clipName}' (from ${requested}) not baked on rig` };
     const verdict = verdictForSurfaceVerb(verb, move, timing, s);
     rows.push({
@@ -737,6 +821,7 @@ function fmtTiming(t) {
 function report(data) {
   console.log("clip-fidelity: does the PLAYED CLIP put hands on holds and feet on surfaces during each authored verb?\n");
   console.log(`  rig: ${basename(data.rigFile)}  (fitted from natural ${data.naturalHeight.toFixed(4)}m to STAND_HEIGHT ${STAND_HEIGHT}m)`);
+  console.log(`  limb IK: ${data.ikLive ? "LIVE (applyParkourIkToRig, as the renderer runs it) — pass --no-ik for the root-neutral baseline" : "OFF (root-neutral baseline)"}`);
   if (data.crossCheck?.staticDecoderM != null) {
     const d = Math.abs(data.crossCheck.threeJsNaturalM - data.crossCheck.staticDecoderM);
     console.log(`  decoder cross-check: three.js ${data.crossCheck.threeJsNaturalM.toFixed(4)}m vs static skinned ${data.crossCheck.staticDecoderM.toFixed(4)}m (${d < 0.02 ? "agree" : `DISAGREE by ${d.toFixed(3)}m`})`);
@@ -899,7 +984,11 @@ if (!existsSync(rigFile)) {
   console.error(`clip-fidelity: rig not found: ${rigFile}`);
   process.exit(2);
 }
-const data = await run(rigFile);
+// IK is LIVE by default so this tool measures what the renderer draws; --no-ik
+// gives the root-neutral baseline for a before/after comparison.
+const useIk = !argv.includes("--no-ik");
+const data = await run(rigFile, useIk);
+data.ikLive = useIk;
 if (argv.includes("--json")) {
   console.log(JSON.stringify(data, (k, v) => (v instanceof Set ? [...v] : v), 2));
   process.exit(0);

@@ -27,6 +27,10 @@ export interface RiggedIkFrame {
   boxes: readonly IkBox[];
   gripHands: boolean;
   footPins?: readonly (Vec3Like | null)[];
+  // Hold a genuinely planted foot at a fixed world point so it does not skate as
+  // the root translates (the vault/mantle push-off). The renderer detects the
+  // plant live; a slide verb, whose feet ride the ground, must leave this false.
+  pinPlantedFeet?: boolean;
 }
 
 // Cache-bust token for the production cast bake. The loader cache is keyed on
@@ -88,6 +92,8 @@ const ANIM_THROTTLE_DISTANCE_M = 35;
 const ANIM_THROTTLE_STEP_S = 0.5;
 const throttleScratch = new THREE.Vector3();
 const viewCullScratch = new THREE.Vector3();
+const plantScratchRoot = new THREE.Vector3();
+const plantScratchToe = new THREE.Vector3();
 
 function RiggedInner(props: {
   glbKey: string;
@@ -204,6 +210,15 @@ function RiggedInner(props: {
     () => (hasIk ? resolveParkourLimbs(rig.root) : null),
     [rig, hasIk],
   );
+  // Live plant tracking for the foot pin. A running minimum of each toe's height
+  // above the rig root (its clip-local foot height, invariant to where the group
+  // has moved) tells whether the foot is at its planted low; the world point is
+  // latched on the first planted frame and released when the foot lifts. Reset
+  // whenever the clip changes so a new verb starts clean.
+  const plantRef = useRef({
+    minY: [Infinity, Infinity] as [number, number],
+    pins: [null, null] as (THREE.Vector3 | null)[],
+  });
 
   useEffect(() => {
     const pending = pendingResourceDispose.current;
@@ -286,6 +301,9 @@ function RiggedInner(props: {
       next.crossFadeFrom(prev, fade, true);
     }
     actionRef.current = next;
+    // A new verb: forget the previous move's plant so its pin cannot leak in.
+    plantRef.current.minY = [Infinity, Infinity];
+    plantRef.current.pins = [null, null];
   }, [props.clip, props.timeOffset, props.loopOnce, animationClips, rig]);
 
   useFrame(({ camera }, dt) => {
@@ -354,13 +372,49 @@ function RiggedInner(props: {
     const request = ikFrameRef.current;
     if (!limbs || !request) return;
     const frame = request();
-    if (!frame) return;
+    if (!frame) {
+      // No verb active: forget any plant so the next one starts clean.
+      plantRef.current.minY = [Infinity, Infinity];
+      plantRef.current.pins = [null, null];
+      return;
+    }
+    let footPins = frame.footPins;
+    if (frame.pinPlantedFeet && !footPins) footPins = livePlantPins(limbs);
     applyParkourIkToRig(limbs, {
       boxes: frame.boxes,
       gripHands: frame.gripHands,
       gripReachM: 0.45,
       skinM: 0.01,
-      footPins: frame.footPins,
+      footPins,
+    });
+  }
+
+  // Detect each planted foot and return its latched world anchor, live. A toe is
+  // "down" while its height above the rig root is within a band of the lowest it
+  // has reached this verb; the anchor is captured on entry and released on lift.
+  // O(1) per foot — no clip sampling — so it adds nothing measurable to the frame.
+  function livePlantPins(limbs: ParkourLimbs): (Vec3Like | null)[] {
+    const PLANT_BAND_M = 0.03;
+    const rootY = plantScratchRoot.setFromMatrixPosition(rig.root.matrixWorld).y;
+    const state = plantRef.current;
+    return limbs.legs.map((leg, k) => {
+      const toe = leg[3];
+      if (!toe) return null;
+      toe.getWorldPosition(plantScratchToe);
+      const localY = plantScratchToe.y - rootY;
+      const min = Math.min(state.minY[k] ?? Infinity, localY);
+      state.minY[k] = min;
+      const down = localY <= min + PLANT_BAND_M;
+      if (!down) {
+        state.pins[k] = null;
+        return null;
+      }
+      let pin = state.pins[k] ?? null;
+      if (!pin) {
+        pin = plantScratchToe.clone();
+        state.pins[k] = pin;
+      }
+      return { x: pin.x, y: pin.y, z: pin.z };
     });
   }
 

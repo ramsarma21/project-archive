@@ -12,6 +12,7 @@ import {
   PLAYER_ACTION_CLIPS,
   PLAYER_CLIP_SPEC,
   RiggedCharacter,
+  type RiggedIkFrame,
   STAND_HEIGHT,
   STEALTH_TUNING,
   VERB_CLIP,
@@ -1062,6 +1063,45 @@ function ShaderWarmup() {
   return null;
 }
 
+// Which committed verbs get limb IK, and how. `gripHands` verbs pull a hand onto
+// the hold; `pin` verbs additionally hold the push-off foot still (the ones the
+// clip-fidelity instrument measured a real slide on — VAULT 6.78 m/s, CLIMB_UP
+// 2.94). CLIMB_OVER and HANG_DROP grip but have no ground plant to pin; SLIDE and
+// STEP_UP play a locomotion clip whose feet must ride the ground untouched.
+const IK_GRIP_VERBS = new Set(["VAULT", "CLIMB_OVER", "CLIMB_UP", "HANG_DROP"]);
+const IK_PIN_VERBS = new Set(["VAULT", "CLIMB_UP"]);
+
+/**
+ * The current frame's IK request, or null when no gripping verb is mid-flight —
+ * which is what gates the solve to the handful of frames a vault/mantle/climb is
+ * actually running, so it costs nothing the rest of the time. The obstacle is the
+ * blocker the authored action already froze into its `ignore` set; blockers are
+ * world-axis-aligned AABBs, so this hands the solver exact geometry with no
+ * orientation guesswork.
+ */
+function playerIkFrame(runtime: MissionRuntime): RiggedIkFrame | null {
+  const action = runtime.motion.action;
+  const verb = runtime.flow.verb;
+  if (!action || !IK_GRIP_VERBS.has(verb)) return null;
+  const blockers = runtime.instance.world.blockers;
+  const boxes: { min: [number, number, number]; max: [number, number, number] }[] = [];
+  for (const id of action.ignore) {
+    const b = blockers.find((x) => x.id === id);
+    if (!b) continue;
+    // A full-height wall's topY is Infinity; clamp it so the box has a finite
+    // centre for the body-side face test. The face the limb exits is lateral, so
+    // the exact top never matters, only that it is above the limb.
+    const topY = Number.isFinite(b.topY) ? b.topY : b.baseY + 20;
+    boxes.push({ min: [b.minX, b.baseY, b.minZ], max: [b.maxX, topY, b.maxZ] });
+  }
+  if (boxes.length === 0) return null;
+  return {
+    boxes,
+    gripHands: true,
+    pinPlantedFeet: IK_PIN_VERBS.has(verb),
+  };
+}
+
 /** The imported rig, driven by motion. Motion owns the transform; this reads it. */
 function MissionPlayer(props: { runtime: MissionRuntime }) {
   const group = useRef<THREE.Group>(null);
@@ -1117,6 +1157,7 @@ function MissionPlayer(props: { runtime: MissionRuntime }) {
         timeOffset={clipStartSeconds(playerClipFor(clip))}
         timeScaleRef={timeScaleRef}
         loopOnce={PLAYER_ACTION_CLIPS.has(clip)}
+        ikFrame={() => playerIkFrame(props.runtime)}
         castShadow
         showFallback={false}
       />
