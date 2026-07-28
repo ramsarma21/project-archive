@@ -54,12 +54,24 @@ jobs:
       # nightly is indistinguishable from a passing one on a dashboard, which is
       # the whole failure mode this job removes. Missing secret => a red run that
       # says exactly what to add and where.
-      - name: Require the dedicated grading credential
+      #
+      # ONE KEY, not two (owner's decision). This reads the existing shared
+      # TRUEFOUNDRY_API_KEY rather than a dedicated TRUEFOUNDRY_GRADING_API_KEY.
+      # The dedicated-key rationale was contention: one measurement run had 299 of
+      # 313 calls fall back while the owner was playing on the same key. But this
+      # job runs at 03:00 local (08:00 UTC), when he is not playing, so that window
+      # essentially closes. The trade-off is recorded honestly in
+      # docs/process/CI-AND-BROWSER-CHECKS.md §1a: a heavy nightly and a daytime
+      # manual run *can* still contend, and if fallbacks ever exceed the harness's
+      # 90% classification floor the run FAILS LOUDLY rather than lying — the
+      # acceptable failure mode. The preflight that follows is the part that matters
+      # most: a missing secret is a red run, never a silent skip.
+      - name: Require the grading credential
         env:
-          TRUEFOUNDRY_GRADING_API_KEY: ${{ secrets.TRUEFOUNDRY_GRADING_API_KEY }}
+          TRUEFOUNDRY_API_KEY: ${{ secrets.TRUEFOUNDRY_API_KEY }}
         run: |
-          if [ -z "${TRUEFOUNDRY_GRADING_API_KEY}" ]; then
-            echo "::error title=Missing grading credential::The repository secret TRUEFOUNDRY_GRADING_API_KEY is not set, so the grading eval cannot run. Add it under Settings -> Secrets and variables -> Actions -> New repository secret, named exactly TRUEFOUNDRY_GRADING_API_KEY, holding a DEDICATED TrueFoundry key (NOT the shared dev key and NOT the image-generation key — contention with the owner's play session made 299 of 313 calls fall back on one measurement run). Optionally set TRUEFOUNDRY_GRADING_BASE_URL as a secret if the gateway URL differs from the default."
+          if [ -z "${TRUEFOUNDRY_API_KEY}" ]; then
+            echo "::error title=Missing grading credential::The repository secret TRUEFOUNDRY_API_KEY is not set, so the grading eval cannot run. Add it under Settings -> Secrets and variables -> Actions -> New repository secret, named exactly TRUEFOUNDRY_API_KEY, holding the TrueFoundry gateway key (the same shared key the app uses). Optionally set TRUEFOUNDRY_BASE_URL as a secret if the gateway URL differs from the default."
             exit 1
           fi
           echo "grading credential present"
@@ -85,11 +97,16 @@ jobs:
       #                  the play cap, or it measures timeouts instead of the model.
       # These flags live in the `grading:eval:gate` package.json script so the
       # workflow and a human's local run cannot drift apart.
+      # The shared key is fed under its own name. packages/grading/src/provider.ts
+      # reads TRUEFOUNDRY_GRADING_API_KEY first and falls back to TRUEFOUNDRY_API_KEY
+      # when NODE_ENV is not "production" — and NODE_ENV is unset here, so the shared
+      # key is what grades. Same for the base URL (TRUEFOUNDRY_GRADING_BASE_URL ??
+      # TRUEFOUNDRY_BASE_URL). The model can still be overridden by a repo variable.
       - name: Run grading eval (live model)
         id: eval
         env:
-          TRUEFOUNDRY_GRADING_API_KEY: ${{ secrets.TRUEFOUNDRY_GRADING_API_KEY }}
-          TRUEFOUNDRY_GRADING_BASE_URL: ${{ secrets.TRUEFOUNDRY_GRADING_BASE_URL || 'https://tfy.promptlens.trilogy.com/v1' }}
+          TRUEFOUNDRY_API_KEY: ${{ secrets.TRUEFOUNDRY_API_KEY }}
+          TRUEFOUNDRY_BASE_URL: ${{ secrets.TRUEFOUNDRY_BASE_URL || 'https://tfy.promptlens.trilogy.com/v1' }}
           TRUEFOUNDRY_GRADING_MODEL: ${{ vars.TRUEFOUNDRY_GRADING_MODEL || 'gemini-group/gemini-3.5-flash-lite' }}
         run: |
           mkdir -p .affordwork/grading-eval

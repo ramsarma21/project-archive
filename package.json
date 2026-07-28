@@ -14,6 +14,8 @@
     "db:migrate": "pnpm --filter @pa/api migrate",
     "dev:reset-mission": "node --import tsx apps/api/src/dev/resetMission.ts",
     "grading:eval:gate": "pnpm --filter @pa/grading grading:eval --repeats 3 --concurrency 3 --timeout 20000",
+    "gate": "node scripts/merge-gate.mjs",
+    "gate:static": "node scripts/merge-gate.mjs --static",
     "dev": "concurrently -n api,web -c blue,green \"pnpm --filter @pa/api dev\" \"pnpm --filter @pa/web dev\"",
     "aws:secret": "pnpm --filter @pa/infra sync-google-secret",
     "aws:secrets:check": "pnpm --filter @pa/infra check-secrets",
