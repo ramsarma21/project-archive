@@ -125,6 +125,35 @@ export interface ClimbSpec {
   note?: string;
 }
 
+/**
+ * A placed climb ladder — the self-describing affordance the engine's
+ * `alignClimbToLadder` consumes. The base sits at the foot; the top is the
+ * surface named by `onto` (its height is the ladder top); the outward face
+ * normal (XZ) is the side the body climbs, facing the climber; rungs are the
+ * fixed geometry hand/foot placement reads off.
+ *
+ * INERT TODAY. `compile.ts` forwards these into `world.ladders`, but nothing
+ * authors one yet: the visible ladder GLBs are a content-pipeline job (there is
+ * no generic ladder asset in the project) and the refusal rule is sequenced
+ * behind them. This type + the compile pipe exist so that the moment a ladder is
+ * placed, the tested predicate can read it — the field-forwarding is off the
+ * critical path.
+ */
+export interface LadderPlacementSpec {
+  id: string;
+  /** Foot of the ladder, on the ground the player stands on. */
+  at: Vec3Tuple;
+  /** Deck or landable mass id the top-out lands on; its Y is the ladder top. */
+  onto: string;
+  /** Outward face normal in XZ (points from the wall toward the climber). */
+  faceX: number;
+  faceZ: number;
+  /** Rail-to-rail width; defaults applied in compile. */
+  widthM?: number;
+  /** Fixed rung spacing; defaults applied in compile. */
+  rungGapM?: number;
+}
+
 /** A walkable slope, emitted as stepped strips because the mover snaps 6cm. */
 export interface RampSpec {
   id: string;
@@ -400,6 +429,8 @@ export interface MissionLevel {
   decks: DeckSpec[];
   ramps: RampSpec[];
   climbs: ClimbSpec[];
+  /** Placed climb ladders. Optional and empty today (see LadderPlacementSpec). */
+  ladders?: LadderPlacementSpec[];
   nodes: RouteNode[];
   links: RouteLink[];
   patrols: PatrolSpec[];
