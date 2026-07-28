@@ -144,15 +144,12 @@ zero-evidence form pass (`1c4250f`).
   steeple without crossing the roof trigger, which is a soft-lock waiting to happen if
   `ROPEWALK_STOP` is mandatory. Also: the 2.0 m same-surface band alone does not separate the
   meeting-house leads (8.2) from `BOUGH_CROWN` (8.3) — only the XZ radius does. Flagged, open.
-- **The Liberty Elm is a tree now, but the bark reads as polished wood** (`8d816cb`). Rebuilt
-  procedurally rather than through Meshy, because Meshy foliage *is* the shard defect — a
-  canopy delivered as a few intersecting alpha cards. Fluted bole, three broad limb rafts,
-  crossed leaf-cluster cards with genuine cutout alpha. **All three F_TREE rows retired to
-  100% coverage** (BOUGH_UPPER 67%, LEAP_CROWN 84%, LEAP_UPPER 75%), so the boughs the player
-  lands on finally fill their footprints; debt ledger 25 → 22. Remaining: the trunk reads as
-  glossy wavy grain rather than furrowed bark (too specular, sinusoidal rather than irregular,
-  no depth), and the limb rafts read as flat planks. One more pass in flight; a Gemini→texture
-  pass for the bark is the fallback.
+- ~~The Liberty Elm~~ — **done** (`8d816cb`, then bark reworked). Rebuilt procedurally rather
+  than through Meshy, because Meshy foliage *is* the shard defect. All five F_TREE affordance
+  rows at 100%, so the boughs the player stands on fill their footprints. Bark now matte with a
+  baked normal map and irregular interlacing furrows; it reads as bark rather than varnished
+  timber. Procedural, not photographic — a Gemini texture pass on the hero trunk remains a
+  legitimate future upgrade, not a defect.
 - **Duel cards were too alike to answer — mostly fixed** (`13cdc12`). My diagnosis was wrong:
   the duel does **not** draw from the 46-concept teaching registry. It already asks on exactly
   three concepts, with nine cards (three per concept) derived from the bank. The overlap was
