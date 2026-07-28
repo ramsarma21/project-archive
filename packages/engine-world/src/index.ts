@@ -11,6 +11,7 @@ export * from "./GlbBoundary.js";
 export * from "./GroundSurface.js";
 export * from "./ImportedAssets.js";
 export * from "./ImportedPivotAsset.js";
+export * from "./InstancedProps.js";
 export * from "./interactionRegistry.js";
 export * from "./interactionResolver.js";
 export * from "./interiorMaterials.js";
