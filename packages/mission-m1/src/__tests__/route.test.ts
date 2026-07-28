@@ -34,11 +34,21 @@ test("a player who never takes a risk still finishes", () => {
   assert.ok(safe!.nodes.includes(level.postNode), "the safe route posts the handbill");
 });
 
-test("the vista is on the guaranteed path, because it is the only navigation", () => {
+test("the tower vista is authored and reachable, but the guided line no longer detours up it", () => {
+  // The Town House tower was the ONLY navigation before the visor existed: a
+  // cautious player had to climb somewhere they could see the objective from.
+  // The route is guided now, so climbing five metres up the tower and five back
+  // down for a look is a detour the sensible line does not take — it tops out on
+  // the broad leads with the elm already in sight and carries straight on onto
+  // the roofline. The vista stays a reachable set piece (the CLIMB up from the
+  // leads and the drop back down are still authored); it is simply off the
+  // shortest guided line rather than forced onto it.
+  const anyPath = new Set(level.links.flatMap((l) => [l.from, l.to]));
+  assert.ok(anyPath.has("C_TOWER_GALLERY"), "the tower vista is still authored and linked");
   const safe = viaPost(["SAFE"])!;
   assert.ok(
-    safe.nodes.includes("C_TOWER_GALLERY"),
-    "a cautious player must top out somewhere they can see the objective from",
+    !safe.nodes.includes("C_TOWER_GALLERY"),
+    "the guided line tops out on the leads with the elm in sight, not up the tower and back",
   );
 });
 

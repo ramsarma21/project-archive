@@ -215,7 +215,10 @@ function corniceRun(useSpace: boolean) {
       reachedCorniceS = true;
     }
     if (Math.hypot(q.x - 52, q.z - 1.6) < 2.5 && q.y > 16.5) reachedTowerGallery = true;
-    if (reachedTowerGallery && Math.hypot(q.x - 57.6, q.z - 4.2) < 2.5 && q.y < 13) {
+    // The guided line tops out on the leads and carries straight across to
+    // C_LEADS_E — it no longer detours up the tower — so the leads are reached at
+    // leads height without ever standing on the tower gallery.
+    if (Math.hypot(q.x - 57.6, q.z - 4.2) < 2.5 && q.y > 11.5 && q.y < 13) {
       reachedLeadsE = true;
     }
     if (runtime.outcome) break;
@@ -223,7 +226,7 @@ function corniceRun(useSpace: boolean) {
   return { reachedCorniceS, reachedTowerGallery, reachedLeadsE, climbedEastFaceEarly };
 }
 
-test("first-attempt SAFE marker with Shift and no Space runs the cornice to the tower, not up the east face", () => {
+test("first-attempt SAFE marker with Shift and no Space runs the cornice across the leads, not up the east face or the tower", () => {
   const r = corniceRun(false);
   assert.ok(
     !r.climbedEastFaceEarly,
@@ -231,12 +234,12 @@ test("first-attempt SAFE marker with Shift and no Space runs the cornice to the 
   );
   assert.ok(r.reachedCorniceS, "the body did not run the SAFE cornice to C_CORNICE_S");
   assert.ok(
-    r.reachedTowerGallery,
-    "the body did not take the SAFE ascent C_CORNICE_S → C_LEADS_S → tower gallery",
+    r.reachedLeadsE,
+    "the body did not run the SAFE ascent C_CORNICE_S → C_LEADS_S → across to C_LEADS_E",
   );
   assert.ok(
-    r.reachedLeadsE,
-    "the body did not come down the tower to rejoin the leads at C_LEADS_E",
+    !r.reachedTowerGallery,
+    "the guided line detoured up the tower gallery; it should cross the leads directly",
   );
 });
 
