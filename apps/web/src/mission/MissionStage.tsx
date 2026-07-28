@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree, type RootState } from "@react-three/fiber";
 import {
@@ -774,44 +774,201 @@ function SceneryMount(props: {
  * Warm the shaders during the opening, so the FIRST-SIGHT program compile does
  * not land mid-route.
  *
- * Attributed in the running game (.affordwork/spike-hunt.mjs, a CDP trace over
- * the accelerated client): the "random lurch" is a rare, front-loaded frame of
- * ~40-120ms in which the render callback blocks on `GetProgramiv` — the CPU
- * waiting on a WebGL program LINK. That is three.js compiling a material's
- * program the first time it is drawn, and when it lands above the 83ms five-step
- * catch-up window it discards sim ticks, which is the slow-motion lurch. It is
- * not GC, not resource streaming, and not the crowd (the trace ruled those out).
+ * Attributed in the running game (.affordwork/spike-hunt.mjs + spike-programs.mjs,
+ * a CDP trace over the accelerated client that also reads renderer.info.programs):
+ * the "random lurch" is a rare, front-loaded frame of ~40-120ms in which the
+ * render callback blocks on `GetProgramiv` — the CPU waiting on a WebGL program
+ * LINK. That is three.js compiling a material's program the first time it is
+ * drawn, and when it lands above the 83ms five-step catch-up window it discards
+ * sim ticks, which is the slow-motion lurch. It is not GC, not resource streaming,
+ * and not the crowd (the trace ruled those out).
  *
- * The standard remedy is to compile ahead of time. `compileAsync` uses
- * KHR_parallel_shader_compile where the driver has it, so the warm-up itself does
- * not stall the frame; on a driver without it, `compile` runs during the opening
- * (behind the settle / camera ease) rather than mid-route. It is re-run a few
- * times across the first frames because the scenery, crowd and watch rigs mount
- * under Suspense and appear over the opening, so a single early pass would miss
- * the ones that arrive after it. Bounded to a handful of passes; presentation
- * only, and it reads the scene the level already mounted rather than authoring
- * anything (it never touches M1Scenery or any asset).
+ * The BEAUTY programs (the material each object draws itself with) are warmed
+ * here by `compileAsync(scene, camera)`. It uses KHR_parallel_shader_compile
+ * where the driver has it, so the warm-up itself does not stall the frame; on a
+ * driver without it, `compile` runs during the opening (behind the settle /
+ * camera ease) rather than mid-route. It is re-run a few times across the first
+ * frames because the scenery, crowd and watch rigs mount under Suspense and
+ * appear over the opening, so a single early pass would miss the ones that arrive
+ * after it. Presentation only, and it reads the scene the level already mounted
+ * rather than authoring anything (it never touches M1Scenery or any asset).
+ *
+ * The SHADOW-PASS depth programs are warmed separately by `warmShadowPrograms`
+ * below; `compile()` provably never touches them (see there).
  */
 const WARMUP_FRAMES = [4, 16, 34, 60, 100, 160] as const;
+
+/**
+ * One OFF-SCENE caster of each shadow-pass depth variant — plain, instanced and
+ * skinned — sharing a single `MeshDepthMaterial`, used only to warm the three
+ * shadow depth programs. It is never added to the rendered scene; it exists only
+ * as the argument to `compileAsync`, so it draws nothing and costs no draw call.
+ *
+ * The geometry is a single triangle with the attributes the depth program keys
+ * on — `position`, `normal`, `uv`, and, for the skinned variant, the
+ * `skinIndex`/`skinWeight` that turn on the skinning path. The material mirrors
+ * what `WebGLShadowMap` uses for a directional light: default (`BasicDepthPacking`)
+ * packing, `DoubleSide` (the mission's imported GLB caster materials are all
+ * double-sided, so the shadow pass keeps their depth material double-sided too —
+ * verified against the census: all three real depth programs are double-sided,
+ * none flip-sided), and a 1×1 `map` so the depth program keys on the same `mapUv`
+ * the real (albedo-mapped) casters give it.
+ */
+function warmDepthRoot(): {
+  root: THREE.Object3D;
+  dispose: () => void;
+} {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3),
+  );
+  geometry.setAttribute(
+    "normal",
+    new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1], 3),
+  );
+  geometry.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1], 2));
+
+  const map = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+  map.needsUpdate = true;
+  const material = new THREE.MeshDepthMaterial({
+    depthPacking: THREE.BasicDepthPacking,
+    side: THREE.DoubleSide,
+    map,
+  });
+
+  const root = new THREE.Group();
+
+  const plain = new THREE.Mesh(geometry, material);
+  plain.castShadow = true;
+  root.add(plain);
+
+  const instanced = new THREE.InstancedMesh(geometry, material, 1);
+  instanced.setMatrixAt(0, new THREE.Matrix4());
+  instanced.castShadow = true;
+  root.add(instanced);
+
+  const skinnedGeometry = geometry.clone();
+  skinnedGeometry.setAttribute(
+    "skinIndex",
+    new THREE.Uint16BufferAttribute([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 4),
+  );
+  skinnedGeometry.setAttribute(
+    "skinWeight",
+    new THREE.Float32BufferAttribute([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], 4),
+  );
+  const bone = new THREE.Bone();
+  const skinned = new THREE.SkinnedMesh(skinnedGeometry, material);
+  skinned.add(bone);
+  skinned.bind(new THREE.Skeleton([bone]));
+  skinned.castShadow = true;
+  root.add(skinned);
+
+  const skeleton = skinned.skeleton;
+  return {
+    root,
+    dispose() {
+      geometry.dispose();
+      skinnedGeometry.dispose();
+      map.dispose();
+      material.dispose();
+      skeleton.dispose();
+    },
+  };
+}
+
+interface WarmRenderer {
+  compileAsync?: (scene: unknown, camera: unknown, targetScene?: unknown) => Promise<unknown>;
+  compile: (scene: unknown, camera: unknown, targetScene?: unknown) => unknown;
+  getRenderTarget: () => THREE.WebGLRenderTarget | null;
+  setRenderTarget: (target: THREE.WebGLRenderTarget | null) => void;
+}
+
+/**
+ * Pre-link the three SHADOW-PASS depth programs — the remaining ~86ms first-sight
+ * compile at spawn — so none of them links as the player starts to move.
+ *
+ * WHY this is separate from the beauty warm-up. three renders the shadow map with
+ * an internal `MeshDepthMaterial`, not the object's own material, and
+ * `renderer.compile()` — hence `compileAsync` — only ever calls `getProgram` on an
+ * object's OWN material (verified in three r185's WebGLRenderer.compile). So a
+ * plain `compileAsync(scene, camera)` never links the depth variant; census
+ * (spike-programs.mjs) confirms the depth programs otherwise appear in
+ * renderer.info.programs only as each caster kind first renders in the shadow
+ * pass, on a 100-200ms frame, and because the casters mount under Suspense across
+ * the opening one of those links can slip past the settle and land in play.
+ *
+ * HOW the warm-up matches the real program. A shadow depth program's cache key
+ * carries the shadow render's own state, not the main pass's: it renders INTO a
+ * render target (linear output, and tone mapping forced off) and with `scene=null`
+ * (so no fog), against the scene's real light counts, with the caster's albedo map
+ * bound. Compiling the off-scene depth root against the real scene as the target
+ * scene already matches the light counts; the render-target binding matches the
+ * linear/no-tone-mapping output; nulling the scene fog for the single synchronous
+ * compile call matches the no-fog key; and the depth material's own 1×1 map
+ * matches `mapUv`. The result is that the three programs this links are the SAME
+ * cache entries the real casters reuse (verified: the depth-program count stays at
+ * three, not six), so the real shadow pass finds them already linked and stalls on
+ * none of them. The fog and render target are restored before R3F renders, so this
+ * changes no pixel.
+ *
+ * Presentation/render only; it authors nothing and never touches M1Scenery or any
+ * asset. The imported-visible-world rule permits shader/material handling
+ * explicitly, and this draws no geometry at all.
+ */
+function warmShadowPrograms(
+  renderer: WarmRenderer,
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+  depthRoot: THREE.Object3D,
+  warmTarget: THREE.WebGLRenderTarget,
+): void {
+  const prevTarget = renderer.getRenderTarget();
+  const prevFog = scene.fog;
+  // A bound render target makes the compile key linear-output with tone mapping
+  // off; a null fog matches the shadow pass rendering with `scene === null`.
+  renderer.setRenderTarget(warmTarget);
+  scene.fog = null;
+  try {
+    if (typeof renderer.compileAsync === "function") {
+      void renderer.compileAsync(depthRoot, camera, scene);
+    } else {
+      renderer.compile(depthRoot, camera, scene);
+    }
+  } finally {
+    scene.fog = prevFog;
+    renderer.setRenderTarget(prevTarget);
+  }
+}
 
 function ShaderWarmup() {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const camera = useThree((state) => state.camera);
   const frame = useRef(0);
+  const depth = useMemo(warmDepthRoot, []);
+  const warmTarget = useMemo(() => new THREE.WebGLRenderTarget(1, 1), []);
+  useEffect(() => {
+    return () => {
+      depth.dispose();
+      warmTarget.dispose();
+    };
+  }, [depth, warmTarget]);
+
   useFrame(() => {
     const n = (frame.current += 1);
     if (n > WARMUP_FRAMES[WARMUP_FRAMES.length - 1]!) return;
     if (!WARMUP_FRAMES.includes(n as (typeof WARMUP_FRAMES)[number])) return;
-    const renderer = gl as unknown as {
-      compileAsync?: (scene: unknown, camera: unknown) => Promise<unknown>;
-      compile: (scene: unknown, camera: unknown) => unknown;
-    };
+    const renderer = gl as unknown as WarmRenderer;
+    // Beauty programs: the material each object draws itself with. Re-run across
+    // the opening because the scenery, crowd and watch rigs mount under Suspense.
     if (typeof renderer.compileAsync === "function") {
       void renderer.compileAsync(scene, camera);
     } else {
       renderer.compile(scene, camera);
     }
+    // Shadow depth programs: the remaining spawn compile.
+    warmShadowPrograms(renderer, scene as unknown as THREE.Scene, camera, depth.root, warmTarget);
   });
   return null;
 }
