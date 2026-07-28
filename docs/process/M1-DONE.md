@@ -223,10 +223,16 @@ live where no unit test reaches. Useful as an occasional per-file discovery run;
 worst case, of which **26–44 min is the duel** (24 rounds at 65–110 s each) against 180 s of
 instruction and a 180 s mission clock. So ~80% gunfight, in an ed-tech product. Within a round the
 cost is the **prose answer** (45–90 s to compose) plus a ~20 s engagement window.
-  - **No round ceiling** — health ends the match, and rounds get much faster. **Consequence:** this
-    makes bank exhaustion *reachable*, since the 34-item pool only clears the 24-round cap by one
-    item. `BANK-EXHAUSTION-PROPOSAL.md` stops being theoretical and the generation pipeline stops
-    being an improvement and becomes a dependency.
+  - **No round ceiling** — health ends the match, and rounds get much faster. This makes bank
+    exhaustion *reachable*, since the 34-item pool only clears the 24-round cap by one item.
+  - **Exhaustion policy: reuse questions, as a stopgap.** The owner's call — "just reuse questions
+    for now until we figure out pipeline and bank." So no new behaviour: a repeat is served and
+    graded normally. `BANK-EXHAUSTION-PROPOSAL.md` is **deferred, not rejected**. Two conditions on
+    the stopgap: a repeat must be *identifiable as a repeat* so the retrieval ledger can decline to
+    treat five answers in one match as five sessions' evidence, and it must not be silent to the
+    player — reuse is fine, reuse you can't tell from a fresh question is a small lie. Replaced when
+    generation reaches a few hundred items per chapter, at which point exhaustion stops being
+    reachable in practice.
   - **An answer is 1–2 cards plus one sentence.** The evidence placement *is* the reasoning; the
     sentence says why. ~20–25 s instead of 45–90, and it suits the deterministic-card /
     short-prose-comparison architecture far better than a paragraph.
