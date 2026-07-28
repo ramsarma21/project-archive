@@ -90,12 +90,23 @@ replay harness.
 ## Open
 
 **Would affect play now**
-- **Bare-wall climbs — half done.** Nine ladders are authored, drawn and resolving through
-  `alignClimbToLadder` (`025ad65`), so the content the refusal predicate needs now exists.
-  Refusal itself is **not yet on**: a climb against blank stone still commits. Two climbs
-  stay grips by design — the elm crown (no bough asset; won't bolt a ladder to a tree) and
-  the stone buttress (already climbs drawn masonry set-offs) — so switching refusal on
-  requires modelling a grip, not just a ladder, or those two break the route. In flight.
+- **Bare-wall climbs — the ladders are a facade. Do not count this as progress.** Nine are
+  authored and drawn (`025ad65`) and the owner found them broken in one screenshot: a ladder
+  standing in open air under a deck it never reaches, leaning on nothing, climbed *through*.
+  Three defects, all structural:
+  - `SceneryPlacement` has only `yaw` — **no pitch** — so a leaning ladder cannot lean.
+    Every one is drawn bolt upright.
+  - The draw uniformly scales one 1.90 m mesh to each rise (2.3–3.0 m), so rung spacing
+    inflates 1.2–1.58× and corresponds to nothing a leg could step on. Height should come
+    from more rungs, not bigger ones.
+  - They carry no collision by design, so the body climbs the air beside a ghost. The
+    reasoning (a solid at a climb foot would block the standing spot) was sound about the
+    problem and wrong about the fix: the ladder should stand *beside and leaning over* the
+    spot, not occupy it.
+  - The asset may be the wrong object outright — described as "a braced leaning ladder,"
+    renders as a splayed four-legged trestle.
+  Refusal is still off. Asset, placement, lean, collision, animation and refusal are being
+  redone as one task, because the owner is right that they only work together.
 - **Animations do not match motion.** Vault: planted foot slides 6.8 m/s and pokes 11 cm
   into the obstacle, hands only graze the top. Climb-over: foot 13.5 cm through the wall,
   only 81% of the clip shown. Hang-drop: hand 30 cm inside the wall. Mantle: foot slides
@@ -147,6 +158,15 @@ All three of 28 Jul's regressions were introduced by the previous night's fixes.
 | Duel harness rendered a void | the graded-attempt rewrite | `check-playthrough` duel-void census |
 | Encounter soft-lock from a roof | relocating the beat to a roof | same-surface arming + 16 s abort |
 | Boss ignored all cover | arena swap exposing a missing opt-in | parity assertions in `missionDuel.test.ts` |
+| Ladders drawn floating, upright, ghosted | the ladder placement itself | *nothing yet — see Open* |
+
+**A fourth failure, and it was mine.** The ladder work was merged on a worker's report of
+"flush to the face and reaching each surface," supported by brightened screenshots — three of
+which the worker itself described as too cramped to read. I merged anyway. The owner found
+the defect in one frame. **A screenshot that does not plainly show the thing being claimed is
+a failed check, not a caption to write around**, and a green gate beside an illegible capture
+is worth nothing. Every asset or placement claim from here needs a frame where the contact
+is visible at a brightness where geometry is legible.
 
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran
