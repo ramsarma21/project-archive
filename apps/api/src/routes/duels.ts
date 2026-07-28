@@ -234,6 +234,28 @@ export async function registerDuelRoutes(
       }
       const submission = parsed.value;
 
+      // A refusal here reaches an AUTHENTICATED player who is about to be granted the
+      // maximum by the client's own non-2xx fallback, silently. Recording it into the
+      // grading signal is what stops that from leaving /v1/health reading OK while
+      // every round is granted — the observability hole the client-side fallback
+      // opened. It never fails the health check; it only makes the condition sayable.
+      const noteUngraded = (
+        reason: string,
+        httpStatus: number,
+        advice: string,
+        itemId: string,
+      ): void => {
+        grading.signal.recordUngradedRefusal(request.log, {
+          profileId: owner.profileId,
+          duelId,
+          roundIndex: round.round,
+          itemId,
+          reason,
+          httpStatus,
+          advice,
+        });
+      };
+
       if (!resolveAttempt || !questionAuthority || !verdictStore) {
         // A misconfigured server, never a request the client can cause. Refused
         // rather than graded, because grading without an attempt to bind to would
@@ -241,6 +263,12 @@ export async function registerDuelRoutes(
         request.log.error(
           { profileId: owner.profileId, duelId },
           "duel grading: attempt/verdict authority not wired; refusing",
+        );
+        noteUngraded(
+          "DUEL_AUTHORITY_UNAVAILABLE",
+          400,
+          "the duel route's attempt/verdict authority is not wired; check app.ts.",
+          submission.itemId,
         );
         return reply.code(400).send({ error: "DUEL_AUTHORITY_UNAVAILABLE" });
       }
@@ -255,6 +283,14 @@ export async function registerDuelRoutes(
         request.log.warn(
           { profileId: owner.profileId, duelId },
           "duel grading: no open attempt for this profile; refusing",
+        );
+        noteUngraded(
+          "NO_OPEN_ATTEMPT",
+          409,
+          "an authenticated player reached a graded round with no open progression " +
+            "attempt, so the client granted the maximum ungraded. Ensure a mission " +
+            "attempt is opened before the duel posts a verdict.",
+          submission.itemId,
         );
         return reply.code(409).send({ error: "NO_OPEN_ATTEMPT" });
       }
@@ -271,6 +307,13 @@ export async function registerDuelRoutes(
           },
           "duel grading: refused a duel id that is not the open attempt's own",
         );
+        noteUngraded(
+          "DUEL_NOT_CANONICAL",
+          409,
+          "the posted duel id is not the open attempt's canonical one, so the client " +
+            "granted the maximum ungraded. The client must post m1DuelId(attemptOrdinal).",
+          submission.itemId,
+        );
         return reply.code(409).send({ error: "DUEL_NOT_CANONICAL" });
       }
 
@@ -284,6 +327,13 @@ export async function registerDuelRoutes(
         request.log.error(
           { profileId: owner.profileId, duelId: canonicalDuelId, expectedItemId },
           "duel grading: the server-selected item is not in the bank (content drift)",
+        );
+        noteUngraded(
+          "ITEM_NOT_FOUND",
+          404,
+          "the server-selected item drifted out of the grading bank, so the round " +
+            "could not be graded and the client granted the maximum. Re-sync the bank.",
+          expectedItemId,
         );
         return reply.code(404).send({ error: "ITEM_NOT_FOUND" });
       }

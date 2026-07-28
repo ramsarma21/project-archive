@@ -300,7 +300,97 @@ export class GradingSignal {
         : "duel grading: graded",
     );
 
-    if (ungraded) this.announce(diagnosis, round.fallbackStatus ?? null);
+    if (ungraded) {
+      this.announce(
+        diagnosis,
+        round.fallbackStatus ?? null,
+        diagnosis === null
+          ? "the cause was not reported."
+          : FALLBACK_DIAGNOSIS_ADVICE[diagnosis],
+      );
+    }
+    this.escalate(logger, snapshot, at);
+  }
+
+  /**
+   * A GRADEABLE round that was refused BEFORE it reached the classifier, and the
+   * hole this closes.
+   *
+   * `record` above only ever sees a round that reached `grade()`. A verdict request
+   * that the route refuses first — an authenticated player with no open attempt, a
+   * duel id that is not the attempt's own, a misconfigured authority, a server item
+   * that drifted out of the bank — never calls it. But the CLIENT treats every
+   * non-2xx as the generous grant (see apps/web/src/duel/duelGrading.ts): it mints
+   * the maximum and moves on. So exactly the condition this file exists to make
+   * visible — every answer granted, a wrong one paying like a right one — could
+   * happen for a whole lesson while `/v1/health` read OK, because the one place the
+   * count is kept was never reached. This records those refusals as what they are:
+   * gradeable rounds that were granted without being graded.
+   *
+   * It is a HARD FAULT, not a rate question: an authenticated player whose round
+   * cannot be graded is refused the same way on the next round, so one is as
+   * conclusive as a hundred — the same reasoning `status()` already applies to an
+   * unreachable gateway. It still does NOT fail the health check; nothing in this
+   * file ever changes a status code. It only makes the condition sayable.
+   */
+  recordUngradedRefusal(
+    logger: FastifyBaseLogger,
+    refusal: {
+      readonly profileId: string;
+      readonly duelId: string;
+      readonly roundIndex: number;
+      /** The server-selected item when known; the client's claim otherwise. */
+      readonly itemId: string;
+      /** The route's own error code: NO_OPEN_ATTEMPT, DUEL_NOT_CANONICAL, … */
+      readonly reason: string;
+      /** The HTTP status the route returned for it. */
+      readonly httpStatus: number;
+      /** One line an operator can act on. */
+      readonly advice: string;
+    },
+  ): void {
+    const at = this.now();
+    this.prune(at);
+    this.rounds.push(at);
+    this.roundsSinceBoot += 1;
+    // It needed the classifier (it is not a deterministic pre-check) and it did not
+    // reach it: gradeable, ungraded, and a hard fault.
+    this.gradeable.push(at);
+    this.ungraded.push(at);
+    this.ungradedSinceBoot += 1;
+    this.lastUngradedAt = at;
+    this.hardFaults.push(at);
+    this.byReason.set(
+      "ROUTE_REFUSED",
+      (this.byReason.get("ROUTE_REFUSED") ?? 0) + 1,
+    );
+    this.byDiagnosis.set(refusal.reason, (this.byDiagnosis.get(refusal.reason) ?? 0) + 1);
+
+    const snapshot = this.snapshot();
+    // The SAME metric line record() emits, so the CloudWatch alarm counts a refused
+    // round in its denominator and numerator exactly as it counts a gateway fallback:
+    // graded=1 (gradeable), fallback=1 (granted without grading). A refused round is
+    // as much a granted-without-grading round as an unreachable one.
+    logger.info(
+      {
+        paMetric: GRADING_METRIC_MARKER,
+        graded: 1,
+        fallback: 1,
+        path: "FALLBACK",
+        reason: "ROUTE_REFUSED",
+        diagnosis: refusal.reason,
+        status: refusal.httpStatus,
+        latencyMs: 0,
+        duelId: refusal.duelId,
+        round: refusal.roundIndex,
+        itemId: refusal.itemId,
+        profileId: refusal.profileId,
+        ungradedPercent: snapshot.ungradedPercent,
+      },
+      "duel grading: a verdict request was refused before reaching the classifier; the client will grant the maximum",
+    );
+
+    this.announce(refusal.reason, refusal.httpStatus, refusal.advice);
     this.escalate(logger, snapshot, at);
   }
 
@@ -413,24 +503,21 @@ export class GradingSignal {
    * conclude from round one that grading works.
    */
   private announce(
-    diagnosis: FallbackDiagnosis | null,
+    cause: string | null,
     status: number | null,
+    advice: string,
   ): void {
     if (!this.announceToConsole) return;
-    const key = `${diagnosis ?? "UNKNOWN"}:${status ?? ""}`;
+    const key = `${cause ?? "UNKNOWN"}:${status ?? ""}`;
     if (this.announced.has(key)) return;
     this.announced.add(key);
-    const advice =
-      diagnosis === null
-        ? "the cause was not reported."
-        : FALLBACK_DIAGNOSIS_ADVICE[diagnosis];
     console.error(
       [
         "",
         "  ┌─────────────────────────────────────────────────────────────────────┐",
         "  │  DUEL GRADING IS NOT GRADING.                                       │",
         "  └─────────────────────────────────────────────────────────────────────┘",
-        `  cause      ${diagnosis ?? "UNKNOWN"}${status === null ? "" : ` (HTTP ${status})`}`,
+        `  cause      ${cause ?? "UNKNOWN"}${status === null ? "" : ` (HTTP ${status})`}`,
         `  what to do ${advice}`,
         "",
         "  Until this is fixed EVERY answer is granted the maximum, so a wrong",

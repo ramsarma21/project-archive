@@ -111,7 +111,27 @@ export interface VerdictResult {
    * counted, which is exactly what the API's audit exists to measure.
    */
   readonly receipt: VerdictReceipt | null;
+  /**
+   * The HTTP status the grade endpoint returned, when it answered at all. Non-null
+   * only on the `AUTHORITY_UNREACHABLE` path a non-2xx produced — it is what turns
+   * "the grader could not be reached" from a guess into a fact a console line and a
+   * player message can name. Null for a genuine abort, a network throw, and any
+   * verdict the server actually minted.
+   */
+  readonly httpStatus: number | null;
+  /**
+   * The server's own diagnosis for a round it granted WITHOUT grading, read from
+   * the `x-pa-grading-fallback` header. Present only when `origin` is `AUTHORITY`
+   * and the server fell back (DEADLINE_EXCEEDED, PROVIDER_UNREACHABLE, …): the
+   * verdict's `source` is `GRADING_TIMEOUT` either way, so this is the only thing
+   * that tells a slow model apart from an unreachable one on an otherwise-successful
+   * response. Null on a graded round and on every client-minted verdict.
+   */
+  readonly serverFallbackDiagnosis: string | null;
 }
+
+/** Where the server names why it granted without grading. Set by ../duels/grading. */
+export const GRADING_FALLBACK_HEADER = "x-pa-grading-fallback";
 
 export type VerdictAuthority = (request: VerdictRequest) => Promise<VerdictResult>;
 
@@ -140,13 +160,21 @@ async function csrfToken(): Promise<string | null> {
  */
 export const httpVerdictAuthority: VerdictAuthority = async (request) => {
   const startedAt = Date.now();
-  const timeout = (origin: Extract<VerdictOrigin, "AUTHORITY_TIMEOUT" | "AUTHORITY_UNREACHABLE">): VerdictResult => ({
+  const timeout = (
+    origin: Extract<VerdictOrigin, "AUTHORITY_TIMEOUT" | "AUTHORITY_UNREACHABLE">,
+    httpStatus: number | null = null,
+  ): VerdictResult => ({
     verdict: mintTimeoutVerdict(request.item.itemId, request.item.itemVersion),
     origin,
     elapsedMs: Date.now() - startedAt,
     // The cap grants the maximum without the server having decided anything, so
     // there is no receipt and inventing one is the one thing that must not happen.
     receipt: null,
+    // A non-2xx is why this is UNREACHABLE rather than a slow grader; carrying the
+    // code is what lets the overlay and the console say which happened instead of
+    // both blaming the model. Null for an abort or a network throw.
+    httpStatus,
+    serverFallbackDiagnosis: null,
   });
 
   const controller = new AbortController();
@@ -170,13 +198,21 @@ export const httpVerdictAuthority: VerdictAuthority = async (request) => {
         selectedCardIds: request.selectedCardIds,
       }),
     });
-    if (!response.ok) return timeout("AUTHORITY_UNREACHABLE");
+    // A non-2xx is NOT a timeout. The generous grant is right — Mission-Slate §1.7,
+    // and the client cannot grade — but the CAUSE is a refused or missing endpoint,
+    // not a slow model, so it is carried as UNREACHABLE with the status that proves
+    // it. Calling this "the grader took too long" is the lie this branch used to tell.
+    if (!response.ok) return timeout("AUTHORITY_UNREACHABLE", response.status);
     // Read before the body, so a receipt is never lost to a parse failure below.
     const receipt = response.headers.get(VERDICT_RECEIPT_HEADER);
+    // The server's own diagnosis for a round it granted without grading. Absent on a
+    // graded round; a value here means the SERVER fell back (see ../duels/grading),
+    // which is a different, server-side condition from the client's own cap.
+    const serverFallbackDiagnosis = response.headers.get(GRADING_FALLBACK_HEADER);
     const parsed = parseVerdictEnvelope(await response.json());
     if (!parsed.ok) {
       console.warn(`[duel] grading authority sent a bad verdict: ${parsed.code} ${parsed.detail}`);
-      return timeout("AUTHORITY_UNREACHABLE");
+      return timeout("AUTHORITY_UNREACHABLE", response.status);
     }
     return {
       verdict: parsed.verdict,
@@ -185,6 +221,8 @@ export const httpVerdictAuthority: VerdictAuthority = async (request) => {
       receipt: receipt
         ? { round: request.round, duelId: request.duelId, receipt }
         : null,
+      httpStatus: response.status,
+      serverFallbackDiagnosis,
     };
   } catch (cause) {
     const aborted = cause instanceof DOMException && cause.name === "AbortError";
@@ -225,6 +263,8 @@ export function createStandInVerdictAuthority(
       elapsedMs: Date.now() - startedAt,
       // A stand-in holds no signing key and must not look as though it does.
       receipt: null,
+      httpStatus: null,
+      serverFallbackDiagnosis: null,
     };
   };
 }

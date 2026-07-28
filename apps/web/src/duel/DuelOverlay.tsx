@@ -8,6 +8,7 @@ import {
 import { duelControls } from "./duelInput.js";
 import { grantSummary } from "./RoundHud.js";
 import type { DuelHud } from "./duelRuntime.js";
+import type { VerdictOrigin } from "./duelGrading.js";
 
 // Everything the round says to the player that is not the question box.
 //
@@ -42,12 +43,59 @@ export function FaceOffTitle(props: { hud: DuelHud; opponentName: string }) {
   );
 }
 
-export function VerdictBeat(props: { hud: DuelHud }) {
+/**
+ * What a generous grant should SAY, told apart by how it was granted.
+ *
+ * Every case here grants the maximum — that is Mission-Slate §1.7 and it does not
+ * change. What changes is the sentence: the verdict's `source` is `GRADING_TIMEOUT`
+ * for a client abort, a refused endpoint AND a server-side fallback alike (the wire
+ * has one word for "granted without a grade"), so `source` alone cannot tell a slow
+ * grader from an unreachable one. The `origin` the authority reported can, and
+ * saying "the grader took too long" when the endpoint returned a 404 or a 401 was
+ * a lie the player had no way to see through.
+ */
+function generousGrantNotice(
+  origin: VerdictOrigin | null,
+  serverFallbackDiagnosis: string | null,
+): string | null {
+  const logged = "you were given the maximum and your answer was logged for review.";
+  switch (origin) {
+    case "AUTHORITY_TIMEOUT":
+      return `The grader did not answer in time, so ${logged}`;
+    case "AUTHORITY_UNREACHABLE":
+      return `The grader could not be reached, so ${logged}`;
+    case "AUTHORITY":
+      // A 200 whose verdict is still a generous grant: the SERVER fell back. Name the
+      // server's own diagnosis when it sent one, so a slow model and an unreachable
+      // gateway do not read identically to the player either.
+      return serverFallbackDiagnosis === "DEADLINE_EXCEEDED"
+        ? `The grader did not decide in time, so ${logged}`
+        : `The grader could not decide this round, so ${logged}`;
+    default:
+      // A stand-in or an unknown origin: keep the original, honest-enough copy.
+      return `The grader took too long, so ${logged}`;
+  }
+}
+
+export function VerdictBeat(props: {
+  hud: DuelHud;
+  /** How the last verdict was obtained, when the screen recorded it. */
+  grantOrigin?: VerdictOrigin | null;
+  /** The server's fallback diagnosis header, when it granted without grading. */
+  serverFallbackDiagnosis?: string | null;
+}) {
   const { hud } = props;
   const grant = hud.grants?.A;
   const verdict = hud.lastVerdict;
   if (!grant) return null;
   const correct = verdict?.kind === "CORRECT";
+  const notice =
+    verdict?.source === "GRADING_TIMEOUT"
+      ? generousGrantNotice(
+          props.grantOrigin ?? null,
+          props.serverFallbackDiagnosis ?? null,
+        )
+      : null;
   return (
     <div className={`duel-panel duel-verdict${correct ? " is-correct" : " is-wrong"}`}>
       <span className="duel-kicker">
@@ -58,12 +106,7 @@ export function VerdictBeat(props: { hud: DuelHud }) {
         {grant.magazine === 1 ? " ball" : " balls"} loaded
       </p>
       <p className="duel-verdict-detail">{grantSummary(grant)}</p>
-      {verdict?.source === "GRADING_TIMEOUT" && (
-        <p className="duel-notice">
-          The grader took too long, so you were given the maximum and the answer was
-          logged for review.
-        </p>
-      )}
+      {notice && <p className="duel-notice">{notice}</p>}
       <p className="duel-verdict-count">
         Resuming in {hud.secondsRemaining ?? 0}
       </p>
