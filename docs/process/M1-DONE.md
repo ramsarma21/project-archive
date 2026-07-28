@@ -70,12 +70,13 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[x]** The hour is continuous from the cutscene into the arena.
 - **[x]** The boss uses cover.
 - **[x]** Grading actually runs on the real path.
-- **[~]** Questions demand reasoning and have exactly one defensible answer. Cards are
-  differentiated and the tightest pair now separates on the question; **the grader still credits
-  wrong answers** — "the right to not pay taxes" is the misconception the mission exists to
-  correct.
-- **[ ]** False positives are gated. Only false negatives are, so every pressure points toward
-  leniency.
+- **[x]** Questions demand reasoning and have exactly one defensible answer. Cards state one
+  facet each, the tightest pair separates on the question, and the two over-crediting rubrics
+  are fixed: false positives 1.73% → 0.58%, `AUTHORED_REJECT` 97.9% → 100%, false negatives
+  held at 0.00% (`7e02bf2`).
+- **[~]** False positives are gated. Approved design in flight: a 2.0% ceiling for gross drift
+  **plus** a named-exception list, because a ceiling alone would not have caught this bug — it
+  began at 1.73%. One keyword-salad false positive remains.
 
 ## 6. It runs
 
