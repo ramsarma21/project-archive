@@ -7,6 +7,7 @@ import {
   levelDesignMaxGapM,
   solveLeapOfFaith,
 } from "@pa/engine-world/parkour";
+import { ladderTaggedIds } from "@pa/engine-world/collision";
 
 import { compileLevel } from "../compile.js";
 import { M1_EFFIGY_RUN } from "../level/index.js";
@@ -241,11 +242,16 @@ test("every vault, slide and climb sits inside its verb's envelope", () => {
 });
 
 test("every surface the route stands on is wide enough to be standable", () => {
+  // Ladders are climb affordances standing BESIDE the climb foot, not part of the
+  // surface the node stands on, so the solid ladders are excluded from the span —
+  // the same way verifyNode measures it. That a solid ladder does not actually
+  // wall the route in play is proven by check-playthrough, where it is collided.
+  const ladders = ladderTaggedIds(compiled.world);
   for (const spec of level.nodes) {
     const height = spec.tags.includes("crouch")
       ? MOVEMENT_CAPABILITIES.crouchHeightM
       : MOVEMENT_CAPABILITIES.standHeightM;
-    const span = standableSpanM(compiled.world, spec.pos, height);
+    const span = standableSpanM(compiled.world, spec.pos, height, 3, ladders);
     assert.ok(
       span >= MOVEMENT_CAPABILITIES.minStandableTopDepthM - 1e-9,
       `${spec.id}: ${span.toFixed(2)}m across the narrow axis`,

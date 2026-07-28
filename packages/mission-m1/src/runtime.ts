@@ -22,6 +22,13 @@ import { compileLevel, type CompiledLevel } from "./compile.js";
 import { coverPredicate, type CoverRead } from "./cover.js";
 import { patrolPoseAt } from "./stealth.js";
 import { M1_EFFIGY_RUN } from "./level/index.js";
+import {
+  LADDER_DEPTH_M,
+  LADDER_GAUGE_M,
+  LADDER_LEAN_FROM_HORIZONTAL,
+  ladderLines,
+  type LadderLine,
+} from "./level/ladderGeom.js";
 import { ARENA } from "./level/duelArena.js";
 import { GROUND, GROUND_SURFACE, groundPlateY } from "./level/ground.js";
 import { CROWD_CIVILIANS } from "./level/opposition.js";
@@ -1176,128 +1183,37 @@ export function sceneryPlacements(
 // ---------------------------------------------------------------------------
 
 // The generated leaning-ladder family (assets/pipeline/build_work_ladder.mjs).
-// One GLB per rung COUNT, each two rails and `N` rungs at a fixed 0.30 m gauge
-// over a real length of `N * RUNG_GAP_M`. Rungs come from the COUNT, never from
-// scaling one mesh — a uniform contain-fit of a single ladder up a 2.3–3.0 m
-// rise spreads the rungs to ~0.4–0.5 m, nothing a leg steps on. The placement
-// picks the variant whose natural length is nearest the rail it needs and fills
-// the length by <=5 %, so the rungs stay at ~0.30 m at every rise.
-const LADDER_RUNG_GAP_M = 0.3;
-const LADDER_GAUGE_M = 0.43;
-const LADDER_DEPTH_M = 0.05;
-const LADDER_MARGIN_M = 0.15; // rail overrun below the first / above the last rung
-const LADDER_RUNG_COUNTS = [8, 9, 10, 11] as const;
-/**
- * Lean from horizontal. 72° is the mid of the tradesman's 70–75° range (the 4:1
- * rule), so the foot stands out from the wall by rise/tan(72°) and the rail runs
- * rise/sin(72°). A vertical ladder is not a leaning ladder, and the owner's law
- * is that the ladder "genuinely has to be on the outside" leaning on the face.
- */
-const LADDER_LEAN_FROM_HORIZONTAL = (72 * Math.PI) / 180;
-
-/** Natural length of a variant GLB, matching build_work_ladder.mjs. */
-function ladderVariantLengthM(count: number): number {
-  return LADDER_MARGIN_M + (count - 1) * LADDER_RUNG_GAP_M + LADDER_MARGIN_M;
-}
-
-/** Height of a served surface: a deck plane, a landable mass top, or the ground. */
-function surfaceHeightOf(level: MissionLevel, id: string): number | null {
-  for (const deck of level.decks) if (deck.id === id) return deck.y;
-  for (const mass of level.masses) {
-    if (mass.id === id && mass.landable && Number.isFinite(mass.topY)) return mass.topY;
-  }
-  if (id === "GROUND") return 0;
-  return null;
-}
+// One GLB per rung COUNT, each two rails and `N` rungs at a fixed 0.30 m gauge.
+// The leaning line itself is resolved in `ladderGeom` so the DRAW here and the
+// COLLISION in compile.ts are the same object; this only adds the render fields
+// (which variant, the fill box, the yaw and the pitch) on top of that line.
 
 /**
- * The lean geometry one placed ladder is drawn with, derived from the authored
- * `LadderPlacementSpec` and the surface it serves. Exported so the ladder's
- * COLLISION (compile.ts) and its DRAW (below) are computed from one function and
- * cannot drift — a solid the player sees in one place and collides with in
- * another is the whole class of bug this level exists to avoid.
- *
- * The ladder tops out on the served surface's OUTWARD lip and its foot stands
- * `run` metres out from that lip on the ground, so it TOUCHES at both ends: foot
- * on the floor, top rail against the face. It is placed on the exterior face
- * (the `faceX/faceZ` normal points from the wall back at the climber), leaning
- * inward at `pitch` from vertical.
+ * The lean geometry one placed ladder is drawn with, from the shared `ladderLine`
+ * plus the render fields.
  */
-export interface LadderDraw {
-  id: string;
-  /** Rung count and the variant GLB it selects. */
-  count: number;
+export interface LadderDraw extends LadderLine {
   asset: string;
   assetPath: string;
-  /** Foot of the ladder on the ground (its drawn origin). */
-  foot: Vec3Tuple;
-  /** Top rail landing, on the served surface lip. */
-  top: Vec3Tuple;
   /** Fill box: [gauge, railLength, depth]. */
   size: Vec3Tuple;
   yaw: number;
   /** Lean about local X, radians (0 = upright; ~0.31 = 18° off vertical). */
   pitch: number;
-  railLengthM: number;
-  rungGapM: number;
 }
 
 export function ladderDraws(level: MissionLevel = M1_EFFIGY_RUN): LadderDraw[] {
-  const draws: LadderDraw[] = [];
-  for (const spec of level.ladders ?? []) {
-    const topY = surfaceHeightOf(level, spec.onto);
-    if (topY === null) continue;
-    const footY = spec.at[1];
-    const rise = topY - footY;
-    if (rise <= 0) continue;
-
-    const faceLen = Math.sqrt(spec.faceX * spec.faceX + spec.faceZ * spec.faceZ) || 1;
-    const fX = spec.faceX / faceLen; // outward, toward the climber
-    const fZ = spec.faceZ / faceLen;
-
-    const railLength = rise / Math.sin(LADDER_LEAN_FROM_HORIZONTAL);
-    const run = rise / Math.tan(LADDER_LEAN_FROM_HORIZONTAL);
-
-    // The FOOT is the authored climb foot: the exact spot the player stands to
-    // climb (`ladder-findings` measured it against the served surface), so the
-    // ladder is where the climb is, not metres away at a deck edge. The ladder
-    // leans INWARD (−face, toward the surface) by `run`, topping out at the
-    // served height over the face it rests on.
-    const foot: Vec3Tuple = [spec.at[0], footY, spec.at[2]];
-    const top: Vec3Tuple = [foot[0] - fX * run, topY, foot[2] - fZ * run];
-
-    // Pick the variant whose natural length is nearest the rail, clamped to the
-    // built set, and fill the length onto the exact rail so rungs stay ~0.30 m.
-    let count: number = LADDER_RUNG_COUNTS[0]!;
-    let best = Infinity;
-    for (const candidate of LADDER_RUNG_COUNTS) {
-      const d = Math.abs(ladderVariantLengthM(candidate) - railLength);
-      if (d < best) {
-        best = d;
-        count = candidate;
-      }
-    }
-
+  const pitch = Math.PI / 2 - LADDER_LEAN_FROM_HORIZONTAL;
+  return ladderLines(level).map((line) => ({
+    ...line,
+    asset: `work-ladder-${line.count}`,
+    assetPath: `world/props/work-ladder-${line.count}.glb`,
+    size: [LADDER_GAUGE_M, line.railLengthM, LADDER_DEPTH_M],
     // Local +Z maps to the INWARD direction, so a positive pitch about local X
     // tips the top inward against the face.
-    const yaw = Math.atan2(-fX, -fZ);
-    const pitch = Math.PI / 2 - LADDER_LEAN_FROM_HORIZONTAL;
-
-    draws.push({
-      id: `LADDER_${spec.id}`,
-      count,
-      asset: `work-ladder-${count}`,
-      assetPath: `world/props/work-ladder-${count}.glb`,
-      foot,
-      top,
-      size: [LADDER_GAUGE_M, railLength, LADDER_DEPTH_M],
-      yaw,
-      pitch,
-      railLengthM: railLength,
-      rungGapM: railLength / count,
-    });
-  }
-  return draws;
+    yaw: Math.atan2(-line.faceX, -line.faceZ),
+    pitch,
+  }));
 }
 
 /**

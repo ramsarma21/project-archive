@@ -856,13 +856,17 @@ async function run(options) {
   const loadStatus = new Map();
   for (const pl of placed) loadStatus.set(pl.record.status, (loadStatus.get(pl.record.status) ?? 0) + 1);
 
-  // Climb LADDERS are not standable surfaces: they carry no collision, the mover
-  // never lands on them, and they lean (a rotation this flat-plane placement does
-  // not reproduce), so their upright rungs would poke a false surface over a real
-  // one — the leaning ladder standing on the Hollis buttress read its buttress
-  // top +0.47m PROUD. They are the thing the player GRIPS, never a floor, so they
-  // are excluded from the geometry that answers "is there stone under this
-  // affordance". Scored the same way the ground plates are (not sampled).
+  // Climb LADDERS are excluded from the SURFACE sampler because they are NOT A
+  // STANDABLE SURFACE — not because they lack collision. They are solid now (a
+  // body cannot walk through one), but the mover never LANDS on a leaning ladder:
+  // it is the thing the player grips and climbs, never a floor another affordance
+  // rests on. Sampling one as "stone under this affordance" is wrong twice over —
+  // it is not a floor, and this flat-plane placement cannot reproduce its lean, so
+  // its upright rungs would poke a false surface over a real one (the leaning
+  // ladder over the Hollis buttress read the buttress top +0.47m PROUD). Their
+  // solidity is verified where it belongs: check-world-collision (a drawn solid)
+  // and check-playthrough (no body inside one, no route walled). Here they are
+  // excluded exactly as the ground plates are — present, not sampled as a surface.
   const sampleable = placed.filter((pl) => !pl.asset.startsWith("work-ladder"));
 
   const rows = [];
