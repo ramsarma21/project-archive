@@ -67,6 +67,9 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   the radius is pinned by test. Debt 22 → 19.
 - **[ ]** Cover you can see is cover that stops a ball, everywhere — true in the arena, not yet
   true for the rope capstan and coils, which sit 0.64–0.99 m below their cover line.
+- **[ ]** **Owner decision, 28 Jul:** at the market the cover you hide behind is the neighbouring
+  awning, and the stall body is 0.45 m too short to shelter you. He wants **the stall body itself
+  to be the cover**. Queued for `level-data` (its files are in use).
 
 ## 3. Animation and motion agree
 
@@ -170,6 +173,11 @@ thorough — a target that grows faster than it is met is not a target.
 runner and re-runs a whole package suite per mutant — roughly 17 CPU-hours for the load-bearing
 set. Worse, it is blind to the grader-wiring and beat-reachability gaps entirely, because those
 live where no unit test reaches. Useful as an occasional per-file discovery run; not a gate.
+
+**Owner decisions taken 28 Jul:** build end-effector IK rather than re-baking clips, because
+limbs landing on the geometry is the last thing between the parkour and looking real. Widen the
+climb-over window to ~650 ms so the move reads complete. Make the market stall body the cover.
+He will capture "cannot run" in play, since every in-lane mechanism is ruled out.
 
 **Meta-work is time-boxed.** Process, guards and instruments exist to make the list above
 shrink. If a tick produces only process, that is a failed tick.
