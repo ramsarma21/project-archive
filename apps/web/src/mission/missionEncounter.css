@@ -245,6 +245,92 @@
   cursor: not-allowed;
 }
 
+/* ---- the boss challenge: the same subtitle voice, in a cinematic frame ----
+   The officer-stops-you-at-the-gate cutscene reuses the `.msn-enc-say` subtitle
+   language wholesale so his challenge reads exactly like the guards who stop the
+   player mid-route. What it adds is a letterboxed cinematic frame and a skip:
+   the world (the two-shot of the officer and the player) is the scene, drawn by
+   MissionStage, and this is the caption track over it. */
+
+.msn-boss {
+  /* Top bar, subtitle low, bottom bar — a letterbox rather than the encounter's
+     lower-third dock. The soft floor gradient is dropped in favour of the bars. */
+  justify-content: space-between;
+  background: none;
+  padding: 0;
+  animation: msn-boss-fade 320ms ease-out;
+}
+
+.msn-boss.is-reduced {
+  animation: none;
+}
+
+.msn-boss .msn-enc-say {
+  /* Sit the subtitle in the lower third, above the bottom bar, as the encounter
+     does — but pushed up off the very bottom so the letterbox reads as framing. */
+  margin: 0 0 12vh;
+  padding: 0 4vw;
+}
+
+/* The two black cinematic bars. Pointer-transparent except the skip inside the
+   bottom one. They ease in so the hand-over into the cutscene reads. */
+.msn-boss-bar {
+  pointer-events: none;
+  width: 100%;
+  height: 12vh;
+  background: #04060a;
+  display: flex;
+  align-items: center;
+}
+
+.msn-boss-bar-top {
+  box-shadow: 0 1px 0 rgba(127, 176, 224, 0.18);
+}
+
+.msn-boss-bar-bottom {
+  justify-content: flex-end;
+  padding: 0 4vw;
+  box-shadow: 0 -1px 0 rgba(127, 176, 224, 0.18);
+}
+
+/* The challenge line burns a touch warmer than a guard's — this is the man who
+   means to shoot you, not one asking a question. Reinforced by the words. */
+.msn-boss.is-challenge .msn-enc-line {
+  color: #ffe8d6;
+}
+
+.msn-boss-skip {
+  pointer-events: auto;
+  padding: 0.4rem 0.9rem;
+  font: 600 0.78rem/1 system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #cdd9ea;
+  background: rgba(16, 24, 36, 0.7);
+  border: 1px solid rgba(127, 176, 224, 0.34);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.msn-boss-skip:hover {
+  color: #ffffff;
+  border-color: #7fb0e0;
+}
+
+.msn-boss-skip:focus-visible {
+  outline: 2px solid #7fb0e0;
+  outline-offset: 2px;
+}
+
+@keyframes msn-boss-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes msn-enc-rise {
   from {
     opacity: 0;
