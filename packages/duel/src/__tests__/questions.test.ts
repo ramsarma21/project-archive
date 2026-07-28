@@ -4,6 +4,7 @@ import { askQuestion, bankOrder, roundsBeforeRecycling } from "../questions.js";
 import { bossProfileForTier } from "../boss.js";
 import { referenceArena } from "../arena.js";
 import { createDuel } from "../machine.js";
+import { serialiseCommitLog } from "../events.js";
 import { questionSet, runDuel } from "./harness.js";
 
 const BANK = questionSet(18);
@@ -139,4 +140,61 @@ test("a duel that outlasts its bank keeps asking, and the log discloses it", () 
     (event) => event.type === "QUESTION_OPENED" && event.recycled,
   );
   assert.equal(recycled.length, 5, "rounds 4 to 8 are repeats, and every one is flagged");
+});
+
+test("a reused item is identifiable as a repeat in the PERSISTED record, not just at ask time", () => {
+  // Reuse is a stopgap (see questions.ts), and the owner's condition on it is that a
+  // repeat must not read as a fresh question to either the player or the learning
+  // record. The player half is the "asked again" marker in QuestionPanel. This is the
+  // record half: the durable commit log the API's per-concept retrieval ledger reads
+  // must carry, per round, whether the graded item was a repeat and its appearance
+  // ordinal — so "asked five times, right five times in one match" cannot be booked as
+  // five independent retrievals. It rides the committed VERDICT_COMMITTED record
+  // because the grading-request wire is a strict allowlist that cannot carry it.
+  const result = runDuel({
+    opponent: { kind: "BOSS", profile: bossProfileForTier(1) },
+    verdicts: () => "WRONG",
+    intents: () => ({
+      moveX: 0,
+      moveZ: 0,
+      sprint: false,
+      crouch: false,
+      jump: false,
+      dodge: false,
+      fire: false,
+      aimX: 0,
+      aimZ: 0,
+      abilityId: null,
+    }),
+    bankSize: 3,
+    roundCeiling: 8,
+  });
+
+  const committed = serialiseCommitLog(result.log).filter(
+    (entry) => entry.type === "VERDICT_COMMITTED" && entry.side === "A",
+  );
+  assert.equal(committed.length, 8, "every round commits a player verdict");
+
+  // Rounds 1-3 are the first pass: fresh, appearance 1. Rounds 4-8 are reuse: flagged
+  // as recycled with a rising appearance ordinal the ledger can weight down.
+  for (const entry of committed) {
+    const round = entry.round as number;
+    const expectedAppearance = Math.floor((round - 1) / 3) + 1;
+    assert.equal(
+      entry.appearance,
+      expectedAppearance,
+      `round ${round} should record appearance ${expectedAppearance}`,
+    );
+    assert.equal(
+      entry.recycled,
+      round > 3,
+      `round ${round} recycled flag`,
+    );
+  }
+  // And the fact is durable specifically — it survives serialisation into the log
+  // that leaves the client, rather than living only on the transient QUESTION_OPENED.
+  assert.ok(
+    committed.some((entry) => entry.recycled === true),
+    "at least one repeat is recorded as a repeat in the persisted log",
+  );
 });

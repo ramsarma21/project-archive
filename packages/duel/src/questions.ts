@@ -5,14 +5,42 @@
 // until a health bar empties has no upper bound on questions, so the bank WILL run
 // out and something has to happen at the bottom of it.
 //
-// THE PRECEDENT IS ALREADY SET AND THIS FOLLOWS IT. The chapter assessment met the
-// same problem — a retry can need more items than the reserve holds — and answered
-// it by recycling openly rather than concealing the reuse: `@pa/reporting` records
-// mastery shown on a repeated item as `evidenceStrength: "RECYCLED_ITEMS"` and
-// qualifies the whole claim with `MASTERY_ON_RECYCLED_ITEMS`, on the reasoning that
-// a repeat is weaker evidence and a report that hides it is lying by omission. The
-// duel does the same one layer down: it repeats, it marks the repeat, and it lets
-// the consumer decide what a repeat is worth.
+// ---- REUSE IS A STOPGAP, NAMED AS ONE (owner decision, 28 Jul) ---------------
+//
+// WHAT HAPPENS AT THE BOTTOM OF THE BANK, TODAY: the bank is REUSED. When a match
+// outlasts its eligible pool, `askQuestion` reshuffles and asks a repeat, disclosing
+// it (`recycled`/`appearance`). A repeat is served and graded exactly like a fresh
+// item. This is deliberately the simplest thing that works, and it is explicitly
+// TEMPORARY:
+//
+//   > "just reuse questions for now until we figure out pipeline and bank" — owner
+//
+// WHAT REPLACES IT, so "for now" does not become permanent by default. The question
+// GENERATION PIPELINE (content/QUESTION-PIPELINE.md) is built through its verification
+// gauntlet and will grow each chapter's bank to a few HUNDRED items. At that volume a
+// single match cannot realistically outlast the eligible pool — even under the PvP
+// symmetry rule, a fresh draw survives dozens of matches between the same pair rather
+// than five (§7 of that doc) — so exhaustion stops being reachable in practice and the
+// question of what to do at the bottom of the bank becomes moot for real play.
+//
+// WHAT IS DEFERRED, NOT REJECTED. `content/m1/BANK-EXHAUSTION-PROPOSAL.md` proposes a
+// DEFINED degrade for when the pool genuinely runs out — cap the questions rather than
+// the rounds, stop asking, grant the wrong-answer floor to both sides, and disclose it.
+// It was written from the content side precisely so two proposals could be RECONCILED
+// rather than two behaviours discovered, and that is still the right instinct: when the
+// pipeline lands and the bank is large, the owner should reconcile that proposal with
+// whatever the pipeline wants before choosing a permanent behaviour. Until then, reuse.
+// Do not delete that proposal; it is the design for the case this stopgap papers over.
+//
+// THE PRECEDENT REUSE FOLLOWS. The chapter assessment met the same problem — a retry
+// can need more items than the reserve holds — and answered it by recycling openly
+// rather than concealing the reuse: `@pa/reporting` records mastery shown on a repeated
+// item as `evidenceStrength: "RECYCLED_ITEMS"` and qualifies the whole claim with
+// `MASTERY_ON_RECYCLED_ITEMS`, on the reasoning that a repeat is weaker evidence and a
+// report that hides it is lying by omission. The duel does the same one layer down: it
+// repeats, it MARKS the repeat (so the player sees "asked again" and the learning
+// record can discount it — see the note on `appearance`/`recycled` reaching grade time
+// in events.ts), and it lets the consumer decide what a repeat is worth.
 //
 // The three alternatives were considered and rejected:
 //
@@ -24,6 +52,9 @@
 //                                              model only ever classifies
 //   granting bullets without a question        severs the knowledge link exactly when
 //                                              the match is at its most decided
+//
+// (The bank-exhaustion proposal above is a fourth option — defined degrade — deferred
+// pending the pipeline, not one of these three rejected ones.)
 //
 // Determinism: the order is a seeded permutation, so the PvP authority, the client
 // and a replay all ask the same question on round 40. No clock, no Math.random.

@@ -573,6 +573,12 @@ function commitVerdict(
     round: state.round,
     side,
     verdict,
+    // The repeat fact, carried onto the committed record so it survives to grade
+    // time and into the persisted log for the learning ledger. `state.asked` is the
+    // core's own authoritative account of what this round asked and whether it was a
+    // reuse (see questions.ts — reuse is a named stopgap).
+    appearance: state.asked.appearance,
+    recycled: state.asked.recycled,
   };
   if (awaiting.length > 0) {
     return {
