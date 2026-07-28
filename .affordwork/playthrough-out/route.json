@@ -1,17 +1,17 @@
 {
   "url": "http://localhost:5280/src/mission/floor.html?hold=0&seed=0xb057&encounterVerdict=correct",
-  "elapsedS": 40,
-  "maxProgressX": 75.63645631371084,
-  "maxStall": 0.9899999999999998,
+  "elapsedS": 40.3,
+  "maxProgressX": 75.76898143914288,
+  "maxStall": 0.8999999999999998,
   "outcome": null,
   "mandatory": {
     "SHAMBLES_STOP": {
-      "armedAtS": 5.521,
-      "resolvedAtS": 7.498
+      "armedAtS": 5.5,
+      "resolvedAtS": 7.374
     },
     "ROPEWALK_STOP": {
-      "armedAtS": 38.801,
-      "resolvedAtS": 40.039
+      "armedAtS": 38.575,
+      "resolvedAtS": 40.283
     }
   },
   "pen": {
