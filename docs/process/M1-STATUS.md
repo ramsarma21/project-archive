@@ -304,6 +304,7 @@ the orchestrator actually made, and the specific change made in response.
 | Inherited "three clips are unbaked" from an earlier worker's report and asserted it as fact; the rig had all three | A claim relayed from another worker is **untraced** until measured. Cite the measurement, not the report. |
 | Called two gates "blocking" for hours when CI had never run once — `main` was 204 commits unpushed | A gate is unverified until a real run is observed. Say "unverified" until then, and push early enough to find out. |
 | Accepted a local green as evidence for a cross-platform property; the first Linux run failed on a baked-constant guard comparing against the host's own `Math.sin` | A determinism claim cannot be verified on one platform. Reason about the runner, not the laptop. |
+| Quoted the affordance debt count as a fixed number to a lane whose branch predated three retirements | A moving count needs its baseline named. Say "22 on `main` as of X", not "22". |
 
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran
@@ -391,6 +392,18 @@ test claims to guard, and see whether the test still passes. Results, ranked:
 **The pattern across all of them:** every gap is a *runtime, cross-system, visible* property,
 which is exactly what a unit suite structurally cannot reach — and exactly the list of things
 that have reached the owner in play.
+
+**A pipeline finding, from three independent repairs today.** Every one traced to the generator's
+own output, not to the processing:
+- the elm's canopy *was* Meshy foliage — a handful of intersecting alpha cards;
+- the Town House's cupola was drawn on a thin neck over a 1.4 m void, which the build's height
+  warp stretched rather than filled;
+- `bldg-brick`'s raw generation is **32% needle slivers** on a half-resolution atlas, and no
+  weld, de-spike or decimate reaches it.
+
+Two were fixed by procedural authoring; the third is being. **Treat "regenerate it" as the option
+to justify, not the default** — asking the same generator for a better retry has failed three
+times, and the pipeline's contain-fit stage cannot repair a jagged surface.
 
 **The gap that cost the most:** every collision *invariant* reads authored hulls, and the
 mover has never touched a GLB — `collision.ts`, `playerMotion.ts` and `traversalResolver.ts`
