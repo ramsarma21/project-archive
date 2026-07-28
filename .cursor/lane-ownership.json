@@ -49,7 +49,8 @@
     ],
     "mission-encounters": [
       "packages/duel/**",
-      "packages/netcode/**"
+      "packages/netcode/**",
+      "scripts/check-drawn-penetration.mjs"
     ],
     "mission-cinematic": [
       "apps/web/src/mission/duelPort.ts",
