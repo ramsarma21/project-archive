@@ -11,6 +11,8 @@ import {
 } from "./duelGrading.js";
 import { missionCast, missionDuelDescriptor } from "./missionBrief.js";
 import { M1_MISSION_ID, duelBrief } from "../chapter/m1Mission.js";
+import { M1_MODULE } from "../module/m1Module.js";
+import { moduleRequiredCheckIds } from "../module/moduleFormat.js";
 import {
   establishLocalSession,
   getSession,
@@ -44,24 +46,24 @@ import "../styles.css";
 // one and nothing a real player owns is ever spent.
 
 const CHAPTER_ID = "boston-1765";
-const MODULE_ID = "BOS.MD01.MODULE.BRIEF.v1";
-// The module gate's inputs, transcribed from apps/api/src/progression/content.ts
-// (the web build ships no content directory to import them from). The server
-// re-derives the required set and refuses a completion missing any, so these must
-// match the authored deck.
-const MODULE_CUES = [
-  "BOS.MD01.CUE.BRIEF_IDENTITY.v1",
-  "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
-  "BOS.MD01.CUE.BRIEF_STAMP.v1",
-  "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
-  "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1",
-  "BOS.MD01.CUE.BRIEF_INSERT.v1",
-];
-const MODULE_CHECKS = [
-  "BOS.MD01.CHECK.POSTWAR_REVENUE.v1",
-  "BOS.MD01.CHECK.STAMP_SCOPE.v1",
-  "BOS.MD01.CHECK.REPRESENTATION.v1",
-];
+
+// The module gate's inputs, DERIVED from the authored deck rather than hand-copied.
+//
+// This used to transcribe the cue and check ids into two literal arrays "because
+// the web build ships no content directory to import them from" — which was simply
+// not true: `m1Module.ts` already imports `content/m1/module.json`, and the real
+// module player (`module/devEntry.tsx`, and the shipped ModulePlayer) derive their
+// completion from that same `M1_MODULE`. A hand-copy beside it was a third copy of
+// the one deck (the authored JSON, the server's transcription in content.ts, and
+// this), and a copy is a place a difference can appear: the server re-derives the
+// required set and refuses a completion missing any, so a drifted list here would
+// make this "graded" harness silently fail to open its attempt — the very class of
+// dev/real divergence this harness exists to have already been fixed. Deriving
+// from `M1_MODULE` makes the harness's gate the real module player's gate by
+// construction; server↔authored parity is pinned in apps/api's module-deck test.
+const MODULE_ID = M1_MODULE?.moduleId ?? "BOS.MD01.MODULE.BRIEF.v1";
+const MODULE_CUES = M1_MODULE?.cards.map((card) => card.cueId) ?? [];
+const MODULE_CHECKS = M1_MODULE ? moduleRequiredCheckIds(M1_MODULE) : [];
 
 /** 32 random bytes as 64 lowercase hex, the shape a profile's variation seed takes. */
 function randomSeedHex(): string {
