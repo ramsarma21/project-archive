@@ -29,9 +29,19 @@ MIXAMO_DIR = os.path.join(ROOT, "source", "mixamo")
 
 # Stationary performances: the world controller owns horizontal placement, so
 # freeze ground-plane hip drift (vertical stays: sitting, stumbling, leaning).
+#
+# `dash` is here for the same reason but a different cause. It is Mixamo's
+# "Idle To Sprint" (Start Sprint From Action Idle), a committed launch that
+# travels several metres downrange, and it could NOT be pulled "In Place" (the
+# checkbox is absent on that transition card). The dash verb is code-driven —
+# packages/engine-world drives the burst displacement itself and the clip
+# supplies pose only — so its authored forward travel must be frozen or the body
+# double-moves and slides. Its vertical drive down-and-off-the-plant is the read
+# and is kept.
 IN_PLACE_HORIZONTAL = {
     "shout", "satchelSearch", "scolded", "ropePull", "read",
     "sitIdle", "sitTalk",
+    "dash",
 }
 
 MESHY_BONE_MAP = {

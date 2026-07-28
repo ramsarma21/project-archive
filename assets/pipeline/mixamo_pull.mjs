@@ -117,6 +117,24 @@ const BATCHES = {
     { id: "dropRoll", queries: ["Falling To Roll"], match: "Description: Mid-Air Falling Into A Roll Game Blend", inPlace: true },
     { id: "dropRollAlt", queries: ["Falling To Roll"], match: "Description: Mid-Air Falling Into A Roll", exclude: "Game Blend", inPlace: true },
   ],
+  // The player's dash verb (packages/engine-world/src/parkour/clips.ts, VERB_CLIP.DASH).
+  //
+  // Mixamo files no card under "dash" — the whole "Dash" query is cyclic runs,
+  // strafes and falls (see test-results/mixamo-search/titles.json). The verb's
+  // read is "an explosive directed push off one foot, low and forward,
+  // recovering into a run" that "must read as a decision rather than a faster
+  // stride". The one card that IS that launch, rather than a loop, is "Idle To
+  // Sprint" ("Start Sprint From Action Idle"): the actor drops into a low
+  // action-ready crouch and drives off the plant into a sprint — a committed
+  // burst, not a cycle. Anchored on the description because the "Idle To Sprint"
+  // title also fronts rifle/aiming starts.
+  //
+  // Pulled In Place so Mixamo strips the forward travel at the source; the bake
+  // then owns horizontal placement (dash is code-driven), keeping only the
+  // clip's vertical drive down-and-forward, which is the read.
+  "dash-2026-07-27": [
+    { id: "dash", queries: ["Sprint Start", "Idle To Sprint"], match: "Start Sprint From Action Idle", inPlace: true },
+  ],
 };
 const args = process.argv.slice(2);
 const batchArg = args.find((arg) => arg.startsWith("--batch="))?.split("=")[1];
