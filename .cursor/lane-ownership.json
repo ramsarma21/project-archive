@@ -26,10 +26,13 @@
   "lanes": {
     "mission-world": [
       "packages/engine-world/**",
-      "packages/mission-m1/**",
+      "packages/mission-m1/src/level/ladders.ts",
+      "packages/mission-m1/src/types.ts",
+      "packages/mission-m1/src/compile.ts",
+      "packages/mission-m1/src/runtime.ts",
+      "packages/mission-m1/src/assets.ts",
       "apps/web/src/chapter/M1Scenery.tsx",
       "scripts/check-world-affordances.mjs",
-      "assets/pipeline/*work_ladder*",
       "assets/pipeline/*ladder*",
       "apps/web/public/world/props/work-ladder*"
     ],
@@ -74,6 +77,15 @@
     "api-hunt": [
       "apps/api/**",
       "packages/pvp/**"
+    ],
+    "level-data": [
+      "packages/mission-m1/src/level/route.ts",
+      "packages/mission-m1/src/level/route2.ts",
+      "packages/mission-m1/src/level/geometry.ts",
+      "packages/mission-m1/src/level/dockSquare.ts",
+      "packages/mission-m1/src/level/climbs.ts",
+      "packages/mission-m1/src/level/opposition.ts",
+      "packages/mission-m1/src/encounters/**"
     ]
   }
 }
