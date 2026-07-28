@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import {
   ASSESSMENT_ITEMS_PER_CONCEPT,
   LEARNING_MODULE_SECONDS,
+  MAX_MISSION_ATTEMPTS,
   PROGRESSION_MODEL_VERSION,
   STARTING_RANK,
   applyMissionOutcome,
@@ -93,6 +94,19 @@ export interface AbandonMissionAttemptResult {
   campaign: CampaignProgression;
   chapter: ChapterProgression;
   derived: ProgressionDerived;
+}
+
+export interface ResetMissionAttemptsResult {
+  /** The mission after the reset: UNSTARTED, zero attempts used, nothing awarded. */
+  mission: MissionProgress;
+  /** How many attempt rows were removed. Reported so the caller can audit. */
+  deletedAttempts: number;
+  /**
+   * The module-gate ordinals that SURVIVED the reset
+   * (`learning_module_completions` for this mission), read back after the write
+   * so a caller can prove the gate was preserved rather than assume it.
+   */
+  moduleGateOrdinalsPreserved: number[];
 }
 
 export interface SubmitAssessmentResult {
@@ -641,6 +655,85 @@ export class ProgressionService {
           chapter: delta.chapter,
           derived: this.derived(delta.campaign, delta.chapter),
         },
+      };
+    });
+  }
+
+  /**
+   * DEV-ONLY: reset one mission's attempt ledger, PRESERVING the module gate.
+   *
+   * This is the productised form of the hand-run SQL a reset used to need. Inside
+   * the same per-profile advisory-locked transaction every other mutation uses, it
+   *
+   *   * removes the mission's attempt rows (`mission_attempts`), freeing ordinals
+   *     1..3 so a fresh attempt one can be opened; and
+   *   * resets the durable per-mission counters (`mission_progress`) to UNSTARTED,
+   *     zero attempts used, nothing awarded.
+   *
+   * WHAT IT DELIBERATELY DOES NOT TOUCH — and this is the load-bearing invariant,
+   * not an omission: `learning_module_completions`. The boss duel is bound to the
+   * player's own open attempt and refuses to grade unless that attempt's module
+   * gate is satisfied, so wiping the gate alongside the attempts would lock the
+   * player out of the exact run they reset in order to test. The gate ordinals are
+   * read back afterwards and returned, so the caller can PROVE the gate survived.
+   *
+   * It is not on the client's writable surface: no route exposes it except the
+   * dev-gated `/v1/dev/reset-mission`, which is a 404 in production. Rank,
+   * cumulative Levels, the Codex, concept mastery and every other mission are left
+   * exactly as they were — this resets attempts for one mission and nothing else.
+   */
+  async resetMissionAttempts(
+    profileId: string,
+    request: { chapterId: string; missionId: string },
+  ): Promise<ServiceResult<ResetMissionAttemptsResult>> {
+    return this.store.transact(profileId, async (tx) => {
+      const { chapter } = await this.ensureCampaign(tx, profileId);
+      if (chapter.chapterId !== request.chapterId || chapter.status !== "ACTIVE") {
+        return fail("CHAPTER_NOT_ACTIVE");
+      }
+      // Refuse an unknown mission rather than minting a blank row for it: a reset
+      // targets an authored mission, and a typo should say so, not silently create.
+      const reward = this.content.missionReward(chapter.chapterId, request.missionId);
+      if (!reward) return fail("PACKAGE_MISSING");
+
+      // Free the ordinals. This removes any live attempt too, which is intended:
+      // a dev reset is allowed to discard an in-progress run.
+      const deletedAttempts = await tx.deleteMissionAttempts(
+        chapter.chapterId,
+        request.missionId,
+      );
+
+      const at = this.at();
+      const mission: MissionProgress = {
+        profileId,
+        chapterId: chapter.chapterId,
+        missionId: request.missionId,
+        attemptsUsed: 0,
+        outcome: "UNSTARTED",
+        awardedXp: 0,
+        clearedOnAttempt: null,
+        clearedAt: null,
+        failedAt: null,
+        updatedAt: at,
+      };
+      await tx.putMission(mission);
+
+      // Read the gate back — never written here — so the result can assert which
+      // ordinals still satisfy the duel's canonical-attempt requirement.
+      const moduleGateOrdinalsPreserved: number[] = [];
+      for (let ordinal = 1; ordinal <= MAX_MISSION_ATTEMPTS; ordinal += 1) {
+        const completion = await tx.moduleCompletion(
+          chapter.chapterId,
+          "MISSION_ATTEMPT",
+          request.missionId,
+          ordinal,
+        );
+        if (completion) moduleGateOrdinalsPreserved.push(ordinal);
+      }
+
+      return {
+        ok: true as const,
+        value: { mission, deletedAttempts, moduleGateOrdinalsPreserved },
       };
     });
   }

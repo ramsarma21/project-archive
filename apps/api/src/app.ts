@@ -34,11 +34,17 @@ import { registerProgressionRoutes } from "./routes/progression.js";
 import { registerPvpRoutes } from "./routes/pvp.js";
 import { registerReportingRoutes } from "./routes/reporting.js";
 import { registerLocalSessionRoute } from "./routes/localSession.js";
+import { registerDevResetRoute } from "./routes/devReset.js";
 import { createDuelGrading } from "./duels/grading.js";
 import { postgresDuelVerdictStore } from "./duels/verdictStore.js";
 import { m1DuelId, m1ExpectedDuelItem } from "@pa/mission-m1";
 import { createPvpGrading } from "./pvp/grading.js";
-import { bostonProgressionContent, M1_MODULE_ID } from "./progression/content.js";
+import {
+  BOSTON_RUNTIME_CHAPTER_ID,
+  M1_MISSION_ID,
+  M1_MODULE_ID,
+  bostonProgressionContent,
+} from "./progression/content.js";
 import { pvpCardResolver } from "./pvp/cardAccess.js";
 import { postgresProgressionStore } from "./progression/postgresStore.js";
 import { ProgressionService } from "./progression/service.js";
@@ -416,6 +422,17 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
     // Non-production only: the route answers 404 in production, so this is never
     // reached there and no tab credential is ever minted on a deployed task.
     mintDevSession: (sid) => devSessionStore.mint(sid),
+  });
+
+  // A dev-only reset of the CALLER'S OWN mission attempts, for the testing loop.
+  // 404 in production (the gate is read per request), session-scoped to the
+  // caller's own profile, CSRF-protected, and it preserves the module gate so the
+  // duel can still grade the fresh attempt. See routes/devReset.ts.
+  registerDevResetRoute(app, {
+    service: progression,
+    defaultChapterId: BOSTON_RUNTIME_CHAPTER_ID,
+    defaultMissionId: M1_MISSION_ID,
+    allowedOrigin: WEB_ORIGIN,
   });
 
   app.post("/v1/logout", async (req, reply) => {

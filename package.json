@@ -12,6 +12,7 @@
     "lint": "node scripts/check-boundaries.mjs && node scripts/check-dangling-imports.mjs && node scripts/check-world-textures.mjs --selftest && node scripts/check-world-textures.mjs && node scripts/check-world-scale.mjs --selftest && node scripts/check-world-scale.mjs",
     "db:up": "docker compose up -d",
     "db:migrate": "pnpm --filter @pa/api migrate",
+    "dev:reset-mission": "node --import tsx apps/api/src/dev/resetMission.ts",
     "dev": "concurrently -n api,web -c blue,green \"pnpm --filter @pa/api dev\" \"pnpm --filter @pa/web dev\"",
     "aws:secret": "pnpm --filter @pa/infra sync-google-secret",
     "aws:secrets:check": "pnpm --filter @pa/infra check-secrets",

@@ -160,6 +160,15 @@ function bostonMissionId(ordinal: number): string {
   return `PA.SEA01.CH02.BOSTON.MD${String(ordinal).padStart(2, "0")}`;
 }
 
+/**
+ * M1's runtime mission id — the Boston slate's first mission, "The Effigy Run".
+ *
+ * Exported so the dev-reset surfaces (the CLI script and the dev-gated route)
+ * share ONE authoritative id with the content pack rather than re-spelling the
+ * slug, exactly as `BOSTON_RUNTIME_CHAPTER_ID` is the one chapter id.
+ */
+export const M1_MISSION_ID = bostonMissionId(1);
+
 const MISSION_ORDINALS: ReadonlyMap<string, number> = new Map(
   Array.from({ length: BOSTON_MISSION_COUNT }, (_, index) => [
     bostonMissionId(index + 1),

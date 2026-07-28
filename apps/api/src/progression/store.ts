@@ -196,6 +196,19 @@ export interface ProgressionTx {
     attempt: MissionAttempt,
     committedEvents: readonly unknown[],
   ): Promise<void>;
+  /**
+   * Delete every attempt row for one mission of this profile, and return how many
+   * were removed.
+   *
+   * DEV-RESET SUPPORT, AND DELIBERATELY NARROW. It frees the attempt ordinals
+   * (1..3) so a fresh attempt one can be opened again, and it is paired with a
+   * `mission_progress` reset by the service. It touches ONLY `mission_attempts`:
+   * `learning_module_completions` is a separate table and is never deleted here,
+   * because the boss duel refuses to grade unless the attempt it is bound to has a
+   * satisfied module gate — so wiping the gate would lock the player out of the
+   * very run a reset exists to let them replay.
+   */
+  deleteMissionAttempts(chapterId: string, missionId: string): Promise<number>;
   putConceptMastery(
     mastery: ConceptMastery,
     disclosure: ConceptMasteryDisclosure,
