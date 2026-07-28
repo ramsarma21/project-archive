@@ -128,6 +128,16 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 
 ---
 
+## Needs the owner — cannot be closed from here
+
+1. **`gh auth login`.** The played-mission gate is "blocking" only because the YAML says so;
+   nothing here can confirm it runs in a real Actions runner. Two gates now rest on that.
+2. **Add repository secret `TRUEFOUNDRY_GRADING_API_KEY`** — a *dedicated* key with its own
+   quota. The shared key contends with the owner's play session; one measurement run had 299 of
+   313 calls fall back. Until it exists the nightly grading gate fails loudly at preflight.
+3. **A location or a live capture for "cannot run."** Every in-lane mechanism is ruled out.
+4. **A frame-trace on the owner's hardware** to settle whether residual GPU spikes are real.
+
 ## How the loop uses this
 
 Each tick, prefer the **unmet** condition with the most player impact whose files are free.
