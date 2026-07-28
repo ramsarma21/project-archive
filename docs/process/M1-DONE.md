@@ -218,9 +218,11 @@ runner and re-runs a whole package suite per mutant — roughly 17 CPU-hours for
 set. Worse, it is blind to the grader-wiring and beat-reachability gaps entirely, because those
 live where no unit test reaches. Useful as an occasional per-file discovery run; not a gate.
 
-**Owner's pacing decisions, 28 Jul — the learn-to-play ratio.** Measured: a module runs 45–60 min
-worst case, of which **26–44 min is the duel** (24 rounds at 65–110 s each) against 180 s of
-instruction and a 180 s mission clock. So ~80% gunfight, in an ed-tech product. Within a round the
+**Owner's pacing decisions, 28 Jul — the learn-to-play ratio.** **My framing overstated it.** I
+built the case on the 24-round ceiling, which a later trace showed is an anti-hang backstop that
+never fires: health already ends every duel, in PvE and PvP, at a measured **4–7 rounds**. So a
+typical duel is **7–11 min**, not 26–44, and a typical module is nearer 15–20 min than 45–60. The
+ratio is worth improving; it was never as broken as I said. Within a round the
 cost is the **prose answer** (45–90 s to compose) plus a ~20 s engagement window.
   - **No round ceiling** — health ends the match, and rounds get much faster. This makes bank
     exhaustion *reachable*, since the 34-item pool only clears the 24-round cap by one item.
@@ -235,7 +237,11 @@ cost is the **prose answer** (45–90 s to compose) plus a ~20 s engagement wind
   - **An answer is 1–2 cards plus one sentence.** The evidence placement *is* the reasoning; the
     sentence says why. ~20–25 s instead of 45–90, and it suits the deterministic-card /
     short-prose-comparison architecture far better than a paragraph.
-  - **Engagement window** ~20 s → 10–12 s, if winnability survives it (7 balls must still win).
+  - ~~Engagement window 20 s → 10–12 s~~ — **cannot ship**, measured. The coupling isn't the 7-ball
+    path (7 balls fit any window over ~7 s) but the 14-ball ones: reaching 12 s needs a faster
+    reload, after which the reference skilled player is **knocked out on the wrong-answer path** at
+    tiers 3–4, violating "answering wrong is a handicap, never a lockout." Needs a full magazine and
+    economy retune to be safe — deferred, ~8 s/round of payoff.
   - **Missions become milestones**, every 3rd–4th module rather than every module — but **longer and
     covering more concepts**, since the world already exists. Retrieval breadth stays with the duel.
   - Target: ~15 min per module, ~10 retrievals, one every 90 s — roughly 3.5 h per chapter instead
