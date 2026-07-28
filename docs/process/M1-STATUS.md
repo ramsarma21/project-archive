@@ -118,15 +118,19 @@ replay harness.
   4 m/s while a *looping* clip plays. Step-up has no clip — it plays the run cycle.
   Landings show 44% (run) and 55% (received) before being cut off. Measured, unfixed.
   *Sequenced after the ladders, since climb paths are changing.*
-- **Body falls *through* the ground at the elm.** Reported in play 28 Jul: jumping off the
-  height beside the Liberty Elm puts the body in/through the street rather than on it, and an
-  encounter arms there, off the guided descent. The authored way down is three chained
-  `CLIMB`s precisely because a straight drop is 6.4 m — past the roll ceiling — so the design
-  anticipates the jump and routes around it without handling a player who jumps anyway.
-  Suspects: a gap in ground coverage at the elm base, or audit **P4** (ground support is a
-  point query, so support is sampled not swept — the same defect that lets a body float off a
-  roof edge could fail to find ground), or tunnelling through a thin surface at fall speed.
-  Unclassified until reproduced. In flight.
+- **A 6.4–11.2 m fall costs nothing.** The elm fall-through was **disproven** (`5ec3684`): the
+  floor is solid everywhere under the tree and a jump off every bough lands *on* it, guarded
+  by 35 cases. What is genuinely wrong is that the drop is consequence-free — a HARD landing
+  only emits noise, and the edge brake gates a *run-off* above 5.5 m but never a *jump*, so
+  jumping bypasses the protection entirely. Against the owner's 1:1-with-real-life rule an
+  11 m drop onto cobbles is an injury or a refused take-off. Lives in `engine-world`;
+  sequenced behind the ladder rework. **Not a soft-lock:** what met him at the tree was the
+  street constable patrolling under it, drawn by the landing noise — a patrol, not a beat, and
+  the same-surface band correctly refuses arming from the base or the boughs.
+- **A route bypasses a possibly-mandatory beat.** The ground-up buttress line reaches the
+  steeple without crossing the roof trigger, which is a soft-lock waiting to happen if
+  `ROPEWALK_STOP` is mandatory. Also: the 2.0 m same-surface band alone does not separate the
+  meeting-house leads (8.2) from `BOUGH_CROWN` (8.3) — only the XZ radius does. Flagged, open.
 - **The Liberty Elm renders as neon shards.** Seen in play 28 Jul: the mission's climactic
   set-piece draws as a smeared cylinder trunk under flat shattered green planes. Strong
   suspicion is the contain-fit class again, in its worst instance — `liberty-elm-hero` is
