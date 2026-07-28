@@ -45,6 +45,7 @@ import {
 } from "../duels/grading.js";
 import { m1EncounterBank } from "@pa/grading";
 import type { DuelVerdictStore } from "../duels/verdictStore.js";
+import type { ConceptRetrievalStore } from "../progression/retrievalStore.js";
 
 const SESSION_COOKIE = "pa_session";
 const MAX_ID_CHARS = 200;
@@ -94,6 +95,11 @@ export interface EncounterRouteOptions extends DuelGradingOptions {
   readonly resolveAttempt?: EncounterAttemptResolver;
   readonly questionAuthority?: EncounterQuestionAuthority;
   readonly verdictStore?: DuelVerdictStore;
+  /**
+   * The formative retrieval ledger. Optional and off the grading path: a failure
+   * to record is logged and swallowed so a stop can never soft-lock on it.
+   */
+  readonly retrieval?: ConceptRetrievalStore;
   readonly authenticate?: (
     sessionId: string | undefined,
   ) => Promise<{ profileId: string } | null>;
@@ -215,7 +221,7 @@ export async function registerEncounterRoutes(
   const requireOwner = makeRequireOwner(authenticate);
   const questionAuthority =
     options.questionAuthority ?? defaultEncounterQuestionAuthority();
-  const { resolveAttempt, verdictStore } = options;
+  const { resolveAttempt, verdictStore, retrieval } = options;
 
   app.post<{ Params: { encounterId: string } }>(
     "/v1/encounters/:encounterId/verdict",
@@ -302,7 +308,7 @@ export async function registerEncounterRoutes(
       // changed answer, a reload, a double-fire, a racer — returns the first
       // stored envelope and receipt and never re-grades. One round per encounter,
       // so the round index is 0.
-      const { record } = await verdictStore.resolve(
+      const { record, firstMinted } = await verdictStore.resolve(
         { profileId: owner.profileId, duelId: canonicalId, round: 0 },
         async () => {
           const graded = await grading.grade({
@@ -323,6 +329,36 @@ export async function registerEncounterRoutes(
           };
         },
       );
+
+      // Fold the graded stop into the formative retrieval ledger, once, on the
+      // first mint. An encounter is asked once per attempt, so it is always a fresh
+      // first appearance (never a recycled repeat). Off the grading path: a failure
+      // is logged and swallowed so a model outage cannot soft-lock the stop.
+      if (firstMinted && retrieval) {
+        try {
+          await retrieval.record({
+            profileId: owner.profileId,
+            chapterId: attempt.chapterId,
+            missionId: attempt.missionId,
+            attemptId: attempt.attemptId,
+            conceptId: item.conceptId,
+            itemId: item.itemId,
+            source: "ENCOUNTER",
+            duelId: canonicalId,
+            roundIndex: 0,
+            correct: record.envelope.kind === "CORRECT",
+            graded: record.envelope.source !== "GRADING_TIMEOUT",
+            recycled: false,
+            appearance: 1,
+            seenAt: new Date().toISOString(),
+          });
+        } catch (cause) {
+          request.log.warn(
+            { cause, profileId: owner.profileId, encounterId, canonicalId },
+            "retrieval ledger: failed to record a graded encounter",
+          );
+        }
+      }
 
       reply.header("x-pa-verdict-receipt", record.receipt);
       reply.header("x-pa-grading-path", record.gradingPath);

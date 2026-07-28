@@ -208,6 +208,39 @@ test("the retired game's tables are dropped by a new migration, not by an edit",
   assert.ok(Object.hasOwn(checksums, "002_open_responses.sql"));
 });
 
+test("the retrieval ledger is separate, server-minted, and keyed 1:1 with verdicts", () => {
+  const sql = readFileSync(join(migrationRoot, "012_concept_retrieval.sql"), "utf8");
+  for (const required of [
+    "create table if not exists concept_retrieval",
+    // Keyed exactly like duel_verdicts, so "first answer is final" carries and a
+    // reset can find the verdicts a mission produced through these rows.
+    "primary key (profile_id, duel_id, round_index)",
+    // The repeat marker the duel lane emits, consumed rather than hidden.
+    "recycled boolean not null default false",
+    "appearance integer not null default 1 check (appearance >= 1)",
+    // Spacing: when it happened, and which match it belonged to.
+    "seen_at timestamptz not null default now()",
+    "attempt_id uuid not null",
+    // A grading outage is recorded but must not read as evidence of retrieval.
+    "graded boolean not null",
+    // An id, never answer text — the same rule duel_verdicts keeps.
+    "item_id text not null",
+    "source text not null check (source in ('DUEL', 'ENCOUNTER'))",
+  ]) {
+    assert.match(
+      sql,
+      new RegExp(required.replace(/[()>=']/g, "\\$&"), "i"),
+      `012_concept_retrieval.sql is missing: ${required}`,
+    );
+  }
+  // It is its OWN table, never a column bolted onto the summative mastery record:
+  // "mastered on an assessment" and "got it right in a gunfight" are different
+  // claims a teacher must see apart, so this migration does not touch concept_mastery.
+  assert.doesNotMatch(sql, /alter table concept_mastery/i);
+  // And answer text never reaches this row, in any spelling.
+  assert.doesNotMatch(sql, /answer_text|response_text|answer_hash|response_ref/i);
+});
+
 test("open-response migrations contain security and compatibility shape", () => {
   const storage = readFileSync(
     join(migrationRoot, "002_open_responses.sql"),

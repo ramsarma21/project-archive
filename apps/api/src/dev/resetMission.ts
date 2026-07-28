@@ -23,6 +23,7 @@ import "../config.js";
 import { pool, query } from "../db.js";
 import { ProgressionService } from "../progression/service.js";
 import { postgresProgressionStore } from "../progression/postgresStore.js";
+import { postgresConceptRetrievalStore } from "../progression/retrievalStore.js";
 import {
   BOSTON_RUNTIME_CHAPTER_ID,
   M1_MISSION_ID,
@@ -152,11 +153,23 @@ async function main(): Promise<void> {
     fail(`reset refused: ${result.error}`);
   }
 
+  // Clear the mission's formative retrieval ledger and its stale duel verdicts, so
+  // a replay re-grades and re-records rather than replaying the prior run. The
+  // module gate and concept mastery are untouched, exactly as the attempt reset
+  // leaves them.
+  const retrievalCleared = await postgresConceptRetrievalStore().clearMission(
+    profileId,
+    args.chapter,
+    args.mission,
+  );
+
   const after = await readState(profileId, args.chapter, args.mission);
   console.log("\n===== AFTER =====");
   console.dir(after, { depth: null });
   console.log("\n===== RESULT =====");
   console.dir(result.value, { depth: null });
+  console.log("\n===== RETRIEVAL LEDGER =====");
+  console.dir(retrievalCleared, { depth: null });
 
   // The invariant, stated out loud so a run that silently broke it is visible.
   const gateHeld =

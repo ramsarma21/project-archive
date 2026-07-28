@@ -9,6 +9,7 @@ import {
   missionBaseXp,
 } from "@pa/abilities";
 import type { MissionAttempt, ProgressionSnapshot } from "@pa/contracts";
+import { m1DuelId } from "@pa/mission-m1";
 import { buildApp } from "../src/app.js";
 import { csrfTokenForSession } from "../src/auth.js";
 import { pool, query } from "../src/db.js";
@@ -18,6 +19,7 @@ import {
   M1_MODULE_ID,
   bostonProgressionContent,
 } from "../src/progression/content.js";
+import { postgresConceptRetrievalStore } from "../src/progression/retrievalStore.js";
 
 // ===========================================================================
 // Clearing Mission 1 pays XP, and the payout survives a reload.
@@ -339,6 +341,180 @@ test("a client cannot name its own award, its own ordinal or its own verdict", a
   const snapshot = await pull(runner);
   assert.equal(snapshot.openAttempt?.attemptId, attempt.attemptId);
   assert.equal(snapshot.activeChapter.xp, 0);
+});
+
+// ===========================================================================
+// The formative retrieval ledger, against a real Postgres.
+//
+// The in-memory double (concept-retrieval.test.ts) proves the shape; these prove
+// the SQL, the profile scoping under a real WHERE (the property the progression
+// double lied about until it was unified), and the dev-reset's cross-table clear.
+// ===========================================================================
+
+/** A duel round posted through the real route, exactly as the client does. */
+function postDuel(runner: Runner, duelId: string, round: number, answer: string) {
+  return app.inject({
+    method: "POST",
+    url: `/v1/duels/${encodeURIComponent(duelId)}/rounds/${round}/verdict`,
+    headers: {
+      cookie: runner.cookie,
+      "x-pa-csrf-token": runner.csrf,
+      origin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
+      "content-type": "application/json",
+    },
+    // itemId/conceptId are client CLAIMS the server ignores; it grades and records
+    // the item the round actually asks, computed from the stored attempt.
+    payload: {
+      side: "A",
+      itemId: "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
+      itemVersion: "v1",
+      conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+      answer,
+    },
+  });
+}
+
+interface RetrievalRow {
+  concept_id: string;
+  item_id: string;
+  source: string;
+  correct: boolean;
+  graded: boolean;
+  recycled: boolean;
+  appearance: number;
+  mission_id: string;
+  duel_id: string;
+  round_index: number;
+}
+
+test("a graded duel round lands in the retrieval ledger, server-minted", async () => {
+  const runner = await newRunner("Duelling Runner");
+  const attempt = await authorize(runner);
+  // A blank answer abstains → WRONG, graded deterministically (no classifier).
+  const res = await postDuel(runner, m1DuelId(attempt.attemptOrdinal), 1, "");
+  assert.equal(res.statusCode, 200, res.body);
+  assert.equal(res.json().kind, "WRONG");
+
+  const rows = await query<RetrievalRow>(
+    `select concept_id, item_id, source, correct, graded, recycled, appearance,
+            mission_id, duel_id, round_index
+       from concept_retrieval where profile_id=$1`,
+    [runner.profileId],
+  );
+  assert.equal(rows.rowCount, 1, "exactly one row for one graded round");
+  const row = rows.rows[0]!;
+  assert.equal(row.source, "DUEL");
+  assert.equal(row.mission_id, M1);
+  assert.equal(row.duel_id, m1DuelId(attempt.attemptOrdinal));
+  assert.equal(row.round_index, 1);
+  assert.equal(row.correct, false, "a blank is WRONG");
+  assert.equal(row.graded, true, "an abstention is a real grade");
+  assert.equal(row.recycled, false);
+  // The concept and item are the SERVER-selected round's, one of M1's three.
+  assert.match(row.item_id, /^BOS\.MD01\.DUEL\./);
+  assert.match(row.concept_id, /^BOS\.CONCEPT\./);
+
+  // And the read rolls it up the way a report wants it.
+  const [summary] = await postgresConceptRetrievalStore().byChapter(
+    runner.profileId,
+    BOSTON_RUNTIME_CHAPTER_ID,
+  );
+  assert.ok(summary);
+  assert.equal(summary.asked, 1);
+  assert.equal(summary.askedGraded, 1);
+  assert.equal(summary.correct, 0);
+  assert.equal(summary.distinctItems, 1);
+  assert.equal(summary.distinctAttempts, 1);
+});
+
+test("the ledger reads are profile-scoped: one student's asks never enter another's report", async () => {
+  // The mutation-proof guard. The progression double returned every profile's rows
+  // behind a comment promising otherwise; this asserts the real SQL does not. Break
+  // the `where profile_id=$1` in postgresConceptRetrievalStore.byChapter and this
+  // fails, which is the whole point — a ledger that reports the wrong student's
+  // learning is worse than none.
+  const store = postgresConceptRetrievalStore();
+  const alice = await newRunner("Ledger Alice");
+  const bob = await newRunner("Ledger Bob");
+  const base = {
+    chapterId: BOSTON_RUNTIME_CHAPTER_ID,
+    missionId: M1,
+    attemptId: crypto.randomUUID(),
+    conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
+    itemId: "BOS.MD01.DUEL.STAMP.NAME_TWO.v1",
+    source: "DUEL" as const,
+    correct: true,
+    graded: true,
+    recycled: false,
+    appearance: 1,
+    seenAt: new Date().toISOString(),
+  };
+  // Alice: one correct ask. Bob: two, both wrong. Same concept and chapter.
+  await store.record({ ...base, profileId: alice.profileId, duelId: "A#duel@1", roundIndex: 1, correct: true });
+  await store.record({ ...base, profileId: bob.profileId, duelId: "B#duel@1", roundIndex: 1, correct: false });
+  await store.record({ ...base, profileId: bob.profileId, duelId: "B#duel@1", roundIndex: 2, correct: false });
+
+  const aSummary = await store.byChapter(alice.profileId, BOSTON_RUNTIME_CHAPTER_ID);
+  const bSummary = await store.byChapter(bob.profileId, BOSTON_RUNTIME_CHAPTER_ID);
+  assert.equal(aSummary.length, 1);
+  assert.equal(aSummary[0]!.asked, 1, "Alice sees only her one ask, not Bob's three");
+  assert.equal(aSummary[0]!.correct, 1);
+  assert.equal(bSummary[0]!.asked, 2, "Bob sees only his two");
+  assert.equal(bSummary[0]!.correct, 0);
+});
+
+test("a dev-reset clears the mission's retrieval ledger AND its stale duel verdicts", async () => {
+  const runner = await newRunner("Resetting Runner");
+  const attempt = await authorize(runner);
+  const duelId = m1DuelId(attempt.attemptOrdinal);
+  const graded = await postDuel(runner, duelId, 1, "");
+  assert.equal(graded.statusCode, 200, graded.body);
+
+  // Both tables now hold a row for this round.
+  const before = await query(
+    "select 1 from concept_retrieval where profile_id=$1",
+    [runner.profileId],
+  );
+  const beforeVerdicts = await query(
+    "select 1 from duel_verdicts where profile_id=$1 and duel_id=$2 and round_index=1",
+    [runner.profileId, duelId],
+  );
+  assert.equal(before.rowCount, 1);
+  assert.equal(beforeVerdicts.rowCount, 1);
+
+  // The reset endpoint the dev harness uses. It clears the mission's retrieval and
+  // its verdicts so a replay re-grades rather than replaying the prior run.
+  const reset = await app.inject({
+    method: "POST",
+    url: "/v1/dev/reset-mission",
+    headers: {
+      cookie: runner.cookie,
+      "x-pa-csrf-token": runner.csrf,
+      origin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
+      "content-type": "application/json",
+    },
+    payload: { chapterId: BOSTON_RUNTIME_CHAPTER_ID, missionId: M1 },
+  });
+  assert.equal(reset.statusCode, 200, reset.body);
+  const body = reset.json() as {
+    reset: { moduleGateOrdinalsPreserved: number[] };
+    retrieval: { retrievalRowsCleared: number; verdictsCleared: number };
+  };
+  assert.equal(body.retrieval.retrievalRowsCleared, 1);
+  assert.equal(body.retrieval.verdictsCleared, 1, "the stale verdict is gone so a replay re-grades");
+  // The module gate — durable, not run-state — survives, exactly as before.
+  assert.ok(body.reset.moduleGateOrdinalsPreserved.includes(1));
+
+  const afterRetrieval = await query(
+    "select 1 from concept_retrieval where profile_id=$1",
+    [runner.profileId],
+  );
+  const afterVerdicts = await query(
+    "select 1 from duel_verdicts where profile_id=$1 and duel_id=$2",
+    [runner.profileId, duelId],
+  );
+  assert.equal(afterRetrieval.rowCount, 0, "the mission's retrieval history is cleared");
+  assert.equal(afterVerdicts.rowCount, 0, "and its verdicts, so the replay is fresh");
 });
 
 test("the milestones the server holds are the authored schedule", async () => {
