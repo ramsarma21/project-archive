@@ -30,11 +30,122 @@
 import "../config.js";
 import { randomBytes } from "node:crypto";
 import { m1ContentBank } from "@pa/grading";
+import {
+  m1DuelId,
+  m1ExpectedDuelCardIds,
+  m1ExpectedDuelItem,
+} from "@pa/mission-m1";
+import type { FastifyInstance } from "fastify";
 import { buildApp } from "../app.js";
 import { csrfTokenForSession } from "../auth.js";
 import { query } from "../db.js";
 import { createDuelGrading } from "./grading.js";
 import { DUEL_ROUND_CEILING } from "./request.js";
+
+// The boss duel is now bound to the player's OWN open progression attempt: the route
+// resolves the attempt, requires the posted duel id to be its canonical one, and
+// grades the item the ROUND asks (server-selected from the stored seed+ordinal),
+// ignoring the client's claim. So this check can no longer post a hand-written duel
+// id with a hand-picked item and expect a grade — it must open a real attempt first,
+// exactly as the browser does, then grade the item the round actually asks. The two
+// content constants below are the module gate's inputs, transcribed from
+// progression/content.ts (the API ships no content directory to import them from).
+const CHAPTER_ID = "boston-1765";
+const MISSION_ID = "PA.SEA01.CH02.BOSTON.MD01";
+const MODULE_ID = "BOS.MD01.MODULE.BRIEF.v1";
+const MODULE_CUES = [
+  "BOS.MD01.CUE.BRIEF_IDENTITY.v1",
+  "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
+  "BOS.MD01.CUE.BRIEF_STAMP.v1",
+  "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
+  "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1",
+  "BOS.MD01.CUE.BRIEF_INSERT.v1",
+];
+const MODULE_CHECKS = [
+  "BOS.MD01.CHECK.POSTWAR_REVENUE.v1",
+  "BOS.MD01.CHECK.STAMP_SCOPE.v1",
+  "BOS.MD01.CHECK.REPRESENTATION.v1",
+];
+
+interface OpenAttempt {
+  readonly attemptOrdinal: number;
+  readonly attemptSeedHex: string;
+  readonly duelId: string;
+}
+
+/**
+ * Open a real mission attempt for a test user, the same two round trips the browser
+ * makes: record the mandatory module, then open the attempt. Returns the server's
+ * ordinal, seed and the canonical duel id every graded post must carry.
+ */
+async function openAttemptFor(
+  app: FastifyInstance,
+  user: TestUser,
+  auth: () => Record<string, string>,
+): Promise<OpenAttempt> {
+  const moduleRes = await app.inject({
+    method: "POST",
+    url: `/v1/profiles/${user.profileId}/progression/modules`,
+    headers: auth(),
+    payload: {
+      chapterId: CHAPTER_ID,
+      moduleId: MODULE_ID,
+      gatesKind: "MISSION_ATTEMPT",
+      gatesId: MISSION_ID,
+      acknowledgedCueIds: MODULE_CUES,
+      acknowledgedCheckIds: MODULE_CHECKS,
+      observedSeconds: 180,
+    },
+  });
+  if (moduleRes.statusCode !== 200) {
+    fail(`could not record the module gate: ${moduleRes.statusCode} ${moduleRes.body}`);
+  }
+  const openRes = await app.inject({
+    method: "POST",
+    url: `/v1/profiles/${user.profileId}/progression/mission-attempts`,
+    headers: auth(),
+    payload: { chapterId: CHAPTER_ID, missionId: MISSION_ID },
+  });
+  if (openRes.statusCode !== 200) {
+    fail(`could not open a mission attempt: ${openRes.statusCode} ${openRes.body}`);
+  }
+  const attempt = openRes.json() as {
+    attemptOrdinal: number;
+    attemptSeedHex: string;
+  };
+  return {
+    attemptOrdinal: attempt.attemptOrdinal,
+    attemptSeedHex: attempt.attemptSeedHex,
+    duelId: m1DuelId(attempt.attemptOrdinal),
+  };
+}
+
+/**
+ * The first round whose server-selected item is asked AGAIN at a later round, so the
+ * SAME item can be graded both ways. The duel's bank permutation is not a plain
+ * cycle, so the pair is discovered rather than assumed.
+ */
+function sameItemBothWays(attempt: OpenAttempt): {
+  itemId: string;
+  goodRound: number;
+  badRound: number;
+} {
+  const rounds = new Map<string, number[]>();
+  for (let round = 1; round <= 24; round += 1) {
+    const itemId = m1ExpectedDuelItem({
+      attemptSeedHex: attempt.attemptSeedHex,
+      attemptOrdinal: attempt.attemptOrdinal,
+      round,
+    }).item.itemId;
+    rounds.set(itemId, [...(rounds.get(itemId) ?? []), round]);
+  }
+  for (const [itemId, asked] of rounds) {
+    if (asked.length >= 2 && referenceAnswerFor(itemId)) {
+      return { itemId, goodRound: asked[0]!, badRound: asked[1]! };
+    }
+  }
+  return fail("no item is asked twice inside 24 rounds; cannot grade one both ways");
+}
 
 /**
  * @pa/duel's `BULLETS_FOR_CORRECT` and `BULLETS_FOR_WRONG`, reported rather than
@@ -48,8 +159,6 @@ const REPORTED_BULLETS: Readonly<Record<string, number>> = {
   CORRECT: 14,
   WRONG: 7,
 };
-
-const DUEL_ID = "PA.BOS.M1.EFFIGY_RUN#duel@1";
 
 interface TestUser {
   readonly profileId: string;
@@ -125,6 +234,14 @@ async function main(): Promise<void> {
       cookie: `pa_session=${user.sessionId}`,
       "x-pa-csrf-token": csrfTokenForSession(user.sessionId),
     });
+
+    // Open the student's OWN attempt, exactly as the browser does, so the graded
+    // rounds below post the attempt's canonical duel id and are bound to a real run.
+    // Without this the route refuses every post 409 before grading — which is the
+    // integrated route working as designed, and the reason a check that skipped it
+    // proved nothing about grading.
+    const attempt = await openAttemptFor(app, student, () => mutatingAs(student));
+    const DUEL_ID = attempt.duelId;
     const url = (round: number) =>
       `/v1/duels/${encodeURIComponent(DUEL_ID)}/rounds/${round}/verdict`;
 
@@ -205,42 +322,59 @@ async function main(): Promise<void> {
     // ---- a real graded round ----------------------------------------------
     //
     // The same item both ways. Two different items would prove nothing: the whole
-    // question is whether what the STUDENT WROTE changed the outcome.
+    // question is whether what the STUDENT WROTE changed the outcome. The route now
+    // selects the item from the stored attempt (never the client's claim), so the
+    // pair of rounds that ask the SAME item is discovered from the attempt's own seed
+    // and the item's authored reference answer is graded against the item the round
+    // actually asks.
     console.log("\nGrading, live, one item both ways");
-    const itemId = "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1";
+    const both = sameItemBothWays(attempt);
+    const itemId = both.itemId;
+    // The round's Codex cards, server-derived. Placed on the good answer because the
+    // route folds prose AND evidence: a CLASSIFIER CORRECT with unsatisfied evidence
+    // is minted WRONG, exactly as the duel requires the player to place them.
+    const goodCards = m1ExpectedDuelCardIds({
+      attemptSeedHex: attempt.attemptSeedHex,
+      attemptOrdinal: attempt.attemptOrdinal,
+      round: both.goodRound,
+    });
+    // A third round for the empty box (a deterministic pre-check WRONG), distinct
+    // from the two that grade the item both ways.
+    const emptyRound = [2, 3, 4, 5, 6].find(
+      (candidate) => candidate !== both.goodRound && candidate !== both.badRound,
+    )!;
     console.log(`      item     ${itemId}`);
     console.log(`      question ${questionFor(itemId).slice(0, 110)}…`);
+    console.log(`      rounds   good=${both.goodRound} wrong=${both.badRound} (same item)`);
 
     interface Round {
       readonly label: string;
       readonly round: number;
       readonly answer: string;
       readonly expect: "CORRECT" | "WRONG";
+      readonly cards: readonly string[];
     }
     const rounds: readonly Round[] = [
       {
-        label: "the item's own authored reference answer",
-        round: 1,
+        label: "the item's own authored reference answer, with its Codex evidence",
+        round: both.goodRound,
         answer: referenceAnswerFor(itemId),
         expect: "CORRECT",
+        cards: goodCards,
       },
       {
-        label: "a student's own words, correct",
-        round: 2,
-        answer: "they're broke from the war with france and want us to pay for it",
-        expect: "CORRECT",
-      },
-      {
-        label: "a plausible wrong answer",
-        round: 3,
-        answer: "because they wanted to control us and show they were in charge",
+        label: "a deliberately off-topic answer to the SAME item",
+        round: both.badRound,
+        answer: "the colonists adored the king and asked him to tax them more heavily",
         expect: "WRONG",
+        cards: goodCards,
       },
       {
         label: "an empty box",
-        round: 4,
+        round: emptyRound,
         answer: "",
         expect: "WRONG",
+        cards: [],
       },
     ];
 
@@ -263,6 +397,7 @@ async function main(): Promise<void> {
           itemVersion: "v1",
           conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
           answer: entry.answer,
+          selectedCardIds: entry.cards,
         },
       });
       const elapsed = Date.now() - startedAt;

@@ -34,6 +34,7 @@ import { createDuelInput, duelControls } from "./duelInput.js";
 import {
   httpVerdictAuthority,
   type VerdictAuthority,
+  type VerdictOrigin,
   type VerdictReceipt,
 } from "./duelGrading.js";
 import {
@@ -169,6 +170,14 @@ export function DuelScreen(props: DuelScreenProps) {
   const hud = useDuelHud(runtime);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // How the last committed verdict was obtained, so the verdict beat can tell a slow
+  // grader ("took too long") apart from an unreachable one ("could not be reached").
+  // The verdict's own `source` is GRADING_TIMEOUT for both, so this is the only thing
+  // that distinguishes them on screen. Never changes the generous grant.
+  const [lastGrant, setLastGrant] = useState<{
+    origin: VerdictOrigin;
+    serverFallbackDiagnosis: string | null;
+  } | null>(null);
   const reported = useRef(false);
   // Collected rather than held in state: nothing on screen reads a receipt, and a
   // re-render per graded round to store an opaque string would be a render nobody
@@ -220,6 +229,16 @@ export function DuelScreen(props: DuelScreenProps) {
           item,
           answer,
           selectedCardIds,
+        });
+        // Say what actually happened, before the verdict is committed unread. A
+        // generous grant is right either way, but conflating a slow grader with a
+        // refused endpoint is how an unregistered route hid behind "the grader took
+        // too long" for the life of the duel. This line is the console-facing half of
+        // the truth the overlay tells the player.
+        announceGrantOrigin(result, hud.round);
+        setLastGrant({
+          origin: result.origin,
+          serverFallbackDiagnosis: result.serverFallbackDiagnosis,
         });
         // The verdict is the authority's. The client hands it over unread, and there
         // is no field on this call that could carry a bullet count.
@@ -312,7 +331,13 @@ export function DuelScreen(props: DuelScreenProps) {
               : { reducedMotion: props.reducedMotion })}
           />
         )}
-        {hud.phase === "BULLETS_GRANTED" && <VerdictBeat hud={hud} />}
+        {hud.phase === "BULLETS_GRANTED" && (
+          <VerdictBeat
+            hud={hud}
+            grantOrigin={lastGrant?.origin ?? null}
+            serverFallbackDiagnosis={lastGrant?.serverFallbackDiagnosis ?? null}
+          />
+        )}
         {hud.phase === "LINE_OF_SIGHT_BREAK" && <BreakBeat hud={hud} />}
         {hud.phase === "DUEL_RESOLVED" && (
           <OutcomePanel
@@ -325,6 +350,56 @@ export function DuelScreen(props: DuelScreenProps) {
     </div>
   );
 }
+
+/**
+ * The console-facing half of the truth the overlay tells the player.
+ *
+ * `app.ts` builds the API's logger off in development, and the server never even
+ * sees a round the client granted itself on a non-2xx — so if this line is not
+ * written here, a duel played entirely on the client's fallback leaves NOTHING on
+ * any console saying grading never happened. That silence is exactly how "the
+ * grader took too long" was believed for a route that was returning 404 every
+ * round. It names the origin and, on an unreachable round, the HTTP status.
+ */
+function announceGrantOrigin(
+  result: {
+    origin: VerdictOrigin;
+    httpStatus: number | null;
+    serverFallbackDiagnosis: string | null;
+  },
+  round: number,
+): void {
+  switch (result.origin) {
+    case "AUTHORITY_UNREACHABLE":
+      console.warn(
+        `[duel] round ${round}: the grader could not be reached` +
+          `${result.httpStatus === null ? "" : ` (HTTP ${result.httpStatus})`}` +
+          " — granted the maximum WITHOUT grading. This is not a slow grader; the " +
+          "request never reached the classifier, so a wrong answer paid the same as " +
+          "a right one. Check the verdict endpoint and the session/attempt it needs.",
+      );
+      return;
+    case "AUTHORITY_TIMEOUT":
+      console.warn(
+        `[duel] round ${round}: the grader did not answer within the ${GRADING_CAP_MS_LABEL} cap` +
+          " — granted the maximum without a verdict.",
+      );
+      return;
+    case "AUTHORITY":
+      if (result.serverFallbackDiagnosis !== null) {
+        console.warn(
+          `[duel] round ${round}: the server granted the maximum without grading` +
+            ` (${result.serverFallbackDiagnosis}). The answer was not classified.`,
+        );
+      }
+      return;
+    default:
+      return;
+  }
+}
+
+/** Named once so the console line and the design's cap cannot drift apart. */
+const GRADING_CAP_MS_LABEL = "1.5-second";
 
 /** Boss descriptor helper, so a mission hands over content and not plumbing. */
 export function bossOpponent(profile: BossProfile): OpponentSource {
