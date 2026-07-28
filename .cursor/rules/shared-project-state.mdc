@@ -69,6 +69,27 @@ hunting — filtering belongs in a separate pass, and a hunt that self-censors r
 it saw. Rank by what the finding was protecting or by how likely the owner is to hit it, and
 say plainly which findings you are confident in and which need a human eye.
 
+## Why this repo prescribes evidence, and where it deliberately doesn't
+
+Current models self-verify well, and generic instructions to "double-check your work" or "add a
+final verification step" cause over-verification and waste. Do not add them, and strip them if
+you find them.
+
+**The evidence standards in these files are not that, and must not be removed on that
+reasoning.** They exist because this repo's most natural verification instruments *lie*: the
+replay harness reported "0 of 44 transitions phase" while the owner watched himself climb
+through a church, because the mover reads authored hulls and has never touched a GLB. A worker
+following its own good instincts would reach for exactly that harness. Which instrument is
+admissible for which claim is domain knowledge no model can infer, so it is written down.
+
+The distinction, so a future reader can tell them apart:
+
+- **Remove:** "verify your work", "re-check before responding", "use a subagent to confirm".
+- **Keep:** which gate can see which defect, that the replay harness is inadmissible for
+  phasing, that an illegible frame is a failed check, that a determinism claim cannot be
+  verified on one platform, and the release bar (the named gate list) — that is a specification,
+  not a self-check.
+
 ## Length
 
 Match a document to what the task needs. Cover the substance and stop; no filler sections, no
