@@ -19,6 +19,7 @@
     "aws:bootstrap": "pnpm --filter @pa/infra bootstrap",
     "aws:deploy": "pnpm --filter @pa/infra run deploy",
     "test": "node scripts/run-tests.mjs",
+    "verify:content": "node --import tsx content/m1/verify.mjs && node content/capstone/boston-1765/verify.mjs",
     "assets:verify:placement": "node --import tsx assets/pipeline/verify_m1_placements.mjs",
     "playwright:install": "playwright install chromium"
   },
