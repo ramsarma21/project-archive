@@ -170,6 +170,17 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 
 ## Open, and newly named 28 Jul
 
+- **[ ]** **The game records nothing about what was learned.** `conceptMastery` is written *only*
+  by the chapter-assessment commit — all-or-nothing at 100% on a form. Every formative retrieval is
+  lost: encounter and duel verdicts are graded server-side with a known `conceptId` and stored, and
+  the mission commit carries them in `committedEvents`, which the server "derives nothing whatsoever
+  from." So which concepts were asked, right or wrong, how often, is recorded nowhere. Matters more
+  after the pacing decision, since the duel now carries retrieval breadth. In flight.
+- **[ ]** **Consequences are binary and scripted**, not accumulating. Designed (a run-scoped
+  suspicion that raises patrol density, withdraws cover and watches the final gate — world state
+  rather than events, which is also what stops it glitching), and deliberately **not built**: the
+  accumulator lives in a contested file, and emitting a field nothing reads is the dead-but-plausible
+  shape removed from the duel brief. Needs orchestrator sequencing across three lanes.
 - **[ ]** A wrong answer teaches nothing. In a teaching game the wrong answer is the highest-value
   moment — the player is attentive and has just committed to a false belief. Owner wants feedback
   in PvP. The competitive constraint is load-bearing: both sides draw from a shared eligible pool
