@@ -152,8 +152,15 @@ All three of 28 Jul's regressions were introduced by the previous night's fixes.
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran
 inside a harness that didn't grade, in the wrong arena, against a boss that ignored cover —
 and nothing failed. A dev path that differs from the real path in a load-bearing way is
-worse than no dev path, because it produces confident false results. A systematic parity
-sweep across every dual-path surface is in flight.
+worse than no dev path, because it produces confident false results.
+
+All fourteen dual-path surfaces were swept (`afe8717`). Eleven agree; two differ
+legitimately and say so loudly (the scripted verdict harness, dev sessions). The two that
+were load-bearing and unguarded are now pinned: the standalone-vs-mission boss profile
+must match field-for-field in the same arena, and the server's transcribed module gate must
+equal the authored deck in order. The harness's third hand-copy of that deck is deleted
+rather than pinned. Still divergent and deliberately deferred: PvP runs its own arena
+(`docs/process/PvP-Arena-Unification-Plan.md`).
 
 ---
 
