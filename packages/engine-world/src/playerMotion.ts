@@ -1535,6 +1535,20 @@ function stepAuthored(world: CollisionWorld, state: MotionState, dt: number, red
   };
 }
 
+/**
+ * The raw interpolated spline sample an authored action WANTS to be at for a
+ * normalised progress `t`, BEFORE the solver depenetrates it. Exposed read-only
+ * so instrumentation can measure how far the collision solver has to move the
+ * body off the authored spline each tick — the "solver fighting the animation"
+ * divergence — without re-deriving the easing. Pure; changes nothing.
+ */
+export function sampleAuthoredPath(
+  action: AuthoredAction,
+  t: number,
+): { x: number; y: number; z: number; yaw: number } {
+  return samplePath(action, t);
+}
+
 // Deterministic piecewise-linear sample along the anchor chain, with an
 // authored vault loft. Root-neutral: the clip adds no displacement of its own.
 function samplePath(action: AuthoredAction, t: number): { x: number; y: number; z: number; yaw: number } {

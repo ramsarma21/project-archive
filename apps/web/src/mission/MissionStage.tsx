@@ -37,6 +37,7 @@ import {
   type ThrowAimRead,
 } from "../visor/index.js";
 import { affordanceRead, teachable, verbCaption } from "./affordance.js";
+import { DIAG_ENABLED, pushFrame } from "./diag.js";
 import { MISSION_EXPOSURE, dawnSky } from "./dawn.js";
 import {
   cinematicActive,
@@ -233,6 +234,7 @@ function MissionDriver(props: {
   const reported = useRef(false);
   const sampledAt = useRef(-1);
   const auditedAt = useRef(-1);
+  const droppedBefore = useRef(0);
 
   useFrame((_state, delta) => {
     const { runtime, input } = props;
@@ -264,6 +266,28 @@ function MissionDriver(props: {
       reducedMotion: props.reducedMotion,
       flowEnabled: !props.paused,
     });
+    // The running-game frame trace (dev only). The render frame delta R3F hands
+    // in, the fixed steps run, the fixed steps DROPPED by the catch-up bound, and
+    // the reflex time scale — the mechanism of the reported slow motion, since a
+    // dropped step is sim time discarded rather than banked. `deltaMs` is the
+    // delta R3F provides, not a wall-clock read; the sim's own cost is left to a
+    // node microbenchmark of stepMissionRuntime, which keeps the fixed step free
+    // of any clock read. See diag.ts.
+    if (DIAG_ENABLED) {
+      const droppedThisFrame = runtime.droppedSteps - droppedBefore.current;
+      droppedBefore.current = runtime.droppedSteps;
+      pushFrame({
+        tick: runtime.ticks,
+        deltaMs: delta * 1000,
+        steps: step.steps,
+        droppedTotal: runtime.droppedSteps,
+        droppedThisFrame,
+        timeScale: runtime.timeScale,
+        speed: Math.hypot(runtime.motion.vel.x, runtime.motion.vel.z),
+        verb: runtime.flow.verb,
+        phase: runtime.motion.phase,
+      });
+    }
     // Each latch survives until a fixed step actually took it. A frame that
     // advanced no ticks — a very high refresh rate, or a resumed tab whose delta
     // was clamped to nothing — must not swallow the press.
