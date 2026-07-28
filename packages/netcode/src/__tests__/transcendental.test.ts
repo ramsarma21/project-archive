@@ -28,9 +28,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  bossIntent,
+  bossProfileForTier,
+  combatView,
   createCombatState,
   fieldRandom,
   intent,
+  oracleIntent,
   playerParams,
   referenceArena,
   stepCombat,
@@ -365,10 +369,11 @@ function findHitBoundary(hits: (offset: number) => boolean): number | null {
   return low;
 }
 
-test("the hash names the first divergent tick, which is what makes it reproducible", () => {
+test("the full hash names the first divergent tick; the client digest ignores cosmetic yaw", () => {
   // A detector that reports "these runs differ" is barely better than a player
   // complaining. What makes a report reducible to a test is the TICK, because a tick
-  // plus the input log is a reproduction.
+  // plus the input log is a reproduction — so the FULL server digest must name the
+  // first tick two engines part ways, and everything before it must be bit-identical.
   const log = inputLog(7919, 400);
   const from = startState();
   const honest = simulate(log, from);
@@ -385,12 +390,121 @@ test("the hash names the first divergent tick, which is what makes it reproducib
     assert.equal(honest.hashes[index], other.hashes[index], `tick ${index + 1}`);
   }
 
-  // And the narrower digest a client actually reports sees it too. If it did not, the
-  // detector would be blind to exactly the class of bug it exists for.
-  const differs =
-    hashPredictable(honest.states[first]!.fighters.A) !==
-      hashPredictable(other.states[first]!.fighters.A) ||
-    hashPredictable(honest.states[first]!.fighters.B) !==
-      hashPredictable(other.states[first]!.fighters.B);
-  assert.ok(differs, "the client-facing digest must see what the full digest sees");
+  // WHAT THE FULL DIGEST CATCHES HERE IS FACING, AND ONLY FACING. This assertion
+  // moved when the duel's combat path was reduced to IEEE-pinned ops: with no
+  // hypot/atan2/acos feeding position, aim or hits, the ONLY field a transcendental
+  // perturbation still moves is yaw, which `stepGrounded` derives with `atan2` and a
+  // speed-dependent `exp` in engine-world and which nothing reads back to produce
+  // state. So at the first divergent tick the predictable fields agree bit-for-bit
+  // and only facing differs — the surviving divergence is cosmetic by construction.
+  const ha = honest.states[first]!.fighters.A.motion;
+  const oa = other.states[first]!.fighters.A.motion;
+  const hb = honest.states[first]!.fighters.B.motion;
+  const ob = other.states[first]!.fighters.B.motion;
+  assert.ok(
+    ha.yaw !== oa.yaw || hb.yaw !== ob.yaw,
+    "the surviving full-hash divergence is facing (yaw)",
+  );
+  for (const [h, o] of [[ha, oa], [hb, ob]] as const) {
+    assert.equal(h.pos.x, o.pos.x, "position is engine-exact");
+    assert.equal(h.pos.z, o.pos.z, "position is engine-exact");
+    assert.equal(h.vel.x, o.vel.x, "velocity is engine-exact");
+    assert.equal(h.vel.z, o.vel.z, "velocity is engine-exact");
+  }
+
+  // AND SO THE CLIENT-FACING DIGEST — which excludes yaw by design — does not fire on
+  // this cosmetic drift, at the first divergent tick OR ANY OTHER. This is the payoff
+  // of the combat determinism work: `hashPredictable` is now bit-stable across a
+  // 16-ulp engine gap for the whole round, so a client's report is a real desync
+  // rather than facing noise on a body that is in the identical place. (Before the
+  // conversion this test asserted the opposite — that the client digest saw the same
+  // divergence the full one did — because combat still called hypot/atan2/acos on the
+  // predictable path. Removing them is exactly why that no longer holds.)
+  for (let index = 0; index < honest.states.length; index++) {
+    assert.equal(
+      hashPredictable(honest.states[index]!.fighters.A),
+      hashPredictable(other.states[index]!.fighters.A),
+      `A predictable tick ${index + 1}`,
+    );
+    assert.equal(
+      hashPredictable(honest.states[index]!.fighters.B),
+      hashPredictable(other.states[index]!.fighters.B),
+      `B predictable tick ${index + 1}`,
+    );
+  }
+
+  // BUT IT IS NOT BLIND. A genuine difference in a predictable field still moves the
+  // client digest; if it did not, the detector would be useless for the bug it exists
+  // for — a real cross-engine desync in position, velocity or aim.
+  const shifted = honest.states[first]!.fighters.A;
+  const genuine = {
+    ...shifted,
+    motion: { ...shifted.motion, pos: { ...shifted.motion.pos, x: shifted.motion.pos.x + 0.01 } },
+  };
+  assert.notEqual(
+    hashPredictable(genuine),
+    hashPredictable(shifted),
+    "a real predictable difference must still move the client digest",
+  );
+});
+
+/** Perturb ONLY `Math.hypot`, leaving sin/cos/atan2 exact. */
+function withPerturbedHypot<T>(ulps: number, body: () => T): T {
+  const original = Math.hypot;
+  Math.hypot = ((...values: number[]) =>
+    nudge(original(...values), ulps)) as typeof Math.hypot;
+  try {
+    return body();
+  } finally {
+    Math.hypot = original;
+  }
+}
+
+test("a policy-driven boss engagement is bit-identical under a hypot perturbation", () => {
+  // The sweep above drives combat with raw intents; this drives it with the POLICY —
+  // `oracleIntent` for A and `bossIntent` for B — so it exercises the transcendentals
+  // in policy.ts: the intercept solver, the threat/evade geometry, `towards`, the
+  // cover-probe ring and the lead-blend normalisation. Every planar length there was
+  // moved off `Math.hypot` onto `Math.sqrt(x*x + z*z)`, and the cover ring's cos/sin
+  // were baked, so nothing the boss or the oracle decides depends on `Math.hypot` any
+  // more. Perturbing ONLY hypot must therefore leave the entire engagement — position,
+  // velocity, aim, health, hits, the boss's whole path and firing cadence — identical
+  // to the last bit, tick after tick.
+  //
+  // sin/cos are deliberately NOT perturbed here, because `bossIntent` rotates its aim
+  // by a seeded jitter with `Math.sin`/`Math.cos` of a runtime angle that cannot be
+  // baked (documented in policy.ts). That single site is the one policy transcendental
+  // with no cross-engine consequence in any shipped path — a client never runs
+  // `bossIntent`, and a replay steps recorded intents — so it is left unpinned and is
+  // out of this hypot-invariance claim by design.
+  const world = arena.world;
+  const profile = bossProfileForTier(3);
+  const play = (): string[] => {
+    let state = createCombatState(params, arena.placement);
+    state = {
+      ...state,
+      fighters: {
+        A: { ...state.fighters.A, ammo: 6 },
+        B: { ...state.fighters.B, ammo: 6 },
+      },
+    };
+    const hashes: string[] = [];
+    for (let tick = 0; tick < ENGAGEMENT_TICKS; tick++) {
+      const a = oracleIntent(combatView(world, state, "A"));
+      const b = bossIntent(profile, combatView(world, state, "B"), 4242);
+      state = stepCombat(world, state, { A: a, B: b }, params, 1).state;
+      hashes.push(hashCombatState(state));
+    }
+    return hashes;
+  };
+
+  const honest = play();
+  const perturbed = withPerturbedHypot(64, play);
+  for (let index = 0; index < honest.length; index++) {
+    assert.equal(
+      honest[index],
+      perturbed[index],
+      `policy engagement diverged at tick ${index + 1} under a hypot-only perturbation`,
+    );
+  }
 });
