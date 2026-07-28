@@ -147,7 +147,8 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
   {
     itemId: "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1",
     conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
-    prompt: "From what date must the stamp be paid?",
+    prompt:
+      "Parliament passed this Act back in the spring, so the law is already made. Then why is this town still free to stand at my board and argue about it tonight, instead of already paying the stamp? What has not happened yet?",
   },
   {
     itemId: "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1",

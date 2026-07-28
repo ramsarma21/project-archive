@@ -68,11 +68,11 @@
     { "itemId": "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1", "answer": "the cloth, because it came over from england on a ship", "expected": "WRONG", "why": "Wrong object, reasoned about import duties." },
     { "itemId": "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1", "answer": "whichever one is worth more money", "expected": "WRONG", "why": "Value, and no pick." },
 
-    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "11/1", "expected": "CORRECT", "why": "The date in the format a Chromebook generation writes it." },
-    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "the 1st of nov", "expected": "CORRECT", "why": "Abbreviated and correct." },
-    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "november the first, 1764", "expected": "CORRECT", "why": "Right date, wrong year. The year is not asked." },
-    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "august 14", "expected": "WRONG", "why": "Today's date in the mission. A very available wrong answer." },
-    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "sometime next year", "expected": "WRONG", "why": "No date, and wrong." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "it doesnt start till the 1st of november, so theres still time to fight it", "expected": "CORRECT", "why": "The not-yet-in-force window with the date and the stakes, phrased differently from the accept list." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "the stamp isnt required yet. this all kicks in later in the year, not today", "expected": "CORRECT", "why": "Carries the window without naming the month, which the item accepts." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "nothings due yet, we got till november before anyone has to pay", "expected": "CORRECT", "why": "Terse, and it carries the window." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "11/1", "expected": "WRONG", "why": "The bare date, in the format a Chromebook generation writes it. Under the rewritten item it names when the duty starts but asserts nothing about what has not yet happened, which is what the question asks." },
+    { "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1", "answer": "the war debt still hasnt been paid off", "expected": "WRONG", "why": "A confident, plausible 'not yet' about the wrong subject: the debt, not the duty, so it does not say why the tax can still be resisted tonight." },
 
     { "itemId": "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1", "answer": "because paper is what comes out of a print shop and paper is the taxed thing", "expected": "CORRECT", "why": "The product-to-category link." },
     { "itemId": "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1", "answer": "a cooper can still sell a barrel without a stamp. we cant sell a sheet", "expected": "CORRECT", "why": "The link built as a comparison, using the question's own trades." },

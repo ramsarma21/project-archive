@@ -71,7 +71,7 @@ Three places the two banks differ on substance, all recorded there:
 
 | Item | This bank | That bank | Status |
 |---|---|---|---|
-| `FROM_WHEN` | bare "November" is **correct** | month with no day is **wrong** | **Genuine conflict. Wants an owner decision.** |
+| `FROM_WHEN` | the question no longer asks for the date | month with no day is **wrong** | **Resolved by rewrite — see below.** The item was retired as date recall and now asks why the duty has not yet taken effect, so the month-versus-day question no longer arises. |
 | `CORRECT_THE_APPRENTICE` | an incomplete enumeration that holds the boundary is correct | a bare "just newspapers" is wrong | Narrower than it looks; both fail a bare "just newspapers" |
 | `NOT_THE_MONEY` | bare "something else" is wrong, and the question now demands the ground | a note records that `needs: 1` lets it pass and says the fix belongs in the question | Agreement — that note names the fix and this is the fix |
 
@@ -280,9 +280,9 @@ binary verdict cannot. Each is recorded in the item's `line` field. Six went to 
 
 | Item | The case | Call | Why |
 |---|---|---|---|
-| `WHAT_IT_LEFT` | "the war cost more than they had" — an expense, not an outstanding debt | **CORRECT** | The item asks what financial problem Parliament is solving. A student who has the money pressure has the concept; failing them over the noun *debt* is grading vocabulary. |
+| `WHAT_IT_LEFT` | "the war cost more than they had, so they made the colonies chip in" — cost wording, not the noun *debt* | **CORRECT** | The item is a two-part core (the money problem **and** Parliament's colonial fix). Cost wording earns the money half — failing it over the noun *debt* would be grading vocabulary — but a money-only answer with no fix is now **wrong**, matching the shipped rubric and the labelled set. |
 | `WHICH_CAME_FIRST` | "the debt" with no causal sentence after it | **CORRECT** | The ordering *is* the causal claim. The question's second half asks the same thing twice, and demanding a second sentence from a kid typing under fire is the false-negative trap in miniature. |
-| `FROM_WHEN` | "November", month with no day | **CORRECT** | The taught proposition is "from 1 November", there is no competing November date anywhere in the module, and losing a gunfight over one digit is precisely what this bank is written to avoid. |
+| `FROM_WHEN` | "it hasnt started yet" with no date named | **CORRECT** | The rewritten item asks why the fight is still live tonight, not for the date. Locating the duty in the future is the whole idea, so the exact date is not required; a bare date with no claim attached is now **wrong**, because it answers a different question. |
 | `CORRECT_THE_APPRENTICE` | "no, only newspapers" — right boundary, short list | **CORRECT** | The student separated paper from goods, which is the concept. Only the enumeration is incomplete. |
 | `NAME_TWO` | "paper and legal documents" — the two categories rather than two instances | **CORRECT** | Answering at category level is the more general answer, not a worse one. |
 | `PRIVATE_LETTER` | "no, it's private" without the printed-or-legal reason | **CORRECT** | *Private* is the module's own framing of that exact example. |

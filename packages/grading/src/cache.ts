@@ -1,10 +1,10 @@
 // The verdict cache.
 //
 // At classroom scale the answer distribution has a very short head. Thirty
-// students answering "From what date must the stamp be paid?" produce a handful
-// of distinct normalised strings — "1 november", "november 1st", "the first of
-// november" — and the first of each costs a model call while the rest cost a map
-// lookup. That is the difference between paying for 540 classifications a session
+// students asked why Parliament is suddenly taxing Boston produce a handful of
+// distinct normalised strings — "war debt", "they were broke from the war",
+// "to pay for the war" — and the first of each costs a model call while the rest
+// cost a map lookup. That is the difference between paying for 540 classifications a session
 // and paying for a few dozen.
 //
 // The key includes the rubric version, which is a content hash of the rubric
