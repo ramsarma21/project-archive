@@ -529,6 +529,39 @@ export function maxGapMetersForDrop(
 }
 
 /**
+ * Slowest approach at which a lip-to-lip gap of `gapM` (far lip `dropM` below the
+ * near lip) is worth OFFERING as a running gap jump — the exact inverse of
+ * `maxGapMetersForDrop`, including the planner's `jumpGapSafetyM` so a jump offered
+ * at this speed is one the ballistic solve will then accept.
+ *
+ * At a fixed drop the reachable gap is LINEAR in approach speed —
+ *   gap(v) = v * (airtime - 1/tickHz) - 2*radius
+ * — because the takeoff setback grows with speed at exactly one tick of travel. So
+ * this inverse is exact, not a fit:
+ *   v = (gap + safety + 2*radius) / (airtime - 1/tickHz).
+ *
+ * This is the "how fast must I be going to make THIS gap" number, and it is why a
+ * short gap is a short-run-up jump: a 1.4m flat gap needs ~2.5 m/s, a 3.3m one needs
+ * a near-full sprint. The verb ladder floors its JUMP_GAP offer at this rather than
+ * a flat sprint speed, so it demands exactly the speed the geometry in front of the
+ * body actually requires — never more (which soft-locks a makeable short leap behind
+ * the edge brake) and, capped against `jumpGapMinSpeedMps`, never less than the old
+ * behaviour asked for a long gap. Published so level tooling can read the offer floor
+ * for an authored gap the same way it reads `maxFlatGapM`; the planner's exact solve
+ * is still the arbiter of whether any individual arc lands.
+ */
+export function minGapJumpSpeedMps(
+  gapM: number,
+  dropM = 0,
+  safetyM: number = PARKOUR_TUNING.jumpGapSafetyM,
+  launchVy = RUNNING_JUMP_VY,
+): number {
+  const gapPerSpeed = jumpAirtimeForDrop(dropM, launchVy) - 1 / FIELD_TICK_HZ;
+  if (gapPerSpeed <= 0) return Infinity;
+  return (Math.max(0, gapM) + safetyM + 2 * CAPSULE_RADIUS) / gapPerSpeed;
+}
+
+/**
  * Safety margin between what the engine can physically solve and what level
  * design is allowed to author, so a gap built exactly to budget always clears
  * even with imperfect approach speed.

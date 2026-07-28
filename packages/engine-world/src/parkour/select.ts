@@ -34,7 +34,9 @@ import {
 } from "../collision.js";
 import { FIELD_DT } from "../fieldSimulation.js";
 import {
+  RUN_SPEED,
   RUNNING_JUMP_VY,
+  projectGroundSpeed,
   simulateBallistic,
   type AuthoredAction,
   type AuthoredAnchor,
@@ -46,7 +48,12 @@ import {
   type ReceivingTarget,
 } from "./leapOfFaith.js";
 import type { ParkourProbe } from "./probe.js";
-import { PARKOUR_TUNING, type ParkourTuning, type TraversalVerb } from "./tuning.js";
+import {
+  PARKOUR_TUNING,
+  minGapJumpSpeedMps,
+  type ParkourTuning,
+  type TraversalVerb,
+} from "./tuning.js";
 
 /** How a committed verb is handed to the motion layer. */
 export type VerbMotion =
@@ -893,6 +900,77 @@ export function planVerb(
     default:
       return null;
   }
+}
+
+/**
+ * Will a sprinting body reach this lip fast enough to CLEAR the gap beyond it with
+ * a running gap jump, landing on the far surface? — so the edge brake can tell a
+ * lip it will LEAP from a lip it will FALL off.
+ *
+ * THIS IS WHY A MAKEABLE GAP IS NOT A LIP TO BRAKE AT. The walk-off read calls a
+ * flat gap fatal, and it is right about the walk-off: a body that strolls off a
+ * flat gap has no launch and drops into the void. But a sprinting body does not
+ * stroll — it auto-jumps, and the jump clears. Braking there is not a safety, it
+ * is a soft-lock a stride short of a makeable leap (measured on the Town House
+ * scaffold->gallery: a 1.44m flat gap over a 5.60m drop with 1.3m of run-up, where
+ * EDGE_BRAKE committed at 2.55 m/s and bled the body to a standstill though it
+ * would have reached the lip at 3.9 m/s and cleared 3.0m). So the brake defers to a
+ * leap the body will make, exactly as a solvable dive already outranks it.
+ *
+ * "Will make" is answered by the SAME authority that commits the real jump —
+ * planVerb's exact ballistic solve and landing checks — not a distance heuristic:
+ *
+ *   * The takeoff SPEED is `projectGroundSpeed` over the run-up remaining to the
+ *     lip, the exact speed the body arrives with on an open lane, so a standing
+ *     start that will accelerate into the leap is judged on where it is going, not
+ *     where it is. The takeoff POSITION is the lip, because that is where the jump
+ *     actually launches.
+ *   * planVerb then requires the arc to LAND ON the far surface at its height and
+ *     inside the roll ceiling. A far ledge that is not actually landable — wrong
+ *     height, blocked, or an overshoot onto a lower fatal deck — is REJECTED, and
+ *     the brake is kept. This is the guard that keeps the roof-safety role: only a
+ *     lip with a genuinely landable leap beyond it is exempted.
+ *
+ * Fires only for a committed sprint (`sprintHeld` + pushing into the gap) at a lip
+ * the brake would otherwise own. Anything else — a walk, a body turning away, no
+ * far ledge, a gap too wide for the run-up's speed — brakes exactly as before.
+ */
+export function gapLeapReachable(
+  world: CollisionWorld,
+  probe: ParkourProbe,
+  ctx: SelectContext,
+  start: Vec3,
+  tuning: ParkourTuning = PARKOUR_TUNING,
+): boolean {
+  const edge = probe.edge;
+  if (edge === null || edge.gapM === null || edge.far === null) return false;
+  if (!ctx.sprintHeld || !(ctx.pushing ?? false)) return false;
+  // Only a lip the brake would own: within brake range, over a fatal walk-off.
+  if (edge.contactDistanceM > tuning.edgeBrakeDistanceM) return false;
+  if (Number.isFinite(edge.dropM) && edge.dropM <= tuning.edgeBrakeMinDropM) {
+    return false;
+  }
+  const runUpM = Math.max(0, edge.contactDistanceM - tuning.edgeCommitMinM);
+  const projected = projectGroundSpeed(
+    probe.speedMps,
+    RUN_SPEED,
+    runUpM,
+    FIELD_DT,
+  );
+  // Cheap linear reject before the ballistic solve: even the derived envelope
+  // floor is not met, so no arc lands.
+  if (projected < minGapJumpSpeedMps(edge.gapM, edge.far.dropM, tuning.jumpGapSafetyM)) {
+    return false;
+  }
+  // Validate the projected launch FROM THE LIP with the exact planner — the same
+  // solve, landing surface, height and roll-ceiling checks the real commit uses.
+  const takeoff: Vec3 = {
+    x: start.x + probe.dirX * runUpM,
+    y: edge.lip.y,
+    z: start.z + probe.dirZ * runUpM,
+  };
+  const projectedProbe: ParkourProbe = { ...probe, speedMps: projected };
+  return planVerb(world, projectedProbe, ctx, "JUMP_GAP", takeoff, tuning) !== null;
 }
 
 /**

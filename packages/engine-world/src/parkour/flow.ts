@@ -65,6 +65,7 @@ import {
 } from "./leapOfFaith.js";
 import { predictCommittedWalkOff, probeAhead, type ParkourProbe } from "./probe.js";
 import {
+  gapLeapReachable,
   planVerb,
   rankVerbs,
   type SelectContext,
@@ -1166,6 +1167,19 @@ export function stepFlow(
       verb !== "LEAP_OF_FAITH" &&
       verb !== "HANG_DROP"
     ) {
+      continue;
+    }
+    // A LIP THE BODY WILL LEAP FROM IS NOT ONE TO BRAKE AT. The walk-off read
+    // reports this flat gap as a fatal fall — a body that strolls off has no
+    // launch and drops into the void — so the ladder ranks EDGE_BRAKE. But a
+    // sprinting body auto-jumps it, and `gapLeapReachable` confirms, with the same
+    // exact ballistic solve and landing checks the real JUMP_GAP commit uses, that
+    // the body will reach the lip fast enough to clear onto the far surface. When
+    // it will, the brake stands aside so JUMP_GAP (ranked above it) can own the lip
+    // once the body arrives at takeoff speed — the fix for the Town House
+    // scaffold->gallery soft-lock, and only there: a genuine kill lip with no
+    // landable leap still returns false here and still brakes.
+    if (verb === "EDGE_BRAKE" && gapLeapReachable(world, probe, ctx, motion.pos, tuning)) {
       continue;
     }
     // Not there yet is not the same as cannot. A dive read at half a metre from
