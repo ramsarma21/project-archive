@@ -98,9 +98,10 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 
 - **[x]** The elm beat arms from the pose a player actually arrives in.
 - **[x]** It is a reaction test, generous and large, not a precision test.
-- **[ ]** The beat is reachable by climbing, asserted. `apps/web/test/missionBeat.test.ts`
-  (lines 100–104, 393–416) spawns the player *on* the crown facing the work, granting both the
-  climb and the facing. Folds into the untested climb-refusal gap.
+- **[x]** The beat is reachable by climbing, asserted in real play: the gate drops in on the low
+  bough, climbs the elm grip to the crown, and requires the beat to arm from that arrival
+  (`08b4ec6`). The unit test still spawns on the bough, which is now acceptable because the gate
+  covers reachability.
 
 ## 8. Nothing silently regresses
 
@@ -108,9 +109,12 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   `gh` is unauthenticated locally, so this is unconfirmed.
 - **[x]** Dev and harness paths are pinned to the real paths they mirror.
 - **[x]** Cross-lane and main-checkout writes are mechanically refused; one worker per worktree.
-- **[ ]** Climb refusal is asserted end to end. Turning it off entirely leaves 730 tests green.
-- **[ ]** Nothing asserts the grader runs on the live duel path — the same wiring failure could
-  recur undetected.
+- **[x]** Climb refusal is asserted end to end, in real play: a controlled A/B where the same
+  climb volume arms with its ladder and refuses without it (`08b4ec6`).
+- **[x]** The grader is asserted to run on the live duel path — the API's own grading window
+  must advance, which a client-minted fallback cannot cause. Limit stated honestly: it asserts
+  the gradeable-round delta, not a model classification, because CI has no classifier
+  credential.
 - **[ ]** Nothing asserts mastering a concept actually learns its codex card and mints it
   PvP-legal; `codexDev` injects that standing. Also unconfirmed: whether any test drives
   `M1_PVP_CARD_ACCESS`'s shipping `ASSESSMENT_PASSED` branch, since it is set to `PLAYTEST_ALL`
@@ -124,6 +128,12 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 Each tick, prefer the **unmet** condition with the most player impact whose files are free.
 When a condition flips to met, mark it here with its evidence. Do not add conditions to feel
 thorough — a target that grows faster than it is met is not a target.
+
+**Mutation testing was assessed and rejected as a gate**, with numbers: the suite runs on
+`node --test`, which Stryker has no runner for, so it falls back to a coverage-blind command
+runner and re-runs a whole package suite per mutant — roughly 17 CPU-hours for the load-bearing
+set. Worse, it is blind to the grader-wiring and beat-reachability gaps entirely, because those
+live where no unit test reaches. Useful as an occasional per-file discovery run; not a gate.
 
 **Meta-work is time-boxed.** Process, guards and instruments exist to make the list above
 shrink. If a tick produces only process, that is a failed tick.
