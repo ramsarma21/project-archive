@@ -430,7 +430,7 @@
       "referenceAnswer": "Any two of: a newspaper, a printed handbill, a deed, a court paper, a licence, a pack of playing cards — printed paper or legal paper.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.NAME_TWO.v1",
-        "requiredCore": "Two distinct things, each of which is printed matter or a legal or official paper.",
+        "requiredCore": "Two distinct things, and BOTH must fall inside the taxed category: printed matter or a legal or official paper. If either named thing is an ordinary good or a private handwritten letter, only one of the two is inside the line and the answer fails, because two were asked for.",
         "line": "Credit any category-correct instantiation rather than matching a list of nouns. The module names six examples; a student who supplies a seventh the module never mentioned — a pamphlet, a will, a marriage licence, a ship's papers, an almanac — has demonstrated more, not less. What fails is an ordinary good, private handwriting, or one thing said twice.",
         "acceptExamples": [
           { "text": "newspapers and deeds", "why": "Two, both inside." },
@@ -442,7 +442,7 @@
         "rejectExamples": [
           { "text": "cloth and nails", "why": "Ordinary goods, which the module names on the outside of the line." },
           { "text": "tea and sugar", "why": "Ordinary goods, and a different Act." },
-          { "text": "a letter to my sister and a newspaper", "why": "One valid, one explicitly outside. Half is not a verdict; the item asked for two." },
+          { "text": "a letter to my sister and a newspaper", "why": "One inside, one outside: a private handwritten letter is not taxed, so only the newspaper counts. The item asked for two things inside the line and this gives one, so it fails exactly as a half-answer does." },
           { "text": "newspapers and newspapers", "why": "One thing twice." },
           { "text": "everything printed", "why": "The category with no instantiation and no count. Two things were asked for." },
           { "text": "a newspaper", "why": "One thing. The count is the item." }
@@ -492,7 +492,7 @@
       "referenceAnswer": "The right not to be taxed except by a body the town elected. Boston elects no member of Parliament, so a tax Parliament lays on Boston is laid without the town's consent.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.WHAT_RIGHT.v1",
-        "requiredCore": "The right not to be taxed by a body the taxed people did not elect — no taxation without representation.",
+        "requiredCore": "The right not to be taxed except by a body the town elected: no taxation without representation, or consent. The consent element is required — the answer must object to WHO lays the tax (no vote, no say, an unelected Parliament), not merely to being taxed. A bare refusal of taxation, with no who-lays-it element, is a different and wrong claim.",
         "line": "The slogan is the answer here, so it earns it; this is the one item where the memorised phrase is the proposition rather than a substitute for it. What fails is a right the sheet does not claim: refusing all taxation, independence from Britain, or an objection to the amount.",
         "acceptExamples": [
           { "text": "no taxation without representation", "why": "The claim, in its own words." },
@@ -502,7 +502,7 @@
           { "text": "the right to vote for whoever taxes us", "why": "Same." }
         ],
         "rejectExamples": [
-          { "text": "the right to not pay taxes", "why": "Not the claim. Boston's own assembly could tax the town tomorrow and the sheet would say nothing." },
+          { "text": "the right to not pay taxes", "why": "A blanket refusal of taxation, which is the misconception this item exists to correct rather than the right the sheet claims. It names no consent, no vote, and no who-lays-the-tax; Boston's own elected assembly could tax the town tomorrow without violating it. Taxation refused without the consent element does not carry the core." },
           { "text": "the right to be free and independent from britain", "why": "1765. Independence is eleven years away and this is the anachronism the item is written to catch." },
           { "text": "the tax is too much money", "why": "Amount, not right." },
           { "text": "the right to a trial by jury", "why": "A real colonial grievance and the wrong one for this sheet." },
