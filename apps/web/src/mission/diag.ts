@@ -39,6 +39,7 @@ import {
   lowStepIds,
   sampleAuthoredPath,
   STEP_UP,
+  supportBelow,
   type CollisionWorld,
   type MotionState,
 } from "@pa/engine-world";
@@ -97,6 +98,15 @@ export interface AuthoredSample {
   /** Deepest hull the solved position is inside (no ignore), or null. */
   deepestEmbedM: number;
   deepestEmbedId: string | null;
+  /** Highest support surface at/below the solved foot under its XZ, or null. */
+  surfaceY: number | null;
+  /**
+   * How far the solved foot rides ABOVE that surface — the vertical loft. A vault
+   * that arcs over its obstacle rather than conforming to it reads a large lift
+   * here mid-cross; a body genuinely climbing a bare face (support far below) also
+   * reads large but for a legitimate reason, so read it against the verb.
+   */
+  liftM: number | null;
 }
 
 interface DiagRings {
@@ -207,6 +217,12 @@ export function recordTick(
         deepestEmbedId = e.id;
       }
     }
+    // The surface the solved foot is riding over, and how far above it the body
+    // sits. Support at/below the foot under the solved XZ (snapUp 0, so it is the
+    // real top, not a snap-up guess).
+    const support = supportBelow(world, motion.pos.x, motion.pos.z, motion.pos.y, 0);
+    const surfaceY = support ? support.y : null;
+    const liftM = surfaceY === null ? null : motion.pos.y - surfaceY;
     push(
       rings.authored,
       {
@@ -219,6 +235,8 @@ export function recordTick(
         divergenceM,
         deepestEmbedM,
         deepestEmbedId,
+        surfaceY,
+        liftM,
       },
       AUTHORED_CAP,
     );
