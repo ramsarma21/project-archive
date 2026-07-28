@@ -444,6 +444,17 @@ function tx(client: pg.PoolClient, profileId: string): ProgressionTx {
         ] as never[],
       );
     },
+    deleteMissionAttempts: async (chapterId, missionId) => {
+      // Scoped to this profile, this chapter and this mission — never a blanket
+      // wipe. `learning_module_completions` is untouched by design (see the store
+      // interface): the module gate must survive so a fresh attempt can grade.
+      const result = await client.query(
+        `delete from mission_attempts
+         where profile_id=$1 and chapter_id=$2 and mission_id=$3`,
+        [profileId, chapterId, missionId] as never[],
+      );
+      return result.rowCount ?? 0;
+    },
     putConceptMastery: async (mastery, disclosure) => {
       await client.query(
         `insert into concept_mastery(

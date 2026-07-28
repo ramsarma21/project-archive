@@ -174,6 +174,21 @@ class MemoryStore implements ProgressionStore {
         this.missionAttempts.set(attempt.attemptId, structuredClone(attempt));
         this.commitLogs.set(attempt.attemptId, structuredClone(committedEvents));
       },
+      deleteMissionAttempts: async (chapterId, missionId) => {
+        let deleted = 0;
+        for (const [id, attempt] of this.missionAttempts) {
+          if (
+            attempt.profileId === profileId &&
+            attempt.chapterId === chapterId &&
+            attempt.missionId === missionId
+          ) {
+            this.missionAttempts.delete(id);
+            this.commitLogs.delete(id);
+            deleted += 1;
+          }
+        }
+        return deleted;
+      },
       putConceptMastery: async (row, disclosure) => {
         const key = `${profileId}:${row.chapterId}:${row.conceptId}`;
         const previous = this.mastery.get(key);

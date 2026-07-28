@@ -6,6 +6,7 @@ import {
   type CompleteLearningModuleRequest,
   type LearningModuleCompletion,
   type MissionAttempt,
+  type MissionProgress,
   type OnboardingPreferences,
   type OpenChapterAssessmentRequest,
   type OpenMissionAttemptRequest,
@@ -348,4 +349,55 @@ export function postAssessmentSubmission(
   csrfToken: string,
 ): Promise<ProgressionCallResult<unknown>> {
   return postProgression(profileId, "assessment-submissions", body, csrfToken);
+}
+
+/** What the dev reset route returns: the reset mission plus a confirmation snapshot. */
+export interface DevMissionResetResult {
+  readonly ok: true;
+  readonly reset: {
+    readonly mission: MissionProgress;
+    readonly deletedAttempts: number;
+    readonly moduleGateOrdinalsPreserved: number[];
+  };
+  readonly progression: ProgressionSnapshot;
+}
+
+/**
+ * DEV-ONLY: reset the CURRENT session's own attempts for a mission (default M1),
+ * preserving the module gate. Hits `/v1/dev/reset-mission`, which is a 404 in
+ * production and scoped server-side to the session's own profile — this transport
+ * cannot name a profile, exactly as the endpoint cannot accept one. Used only by
+ * the dev harness reset control; nothing player-facing calls it.
+ */
+export async function postDevResetMission(
+  body: { chapterId?: string; missionId?: string },
+  csrfToken: string,
+): Promise<ProgressionCallResult<DevMissionResetResult>> {
+  try {
+    const response = await fetch(`${BASE}/v1/dev/reset-mission`, {
+      method: "POST",
+      credentials: "include",
+      headers: withDevSessionHeader({
+        "content-type": "application/json",
+        "x-pa-csrf-token": csrfToken,
+      }),
+      body: JSON.stringify(body),
+    });
+    if (response.status >= 500) {
+      return { status: "UNREACHABLE", detail: `HTTP_${response.status}` };
+    }
+    if (!response.ok) {
+      return {
+        status: "REFUSED",
+        error: await readError(response),
+        httpStatus: response.status,
+      };
+    }
+    return { status: "OK", value: (await response.json()) as DevMissionResetResult };
+  } catch (cause) {
+    return {
+      status: "UNREACHABLE",
+      detail: cause instanceof Error ? cause.message : String(cause),
+    };
+  }
 }

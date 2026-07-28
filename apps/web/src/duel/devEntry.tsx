@@ -14,6 +14,7 @@ import { M1_MISSION_ID, duelBrief } from "../chapter/m1Mission.js";
 import {
   establishLocalSession,
   getSession,
+  postDevResetMission,
   postModuleCompletion,
   postOpenMissionAttempt,
 } from "../api.js";
@@ -237,6 +238,47 @@ function Harness() {
   const grip = useMemo(gripFromParams, []);
   const inspect = useMemo(inspectFromParams, []);
 
+  // The dev reset control's last outcome, shown on the button. Dev-only chrome.
+  const [resetNote, setResetNote] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+
+  // Reset THIS session's own M1 attempts through the dev-gated endpoint, then
+  // re-open a clean attempt so the loop can keep going without hand-SQL. The
+  // endpoint scopes to the session's own profile and preserves the module gate;
+  // this control only supplies the CSRF token the session already minted.
+  async function resetMyM1(): Promise<void> {
+    setResetting(true);
+    setResetNote(null);
+    try {
+      const session = await getSession();
+      const csrf = session?.csrfToken;
+      if (!csrf) {
+        setResetNote("no session/CSRF — open ?verdict=live first");
+        return;
+      }
+      const result = await postDevResetMission(
+        { chapterId: CHAPTER_ID, missionId: M1_MISSION_ID },
+        csrf,
+      );
+      if (result.status !== "OK") {
+        setResetNote(
+          `reset ${result.status}: ${result.status === "REFUSED" ? result.error : result.detail}`,
+        );
+        return;
+      }
+      const { deletedAttempts, moduleGateOrdinalsPreserved } = result.value.reset;
+      setResetNote(
+        `reset OK — removed ${deletedAttempts} attempt(s); gate ordinals [${moduleGateOrdinalsPreserved.join(",")}] preserved. Re-opening…`,
+      );
+      // Re-bootstrap a fresh, gradeable attempt one.
+      setRunId((value) => value + 1);
+    } catch (cause) {
+      setResetNote(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setResetting(false);
+    }
+  }
+
   const descriptor = isLive
     ? live.status === "ready"
       ? live.descriptor
@@ -246,6 +288,13 @@ function Harness() {
   return (
     <>
       <HarnessBanner mode={mode} />
+      {isLive && (
+        <DevResetControl
+          onReset={resetMyM1}
+          busy={resetting}
+          note={resetNote}
+        />
+      )}
       {isLive && live.status === "loading" && (
         <BootstrapNotice>Opening a ranked practice attempt…</BootstrapNotice>
       )}
@@ -275,6 +324,73 @@ function Harness() {
         />
       )}
     </>
+  );
+}
+
+/**
+ * A loud, unmistakably-DEV reset control.
+ *
+ * It hits the dev-gated `/v1/dev/reset-mission` for THIS session's own profile and
+ * re-opens a clean attempt. Styled to be impossible to mistake for a player button:
+ * a red, monospace, `DEV`-prefixed control fixed to the corner, well away from the
+ * duel's own UI. It only renders in the dev harness (this entry is never in the
+ * production `/index.html` build), and the endpoint it calls is a 404 in production.
+ */
+function DevResetControl(props: {
+  onReset: () => void;
+  busy: boolean;
+  note: string | null;
+}) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        right: 12,
+        bottom: 12,
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: 6,
+        maxWidth: 360,
+        pointerEvents: "auto",
+      }}
+    >
+      {props.note && (
+        <div
+          role="status"
+          style={{
+            font: "600 11px/1.4 ui-monospace, monospace",
+            color: "#2a1400",
+            background: "#ffe08a",
+            border: "1px solid #a65",
+            borderRadius: 4,
+            padding: "4px 8px",
+            textAlign: "right",
+          }}
+        >
+          {props.note}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={props.onReset}
+        disabled={props.busy}
+        style={{
+          font: "700 12px/1 ui-monospace, monospace",
+          letterSpacing: "0.04em",
+          color: "#fff",
+          background: props.busy ? "#7a2b2b" : "#b91c1c",
+          border: "2px solid #7f1010",
+          borderRadius: 6,
+          padding: "8px 12px",
+          cursor: props.busy ? "wait" : "pointer",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+        }}
+      >
+        {props.busy ? "DEV · RESETTING…" : "DEV · RESET MY M1 ATTEMPTS"}
+      </button>
+    </div>
   );
 }
 
