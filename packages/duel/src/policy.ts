@@ -33,6 +33,20 @@ import type { BossProfile } from "./boss.js";
 import type { CoverPoint } from "./cover.js";
 import { BULLET_SPEED_MPS } from "./tuning.js";
 
+// ---- determinism helpers ---------------------------------------------------
+//
+// A policy is "a replay artefact rather than an AI: same seed, same tick, same
+// decision, on every machine" (see the header). That contract is only as strong as
+// the maths under it, so every planar length a decision turns on is computed with
+// `Math.sqrt(x*x + z*z)` rather than `Math.hypot`. IEEE 754 pins +, -, *, / and
+// sqrt to one correctly-rounded result on every engine and explicitly does NOT pin
+// hypot, so the naive-looking form is the engine-independent one, exactly as in
+// engine-world's `horizSpeed` and @pa/duel's combat path.
+
+function planarLength(x: number, z: number): number {
+  return Math.sqrt(x * x + z * z);
+}
+
 // ---- ballistics ------------------------------------------------------------
 //
 // `solveInterceptDirection` used to live here. It moved to combat.ts when the aim
@@ -64,14 +78,14 @@ export function nearestThreat(
     if (t < 0) continue;
     const closestX = projectile.x + projectile.vx * t;
     const closestZ = projectile.z + projectile.vz * t;
-    const missBy = Math.hypot(
+    const missBy = planarLength(
       view.self.motion.pos.x - closestX,
       view.self.motion.pos.z - closestZ,
     );
     if (missBy > radius) continue;
     const ticks = Math.round(t * FIELD_TICK_HZ);
     if (best === null || ticks < best.ticks) {
-      const length = Math.hypot(projectile.vx, projectile.vz);
+      const length = planarLength(projectile.vx, projectile.vz);
       // Step across the ball's path, on the side that is already further away.
       const perpX = -projectile.vz / length;
       const perpZ = projectile.vx / length;
@@ -97,11 +111,43 @@ export function nearestThreat(
 function towards(from: FighterState, to: FighterState): { x: number; z: number } {
   const dx = to.motion.pos.x - from.motion.pos.x;
   const dz = to.motion.pos.z - from.motion.pos.z;
-  const length = Math.hypot(dx, dz);
+  const length = planarLength(dx, dz);
   return length > 1e-6 ? { x: dx / length, z: dz / length } : { x: 0, z: 1 };
 }
 
-const COVER_PROBE_DIRECTIONS = 16;
+/**
+ * The fixed set of equally-spaced probe headings `directionToCover` fans out, with
+ * cos/sin BAKED as literals.
+ *
+ * The headings depend only on the loop index and the count, never on runtime state,
+ * so each cos/sin is a compile-time constant — and the boss's chosen cover heading
+ * becomes a movement intent whose resulting position is hashed and part of the
+ * "same decision on every machine" contract. `Math.cos`/`Math.sin` are
+ * implementation-approximated, so computing the ring at load would let two engines
+ * probe in fractionally different directions and, at a threshold, choose different
+ * cover. Each pair equals `[Math.cos(a), Math.sin(a)]` for `a = (i / 16) * 2*PI` on
+ * the authoring engine, so the table is a no-op there and engine-exact everywhere;
+ * `bossNav.test.ts` re-derives it and fails on drift. Exported only so that guard
+ * can compare each entry against `[Math.cos(a), Math.sin(a)]`.
+ */
+export const COVER_PROBE_HEADINGS: readonly (readonly [number, number])[] = [
+  [1, 0],
+  [0.9238795325112867, 0.3826834323650898],
+  [0.7071067811865476, 0.7071067811865475],
+  [0.38268343236508984, 0.9238795325112867],
+  [6.123233995736766e-17, 1],
+  [-0.3826834323650897, 0.9238795325112867],
+  [-0.7071067811865475, 0.7071067811865476],
+  [-0.9238795325112867, 0.3826834323650899],
+  [-1, 1.2246467991473532e-16],
+  [-0.9238795325112868, -0.3826834323650896],
+  [-0.7071067811865477, -0.7071067811865475],
+  [-0.38268343236509034, -0.9238795325112865],
+  [-1.8369701987210297e-16, -1],
+  [0.38268343236509, -0.9238795325112866],
+  [0.7071067811865474, -0.7071067811865477],
+  [0.9238795325112865, -0.3826834323650904],
+];
 const COVER_PROBE_DISTANCE = 2.2;
 
 /**
@@ -111,10 +157,7 @@ const COVER_PROBE_DISTANCE = 2.2;
  */
 export function directionToCover(view: CombatView): { x: number; z: number } | null {
   const opponentEye = eyePosition(view.opponent.motion);
-  for (let index = 0; index < COVER_PROBE_DIRECTIONS; index++) {
-    const angle = (index / COVER_PROBE_DIRECTIONS) * Math.PI * 2;
-    const dirX = Math.cos(angle);
-    const dirZ = Math.sin(angle);
+  for (const [dirX, dirZ] of COVER_PROBE_HEADINGS) {
     const probe = {
       x: view.self.motion.pos.x + dirX * COVER_PROBE_DISTANCE,
       y: view.self.motion.pos.y,
@@ -240,7 +283,7 @@ export function coverApproachIntent(
   const face = towards(view.self, view.opponent);
   const dx = target.x - view.self.motion.pos.x;
   const dz = target.z - view.self.motion.pos.z;
-  const distance = Math.hypot(dx, dz);
+  const distance = planarLength(dx, dz);
   if (distance <= COVER_ARRIVE_RADIUS_M) {
     // Arrived: drop into cover and hold. No fire — this is the reload break.
     return intent({ moveX: 0, moveZ: 0, crouch: true, aimX: face.x, aimZ: face.z });
@@ -298,9 +341,23 @@ export function bossIntent(
   // target currently stands, then add seeded jitter.
   const blendX = direct.x + (perfect.x - direct.x) * profile.leadFraction;
   const blendZ = direct.z + (perfect.z - direct.z) * profile.leadFraction;
-  const blendLength = Math.hypot(blendX, blendZ) || 1;
+  const blendLength = planarLength(blendX, blendZ) || 1;
   const jitter =
     (fieldRandom(seed, view.tick, SALT_AIM) * 2 - 1) * profile.aimErrorRad;
+  // THIS sin/cos IS LEFT UNCONVERTED, AND DELIBERATELY. It rotates the boss's aim by
+  // a seeded error angle, and unlike the fixed cover ring above there is nothing to
+  // bake: `jitter` is a fresh runtime value every tick, so its sin/cos genuinely
+  // cannot be reduced to pinned ops. The output is load-bearing — it sets the boss's
+  // aimX/aimZ, hence its shot heading and the hits it lands — but converting it is
+  // not possible without changing the aim-error MODEL (e.g. a lateral offset instead
+  // of a rotation), which is a behaviour change, not a determinism fix. It is also
+  // the one policy transcendental with no cross-engine consequence in any shipped
+  // path: the boss is authoritative-only, a predicting client never runs `bossIntent`
+  // (it seats the opponent from the server snapshot and re-derives only its own
+  // body), and a divergence replay steps the RECORDED intents rather than recomputing
+  // them. So this is precisely the case the header's contract tolerates for the same
+  // reason the motion work tolerated yaw's atan2: unpinned, but never the input to a
+  // second engine's hash.
   const cos = Math.cos(jitter);
   const sin = Math.sin(jitter);
   const baseX = blendX / blendLength;

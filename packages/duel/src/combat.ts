@@ -60,6 +60,7 @@ import {
 import type { DuelEvent } from "./events.js";
 import { otherSide, type BySide, type DuelSide } from "./sides.js";
 import {
+  AIM_ASSIST_MAX_RAD,
   BULLET_LIFETIME_TICKS,
   BULLET_SPEED_MPS,
   DODGE_COOLDOWN_TICKS,
@@ -74,6 +75,47 @@ import {
   FIRE_INTERVAL_TICKS,
   type AimAssistProfile,
 } from "./tuning.js";
+
+// ---- determinism helpers ---------------------------------------------------
+//
+// Every planar length below feeds the hashed simulation state — a target
+// velocity, an aim heading, a dodge direction, a spawned ball — and the whole
+// point of @pa/netcode's digest is comparing a hash computed by Node against one
+// computed by a student's browser. So none of them may go through `Math.hypot`,
+// which IEEE 754 and the ECMAScript spec leave implementation-approximated: V8,
+// JavaScriptCore and SpiderMonkey can each return a different last bit for it. This
+// form uses only the ops the standard DOES pin (+, -, *, /, sqrt), so it is
+// bit-identical on every engine. It mirrors engine-world's `horizSpeed` in
+// playerMotion.ts exactly, for exactly the same reason.
+
+function planarLength(x: number, z: number): number {
+  return Math.sqrt(x * x + z * z);
+}
+
+// cos(AIM_ASSIST_MAX_RAD), BAKED as a decimal literal for the reason engine-world
+// bakes its accel/decel blends. `Math.cos` is implementation-approximated, so
+// computing it at load would reintroduce the cross-engine spread this change
+// removes; a numeric literal, by contrast, is required by ECMAScript to parse to
+// the nearest double on every conforming engine. This equals
+// `Math.cos(AIM_ASSIST_MAX_RAD)` on the authoring engine, so it is a no-op there
+// (no golden shift) and a determinism fix everywhere else. `combat.test.ts`
+// re-derives it and fails if AIM_ASSIST_MAX_RAD ever drifts away from it. Exported
+// only so that guard can compare it against `Math.cos(AIM_ASSIST_MAX_RAD)`, exactly
+// as engine-world exports GROUNDED_ACCEL_BLEND for its own re-derivation test.
+export const AIM_ASSIST_MAX_RAD_COS = 0.9780309147241483;
+
+/**
+ * The baked cosine of an aim-assist cone cap. Only PLAYER_AIM_ASSIST ships, so only
+ * its cap is baked; any other cap has no exact cosine here and is failed loudly
+ * rather than silently reaching for `Math.cos` on the hashed firing path.
+ */
+function aimAssistMaxCos(assist: AimAssistProfile): number {
+  if (assist.maxRadians === AIM_ASSIST_MAX_RAD) return AIM_ASSIST_MAX_RAD_COS;
+  throw new Error(
+    `aim-assist cap ${assist.maxRadians} rad has no baked cosine; add one beside ` +
+      `AIM_ASSIST_MAX_RAD_COS so the snap test stays engine-exact rather than calling Math.cos.`,
+  );
+}
 
 // ---- intents ---------------------------------------------------------------
 
@@ -222,6 +264,21 @@ export function createFighter(
     shotsFired: 0,
     hitsLanded: 0,
     hitsTaken: 0,
+    // The initial aim heading is seeded from the placement yaw with sin/cos, which
+    // ARE implementation-approximated — and it is left that way ON PURPOSE, by the
+    // same test the motion work applied: does this call ever execute on the
+    // cross-engine hashed path? It does not. `createFighter` runs once, on the
+    // authority, at match start; the resulting aimX/aimZ are serialised into the
+    // baseline snapshot the server sends every client, and a predicting client
+    // seeds its own body from that baseline and never re-derives it (see
+    // @pa/netcode's `predict`). A replay likewise starts from the recorded baseline.
+    // So the seed is computed exactly once, by one engine, and transmitted — never
+    // recomputed by a second engine for comparison. Baking it would demand a literal
+    // per placement yaw for no determinism gain, and @pa/netcode's own perturbation
+    // sweep deliberately builds the start state outside its perturbation for this
+    // exact reason. Once a shot is fired or an aim input arrives, aimX/aimZ are
+    // overwritten by the sqrt-normalised heading in `stepFighterMotion` / firing,
+    // which IS engine-exact.
     aimX: Math.sin(yaw),
     aimZ: Math.cos(yaw),
   };
@@ -279,12 +336,12 @@ export function solveInterceptDirection(
     }
   }
   if (t === null || !Number.isFinite(t)) {
-    const length = Math.hypot(rx, rz);
+    const length = planarLength(rx, rz);
     return length > 1e-6 ? { x: rx / length, z: rz / length } : null;
   }
   const aimX = rx + targetVel.x * t;
   const aimZ = rz + targetVel.z * t;
-  const length = Math.hypot(aimX, aimZ);
+  const length = planarLength(aimX, aimZ);
   return length > 1e-6 ? { x: aimX / length, z: aimZ / length } : null;
 }
 
@@ -306,7 +363,7 @@ export function assistedAim(
   assist: AimAssistProfile | null,
   canTarget: boolean,
 ): { x: number; z: number } {
-  const length = Math.hypot(desiredX, desiredZ);
+  const length = planarLength(desiredX, desiredZ);
   const desired =
     length > 1e-6 ? { x: desiredX / length, z: desiredZ / length } : { x: 0, z: 0 };
   if (!assist || !canTarget || isDowned(target) || length <= 1e-6) return desired;
@@ -318,18 +375,43 @@ export function assistedAim(
   );
   if (!solution) return desired;
 
-  const distance = Math.hypot(
+  const distance = planarLength(
     target.motion.pos.x - shooter.motion.pos.x,
     target.motion.pos.z - shooter.motion.pos.z,
   );
-  // A lateral forgiveness at the target, expressed as the angle it subtends from
-  // here, then clamped so point-blank does not become an auto-turn.
-  const tolerance = Math.min(
-    assist.maxRadians,
-    Math.atan2(assist.lateralMetres, Math.max(distance, 1e-3)),
-  );
+  // The snap test is "is the desired heading inside the tolerance cone around the
+  // intercept solution", where the tolerance is the smaller of a fixed cap and the
+  // angle the lateral forgiveness subtends at this range:
+  //
+  //   snap  iff  angle(desired, solution) <= min(maxRadians, atan2(lateral, dist))
+  //
+  // This decision is LOAD-BEARING and on the hashed path: its output becomes the
+  // shot's heading, which sets aimX/aimZ and the spawned ball's velocity, and a
+  // predicting client runs exactly this for its own shots (see @pa/netcode's
+  // `hashPredictable`). Written with `atan2` and `acos` — both
+  // implementation-approximated — the snap flips between engines near the cone edge,
+  // which is a ball that connects on the server and misses in the browser. So the
+  // whole comparison is moved into cosine space, where it uses only IEEE-pinned ops
+  // and one baked constant. Since cos is monotonically decreasing on [0, pi] and
+  // every angle here lies in [0, pi/2], the angle inequality is exactly a
+  // dot-product one:
+  //
+  //   acos(dot) <= min(maxRadians, atan2(lat, dist))
+  //     <=> dot >= cos(min(maxRadians, atan2(lat, dist)))
+  //     <=> dot >= max(cos(maxRadians), cos(atan2(lat, dist)))
+  //
+  // and cos(atan2(lat, dist)) is exactly dist / sqrt(lat*lat + dist*dist) — the
+  // adjacent over the hypotenuse of that right triangle — which is pure sqrt and
+  // divide, no transcendental. cos(maxRadians) is the one term with no algebraic
+  // route, so it is baked (`aimAssistMaxCos`). The clamp on `dot` is kept: rounding
+  // can carry a unit-vector dot a hair past 1, and the comparison must not be fed a
+  // value it could never legitimately reach.
+  const dist = Math.max(distance, 1e-3);
+  const cosLateral =
+    dist / Math.sqrt(assist.lateralMetres * assist.lateralMetres + dist * dist);
+  const cosTolerance = Math.max(aimAssistMaxCos(assist), cosLateral);
   const dot = Math.max(-1, Math.min(1, desired.x * solution.x + desired.z * solution.z));
-  return Math.acos(dot) <= tolerance ? solution : desired;
+  return dot >= cosTolerance ? solution : desired;
 }
 
 // ---- queries ---------------------------------------------------------------
@@ -357,7 +439,7 @@ export function hasLineOfSight(
 }
 
 export function distanceBetween(a: FighterState, b: FighterState): number {
-  return Math.hypot(a.motion.pos.x - b.motion.pos.x, a.motion.pos.z - b.motion.pos.z);
+  return planarLength(a.motion.pos.x - b.motion.pos.x, a.motion.pos.z - b.motion.pos.z);
 }
 
 /** Read-only view handed to an opponent policy. Policies never see raw state. */
@@ -569,7 +651,7 @@ function stepFighterMotion(
     // worst possible response to a button press, and the one a panicking player
     // makes most. It backsteps instead, away from where they are aiming, which is
     // both the genre convention and the only guess that is ever right by default.
-    const moveLength = Math.hypot(fighterIntent.moveX, fighterIntent.moveZ);
+    const moveLength = planarLength(fighterIntent.moveX, fighterIntent.moveZ);
     const dirX = moveLength > 1e-6 ? fighterIntent.moveX : -fighter.aimX;
     const dirZ = moveLength > 1e-6 ? fighterIntent.moveZ : -fighter.aimZ;
     const burst = beginDash(
@@ -597,7 +679,7 @@ function stepFighterMotion(
   // Computed unconditionally: stepMotion substitutes the burst velocity while a
   // dash is open, so there is no branch here and no second notion of "how fast am
   // I going".
-  const moveLength = Math.hypot(fighterIntent.moveX, fighterIntent.moveZ);
+  const moveLength = planarLength(fighterIntent.moveX, fighterIntent.moveZ);
   const speed =
     freeMoveSpeed({
       shiftHeld: fighterIntent.sprint,
@@ -614,7 +696,7 @@ function stepFighterMotion(
       : { x: 0, z: 0 };
 
   if (fighterIntent.jump && motion.grounded && !isDashing(motion)) {
-    const speed = Math.hypot(motion.vel.x, motion.vel.z);
+    const speed = planarLength(motion.vel.x, motion.vel.z);
     motion =
       fighterIntent.sprint && speed >= 1.2
         ? beginRunningJump(motion)
@@ -628,7 +710,7 @@ function stepFighterMotion(
     reducedMotion: false,
   });
 
-  const aimLength = Math.hypot(fighterIntent.aimX, fighterIntent.aimZ);
+  const aimLength = planarLength(fighterIntent.aimX, fighterIntent.aimZ);
   return {
     ...fighter,
     motion: stepped.state,
@@ -657,7 +739,7 @@ function resolveFiring(
   // the floor". Falling back to the last committed facing keeps a press from being
   // silently eaten on the one frame the pointer has not moved yet — the previous
   // behaviour swallowed the shot AND the client's fire latch with it.
-  const requestedLength = Math.hypot(fighterIntent.aimX, fighterIntent.aimZ);
+  const requestedLength = planarLength(fighterIntent.aimX, fighterIntent.aimZ);
   const requestedX = requestedLength > 1e-6 ? fighterIntent.aimX : shooter.aimX;
   const requestedZ = requestedLength > 1e-6 ? fighterIntent.aimZ : shooter.aimZ;
   const aimed = assistedAim(
@@ -668,7 +750,7 @@ function resolveFiring(
     params.aimAssist,
     canTarget,
   );
-  if (Math.hypot(aimed.x, aimed.z) <= 1e-6) return null;
+  if (planarLength(aimed.x, aimed.z) <= 1e-6) return null;
   const dirX = aimed.x;
   const dirZ = aimed.z;
 
