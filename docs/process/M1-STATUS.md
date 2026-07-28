@@ -395,6 +395,13 @@ test claims to guard, and see whether the test still passes. Results, ranked:
 which is exactly what a unit suite structurally cannot reach — and exactly the list of things
 that have reached the owner in play.
 
+**The dev-reset did not give a fresh duel** (fixed, `api-hunt`). A duel's verdict key is
+`<levelId>#duel@<ordinal>` — no attempt id — so after a reset re-opened attempt 1, the old
+`duel_verdicts` rows were still returned with `firstMinted=false` and the "fresh" replay silently
+re-served the prior run's verdicts **without re-grading**. Every mission reset and replay before
+this was replaying old grading. Found while building the retrieval ledger, because clearing run
+history forced the question of what else survives a reset.
+
 **House pattern for a baked constant.** Two guards asserted a baked literal equalled the host's
 own `Math.*` bit-for-bit — the exact functions whose cross-platform variance motivated baking —
 and the first Linux run failed one while the constants were correct. Both are fixed the same way,
