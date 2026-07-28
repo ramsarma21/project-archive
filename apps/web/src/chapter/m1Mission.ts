@@ -1,9 +1,6 @@
 import {
-  ARENA,
   M1_EFFIGY_RUN,
   YARD,
-  arenaPlacement,
-  arenaWorld,
   civiliansAtTick,
   compileLevel,
   coveredAtFor,
@@ -268,12 +265,9 @@ function objectives(
 // importing it is how the SYMMETRIC_COMPLEMENT opt-in went missing from the real
 // mission path while a green suite reported the player's 7/14 either way.
 export function duelBrief(seed: number, attemptOrdinal: number): MissionDuelBrief {
-  const placement = arenaPlacement();
   return {
     duelId: m1DuelId(attemptOrdinal),
     seed,
-    rounds: ARENA.rounds,
-    world: arenaWorld(),
     opponent: {
       kind: "BOSS",
       // Tier 1: M1 has one difficulty and it is the bottom of the curve.
@@ -306,12 +300,6 @@ export function duelBrief(seed: number, attemptOrdinal: number): MissionDuelBrie
       }),
     },
     questions: duelQuestionsForAttempt(seed, attemptOrdinal),
-    placement,
-    conceptIds: [
-      "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "BOS.CONCEPT.REPRESENTATION.v1",
-    ],
   };
 }
 

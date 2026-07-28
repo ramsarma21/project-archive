@@ -90,15 +90,8 @@ export function testDuelBrief(): MissionDuelBrief {
   return {
     duelId: "duel-test",
     seed: 1234,
-    rounds: 6,
-    world: testWorld(),
     opponent: { kind: "BOSS", profile: { bossId: "test-boss" } },
     questions: [1, 2, 3, 4, 5, 6],
-    placement: {
-      A: { pos: { x: 0, y: 0, z: -4 }, yaw: 0 },
-      B: { pos: { x: 0, y: 0, z: 4 }, yaw: Math.PI },
-    },
-    conceptIds: ["CONCEPT.ONE"],
   };
 }
 
