@@ -47,8 +47,23 @@
 //
 // It needs a running dev web server (the mission + duel harnesses), and the DUEL
 // stage additionally needs the API up (verdict=live opens a throwaway graded
-// attempt). If either is missing it says exactly what to start. It is NOT wired
-// into CI yet — see the report for what that would take.
+// attempt). If either is missing it says exactly what to start.
+//
+// THE ORIGIN REQUIREMENT (read this before running on a non-default port). The
+// DUEL live attempt is a CSRF-protected mutation, and the API refuses it with
+// CSRF_INVALID unless its WEB_ORIGIN env var EXACTLY equals the origin the browser
+// runs on — the same host and port as this baseURL. On the default port the API's
+// default WEB_ORIGIN (http://localhost:5173) happens to match; on any other port
+// it does not, and the duel silently reports "could not open a gradeable attempt"
+// that reads like broken attempt machinery but is only a mismatched origin. So
+// start the API with WEB_ORIGIN set to this baseURL. This check watches the API's
+// responses and, if it sees that refusal, names the mismatch outright rather than
+// leaving it to look like a code bug.
+//
+// This IS wired into CI as a blocking job (`playthrough` in .github/workflows/ci.yml),
+// which provisions Postgres + the API (WEB_ORIGIN pinned to the web origin) + the
+// web dev server before running it. See docs/process/CI-AND-BROWSER-CHECKS.md for
+// the job's shape and for what this gate structurally CANNOT see.
 
 import { chromium } from "playwright";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -63,8 +78,13 @@ mkdirSync(OUT, { recursive: true });
 const argv = process.argv.slice(2);
 const onlyIdx = argv.indexOf("--only");
 const onlyArg = onlyIdx >= 0 && argv[onlyIdx + 1] ? new Set(argv[onlyIdx + 1].split(",")) : null;
-const onlyValue = onlyIdx >= 0 ? argv[onlyIdx + 1] : null;
-const positional = argv.filter((a, i) => !a.startsWith("--") && a !== onlyValue && i !== onlyIdx + 1);
+// A positional argument is anything that is not a flag and is not the value that
+// follows `--only`. The `onlyIdx < 0` guard matters: without it, `onlyIdx + 1`
+// is 0 when there is no `--only`, which would wrongly drop the FIRST positional
+// (the baseURL) and silently fall back to the default port.
+const positional = argv.filter(
+  (a, i) => !a.startsWith("--") && (onlyIdx < 0 || i !== onlyIdx + 1),
+);
 const BASE = (process.env.PLAYTHROUGH_BASE ?? positional[0] ?? "http://localhost:5273").replace(/\/$/, "");
 const wants = (stage) => !onlyArg || onlyArg.has(stage);
 
@@ -123,6 +143,42 @@ async function reachable(url) {
   } catch {
     return false;
   }
+}
+
+// Records any API response that refused a mutation with CSRF_INVALID. A duel
+// bootstrap that fails on a mismatched WEB_ORIGIN produces exactly this — a 403
+// on /v1/auth/local-session or the module/attempt POST — and without capturing it
+// the on-screen message ("could not open a gradeable attempt") reads as if the
+// attempt machinery is broken rather than as the origin trap it is.
+function watchOriginDenials(page) {
+  const denials = [];
+  page.on("response", (res) => {
+    try {
+      const url = res.url();
+      if (!/\/(v1|api)\//.test(url) || res.status() !== 403) return;
+      res
+        .text()
+        .then((body) => {
+          if (/CSRF_INVALID/.test(body)) denials.push({ url, body: body.slice(0, 120) });
+        })
+        .catch(() => {});
+    } catch {
+      /* a response that cannot be read tells us nothing; ignore it */
+    }
+  });
+  return denials;
+}
+
+// The plain-language remediation for a duel-live failure that was really an origin
+// mismatch. Empty when no CSRF refusal was seen, so it only speaks when it applies.
+function originMismatchHint(denials) {
+  if (denials.length === 0) return "";
+  return (
+    ` ORIGIN MISMATCH, not broken attempt machinery: the API refused the attempt with` +
+    ` CSRF_INVALID on ${denials.length} call(s) (e.g. ${denials[0].url}). The browser's` +
+    ` Origin is ${BASE}, but the API's WEB_ORIGIN is set to something else. Start the API` +
+    ` with WEB_ORIGIN=${BASE} — it must equal this base URL exactly, host and port included.`
+  );
 }
 
 async function launch() {
@@ -456,6 +512,7 @@ async function stageDuel(browser) {
   log("\n[DUEL] the harness loads a world (verdict=live)");
   {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const denials = watchOriginDenials(page);
     const url = `${BASE}/src/duel/duel.html?verdict=live`;
     await page.goto(url, { waitUntil: "commit", timeout: 120000 });
     let mounted = false;
@@ -465,9 +522,10 @@ async function stageDuel(browser) {
     }
     await sleep(6000);
     if (!mounted) {
+      await page.screenshot({ path: join(OUT, "duel-live-fail.png") }).catch(() => {});
       const notice = await page.evaluate(() => document.body.innerText.slice(0, 300)).catch(() => "");
       assert(false, "duel harness opens a graded attempt",
-        `verdict=live never mounted a duel (window.__duel absent). It opens a real attempt, so this stage needs the API up. On-screen: ${JSON.stringify(notice)}`);
+        `verdict=live never mounted a duel (window.__duel absent). It opens a real attempt, so this stage needs the API up.${originMismatchHint(denials)} On-screen: ${JSON.stringify(notice)}`);
     } else {
       const botSky = await duelBotSky(page).catch(() => 1);
       await page.screenshot({ path: join(OUT, "duel-live.png") }).catch(() => {});
