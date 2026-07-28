@@ -185,8 +185,15 @@ replay harness.
   written: `docs/process/PvP-Arena-Unification-Plan.md`.
 - Residual mid-route frame spikes trace to GPU rasterisation, not compilation — hardware and
   load, not code. Needs the owner's machine to settle magnitude.
-- `MissionDuelBrief.world`/`.placement` are assembled but unused. The M1 yard's duel-cover
-  props are now purely decorative, including the yard stage fixed on 28 Jul.
+- `MissionDuelBrief.world`/`.placement`/`.rounds`/`.conceptIds` are assembled but unused —
+  `duelBrief()` builds a whole collision world and placement that the only consumer
+  deliberately ignores, and a test asserts the descriptor's arena is *not* the brief's world.
+  The hazard is a future author assuming they're load-bearing. Narrow the brief to
+  `{ duelId, seed, opponent, questions }`, after proving `arenaWorld()`/`arenaPlacement()`
+  aren't still feeding the traversal level. Queued.
+- Two `check-world-scale` findings print as observations and gate nothing:
+  `playerboy-rigged.glb` is 1.2× off its declared size and `flintlock-pistol.glb` 1.5×.
+  Deliberately non-blocking, so nothing enforces them.
 - 25 itemised affordance debt entries, gated so the list can shrink but never grow silently.
 - **One flaky test**, seen once: an `apps/api` backoff-timing case failed twice under parallel
   full-suite load and passed 199/199 in isolation; a later full run was clean. Flakiness is
@@ -219,6 +226,12 @@ real path it mirrored had drifted. The owner's entire boss-fight playtesting his
 inside a harness that didn't grade, in the wrong arena, against a boss that ignored cover —
 and nothing failed. A dev path that differs from the real path in a load-bearing way is
 worse than no dev path, because it produces confident false results.
+
+A deduplication sweep (`a5360d2`) then found the module gate deck had a **fourth** hand-copy
+in the Postgres e2e test, and the progression double existed **twice** — which is why the
+scoping lie needed correcting in two places. Both now derive from one source, so the
+unification is itself the pin. No new live bug came out of that sweep; the defects of this
+shape had already been caught, and what was removed was latent drift.
 
 All fourteen dual-path surfaces were swept (`afe8717`). Eleven agree; two differ
 legitimately and say so loudly (the scripted verdict harness, dev sessions). The two that
