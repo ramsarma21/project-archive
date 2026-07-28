@@ -319,6 +319,36 @@ test("a concept is mastered only at 100%, and an unanswered item counts against 
   assert.equal(perfect.passed, true);
 });
 
+test("an empty form is never a pass, and a zero-item concept is never mastered", () => {
+  // The two `length > 0` guards inside summarizeAssessmentForm, pinned. Both are
+  // vacuous-`every`/`===` traps: `[].every(mastered)` is true, and `correct === 0`
+  // holds when a concept was served zero items. Either would let a form with
+  // nothing in it report `passed: true` and mint a PvP-legal card off no evidence,
+  // and neither is caught by any form that actually carries items.
+  const emptyForm = summarizeAssessmentForm([], []);
+  assert.equal(emptyForm.passed, false, "a form with no concepts cannot pass");
+  assert.deepEqual(emptyForm.masteredConceptIds, []);
+  assert.equal(emptyForm.scoreDenominator, 0);
+
+  const emptyConcept = summarizeAssessmentForm(
+    [{ conceptId: "C.EMPTY", itemIds: [] }],
+    [],
+  );
+  const row = emptyConcept.byConcept[0];
+  assert.equal(row?.served, 0);
+  assert.equal(
+    row?.mastered,
+    false,
+    "a concept nobody was asked about is not mastered by vacuous 100%",
+  );
+  assert.deepEqual(emptyConcept.masteredConceptIds, []);
+  assert.equal(
+    emptyConcept.passed,
+    false,
+    "a form of only empty concepts is not a pass, however the `every` reads",
+  );
+});
+
 test("a retry narrows to unmastered concepts and draws only fresh items", () => {
   const mastery = new Map([
     ["C.A", { masteredAt: AT }],
