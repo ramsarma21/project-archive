@@ -144,15 +144,15 @@ zero-evidence form pass (`1c4250f`).
   steeple without crossing the roof trigger, which is a soft-lock waiting to happen if
   `ROPEWALK_STOP` is mandatory. Also: the 2.0 m same-surface band alone does not separate the
   meeting-house leads (8.2) from `BOUGH_CROWN` (8.3) — only the XZ radius does. Flagged, open.
-- **The Liberty Elm's mesh is crude.** The mission's climactic set-piece draws as a smeared
-  column under flat shattered foliage cards. **Not a placement defect** — that was my
-  hypothesis and it was disproven with measurements (`7353b82`): the trunk mass and all three
-  bough decks already cluster into one draw at the declared `[16, 18, 16]`, and the fix I
-  proposed (nulling the boughs' asset) would have collapsed it to a 1.8 m pole, which is now
-  guarded. The mesh itself is the job. Success is measurable, not just visual: real limbs at
-  `standableAt: [6.4, 8.3, 11.2]` broad enough to fill their footprints would retire the
-  F_TREE debt rows, which currently read those surfaces 4–9 cm low at 67–81% coverage.
-  In flight.
+- **The Liberty Elm is a tree now, but the bark reads as polished wood** (`8d816cb`). Rebuilt
+  procedurally rather than through Meshy, because Meshy foliage *is* the shard defect — a
+  canopy delivered as a few intersecting alpha cards. Fluted bole, three broad limb rafts,
+  crossed leaf-cluster cards with genuine cutout alpha. **All three F_TREE rows retired to
+  100% coverage** (BOUGH_UPPER 67%, LEAP_CROWN 84%, LEAP_UPPER 75%), so the boughs the player
+  lands on finally fill their footprints; debt ledger 25 → 22. Remaining: the trunk reads as
+  glossy wavy grain rather than furrowed bark (too specular, sinusoidal rather than irregular,
+  no depth), and the limb rafts read as flat planks. One more pass in flight; a Gemini→texture
+  pass for the bark is the fallback.
 - **Duel cards were too alike to answer — mostly fixed** (`13cdc12`). My diagnosis was wrong:
   the duel does **not** draw from the 46-concept teaching registry. It already asks on exactly
   three concepts, with nine cards (three per concept) derived from the bank. The overlap was
@@ -314,6 +314,10 @@ Read this before concluding a green run means the game is correct.
 | `assets:verify:affordances` | real mesh geometry at each authored affordance | whether a human could make the move |
 | `check-playthrough` — **blocking in CI** (`8eb2393`) | world renders, route advances, stops resolve, no hang, no hull penetration | climbing through *drawn* geometry, animation fidelity, the terminal elm beat (deliberately unplayed — a bot that could reliably hit it would itself be flaky) |
 | `check-clip-fidelity` | hands/feet vs surfaces, plant slide, clip timing | not yet a gate — red by construction |
+
+**Disproven, do not re-derive:** the elm is *not* drawn four times — trunk and all three
+bough decks already cluster into one draw at the declared size, and nulling the boughs' asset
+would collapse it to a 1.8 m pole (`7353b82`, guarded).
 
 **A mutation hunt found the suite's own blind spots** (`6cb600d`). Method: break the code a
 test claims to guard, and see whether the test still passes. Results, ranked:
