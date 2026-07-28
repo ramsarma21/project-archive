@@ -122,6 +122,20 @@ replay harness.
   point query, so support is sampled not swept — the same defect that lets a body float off a
   roof edge could fail to find ground), or tunnelling through a thin surface at fall speed.
   Unclassified until reproduced. In flight.
+- **The Liberty Elm renders as neon shards.** Seen in play 28 Jul: the mission's climactic
+  set-piece draws as a smeared cylinder trunk under flat shattered green planes. Strong
+  suspicion is the contain-fit class again, in its worst instance — `liberty-elm-hero` is
+  used as the asset for the trunk mass *and* for all three bough **decks**, so one hero mesh
+  is squashed four times, flattened into thin deck boxes for the boughs. **Not yet assigned**
+  (the lanes that own `assets.ts` and the elm geometry are both occupied).
+- **The elm beat is finicky and hard to start.** The whack-a-mole reaction panel often fails
+  to appear. Arming keys off a single authored stance point, so a tight tolerance means a
+  spot that looks right on the crown won't trigger, with no cue saying you're short.
+  Difficulty is deliberately system-owned in `packages/beat`, not level-tunable. In flight.
+- **No staging into the boss fight.** Walking into the yard cuts straight to the duel. Wants
+  a cinematic: the officer there again, stopping the player, issuing the challenge, subtitled.
+  Being built on the existing `encounterCinematic` machinery rather than a second system.
+  In flight.
 - **"Cannot run"** — unexplained. Every in-lane mechanism ruled out by two systematic
   passes; the per-leg speed cap is disproven (it releases ~3 m *early*). Needs a location
   or a live capture from the owner.
