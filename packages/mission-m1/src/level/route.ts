@@ -197,7 +197,8 @@ export const NODES: RouteNode[] = [
   // -- E: the leap ----------------------------------------------------------
   node("E_ELLIOT_ROOF", "E_LEAP", [77.0, BAND.MEETING_EAVE, -9.0], "ELLIOT_HOUSE__ROOF", ["stealth-line"]),
   node("E_ELLIOT_LIP", "E_LEAP", [79.0, BAND.MEETING_EAVE, -6.9], "ELLIOT_HOUSE__ROOF", ["lip"]),
-  node("E_RIDGE", "E_LEAP", [79.5, BAND.MEETING_RIDGE, 8.6], "MEETING_RIDGE", []),
+  node("E_RIDGE", "E_LEAP", [78.5, BAND.MEETING_RIDGE, 8.6], "MEETING_RIDGE", [],
+    "The ridge foot of the steeple climb, pulled west off [79.5] so the reach up to the louvre sill threads clear of the elm's northern canopy sprawl (which reaches z8.8 over the belfry) rather than driving the body 0.46m into it. The ridge monitor runs the width of the roof, so the hold moves without leaving it."),
   node("E_LOUVRE", "E_LEAP", [80.0, BAND.LOUVRE_SILL, 8.9], "LOUVRE_SILL", []),
   node("E_GALLERY", "E_LEAP", [80.0, BAND.STEEPLE_GALLERY, 9.6], "STEEPLE_GALLERY", ["leap-point"]),
   // The south-west corner of the lantern cornice. The ring is 0.8m of walkway now
@@ -214,7 +215,8 @@ export const NODES: RouteNode[] = [
   node("E_VANE", "E_LEAP", [81.1, BAND.STEEPLE_VANE, 10.7], "STEEPLE_VANE", ["leap-point", "expert"]),
 
   // -- F: the tree ----------------------------------------------------------
-  node("F_LOW", "F_TREE", [79.0, BAND.BOUGH_LOW, 2.6], "BOUGH_LOW", ["bough"]),
+  node("F_LOW", "F_TREE", [78.7, BAND.BOUGH_LOW, 0.4], "BOUGH_LOW", ["bough"],
+    "Under the crown's south-west overhang. Pulled off the [79.0, 2.6] spot (still under the crown) because that sat the walked path's HEAD up in the drawn canopy raft at z1.9-3.0: the swept climbs off it (to the awning, up to the crown) drove the body 0.67m and 0.33m into the drawn elm. This spot — same tier, same overhang, out from under the raft — takes both to a graze."),
   node("F_CROWN", "F_TREE", [79.6, BAND.BOUGH_CROWN, 1.9], "BOUGH_CROWN", ["bough"],
     "Where LEAP_CROWN rests the diver. The dive is captured by an explicit target, so the node has to be the target."),
   node("F_CROWN_E", "F_TREE", [82.6, BAND.BOUGH_CROWN, 2.6], "BOUGH_CROWN", ["bough"],
@@ -222,8 +224,8 @@ export const NODES: RouteNode[] = [
   node("F_UPPER", "F_TREE", [82.0, BAND.BOUGH_UPPER, 2.6], "BOUGH_UPPER", ["bough", "expert"]),
   node("F_POST", "F_TREE", [79.6, BAND.BOUGH_CROWN, 0.4], "BOUGH_CROWN", ["post"],
     "Feet on the crown limb, the effigy swinging a tier below, the crowd under that."),
-  node("F_POST_STEP", "F_TREE", [79.6, BAND.BOUGH_LOW, 3.8], "BOUGH_LOW", ["bough"],
-    "The lip off the crown onto the low bough. F_LOW itself sits back under the crown's overhang — the spot the ascent climb-volume serves — so there is no edge there to leave from; you come down at the crown's northern rim and walk in. This is that rim, on the exposed low bough a body-length past where the crown ends."),
+  node("F_POST_STEP", "F_TREE", [77.8, BAND.BOUGH_LOW, 0.4], "BOUGH_LOW", ["bough"],
+    "The lip off the crown onto the low bough. F_LOW itself sits back under the crown's overhang — the spot the ascent climb-volume serves — so there is no edge there to leave from; you come down at an exposed rim and walk in. This is the WEST rim, on the exposed low bough a stride past where the crown ends (x<78.6). It was the NORTH rim [79.6, 3.8], but the pinned post (F_POST, the beat stance, cannot move) sits at z0.4, so a climb-down to the north rim swept the body's head north through the drawn canopy raft at z1.9-3.0 (0.81m into the elm). Dropping down the west rim at the post's own z keeps the descent out of that raft, and F_LOW is a short step east of here."),
   // The two descent landings sit at the WEST edges the body actually drops off,
   // not under the overhang above them. The low bough (x from 77.4) overhangs the
   // stall awning, so the only rim a body can leave the boughs from is the bough's
@@ -235,7 +237,7 @@ export const NODES: RouteNode[] = [
   // is where the second hang-drop leaves from, coming down on open ground clear of
   // the awning at (76.2, 0). Both landings are on the same imported decks; only the
   // waypoints moved to where the descent is physically takeable.
-  node("F_AWNING", "F_TREE", [77.0, 3.2, 2.8], "TREE_AWNING", ["catch"]),
+  node("F_AWNING", "F_TREE", [77.0, 3.2, 1.4], "TREE_AWNING", ["catch"]),
   node("F_GROUND", "F_TREE", [76.2, 0.0, 3.6], "GROUND", []),
 
   // The crossing under the elm. Twelve bodies, torchlight at 0.85 — the brightest

@@ -115,10 +115,18 @@ decks.push(
     section: "D2_ROPEWALK",
     asset: "roof-walk-board-long",
     rect: rect(59.6, 79.0, 20.5, 22.1),
-    y: 5.2,
+    // 5.4, raised 0.2m from 5.2. The hatch drop onto this beam (D2_ROOF_N at the
+    // roof, 8.6m) measured 3.4m — 0.2m past the 3.2m hang-drop ceiling, so the
+    // reader classified it a ROLL, and a body cannot roll on a beam its own width.
+    // At 5.4 the fall is 3.2m: a controlled feet-first hang-drop the beam can
+    // actually receive, the plausible move the 1:1-with-real-life rule wants.
+    // Nothing else on the beam moves relative to it (the D2_BEAM_* walk nodes rise
+    // with it); the only knock-on is the quiet run-off off the west end, now 2.2m
+    // (D2_BEAM_W -> HEMP_BALES_HIGH), still inside the 2.2m run-off ceiling.
+    y: 5.4,
     carriedBy: [],
     tags: ["beam"],
-    note: "A tie beam the length of the shed, 1.6m wide. You land on it out of the hatch and run it in the dark with the floor four metres down.",
+    note: "A tie beam the length of the shed, 1.6m wide. You hang-drop onto it out of the hatch (3.2m) and run it in the dark with the floor over five metres down.",
   }),
 );
 
@@ -145,7 +153,7 @@ masses.push(
     rect: rect(61.4, 64.6, 22.4, 25.4),
     topY: 3.2,
     tags: ["bales", "cover"],
-    note: "2.0m below the beam's west end: a run-off, so the descent out of the roof never stops. Also the only full-height mass between the night man's post and the floor route.",
+    note: "2.2m below the beam's west end: a run-off, so the descent out of the roof never stops. Also the only full-height mass between the night man's post and the floor route.",
   }),
   prop({
     id: "HEMP_BALES_LOW",

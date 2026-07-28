@@ -69,11 +69,11 @@ export const NODES_2: RouteNode[] = [
   node("D2_VENT_IN_1", "D2_ROPEWALK", [71.7, 8.6, 19.95], "ROPEWALK_ROOF_W", []),
   node("D2_VENT_OUT_1", "D2_ROPEWALK", [74.1, 8.6, 19.95], "ROPEWALK_ROOF_W", []),
   node("D2_ROOF_N", "D2_ROPEWALK", [76.1, 8.6, 18.6], "ROPEWALK_ROOF_N", ["lip"]),
-  node("D2_BEAM_MID", "D2_ROPEWALK", [76.1, 5.2, 21.3], "ROPEWALK_TIE_BEAM", ["beam"],
-    "Down the hatch onto the tie beam, four metres over an unlit floor."),
-  node("D2_BEAM_E", "D2_ROPEWALK", [72.0, 5.2, 21.3], "ROPEWALK_TIE_BEAM", ["beam"],
-    "Directly over the night man's lantern. Thirteen metres of beam west to the hemp in the dark, or 5.2m straight down onto his floor. The long way is quiet."),
-  node("D2_BEAM_W", "D2_ROPEWALK", [63.0, 5.2, 21.3], "ROPEWALK_TIE_BEAM", ["beam"],
+  node("D2_BEAM_MID", "D2_ROPEWALK", [76.1, 5.4, 21.3], "ROPEWALK_TIE_BEAM", ["beam"],
+    "A 3.2m hang-drop through the hatch onto the tie beam, over five metres above an unlit floor."),
+  node("D2_BEAM_E", "D2_ROPEWALK", [72.0, 5.4, 21.3], "ROPEWALK_TIE_BEAM", ["beam"],
+    "Directly over the night man's lantern. Thirteen metres of beam west to the hemp in the dark, or straight down onto his floor. The long way is quiet."),
+  node("D2_BEAM_W", "D2_ROPEWALK", [63.0, 5.4, 21.3], "ROPEWALK_TIE_BEAM", ["beam"],
     "The west end of the walked beam, over the hemp stacks. From here the descent is three run-offs and none of them is heard."),
   // Where the 5.2m run-off actually puts you, not where it aims: off the beam's
   // south edge at a walk the arc carries 2.3m before the floor arrives, which
@@ -185,7 +185,7 @@ export const LINKS_2: RouteLink[] = [
   // 2.2m ceiling, so the descent out of the roof never actually stops.
   link("D2_BEAM_W", "D2_BALES_HIGH", "DROP", "SAFE", "CHAIN_DROP", {
     speedMps: 2.3,
-    note: "2.0m off the beam's west end into the raw hemp. A run-off, which is the quietest landing the game has, and it is why walking the whole length of the beam is worth the seconds it costs.",
+    note: "2.2m off the beam's west end into the raw hemp. A run-off, which is the quietest landing the game has, and it is why walking the whole length of the beam is worth the seconds it costs.",
   }),
   link("D2_BALES_HIGH", "D2_BALES_LOW", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 2.3 }),
   link("D2_BALES_LOW", "D2_FLOOR_W", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 2.3 }),
