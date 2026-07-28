@@ -26,8 +26,10 @@ import type {
 // SHARED TEST INFRA. It models the Postgres store field for field — the
 // per-profile advisory lock, the chapter/profile-scoped reads, the first-write-wins
 // upserts, and the `serialisedForm` projection — so a test drives the real
-// derivation logic against a faithful stand-in. It is multi-profile safe (snapshot
-// filters by profile), which is what the dev-reset scoping tests rely on.
+// derivation logic against a faithful stand-in. It is multi-profile safe: snapshot
+// scopes every collection the way `postgresStore` does — missions/openAttempt/codex
+// and the PvP loadout by profile, and chapter abilities and concept mastery by
+// profile AND the active chapter — which is what the dev-reset scoping tests rely on.
 export class MemoryStore implements ProgressionStore {
   campaigns = new Map<string, CampaignProgression>();
   chapters = new Map<string, ChapterProgression>();
@@ -309,10 +311,24 @@ export class MemoryStore implements ProgressionStore {
           (attempt) =>
             attempt.profileId === profileId && attempt.status === "IN_PROGRESS",
         ) ?? null,
-      codex: [...this.codex.values()],
-      chapterAbilities: [...this.chapterAbilities.values()],
-      pvpAbilities: [...this.pvpAbilities.values()],
-      conceptMastery: [...this.mastery.values()],
+      // Scoped exactly as the Postgres snapshot scopes them: codex and the PvP
+      // loadout by profile, chapter abilities and concept mastery by profile AND
+      // the active chapter. Returning other profiles'/chapters' rows here would
+      // let a multi-profile test pass on data it never wrote.
+      codex: [...this.codex.values()].filter((card) => card.profileId === profileId),
+      chapterAbilities: [...this.chapterAbilities.values()].filter(
+        (ability) =>
+          ability.profileId === profileId &&
+          ability.chapterId === campaign.activeChapterId,
+      ),
+      pvpAbilities: [...this.pvpAbilities.values()].filter(
+        (ability) => ability.profileId === profileId,
+      ),
+      conceptMastery: [...this.mastery.values()].filter(
+        (mastery) =>
+          mastery.profileId === profileId &&
+          mastery.chapterId === campaign.activeChapterId,
+      ),
     };
   }
 }

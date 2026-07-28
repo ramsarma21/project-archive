@@ -312,15 +312,33 @@ class MemoryStore implements ProgressionStore {
         xp: activeChapter.xp,
         xpToNextLevel: null,
       },
-      missions: [...this.missions.values()],
+      // Scoped exactly as `postgresStore` (and the shared support double) scope
+      // these: missions/openAttempt/codex and the PvP loadout by profile, chapter
+      // abilities and concept mastery by profile AND the active chapter. Every
+      // test here uses one profile, so the leak was dormant — but a verbatim copy
+      // of the lie is one multi-profile test away from a false pass.
+      missions: [...this.missions.values()].filter(
+        (mission) => mission.profileId === profileId,
+      ),
       openAttempt:
         [...this.missionAttempts.values()].find(
-          (attempt) => attempt.status === "IN_PROGRESS",
+          (attempt) =>
+            attempt.profileId === profileId && attempt.status === "IN_PROGRESS",
         ) ?? null,
-      codex: [...this.codex.values()],
-      chapterAbilities: [...this.chapterAbilities.values()],
-      pvpAbilities: [...this.pvpAbilities.values()],
-      conceptMastery: [...this.mastery.values()],
+      codex: [...this.codex.values()].filter((card) => card.profileId === profileId),
+      chapterAbilities: [...this.chapterAbilities.values()].filter(
+        (ability) =>
+          ability.profileId === profileId &&
+          ability.chapterId === campaign.activeChapterId,
+      ),
+      pvpAbilities: [...this.pvpAbilities.values()].filter(
+        (ability) => ability.profileId === profileId,
+      ),
+      conceptMastery: [...this.mastery.values()].filter(
+        (mastery) =>
+          mastery.profileId === profileId &&
+          mastery.chapterId === campaign.activeChapterId,
+      ),
     };
   }
 }
