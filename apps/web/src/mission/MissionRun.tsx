@@ -11,6 +11,7 @@ import {
   shouldArmBossChallenge,
   type BossChallengeStage,
 } from "./bossCutscene.js";
+import { missionDuelSky } from "./missionDuelSky.js";
 import { MissionBeatPanel } from "./MissionBeatPanel.js";
 import { MissionEncounter } from "./MissionEncounter.js";
 import { MissionHud } from "./MissionHud.js";
@@ -205,6 +206,10 @@ export function MissionRun(props: {
   // ends, however it ends (played out, skipped, or the hard cap).
   const [bossChallenge, setBossChallenge] = useState<BossChallengeStage | null>(null);
   const pendingDuelOutcome = useRef<MissionTraversalOutcome | null>(null);
+  // The dawn lift at the moment the yard was reached, captured with the cutscene
+  // and carried into the duel so the fight opens in the same pre-dawn light the
+  // officer stopped the player in — not the arena's stand-alone midday.
+  const arrivalLift = useRef<number | null>(null);
 
   // The encounter authority: the real CSRF-authenticated HTTP route in
   // production, or a deterministic dev stand-in when a `?encounterVerdict=` query
@@ -254,6 +259,7 @@ export function MissionRun(props: {
     // A fresh attempt cannot inherit the last run's cutscene.
     if (bossChallenge) setBossChallenge(null);
     pendingDuelOutcome.current = null;
+    arrivalLift.current = null;
   }
 
   // The camera's orientation, which is the player's and is mutated in place so
@@ -351,6 +357,7 @@ export function MissionRun(props: {
     const onResolved = (outcome: MissionTraversalOutcome) => {
       if (shouldArmBossChallenge(outcome, bossChallenge !== null)) {
         pendingDuelOutcome.current = outcome;
+        arrivalLift.current = runtime.dawn.lift01;
         setBossChallenge({
           startedAtMs: bossCutsceneNowMs(),
           player: {
@@ -467,6 +474,12 @@ export function MissionRun(props: {
         </div>
       );
     }
+    // The arena inherits the mission's time of day at arrival, so the fight
+    // opens in the same pre-dawn the officer's challenge was lit in rather than
+    // the arena's stand-alone midday. Null lift (no cutscene armed, e.g. a
+    // direct-to-duel path) leaves the arena on its own default.
+    const duelSky =
+      arrivalLift.current !== null ? missionDuelSky(arrivalLift.current) : undefined;
     return (
       <div className="msn">
         <Duel
@@ -474,6 +487,7 @@ export function MissionRun(props: {
           missionId={phase.ticket.missionId}
           attemptOrdinal={phase.ticket.attemptOrdinal}
           reducedMotion={props.reducedMotion}
+          {...(duelSky ? { sky: duelSky } : {})}
           onResolved={session.resolveDuel}
           onAbandon={session.abandonAttempt}
         />

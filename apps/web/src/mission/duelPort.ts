@@ -48,6 +48,37 @@ export interface MissionDuelBrief {
   readonly conceptIds: readonly string[];
 }
 
+/**
+ * The time of day to light the arena at, when a mission enters its duel.
+ *
+ * The mission is set before dawn and the duel is a beat later at the same place,
+ * so the fight must not open at the arena's stand-alone midday. This is the seam
+ * that carries the mission's sky across: the container computes it from the
+ * dawn model at the moment of arrival (see missionDuelSky.ts) and the duel view
+ * lights the yard from it instead of its own daylight rig. Absent, the arena
+ * keeps its stand-alone default — the stand-alone duel has no mission clock.
+ *
+ * Colours only where colours travel across tone curves; the intensities are
+ * expressed in the arena's own (ACES) range rather than the mission stage's
+ * (Neutral) one, so the duel view can apply them without a second calibration.
+ * A plain data record, so this port stays free of three.js and of the duel.
+ */
+export interface DuelSky {
+  /** Background / clear colour, `#rrggbb`. */
+  readonly background: string;
+  /** Fog colour and exponential density. */
+  readonly fogColor: string;
+  readonly fogDensity: number;
+  /** Hemisphere sky/ground colours and its intensity in the arena's range. */
+  readonly hemiSky: string;
+  readonly hemiGround: string;
+  readonly hemiIntensity: number;
+  /** Key (sun/moon) colour and intensity in the arena's range. Direction is the
+   *  arena's own, kept for readable raking shadows off the cover. */
+  readonly sunColor: string;
+  readonly sunIntensity: number;
+}
+
 /** One round's knowledge evidence. Reports; mints nothing, gates nothing. */
 export interface MissionDuelRoundReport {
   readonly round: number;
@@ -94,6 +125,13 @@ export interface MissionDuelViewProps {
   readonly missionId: string;
   readonly attemptOrdinal: number;
   readonly reducedMotion: boolean;
+  /**
+   * The mission's time of day for the arena, or absent to keep the stand-alone
+   * daylight. Set by the container from the dawn state at yard arrival, so the
+   * fight opens in the same pre-dawn the officer stopped the player in rather
+   * than jumping to midday across the cutscene→duel seam.
+   */
+  readonly sky?: DuelSky;
   /** Called exactly once, when the duel resolves. */
   readonly onResolved: (report: MissionDuelReport) => void;
   /** Called when the player leaves the duel without finishing it. */

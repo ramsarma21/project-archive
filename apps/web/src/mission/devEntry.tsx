@@ -24,6 +24,7 @@ import {
 import { attachMissionInput, createMissionInputState } from "./missionInput.js";
 import { createMissionLookState } from "./missionLook.js";
 import { dawnRead } from "./dawn.js";
+import { missionDuelSky } from "./missionDuelSky.js";
 import {
   createMissionRuntime,
   disposeMissionRuntime,
@@ -160,6 +161,7 @@ function Harness() {
   const bossMode = params.get("boss") === "1";
   const [enteredDuel, setEnteredDuel] = useState(false);
   const bossArmed = useRef(false);
+  const armedLift = useRef<number | null>(null);
   const input = useMemo(createMissionInputState, []);
 
   // The hold is the default and the run is what comes after it, which is the
@@ -253,6 +255,7 @@ function Harness() {
         runtime.instance.traversalBudgetS,
         runtime.instance.traversalBudgetS,
       );
+      armedLift.current = runtime.dawn.lift01;
       setOutcome({ kind: "REACHED_DUEL", ...missionObservation(runtime) });
       setChallenge({
         startedAtMs: bossCutsceneNowMs(),
@@ -301,6 +304,8 @@ function Harness() {
   if (enteredDuel) {
     const Duel = duelView();
     if (Duel) {
+      const sky =
+        armedLift.current !== null ? missionDuelSky(armedLift.current) : undefined;
       return (
         <div className="msn">
           <Duel
@@ -308,6 +313,7 @@ function Harness() {
             missionId={M1_MISSION_ID}
             attemptOrdinal={1}
             reducedMotion={reducedMotion}
+            {...(sky ? { sky } : {})}
             onResolved={() => setEnteredDuel(false)}
             onAbandon={again}
           />
