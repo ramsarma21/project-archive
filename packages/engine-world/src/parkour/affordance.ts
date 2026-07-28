@@ -48,7 +48,6 @@ import { PARKOUR_TUNING, type ParkourTuning, type TraversalVerb } from "./tuning
 export const HOLD_VERBS: ReadonlySet<TraversalVerb> = new Set<TraversalVerb>([
   "STEP_UP",
   "VAULT",
-  "MANTLE",
   "CLIMB_OVER",
   "CLIMB_UP",
   "SLIDE",

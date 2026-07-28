@@ -39,13 +39,24 @@ import type { TraversalClassifierConfig } from "../traversalClassifier.js";
  * open ground that tells the reader they wanted to leave the floor, and nothing
  * in the world that says they wanted to be two metres left of here right now.
  */
+// Move set folded toward a small, always-correct vocabulary (owner: "a simple
+// parkour type mission ... ONE ROUTE"). MANTLE folded into CLIMB_UP: the two
+// already drove the SAME authored motion (a mantle is a CLIMB_UP with a mantle
+// clip) and share an envelope band, so the merge removes a verb LABEL, not a
+// behaviour, and CLIMB_UP now spans the old mantle band as well.
+//
+// CLIMB_OVER is deliberately KEPT distinct, not folded into VAULT: a climb-over
+// crosses a thin obstacle in the 1.15-1.90m band, above VAULT's published
+// envelope ceiling of 1.15m, so folding it would silently widen the vault
+// contract level design budgets gaps against. Cutting a verb must not enlarge
+// another's envelope; the two thin-crossing bands stay two verbs. DASH stays
+// (the owner asked for it and a real clip is baked). See select.rankObstacle.
 export type TraversalVerb =
   | "NONE"
   | "STEP_UP"
   | "SLIDE"
   | "VAULT"
   | "CLIMB_OVER"
-  | "MANTLE"
   | "CLIMB_UP"
   | "JUMP"
   | "JUMP_GAP"
@@ -88,7 +99,6 @@ export const AUTHORABLE_VERBS: readonly TraversalVerb[] = [
   "SLIDE",
   "VAULT",
   "CLIMB_OVER",
-  "MANTLE",
   "CLIMB_UP",
   "JUMP_GAP",
   "HANG_DROP",
@@ -389,8 +399,6 @@ export const PARKOUR_TUNING: ParkourTuning = {
     // 45 fixed steps. The `vault` take is ~3.0s of content and needs 4.0x.
     VAULT: 750,
     CLIMB_OVER: 520,
-    // 56 fixed steps. The `mantle` take is ~3.7s of content and needs 4.0x.
-    MANTLE: 933,
     CLIMB_UP: 900,
     // Ballistic and burst verbs are timed by the integrator, not authored.
     JUMP: 0,
@@ -422,7 +430,6 @@ export const PARKOUR_TUNING: ParkourTuning = {
     SLIDE: 0.45,
     VAULT: 0.3,
     CLIMB_OVER: 0.35,
-    MANTLE: 0.35,
     CLIMB_UP: 0.2,
     JUMP: 0.3,
     JUMP_GAP: 0.3,

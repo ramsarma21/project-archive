@@ -48,10 +48,12 @@ test("a crate at chest height with clear far ground is vaulted", () => {
   assert.equal(classifyVerb(probeFor(collision, motion), selectContext()), "VAULT");
 });
 
-test("a wall above the vault ceiling with a standable top is mantled", () => {
+test("a wall above the vault ceiling with a standable top is climbed", () => {
+  // The old MANTLE band folded into CLIMB_UP; a standable ledge in the 1.15-1.9m
+  // band is a CLIMB_UP now, same authored motion the mantle always drove.
   const collision = world([box("ledge", 3, 1.6, 1.4)]);
   const motion = runningNorth(1.6);
-  assert.equal(classifyVerb(probeFor(collision, motion), selectContext()), "MANTLE");
+  assert.equal(classifyVerb(probeFor(collision, motion), selectContext()), "CLIMB_UP");
 });
 
 test("a wall too narrow to stand on is crossed, not mounted", () => {
@@ -87,7 +89,9 @@ test("a full-height wall is BLOCKED", () => {
   assert.equal(classifyVerb(probeFor(collision, motion), selectContext()), "BLOCKED");
 });
 
-test("the mantle ceiling is exactly the published number", () => {
+test("the folded climb band spans the old mantle ceiling continuously", () => {
+  // MANTLE folded into CLIMB_UP, so the old mantle/climb boundary no longer
+  // switches verbs: a standable top on either side of it is a CLIMB_UP.
   const collision = world([
     box("under", 3, MOVEMENT_CAPABILITIES.maxMantleHeightM - 0.01, 1.4),
   ]);
@@ -95,7 +99,7 @@ test("the mantle ceiling is exactly the published number", () => {
     box("over", 3, MOVEMENT_CAPABILITIES.maxMantleHeightM + 0.01, 1.4),
   ]);
   const motion = runningNorth(1.6);
-  assert.equal(classifyVerb(probeFor(collision, motion), selectContext()), "MANTLE");
+  assert.equal(classifyVerb(probeFor(collision, motion), selectContext()), "CLIMB_UP");
   assert.equal(classifyVerb(probeFor(over, motion), selectContext()), "CLIMB_UP");
 });
 
@@ -108,9 +112,9 @@ test("the vault ceiling is exactly the published number", () => {
   ]);
   const motion = runningNorth(1.6);
   assert.equal(classifyVerb(probeFor(under, motion), selectContext()), "VAULT");
-  // Just above the vault ceiling the same standable top is mantled instead: the
-  // player never stops, the verb changes.
-  assert.equal(classifyVerb(probeFor(over, motion), selectContext()), "MANTLE");
+  // Just above the vault ceiling the same standable top is a CLIMB_UP (the old
+  // mantle band): the player never stops, the authored motion is the same.
+  assert.equal(classifyVerb(probeFor(over, motion), selectContext()), "CLIMB_UP");
 });
 
 test("an overhead span at crouch height is slid under at sprint", () => {
@@ -465,7 +469,7 @@ test("a body pressed against a climbable face is still offered the climb", () =>
   });
   assert.equal(
     classifyVerb(probe, selectContext({ pushing: true })),
-    "MANTLE",
+    "CLIMB_UP",
     "holding forward at the face must keep offering the verb",
   );
   assert.equal(
