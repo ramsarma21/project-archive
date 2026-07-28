@@ -63,7 +63,10 @@
       "apps/web/src/mission/MissionEncounter.tsx",
       "apps/web/src/mission/encounterCinematic.ts",
       "apps/web/src/mission/missionEncounter.css",
-      "apps/web/src/chapter/m1Mission.ts"
+      "apps/web/src/chapter/m1Mission.ts",
+      "packages/mission-m1/src/encounters/**",
+      "packages/mission-m1/src/level/opposition.ts",
+      "packages/grading/src/items/encounters.ts"
     ],
     "mission-presentation": [
       "scripts/**",
@@ -92,8 +95,6 @@
       "packages/mission-m1/src/level/geometry.ts",
       "packages/mission-m1/src/level/dockSquare.ts",
       "packages/mission-m1/src/level/climbs.ts",
-      "packages/mission-m1/src/level/opposition.ts",
-      "packages/mission-m1/src/encounters/**",
       "packages/mission-m1/src/level/ropewalk.ts"
     ]
   }
