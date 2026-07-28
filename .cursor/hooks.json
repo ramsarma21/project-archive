@@ -7,6 +7,18 @@
         "matcher": "Write|StrReplace|Delete|EditNotebook",
         "timeout": 10
       }
+    ],
+    "subagentStart": [
+      {
+        "command": ".cursor/hooks/lane-lock.sh start",
+        "timeout": 10
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": ".cursor/hooks/lane-lock.sh stop",
+        "timeout": 10
+      }
     ]
   }
 }

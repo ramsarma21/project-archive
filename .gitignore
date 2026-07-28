@@ -111,3 +111,4 @@ apps/api/.diag-*.mts
 # untracked files that clutter every `git status` and have already been swept
 # into a commit by accident. Never loaded by anything; local to a worker.
 .affordwork/
+.cursor/locks/
