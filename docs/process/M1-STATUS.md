@@ -131,12 +131,23 @@ replay harness.
   steeple without crossing the roof trigger, which is a soft-lock waiting to happen if
   `ROPEWALK_STOP` is mandatory. Also: the 2.0 m same-surface band alone does not separate the
   meeting-house leads (8.2) from `BOUGH_CROWN` (8.3) — only the XZ radius does. Flagged, open.
-- **The Liberty Elm renders as neon shards.** Seen in play 28 Jul: the mission's climactic
-  set-piece draws as a smeared cylinder trunk under flat shattered green planes. Strong
-  suspicion is the contain-fit class again, in its worst instance — `liberty-elm-hero` is
-  used as the asset for the trunk mass *and* for all three bough **decks**, so one hero mesh
-  is squashed four times, flattened into thin deck boxes for the boughs. **Not yet assigned**
-  (the lanes that own `assets.ts` and the elm geometry are both occupied).
+- **The Liberty Elm's mesh is crude.** The mission's climactic set-piece draws as a smeared
+  column under flat shattered foliage cards. **Not a placement defect** — that was my
+  hypothesis and it was disproven with measurements (`7353b82`): the trunk mass and all three
+  bough decks already cluster into one draw at the declared `[16, 18, 16]`, and the fix I
+  proposed (nulling the boughs' asset) would have collapsed it to a 1.8 m pole, which is now
+  guarded. The mesh itself is the job. Success is measurable, not just visual: real limbs at
+  `standableAt: [6.4, 8.3, 11.2]` broad enough to fill their footprints would retire the
+  F_TREE debt rows, which currently read those surfaces 4–9 cm low at 67–81% coverage.
+  In flight.
+- **Duel and codex cards are too alike to answer.** The card taxonomy is the 46-concept
+  curriculum registry, where overlap is a *feature* for teaching — `STAMP_SCOPE` vs
+  `STAMP_WHAT_COUNTS`, five rights concepts, five communication concepts, four cards for the
+  one August 14 effigy. Used as an *answer key* that overlap is fatal: two cards plausibly
+  answer the same question, so the player is reading the author's mind. Likely fix is a small
+  mutually-exclusive askable set distinct from the teaching registry, with a pairwise
+  discriminator test — if no question separates two cards, they aren't two cards. Must stay
+  reasoning-based, not retreat to trivia. In flight.
 - ~~The elm beat is finicky and hard to start~~ — **fixed** (`27ec2b5`). It was failing to
   arm, not rendering wrong: a 1.1 m circle on the crown tip plus a ±60° facing arc rejected
   the exact pose a player arrives in off the leap (1.5 m back, ~105° off, moving south down
