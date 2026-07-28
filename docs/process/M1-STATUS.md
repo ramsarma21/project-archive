@@ -113,6 +113,15 @@ replay harness.
   4 m/s while a *looping* clip plays. Step-up has no clip — it plays the run cycle.
   Landings show 44% (run) and 55% (received) before being cut off. Measured, unfixed.
   *Sequenced after the ladders, since climb paths are changing.*
+- **Body falls *through* the ground at the elm.** Reported in play 28 Jul: jumping off the
+  height beside the Liberty Elm puts the body in/through the street rather than on it, and an
+  encounter arms there, off the guided descent. The authored way down is three chained
+  `CLIMB`s precisely because a straight drop is 6.4 m — past the roll ceiling — so the design
+  anticipates the jump and routes around it without handling a player who jumps anyway.
+  Suspects: a gap in ground coverage at the elm base, or audit **P4** (ground support is a
+  point query, so support is sampled not swept — the same defect that lets a body float off a
+  roof edge could fail to find ground), or tunnelling through a thin surface at fall speed.
+  Unclassified until reproduced. In flight.
 - **"Cannot run"** — unexplained. Every in-lane mechanism ruled out by two systematic
   passes; the per-leg speed cap is disproven (it releases ~3 m *early*). Needs a location
   or a live capture from the owner.
