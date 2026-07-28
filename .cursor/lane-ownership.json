@@ -88,7 +88,9 @@
       "apps/web/public/world/props/bldg-row-clapboard-c.glb",
       "assets/pipeline/*townhouse*",
       "assets/pipeline/*brick*",
-      "assets/pipeline/*facade*"
+      "assets/pipeline/*facade*",
+      "apps/web/public/world/props/bldg-printshop.glb",
+      "assets/pipeline/*printshop*"
     ],
     "api-hunt": [
       "apps/api/**",
