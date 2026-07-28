@@ -10,6 +10,7 @@ import {
   httpVerdictAuthority,
 } from "./duelGrading.js";
 import { missionCast, missionDuelDescriptor } from "./missionBrief.js";
+import { MissionArenaView } from "./missionArena.js";
 import { M1_MISSION_ID, duelBrief } from "../chapter/m1Mission.js";
 import {
   establishLocalSession,
@@ -285,6 +286,25 @@ function Harness() {
       : null
     : scriptedDescriptor;
 
+  // THE YARD THE LIVE ATTEMPT ACTUALLY FIGHTS IN. A live descriptor's world is the
+  // mission's, carved out of the rope-walk yard at the level's own coordinates
+  // (x ~88–100), not the stand-alone yard built around the origin. `DuelScreen`
+  // defaults to the origin-built `ArenaView` when handed no scenery, which would
+  // draw the yard ninety metres from where the fighters stand — the empty
+  // blue-grey void the boss-fight owner saw. So live mode passes the mission's own
+  // arena view, bound to that world, exactly as the mission container does in
+  // MissionDuel.tsx. Scripted modes keep the default: their `m1DuelDescriptor` uses
+  // `yardArena()` at the origin, which the default `ArenaView` already matches.
+  const liveWorld =
+    isLive && live.status === "ready" ? live.descriptor.arena.world : null;
+  const LiveScenery = useMemo(() => {
+    if (!liveWorld) return undefined;
+    const world = liveWorld;
+    return function ArenaScenery(scenery: { reducedMotion: boolean }) {
+      return <MissionArenaView world={world} reducedMotion={scenery.reducedMotion} />;
+    };
+  }, [liveWorld]);
+
   return (
     <>
       <HarnessBanner mode={mode} />
@@ -308,6 +328,7 @@ function Harness() {
         <DuelScreen
           descriptor={descriptor}
           verdictAuthority={authority}
+          {...(LiveScenery ? { Scenery: LiveScenery } : {})}
           reducedMotion={params.get("reduced") === "1"}
           playerGrip={grip}
           opponentGrip={grip}
