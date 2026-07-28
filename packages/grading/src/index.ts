@@ -44,3 +44,7 @@ export {
   type EvalCategory,
   type EvalReport,
 } from "./eval/harness.js";
+
+// The offline question pipeline: the verification gauntlet, the runtime prose
+// comparison, and the model seam. Namespaced to keep the flat surface stable.
+export * as pipeline from "./pipeline/index.js";
