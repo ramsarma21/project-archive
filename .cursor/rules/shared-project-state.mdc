@@ -10,7 +10,11 @@ private, drifting snapshot of the project — has caused more damage here than a
 duplicated investigations, two lanes clobbering one file, and fixes re-broken by a sibling who
 did not know they existed.
 
-**Two files are the shared memory. Read both before forming a theory or editing anything.**
+**Three files are the shared memory. Read them before forming a theory or editing anything.**
+
+- `docs/process/M1-DONE.md` — the acceptance conditions M1 must meet, each checkable, each
+  marked met or not. This is the target. Work that does not move a line on it is not the
+  priority, however satisfying it is.
 
 - `docs/process/M1-STATUS.md` — what is fixed (with the commit), what is open (with why it is
   deferred), what has already been **disproven**, the regressions and the guard now catching
