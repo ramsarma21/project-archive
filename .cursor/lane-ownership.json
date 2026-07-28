@@ -45,7 +45,8 @@
       "packages/grading/**",
       "packages/curriculum/**",
       "apps/web/src/codex/**",
-      "apps/web/src/duel/duelItems.ts"
+      "apps/web/src/duel/duelItems.ts",
+      "apps/web/src/pvp/**"
     ],
     "mission-encounters": [
       "packages/duel/**",

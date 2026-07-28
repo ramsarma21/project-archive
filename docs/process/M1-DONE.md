@@ -166,6 +166,21 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 
 ---
 
+## Open, and newly named 28 Jul
+
+- **[ ]** A wrong answer teaches nothing. In a teaching game the wrong answer is the highest-value
+  moment — the player is attentive and has just committed to a false belief. Owner wants feedback
+  in PvP. The competitive constraint is load-bearing: both sides draw from a shared eligible pool
+  spent on the union of their ledgers, so revealing an answer can hand the opponent an edge.
+- **[ ]** **There is no question-authoring pipeline.** Verification is strong (schema, content
+  verifier, eval labels, FN and FP gates); authoring is entirely by hand — items, rubrics, card
+  bindings and eval labels. And the bank is scarce: M1's PvP pool is 34 items against a 24-round
+  ceiling, so "no match can exhaust it" holds **by one item**, on a constant in another package
+  (`BANK-EXHAUSTION-PROPOSAL.md`, written and deliberately unimplemented).
+  - The order matters: **generation without mechanical verification multiplies the ambiguity that
+    made the cards unanswerable.** The pairwise discriminator was run *by hand* today and found
+    the one pair that separated only by luck. Mechanise the checks first.
+
 ## Needs the owner — cannot be closed from here
 
 1. **`gh auth login`.** The played-mission gate is "blocking" only because the YAML says so;
