@@ -849,6 +849,20 @@ export interface PvpRouteOptions {
    * so only one pass runs when the queue drains rather than a backlog burst.
    */
   readonly onSchedulerPass?: (matchId: string) => void;
+  /**
+   * Hands the caller a deterministic driver that runs ONE scheduler pass at a given
+   * clock value and resolves only once the work that pass enqueues (a retry settle, a
+   * retirement delete) has completed. Test-only, defaulted off. It exists so a timing
+   * test can drive the retry/retention machinery against the injected clock with no
+   * real timer and no wall-clock sleep standing in for "a tick has run" — the race
+   * that made the backoff-retry test flaky under load. Pair with `startScheduler: false`.
+   */
+  readonly provideSchedulerDriver?: (driver: {
+    /** Run one scheduler pass at `nowMs` (default: the injected clock now). No await. */
+    readonly pass: (nowMs?: number) => void;
+    /** Await every per-match queue, so effects the passes enqueued have completed. */
+    readonly drain: () => Promise<void>;
+  }) => void;
 }
 
 /**
@@ -939,31 +953,63 @@ export async function registerPvpRoutes(
     }).finally(() => retryingMatches.delete(matchId));
   };
 
-  if (options.startScheduler !== false) {
-    const timer = setInterval(() => {
-      const nowMs = now();
-      sweep(nowMs);
-      for (const [matchId, live] of matchesById) {
-        if (live.authority.phase === "LIVE") {
-          if (scheduledMatches.has(matchId)) continue; // one pass pending/running at a time
-          scheduledMatches.add(matchId);
-          void serialiseOnMatch(matchId, async () => {
-            options.onSchedulerPass?.(matchId);
-            const current = matchesById.get(matchId);
-            if (!current || current.authority.phase !== "LIVE") return;
-            const pumped = pump(current, now());
-            matchesById.set(matchId, pumped);
-            await settle(pumped, standings, app.log, now());
-          }).finally(() => scheduledMatches.delete(matchId));
-        } else if (live.resolvedAtMs !== null && !settledMatchIds.has(matchId)) {
-          // Terminal but not banked — retry the settle with backoff.
-          attemptSettleRetry(matchId, nowMs);
-        }
+  // One scheduler pass, factored out so it can be driven either by the real interval
+  // below or — in a test — deterministically against the injected clock. Enqueues, but
+  // does not await, the per-match work: the interval must not block, and callers that
+  // need the work to have completed await the match queues (see `provideSchedulerDriver`).
+  const runSchedulerPass = (nowMs: number): void => {
+    sweep(nowMs);
+    for (const [matchId, live] of matchesById) {
+      if (live.authority.phase === "LIVE") {
+        if (scheduledMatches.has(matchId)) continue; // one pass pending/running at a time
+        scheduledMatches.add(matchId);
+        void serialiseOnMatch(matchId, async () => {
+          options.onSchedulerPass?.(matchId);
+          const current = matchesById.get(matchId);
+          if (!current || current.authority.phase !== "LIVE") return;
+          const pumped = pump(current, now());
+          matchesById.set(matchId, pumped);
+          await settle(pumped, standings, app.log, now());
+        }).finally(() => scheduledMatches.delete(matchId));
+      } else if (live.resolvedAtMs !== null && !settledMatchIds.has(matchId)) {
+        // Terminal but not banked — retry the settle with backoff.
+        attemptSettleRetry(matchId, nowMs);
       }
-    }, SCHEDULER_INTERVAL_MS);
+    }
+  };
+
+  if (options.startScheduler !== false) {
+    const timer = setInterval(() => runSchedulerPass(now()), SCHEDULER_INTERVAL_MS);
     timer.unref?.();
     app.addHook("onClose", async () => clearInterval(timer));
   }
+
+  // A DETERMINISTIC SCHEDULER DRIVER FOR TESTS. Handed over only when asked (default
+  // off), and orthogonal to the real interval — a test sets `startScheduler: false`,
+  // advances the injected clock, and drives passes itself instead of sleeping on the
+  // wall clock and hoping the real 50 ms interval fired the expected number of times.
+  // That hope is exactly what made the scheduler tests flaky under parallel load: they
+  // asserted against elapsed real time as a proxy for "a tick has (or has not yet) run",
+  // and lost the race when the event loop was contended.
+  //
+  //   `pass(nowMs)` runs ONE scheduler pass — the same body the interval runs — and
+  //     returns immediately, enqueuing (not awaiting) the per-match work. Called
+  //     repeatedly it exercises coalescing exactly as a burst of real ticks would:
+  //     while one pass is pending behind a held queue, the rest are skipped.
+  //   `drain()` awaits every per-match queue, so once it resolves the observable
+  //     effect of the passes driven so far — a bank, a retire — has actually landed.
+  //     Never called while a queue is deliberately held (it would block on the hold).
+  options.provideSchedulerDriver?.({
+    pass: (nowMs = now()) => runSchedulerPass(nowMs),
+    drain: async () => {
+      // Drain to a fixed point: a queued item never chains further match-queue work
+      // today, but draining until no queue remains keeps this correct if one ever
+      // does, rather than returning before the effect lands.
+      for (let guard = 0; guard < 16 && matchQueues.size > 0; guard += 1) {
+        await Promise.allSettled([...matchQueues.values()]);
+      }
+    },
+  });
 
   // ---- lobbies -------------------------------------------------------------
 
