@@ -394,6 +394,25 @@ test claims to guard, and see whether the test still passes. Results, ranked:
 which is exactly what a unit suite structurally cannot reach — and exactly the list of things
 that have reached the owner in play.
 
+**House pattern for a baked constant.** Two guards asserted a baked literal equalled the host's
+own `Math.*` bit-for-bit — the exact functions whose cross-platform variance motivated baking —
+and the first Linux run failed one while the constants were correct. Both are fixed the same way,
+and this is now the pattern:
+
+- an **ulp tolerance sized from measurement**: the observed platform gap, versus the cheapest
+  genuine typo. For the cover ring those were 1 and 62 ulps, so 16 sits in an empty band.
+- **expressed where the error lives.** `1 − exp(x)` lands in a smaller binade than `exp(x)`, so the
+  subtraction *amplifies* — one `exp`-ulp is eight blend-ulps. Budget the transcendental, then
+  convert through the measured amplification.
+- a **permanent perturbation self-test** that nudges the libm worse than any real platform gap and
+  requires the literals to still pass. This is what lets a local green license a cross-platform
+  claim, which nothing in this repo could do before.
+
+**A repo-wide static check was considered and rejected**, with a scan: only two instances ever
+existed. A rule keying on equality near an unpinned `Math.*` would fire on threshold comparisons,
+already-toleranced checks and legitimate same-platform assertions — noise guarding correct files
+against something CI now catches empirically for free.
+
 **A pipeline finding, from three independent repairs today.** Every one traced to the generator's
 own output, not to the processing:
 - the elm's canopy *was* Meshy foliage — a handful of intersecting alpha cards;
