@@ -40,6 +40,19 @@ const APPROACH_HAIL = "Hold there — a word with you.";
 /** Generous client cap; the server enforces the real one. */
 const MAX_ANSWER_CHARS = 600;
 
+/**
+ * How long the subtitle lingers, fading, after a stop RELEASES and the live view
+ * goes null.
+ *
+ * The machine hands control back at RELEASE and the camera eases out of the
+ * two-shot over a beat; unmounting this surface on the same frame popped the
+ * whole lower third out instantly against that easing return. Holding the last
+ * spoken line for a short fade turns the hand-back into a beat rather than a cut.
+ * Presentation only: it draws nothing interactive and reads no runtime state
+ * once the stop is gone. Zero under reduced motion (no lingering motion at all).
+ */
+const LEAVE_FADE_MS = 260;
+
 function sameView(a: ActiveEncounterView | null, b: ActiveEncounterView | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
@@ -86,9 +99,15 @@ export function MissionEncounter(props: {
   const [shotReady, setShotReady] = useState(false);
   const [answer, setAnswer] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // The last live view, held briefly for a fade-out after the stop releases so
+  // the subtitle does not pop out against the camera's easing return. Never
+  // interactive; see LEAVE_FADE_MS.
+  const [leaving, setLeaving] = useState<ActiveEncounterView | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const submittedForRef = useRef<string | null>(null);
+  const prevViewRef = useRef<ActiveEncounterView | null>(null);
+  const leaveTimerRef = useRef<number | null>(null);
 
   // Sample the live projection each frame. Only re-render on a change that the
   // overlay actually draws, so a stationary question costs no renders.
@@ -116,6 +135,40 @@ export function MissionEncounter(props: {
 
   // Cancel any in-flight grade when the overlay tears down (attempt end, retry).
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  // Fade the last spoken line out after the stop releases. When the live view
+  // goes null, keep the frame it last drew for a short window; a fresh stop
+  // supersedes any fade in progress. Under reduced motion there is no fade — the
+  // surface simply unmounts. Presentation only.
+  useEffect(() => {
+    const prev = prevViewRef.current;
+    prevViewRef.current = view;
+    if (view) {
+      if (leaveTimerRef.current !== null) {
+        window.clearTimeout(leaveTimerRef.current);
+        leaveTimerRef.current = null;
+      }
+      setLeaving(null);
+      return;
+    }
+    if (!prev || props.reducedMotion) {
+      setLeaving(null);
+      return;
+    }
+    setLeaving(prev);
+    if (leaveTimerRef.current !== null) window.clearTimeout(leaveTimerRef.current);
+    leaveTimerRef.current = window.setTimeout(() => {
+      setLeaving(null);
+      leaveTimerRef.current = null;
+    }, LEAVE_FADE_MS);
+  }, [view, props.reducedMotion]);
+
+  useEffect(
+    () => () => {
+      if (leaveTimerRef.current !== null) window.clearTimeout(leaveTimerRef.current);
+    },
+    [],
+  );
 
   // Focus the box when a question opens, so a keyboard player is typing at once.
   const phase = view?.phase ?? null;
@@ -159,21 +212,30 @@ export function MissionEncounter(props: {
     runtime.encounterDismiss = view.encounterId;
   }, [runtime, view]);
 
-  if (!view) return null;
+  // While a stop is LIVE the runtime's view drives everything. Once it releases,
+  // `view` goes null but `leaving` holds the last frame for a short fade so the
+  // subtitle does not pop out against the camera's easing return — during that
+  // window nothing is interactive and no runtime state is read.
+  const shown = view ?? leaving;
+  if (!shown) return null;
+  const isLeaving = view === null;
 
-  const speaker = view.view;
-  const activePhase = view.phase;
+  const speaker = shown.view;
+  const activePhase = shown.phase;
   const resolved = activePhase === "RESOLVED";
   const grading = activePhase === "SUBMITTING";
   // The question has opened but the shot is still settling (the camera easing in
   // over the last stride): the officer is already speaking his line, but the
   // dock stays shut for the beat it takes the two-shot to form. This is what
   // makes "the question cannot enable while the shot is unready" true in the UI.
-  const settling = activePhase === "QUESTION" && !shotReady;
+  const settling = !isLeaving && activePhase === "QUESTION" && !shotReady;
   const approaching = activePhase === "APPROACH";
-  const answerable = (activePhase === "QUESTION" && shotReady) || grading;
+  // Interactive affordances exist only while the stop is live; the fade-out draws
+  // the spoken line alone.
+  const answerable =
+    !isLeaving && ((activePhase === "QUESTION" && shotReady) || grading);
 
-  const result = resolved ? resultCopy(view) : null;
+  const result = resolved ? resultCopy(shown) : null;
   // The line the officer is "saying" this frame — a hail as he closes, the
   // question the moment he's in front of you (even while the shot settles), and
   // the verdict in his own words at the end. The accessible subtitle for the
@@ -189,6 +251,7 @@ export function MissionEncounter(props: {
       className={
         `msn-enc is-${activePhase.toLowerCase()}` +
         (settling ? " is-settling" : "") +
+        (isLeaving ? " is-leaving" : "") +
         (props.reducedMotion ? " is-reduced" : "") +
         (result ? ` is-${result.tone}` : "")
       }
@@ -278,7 +341,7 @@ export function MissionEncounter(props: {
         </div>
       )}
 
-      {resolved && result && (
+      {!isLeaving && resolved && result && (
         <div className="msn-enc-dock is-result">
           {/* A labelled tag, not colour alone: the word says which outcome this
               is, and the border tint only reinforces it. */}
