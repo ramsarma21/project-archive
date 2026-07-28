@@ -188,6 +188,10 @@ replay harness.
 - `MissionDuelBrief.world`/`.placement` are assembled but unused. The M1 yard's duel-cover
   props are now purely decorative, including the yard stage fixed on 28 Jul.
 - 25 itemised affordance debt entries, gated so the list can shrink but never grow silently.
+- **One flaky test**, seen once: an `apps/api` backoff-timing case failed twice under parallel
+  full-suite load and passed 199/199 in isolation; a later full run was clean. Flakiness is
+  regression-masking debt — it trains everyone to re-run instead of read — so it wants a fix
+  or a deterministic clock, not tolerance.
 
 ---
 
