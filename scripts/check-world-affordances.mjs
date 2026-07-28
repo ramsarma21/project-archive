@@ -127,7 +127,9 @@ const EPS = 1e-9;
 // below defines "worse" against exactly these.
 //
 // Recorded on branch workflow/mission-encounters against the published world at
-// 81 satisfied / 26 flagged / 0 CRITICAL.
+// 81 satisfied / 26 flagged / 0 CRITICAL; three F_TREE rows (DECK:BOUGH_UPPER,
+// CATCH:LEAP_CROWN, CATCH:LEAP_UPPER) retired on workflow/mission-flow when the
+// Liberty Elm was rebuilt, leaving 22 accepted entries.
 const DEBT_CATEGORIES = {
   "missing-or-short": "GENUINELY MISSING GEOMETRY / TOO-SHORT ASSET — a real defect, owned by the asset & authoring lanes, not this verifier.",
   "catch-radius": "CATCH RADIUS EXCEEDS ITS LANDING SURFACE — the dive/leap acceptance disc reaches past the wagon/bough it lands on. Owned by route authoring (route*.ts / climbs.ts), which is being re-authored; these may change or disappear.",
@@ -144,11 +146,13 @@ const KNOWN_DEBT = new Map([
   // than left describing a solved problem.
   ["MASS_TOP:ROPE_CAPSTAN", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.986, note: "rope-coil-large crown ~0.99m below its cover top; needs a taller vaultable asset through the pipeline." }],
   ["MASS_TOP:COVER_COILS_C", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.635, note: "rope-coil-large crown ~0.64m below its cover top; needs a taller vaultable asset through the pipeline." }],
-  // --- catch radius exceeds its landing surface (5) — route-authoring lane ---
+  // --- catch radius exceeds its landing surface (3) — route-authoring lane ---
+  // LEAP_CROWN and LEAP_UPPER retired on branch workflow/mission-flow: the rebuilt
+  // liberty-elm-hero.glb carries broad near-flat limb rafts that fill both leap
+  // discs (crown NW, upper NE), so both now read 100% at plane. Entries removed
+  // rather than left describing a solved problem.
   ["CATCH:LEAP_YARD_HAY", { category: "catch-radius", rank: 2, band: 0.594, delta: -0.074, note: "leap acceptance radius (1.6m) exceeds the hay-wain-loaded top; the annular gap is a real catch-vs-surface decision." }],
   ["CATCH:CATCH_LANE_HAY", { category: "catch-radius", rank: 1, band: 0.750, delta: -0.077, note: "acceptance radius reaches past the hay-wain top." }],
-  ["CATCH:LEAP_UPPER", { category: "catch-radius", rank: 1, band: 0.750, delta: -0.074, note: "acceptance radius reaches past the upper bough crown." }],
-  ["CATCH:LEAP_CROWN", { category: "catch-radius", rank: 1, band: 0.844, delta: -0.070, note: "acceptance radius reaches slightly past the bough crown." }],
   ["CATCH:CATCH_PRINTSHOP_HAY", { category: "catch-radius", rank: 1, band: 0.875, delta: -0.079, note: "acceptance radius reaches slightly past the hay-wain top." }],
   // --- cover art proud of its collision line (6) ---
   ["MASS_TOP:STALL_0", { category: "cover-proud", rank: 1, band: 0.000, delta: 0.592, note: "market-awning canopy ~0.59m proud of the vault top; market-stall body itself ~0.45m short." }],
@@ -168,7 +172,10 @@ const KNOWN_DEBT = new Map([
   ["MASS_TOP:YARD_STAGE", { category: "flat-plane-limit", rank: 1, band: 0.200, delta: -0.067, note: "warehouse-platform-scale cluster; crown reaches the plane, no continuous surface." }],
   ["CLIMB_TO:CLIMBVOL_C_SCAFF_FOOT->C_SCAFF_1", { category: "flat-plane-limit", rank: 1, band: 0.750, delta: 0.000, note: "bldg-scaffold-run deck itself only ~75% covered (plank gaps / volume past the deck edge); the arrival is not laterally offset, so it is not rescued." }],
   ["CLIMB_TO:CLIMBVOL_C_SCAFF_1->C_SCAFF_2", { category: "flat-plane-limit", rank: 1, band: 0.750, delta: 0.000, note: "bldg-scaffold-run deck itself only ~75% covered (plank gaps / volume past the deck edge); the arrival is not laterally offset, so it is not rescued." }],
-  ["DECK:BOUGH_UPPER", { category: "flat-plane-limit", rank: 1, band: 0.667, delta: -0.043, note: "liberty-elm-hero upper bough is an offset/round tier east of the trunk, not a full ring; the flat-plane sampler under-reads the round crown." }],
+  // DECK:BOUGH_UPPER retired on branch workflow/mission-flow: the rebuilt
+  // liberty-elm-hero.glb runs its limb raft in to the bole at the tier plane, so
+  // the offset upper tier's deck∩trunk strip (which the sampler clips it to) is
+  // now full wood — 100% at plane. Entry removed.
   ["DECK:OLD_BRICK__ROOF", { category: "flat-plane-limit", rank: 1, band: 0.732, delta: -0.075, note: "bldg-meeting-hollis roof deck reads ~73% at plane; a partial-coverage edge of the flat-plane sampler." }],
 ]);
 
