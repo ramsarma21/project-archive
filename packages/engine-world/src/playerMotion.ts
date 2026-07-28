@@ -86,6 +86,42 @@ const ACCEL = 9;
 export const DECEL = 14;
 const MAX_DT = 0.05;
 
+/**
+ * The speed a grounded body accelerating toward `targetSpeed` reaches after
+ * travelling `distanceM` in a straight line from `currentSpeed`, integrated with
+ * the SAME per-tick blend `stepGrounded` uses (`ACCEL`, `dt`, the 0.6 factor).
+ *
+ * This is a forward PROJECTION, not a heuristic: a body running an open lane to a
+ * lip has exactly this speed when it gets there, because the acceleration model is
+ * deterministic and the lane is unobstructed. It exists so the flow reader can ask
+ * "how fast will I be when I reach the takeoff" before deciding whether a lip with
+ * a jumpable gap beyond it is a leap to make or a fall to brake — the same honest
+ * "what will the body actually do" question `simulateWalkOff` answers for a fall,
+ * without paying a full swept simulation for a straight grounded run.
+ *
+ * Overshoot cannot happen: the blend only ever approaches `targetSpeed`, so the
+ * result is bounded by it. A non-positive target or distance returns the current
+ * speed unchanged.
+ */
+export function projectGroundSpeed(
+  currentSpeed: number,
+  targetSpeed: number,
+  distanceM: number,
+  dt: number,
+): number {
+  if (!(distanceM > 0) || !(targetSpeed > 0) || dt <= 0) return currentSpeed;
+  const blend = 1 - Math.exp(-ACCEL * dt * 0.6);
+  let v = currentSpeed;
+  let x = 0;
+  // Bounded: distance/(slowest advancing speed) ticks, capped so a near-stalled
+  // start cannot spin. 512 ticks is > 8s of travel at 60Hz, far past any lane.
+  for (let i = 0; i < 512 && x < distanceM; i += 1) {
+    v += (targetSpeed - v) * blend;
+    x += v * dt;
+  }
+  return v;
+}
+
 // ---- burst tuning ----------------------------------------------------------
 //
 // One burst, shared by every system that needs a short directed surge: the duel's

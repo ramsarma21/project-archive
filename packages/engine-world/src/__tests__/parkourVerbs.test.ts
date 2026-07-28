@@ -10,6 +10,7 @@ import {
   MOVEMENT_CAPABILITIES,
   PARKOUR_TUNING,
   classifyVerb,
+  gapLeapReachable,
   levelDesignMaxGapM,
   maxGapMetersForDrop,
   planVerb,
@@ -285,6 +286,68 @@ test("a buffered jump overrides the edge brake: the player may always choose", (
     selectContext({ jumpBuffered: true }),
   );
   assert.ok(!ranked.includes("EDGE_BRAKE"), `unexpected brake in ${ranked.join(",")}`);
+});
+
+// A flat gap over a FATAL void, both roofs at 6m so the 6m fall below the gap is
+// past the brake floor. A body that strolls off has no launch and falls in — so
+// the walk-off is genuinely fatal and the ladder ranks EDGE_BRAKE. But a sprinting
+// body auto-jumps it, and a jump launched at the lip clears the gap. This is the
+// Town House scaffold->gallery leap distilled: a short run-up gap the reader used
+// to soft-lock behind the brake a stride short of a makeable leap. The brake now
+// defers to it via `gapLeapReachable`, judged by the SAME exact ballistic solve
+// and landing checks the real JUMP_GAP commit uses (not a distance heuristic), so
+// a far ledge that is not actually landable is rejected and still brakes.
+function fatalFlatGap(gapM: number) {
+  return world([
+    box("near", 0, 6, 8, { width: 12 }),
+    box("far", 4 + gapM + 4, 6, 8, { width: 12 }),
+  ]);
+}
+
+test("the edge brake defers to a short-run-up gap jump the body will make", () => {
+  const collision = fatalFlatGap(1.4);
+  // On the near roof, still under the sprint auto-jump speed (2.5 < 3), a short
+  // run-up from the lip, sprinting and pushing into the gap — the run-up carries
+  // the body to the lip fast enough to clear, so the lip is a leap, not a fall.
+  const motion = runningNorth(3.05, 2.5, 6);
+  const probe = probeFor(collision, motion);
+  assert.ok(probe.edge?.far, "expected a reachable far lip");
+  assert.ok(
+    !Number.isFinite(probe.edge!.dropM) || probe.edge!.dropM > PARKOUR_TUNING.edgeBrakeMinDropM,
+    "the walk-off should be fatal, so this is a genuine brake lip",
+  );
+  // The ladder still RANKS the brake (the walk-off is fatal); the flow controller
+  // defers it because the leap is reachable.
+  assert.ok(rankVerbs(probe, selectContext({ pushing: true })).includes("EDGE_BRAKE"));
+  assert.ok(
+    gapLeapReachable(collision, probe, selectContext({ pushing: true }), motion.pos),
+    "a makeable short-run-up leap over a fatal gap was not recognised, so the brake soft-locks it",
+  );
+});
+
+test("the edge brake still fires at a fatal gap too wide to clear from the run-up", () => {
+  // Same fatal void, but a gap beyond the running-jump envelope: no run-up on this
+  // roof reaches a speed that clears it, so braking is correct and the guard must
+  // NOT defer it. The roof-safety role is untouched for a genuine kill lip.
+  const collision = fatalFlatGap(4.2);
+  const motion = runningNorth(3.05, 2.5, 6);
+  const probe = probeFor(collision, motion);
+  assert.ok(
+    !gapLeapReachable(collision, probe, selectContext({ pushing: true }), motion.pos),
+    "an unmakeable fatal gap must not defer the brake",
+  );
+});
+
+test("the edge brake is not deferred for a body not sprinting into the gap", () => {
+  // The world only catches you while you are asking. A body that is not sprinting
+  // toward the gap is not about to leap it, so the fatal lip still brakes.
+  const collision = fatalFlatGap(1.4);
+  const motion = runningNorth(3.05, 2.5, 6);
+  const probe = probeFor(collision, motion);
+  assert.ok(
+    !gapLeapReachable(collision, probe, selectContext({ sprintHeld: false, pushing: true }), motion.pos),
+    "a non-sprinting body at a fatal lip must not defer the brake",
+  );
 });
 
 test("a drop between the roll ceiling and the dive floor is a hard landing, not a wall", () => {
