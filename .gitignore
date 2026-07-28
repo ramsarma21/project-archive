@@ -106,3 +106,8 @@ assets/source/concepts/**/*.jpeg
 # stray probe files agents leave behind
 **/tsconfig.tmp.json
 apps/api/.diag-*.mts
+
+# Worker scratch space: probes, screenshots, one-off diagnostics. Hundreds of
+# untracked files that clutter every `git status` and have already been swept
+# into a commit by accident. Never loaded by anything; local to a worker.
+.affordwork/

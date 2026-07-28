@@ -42,6 +42,7 @@ import {
   type DuelState,
 } from "../machine.js";
 import { oracleIntent } from "../policy.js";
+import { DUEL_ROUND_CEILING } from "../structure.js";
 import {
   blockerIdsAt,
   CAPSULE_RADIUS,
@@ -546,7 +547,7 @@ function measureDuels(kind: VerdictKind, seeds: readonly number[]): DuelMeasure 
       opponent: { kind: "BOSS", profile: M1_TACTICAL },
       questions: questionSet(),
       placement: arena.placement,
-      roundCeiling: 24,
+      roundCeiling: DUEL_ROUND_CEILING,
     });
     let state: DuelState = created.state;
     let steps = 0;
@@ -604,8 +605,14 @@ test("M1 tactical boss: both answer paths are winnable and terminate", () => {
     `wrong path won only ${wrong.winsA}/${wrong.runs} — it must stay winnable`,
   );
   // The backstop is not load-bearing: even the harder path finishes well short of it.
-  assert.ok(correct.maxRounds < 24, `correct path reached ${correct.maxRounds} rounds`);
-  assert.ok(wrong.maxRounds < 24, `wrong path reached ${wrong.maxRounds} rounds`);
+  assert.ok(
+    correct.maxRounds < DUEL_ROUND_CEILING,
+    `correct path reached ${correct.maxRounds} rounds`,
+  );
+  assert.ok(
+    wrong.maxRounds < DUEL_ROUND_CEILING,
+    `wrong path reached ${wrong.maxRounds} rounds`,
+  );
   // The boss never fired an empty magazine in a full live duel.
   assert.equal(correct.firedWhileEmpty + wrong.firedWhileEmpty, 0, "the boss fired while empty in a live duel");
 });
