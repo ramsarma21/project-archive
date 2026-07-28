@@ -7,16 +7,13 @@ import { beatSpecDefects, beatWorstCaseTicks, inFacingArc } from "../spec.js";
 import { beatObjective, inBeatStance, isTerminalPrecisionFailure, BEAT_MOUNT_CONTRACT } from "../mount.js";
 import {
   M1_BEAT_WORST_CASE_TICKS,
-  M1_HANDBILL_CHART,
   M1_NAIL_STANCE,
   M1_NAIL_TARGET,
   M1_POST_OBJECTIVE_ID,
-  M1_SECOND_BEAT_CHART,
-  M1_SECOND_BEAT_TICKS,
   m1NailStanceBeat,
 } from "../m1NailStance.js";
-import { deriveChart } from "../chart.js";
-import { playBeat, perfectPlan } from "./harness.js";
+import { reactionWorstCaseSpan } from "../schedule.js";
+import { playBeat } from "./harness.js";
 
 const SPEC = m1NailStanceBeat();
 
@@ -25,18 +22,8 @@ test("the shipped M1 beat has no defects", () => {
 });
 
 test("the stance and target match the level's authored PRECISION block", () => {
-  // Mirrored from @pa/mission-m1's opposition.ts. This package does not depend
-  // on the level package — the dependency would eventually invert — so the
-  // numbers are restated here and pinned, and the pin is what will fail if the
-  // level moves the bough.
   assert.deepEqual(M1_NAIL_STANCE, { x: 79.6, y: 8.3, z: 0.4 });
   assert.deepEqual(M1_NAIL_TARGET, { x: 80.15, y: 9.45, z: 0.55 });
-  // PRECISION.facingYaw is authored as Math.atan2(0.55, 0.15), which is the
-  // heading from the stance to the target under this repo's yaw convention.
-  // Compared to a tolerance rather than exactly: subtracting the coordinates
-  // costs about 1e-14 of the literal, and the facing arc is sixty degrees wide,
-  // so demanding bit equality here would only ever fail for a reason nobody can
-  // feel.
   assert.ok(
     Math.abs(SPEC.facingYaw - Math.atan2(0.55, 0.15)) < 1e-9,
     `the derived facing ${SPEC.facingYaw} is not the authored ${Math.atan2(0.55, 0.15)}`,
@@ -44,59 +31,33 @@ test("the stance and target match the level's authored PRECISION block", () => {
 });
 
 test("the beat costs the clock a fixed, affordable number of seconds", () => {
-  // THE PACING CLAIM, pinned. A competent run of M1 was measured at 167.9 of the
-  // 180-second clock, so there is roughly twelve seconds unspent and a longer
-  // chart competes directly with route content. This chart takes 2.6 of them —
-  // 6.25 seconds against the 3.65 the five-stroke chart reserved — and buys 2.6x
-  // the judged input for it. The remaining nine and a half seconds are still the
-  // level's to spend.
-  //
-  // Pinned exactly rather than bounded, because the number is now exact: the
-  // chart is a whole number of bars, so there is no distribution to bound.
+  // The pacing claim: the reaction act is reserved at its widest span plus the
+  // follow-through, and it is a whole-second handful, not a chapter. It is a
+  // fixed reservation because the worst case does not depend on the seed.
   const worstSeconds = M1_BEAT_WORST_CASE_TICKS / FIELD_TICK_HZ;
   assert.equal(M1_BEAT_WORST_CASE_TICKS, beatWorstCaseTicks(SPEC));
-  assert.equal(M1_BEAT_WORST_CASE_TICKS, 375);
-  assert.equal(worstSeconds, 6.25);
-});
-
-test("a second beat would cost less than the one it used to be", () => {
-  // The costed proposal in m1NailStance.ts, kept honest. One bar behind the same
-  // full-approach opening is five judged strokes for 3.05 seconds — fewer
-  // seconds than the five-stroke chart this rework replaced, for the same five
-  // strokes — so a level that finds a second place to put one adds a third
-  // again of the mission's timed input for a quarter of its remaining headroom.
-  assert.equal(M1_SECOND_BEAT_CHART.judgedBeats, 5);
-  assert.equal(M1_SECOND_BEAT_TICKS / FIELD_TICK_HZ, 3.05);
+  assert.equal(
+    M1_BEAT_WORST_CASE_TICKS,
+    reactionWorstCaseSpan(SPEC.reaction) + SPEC.verb.settleTicks,
+  );
   assert.ok(
-    M1_SECOND_BEAT_TICKS < M1_BEAT_WORST_CASE_TICKS,
-    "the costed second beat is no longer the cheap one",
+    worstSeconds > 6 && worstSeconds < 15,
+    `the beat reserves ${worstSeconds.toFixed(2)}s, which is not a handful of seconds`,
   );
 });
 
-test("every seed's beat costs the same, so the budget is a price and not a bound", () => {
-  // What the fixed span is FOR. The player spends this beat inside a patrol gap
-  // they have to judge before committing, and a commitment whose length is a
-  // dice roll cannot be judged. A perfect run lands on the same tick every time.
-  const seen = new Set<number>();
-  for (let seed = 0; seed < 400; seed++) {
-    const played = playBeat(SPEC, seed, perfectPlan(SPEC, seed));
-    seen.add(played.elapsedTicks);
-    assert.ok(
-      played.elapsedTicks <= M1_BEAT_WORST_CASE_TICKS,
-      `seed ${seed} ran ${played.elapsedTicks} ticks against a ${M1_BEAT_WORST_CASE_TICKS} budget`,
-    );
-  }
-  assert.deepEqual(
-    [...seen],
-    [M1_HANDBILL_CHART.spanTicks + SPEC.verb.settleTicks],
-    "two seeds took different amounts of the mission clock for the same play",
+test("the act is short and doable — a small handful of flares, each with a wide window", () => {
+  assert.ok(SPEC.reaction.targetCount >= 4 && SPEC.reaction.targetCount <= 8);
+  assert.ok(SPEC.reaction.cellCount >= 4);
+  assert.ok(
+    SPEC.reaction.windowTicks / FIELD_TICK_HZ >= 1,
+    "a flare is up for at least a second",
   );
 });
 
 test("the stance test accepts the bough and rejects the ground under it", () => {
   const facing = SPEC.facingYaw;
   assert.equal(inBeatStance(SPEC, { pos: M1_NAIL_STANCE, yaw: facing }), true);
-  // Half a metre along the bough is still the stance.
   assert.equal(
     inBeatStance(SPEC, {
       pos: { ...M1_NAIL_STANCE, x: M1_NAIL_STANCE.x - 0.5 },
@@ -104,12 +65,10 @@ test("the stance test accepts the bough and rejects the ground under it", () => 
     }),
     true,
   );
-  // The crowd is eight metres below and is not.
   assert.equal(
     inBeatStance(SPEC, { pos: { ...M1_NAIL_STANCE, y: 0 }, yaw: facing }),
     false,
   );
-  // Neither is the far side of the crown.
   assert.equal(
     inBeatStance(SPEC, {
       pos: { ...M1_NAIL_STANCE, x: M1_NAIL_STANCE.x - 3 },
@@ -124,13 +83,10 @@ test("the facing arc is generous but not a full circle", () => {
   assert.equal(inFacingArc(SPEC, facing), true);
   assert.equal(inFacingArc(SPEC, facing + 0.5), true);
   assert.equal(inFacingArc(SPEC, facing + Math.PI), false, "the player's back is turned");
-  // Wrapping is handled: the arc is an angle, not an interval on the line.
   assert.equal(inFacingArc(SPEC, facing + Math.PI * 2), true);
 });
 
 test("the objective is met by doing the work, not by arriving at it", () => {
-  // This is the whole difference from what M1 ships today, where the same
-  // objective is a proximity test and reaching the bough completes it.
   let posted = false;
   const objective = beatObjective({
     id: M1_POST_OBJECTIVE_ID,
@@ -142,7 +98,6 @@ test("the objective is met by doing the work, not by arriving at it", () => {
   assert.equal(objective.satisfiedBy(atTheTree), false, "arriving completed the objective");
   posted = true;
   assert.equal(objective.satisfiedBy(atTheTree), true);
-  // And standing somewhere else with the work done does not retroactively count.
   assert.equal(
     objective.satisfiedBy({ pos: { x: 0, y: 0, z: 0 }, yaw: SPEC.facingYaw }),
     false,
@@ -152,16 +107,12 @@ test("the objective is met by doing the work, not by arriving at it", () => {
 });
 
 test("a torn sheet is a terminal failure and an abandoned run is not", () => {
-  const judged = deriveChart(SPEC.chart, 5).judgedBeats;
-  const torn = playBeat(SPEC, 5, { offsets: new Array(judged).fill(null) });
+  const missAll = Array.from({ length: SPEC.reaction.targetCount }, (_, index) => index);
+  const torn = playBeat(SPEC, 5, { dropped: missAll });
   assert.equal(torn.outcome.grade, "TORN");
   assert.equal(isTerminalPrecisionFailure(torn.outcome), true);
 
-  const walkedAway = playBeat(SPEC, 5, {
-    armAt: 0,
-    offsets: new Array(judged).fill(0),
-    leaveAt: 20,
-  });
+  const walkedAway = playBeat(SPEC, 5, { leaveAt: SPEC.reaction.leadTicks + 5 });
   assert.equal(walkedAway.outcome.abandoned, true);
   assert.equal(
     isTerminalPrecisionFailure(walkedAway.outcome),

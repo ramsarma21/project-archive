@@ -36,8 +36,8 @@ export const MISSION_BINDINGS = {
   strike: {
     codes: ["KeyF"],
     kind: "PRESS",
-    label: "F",
-    does: "Strike — in rhythm, at the work. A stroke off the beat is heard",
+    label: "F / Click",
+    does: "Strike the lit flare at the work. A fumble is heard",
   },
 } as const satisfies Record<string, TraversalBinding>;
 
@@ -74,13 +74,16 @@ export interface MissionInputState {
    */
   dashBuffered: boolean;
   /**
-   * Latched by a press, cleared by the tick that consumes it.
+   * The panel cell the player struck for the precision beat, or null. Latched
+   * by a click or a key press and cleared by the tick that consumes it.
    *
-   * EDGE TRIGGERED, and the latch is why: `keydown` repeats while a key is held,
-   * and a strike delivered on every repeat — or on every fixed step of a long
-   * frame — would read to the beat's judge as a burst of swings at nothing.
+   * EDGE TRIGGERED for the same reason a jump is: a value delivered on every
+   * fixed step of a long frame would read to the beat as a run of strays. This
+   * is written by the whack-a-mole panel — which knows the lit cell for the
+   * keyboard path and the clicked cell for the pointer path — rather than by the
+   * key handler here, because the key handler cannot know which cell is lit.
    */
-  strikeBuffered: boolean;
+  beatHitCell: number | null;
   /**
    * True while the throw key is HELD. This is the aiming state.
    *
@@ -108,7 +111,7 @@ export function createMissionInputState(): MissionInputState {
     crouchHeld: false,
     jumpBuffered: false,
     dashBuffered: false,
-    strikeBuffered: false,
+    beatHitCell: null,
     throwAiming: false,
     throwReleased: false,
   };
@@ -121,7 +124,7 @@ export function clearMissionInput(state: MissionInputState): void {
   state.crouchHeld = false;
   state.jumpBuffered = false;
   state.dashBuffered = false;
-  state.strikeBuffered = false;
+  state.beatHitCell = null;
   state.throwAiming = false;
   state.throwReleased = false;
 }
@@ -155,9 +158,13 @@ const CROUCH_KEYS = codesOf("crouch");
 // and released to throw, handled on its own in the key events below.
 const THROW_KEYS = codesOf("throw");
 
-type LatchField = "jumpBuffered" | "dashBuffered" | "strikeBuffered";
+type LatchField = "jumpBuffered" | "dashBuffered";
 
-/** Which latch a one-shot press sets. Held actions are not in here. */
+/**
+ * Which latch a one-shot press sets. Held actions are not in here, and neither
+ * is the beat strike: it is a cell, not a boolean, and the panel owns it because
+ * only the panel knows which cell is lit. See `MissionInputState.beatHitCell`.
+ */
 const LATCHES: ReadonlyArray<{
   readonly codes: ReadonlySet<string>;
   readonly field: LatchField;
@@ -165,7 +172,6 @@ const LATCHES: ReadonlyArray<{
   [
     ["jump", "jumpBuffered"],
     ["dash", "dashBuffered"],
-    ["strike", "strikeBuffered"],
   ] as ReadonlyArray<[MissionAction, LatchField]>
 ).map(([action, field]) => ({ codes: codesOf(action), field }));
 

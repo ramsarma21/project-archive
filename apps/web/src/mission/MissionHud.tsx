@@ -1,10 +1,8 @@
 import { MAX_MISSION_ATTEMPTS } from "@pa/contracts";
 import {
   DETECTION_CAUSE_LABEL,
-  FIELD_TICK_HZ,
   STEALTH_TUNING,
 } from "@pa/engine-world";
-import type { BeatPresentation } from "@pa/beat";
 import {
   crowdLabel,
   dawnSky,
@@ -12,7 +10,7 @@ import {
   shadowLabel,
   type DawnRead,
 } from "./dawn.js";
-import { MISSION_BINDINGS, MISSION_LEGEND } from "./missionInput.js";
+import { MISSION_LEGEND } from "./missionInput.js";
 import type { MissionPresentation, MissionStandingRead } from "./traversal.js";
 
 // ---------------------------------------------------------------------------
@@ -200,6 +198,21 @@ function ObjectiveSpine(props: { standing: MissionStandingRead }) {
         </span>
       )}
 
+      {/* The imminent authored move, named the moment the guidance arms its
+          gateway. This is the corner half of the wayfinding fix: the in-street
+          mark posts the verb on the take-off, and this says the same word where
+          a HUD-watching player is already looking, so "that scaffold is a
+          climb" arrives before the run at it rather than after braking at it. */}
+      {mark?.action && (
+        <span
+          className={`msn-hud-actioncue${mark.action.kind === "LEAP_OF_FAITH" ? " is-leap" : ""}`}
+          role="status"
+          aria-label="Your next move"
+        >
+          {mark.action.label}
+        </span>
+      )}
+
       {/* The current SAFE leg is authored below a run — a narrow ledge or beam —
           so a held sprint is capped to it. Said BEFORE the lip, not after the
           reader has already braked the body, so a player knows to ease off. */}
@@ -229,94 +242,6 @@ const ALERT_COPY: Readonly<Record<string, string>> = {
   SEARCHING: "Searched",
   ALERTED: "Seen",
 };
-
-/**
- * The beat, as one convergence per pending mark against one fixed line.
- *
- * Deliberately not a ring, an arc or a sweeping needle. Every one of those has
- * to be explained before it means anything, and the player is thirteen and has
- * never played osu. Two things touching is pre-verbal — it is the same read as
- * catching a ball — and there is exactly one moment when the mark is ON the
- * line, which everybody can see coming.
- *
- * `approach01` does all the work: 0 when a mark first becomes readable, exactly
- * 1.0 on its tick. The judgement bands arrive in the same normalised space, so
- * the target's width is a direct conversion and never a second tuning.
- */
-function BeatPanel(props: { beat: BeatPresentation; inStance: boolean }) {
-  const { beat } = props;
-  const armed = beat.phase === "STRIKING" || beat.phase === "SETTLING";
-  const done = beat.phase === "RESOLVED";
-  if (!props.inStance && !armed) return null;
-
-  const offset = beat.lastOffsetTicks;
-  const direction =
-    offset === null || beat.lastJudgement === null
-      ? null
-      : offset === 0
-        ? "dead on"
-        : `${Math.abs((offset / FIELD_TICK_HZ) * 1000).toFixed(0)}ms ${offset < 0 ? "early" : "late"}`;
-
-  return (
-    <section className="msn-beat" aria-label="The work">
-      <span className="msn-beat-kicker">
-        {/* Once the tacks are in there is nothing left to press, so the panel
-            stops asking. A prompt that survives the thing it prompted for is how
-            a player comes to believe they missed something. */}
-        {done
-          ? `The sheet is up · ${beat.grade.toLowerCase()}`
-          : armed
-            ? `${beat.struck} of ${beat.struck + beat.remaining} struck`
-            : `Press ${MISSION_BINDINGS.strike.label} to start`}
-      </span>
-
-      <div className="msn-beat-lane" role="presentation">
-        {/* The line does not move. Everything else arrives at it. */}
-        <span
-          className="msn-beat-window"
-          style={{ width: `${beat.bands.glancing01 * 200}%` }}
-        />
-        <span
-          className="msn-beat-window is-true"
-          style={{ width: `${beat.bands.true01 * 200}%` }}
-        />
-        <span
-          className="msn-beat-window is-flush"
-          style={{ width: `${beat.bands.flush01 * 200}%` }}
-        />
-        <span className="msn-beat-line" />
-        {armed
-          ? beat.marks.map((mark) => (
-              <span
-                key={mark.index}
-                className={`msn-beat-mark${mark.resolved ? " is-resolved" : ""}`}
-                style={{ left: `${Math.min(100, mark.approach01 * 100)}%` }}
-              />
-            ))
-          : /* In stance, the whole chart laid out at its real spacing, so the
-               double is visible as a pair before a single stroke is made. */
-            beat.preview.map((at, index) => (
-              <span
-                key={index}
-                className="msn-beat-preview"
-                style={{ left: `${at * 100}%` }}
-              />
-            ))}
-      </div>
-
-      {/* Early or late, not merely a grade. Which way a player missed is the
-          only feedback that makes practice pay. */}
-      <span className={`msn-beat-read${beat.heard ? " is-heard" : ""}`}>
-        {direction
-          ? `${beat.lastJudgement} · ${direction}`
-          : "Strike on the beat. Off it is loud."}
-      </span>
-      <span className="msn-beat-heard">
-        {beat.heard ? "He heard that" : "Nothing heard"}
-      </span>
-    </section>
-  );
-}
 
 /**
  * One line under the suspicion bar: what being seen is currently costing.
@@ -480,7 +405,9 @@ export function MissionHud(props: {
         )}
       </div>
 
-      {view.beat && <BeatPanel beat={view.beat} inStance={view.inBeatStance} />}
+      {/* The precision beat's panel is a surface of its own — a big holographic
+          whack-a-mole the player clicks — so it lives in `MissionBeatPanel`,
+          rendered by the container beside this HUD, not on this read-only overlay. */}
 
       {/* Generated from the binding table the key handler reads, so the two
           cannot disagree. The list used to be a hand-written string, which is

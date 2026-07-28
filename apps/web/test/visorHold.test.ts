@@ -353,26 +353,34 @@ test("the elm briefing derives every figure from the chart, distinguishing total
   );
 });
 
-test("the generic beat HUD states no mission-specific stroke count of its own", () => {
-  // MissionHud hosts whatever beat a level authors, so a hard-coded count in it
-  // is wrong for every mission but the one it was typed for. The live count is
-  // the kicker's `struck of struck+remaining`, which is the runtime's; the
-  // read-line must not restate a constant that can go stale — as "Six strokes"
-  // did after the chart grew to thirteen.
+test("the beat panel states no mission-specific count of its own", () => {
+  // The beat is a surface of its own now — a holographic whack-a-mole the player
+  // clicks — so its count lives in MissionBeatPanel, not on the read-only HUD. A
+  // hard-coded count would be wrong for every mission but the one it was typed
+  // for; the live figure must come from the runtime presentation (`beat.struck`
+  // and `beat.total`).
+  const panel = readFileSync(
+    new URL("../src/mission/MissionBeatPanel.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(
+    panel,
+    /Six strokes/,
+    "the panel still carries the retired six-stroke read-line",
+  );
+  assert.match(
+    panel,
+    /beat\.struck/,
+    "the only count the panel prints must come from the runtime presentation",
+  );
+  assert.match(panel, /beat\.total/, "and the total must come from the presentation");
+
+  // And the generic HUD carries no beat count at all — the panel owns it.
   const hud = readFileSync(
     new URL("../src/mission/MissionHud.tsx", import.meta.url),
     "utf8",
   );
-  assert.doesNotMatch(
-    hud,
-    /Six strokes/,
-    "the HUD still carries the retired six-stroke read-line",
-  );
-  assert.match(
-    hud,
-    /beat\.struck \+ beat\.remaining/,
-    "the only stroke count the HUD prints must come from the runtime presentation",
-  );
+  assert.doesNotMatch(hud, /Six strokes/, "the HUD still carries a stale beat read-line");
 });
 
 test("the container and the harness ask the same question about who gets taught", () => {

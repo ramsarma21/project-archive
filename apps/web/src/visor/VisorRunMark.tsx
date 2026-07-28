@@ -60,6 +60,25 @@ export interface RunMarkRead {
   readonly viaRoute: boolean;
   /** How far the mark sits above the player's feet. Negative is below. */
   readonly riseM: number;
+  /**
+   * The imminent authored move, when the committed leg is a directed action
+   * gateway (a climb, a vault, a leap, a directed drop), else null on a run.
+   *
+   * This is the mark's answer to the one thing that decides a first mission: the
+   * foot of a climb. There the plate would ORDINARILY recede into the hold it is
+   * pointing at (see RETIRE_M) and leave a wall the player cannot tell from a
+   * climb. When an action is armed the mark instead NAMES the move on the
+   * take-off — "CLIMB UP", "VAULT", "LEAP" — and stops retiring, so the required
+   * verb is unmistakable before the player commits to it. Composed by the
+   * mission (markActionOf); drawn dumbly here.
+   */
+  readonly action?: {
+    readonly kind: string;
+    readonly label: string;
+    readonly direction: "UP" | "OVER" | "ACROSS" | "DOWN";
+    readonly phase: "APPROACH" | "RECEIVER";
+    readonly riseM: number;
+  } | null;
 }
 
 /** How far into the half-frame a mark that has left the view is held. */
@@ -109,14 +128,47 @@ function riseLabel(riseM: number): string {
   return `${Math.abs(rounded)} m ${rounded > 0 ? "up" : "down"}`;
 }
 
+/** A geometric glyph for the way the move goes, prepended to the verb. */
+const DIRECTION_GLYPH: Record<
+  NonNullable<RunMarkRead["action"]>["direction"],
+  string
+> = {
+  UP: "\u25B2 ", // ▲
+  DOWN: "\u25BC ", // ▼
+  OVER: "\u25B6 ", // ▶
+  ACROSS: "\u25B6 ", // ▶
+};
+
 function plateSpec(read: RunMarkRead) {
   const range = Math.max(1, quantise(read.rangeM, RANGE_STEP_M));
+  const rangeStr = `${read.viaRoute ? "" : "~"}${range} m`;
+  // An armed action reframes the plate as an INSTRUCTION on the take-off: the
+  // verb is the headline, and the objective and its distance drop to the line
+  // below so "where" is still on the plate but "what your body does next" is the
+  // thing the eye lands on. This is the whole wayfinding fix for mission one —
+  // at the foot of a climb the plate says CLIMB UP, not a distance to a tree it
+  // is standing in front of.
+  if (read.action) {
+    const glyph = DIRECTION_GLYPH[read.action.direction];
+    const isLeap = read.action.kind === "LEAP_OF_FAITH";
+    return {
+      title: `${glyph}${read.action.label}`,
+      // The elm's name and how far is left, kept as the subtitle so the plate
+      // never stops answering "where". The leap gets its promise instead of a
+      // distance-to-a-tree-you-are-about-to-fly-into.
+      detail: isLeap
+        ? `${read.title} · it catches you`
+        : `${read.title} · ${rangeStr}`,
+      accent: VISOR_INK,
+      tone: "BRIGHT" as const,
+    };
+  }
   return {
     title: read.title,
     // The tilde is the whole of the honesty about the number. A walked route
     // distance is a measurement; a straight line across a town is an estimate,
     // and the two must not print identically.
-    range: `${read.viaRoute ? "" : "~"}${range} m`,
+    range: rangeStr,
     detail: read.detail
       ? `${read.detail} · ${riseLabel(read.riseM)}`
       : riseLabel(read.riseM),
@@ -133,6 +185,9 @@ function plateKey(read: RunMarkRead): string {
     read.viaRoute,
     Math.max(1, quantise(read.rangeM, RANGE_STEP_M)),
     quantise(read.riseM, RISE_STEP_M),
+    // The verb reframes the whole plate, so a change of imminent action is a
+    // rebuild. Null between actions, which is most of the run.
+    read.action?.label ?? "",
   ].join("|");
 }
 
@@ -270,11 +325,22 @@ export function VisorRunMark(props: {
     const distance = camera.position.distanceTo(scratch.world);
     // The retirement ramp, and the only thing that ever hides the mark while an
     // objective is open.
-    const alpha = THREE.MathUtils.clamp(
-      (distance - RETIRE_M) / Math.max(0.001, RETIRE_FULL_M - RETIRE_M),
-      0,
-      1,
-    );
+    //
+    // SUSPENDED WHILE AN ACTION IS ARMED. The ramp exists so a name over the
+    // thing you are already standing on does not become noise — right for the
+    // stroll into the elm, wrong at the foot of a climb, which is exactly where
+    // the mark is close enough to retire AND where the player most needs to be
+    // told the wall is a climb. So while the guidance is holding a directed
+    // action gateway the mark stays full: it has stopped being a label on a
+    // place and become an instruction for a move, and an instruction that fades
+    // as you reach the thing it is instructing is the bug this fixes.
+    const alpha = mark.action
+      ? 1
+      : THREE.MathUtils.clamp(
+          (distance - RETIRE_M) / Math.max(0.001, RETIRE_FULL_M - RETIRE_M),
+          0,
+          1,
+        );
     if (alpha <= 0.01) {
       plateNode.visible = false;
       arrowNode.visible = false;

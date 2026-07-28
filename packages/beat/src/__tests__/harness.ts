@@ -1,12 +1,11 @@
-// Driving a beat from a test, on the same fixed clock the mission uses.
+// Driving a reaction beat from a test, on the same fixed clock the mission uses.
 //
 // Every test in this package plays the run tick by tick rather than calling into
 // its internals, so what is measured is the machine a mission would actually
-// mount. A "player" here is a plan: which beats they strike, how many ticks off
-// they are on each, and any extra swings they take at nothing.
+// mount. A "player" here is a plan: which flares they strike, which they let
+// fade, and any strikes at the wrong cell.
 
 import assert from "node:assert/strict";
-import { deriveChart, type BeatChart } from "../chart.js";
 import {
   createBeatRun,
   stepBeat,
@@ -14,83 +13,72 @@ import {
   type BeatOutcome,
   type BeatRun,
 } from "../machine.js";
+import { deriveSchedule, type ReactionSchedule } from "../schedule.js";
 import type { NoiseEvent } from "../engine.js";
 import type { BeatSpec } from "../spec.js";
 
 export interface PlayPlan {
-  /** Tick the opening stroke lands on. */
-  readonly armAt?: number;
+  /** Flare indices the player never clicks. They fade to a miss. */
+  readonly dropped?: readonly number[];
   /**
-   * Signed tick offset per judged beat, in chart order. Negative is early, null
-   * means the player never swings at that beat.
+   * Flare indices the player clicks on the WRONG cell while they are up. Each
+   * one costs a stray AND then fades to a miss, since it is never struck true.
    */
-  readonly offsets: readonly (number | null)[];
-  /** Absolute ticks the player swings at nothing. */
-  readonly extraPresses?: readonly number[];
-  /** Tick the player steps out of the stance. */
+  readonly wrongCell?: readonly number[];
+  /** Ticks after a flare spawns at which the player clicks it. Default 6. */
+  readonly hitOffset?: number;
+  /** Absolute tick the player steps out of the stance. */
   readonly leaveAt?: number;
-  /** Tick the container tears the run down. */
+  /** Absolute tick the container tears the run down. */
   readonly abandonAt?: number;
 }
 
 export interface PlayResult {
-  readonly chart: BeatChart;
+  readonly schedule: ReactionSchedule;
   readonly run: BeatRun;
   readonly outcome: BeatOutcome;
   readonly events: readonly BeatEvent[];
   readonly noise: readonly NoiseEvent[];
-  /** Ticks the run took from the opening stroke to the resolve. */
   readonly elapsedTicks: number;
 }
 
-/** Every tick the plan presses on, and the beat each press is aimed at. */
-export function pressSchedule(
+/** For each tick, the cell the plan clicks on that tick (at most one). */
+export function clickSchedule(
   spec: BeatSpec,
   seed: number,
   plan: PlayPlan,
-): { armAt: number; presses: Set<number>; chart: BeatChart } {
-  const chart = deriveChart(spec.chart, seed);
-  const armAt = plan.armAt ?? 10;
-  const presses = new Set<number>([armAt]);
-  plan.offsets.forEach((offset, index) => {
-    if (offset === null) return;
-    const beat = chart.offsets[index + 1];
-    if (beat === undefined) return;
-    const tick = armAt + beat + offset;
-    assert.equal(
-      presses.has(tick),
-      false,
-      `the plan presses twice on tick ${tick}; a tick carries at most one stroke`,
-    );
-    presses.add(tick);
-  });
-  for (const tick of plan.extraPresses ?? []) {
-    assert.equal(
-      presses.has(tick),
-      false,
-      `the plan's extra press on tick ${tick} collides with a scheduled stroke`,
-    );
-    presses.add(tick);
+): { clicks: Map<number, number>; schedule: ReactionSchedule } {
+  const schedule = deriveSchedule(spec.reaction, seed);
+  const dropped = new Set(plan.dropped ?? []);
+  const wrong = new Set(plan.wrongCell ?? []);
+  const offset = plan.hitOffset ?? 6;
+  const clicks = new Map<number, number>();
+  for (const target of schedule.targets) {
+    if (dropped.has(target.index)) continue;
+    const cell = wrong.has(target.index)
+      ? (target.cell + 1) % spec.reaction.cellCount
+      : target.cell;
+    // Arm is at tick 0, so a flare is live from its spawn offset.
+    const tick = target.spawnTick + offset;
+    assert.equal(clicks.has(tick), false, `the plan clicks twice on tick ${tick}`);
+    clicks.set(tick, cell);
   }
-  return { armAt, presses, chart };
+  return { clicks, schedule };
 }
 
-/** Play a whole run and return everything it produced. */
-export function playBeat(spec: BeatSpec, seed: number, plan: PlayPlan): PlayResult {
-  const { armAt, presses, chart } = pressSchedule(spec, seed, plan);
+/** Play a whole run and return everything it produced. Arms at tick 0. */
+export function playBeat(spec: BeatSpec, seed: number, plan: PlayPlan = {}): PlayResult {
+  const { clicks, schedule } = clickSchedule(spec, seed, plan);
   let run = createBeatRun(spec, seed);
   const events: BeatEvent[] = [];
   const noise: NoiseEvent[] = [];
 
-  // Generous bound: the machine's own backstop is span + window + settle, and a
-  // run that has not ended well before this has a stuck state rather than a slow
-  // one. The assertion below is the point of the bound.
-  const limit = armAt + chart.spanTicks + 600;
+  const limit = schedule.spanTicks + spec.verb.settleTicks + 600;
   let outcome: BeatOutcome | null = null;
   for (let tick = 0; tick <= limit && outcome === null; tick++) {
     const step = stepBeat(run, {
       tick,
-      strike: presses.has(tick),
+      hitCell: clicks.get(tick) ?? null,
       inStance: plan.leaveAt === undefined || tick < plan.leaveAt,
       abandon: plan.abandonAt !== undefined && tick >= plan.abandonAt,
     });
@@ -101,28 +89,10 @@ export function playBeat(spec: BeatSpec, seed: number, plan: PlayPlan): PlayResu
   }
 
   assert.ok(outcome, "the run never resolved; the machine has a state with no exit");
-  return {
-    chart,
-    run,
-    outcome,
-    events,
-    noise,
-    elapsedTicks: outcome.elapsedTicks,
-  };
+  return { schedule, run, outcome, events, noise, elapsedTicks: outcome.elapsedTicks };
 }
 
-/** A plan that centres every judged beat. */
-export function perfectPlan(spec: BeatSpec, seed: number): PlayPlan {
-  const chart = deriveChart(spec.chart, seed);
-  return { offsets: new Array<number>(chart.judgedBeats).fill(0) };
-}
-
-/** A plan that strikes every judged beat at a fixed offset. */
-export function uniformPlan(
-  spec: BeatSpec,
-  seed: number,
-  offsetTicks: number,
-): PlayPlan {
-  const chart = deriveChart(spec.chart, seed);
-  return { offsets: new Array<number>(chart.judgedBeats).fill(offsetTicks) };
+/** A plan that strikes every flare. */
+export function perfectPlan(): PlayPlan {
+  return {};
 }

@@ -96,13 +96,13 @@ export function isTerminalPrecisionFailure(outcome: BeatOutcome): boolean {
  */
 export const BEAT_MOUNT_CONTRACT: readonly string[] = [
   // --- input ---
-  "playerInput: bind one strike key (the interact key is the natural one) and " +
-    "deliver it EDGE TRIGGERED. A held key delivered as true every tick reads as " +
-    "sixty strokes a second, which the judge scores as fifty-nine strays.",
-  "the container's input frame: carry the press to exactly one tick. When a frame " +
-    "spans several fixed steps, attribute the press to the first of them, the same " +
-    "way jumpBuffered is already consumed — the quantisation is one tick at 60fps " +
-    "and the windows are sized with that in mind.",
+  "playerInput: let the player strike the lit cell with a pointer click OR one " +
+    "key, and deliver the struck cell EDGE TRIGGERED — one cell to exactly one " +
+    "tick. A held key or unreleased pointer delivered every tick reads as a run " +
+    "of strays.",
+  "the container's input frame: carry the struck cell to exactly one tick. When a " +
+    "frame spans several fixed steps, attribute it to the first of them, the same " +
+    "way jumpBuffered is already consumed.",
 
   // --- the tick loop ---
   "the mission runtime: hold one BeatRun per attempt, created from the attempt " +
@@ -111,35 +111,36 @@ export const BEAT_MOUNT_CONTRACT: readonly string[] = [
     "to stepStealthField alongside the parkour and thrown-object noise. This is the " +
     "whole integration of the design's central idea and it is one array spread.",
   "the mission runtime: keep the stealth field stepping while the beat runs. A beat " +
-    "with detection suspended is a rhythm minigame; a beat inside a live field is a " +
+    "with detection suspended is a minigame; a beat inside a live field is a " +
     "stealth mechanic.",
   "the mission runtime: report the player as STILL to the field while in stance — " +
     "traversing must be false, since no traversal verb is running — so standing " +
     "quietly to work is correctly the least visible thing the player can be doing.",
 
   // --- the level ---
-  "the level: derive the chart ONCE per attempt from the attempt seed. Re-deriving " +
-    "on re-entry is required and safe because deriveChart is pure; re-SEEDING on " +
-    "re-entry would let a player leave and return until they drew an easy chart.",
+  "the level: derive the schedule ONCE per attempt from the attempt seed. " +
+    "Re-deriving on re-entry is required and safe because deriveSchedule is pure; " +
+    "re-SEEDING on re-entry would let a player leave and return until they drew an " +
+    "easy one.",
   "the level: replace the post objective's proximity predicate with beatObjective, " +
     "so the sheet going up is what satisfies it rather than arriving at the bough.",
   "the level: treat isTerminalPrecisionFailure as an authored fail in failWhen, with " +
     "the mission's own copy and cue id. An abandoned run is not a failure.",
 
   // --- presentation ---
-  "the stage: draw one convergence per pending mark from approach01, against a " +
-    "fixed line, using imported art. The bands in BEAT_BANDS are the same normalised " +
-    "space, so the target's rings are a direct conversion and never a second tuning.",
-  "the stage: lay the preview array out on the work surface while the run is in " +
-    "stance, so the player can see the rhythm — and the double — before committing.",
-  "the stage: divide that preview at the downbeats. A dozen marks in a row is a " +
-    "queue; three bars of visibly rising density is the thing the player is being " +
-    "asked to weigh a patrol gap against.",
-  "the HUD: show lastOffsetTicks as early or late, not merely as a grade. Which " +
-    "direction a player missed is the only feedback that makes practice pay.",
+  "the stage: draw the panel from cells and activeCell — one lit flare on a big, " +
+    "comfortable target — using the project's holographic language. The panel is " +
+    "UI, so it is procedural by exception, not a modelled world object.",
+  "the stage: draw the live flare's remaining window from activeRemaining01 as an " +
+    "aid, never as a gate: the flare is hittable for its whole window, so a " +
+    "reduced-motion renderer may drop the ring and the beat stays passable.",
+  "the stage: flash the last result from lastResult so a hit, a miss and a stray " +
+    "read differently, and keep the click working with keyboard as well as pointer.",
+  "the HUD: show struck of total so the player can see the act completing, and say " +
+    "whether anything has been heard.",
 
   // --- budget ---
-  "pacing: charge beatWorstCaseTicks to the mission clock. A chart is a whole " +
-    "number of bars, so its span is identical on every seed and this is a fixed " +
-    "reservation rather than a tail the budget almost never pays.",
+  "pacing: charge beatWorstCaseTicks to the mission clock. It is the reaction " +
+    "schedule's widest span, so it is a fixed reservation rather than a tail the " +
+    "budget almost never pays.",
 ];

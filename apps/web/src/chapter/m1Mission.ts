@@ -150,6 +150,7 @@ function marks(spec: BeatSpec, way: Wayfinder) {
       phase: g.phase,
       allowedVerbs: g.allowedVerbs,
       riseM: g.riseM,
+      kind: g.kind,
     };
   };
   return {

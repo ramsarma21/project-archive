@@ -501,13 +501,14 @@ export interface MissionInputFrame {
    */
   readonly dashBuffered?: boolean;
   /**
-   * A strike press latched since the last step. Consumed by the first tick.
+   * The panel cell the player struck since the last step, or null. Consumed by
+   * the first tick.
    *
-   * EDGE TRIGGERED, and this is where that is owned. A held key delivered as
-   * true every fixed step reads to the judge as sixty strokes a second, which it
-   * would correctly score as fifty-nine strays.
+   * EDGE TRIGGERED, and this is where that is owned. A held key or an unreleased
+   * pointer delivered every fixed step reads to the beat as a run of strays, so
+   * the container carries the struck cell to exactly one tick and clears it.
    */
-  readonly strikeBuffered?: boolean;
+  readonly hitCellBuffered?: number | null;
   readonly reducedMotion: boolean;
   /**
    * False while a UI surface owns input. Motion still integrates so the player
@@ -524,8 +525,8 @@ export interface MissionRuntimeStep {
   readonly jumpConsumed: boolean;
   /** True when a buffered dash was handed to the simulation this frame. */
   readonly dashConsumed: boolean;
-  /** True when a buffered strike was handed to the beat this frame. */
-  readonly strikeConsumed: boolean;
+  /** True when a buffered panel strike was handed to the beat this frame. */
+  readonly hitConsumed: boolean;
 }
 
 const CALM_STEALTH_VIEW: StealthPresentation = {
@@ -1040,7 +1041,7 @@ export function missionThrowing(runtime: MissionRuntime): boolean {
 function stepBeatForTick(
   runtime: MissionRuntime,
   read: MissionPlayerRead,
-  strike: boolean,
+  hitCell: number | null,
 ) {
   const mount = runtime.instance.beat;
   const run = runtime.beat;
@@ -1060,7 +1061,7 @@ function stepBeatForTick(
 
   const stepped = stepBeat(run, {
     tick: runtime.clock.tick,
-    strike,
+    hitCell,
     inStance,
   });
   runtime.beat = stepped.run;
@@ -1401,7 +1402,7 @@ function mergeFacings(
 function stepOnce(
   runtime: MissionRuntime,
   frame: MissionInputFrame,
-  latched: { jump: boolean; dash: boolean; strike: boolean },
+  latched: { jump: boolean; dash: boolean; hitCell: number | null },
 ): void {
   const { instance } = runtime;
   const world = instance.world;
@@ -1430,7 +1431,7 @@ function stepOnce(
   if (enc.locked) {
     latched.jump = false;
     latched.dash = false;
-    latched.strike = false;
+    latched.hitCell = null;
   }
   const frozen = enc.ownsInput;
 
@@ -1555,7 +1556,7 @@ function stepOnce(
   // still. Nothing here has to say so.
   const traversing = runtime.flow.verb !== "NONE";
 
-  const beatNoise = stepBeatForTick(runtime, read, latched.strike);
+  const beatNoise = stepBeatForTick(runtime, read, latched.hitCell);
 
   // The one list of bodies, resolved once and handed to all three consumers. The
   // shared empty constant matters: a fresh `[]` per tick would defeat the identity
@@ -1770,7 +1771,7 @@ export function stepMissionRuntime(
       outcome: runtime.outcome,
       jumpConsumed: false,
       dashConsumed: false,
-      strikeConsumed: false,
+      hitConsumed: false,
     };
   }
 
@@ -1784,13 +1785,13 @@ export function stepMissionRuntime(
   // Every press is carried to exactly ONE tick — the first of the frame — and
   // cleared. A frame can span several fixed steps, and a press delivered to all
   // of them is a press repeated: for the jump that is a double launch, and for
-  // the strike it is a stray for every step but the one that landed.
-  const latched = {
+  // the panel strike it is a stray for every step but the one that landed.
+  const latched: { jump: boolean; dash: boolean; hitCell: number | null } = {
     jump: frame.jumpBuffered,
     dash: frame.dashBuffered ?? false,
-    strike: frame.strikeBuffered ?? false,
+    hitCell: frame.hitCellBuffered ?? null,
   };
-  const consumed = { jump: false, dash: false, strike: false };
+  const consumed = { jump: false, dash: false, hit: false };
   for (let tick = advanced.firstTick; tick <= advanced.lastTick; tick += 1) {
     // The clock's tick is the authority the field systems read, so it is set
     // per step rather than left at the end of the frame's run of steps.
@@ -1801,10 +1802,14 @@ export function stepMissionRuntime(
     // is a pure function of the ticks the run played and no drawing surface can
     // move it. See `advanceWayfinding` and levelPort's mark `advance`/`waypoint`.
     advanceWayfinding(runtime);
-    for (const action of ["jump", "dash", "strike"] as const) {
+    for (const action of ["jump", "dash"] as const) {
       if (!latched[action]) continue;
       latched[action] = false;
       consumed[action] = true;
+    }
+    if (latched.hitCell !== null) {
+      latched.hitCell = null;
+      consumed.hit = true;
     }
     if (runtime.outcome) break;
   }
@@ -1814,7 +1819,7 @@ export function stepMissionRuntime(
     outcome: runtime.outcome,
     jumpConsumed: consumed.jump,
     dashConsumed: consumed.dash,
-    strikeConsumed: consumed.strike,
+    hitConsumed: consumed.hit,
   };
 }
 
@@ -1898,6 +1903,37 @@ export interface MissionStandingRead {
   readonly optionalTotal: number;
 }
 
+/**
+ * The imminent authored move on the committed leg, when the guidance is holding
+ * a directed action gateway (a climb, a vault, a leap, a directed drop) — else
+ * null on an ordinary run.
+ *
+ * WHY THE MARK NEEDS THIS. The run-mark plate names WHERE (the elm) and recedes
+ * as the player reaches the next step, which is right for a stroll between
+ * rooftops and wrong at the one moment that decides a first mission: the foot of
+ * a climb. There the "next place" is the hold two metres up, the plate has
+ * retired into it, and what is left on screen is a subtle edge band on a wall
+ * that at full dark reads as scenery. A player who cannot tell the Town House
+ * scaffold from the Town House wall is not failing to read the architecture —
+ * they were never told the wall is a climb. This carries the verb the geometry
+ * is about to perform so the mark can SAY it, in the player's words, on the
+ * take-off, before they commit — which is the whole of the wayfinding ask for
+ * mission one. The label and direction are derived here from the authored kind
+ * and the directed rise so the drawing surface stays dumb.
+ */
+export interface MissionMarkAction {
+  /** The authored action kind (CLIMB / VAULT / JUMP / LEAP_OF_FAITH / DROP …). */
+  readonly kind: string;
+  /** The player-facing imperative for it, e.g. "CLIMB UP", "VAULT", "LEAP". */
+  readonly label: string;
+  /** Which way the move goes, for a directional glyph: up a climb, across a gap. */
+  readonly direction: "UP" | "OVER" | "ACROSS" | "DOWN";
+  /** APPROACH while running in; RECEIVER once on the take-off, mid-move. */
+  readonly phase: "APPROACH" | "RECEIVER";
+  /** Directed receiver elevation, receiver Y minus take-off Y. */
+  readonly riseM: number;
+}
+
 export interface MissionMarkRead {
   readonly pos: Vec3;
   readonly title: string;
@@ -1913,6 +1949,73 @@ export interface MissionMarkRead {
    * run, else null. The HUD reads it to post a walk cue before the roof lip.
    */
   readonly speedCapMps: number | null;
+  /**
+   * The imminent authored move, when the committed leg is a directed action
+   * gateway, else null. See MissionMarkAction — this is what lets the mark name
+   * the climb/vault/leap on the take-off instead of receding into it.
+   */
+  readonly action: MissionMarkAction | null;
+}
+
+/**
+ * Name and aim the imminent action from the authored gateway. Pure.
+ *
+ * Kept beside `markRead` rather than in the drawing surface so the HUD plate and
+ * the in-canvas mark say the identical word for the identical move — two
+ * surfaces disagreeing about whether the next thing is a vault or a climb is the
+ * exact confusion the cue exists to remove. A CLIMB is the one kind that is not
+ * self-describing (the same authored kind covers a reach up, a step over a gate,
+ * and a lowering off a rim), so the directed rise disambiguates it; every other
+ * kind names itself.
+ */
+export function markActionOf(gateway: {
+  readonly kind: string;
+  readonly phase: "APPROACH" | "RECEIVER";
+  readonly riseM: number;
+}): MissionMarkAction {
+  const { kind, phase, riseM } = gateway;
+  let label: string;
+  let direction: MissionMarkAction["direction"];
+  switch (kind) {
+    case "VAULT":
+      label = "VAULT";
+      direction = "OVER";
+      break;
+    case "JUMP":
+    case "DASH_JUMP":
+      label = "JUMP THE GAP";
+      direction = "ACROSS";
+      break;
+    case "LEAP_OF_FAITH":
+      label = "LEAP";
+      direction = "ACROSS";
+      break;
+    case "DROP":
+      label = "DROP DOWN";
+      direction = "DOWN";
+      break;
+    case "MANTLE":
+      label = "CLIMB UP";
+      direction = "UP";
+      break;
+    case "CLIMB":
+    default:
+      // One authored kind, three geometries: a reach up, a step over something
+      // at your own level, a controlled climb-down off a rim. The directed rise
+      // tells them apart so the word matches the move.
+      if (riseM > 0.6) {
+        label = "CLIMB UP";
+        direction = "UP";
+      } else if (riseM < -0.6) {
+        label = "CLIMB DOWN";
+        direction = "DOWN";
+      } else {
+        label = "OVER THE TOP";
+        direction = "OVER";
+      }
+      break;
+  }
+  return { kind, label, direction, phase, riseM };
 }
 
 /**
@@ -1997,6 +2100,7 @@ export function markRead(
   const walked = mark.rangeM?.(from) ?? null;
   const waypoint = mark.waypoint?.(from) ?? null;
   const pos = waypoint?.pos ?? mark.pos;
+  const gateway = mark.gateway?.() ?? null;
   return {
     pos,
     title: mark.title,
@@ -2006,6 +2110,7 @@ export function markRead(
     viaRoute: walked?.viaRoute ?? false,
     riseM: pos.y - from.y,
     speedCapMps: mark.speedCapMps?.(from) ?? null,
+    action: gateway ? markActionOf(gateway) : null,
   };
 }
 

@@ -14,14 +14,26 @@
 import { chartSpecDefects, type BeatChartSpec } from "./chart.js";
 import type { BeatGradeThresholds } from "./judge.js";
 import { verbLadderDefects } from "./noise.js";
+import {
+  reactionSpecDefects,
+  reactionWorstCaseSpan,
+  type BeatReactionSpec,
+} from "./schedule.js";
 import { beatVerbDefects, type BeatVerb } from "./verbs.js";
 import type { Vec3 } from "./engine.js";
-import { HIT_WINDOW_TICKS } from "./tuning.js";
 
 export interface BeatSpec {
   readonly id: string;
   readonly verb: BeatVerb;
+  /**
+   * The rhythmic description of the act, kept for the briefing and the pacing
+   * budget. The player no longer plays a timing chart — see `reaction` — but the
+   * held-moment hologram still reads the number of strokes and bars off this to
+   * describe the work, and the pacing report costs the beat from its span.
+   */
   readonly chart: BeatChartSpec;
+  /** What the player actually does: a reaction test on a holographic panel. */
+  readonly reaction: BeatReactionSpec;
   /** Where the player's feet are while they work. */
   readonly stance: Vec3;
   /** Where the work is: the nail point, the lock, the crank. */
@@ -71,29 +83,28 @@ export function inFacingArc(spec: BeatSpec, yaw: number): boolean {
 /**
  * How long this beat occupies the mission clock, at its longest.
  *
- * The chart's span, plus the outer window the final beat may still be struck in,
- * plus the follow-through — which is exactly the backstop the machine computes
- * at arming, so this is the same number and not an estimate of it.
+ * The reaction schedule's widest span — every seeded gap taken at maximum jitter
+ * — plus the verb's follow-through. It is a ceiling rather than a typical run,
+ * so the pacing budget reserves what the beat can cost rather than a tail it
+ * rarely reaches, and the run auto-resolves at this point whatever the player
+ * has done, which is what guarantees the machine terminates.
  *
- * "At its longest" is now a narrow claim. A chart is a whole number of bars, so
- * `spanTicks` is the same on every seed and the only slack in here is the nine
- * ticks a player spends by taking the last stroke late. The pacing budget is
- * therefore charged what the beat costs rather than a tail it reaches once in
- * four hundred attempts.
- *
- * It does NOT include the time the player spends in stance deciding when to
- * start. That is traversal time they are choosing to spend watching a patrol,
- * and charging it to the beat would make the pacing budget claim the mechanic is
- * slower than it is.
+ * It does NOT include the time the player spends in stance before the first
+ * flare beyond the authored lead. Standing on the bough choosing a patrol gap is
+ * traversal they are choosing to spend, and charging it to the beat would make
+ * the pacing budget claim the mechanic is slower than it is.
  */
 export function beatWorstCaseTicks(spec: BeatSpec): number {
-  return spec.chart.spanTicks + HIT_WINDOW_TICKS + spec.verb.settleTicks;
+  return reactionWorstCaseSpan(spec.reaction) + spec.verb.settleTicks;
 }
 
 /** Everything wrong with an authored beat, as sentences. */
 export function beatSpecDefects(spec: BeatSpec): string[] {
   const defects: string[] = [
     ...chartSpecDefects(spec.chart).map((defect) => `${spec.id}: chart: ${defect}`),
+    ...reactionSpecDefects(spec.reaction).map(
+      (defect) => `${spec.id}: reaction: ${defect}`,
+    ),
     ...beatVerbDefects(spec.verb).map((defect) => `${spec.id}: verb: ${defect}`),
     ...verbLadderDefects(spec.verb).map((defect) => `${spec.id}: verb: ${defect}`),
   ];
