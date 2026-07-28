@@ -68,6 +68,7 @@ import {
   type EncounterResolution,
   type EncounterVerdictKind,
 } from "@pa/mission-m1";
+import { DIAG_ENABLED, recordTick } from "./diag.js";
 import {
   dawnLightLevel,
   dawnRead,
@@ -1522,6 +1523,18 @@ function stepOnce(
   // happens in a real session. Throttled to one line per collider so a wedged
   // body does not flood the console, and stripped from production builds.
   assertNonPenetration(world, runtime.motion, runtime.flow.verb, runtime.ticks);
+
+  // The running-game black box (dev only). Records this settled tick's strict
+  // (no-ignore) embed state and, during an authored transition, how far the
+  // collision solver had to move the body off the animation spline. Read back by
+  // a Playwright driver through `window.__diag`; see diag.ts. Pure telemetry.
+  if (DIAG_ENABLED) {
+    const pen = motionPenetration(world, runtime.motion);
+    recordTick(world, runtime.motion, runtime.flow.verb, runtime.ticks, {
+      embeds: pen.embeds.map((e) => ({ id: e.id, depthM: e.depthM })),
+      deckId: pen.deckId,
+    });
+  }
 
   // A traversal that finished this tick, captured once for the guidance to credit
   // to a directed link. The landing surface is what the feet are on now.

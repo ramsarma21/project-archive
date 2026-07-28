@@ -624,7 +624,30 @@ export function planVerb(
     case "STEP_UP":
     case "CLIMB_UP": {
       if (!obstacle?.topLanding) return null;
-      const lip = ahead(start, probe, obstacle.faceDistanceM, obstacle.topY);
+      // THE RISE ANCHOR IS THE CAPSULE-CENTRE PATH, NOT THE WALL FACE.
+      //
+      // `faceDistanceM` is the centre-to-near-face distance, so an anchor placed
+      // AT the face plants the capsule centre a full radius inside the solid the
+      // body is climbing. The spline then aims the centre into the mass for the
+      // whole rise; the per-substep depenetration shoves it back out to the face
+      // every tick (a radius of divergence, measured in real play at the Hollis
+      // buttress and the Shambles crates), and the instant the feet clear the top
+      // and the solid span no longer overlaps, the body POPS the held radius
+      // inward onto the ledge in a single tick. That pin-then-pop is the "climb
+      // pops / sticks" the owner sees, and it is the animation spline and the
+      // collision solver disagreeing about where the body is by a whole radius.
+      //
+      // Insetting the rise anchor to the face MINUS the radius makes the spline
+      // the path the solver would already hold the body on: the centre rises
+      // tangent to the face (touching, never inside), so there is nothing to
+      // depenetrate during the ascent, and the move onto the landing happens in
+      // the final segment once the feet are AT the top and the span no longer
+      // blocks — a smooth traverse, not a release. This is the animation warped
+      // onto the solver-valid surface rather than the solver fighting it. Clamped
+      // at zero so a vertical reach (an overhead climb whose face distance is nil)
+      // rises straight up rather than behind the body.
+      const riseAlong = Math.max(0, obstacle.faceDistanceM - CAPSULE_RADIUS);
+      const lip = ahead(start, probe, riseAlong, obstacle.topY);
       return authored(
         "CLIMB_UP",
         [

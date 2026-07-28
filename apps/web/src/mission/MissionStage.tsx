@@ -37,6 +37,7 @@ import {
   type ThrowAimRead,
 } from "../visor/index.js";
 import { affordanceRead, teachable, verbCaption } from "./affordance.js";
+import { DIAG_ENABLED, pushFrame } from "./diag.js";
 import { MISSION_EXPOSURE, dawnSky } from "./dawn.js";
 import {
   cinematicActive,
@@ -233,6 +234,7 @@ function MissionDriver(props: {
   const reported = useRef(false);
   const sampledAt = useRef(-1);
   const auditedAt = useRef(-1);
+  const droppedBefore = useRef(0);
 
   useFrame((_state, delta) => {
     const { runtime, input } = props;
@@ -252,6 +254,7 @@ function MissionDriver(props: {
     const look = drainLook(props.lookState);
     const move = lookMoveIntent(look.yaw, input.forward, input.right);
 
+    const simStart = DIAG_ENABLED ? performance.now() : 0;
     const step = stepMissionRuntime(runtime, {
       dtS: delta,
       moveX: move.x,
@@ -264,6 +267,26 @@ function MissionDriver(props: {
       reducedMotion: props.reducedMotion,
       flowEnabled: !props.paused,
     });
+    // The running-game frame trace (dev only). Isolates the sim cost from the
+    // whole frame delta, so a Playwright driver can tell "the solver is
+    // expensive" apart from "the GPU is slow", and surfaces the dropped fixed
+    // steps that are the mechanism of the reported slow motion. See diag.ts.
+    if (DIAG_ENABLED) {
+      const droppedThisFrame = runtime.droppedSteps - droppedBefore.current;
+      droppedBefore.current = runtime.droppedSteps;
+      pushFrame({
+        tick: runtime.ticks,
+        deltaMs: delta * 1000,
+        simMs: performance.now() - simStart,
+        steps: step.steps,
+        droppedTotal: runtime.droppedSteps,
+        droppedThisFrame,
+        timeScale: runtime.timeScale,
+        speed: Math.hypot(runtime.motion.vel.x, runtime.motion.vel.z),
+        verb: runtime.flow.verb,
+        phase: runtime.motion.phase,
+      });
+    }
     // Each latch survives until a fixed step actually took it. A frame that
     // advanced no ticks — a very high refresh rate, or a resumed tab whose delta
     // was clamped to nothing — must not swallow the press.
