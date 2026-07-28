@@ -1,0 +1,43 @@
+---
+description: Read the shared project state before acting, and write findings back to it
+alwaysApply: true
+---
+
+# Shared Project State
+
+Work on this repo runs in many parallel lanes. Context fragmentation — each agent holding a
+private, drifting snapshot of the project — has caused more damage here than any code defect:
+duplicated investigations, two lanes clobbering one file, and fixes re-broken by a sibling who
+did not know they existed.
+
+**Two files are the shared memory. Read both before forming a theory or editing anything.**
+
+- `docs/process/M1-STATUS.md` — what is fixed (with the commit), what is open (with why it is
+  deferred), what has already been **disproven**, the regressions and the guard now catching
+  each, and what every gate is structurally blind to.
+- `docs/process/LANES.md` — which lane owns which files, the standing rules, the environment
+  quirks, and what counts as evidence.
+
+## Rules
+
+- **Check `M1-STATUS.md` before investigating.** Several hypotheses have already been tested
+  and disproven with measurements. Re-deriving one wastes a lane; contradicting one without
+  new evidence is worse.
+- **Check `LANES.md` before editing.** Do not edit a file it assigns to another lane. If the
+  honest fix needs one, stop and report what you need — do not work around it.
+- **Write findings back.** Anything discovered that outlives your task — a defect you did not
+  fix, a stale comment, a gate blind spot, an invariant nothing pins, a disproven theory —
+  belongs in `M1-STATUS.md`, or in your report if you do not own that file. A finding only you
+  know is a finding that will be rediscovered or lost.
+- **Correct these files when they are wrong.** They are written by fallible agents. An audit
+  already refuted a load-bearing claim in `M1-STATUS.md`; the correction was more valuable than
+  the original. Say what you changed and why.
+- **Prefer deleting stale state to appending.** These files are useful only while they are
+  short enough to be read. Fold resolved detail into a line; delete what no longer informs a
+  decision.
+
+## Evidence standard
+
+A claim in these files carries its evidence, or it carries an honest label saying it is
+unverified. Do not launder a worker's report into a fact. "Merged" is not "works": a fix is
+done when it is merged, gated, and recorded.
