@@ -90,7 +90,8 @@
       "packages/mission-m1/src/level/dockSquare.ts",
       "packages/mission-m1/src/level/climbs.ts",
       "packages/mission-m1/src/level/opposition.ts",
-      "packages/mission-m1/src/encounters/**"
+      "packages/mission-m1/src/encounters/**",
+      "packages/mission-m1/src/level/ropewalk.ts"
     ]
   }
 }
