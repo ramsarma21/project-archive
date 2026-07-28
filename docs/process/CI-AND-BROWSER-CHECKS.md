@@ -19,6 +19,10 @@ covers only the harness around them.
 | `lockfile` | **advisory** | `pnpm install --frozen-lockfile` |
 | `api-image` | **advisory** | Dockerfile lint plus a real build of `apps/api/Dockerfile` |
 
+A separate **nightly** workflow, `.github/workflows/grading-eval.yml`, runs the
+*live-model* half of the classifier ship gate on a schedule (not per-PR). It is
+described in [§1a](#1a-the-nightly-grading-eval-live-model) below.
+
 CI pins **Node 24**, matching the API's production base image, rather than
 tracking whatever is newest locally.
 
@@ -50,6 +54,101 @@ and both self-adapt when a migration is added:
 - The persistence suite (in `api-postgres`) applies every migration to a real
   Postgres twice and asserts each is applied exactly once, so a non-idempotent
   migration fails there.
+
+### 1a. The nightly grading eval (live model)
+
+`.github/workflows/grading-eval.yml` runs the classifier ship gate against a
+**real model**, on a schedule, so it no longer depends on someone remembering to
+type `pnpm grading:eval`. That gate previously sat at 3.4% false negatives for
+weeks while appearing healthy, precisely because it ran only on demand and on
+stale hand-labels. The offline structural half
+(`packages/grading/src/__tests__/eval.test.ts`) still runs on **every PR** inside
+`verify`'s `pnpm test` step — it guards the labels, the set's shape and the
+harness arithmetic without a model call. This workflow is the other half.
+
+It runs `pnpm grading:eval:gate` (defined in the root `package.json`, so the CI
+run and a human's local run cannot drift), which is `grading:eval` with:
+
+- **`--repeats 3`** — grade each case three times and take the majority, so a
+  single temperature-zero per-case flip cannot decide the gate. Cost is linear:
+  ~9–10 min at repeats=3 against ~3.3 min single.
+- **`--concurrency 3`** — low, to stay off the gateway's rate limit.
+- **`--timeout 20000`** — ~20 s per case. **The 1.5 s production cap is a *play*
+  cap, not a *measurement* cap.** A player never stands still in a duel waiting on
+  an API, so grading gets 1.5 s and then grants; a measurement has no such
+  constraint, and adopting the play cap would measure timeouts instead of the
+  model. This distinction is the reason the two numbers differ.
+
+**The one secret the owner must add.** The job needs a **dedicated** credential,
+not the shared dev key. Add a repository secret under *Settings → Secrets and
+variables → Actions → New repository secret*:
+
+| Secret | Required | Value |
+|---|---|---|
+| `TRUEFOUNDRY_GRADING_API_KEY` | **yes** | A TrueFoundry key with its **own quota** — not `TRUEFOUNDRY_API_KEY` (the shared/image key). Contention with the owner's own play session made **299 of 313** calls fall back on one measurement run, which measured nothing. |
+| `TRUEFOUNDRY_GRADING_BASE_URL` | optional | Only if the gateway differs from the default `https://tfy.promptlens.trilogy.com/v1`. |
+
+**How the job behaves without the secret: it fails loudly, it does not skip.** A
+skipped nightly is indistinguishable from a passing one on a dashboard, which is
+the entire failure mode being removed. The first step checks the secret and, if it
+is empty, emits a `::error::` naming exactly what to add and where, and exits
+non-zero — a red run, never a green skip.
+
+**Why nightly, not pre-release.** Recommended and built as nightly (with a
+`workflow_dispatch` for an on-demand pre-release spot check). Nightly buys the one
+thing no offline test and no pre-release-only run reliably gives: it catches drift
+in the **model itself**. The provider is a hosted gateway model that can change
+under us with no diff on our side; only a dated series of live runs surfaces that.
+The dated report (below) makes each run a point on a trend. Pre-release is cheaper
+and blocks at the moment that matters, but this repo has no release process or
+tags to hang a "pre-release" trigger on, so a pre-release-only gate would be
+decoration on a process that does not exist — and it would never see provider
+drift between releases. The per-PR offline test already blocks label/shape/arith
+regressions, which is the cheap thing pre-release would otherwise catch.
+
+**What a failure actually signals to a human** — three signals, ordered by how
+well they survive nobody watching:
+
+1. **A committed dated report.** Every run, pass or fail, writes
+   `docs/process/grading-eval/YYYY-MM-DD.json` (plus `latest.json`) and commits it
+   with `[skip ci]`. The git history *is* the trend; a **gap in the dates** is
+   proof the nightly stopped, which a green dashboard would otherwise hide. This is
+   the signal that survives nobody watching, and it is why the report is committed
+   rather than only uploaded.
+2. **An issue.** On a gate failure the job opens (or comments on a rolling) GitHub
+   issue labelled `grading-eval`, with the gate reasons and the run URL, using the
+   auto-provided `GITHUB_TOKEN` — no extra secret. A nightly that fails at 3 a.m.
+   and pings nobody is decoration.
+3. **A red run + artifact.** The job exits non-zero and uploads the report as an
+   artifact, matching the `playthrough` precedent. Artifacts expire, so this is the
+   backstop, not the trend.
+
+The committed-report signal depends on the Actions bot being allowed to push to
+the branch (`contents: write`, and no branch protection blocking it). If a push is
+blocked the job warns rather than failing, and the issue + red run + artifact still
+fire — so a blocked push degrades the trend but never masks a real failure.
+
+**Timing sensitivity.** Unlike the `playthrough` gate — whose long free-run ROUTE
+stage is genuinely wall-clock-sensitive and can stall a driven bot on a loaded
+host — this job has **no real-time simulation stage**. Each case is an independent
+model call bounded by its own ~20 s deadline, so there is no accumulating timing
+drift. Two couplings remain, both handled: (a) the **job wall-clock** — a slow,
+noisy runner plus a serialising gateway can stretch the ~10 min run, so
+`timeout-minutes` is a generous **30** rather than a tight cap that would red-flag
+an honest slow night; and (b) **per-case fallbacks** — a degraded gateway makes
+cases fall back, but the harness **excludes** fallbacks from the rates and **fails
+the gate** when fewer than 90% of cases were actually classified. So a gateway
+outage is a loud fail ("this run does not measure the grader"), never a false pass.
+
+**Unverified from here — read this before trusting a green workflow file.**
+Nothing in this environment can confirm that this workflow actually runs in a real
+GitHub Actions runner, because `gh` is unauthenticated locally: the YAML has not
+been executed, the secret does not exist yet, and no run has been observed. A
+committed, well-formed workflow file is **not** evidence of a working nightly. The
+`playthrough` gate is already blocking on this same unverified basis (see §8 of
+`M1-DONE.md`). The honest confirmation is the first real run — or, tellingly, the
+first missing date in `docs/process/grading-eval/`. Until then, treat this as
+wired-but-unconfirmed.
 
 ### The played-mission gate (`playthrough`)
 

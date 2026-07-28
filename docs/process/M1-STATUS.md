@@ -166,14 +166,25 @@ zero-evidence form pass (`1c4250f`).
   positives are **not**, so every pressure in the system points toward leniency, which is why
   these survived. This is the owner's own complaint ("it keeps … granting right") in another
   form. In flight, with the hard constraint that FN must not leave 0.00% to fix it.
-- **The false-negative gate is not automated.** The real classifier evaluation runs a live
-  model behind `pnpm grading:eval`, outside CI, so it only runs when someone remembers. It
-  previously sat at 3.4% against stale hand-labels while appearing healthy. To automate it:
-  a dedicated credential (the shared dev key contends with the owner's own session — 299 of
-  313 calls fell back during one measurement), a ~20 s timeout since the 1.5 s production cap
-  is a *play* cap not a *measurement* cap, low concurrency, a gate on FN ≤ ceiling plus
-  coverage ≥ 90% rather than exact zero because the live model varies run to run at
-  temperature 0, and nightly rather than per-PR. Queued for the CI lane.
+- **The live classifier gate is now wired to run without anyone remembering — but
+  unverified in a real runner.** `.github/workflows/grading-eval.yml` runs `pnpm
+  grading:eval:gate` (`--repeats 3 --concurrency 3 --timeout 20000`) nightly (08:00 UTC) and
+  on demand, against a dedicated `TRUEFOUNDRY_GRADING_API_KEY` secret. The ~20 s timeout is a
+  *measurement* cap, not the 1.5 s *play* cap; low concurrency stays off the rate limit;
+  repeats=3 keeps a temperature-zero flip from deciding the gate; the harness's coverage gate
+  turns a degraded gateway into a loud fail, not a false pass. **It fails loudly when the
+  secret is absent** (a red run naming what to add), never a silent skip — the failure mode
+  being removed. Failure signals, ranked by surviving nobody watching: a **committed dated
+  report** under `docs/process/grading-eval/` (a gap in the dates is itself the alarm), a
+  GitHub **issue** labelled `grading-eval`, and a red run + artifact. The offline structural
+  `eval.test.ts` still runs per-PR. **Honest limits:** (1) the secret does not exist yet — the
+  owner must add it, and until then every run fails at the credential preflight; (2) nothing
+  here can confirm the workflow runs in a real GitHub Actions runner (`gh` unauthenticated
+  locally, no run observed), the same unverified basis the `playthrough` gate already blocks
+  on. Wired and merged is not "works": the first real run, or the first missing date, settles
+  it. Nightly chosen over pre-release because only a live series catches drift in the *model
+  itself*, and there is no release process to hang a pre-release trigger on. Reasoning in
+  `CI-AND-BROWSER-CHECKS.md` §1a.
 - ~~The elm beat is finicky and hard to start~~ — **fixed** (`27ec2b5`). It was failing to
   arm, not rendering wrong: a 1.1 m circle on the crown tip plus a ±60° facing arc rejected
   the exact pose a player arrives in off the leap (1.5 m back, ~105° off, moving south down
