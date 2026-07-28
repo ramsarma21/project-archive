@@ -306,6 +306,30 @@ Read this before concluding a green run means the game is correct.
 | `check-playthrough` — **blocking in CI** (`8eb2393`) | world renders, route advances, stops resolve, no hang, no hull penetration | climbing through *drawn* geometry, animation fidelity, the terminal elm beat (deliberately unplayed — a bot that could reliably hit it would itself be flaky) |
 | `check-clip-fidelity` | hands/feet vs surfaces, plant slide, clip timing | not yet a gate — red by construction |
 
+**A mutation hunt found the suite's own blind spots** (`6cb600d`). Method: break the code a
+test claims to guard, and see whether the test still passes. Results, ranked:
+
+1. **Climb refusal is not tested end to end — the highest-value gap in the repo.** Neutering
+   the refusal condition in `parkour/probe.ts` so it never fires left **496/496 engine-world
+   and 234/234 mission-m1 tests green**. Only the isolated predicate is tested; nothing drives
+   a real probe against a climb volume with no ladder and asserts it refuses. This is the exact
+   class as the shipped floating-ladder and climb-through bugs. **Route to the engine lane.**
+2. **Nothing asserts the grader runs in a live duel.** Grading is well covered in isolation,
+   but "grading never ran in play" was a *wiring* failure, and no test asserts the duel round
+   path invokes the classifier. The same bug could recur silently today.
+3. **Nothing asserts a beat's stance is reachable.** `missionBeat.test.ts` correctly pins
+   arming from the arrival pose, but it *spawns* the player on the bough — so climbing there is
+   assumed, which folds into finding 1.
+4. Two mastery guards had no test at all (fixed): either could be deleted silently, letting a
+   zero-evidence form report `passed: true` or a zero-item concept read as mastered. That path
+   gates the capstone and mints PvP-legal cards.
+5. `beatQa` hardcodes `inStance: true` in **all five** capture paths — confirming it may never
+   again be cited as play-parity evidence. It is a screenshot tool, not a test.
+
+**The pattern across all of them:** every gap is a *runtime, cross-system, visible* property,
+which is exactly what a unit suite structurally cannot reach — and exactly the list of things
+that have reached the owner in play.
+
 **The gap that cost the most:** every collision *invariant* reads authored hulls, and the
 mover has never touched a GLB — `collision.ts`, `playerMotion.ts` and `traversalResolver.ts`
 are THREE-free and work on analytic rects. So a body can be provably outside every hull while
