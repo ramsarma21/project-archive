@@ -371,6 +371,14 @@ function gridFor(minX, maxX, minZ, maxZ) {
   return { nx, nz };
 }
 
+/** True if (px,pz) lies inside any of the given XZ rects (a punched-out hole). */
+function pointInAnyRect(px, pz, rects) {
+  for (const r of rects) {
+    if (px >= r.minX && px <= r.maxX && pz >= r.minZ && pz <= r.maxZ) return true;
+  }
+  return false;
+}
+
 /**
  * Section the placed geometry over `rect` at authored height `h`.
  *
@@ -378,8 +386,15 @@ function gridFor(minX, maxX, minZ, maxZ) {
  * is closest to `h` within [h - DEEP_SEARCH_BELOW, h + SEARCH_ABOVE]. That is
  * "the surface the mover would find at the plane" — reported as a distribution,
  * never a single sample.
+ *
+ * `opts.excludeRects` (optional): XZ rects to punch out of the sampled footprint
+ * entirely — grid points inside them are not counted at all, not counted as
+ * misses. This is how an annulus deck is judged on its ring: the solid rising
+ * core it surrounds is a hole in the walkway, not a shortfall of it, so the core
+ * footprint is removed from the denominator rather than dragging coverage down.
  */
-export function sampleSurface(candidates, rect, h) {
+export function sampleSurface(candidates, rect, h, opts = {}) {
+  const excludeRects = opts.excludeRects ?? null;
   const { nx, nz } = gridFor(rect.minX, rect.maxX, rect.minZ, rect.maxZ);
   // Pre-filter triangles to those whose XZ AABB overlaps the query rect and
   // whose height range is anywhere in the search column.
@@ -413,6 +428,7 @@ export function sampleSurface(candidates, rect, h) {
     for (let j = 0; j < nz; j++) {
       const px = rect.minX + ((rect.maxX - rect.minX) * (i + 0.5)) / nx;
       const pz = rect.minZ + ((rect.maxZ - rect.minZ) * (j + 0.5)) / nz;
+      if (excludeRects && pointInAnyRect(px, pz, excludeRects)) continue;
       total++;
       // The HIGHEST horizontal surface at or below the plane (within the search
       // column) — the mover's own catch semantics: a descending capsule lands on
@@ -597,19 +613,37 @@ function enumerateAffordances({ level, compiled }) {
   let rampStrips = 0;
   for (const deck of compiled.decks) {
     if (deck.tags?.includes("ramp")) { rampStrips++; continue; }
+    const deckRect = { ...deck.rect };
     let rect = { ...deck.rect };
     let footprintNote = "";
+    // A carrier the deck FULLY SURROUNDS (the deck extends beyond it on all four
+    // sides) that RISES above the deck plane as a solid non-landable mass is a
+    // "rising core": a tower shaft, a steeple lantern. The deck is either a ring
+    // around that core or a cap on top of it — a fact about the delivered mesh,
+    // not the hull — so it is recorded here and resolved when the geometry is
+    // actually sampled (see the annulus rescue in run()).
+    const coreRects = [];
     if (deck.carriedBy && deck.carriedBy.length > 0) {
-      // Sample over the deck ∩ the body that carries it: the jetty lip that
-      // oversails the wall is authored standoff with deliberately no mesh under
-      // it, and sampling it would be a false red.
       const carriers = deck.carriedBy.map((id) => massById.get(id)).filter(Boolean);
-      if (carriers.length > 0) {
+      const supports = [];
+      for (const m of carriers) {
+        const surrounds =
+          deckRect.minX < m.rect.minX && deckRect.maxX > m.rect.maxX &&
+          deckRect.minZ < m.rect.minZ && deckRect.maxZ > m.rect.maxZ;
+        const rises = m.landable === false && Number.isFinite(m.topY) && m.topY > deck.y + ALIGN_BAND_M;
+        if (surrounds && rises) coreRects.push({ ...m.rect });
+        else supports.push(m);
+      }
+      // Sample over the deck ∩ the body that carries it from beneath: the jetty
+      // lip that oversails the wall is authored standoff with deliberately no
+      // mesh under it, and sampling it would be a false red. (Rising cores are
+      // excluded from this clip — they do not carry the deck from beneath.)
+      if (supports.length > 0) {
         const cu = {
-          minX: Math.min(...carriers.map((m) => m.rect.minX)),
-          maxX: Math.max(...carriers.map((m) => m.rect.maxX)),
-          minZ: Math.min(...carriers.map((m) => m.rect.minZ)),
-          maxZ: Math.max(...carriers.map((m) => m.rect.maxZ)),
+          minX: Math.min(...supports.map((m) => m.rect.minX)),
+          maxX: Math.max(...supports.map((m) => m.rect.maxX)),
+          minZ: Math.min(...supports.map((m) => m.rect.minZ)),
+          maxZ: Math.max(...supports.map((m) => m.rect.maxZ)),
         };
         const clipped = intersectRect(rect, cu);
         if (rectValid(clipped)) { rect = clipped; footprintNote = "over carrier"; }
@@ -621,6 +655,8 @@ function enumerateAffordances({ level, compiled }) {
       section: deck.section,
       h: deck.y,
       rect,
+      deckRect,
+      coreRects,
       carriedBy: deck.carriedBy ?? [],
       note: footprintNote,
     });
@@ -644,6 +680,9 @@ function enumerateAffordances({ level, compiled }) {
   //    authored ascent, plus a face to go up.
   for (const climb of level.climbs) {
     const destY = compiled.surfaceY(climb.onto);
+    const ontoMass = massById.get(climb.onto);
+    const ontoDeck = compiled.deckById?.get(climb.onto);
+    const ontoRect = ontoMass ? { ...ontoMass.rect } : ontoDeck ? { ...ontoDeck.rect } : null;
     affordances.push({
       kind: "CLIMB_TO",
       id: climb.id,
@@ -651,6 +690,7 @@ function enumerateAffordances({ level, compiled }) {
       h: destY,
       rect: { ...climb.rect },
       onto: climb.onto,
+      ontoRect,
       footY: (climb.standMinY + climb.standMaxY) / 2,
       unresolved: destY === null,
     });
@@ -700,13 +740,46 @@ async function run(options) {
       continue;
     }
     const candidates = placed.filter((pl) => pl.record.status === "OK" && placedAabbOverlapsColumn(pl.record, aff.rect, aff.h));
-    const result = sampleSurface(candidates, aff.rect, aff.h);
+    // Annulus decks: the deck surrounds a solid rising core (a tower shaft, a
+    // steeple lantern). The standable walkway is the RING around that core, so
+    // the core footprint is punched out of the sample — a hole in the walkway,
+    // not a shortfall of it. A genuinely missing ring still reads red, because
+    // the ring itself is what is now sampled.
+    const excludeRects = aff.kind === "DECK" && aff.coreRects && aff.coreRects.length ? aff.coreRects : null;
+    let result = sampleSurface(candidates, aff.rect, aff.h, excludeRects ? { excludeRects } : {});
+    let sampledRect = aff.rect;
+    let modelNote = excludeRects ? "ring around a solid rising core" : "";
     let face = null;
     if (aff.kind === "CLIMB_TO" && aff.footY !== undefined) {
       face = sampleFace(candidates, aff.rect, aff.footY, aff.h);
     }
-    const verdict = severityOf(aff.kind, result);
-    rows.push({ ...aff, result, face, verdict, candidateAssets: [...new Set(candidates.map((c) => c.asset))] });
+    let verdict = severityOf(aff.kind, result);
+
+    // Offset / mantle climbs: the body does not rise straight up — it pulls up
+    // onto an arrival surface that is laterally offset from where it stands (a
+    // buttress top set back from the wall the player faces). The standing
+    // footprint then samples the ground short of the ledge and reads a false
+    // miss. When the standing-footprint sample is red AND the ascent's own
+    // `onto` target genuinely presents a surface where the body arrives, re-judge
+    // on that arrival footprint. A missing arrival surface still reads red, so
+    // this only forgives an offset, never an absent ledge.
+    if (aff.kind === "CLIMB_TO" && verdict.rank >= 2 && aff.ontoRect) {
+      const arrival = intersectRect(aff.rect, aff.ontoRect);
+      if (rectValid(arrival)) {
+        const arrivalCands = placed.filter((pl) => pl.record.status === "OK" && placedAabbOverlapsColumn(pl.record, arrival, aff.h));
+        const arrivalResult = sampleSurface(arrivalCands, arrival, aff.h);
+        const arrivalVerdict = severityOf(aff.kind, arrivalResult);
+        if (arrivalVerdict.rank < verdict.rank) {
+          result = arrivalResult;
+          verdict = arrivalVerdict;
+          sampledRect = arrival;
+          modelNote = "arrival offset from standing footprint (mantle)";
+        }
+      }
+    }
+
+    if (modelNote) verdict = { ...verdict, reason: `${verdict.reason} [${modelNote}]` };
+    rows.push({ ...aff, rect: sampledRect, result, face, verdict, candidateAssets: [...new Set(candidates.map((c) => c.asset))] });
   }
 
   return { rows, rampStrips, loadStatus, placedCount: placements.length, options };
@@ -926,9 +999,86 @@ function selfTest() {
       `rotated cov=${(rotated.coverageBand * 100).toFixed(0)}% delta=${rotated.medianDelta?.toFixed(3)}m; unrotated finds ${(unrotated.coverageAny * 100).toFixed(0)}%`);
   }
 
+  // ------------------------------------------------------------ shape models
+  // The two selftests above prove the ray-cast reads a flat top honestly. These
+  // prove the two SHAPE models the sampler must not misjudge — and, in both
+  // directions, that the correction never manufactures a pass over geometry that
+  // is genuinely absent or short.
+  const placeBoxTris = (sx, sy, sz, cx, cz) => {
+    const f = join(dir, `syn_${sx}_${sy}_${sz}_${cx}_${cz}.glb`);
+    writeFileSync(f, boxGlb({ sx, sy, sz }));
+    const d = glbDocument(readFileSync(f));
+    const t0 = staticTriangles(d).tris;
+    const bb = triBounds(t0);
+    const map = placementMapper({ fit: "PROP", size: [sx, sy, sz], pos: [cx, 0, cz], yaw: 0 }, bb.min, bb.max);
+    return t0.map((tr) => [map(tr[0]), map(tr[1]), map(tr[2])]);
+  };
+  const cand = (tris) => ({ asset: "syn", record: { tris, ...triBounds(tris) } });
+
+  // Case 7 — ANNULUS (ring deck around a rising core). A ring surface at 3.0m
+  // (outer 8x8, a 4x4 hole in the middle) with a SOLID CORE box rising through
+  // that hole to 6.0m. This is the tower plinth / steeple crockets shape.
+  {
+    const ring = [
+      placeBoxTris(8, 3, 2, 0, -3), // north strip, top at 3.0
+      placeBoxTris(8, 3, 2, 0, 3), // south strip
+      placeBoxTris(2, 3, 4, -3, 0), // west strip
+      placeBoxTris(2, 3, 4, 3, 0), // east strip
+    ].map(cand);
+    const core = cand(placeBoxTris(4, 6, 4, 0, 0)); // rises to 6.0, no top at 3.0
+    const all = [...ring, core];
+    const deckRect = { minX: -4, maxX: 4, minZ: -4, maxZ: 4 };
+    const coreRect = { minX: -2, maxX: 2, minZ: -2, maxZ: 2 };
+
+    // The flat clip to the carrier core reads a false miss: the core is solid
+    // rising geometry with nothing standable at the plane.
+    const clip = sampleSurface(all, coreRect, 3.0);
+    check("annulus: clip to rising core reads a hole", clip.coverageBand < 0.1,
+      `core coverage@plane=${(clip.coverageBand * 100).toFixed(0)}%`);
+
+    // Judged on the ring (core punched out) it is a full, flat walkway.
+    const ring1 = sampleSurface(all, deckRect, 3.0, { excludeRects: [coreRect] });
+    check("annulus: ring (core excluded) is a full walk", ring1.coverageBand > 0.95 && Math.abs(ring1.medianDelta) < 0.05 && severityOf("DECK", ring1).rank === 0,
+      `ring coverage=${(ring1.coverageBand * 100).toFixed(0)}% delta=${ring1.medianDelta?.toFixed(3)}m verdict=${severityOf("DECK", ring1).label}`);
+
+    // BOTH-DIRECTIONS: a genuinely absent ring (only the core exists) must still
+    // read red after the core is excluded — the fix forgives the hole, never a
+    // missing walkway.
+    const empty = sampleSurface([core], deckRect, 3.0, { excludeRects: [coreRect] });
+    check("annulus: absent ring still reads red", empty.coverageBand < 0.05 && severityOf("DECK", empty).rank >= 3,
+      `coverage=${(empty.coverageBand * 100).toFixed(0)}% verdict=${severityOf("DECK", empty).label}`);
+  }
+
+  // Case 8 — OFFSET MANTLE (arrival laterally offset from the standing spot). A
+  // buttress top at 2.6m over z[0,2]; the player stands at z[1.5,4], mostly OFF
+  // the buttress and pulling up onto it. This is the D2->E_BUTTRESS shape.
+  {
+    const buttress = cand(placeBoxTris(4, 2.6, 2, 2, 1)); // footprint x[0,4] z[0,2], top 2.6
+    const climbRect = { minX: 0, maxX: 4, minZ: 1.5, maxZ: 4 };
+    const ontoRect = { minX: 0, maxX: 4, minZ: 0, maxZ: 2 };
+
+    // Sampled at the standing footprint it reads a false miss (the body is mostly
+    // over ground short of the ledge).
+    const standing = sampleSurface([buttress], climbRect, 2.6);
+    check("mantle: standing footprint reads a false miss", standing.coverageBand < 0.4 && severityOf("CLIMB_TO", standing).rank >= 2,
+      `standing coverage=${(standing.coverageBand * 100).toFixed(0)}% verdict=${severityOf("CLIMB_TO", standing).label}`);
+
+    // Sampled where the body arrives (climb ∩ onto) it is a full flat landing.
+    const arrival = sampleSurface([buttress], intersectRect(climbRect, ontoRect), 2.6);
+    check("mantle: arrival footprint is a full landing", arrival.coverageBand > 0.95 && severityOf("CLIMB_TO", arrival).rank === 0,
+      `arrival coverage=${(arrival.coverageBand * 100).toFixed(0)}% delta=${arrival.medianDelta?.toFixed(3)}m verdict=${severityOf("CLIMB_TO", arrival).label}`);
+
+    // BOTH-DIRECTIONS: a buttress built 2m short still reads red at the arrival —
+    // the fix forgives an offset, never a missing or low arrival surface.
+    const shortButtress = cand(placeBoxTris(4, 0.6, 2, 2, 1)); // top at 0.6, not 2.6
+    const arrivalShort = sampleSurface([shortButtress], intersectRect(climbRect, ontoRect), 2.6);
+    check("mantle: short arrival still reads red", arrivalShort.coverageBand < 0.05 && severityOf("CLIMB_TO", arrivalShort).rank >= 3,
+      `coverage@plane=${(arrivalShort.coverageBand * 100).toFixed(0)}% delta=${arrivalShort.medianDelta?.toFixed(3)}m verdict=${severityOf("CLIMB_TO", arrivalShort).label}`);
+  }
+
   rmSync(dir, { recursive: true, force: true });
   console.log(failed === 0
-    ? "\nworld-affordances selftest: OK (the ray-cast measures mesh height, and a short mesh reads short)"
+    ? "\nworld-affordances selftest: OK (the ray-cast measures mesh height, a short mesh reads short,\n  a ring is judged on its ring, and a mantle is judged where the body arrives)"
     : `\nworld-affordances selftest: FAIL (${failed} case(s))`);
   return failed;
 }
