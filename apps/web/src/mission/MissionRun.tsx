@@ -5,6 +5,7 @@ import {
   duelView,
   type MissionDuelReport,
 } from "./duelPort.js";
+import { MissionBeatPanel } from "./MissionBeatPanel.js";
 import { MissionEncounter } from "./MissionEncounter.js";
 import { MissionHud } from "./MissionHud.js";
 import { MissionResultPanel } from "./MissionResultPanel.js";
@@ -338,6 +339,14 @@ export function MissionRun(props: {
             attemptOrdinal={phase.ticket.attemptOrdinal}
             presentation={hud}
             onAbandon={() => setConfirming(true)}
+          />
+        )}
+        {hud?.beat && (
+          <MissionBeatPanel
+            beat={hud.beat}
+            inStance={hud.inBeatStance}
+            input={input}
+            reducedMotion={props.reducedMotion}
           />
         )}
         <MissionEncounter

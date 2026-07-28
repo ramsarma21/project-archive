@@ -241,6 +241,50 @@ export const DEFAULT_PASS_QUALITY = 0.7;
  */
 export const DEFAULT_TORN_QUALITY = 0.4;
 
+// ---- the reaction test -----------------------------------------------------
+//
+// M1's beat is a STORY MOMENT, not a skill check: the player is nailing a
+// handbill to the Liberty Tree in the dark with the watch out, and it should
+// feel like a tense, quick act of defiance that a first-time player passes
+// comfortably. The old anticipatory-timing chart (±33ms FLUSH windows) lived on
+// in `chart.ts` as the briefing's own description of the work, but the thing the
+// player actually does is now a REACTION test: flares come up on a holographic
+// panel one at a time, and the player clicks the lit one before it fades.
+//
+// Every number here is deliberately generous. Reaction — noticing a thing and
+// acting on it — has a ~250ms human floor, so a window has to be MUCH wider than
+// a rhythm window to be fair, and these are wider still. Nothing here is scaled
+// by a player, an attempt or a mode: one difficulty, offered to everybody, and
+// it is the bottom of the curve because this is mission one.
+
+/** Panel cells a flare can appear on. Six is a comfortable 3x2 cluster. */
+export const REACTION_CELL_COUNT = 6;
+
+/** Flares to strike over the whole act. Enough to feel like hammering, not a test. */
+export const REACTION_TARGET_COUNT = 6;
+
+/**
+ * How long a flare stays hittable, in ticks. 84 is 1.4 seconds — more than five
+ * times a trained reaction and a comfortable margin over an inattentive one, so
+ * a player who is looking at the panel connects every time and one who glances
+ * away still usually does. This is the "hit window" the mechanic is judged on,
+ * and it is wide by design: success comes from noticing, never from timing.
+ */
+export const REACTION_WINDOW_TICKS = 84;
+
+/** Dark gap after a flare resolves before the next appears. 0.3s to let the eye reset. */
+export const REACTION_GAP_TICKS = 18;
+
+/**
+ * Seeded variation on the gap, in ticks, so the rhythm is not a metronome the
+ * player can play with their eyes shut — the flare has to be genuinely reacted
+ * to. Drawn from `fieldRandom`, so it is replay-stable like everything else.
+ */
+export const REACTION_GAP_JITTER_TICKS = 12;
+
+/** Lead-in before the first flare, so the panel is read before it is played. 0.5s. */
+export const REACTION_LEAD_TICKS = 30;
+
 // ---- load-time guards ------------------------------------------------------
 
 /**

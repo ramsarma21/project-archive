@@ -33,7 +33,7 @@ const FRAME: MissionInputFrame = {
   crouchHeld: false,
   jumpBuffered: false,
   dashBuffered: false,
-  strikeBuffered: false,
+  hitCellBuffered: null,
   reducedMotion: false,
   flowEnabled: true,
 };

@@ -63,9 +63,7 @@ function run() {
 
   let pendingJump = false;
   let jumpCooldown = 0;
-  let beatStarted = false;
-  let dueTicks: number[] = [];
-  let dueIdx = 0;
+  const clickedFlares = new Set<number>();
 
   const encPhaseSeen = new Map<string, string>();
   let preHatch: any = null;
@@ -111,16 +109,22 @@ function run() {
 
     let moveX = 0;
     let moveZ = 1;
-    let doStrike = false;
+    let hitCell: number | null = null;
     const drivingBeat = objId === "post-the-handbill" && inStance();
     if (drivingBeat) {
       moveX = 0;
       moveZ = 0;
       runtime.motion = { ...runtime.motion, yaw: beatSpec.facingYaw };
-      if (!beatStarted) doStrike = true;
-      else {
-        const nextTick = runtime.clock.tick + 1;
-        if (dueIdx < dueTicks.length && nextTick >= dueTicks[dueIdx]!) doStrike = true;
+      const run = runtime.beat;
+      if (run && run.startedTick !== null) {
+        const offset = runtime.clock.tick - run.startedTick;
+        const live = run.schedule.targets.find(
+          (t) => !run.resolved[t.index] && offset >= t.spawnTick && offset <= t.expireTick,
+        );
+        if (live && !clickedFlares.has(live.index)) {
+          hitCell = live.cell;
+          clickedFlares.add(live.index);
+        }
       }
     } else if (standing) {
       const mark = markRead(standing.objective, p);
@@ -182,18 +186,12 @@ function run() {
       sprintHeld: !drivingBeat,
       crouchHeld: false,
       jumpBuffered: pendingJump,
-      strikeBuffered: doStrike,
+      hitCellBuffered: hitCell,
       reducedMotion: false,
       flowEnabled: true,
     };
     const step = stepMissionRuntime(runtime, frame);
     if (step.jumpConsumed) pendingJump = false;
-    if (step.strikeConsumed && !beatStarted && runtime.beat?.startedTick != null) {
-      beatStarted = true;
-      dueTicks = runtime.beat.chart.offsets.slice(1).map((o) => runtime.beat!.startedTick! + o);
-    } else if (step.strikeConsumed && beatStarted) {
-      dueIdx += 1;
-    }
 
     const np = runtime.motion.pos;
     const onBeam =

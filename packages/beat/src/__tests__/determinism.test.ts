@@ -1,29 +1,25 @@
 // Determinism, checked two ways: by replaying a run, and by reading the source.
 //
 // The netcode agent's replay and the PvP authority both depend on a simulation
-// being a pure function of (seed, tick stream). A single wall-clock read
-// anywhere in this package would break that quietly — the beat would still play,
-// and only a replay taken on a different machine would disagree.
+// being a pure function of (seed, tick stream). A single wall-clock read anywhere
+// in this package would break that quietly — the beat would still play, and only
+// a replay taken on a different machine would disagree.
 
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deriveChart } from "../chart.js";
+import { deriveSchedule } from "../schedule.js";
 import { m1NailStanceBeat } from "../m1NailStance.js";
 import { playBeat } from "./harness.js";
 
 const SPEC = m1NailStanceBeat();
 const SRC = dirname(dirname(fileURLToPath(import.meta.url)));
 
-const PLAN = {
-  armAt: 17,
-  offsets: [0, -3, 7, null, 2] as (number | null)[],
-  extraPresses: [10],
-};
+const PLAN = { dropped: [2], wrongCell: [4] };
 
-test("the same seed and the same presses replay exactly", () => {
+test("the same seed and the same play replay exactly", () => {
   for (const seed of [0, 5, 4242, 0xcafebabe]) {
     const first = playBeat(SPEC, seed, PLAN);
     const second = playBeat(SPEC, seed, PLAN);
@@ -33,28 +29,46 @@ test("the same seed and the same presses replay exactly", () => {
   }
 });
 
-test("re-entering the stance draws the same chart, so a chart cannot be fished for", () => {
+test("re-entering the stance draws the same schedule, so it cannot be fished for", () => {
   // Leaving and coming back must not re-roll. A player who could re-roll would
-  // simply leave until they drew a chart with its double at the front, and the
-  // skill expression would evaporate.
+  // simply leave until the flares fell somewhere easy, and the act would be free.
   const seed = 808;
   const abandoned = playBeat(SPEC, seed, {
-    armAt: 0,
-    offsets: [0, 0, 0, 0, 0],
-    leaveAt: 30,
+    leaveAt: deriveSchedule(SPEC.reaction, seed).targets[1]!.spawnTick + 1,
   });
   assert.equal(abandoned.outcome.abandoned, true);
-  const retried = deriveChart(SPEC.chart, seed);
-  assert.deepEqual(retried.cells, abandoned.chart.cells);
-  assert.deepEqual(retried.offsets, abandoned.chart.offsets);
+  const retried = deriveSchedule(SPEC.reaction, seed);
+  assert.deepEqual(retried.targets, abandoned.schedule.targets);
 });
 
-test("the chart is what makes two seeds play differently", () => {
-  // The same press plan against two seeds produces different results, which is
-  // the property that makes a retry a fresh test of skill rather than a repeat.
-  const a = playBeat(SPEC, 101, PLAN);
-  const b = playBeat(SPEC, 202, PLAN);
-  assert.notDeepEqual(a.chart.cells, b.chart.cells);
+test("the schedule is what makes two seeds play differently", () => {
+  const a = deriveSchedule(SPEC.reaction, 101);
+  const b = deriveSchedule(SPEC.reaction, 202);
+  const cellsA = a.targets.map((target) => target.cell).join(",");
+  const cellsB = b.targets.map((target) => target.cell).join(",");
+  assert.notEqual(cellsA, cellsB, "two seeds drew the same flares");
+});
+
+test("the same seed always draws the same flares, cell for cell and tick for tick", () => {
+  for (const seed of [0, 1, 99, 4242]) {
+    assert.deepEqual(
+      deriveSchedule(SPEC.reaction, seed).targets,
+      deriveSchedule(SPEC.reaction, seed).targets,
+    );
+  }
+});
+
+test("a flare never lands on the cell the one before it used", () => {
+  for (const seed of [0, 1, 2, 3, 17, 88, 404, 2025]) {
+    const targets = deriveSchedule(SPEC.reaction, seed).targets;
+    for (let index = 1; index < targets.length; index++) {
+      assert.notEqual(
+        targets[index]!.cell,
+        targets[index - 1]!.cell,
+        `seed ${seed}: flare ${index} repeated the previous cell`,
+      );
+    }
+  }
 });
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
@@ -68,9 +82,6 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
 }
 
 test("no wall clock and no unseeded randomness anywhere in the package", () => {
-  // scripts/check-boundaries.mjs already refuses Math.random repo-wide. The
-  // clock reads are this package's own promise and nothing enforces them from
-  // outside, so they are enforced from inside.
   const banned: Array<[RegExp, string]> = [
     [/\bDate\s*\.\s*now\s*\(/, "Date.now"],
     [/\bperformance\s*\.\s*now\s*\(/, "performance.now"],
@@ -84,7 +95,6 @@ test("no wall clock and no unseeded randomness anywhere in the package", () => {
   for (const file of sourceFiles(SRC)) {
     const lines = readFileSync(file, "utf8").split("\n");
     lines.forEach((line, index) => {
-      // Comments talk about these on purpose; only code counts.
       const code = line.replace(/\/\/.*$/, "").replace(/^\s*\*.*$/, "");
       for (const [pattern, name] of banned) {
         if (pattern.test(code)) {
@@ -96,12 +106,11 @@ test("no wall clock and no unseeded randomness anywhere in the package", () => {
   assert.deepEqual(offences, []);
 });
 
-test("every timing constant is an integer number of ticks", () => {
-  // A fractional window would round differently at two call sites, and the
-  // difference would only ever show up as a replay that disagrees by one frame.
-  const chart = deriveChart(SPEC.chart, 1);
-  for (const offset of chart.offsets) {
-    assert.equal(Number.isInteger(offset), true, `${offset} is not a whole tick`);
+test("every schedule tick is an integer number of ticks", () => {
+  const schedule = deriveSchedule(SPEC.reaction, 1);
+  for (const target of schedule.targets) {
+    assert.equal(Number.isInteger(target.spawnTick), true, `${target.spawnTick} is fractional`);
+    assert.equal(Number.isInteger(target.expireTick), true, `${target.expireTick} is fractional`);
   }
   assert.equal(Number.isInteger(SPEC.verb.settleTicks), true);
 });

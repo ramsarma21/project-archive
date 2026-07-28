@@ -1,36 +1,25 @@
-// The skill ceiling, as a measurement rather than an intention.
+// Difficulty, as a measurement rather than an intention.
 //
-// The owner's standard is that only genuinely gifted players clear things first
-// try, and that getting better is possible and worth doing. Those are two
-// separate claims and they are tested separately: that the top of the ladder is
-// hard to reach, and that every rung below it is strictly better than the rung
-// under it — in the sheet AND in how much attention it costs.
+// M1's beat is a story moment on mission one: it must be VERY doable. So the
+// claims here are the opposite of a skill ceiling — that a player who is paying
+// attention passes comfortably, that missing one flare is never fatal, and that
+// the stealth coupling still holds so a fumble is heard even though it does not
+// end the run.
 
 import assert from "node:assert/strict";
 import test from "node:test";
 import { STEALTH_TUNING } from "../engine.js";
-import { CELL_TICKS, deriveChart } from "../chart.js";
-import {
-  FLUSH_WINDOW_TICKS,
-  GLANCING_WINDOW_TICKS,
-  TRUE_WINDOW_TICKS,
-} from "../tuning.js";
+import { deriveSchedule } from "../schedule.js";
 import { m1NailStanceBeat } from "../m1NailStance.js";
-import { playBeat, uniformPlan } from "./harness.js";
-import type { BeatGrade } from "../judge.js";
+import { playBeat } from "./harness.js";
 
 const SPEC = m1NailStanceBeat();
 const SEEDS = [3, 17, 88, 404, 2025];
-const GRADE_ORDER: Record<BeatGrade, number> = {
-  TORN: 0,
-  RAGGED: 1,
-  CLEAN: 2,
-  SILENT: 3,
-};
+const TARGETS = SPEC.reaction.targetCount;
 
 /** Total audibility a run would deliver to a listener standing at the tree. */
-function attentionCost(seed: number, offsetTicks: number): number {
-  const played = playBeat(SPEC, seed, uniformPlan(SPEC, seed, offsetTicks));
+function attentionCost(seed: number, dropped: readonly number[]): number {
+  const played = playBeat(SPEC, seed, { dropped });
   let total = 0;
   for (const event of played.noise) {
     if (event.intensity < STEALTH_TUNING.minAudibleNoise) continue;
@@ -39,174 +28,103 @@ function attentionCost(seed: number, offsetTicks: number): number {
   return total;
 }
 
-test("getting better is strictly worth it, on the sheet and in attention", () => {
+test("striking every flare posts the sheet SILENT and is heard by nobody", () => {
   for (const seed of SEEDS) {
-    let previousGrade = -1;
-    let previousCost = Number.POSITIVE_INFINITY;
-    // Worst to best, so both curves should be monotonic in the same direction.
-    for (const offset of [GLANCING_WINDOW_TICKS, TRUE_WINDOW_TICKS, FLUSH_WINDOW_TICKS, 0]) {
-      const played = playBeat(SPEC, seed, uniformPlan(SPEC, seed, offset));
-      const grade = GRADE_ORDER[played.outcome.grade];
-      assert.ok(
-        grade >= previousGrade,
-        `seed ${seed}: tightening to ${offset} ticks made the grade worse`,
-      );
-      const cost = attentionCost(seed, offset);
-      assert.ok(
-        cost <= previousCost,
-        `seed ${seed}: tightening to ${offset} ticks cost MORE attention (${cost} vs ${previousCost})`,
-      );
-      previousGrade = grade;
-      previousCost = cost;
-    }
-    assert.equal(previousCost, 0, `seed ${seed}: a perfect run still made a sound`);
-  }
-});
-
-test("the top of the ladder is only reachable inside two ticks", () => {
-  // Thirty-three milliseconds either side. One tick outside it and the run is
-  // CLEAN rather than SILENT, on every seed.
-  for (const seed of SEEDS) {
-    assert.equal(playBeat(SPEC, seed, uniformPlan(SPEC, seed, 0)).outcome.grade, "SILENT");
-    assert.equal(
-      playBeat(SPEC, seed, uniformPlan(SPEC, seed, FLUSH_WINDOW_TICKS)).outcome.grade,
-      "SILENT",
-    );
-    assert.equal(
-      playBeat(SPEC, seed, uniformPlan(SPEC, seed, FLUSH_WINDOW_TICKS + 1)).outcome.grade,
-      "CLEAN",
-    );
-  }
-});
-
-/** Every judged beat centred, except the ones named, which are never swung at. */
-function droppingPlan(seed: number, dropped: readonly number[]) {
-  const judged = deriveChart(SPEC.chart, seed).judgedBeats;
-  return {
-    offsets: Array.from({ length: judged }, (_, index) =>
-      dropped.includes(index) ? null : 0,
-    ),
-  };
-}
-
-test("one lapse in thirteen strokes does not cost the mission", () => {
-  // The severity rule. A three-minute traversal must not be discarded by one
-  // dropped stroke: the sheet goes up crooked, the player is heard, and the run
-  // continues.
-  //
-  // The longer chart makes this rule MORE important rather than less. Thirteen
-  // chances to drop one is more chances than five, so a terminal failure that
-  // could be reached by a single lapse would now be reached routinely — and it
-  // is not: TORN needs most of the chart missed, which is a player who did not
-  // play rather than a player who slipped.
-  for (const seed of SEEDS) {
-    const oneDropped = playBeat(SPEC, seed, droppingPlan(seed, [6]));
-    assert.equal(oneDropped.outcome.score.slips, 1, `seed ${seed}`);
-    assert.equal(oneDropped.outcome.grade, "RAGGED", `seed ${seed}`);
-    assert.equal(oneDropped.outcome.posted, true, `seed ${seed}: one lapse tore the sheet`);
-
-    const judged = deriveChart(SPEC.chart, seed).judgedBeats;
-    const played = [0, 3, 7, 11];
-    const mostlyDropped = playBeat(
-      SPEC,
-      seed,
-      droppingPlan(
-        seed,
-        Array.from({ length: judged }, (_, index) => index).filter(
-          (index) => !played.includes(index),
-        ),
-      ),
-    );
-    assert.equal(mostlyDropped.outcome.grade, "TORN", `seed ${seed}`);
-    assert.equal(mostlyDropped.outcome.posted, false);
-  }
-});
-
-test("a player who connects with everything is heard but not caught", () => {
-  // The GLANCING floor is the mechanic's promise to a thirteen-year-old on a
-  // trackpad: swing at roughly the right moment on every stroke and the sheet
-  // goes up. It costs attention — five audible strokes is most of a suspicion
-  // bar — and it costs the grade, and it does not cost the attempt.
-  for (const seed of SEEDS) {
-    const played = playBeat(SPEC, seed, uniformPlan(SPEC, seed, GLANCING_WINDOW_TICKS));
+    const played = playBeat(SPEC, seed);
+    assert.equal(played.outcome.grade, "SILENT", `seed ${seed}`);
     assert.equal(played.outcome.posted, true);
-    assert.equal(played.outcome.grade, "RAGGED");
-    assert.ok(
-      attentionCost(seed, GLANCING_WINDOW_TICKS) > STEALTH_TUNING.thresholds.curious,
-      `seed ${seed}: sloppy play went completely unnoticed`,
-    );
+    assert.equal(attentionCost(seed, []), 0, `seed ${seed}: a clean run was heard`);
   }
 });
 
-test("the chart's spike is what separates the ladder", () => {
-  // Every chart's closing bar carries two DOUBLEs — pairs of strokes two hundred
-  // milliseconds apart — so no seed lets a player reach the top without playing
-  // them. That is the difference between a ceiling and a formality.
-  for (const seed of SEEDS) {
-    const played = playBeat(SPEC, seed, uniformPlan(SPEC, seed, 0));
-    const doubles = played.chart.cells.filter((cell) => cell === "DOUBLE").length;
-    assert.ok(doubles >= 2, `seed ${seed} drew a chart with ${doubles} spikes in it`);
-  }
-  assert.equal(CELL_TICKS.DOUBLE, 12, "the spike is no longer a 200ms pair");
+test("the reaction window is generous — well over a second on every flare", () => {
+  // A trained reaction is ~250ms; the window is more than five times that, which
+  // is the whole reason this is doable. Pinned so a later tightening is a choice.
+  assert.ok(
+    SPEC.reaction.windowTicks >= 72,
+    `the window is ${SPEC.reaction.windowTicks} ticks (${(SPEC.reaction.windowTicks / 60).toFixed(2)}s); a reaction test needs a comfortable one`,
+  );
 });
 
-test("a longer chart costs more attention when it is played badly and none when it is not", () => {
-  // THE COUPLING, RE-MEASURED AT THE NEW LENGTH, because tripling the strokes
-  // triples the number of noises a sloppy run makes and that is the one thing
-  // this rework could have broken without a single existing test noticing.
-  //
-  // Both ends of the promise survive exactly, and they survive for structural
-  // reasons rather than by luck. A centred stroke is authored below the field's
-  // audibility floor, so a flawless run is silent at ANY length. And noise-built
-  // suspicion is capped below certainty by the field itself, so a run that is
-  // mashed from end to end brings a watcher over and still cannot complete a
-  // detection — at five strokes or at thirteen.
-  //
-  // What genuinely changed is the middle: a run played entirely TRUE now makes
-  // thirteen small noises instead of five, so somebody standing under the tree
-  // for the whole chart would hear enough to come and look. The price of one
-  // mistake is untouched; there are simply more chances to make one, which is
-  // what a longer commitment means and is the reason it is worth choosing a
-  // patrol gap for.
-  const worstCase = STEALTH_TUNING.noiseSuspicionCeiling;
+test("missing one flare is never fatal — the sheet goes up crooked", () => {
   for (const seed of SEEDS) {
-    assert.equal(attentionCost(seed, 0), 0, `seed ${seed}: a flawless run was heard`);
-    const mashed = playBeat(SPEC, seed, {
-      offsets: new Array(deriveChart(SPEC.chart, seed).judgedBeats).fill(null),
-    });
-    assert.equal(mashed.outcome.loudestIntensity < 1, true);
+    const played = playBeat(SPEC, seed, { dropped: [2] });
+    assert.equal(played.outcome.score.slips, 1, `seed ${seed}`);
+    assert.equal(played.outcome.grade, "RAGGED", `seed ${seed}`);
+    assert.equal(played.outcome.posted, true, `seed ${seed}: one miss tore the sheet`);
+  }
+});
+
+test("a player can miss almost half the flares and still post", () => {
+  // "Very doable" as a boundary: even a distracted first-timer who connects with
+  // more than half the flares gets the handbill up. Only near-total failure tears.
+  const halfMinusOne = Math.floor(TARGETS / 2) - 1; // miss this many, hit the rest
+  const dropped = Array.from({ length: halfMinusOne }, (_, index) => index);
+  for (const seed of SEEDS) {
+    const played = playBeat(SPEC, seed, { dropped });
+    assert.equal(played.outcome.posted, true, `seed ${seed}: missing ${halfMinusOne} tore it`);
+  }
+});
+
+test("only missing most of the act tears the sheet", () => {
+  // TORN is a player who did not play, not a player who slipped: nearly every
+  // flare has to go by unstruck.
+  const dropMost = Array.from({ length: TARGETS - 1 }, (_, index) => index);
+  for (const seed of SEEDS) {
+    const played = playBeat(SPEC, seed, { dropped: dropMost });
+    assert.equal(played.outcome.grade, "TORN", `seed ${seed}`);
+    assert.equal(played.outcome.posted, false);
+  }
+});
+
+test("a fumble is heard but cannot get the player caught by itself", () => {
+  // The stealth coupling, intact: a missed flare is loud, and the field caps what
+  // noise alone can build below certainty, so a botched act brings a watcher over
+  // and hands the rest to his eyes.
+  for (const seed of SEEDS) {
+    const missAll = Array.from({ length: TARGETS }, (_, index) => index);
+    const mashed = playBeat(SPEC, seed, { dropped: missAll });
     assert.ok(
       mashed.outcome.loudestIntensity >= STEALTH_TUNING.minAudibleNoise,
-      `seed ${seed}: dropping every stroke was silent`,
+      `seed ${seed}: dropping every flare was silent`,
     );
+    assert.ok(mashed.outcome.loudestIntensity < 1);
     assert.ok(
-      worstCase < STEALTH_TUNING.thresholds.alerted,
-      "the field would let a botched chart complete a detection by itself",
+      STEALTH_TUNING.noiseSuspicionCeiling < STEALTH_TUNING.thresholds.alerted,
+      "the field would let a botched act complete a detection by itself",
     );
   }
 });
 
-test("mashing is never a strategy", () => {
-  // A player who cannot read the chart might try hitting the key constantly.
-  // Nothing stops them connecting with beats that way, and the noise is what
-  // makes it a terrible idea: every swing that misses is the loudest thing the
-  // verb can produce.
-  const seed = 17;
-  const perfect = playBeat(SPEC, seed, uniformPlan(SPEC, seed, 0));
-  const chart = perfect.chart;
-  const extra: number[] = [];
-  for (let tick = 4; tick < chart.spanTicks; tick += 4) {
-    if (chart.offsets.includes(tick)) continue;
-    extra.push(tick);
+test("getting fewer flares wrong is strictly quieter", () => {
+  for (const seed of SEEDS) {
+    const clean = attentionCost(seed, []);
+    const one = attentionCost(seed, [1]);
+    const two = attentionCost(seed, [1, 3]);
+    assert.equal(clean, 0, `seed ${seed}: a clean run made a sound`);
+    assert.ok(one > clean, `seed ${seed}: a miss cost no attention`);
+    assert.ok(two > one, `seed ${seed}: two misses were no louder than one`);
   }
-  const mashed = playBeat(SPEC, seed, {
-    armAt: 0,
-    offsets: chart.offsets.slice(1).map(() => 0),
-    extraPresses: extra,
-  });
-  assert.ok(mashed.outcome.score.strays > 0);
+});
+
+test("clicking the wrong cell is a stray, and it is louder than a clean strike", () => {
+  const seed = 17;
+  const played = playBeat(SPEC, seed, { wrongCell: [2] });
+  assert.ok(played.outcome.score.strays >= 1);
   assert.ok(
-    mashed.outcome.score.quality < perfect.outcome.score.quality,
-    "mashing scored as well as playing",
+    played.outcome.loudestIntensity >= STEALTH_TUNING.minAudibleNoise,
+    "a stray went unheard",
   );
+});
+
+test("every seed's beat costs the same worst case, so the budget is a price", () => {
+  // The span varies a little with the seeded gap jitter, but the reserved worst
+  // case is fixed, which is what the pacing budget rests on.
+  const worst = deriveSchedule(SPEC.reaction, 0);
+  for (let seed = 0; seed < 200; seed++) {
+    const schedule = deriveSchedule(SPEC.reaction, seed);
+    assert.equal(schedule.targets.length, TARGETS, `seed ${seed} drew a different count`);
+    assert.ok(schedule.spanTicks > 0);
+    assert.ok(schedule.spanTicks <= worst.spanTicks + SPEC.reaction.gapJitterTicks * TARGETS);
+  }
 });

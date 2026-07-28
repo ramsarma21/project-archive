@@ -260,7 +260,7 @@ function MissionDriver(props: {
       crouchHeld: input.crouchHeld,
       jumpBuffered: input.jumpBuffered,
       dashBuffered: input.dashBuffered,
-      strikeBuffered: input.strikeBuffered,
+      hitCellBuffered: input.beatHitCell,
       reducedMotion: props.reducedMotion,
       flowEnabled: !props.paused,
     });
@@ -269,16 +269,16 @@ function MissionDriver(props: {
     // was clamped to nothing — must not swallow the press.
     if (step.jumpConsumed) input.jumpBuffered = false;
     if (step.dashConsumed) input.dashBuffered = false;
-    if (step.strikeConsumed) input.strikeBuffered = false;
+    if (step.hitConsumed) input.beatHitCell = null;
 
     // A perspective encounter that owns input or locks the player drops any
-    // buffered one-shot, so a jump, dash or strike pressed just before the stop
-    // cannot fire on release. The simulation already ignores them for the ticks
-    // it runs locked; this clears the browser-side latch the sim cannot reach.
+    // buffered one-shot, so a jump, dash or panel strike pressed just before the
+    // stop cannot fire on release. The simulation already ignores them for the
+    // ticks it runs locked; this clears the browser-side latch the sim cannot reach.
     if (runtime.encounterOwnsInput || runtime.encounterLocked) {
       input.jumpBuffered = false;
       input.dashBuffered = false;
-      input.strikeBuffered = false;
+      input.beatHitCell = null;
     }
 
     // The throw is aim-and-release. Aimed down the LOOK, not the body's facing:
@@ -310,13 +310,13 @@ function MissionDriver(props: {
     // at a rate a person can read. Sixty React updates a second to draw a clock
     // that changes ten times is the expensive way to do nothing.
     //
-    // While the beat is running it is exactly the right way, though. The read is
-    // one mark converging on one line and the windows are two ticks wide at the
-    // top end, so a mark that moves in eight-tick jumps is not a read at all —
-    // it is a slideshow the player is asked to hit. Full rate for the few
-    // seconds a chart lasts is the cheapest honest answer.
-    const striking = runtime.beat?.phase === "STRIKING";
-    const slice = striking ? runtime.ticks : Math.floor(runtime.ticks / 8);
+    // While the beat is running it is exactly the right way, though. A flare
+    // lights and fades over a second or two, and the countdown ring on it wants
+    // to move smoothly, so the panel is sampled every tick for the few seconds
+    // the act lasts rather than eight times a second.
+    const beatLive =
+      runtime.beat?.phase === "ACTIVE" || runtime.beat?.phase === "SETTLING";
+    const slice = beatLive ? runtime.ticks : Math.floor(runtime.ticks / 8);
     if (slice !== sampledAt.current) {
       sampledAt.current = slice;
       props.onSample(missionPresentation(runtime));

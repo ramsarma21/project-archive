@@ -3,22 +3,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createBeatRun, stepBeat } from "../machine.js";
-import { defineChart, deriveChart, evenly, figure } from "../chart.js";
 import { strikeIntensity } from "../noise.js";
-import { BAR_TICKS, GLANCING_WINDOW_TICKS, HIT_WINDOW_TICKS } from "../tuning.js";
+import { deriveSchedule } from "../schedule.js";
 import { m1NailStanceBeat } from "../m1NailStance.js";
-import type { BeatSpec } from "../spec.js";
-import { perfectPlan, playBeat, uniformPlan } from "./harness.js";
+import { perfectPlan, playBeat } from "./harness.js";
 
 const SPEC = m1NailStanceBeat();
 
-test("nothing happens until the player decides to start", () => {
-  // The beat sits at a fixed spot inside a live stealth field. Arming it is the
-  // player's decision, and it is the decision that makes this a stealth beat
-  // rather than a cutscene with buttons.
+test("nothing arms until the player is in the stance", () => {
+  // A player passing through the stance radius on the way down has not started
+  // the act; being in position and facing the work is what arms it.
   let run = createBeatRun(SPEC, 7);
-  for (let tick = 0; tick < 600; tick++) {
-    const step = stepBeat(run, { tick, strike: false, inStance: true });
+  for (let tick = 0; tick < 120; tick++) {
+    const step = stepBeat(run, { tick, hitCell: null, inStance: false });
     run = step.run;
     assert.equal(step.noise.length, 0);
     assert.equal(step.outcome, null);
@@ -27,128 +24,86 @@ test("nothing happens until the player decides to start", () => {
   assert.equal(run.startedTick, null);
 });
 
-test("a stroke outside the stance does not arm the beat", () => {
-  let run = createBeatRun(SPEC, 7);
-  const step = stepBeat(run, { tick: 4, strike: true, inStance: false });
-  run = step.run;
-  assert.equal(run.phase, "STANCE");
-  assert.equal(step.events.length, 0);
-});
-
-test("the opening stroke starts the chart and cannot be mistimed", () => {
-  const run = createBeatRun(SPEC, 7);
-  const step = stepBeat(run, { tick: 40, strike: true, inStance: true });
-  assert.equal(step.run.phase, "STRIKING");
+test("reaching the stance arms the run and it makes no sound doing so", () => {
+  const step = stepBeat(createBeatRun(SPEC, 7), { tick: 40, hitCell: null, inStance: true });
+  assert.equal(step.run.phase, "ACTIVE");
   assert.equal(step.run.startedTick, 40);
-  assert.deepEqual(
-    step.events.map((event) => event.type),
-    ["armed"],
-  );
-  // It makes a noise the player hears and the field does not: there was nothing
-  // to mistime, so there is nothing to charge for.
-  assert.equal(step.noise.length, 1);
-  assert.equal(step.noise[0]!.intensity, strikeIntensity("FLUSH", SPEC.verb));
+  assert.deepEqual(step.events.map((event) => event.type), ["armed"]);
+  assert.equal(step.noise.length, 0);
 });
 
-test("the whole commitment is known the moment the player starts", () => {
-  // This is what lets the HUD show the player how long a chart will take before
-  // they spend a patrol gap on it.
-  const chart = deriveChart(SPEC.chart, 7);
-  const step = stepBeat(createBeatRun(SPEC, 7), {
-    tick: 40,
-    strike: true,
-    inStance: true,
-  });
-  assert.equal(
-    step.run.resolveAtTick,
-    40 + chart.spanTicks + HIT_WINDOW_TICKS + SPEC.verb.settleTicks,
-  );
+test("the whole commitment is known the moment the run arms", () => {
+  const schedule = deriveSchedule(SPEC.reaction, 7);
+  const step = stepBeat(createBeatRun(SPEC, 7), { tick: 40, hitCell: null, inStance: true });
+  assert.equal(step.run.resolveAtTick, 40 + schedule.spanTicks + SPEC.verb.settleTicks);
 });
 
-test("a flawless run resolves SILENT and never emits an audible noise", () => {
+test("striking every lit flare resolves SILENT and makes no audible sound", () => {
   for (const seed of [3, 19, 77, 501]) {
-    const played = playBeat(SPEC, seed, perfectPlan(SPEC, seed));
+    const played = playBeat(SPEC, seed, perfectPlan());
     assert.equal(played.outcome.grade, "SILENT", `seed ${seed}`);
     assert.equal(played.outcome.posted, true);
-    assert.equal(played.outcome.score.flush, played.chart.judgedBeats);
+    assert.equal(played.outcome.score.flush, SPEC.reaction.targetCount);
     assert.equal(played.outcome.score.strays, 0);
     for (const event of played.noise) {
       assert.equal(
         event.intensity,
         strikeIntensity("FLUSH", SPEC.verb),
-        `seed ${seed} produced a noise louder than a centred stroke`,
+        `seed ${seed} produced a noise louder than a clean strike`,
       );
     }
   }
 });
 
-test("every stroke and every slip makes exactly one noise", () => {
-  // The field's suspicion model treats a noise as an impulse rather than a rate,
-  // so a caller that repeated an event across ticks would multiply its effect by
-  // the frame count. This is that contract, checked.
-  const seed = 23;
-  const chart = deriveChart(SPEC.chart, seed);
-  const plan = { offsets: [0, 4, null, 8, 0] as (number | null)[] };
-  const played = playBeat(SPEC, seed, plan);
-  const strokes = played.events.filter(
+test("a flare left to fade slips, and only after its window closes", () => {
+  const seed = 31;
+  const played = playBeat(SPEC, seed, { dropped: [2] });
+  const slip = played.events.find((event) => event.type === "slipped");
+  assert.ok(slip, "the unstruck flare never faded");
+  assert.equal(slip!.beatIndex, 2);
+  assert.equal(played.outcome.score.slips, 1);
+  assert.equal(played.outcome.grade, "RAGGED");
+  assert.equal(played.outcome.posted, true, "one lapse does not tear the sheet");
+});
+
+test("clicking the wrong cell is a stray and does not consume the live flare", () => {
+  // Punishing one fumble twice would make a panicked misclick catastrophic. A
+  // wrong-cell click costs noise and a dent in the average; the flare it missed
+  // then fades on its own.
+  const seed = 55;
+  const played = playBeat(SPEC, seed, { wrongCell: [1] });
+  assert.equal(played.outcome.score.strays, 1);
+  assert.equal(played.outcome.score.slips, 1, "the flare struck-at-wrongly still faded");
+  assert.ok(played.outcome.grade !== "SILENT", "a stray was free");
+});
+
+test("clicking in the dark gap between flares does nothing", () => {
+  // A reaction test is about the flares. A twitchy finger between prompts must
+  // not accrue strays, or a nervous player fails for being nervous.
+  let run = createBeatRun(SPEC, 4);
+  run = stepBeat(run, { tick: 0, hitCell: null, inStance: true }).run;
+  // Tick 1 is inside the lead, before any flare has spawned.
+  const step = stepBeat(run, { tick: 1, hitCell: 0, inStance: true });
+  assert.equal(step.noise.length, 0);
+  assert.equal(step.run.records.length, 0);
+});
+
+test("every strike, slip and stray makes exactly one noise", () => {
+  // The field's suspicion model treats a noise as an impulse, so a caller that
+  // repeated an event across ticks would multiply its effect by the frame count.
+  const played = playBeat(SPEC, 23, { dropped: [1], wrongCell: [3] });
+  const sounded = played.events.filter(
     (event) =>
-      event.type === "armed" ||
       event.type === "struck" ||
       event.type === "slipped" ||
       event.type === "strayed",
   );
-  assert.equal(played.noise.length, strokes.length);
-  assert.equal(played.outcome.score.judged, chart.judgedBeats);
-});
-
-test("a beat that is never struck slips, and only after its window closes", () => {
-  const seed = 31;
-  const chart = deriveChart(SPEC.chart, seed);
-  const played = playBeat(SPEC, seed, {
-    armAt: 0,
-    offsets: chart.offsets.slice(1).map((_, index) => (index === 2 ? null : 0)),
-  });
-  const slip = played.events.find((event) => event.type === "slipped");
-  assert.ok(slip, "the unstruck beat never slipped");
-  assert.equal(slip!.beatIndex, 3);
-  assert.equal(played.outcome.score.slips, 1);
-  assert.equal(played.outcome.grade, "RAGGED");
-});
-
-test("a swing at nothing costs noise and does not eat the next beat", () => {
-  // Stealing the next beat would punish one mistake twice, and it would make a
-  // panicked recovery swing catastrophic rather than merely loud.
-  const seed = 55;
-  const chart = deriveChart(SPEC.chart, seed);
-  // Half a pulse after the opening stroke: too late to be it, far too early to
-  // be the first beat, and clear of every window whatever the seed drew.
-  const strayTick = 10;
-  assert.ok(
-    Math.abs(strayTick - chart.offsets[1]!) > GLANCING_WINDOW_TICKS,
-    "the fixture's stray lands inside the first beat's window",
-  );
-  const played = playBeat(SPEC, seed, {
-    armAt: 0,
-    offsets: chart.offsets.slice(1).map(() => 0),
-    extraPresses: [strayTick],
-  });
-  assert.equal(played.outcome.score.strays, 1);
-  assert.equal(
-    played.outcome.score.flush,
-    chart.judgedBeats,
-    "the stray consumed a beat that the player then struck perfectly",
-  );
-  assert.ok(played.outcome.grade !== "SILENT", "mashing was free");
+  assert.equal(played.noise.length, sounded.length);
 });
 
 test("leaving the stance abandons the run rather than tearing the sheet", () => {
-  const seed = 12;
-  const chart = deriveChart(SPEC.chart, seed);
-  const played = playBeat(SPEC, seed, {
-    armAt: 0,
-    offsets: chart.offsets.slice(1).map(() => 0),
-    leaveAt: chart.offsets[2]! + 1,
-  });
+  const schedule = deriveSchedule(SPEC.reaction, 12);
+  const played = playBeat(SPEC, 12, { leaveAt: schedule.targets[1]!.spawnTick + 1 });
   assert.equal(played.outcome.abandoned, true);
   assert.equal(played.outcome.posted, false);
   assert.equal(played.run.phase, "ABANDONED");
@@ -156,92 +111,55 @@ test("leaving the stance abandons the run rather than tearing the sheet", () => 
 });
 
 test("turning to leave during the follow-through keeps the result earned", () => {
-  // The tacks are already in by then. A player who starts moving on the last
-  // stroke has done the work, and taking it back would be a rule nobody could
-  // guess at.
-  const seed = 12;
-  const chart = deriveChart(SPEC.chart, seed);
-  const played = playBeat(SPEC, seed, {
-    armAt: 0,
-    offsets: chart.offsets.slice(1).map(() => 0),
-    leaveAt: chart.spanTicks + 1,
-  });
+  const schedule = deriveSchedule(SPEC.reaction, 12);
+  const played = playBeat(SPEC, 12, { leaveAt: schedule.spanTicks + 1 });
   assert.equal(played.outcome.abandoned, false);
   assert.equal(played.outcome.grade, "SILENT");
 });
 
 test("the container can tear the run down at any tick", () => {
-  const played = playBeat(SPEC, 12, {
-    armAt: 0,
-    offsets: [0, 0, 0, 0, 0],
-    abandonAt: 5,
-  });
+  const played = playBeat(SPEC, 12, { abandonAt: 5 });
   assert.equal(played.outcome.abandoned, true);
 });
 
 test("stepping a resolved run is a no-op that keeps reporting its outcome", () => {
-  const seed = 9;
-  const played = playBeat(SPEC, seed, perfectPlan(SPEC, seed));
-  const again = stepBeat(played.run, { tick: 10_000, strike: true, inStance: true });
+  const played = playBeat(SPEC, 9, perfectPlan());
+  const again = stepBeat(played.run, { tick: 10_000, hitCell: 0, inStance: true });
   assert.equal(again.run, played.run);
   assert.equal(again.noise.length, 0);
   assert.deepEqual(again.outcome, played.outcome);
 });
 
 test("the run always terminates, however the player behaves", () => {
-  // The mission runtime drives this inside its own fixed-step loop; a phase with
-  // no exit would be a hang rather than a bug you can see.
+  // The mission runtime drives this in a fixed-step loop; a phase with no exit
+  // would be a hang rather than a bug you can see.
   for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
-    const chart = deriveChart(SPEC.chart, seed);
+    const schedule = deriveSchedule(SPEC.reaction, seed);
     const idle = playBeat(SPEC, seed, {
-      armAt: 0,
-      offsets: chart.offsets.slice(1).map(() => null),
+      dropped: schedule.targets.map((target) => target.index),
     });
-    assert.equal(idle.outcome.score.slips, chart.judgedBeats);
+    assert.equal(idle.outcome.score.slips, SPEC.reaction.targetCount);
     assert.equal(idle.outcome.grade, "TORN");
     assert.ok(
-      idle.elapsedTicks <= chart.spanTicks + HIT_WINDOW_TICKS + SPEC.verb.settleTicks,
+      idle.elapsedTicks <= schedule.spanTicks + SPEC.verb.settleTicks,
       `seed ${seed} ran past its own backstop`,
     );
   }
 });
 
-test("precision is paid back in tempo as well as in silence", () => {
-  const seed = 44;
-  const early = playBeat(SPEC, seed, uniformPlan(SPEC, seed, 0));
-  const late = playBeat(SPEC, seed, uniformPlan(SPEC, seed, GLANCING_WINDOW_TICKS));
-  assert.ok(
-    early.elapsedTicks < late.elapsedTicks,
-    "finishing ahead of the chart took as long as finishing behind it",
-  );
-});
-
-test("a stroke on the last legal tick of a window still connects", () => {
+test("a flare struck on the last legal tick of its window still connects", () => {
   const seed = 61;
-  const played = playBeat(SPEC, seed, uniformPlan(SPEC, seed, GLANCING_WINDOW_TICKS));
+  const played = playBeat(SPEC, seed, { hitOffset: SPEC.reaction.windowTicks });
   assert.equal(played.outcome.score.slips, 0);
-  assert.equal(played.outcome.score.glancing, played.chart.judgedBeats);
+  assert.equal(played.outcome.score.flush, SPEC.reaction.targetCount);
 });
 
-test("a stroke one tick past the window is a stray and the beat slips", () => {
-  // Played against a chart of nothing but wide gaps, so the late stroke has no
-  // neighbouring beat to be generously absorbed by and the two consequences are
-  // separable.
-  const wide: BeatSpec = {
-    ...SPEC,
-    id: "test.wide",
-    chart: defineChart({
-      id: "test.wide.chart",
-      barTicks: BAR_TICKS,
-      openingCell: "LONG",
-      spikeCell: "DOUBLE",
-      phases: [{ id: "WIDE", bars: 2, figures: evenly([figure("LONG", "LONG")]) }],
-    }),
-  };
-  const played = playBeat(wide, 3, {
-    armAt: 0,
-    offsets: [GLANCING_WINDOW_TICKS + 1, 0, 0, 0, 0],
-  });
-  assert.equal(played.outcome.score.slips, 1);
-  assert.equal(played.outcome.score.strays, 1);
+test("a click one tick past the window misses and the flare has already faded", () => {
+  const seed = 61;
+  const played = playBeat(SPEC, seed, { hitOffset: SPEC.reaction.windowTicks + 1 });
+  // Every click lands in the dark gap after its flare faded, so nothing connects
+  // and nothing strays: the flares simply went by.
+  assert.equal(played.outcome.score.flush, 0);
+  assert.equal(played.outcome.score.slips, SPEC.reaction.targetCount);
+  assert.equal(played.outcome.score.strays, 0);
 });

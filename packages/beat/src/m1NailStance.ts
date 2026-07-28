@@ -38,9 +38,16 @@ import {
   DEFAULT_PASS_QUALITY,
   DEFAULT_TORN_QUALITY,
   HIT_WINDOW_TICKS,
+  REACTION_CELL_COUNT,
+  REACTION_GAP_JITTER_TICKS,
+  REACTION_GAP_TICKS,
+  REACTION_LEAD_TICKS,
+  REACTION_TARGET_COUNT,
+  REACTION_WINDOW_TICKS,
 } from "./tuning.js";
 import { DRIVE_FASTENER } from "./verbs.js";
 import { beatWorstCaseTicks, type BeatSpec } from "./spec.js";
+import type { BeatReactionSpec } from "./schedule.js";
 import type { Vec3 } from "./engine.js";
 
 /** Mirrors `PRECISION.stance` — the bough the player works from. */
@@ -133,6 +140,25 @@ export const M1_HANDBILL_CHART: BeatChartSpec = defineChart({
   ],
 });
 
+/**
+ * M1's reaction test: what the player actually does at the tree.
+ *
+ * Six flares on a six-cell panel, one up at a time, each hittable for a wide
+ * 1.4-second window. It is deliberately, structurally easy — this is mission one
+ * and a story beat, not a skill gate — so a player who is watching the panel
+ * connects with every flare, and the forgiving grade (see the thresholds below)
+ * means missing a couple still gets the sheet up. The tension is fiction, not
+ * difficulty: the watch is in the street, and a fumble is loud.
+ */
+export const M1_HANDBILL_REACTION: BeatReactionSpec = {
+  cellCount: REACTION_CELL_COUNT,
+  targetCount: REACTION_TARGET_COUNT,
+  windowTicks: REACTION_WINDOW_TICKS,
+  gapTicks: REACTION_GAP_TICKS,
+  gapJitterTicks: REACTION_GAP_JITTER_TICKS,
+  leadTicks: REACTION_LEAD_TICKS,
+};
+
 export interface M1NailStanceOptions {
   /** Defaults to the authored bough position. */
   readonly stance?: Vec3;
@@ -156,6 +182,7 @@ export function m1NailStanceBeat(options: M1NailStanceOptions = {}): BeatSpec {
     id: "BOS.MD01.ACT.POST_HANDBILL.v1",
     verb: DRIVE_FASTENER,
     chart: M1_HANDBILL_CHART,
+    reaction: M1_HANDBILL_REACTION,
     stance,
     target,
     facingYaw: Math.atan2(target.x - stance.x, target.z - stance.z),
@@ -172,9 +199,9 @@ export function m1NailStanceBeat(options: M1NailStanceOptions = {}): BeatSpec {
       tornQuality: DEFAULT_TORN_QUALITY,
     },
     note:
-      "Three bars of rising density into the bole beside the effigy, with the " +
-      "constable coming up Orange Street underneath. Nothing to read; it is pure " +
-      "timing, and every stroke that is not centred is a noise he can hear.",
+      "Six flares on the bole beside the effigy, struck one at a time, with the " +
+      "constable coming up Orange Street underneath. A quick act of defiance, not " +
+      "a skill gate; every flare left to fade is a noise he can hear.",
   };
 }
 
