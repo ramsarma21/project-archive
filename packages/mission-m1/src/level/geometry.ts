@@ -267,12 +267,26 @@ stallXs.forEach((x, index) => {
       tags: ["stall", "mid-line"],
     }),
   );
+  // The two canopies that FLANK the gaol-barrel vault (stalls 0 and 1, either
+  // side of GAOL_BARRELS at x 21.6-22.7) keep their south edge OUT of the street
+  // lane. A vault lifts a standing capsule to ~1.3m over the barrel; where a
+  // canopy overhangs the lane to z=-0.20 that lifted head crosses the awning
+  // deck plane, so `authoredTrajectoryClear` refused the vault for any body north
+  // of z~=-0.55 — i.e. for a player running the natural street line (the street
+  // nodes sit at z=-0.4). The vault only committed on the exact z=-0.6 axis, so a
+  // normal forward run wedged against the barrels with a VAULT that never fired
+  // and the only way on was to climb the canopies. Pulling these two south edges
+  // to the stall front (z=0.0) clears the whole lane for the vault while leaving
+  // the mid-line canopy run (the nodes sit at z=1.3) and every downstream awning
+  // untouched. Stalls 2-4 keep the overhanging south edge the SAFE awning climb
+  // (B_CRATES_FOOT -> B_CANOPY_2_S) reaches up onto.
+  const canopySouthZ = index <= 1 ? 0.0 : -0.2;
   decks.push(
     deck({
       id: `STALL_${index}__CANOPY`,
       section: "B_SHAMBLES",
       asset: "market-awning",
-      rect: rect(x - 0.1, x + 2.7, -0.2, 2.8),
+      rect: rect(x - 0.1, x + 2.7, canopySouthZ, 2.8),
       y: BAND.STALL_ROOF,
       carriedBy: [`STALL_${index}`],
       tags: ["awning", "mid-line"],
