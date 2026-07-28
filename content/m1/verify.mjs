@@ -11,12 +11,14 @@
 // and the answerable-from-the-module claim is an assertion here rather than a
 // promise there.
 //
-// Zero dependencies, reads only this directory plus content/staar (read-only).
-// Run:  node content/m1/verify.mjs
+// Reads only this directory plus content/staar (read-only), and IMPORTS one number
+// it must not restate — @pa/duel's DUEL_ROUND_CEILING — from the source that owns
+// it. That import needs the repo's TypeScript loader, so this runs under tsx.
+// Run:  node --import tsx content/m1/verify.mjs
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (rel) => JSON.parse(readFileSync(join(here, rel), "utf8"));
@@ -37,16 +39,42 @@ const warn = (m) => warnings.push(m);
 //
 // A constant copied into a second file drifts silently, and a checker that
 // passes against a number the engine stopped using is worse than no checker. So
-// the module length, the concept-id pattern, the round ceiling and the shape of
-// ModuleCard are all parsed out of the source that declares them, and anything
-// that cannot be read is reported as unverified rather than assumed.
+// the module length, the concept-id pattern and the shape of ModuleCard are
+// parsed out of the source that declares them.
+//
+// The round ceiling is the one number checked here that is a CONTRACT another
+// package owns rather than a shape this file describes, so it is not text-scraped
+// at all: it is imported and executed from `@pa/duel`'s own leaf module. Scraping
+// it is precisely how it broke — the constant moved from tuning.ts into
+// structure.ts and left a bare re-export behind, which no `NAME = <digits>` regex
+// can match, so the check quietly warned and stopped verifying. An import cannot
+// fail that way silently: if the value cannot be resolved the check FAILS (see
+// the invariant below), because a missing contract must never pass as a clean run.
 // ---------------------------------------------------------------------------
 
 const repoRoot = join(here, "..", "..");
 const CONTRACTS = "packages/contracts/src/progression.ts";
 const CURRICULUM_TYPES = "packages/curriculum/src/types.ts";
 const MODULE_FORMAT = "apps/web/src/module/moduleFormat.ts";
-const DUEL_TUNING = "packages/duel/src/tuning.ts";
+
+// The leaf module @pa/duel exports the ceiling from — it has no imports of its
+// own, so loading it drags in nothing else. Imported by file path rather than by
+// the `@pa/duel/structure` specifier so resolution does not depend on where this
+// script is run from; a move of the file surfaces as a loud import failure, which
+// is the correct outcome.
+const DUEL_STRUCTURE = "packages/duel/src/structure.ts";
+
+async function importRoundCeiling() {
+  const href = pathToFileURL(join(repoRoot, DUEL_STRUCTURE)).href;
+  const mod = await import(href);
+  const value = mod.DUEL_ROUND_CEILING;
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(
+      `DUEL_ROUND_CEILING imported as ${JSON.stringify(value)}, not a positive integer`,
+    );
+  }
+  return value;
+}
 
 function sourceText(relPath) {
   try {
@@ -472,13 +500,23 @@ if (pvp) {
 
   // THE INVARIANT. While the pool is larger than the hard round ceiling, no
   // single match can repeat a question — tier 3 of the draw policy is
-  // unreachable. It is read out of @pa/duel rather than restated, so raising the
-  // ceiling there fails here instead of silently repeating questions at play.
-  const ceiling = sourceText(DUEL_TUNING) === null
-    ? null
-    : numberFrom(DUEL_TUNING, "DUEL_ROUND_CEILING", 0) || null;
+  // unreachable. It is IMPORTED from @pa/duel rather than restated, so raising the
+  // ceiling there fails here instead of silently repeating questions at play. An
+  // unresolvable value is a FAILURE, never a warning: the whole reason this check
+  // exists is defeated the moment it cannot read the number it guards.
+  let ceiling = null;
+  try {
+    ceiling = await importRoundCeiling();
+  } catch (error) {
+    fail(
+      `DUEL_ROUND_CEILING could not be imported from ${DUEL_STRUCTURE}: ${error.message}. ` +
+        `The round-ceiling invariant cannot be checked and this run is not a pass. ` +
+        `Run under the TypeScript loader: node --import tsx content/m1/verify.mjs`,
+    );
+  }
   if (ceiling === null) {
-    warn("packages/duel tuning is not readable; the round-ceiling invariant is unverified");
+    // Recorded as a FAILURE above; without the real value none of the checks
+    // below mean anything, so they are skipped rather than run against a guess.
   } else {
     if (pvp.size <= ceiling) {
       fail(

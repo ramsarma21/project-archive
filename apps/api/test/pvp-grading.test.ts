@@ -81,14 +81,25 @@ test("the grader covers the whole PvP pool, not just the PvE rotation", async ()
 
 test("the pool stays larger than the duel's round ceiling, so no match repeats", async () => {
   const { poolHealth } = await import("../src/pvp/questionPool.js");
+  // The ceiling is IMPORTED from the package that owns it, never copied as a
+  // literal. A hardcoded `24` here would pass while @pa/duel raised the real
+  // ceiling to 25 — the guarded margin is one item — which is the same
+  // green-while-checking-nothing drift the ceiling lives in a leaf module to
+  // prevent. Read it, so a change there fails here instead.
+  const { DUEL_ROUND_CEILING } = await import("@pa/duel/structure");
   const health = poolHealth();
   assert.equal(health.total, 34);
   assert.equal(health.capstoneShared, 9);
-  // @pa/duel's DUEL_ROUND_CEILING. The guarded margin is ONE item, and this is the
-  // assertion that fails if either number moves.
+  // The guarded pool is what a player who has mastered nothing faces, which is
+  // every player until the first capstone is sat; the full pool is a superset of
+  // it. Both must clear the ceiling, and the guarded margin is ONE item.
   assert.ok(
-    health.unguarded > 24,
-    `the guarded pool is ${health.unguarded} against a ceiling of 24`,
+    health.unguarded > DUEL_ROUND_CEILING,
+    `the guarded pool is ${health.unguarded} against a ceiling of ${DUEL_ROUND_CEILING}`,
+  );
+  assert.ok(
+    health.total > DUEL_ROUND_CEILING,
+    `the full pool is ${health.total} against a ceiling of ${DUEL_ROUND_CEILING}`,
   );
 });
 
