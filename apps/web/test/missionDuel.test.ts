@@ -26,6 +26,7 @@ import {
   BULLETS_FOR_WRONG,
   FACE_OFF_TICKS,
   FIELD_DT,
+  M1_BOSS_TACTICS,
   duelCommitLog,
   mintVerdict,
   projectFieldSeed,
@@ -158,6 +159,23 @@ test("the mission boss is the symmetric-complement officer, and a wrong answer a
     profile.ammoPolicy,
     "SYMMETRIC_COMPLEMENT",
     "the mission officer must earn the mirror of the player's award, not a flat magazine",
+  );
+
+  // THE SAME CLASS OF DRIFT, one arena later. The duel now happens in the shared
+  // cover-rich yard, so the mission boss must ALSO carry the stand-alone
+  // descriptor's tactical opt-ins — otherwise the officer stands in the open
+  // ignoring the eight pieces of cover, which is the flat-7 bug's twin: the
+  // stand-alone path opted in and the mission did not. Pinned here so a green suite
+  // can never again report a fight the player does not actually fight.
+  assert.equal(
+    profile.takesCoverBeforeQuestion,
+    true,
+    "the officer must break behind cover before a question, not wait in the open",
+  );
+  assert.equal(
+    profile.tactical,
+    M1_BOSS_TACTICS,
+    "the officer must fight to the ammo-aware plan the arena was tuned for",
   );
 
   // Driven through the core's own award, off a committed verdict — not asserted

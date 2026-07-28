@@ -29,7 +29,7 @@ import {
   type BeatOutcome,
   type BeatSpec,
 } from "@pa/beat";
-import { bossProfileForTier } from "@pa/duel";
+import { M1_BOSS_TACTICS, bossProfileForTier } from "@pa/duel";
 import type { MissionDuelBrief } from "../mission/duelPort.js";
 import type {
   MissionBeatMount,
@@ -278,17 +278,31 @@ export function duelBrief(seed: number, attemptOrdinal: number): MissionDuelBrie
       kind: "BOSS",
       // Tier 1: M1 has one difficulty and it is the bottom of the curve.
       //
+      // This is the mission's AUTHORITATIVE boss, and it must match the stand-alone
+      // m1Duel.ts descriptor in full — all three opt-ins, not just the first.
+      //
       // SYMMETRIC_COMPLEMENT, not the default flat magazine. M1's officer earns the
       // MIRROR of the player's award off the same graded round: a correct answer
       // arms him with 7 and a wrong one with 14 (complementaryBossBullets in
-      // @pa/duel). This is the mission's authoritative boss and it must match the
-      // stand-alone m1Duel.ts descriptor — which already opts in. Without it the
-      // real mission path fell back to AUTHORED_FLAT and the boss was armed with a
-      // flat 7 EVERY round, so a wrong answer never actually armed the enemy and
-      // the complement rule that landed in the core never reached the fight a
-      // player fights. See packages/duel/src/__tests__/pveComplement.test.ts.
+      // @pa/duel). Without it the real mission path fell back to AUTHORED_FLAT and
+      // the boss was armed with a flat 7 EVERY round, so a wrong answer never armed
+      // the enemy. See packages/duel/src/__tests__/pveComplement.test.ts.
+      //
+      // takesCoverBeforeQuestion + M1_BOSS_TACTICS, because the duel is now fought
+      // in the shared rope-walk arena (see apps/web/src/duel/missionBrief.ts) whose
+      // entire design is eight pieces of cover. Without these the officer stood in
+      // the open in the middle of a cover-rich yard — the flat 7 bug's twin: the
+      // stand-alone descriptor opted in and the mission did not, so the fight a
+      // player actually fought ignored the arena. With them the officer breaks off
+      // behind imported cover and crouches before each question, and fights to the
+      // ammo-aware plan (armed he trades in the open, low he peeks from cover, out
+      // of ammo he holds behind cover). The tactics are tuned against THIS arena —
+      // it is the one the stand-alone descriptor was measured on — so they fit the
+      // cover that is actually there. See @pa/duel bossAi.ts / bossTactics.test.ts.
       profile: bossProfileForTier(1, "BOS.MD01.BOSS.CONSTABLE", {
         ammoPolicy: "SYMMETRIC_COMPLEMENT",
+        takesCoverBeforeQuestion: true,
+        tactical: M1_BOSS_TACTICS,
       }),
     },
     questions: duelQuestionsForAttempt(seed, attemptOrdinal),
