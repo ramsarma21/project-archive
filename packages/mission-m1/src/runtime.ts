@@ -709,6 +709,29 @@ export const MODULE_RUNS: Record<string, ModuleRun> = {
     naturalM: [1.9, 1.493, 1.629],
     stance: "BLOCK",
   },
+  // The loaded hay wain, dressing the lane and duel-yard catches as well as the
+  // printshop dive. A four-wheeled wagon piled above the sideboards with a flat
+  // trodden load on top: filled into its blocker, that load lands at the catch
+  // plane. `hay-cart` was standing in on LANE_HAY and COVER_HAY_NW and its mesh
+  // is a heaped cart whose crown is 0.21m proud of its flat area, so the flat a
+  // diver actually meets sat that far below the authored catch; the wain's load
+  // is flat to within 0.08m. naturalM is the mesh's aspect at the ~1.9 convention.
+  "hay-wain-loaded": {
+    naturalM: [1.311, 1.311, 1.9],
+    stance: "BLOCK",
+  },
+  // The duel yard's loading stage. Its box is 2.6 x 1.8 x 4.2 — the top at 1.8m
+  // is the surface the boss fight is fought on and around — but the mesh is a
+  // wide, low platform (1.90 x 0.60 x 1.01), so a contain-fit was bound by the
+  // width and drew it 2.6 x 0.83 x 1.39: a stage barely knee-high whose top fell
+  // 0.97m under the plane the player is told to stand on. A BLOCK fills the
+  // blocker on every axis, the same as every other route-bearing mass here, so
+  // the deck the duel lives on is the deck the duel is authored against. naturalM
+  // is the mesh's aspect at the ~1.9 convention.
+  "warehouse-platform-scale": {
+    naturalM: [1.9, 0.605, 1.013],
+    stance: "BLOCK",
+  },
   // The gaol barrels: the one vault on the street line. A BLOCK, not a loose
   // PROP, so the imported barrels FILL their collider on every axis rather than
   // contain-fitting inside it — a contain-fit took the mesh's longest-axis ratio

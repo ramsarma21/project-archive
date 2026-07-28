@@ -25,7 +25,7 @@ export const ASSETS: AssetRequirement[] = [
   { key: "bldg-printshop", status: "EXISTING", path: "world/props/bldg-printshop.glb", sizeM: [13, 7.1, 14], why: "Edes & Gill. The run opens on its leads." },
   { key: "printer-drying-rack", status: "EXISTING", path: "world/props/printer-drying-rack.glb", sizeM: [2.6, 1.6, 2.8], why: "The unstamped sheets, taken at a run." },
   { key: "market-awning", status: "EXISTING", path: "world/props/market-awning.glb", sizeM: [3.2, 2.6, 2.4], why: "Pentices and stall canopies; the mid line's running surface." },
-  { key: "hay-cart", status: "EXISTING", path: "world/props/hay-cart.glb", sizeM: [2.8, 2.2, 2.4], why: "The lane and duel-yard hay: a loaded four-wheeled fodder cart with a flat trodden top at 2.2m. The two printshop dive targets are their own `hay-wain-loaded`; this serves the LANE_HAY and COVER_HAY_NW landings, whose footprints a 2.8 x 2.4 body contain-fits without shortfall.", standableAt: [2.2] },
+  { key: "hay-cart", status: "EXISTING", path: "world/props/hay-cart.glb", sizeM: [2.8, 2.2, 2.4], why: "A loaded fodder cart with a flat trodden top at 2.2m, dressing DOCK_CART_W. The lane and duel-yard catches (LANE_HAY, COVER_HAY_NW) are `hay-wain-loaded` now, not this: the cart mesh heaps to a crown 0.21m proud of its flat area, so the flat a diver actually lands on sat 0.21m under the authored catch. A wain's load is flat to 0.08m and is the surface a leap wants.", standableAt: [2.2] },
   { key: "market-stall", status: "EXISTING", path: "world/props/market-stall.glb", sizeM: [2.6, 1.9, 2.0], why: "The shambles, and the bookseller's stall under the elm.", standableAt: [1.9, 1.1] },
   { key: "hand-cart", status: "EXISTING", path: "world/props/hand-cart.glb", sizeM: [2.4, 0.95, 1.6], why: "Street-line cover that also breaks the watch's sightline.", standableAt: [0.95] },
   { key: "crate-stack", status: "EXISTING", path: "world/props/crate-stack.glb", sizeM: [2.2, 1.9, 1.8], why: "Crossovers between the street and the canopies.", standableAt: [1.9] },
@@ -232,7 +232,7 @@ export const ASSETS: AssetRequirement[] = [
     path: "world/props/hay-wain-loaded.glb",
     sizeM: [2.2, 2.2, 3.2],
     standableAt: [2.2],
-    why: "The two wains under the printshop's south-east corner, and the mission's first dive target. `hay-cart` was standing in and cannot: its mesh is 1.90 x 0.89 x 1.06, a two-wheeled handcart, so a contain-fit into this box draws 38% of the landing's depth with its top 1.17m under the surface that catches you. A wain is a four-wheeled farm wagon loaded above the sideboards; the load has to reach 2.2m because that is where the player lands, and the top wants to read as loose hay rather than as a lid.",
+    why: "The wains the run dives and bails onto: the two under the printshop's south-east corner (the first dive target), the lane catch LANE_HAY, and the duel-yard catch COVER_HAY_NW. A four-wheeled farm wagon loaded above the sideboards; the load reaches 2.2m because that is where the player lands, and the top reads as loose hay rather than a lid. Filled as a BLOCK so the flat load meets the catch plane, where `hay-cart`'s heaped mesh crowns 0.21m proud and left the flat a diver actually lands on that far below it.",
   },
   {
     key: "buttress-stepped-stone",
