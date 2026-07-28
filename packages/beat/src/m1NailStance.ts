@@ -186,12 +186,42 @@ export function m1NailStanceBeat(options: M1NailStanceOptions = {}): BeatSpec {
     stance,
     target,
     facingYaw: Math.atan2(target.x - stance.x, target.z - stance.z),
-    // Sixty degrees. The player has to be looking at the tree, not holding a
-    // heading: see the note on the field in spec.ts.
-    facingToleranceRad: Math.PI / 3,
-    // The bough deck is 4.8m across, so this is comfortably inside it and the
-    // player is never nudged out of the beat by the idle sway of a landing.
-    stanceRadiusM: 1.1,
+    // WHY THIS IS THREE-QUARTERS OF A CIRCLE, and why it USED to be sixty degrees.
+    //
+    // The sixty-degree arc was inherited from the timing lane this beat replaced,
+    // where the marks CONVERGED in the world in front of the nail and a player
+    // with their back turned would have watched the whole act happen off-screen.
+    // That is no longer the mechanic. The reaction panel is a SCREEN-SPACE HUD
+    // overlay (see MissionBeatPanel — `position: absolute; left: 50%`): it is
+    // dead-centre on the display no matter which way the body is pointed, so
+    // facing has nothing to do with whether the player can see the flares. A
+    // sixty-degree heading gate on a panel you can always see is not a readability
+    // rule any more, it is a second, invisible precision test — and it is the one
+    // the owner was failing. The player arrives at the crown off the leap moving
+    // SOUTH down the limb (F_CROWN→F_POST is a -z run), so their heading on arrival
+    // is ~180°, which is ~105° off the ~75° facing to the bole — outside sixty
+    // degrees. They stood in the right spot and the panel never armed, or armed
+    // for the one frame their look swung through the arc and disarmed again (the
+    // "it flickers rather than presents" report). Nothing on the HUD ever told
+    // them to turn, the way every climb and vault now names its verb on take-off.
+    //
+    // So the arc now only rejects a body squarely turned AWAY from the tree — a
+    // player sprinting off the far side of the crown — which keeps the fiction
+    // ("you are working at the bole") and the spec's own back-turned guard
+    // (inFacingArc rejects facing + π at this tolerance) without gating the panel
+    // on a heading. It is generous by design: this is mission one and a story
+    // beat, not a heading-hold skill test.
+    facingToleranceRad: (3 * Math.PI) / 4,
+    // The crown deck is ~4.8m across and the player lands anywhere on it off the
+    // leap, then walks the last body-length to the bole. The old 1.1m circle sat
+    // on the very tip at the trunk (z=0.4) while the arrival node F_CROWN is 1.5m
+    // back (z=1.9) — so a player who had plainly reached the crown was still just
+    // outside the stance and the beat would not start. This covers the reachable
+    // crown near the bole rather than a spot on it, so standing on the bough IS
+    // being in stance; the big panel coming up is then the whole cue that the act
+    // has begun. Still short of the far limb end (F_CROWN_E, ~3.7m out) and of the
+    // low bough a tier down, so it is the crown and not the whole tree.
+    stanceRadiusM: 2.4,
     stanceHeightToleranceM: 1,
     thresholds: {
       // The mission slate's authored figure, kept.
