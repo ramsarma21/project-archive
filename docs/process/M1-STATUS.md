@@ -306,6 +306,7 @@ the orchestrator actually made, and the specific change made in response.
 | Accepted a local green as evidence for a cross-platform property; the first Linux run failed on a baked-constant guard comparing against the host's own `Math.sin` | A determinism claim cannot be verified on one platform. Reason about the runner, not the laptop. |
 | Quoted the affordance debt count as a fixed number to a lane whose branch predated three retirements | A moving count needs its baseline named. Say "22 on `main` as of X", not "22". |
 | Told a lane the elm climb **anchors** ran through the trunk; standing at every anchor was clean and it was the **swept paths** threading the canopy | Name the measured thing, not the inferred cause. The instrument reported per-transition depth, not per-anchor. |
+| Told the owner M1 owns "~23 concepts" and built a broken-ratio argument on it — the number was a grep of lines containing "M1". M1 owns **2–3**; the 46 belong to 14 modules | Never quote a count from a text search. Call the function that computes it. |
 
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran
