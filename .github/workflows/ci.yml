@@ -165,6 +165,139 @@ jobs:
         run: pnpm --filter @pa/api test:postgres
 
   # ---------------------------------------------------------------------------
+  # The played-mission gate. It is the only gate that OPENS THE GAME and plays it:
+  # it drives the real client with Playwright and asserts the mission renders, the
+  # route advances, every mandatory encounter arms AND resolves (no soft-lock), no
+  # body penetrates solid geometry, the yard is reached, and the duel loads a graded
+  # world that discriminates a right answer from a wrong one. Every gate above reads
+  # source, authored data or mesh geometry; each of this morning's three regressions
+  # — the duel void, the encounter soft-lock, the untextured props — passed all of
+  # them while the game was visibly broken. This is the gate that catches that.
+  #
+  # WHY ITS OWN JOB rather than a step in `verify`. `verify` is deliberately the
+  # database-free, browser-free gate that stays green in seconds; giving it a
+  # Postgres service, a browser and two long-lived servers would break that contract
+  # and slow the fast static feedback. A running stack is exactly what the existing
+  # `api-postgres` job already models, so this follows that precedent: a
+  # service-backed job with its own Postgres.
+  #
+  # WHY THE PORTS ARE NOT THE DEFAULTS. The duel's live attempt is a CSRF-protected
+  # mutation, and the API refuses it with CSRF_INVALID unless its WEB_ORIGIN exactly
+  # equals the browser's origin. On the default port the API's default origin happens
+  # to match; on any other it does not, and the duel silently reports "could not open
+  # a gradeable attempt" that reads like a code bug. That is the trap the owner hit
+  # within minutes. Running here on non-default ports with WEB_ORIGIN pinned to the
+  # web origin both provisions it correctly AND keeps that path exercised, so a
+  # regression in the origin handling is caught rather than papered over by a default.
+  #
+  # NO BUILD STEP: every @pa/* package exports ./src/*.ts, so the web dev server
+  # (vite) and the API (tsx) run straight from source. That is also why this job is
+  # untouched by the packages/*/dist EPERM the sandboxed `pnpm build` can throw.
+  # ---------------------------------------------------------------------------
+  playthrough:
+    name: playthrough (played-mission gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine # matches docker-compose.yml and api-postgres
+        env:
+          POSTGRES_USER: project_archive
+          POSTGRES_PASSWORD: project_archive
+          POSTGRES_DB: project_archive
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U project_archive -d project_archive"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Non-default ports on purpose (see the header): this keeps the WEB_ORIGIN /
+      # CSRF path honest instead of relying on the default that happens to match.
+      WEB_PORT: "5273"
+      API_PORT: "3011"
+      # The single fact that makes verdict=live gradeable off the default port: the
+      # API's allowed origin must equal the origin the browser runs on, exactly.
+      WEB_ORIGIN: http://127.0.0.1:5273
+      VITE_API_PROXY_TARGET: http://127.0.0.1:3011
+      DATABASE_URL: postgres://project_archive:project_archive@localhost:5432/project_archive
+      API_HOST: 127.0.0.1
+      # Loopback, http, dev sessions on (NODE_ENV is unset, so it is not production):
+      # the harness opens a throwaway local session to arm a real, canonical attempt.
+      COOKIE_SECURE: "false"
+      # A throwaway signing secret so the API will start. Grading itself is OFF here
+      # (no classifier credential), which is fine: the discrimination check uses the
+      # scripted client-side verdicts, and the live stage only asserts the arena
+      # RENDERS — it never submits an answer to the grader.
+      GRADING_RECEIPT_SECRET: ci-throwaway-playthrough-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install workspace
+        run: pnpm install --no-frozen-lockfile
+
+      # Playwright is a repo dependency, but pnpm does not run its browser-download
+      # lifecycle script, so the browser is fetched explicitly. --with-deps pulls the
+      # system libraries the headless browser needs on a bare runner. On Linux there
+      # is no Google Chrome at the mac path the harness prefers, so it uses this one.
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # server.ts does not migrate on boot, so the schema is applied before it starts;
+      # the live attempt writes real progression rows and needs the tables present.
+      - name: Apply migrations
+        run: pnpm --filter @pa/api migrate
+
+      # Backgrounded here and left running for the gate step; the runner is ephemeral,
+      # so no teardown is needed. Each waits on a real readiness signal — the API on
+      # /v1/health reporting database:true, the web on a 200 from its root — rather
+      # than a fixed sleep, and fails loudly with its log if it never comes up.
+      - name: Start API
+        run: |
+          nohup pnpm --filter @pa/api start > /tmp/pa-api.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf "http://127.0.0.1:${API_PORT}/v1/health" >/dev/null; then
+              echo "API healthy"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::API never became healthy"; cat /tmp/pa-api.log; exit 1
+      - name: Start web dev server
+        run: |
+          nohup pnpm --filter @pa/web exec vite --port "${WEB_PORT}" --strictPort --host 127.0.0.1 \
+            > /tmp/pa-web.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf "http://127.0.0.1:${WEB_PORT}/" >/dev/null; then
+              echo "web up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::web dev server never came up"; cat /tmp/pa-web.log; exit 1
+
+      # The gate. Blocking and unweakened: no continue-on-error, no retry, the full
+      # ~95s soft-lock/timeout budget intact. A red here means the played mission is
+      # broken, which is the whole point.
+      - name: Played-mission gate
+        run: node scripts/check-playthrough.mjs "http://127.0.0.1:${WEB_PORT}"
+
+      # A browser gate that fails opaquely gets disabled, so on failure it leaves the
+      # frame that failed: world-spawn.png / duel-live.png (or duel-live-fail.png) and
+      # the route/census/grading JSON the check already writes. This is the first CI
+      # job to upload an artifact; there was no prior pattern to follow.
+      - name: Upload playthrough artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playthrough-out
+          path: .affordwork/playthrough-out/
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
   # Advisory: expected to fail right now.
   #
   # pnpm-lock.yaml describes fewer projects than the workspace contains, so no

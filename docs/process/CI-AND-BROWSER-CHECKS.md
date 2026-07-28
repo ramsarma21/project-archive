@@ -13,8 +13,9 @@ covers only the harness around them.
 
 | Job | Blocking | What it covers |
 |---|---|---|
-| `verify` | yes | boundary lint, content verification, `pnpm typecheck`, `pnpm test`, packages build, web production build |
+| `verify` | yes | boundary lint, content verification, `pnpm typecheck`, `pnpm test`, the three asset mesh-vs-authoring guards, packages build, web production build |
 | `api-postgres` | yes | `@pa/api` persistence suite against a real `postgres:17-alpine` |
+| `playthrough` | yes | opens the real client with Playwright against a running stack (Postgres + API + web) and plays the mission: world renders, route advances, every encounter arms **and** resolves, no penetration, yard reached, duel loads a graded world |
 | `lockfile` | **advisory** | `pnpm install --frozen-lockfile` |
 | `api-image` | **advisory** | Dockerfile lint plus a real build of `apps/api/Dockerfile` |
 
@@ -49,6 +50,99 @@ and both self-adapt when a migration is added:
 - The persistence suite (in `api-postgres`) applies every migration to a real
   Postgres twice and asserts each is applied exactly once, so a non-idempotent
   migration fails there.
+
+### The played-mission gate (`playthrough`)
+
+`scripts/check-playthrough.mjs`, run by the `playthrough` job, is the only gate
+that opens the game and plays it. Everything else in CI reads source, authored
+data, collision hulls or mesh geometry; not one of them mounts the client. That
+gap is not theoretical — three regressions in a single morning (a duel harness
+rendering into an empty void, an encounter that armed but could never resolve, and
+props rendering as untextured white boxes) each passed lint, typecheck, 2,712
+tests, a build and four world verifiers while the mission was visibly broken. This
+gate drives the real client with Playwright and asserts, each failing loudly by
+name with no continue-on-error and no degrade-to-warning:
+
+- **WORLD** — the scene renders: draw calls and triangles in a sane band, textures
+  present, and **zero** untextured near-white "white-box" props (read off
+  `renderer.info` and a material census, not pixels).
+- **ROUTE** — a driven run advances east through the street and every mandatory
+  encounter **arms *and* resolves** within a timeout that fails rather than hangs
+  (arming alone is the soft-lock signature), with no body ever inside solid hull.
+- **YARD** — a driven run reaches the rope-walk yard, the route's end line.
+- **DUEL** — `verdict=live` loads a real arena (not the void), and a graded answer
+  discriminates right from wrong (a correct answer pays more balls than a wrong one).
+
+**Why its own job, not a step in `verify`.** `verify` is deliberately the
+database-free, browser-free gate that goes green in seconds; a Postgres service, a
+browser and two long-lived servers do not belong in it. The `api-postgres` job is
+the existing precedent for a service-backed job, so `playthrough` follows it: its
+own `postgres:17-alpine` service, migrations applied before the API starts, the API
+and the web dev server backgrounded (each waited on a real readiness signal — the
+API on `/v1/health` reporting `database:true`, the web on a 200 — not a fixed
+sleep), then the check. No `pnpm build` step is needed because every `@pa/*` package
+exports `./src/*.ts`, so vite and tsx run straight from source; that is also why the
+job is immune to the `packages/*/dist` `EPERM` a sandboxed build can throw.
+
+**The origin requirement, and why the ports are not the defaults.** The duel's live
+attempt is a CSRF-protected mutation. The API compares the request's `Origin` header
+against its `WEB_ORIGIN` and refuses with `CSRF_INVALID` on any mismatch; the web dev
+server proxies `/v1` and `/api` to the API but forwards the browser's real `Origin`,
+so **`WEB_ORIGIN` must equal the web origin exactly, host and port included.** On the
+default port the API's default (`http://localhost:5173`) happens to match, so the
+trap is invisible there; on any other port the duel stage silently reports "could not
+open a gradeable attempt", which reads exactly like broken attempt machinery. CI runs
+on non-default ports (web `5273`, API `3011`) with `WEB_ORIGIN` pinned to the web
+origin — this both fixes it and keeps the origin path exercised, so a regression in
+the origin handling fails the gate instead of hiding behind a matching default. The
+check itself now also **detects this specific refusal**: it watches the API's
+responses and, if the live attempt fails after a `CSRF_INVALID`, says "ORIGIN
+MISMATCH … start the API with `WEB_ORIGIN=<the base URL>`" rather than leaving it to
+look like a code bug.
+
+**On failure it leaves the frame.** A browser gate that fails opaquely gets
+disabled, so the job uploads `.affordwork/playthrough-out/` as an artifact on
+failure — `world-spawn.png`, `duel-live.png` (or `duel-live-fail.png`), and the
+`route.json` / `world-census.json` / `duel-grading.json` the check writes. This is
+the first CI job to upload an artifact; there was no prior pattern to match.
+
+**It is unweakened, and stays that way.** No retries that would mask a real failure,
+no reduced timeouts that would skip the soft-lock check, nothing degraded to a
+warning. Measured flakiness is zero across repeated runs with the census values
+identical to the decimal (171 draw calls, 5,108,594 triangles, 147 textures,
+duel `botSky` 0.058, magazines 14 vs 7, penetration 0 m); the ~90 s runtime is
+mostly the deliberate route/soft-lock budget. If provisioning ever proves genuinely
+unreliable, the honest move is to make it report-only with the reason stated here —
+not to ship a flaky blocking gate. A gate people learn to ignore is worse than none.
+
+#### What this gate CANNOT see
+
+A green `playthrough` does **not** mean the game is correct. The check reads hull
+penetration, a render census, encounter state and route progress — nothing more —
+so it is structurally blind to a real class of defects, and anyone reading a green
+run should not conclude otherwise:
+
+- **Climbing through *drawn* geometry.** It reads the collision hull penetration
+  ring, and the collision column is legitimately empty in places where the visible
+  mesh is not; a body can pass through geometry that is drawn but not collidable and
+  this gate sees nothing wrong. The mesh-vs-collision agreement is the job of
+  `assets:verify:collision`, not this.
+- **Whether animations put hands on holds.** It never inspects rig poses. A climb
+  can complete with the hands nowhere near the hold and the gate still passes; that
+  is `scripts/check-clip-fidelity.mjs`'s domain.
+- **Bare-wall climbs.** A separate audit measured eight climbs against blank wall
+  (surfaces with no authored affordance). This gate does not evaluate whether a
+  climbed surface *presents* the affordance it was authored against — that is
+  `assets:verify:affordances` and its `KNOWN_DEBT` list.
+- **The terminal skill beat.** The autonomous driver deliberately does not play the
+  Liberty Elm posting beat and bough dismount; a bot that reliably executes that
+  skill beat would itself be a flaky dependency. Full `REACHED_DUEL` completion is
+  covered at the data level by mission-m1's route/traversability tests, not here.
+
+In short: this gate proves the mission *renders and can be driven end to end with
+its encounters resolving and its duel gradeable*. It does not prove the climbing
+reads right, the hands land, or every surface is honest. Those have their own gates;
+keep reading them.
 
 ### Why two jobs are still advisory
 
@@ -131,9 +225,16 @@ than replacing the only Playwright some machines have:
   || { mkdir -p /tmp/pw-check && ln -s "$PWD/node_modules" /tmp/pw-check/node_modules; }
 ```
 
-There is no CI job for browser checks. Two things have to land first: the import
-fix above, and the missing production assets noted below — a CI runner cannot
-render a world whose GLBs are not in the repository.
+There is now **one** CI browser gate: the `playthrough` job (see §1). It sidesteps
+the `/tmp/pw-check` problem above by not being one of those harnesses — it imports
+`playwright` normally and installs the browser with `pnpm exec playwright install
+--with-deps chromium` — and it renders in CI only because the world GLBs it needs
+are all tracked: every one of the files the web serves from `apps/web/public/world`
+is in the repository, so a fresh checkout renders the same scene the census expects.
+The 27 `assets/pipeline/qa_*.mjs` harnesses are still **not** wired into CI; they
+await the `/tmp/pw-check` import fix (Ticket B.4). A missing production asset noted
+below is not a reason those cannot run so much as a defect the `playthrough` gate
+would itself catch, loudly, as a collapsed render census.
 
 ---
 
