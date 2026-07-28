@@ -236,10 +236,14 @@ zero-evidence form pass (`1c4250f`).
   `playerboy-rigged.glb` is 1.2× off its declared size and `flintlock-pistol.glb` 1.5×.
   Deliberately non-blocking, so nothing enforces them.
 - 25 itemised affordance debt entries, gated so the list can shrink but never grow silently.
-- **One flaky test**, seen once: an `apps/api` backoff-timing case failed twice under parallel
-  full-suite load and passed 199/199 in isolation; a later full run was clean. Flakiness is
-  regression-masking debt — it trains everyone to re-run instead of read — so it wants a fix
-  or a deterministic clock, not tolerance.
+- ~~One flaky test~~ — **fixed** (`111323b`), and it was **three**, not one. All drove a real
+  `setInterval` against a fake clock and used wall-clock sleeps as a proxy for "a tick ran". The
+  test now injects a scheduler driver and controls time; one assertion was tightened rather than
+  any loosened. Production backoff was never fragile.
+- **Two latent traps in `apps/api`**, found while hunting, not fixed: `SubmissionRateLimiter` in
+  `assessment/requestPolicy.ts` is defined but never wired in and never tested — dead code that
+  reads as a live protection. And `matchesById`/`passes` in the pvp route are module-global, so
+  live matches leak across tests in that file.
 
 ---
 
