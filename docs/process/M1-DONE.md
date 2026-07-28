@@ -43,11 +43,13 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   from 25; three retired when the elm was rebuilt.
 - **[~]** Every asset reads as the object it represents. A visual sweep now exists
   (`c3afd4a`) — it drives the real client, enumerates all 170 placements, and emits a legible
-  contact sheet. It immediately found **the Town House rendering with its cornice, leads and
-  cupola tower floating detached in open sky**, on the climb route, having passed all six
-  existing gates because its bounding box is continuous and the defect is the air in the middle.
-  Also open: the elm's bark reads as polished timber; the Gaol facade may be z-fighting. Both
-  in flight.
+  contact sheet. Its first run found the Town House rendering with its cornice, leads and cupola
+  **floating detached in open sky** — a 1.4 m band of zero vertices the generator baked in and
+  the build's height warp stretched rather than filled. **Fixed** (`d96eb40`) by drawing the
+  solid tower drum the collision already declares. Still open: `bldg-brick`-class buildings
+  (the Gaol and the dormered row) ship a **torn, doubled facade** — trim and mortar shredded
+  into zigzag ribbons with ghosted window frames, identical from every angle, so a baked
+  mesh/atlas defect rather than lighting.
   - **The sharpest illustration of the root problem yet:** in the same frame, one of the nine
     ladders leans in **mid-air** against the floating slab. It is geometrically correct — foot
     and top match the authored surfaces exactly. The drawn building is not where the authored
