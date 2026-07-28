@@ -79,12 +79,14 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[~]** A climb plays a one-shot mantle rather than a looping ladder clip (`f9ef8e1`) — the
   baked `mantle` was orphaned while `CLIMB_UP` played the cyclic `climbUp`. Planted-foot slide
   4.07 → 2.94 m/s and the loop is gone. Hands still are not *on* the rungs: that needs IK.
-- **[ ]** Vault, climb-over, hang-drop and mantle stop sliding planted feet and pushing limbs
-  through walls. **One structural cause, now identified:** authored verbs assign the root from a
-  smoothstep anchor path while clips play root-neutral and un-retargeted with **no IK**. No
-  source clip can fix it — it needs end-effector IK onto the anchor geometry, or a per-window
-  re-bake. Separately, `climbOver` is simply too long for its 520 ms window (81% shown); showing
-  it whole needs ≥642 ms, which is a gameplay-tuning call nobody has made.
+- **[~]** Vault, climb-over, hang-drop and mantle stop sliding planted feet and pushing limbs
+  through walls. Two-bone presentation-only IK built and measured (`b71d9b2`): **VAULT** slide
+  6.78 m/s → 0 and foot 11.2 cm → 0; **mantle** 17.7 cm → 0; **CLIMB_OVER** fixed by the window
+  alone (520 → 650 ms — the foot was clipping because it never finished its arc). **Not yet wired
+  into the game** — dormant until `MissionStage` passes it a frame, which is in flight, so the
+  running game still slides. `HANG_DROP` is a genuine partial (hand 29.9 → 12.6 cm): its anchor
+  seats the capsule centre *on* the wall face, so the braced limbs start ~28 cm inside — a
+  level-data anchor inset, not an IK limit.
 - **[~]** Step-up plays the run cycle, and that is **declined on measurement**: run is
   spatially clean on a curb (zero clip-through, zero slide), while the only Mixamo candidate
   shows 28% of itself in the deliberate 200 ms window — a flag becoming a severe. The real need
