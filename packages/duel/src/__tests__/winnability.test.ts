@@ -6,6 +6,39 @@
 // magazine and on a correct answer's, over a fixed seed set. Deterministic, so the
 // numbers in the comments are reproducible rather than indicative.
 //
+// READ THIS BEFORE TRUSTING ANY NUMBER IN THIS FILE FOR A CLAIM ABOUT M1.
+//
+// For most of this file's life every measurement here drove `bossProfileForTier(tier)`
+// in `referenceArena()`, and M1 ships neither of those. The mission builds the tier-1
+// curve plus THREE opt-ins — SYMMETRIC_COMPLEMENT ammo, cover-seeking before each
+// question, and the ammo-aware tactical layer — in the 11x11 rope-walk yard with eight
+// pieces of cover, not the 12x12 four-cover tuning fixture. Both halves differed, so
+// every "winnability verified" claim in this package described a fight nobody plays.
+// That is the same defect class as the replay harness ruled inadmissible for real-play
+// claims: a test path that diverged from the shipped path and nobody noticed, because
+// it stayed green.
+//
+// The file is now in two parts, and the division is deliberate:
+//
+//   THE TIER CURVE (`sweep`)      the bare profile in the reference fixture, across all
+//                                five tiers. This is what it has always measured and it
+//                                is still worth measuring — the curve's SHAPE (a harder
+//                                boss kills faster, knowledge is worth more at the top)
+//                                is a property of the profiles, and tiers 2-5 have no
+//                                shipped arena to measure in because no mission ships
+//                                them yet. It is NOT evidence about M1.
+//
+//   M1'S SHIPPED FIGHT (`shipped`)  the tier-1 profile WITH its three opt-ins in the
+//                                rope-walk yard. The only measurement here that is
+//                                evidence about the fight a student plays.
+//
+// PAIR THEM AS M1 SHIPS THEM OR THE NUMBERS MEAN NOTHING. Measuring the production
+// profile in `referenceArena()` was tried and retracted: it reports a 12.4-round
+// correct path against the real pairing's 11.5 and, worse, it MISSES the backstop hits
+// entirely, because reaching the round ceiling is an arena effect (2 of 8 seeds in the
+// yard, 0 of 8 in the fixture). Half the shipped configuration is not a measurement of
+// the shipped configuration.
+//
 // WHAT CHANGED WHEN THE ROUND COUNT BECAME UNBOUNDED. The old file asked one
 // question — can six shots kill this boss? — and every assertion was a variation on
 // it. There is no shot budget now, so the questions are:
@@ -28,7 +61,16 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { bossProfileForTier, type BossTier } from "../boss.js";
+import { ropewalkYardArena, type DuelArena } from "../arena.js";
+import {
+  M1_BOSS_OVERRIDES,
+  M1_BOSS_TACTICS,
+  M1_BOSS_TIER,
+  bossProfileForTier,
+  projectExchange,
+  type BossProfile,
+  type BossTier,
+} from "../boss.js";
 import { fieldRandom } from "../engine.js";
 import { duelClearedMission, MISSION_CLEAR_REQUIRES_KNOCKOUT } from "../events.js";
 import {
@@ -43,7 +85,12 @@ import {
   type CombatIntent,
   type CombatView,
 } from "../combat.js";
-import { DUEL_ROUNDS, DUEL_ROUND_CEILING } from "../tuning.js";
+import {
+  BULLETS_FOR_WRONG,
+  DUEL_ROUNDS,
+  DUEL_ROUND_CEILING,
+  REQUIRED_WRONG_PATH_MARGIN,
+} from "../tuning.js";
 import type { DuelSide } from "../sides.js";
 import type { VerdictKind } from "../verdict.js";
 import { runDuel } from "./harness.js";
@@ -88,17 +135,29 @@ const WIDE_SEEDS = [
 
 const sweepCache = new Map<string, Sweep>();
 
-function sweep(
-  tier: BossTier,
-  verdict: VerdictKind,
-  intents?: (side: DuelSide, view: CombatView) => CombatIntent,
-  key?: string,
-  seeds: readonly number[] = SEEDS,
+/** How a run answers. `ALTERNATING` is the realistic middle a real student sits in. */
+type AnswerPath = VerdictKind | "ALTERNATING";
+
+function verdictOn(path: AnswerPath, round: number): VerdictKind {
+  if (path === "ALTERNATING") return round % 2 === 1 ? "CORRECT" : "WRONG";
+  return path;
+}
+
+/**
+ * Drive `seeds` whole duels against one profile in one arena and aggregate them.
+ *
+ * The profile and the arena are ONE argument in spirit: they are a fight, and the two
+ * callers below exist so that the pairing is chosen once, explicitly, rather than a
+ * profile being handed whatever arena the harness happens to default to. That default
+ * is how the gate came to measure a boss M1 does not ship in a yard M1 does not use.
+ */
+function sweepFight(
+  profile: BossProfile,
+  arena: DuelArena | undefined,
+  path: AnswerPath,
+  intents: ((side: DuelSide, view: CombatView) => CombatIntent) | undefined,
+  seeds: readonly number[],
 ): Sweep {
-  const cacheKey = `${tier}:${verdict}:${key ?? "oracle"}:${seeds.length}`;
-  const cached = sweepCache.get(cacheKey);
-  if (cached) return cached;
-  const profile = bossProfileForTier(tier);
   let wins = 0;
   let knockouts = 0;
   let deaths = 0;
@@ -110,8 +169,9 @@ function sweep(
   for (const seed of seeds) {
     const result = runDuel({
       opponent: { kind: "BOSS", profile },
-      verdicts: () => verdict,
+      verdicts: (_side, round) => verdictOn(path, round),
       seed,
+      ...(arena ? { arena } : {}),
       ...(intents ? { intents } : {}),
     });
     if (result.outcome.winner === "A") wins += 1;
@@ -127,7 +187,7 @@ function sweep(
     playerHealthLeft += result.outcome.healthA / seeds.length;
   }
   const sorted = [...losses].sort((a, b) => a - b);
-  const result: Sweep = {
+  return {
     wins,
     knockouts,
     deaths,
@@ -138,9 +198,66 @@ function sweep(
     medianLoss: sorted.length === 0 ? 0 : sorted[Math.floor((sorted.length - 1) / 2)]!,
     runs: seeds.length,
   };
+}
+
+/**
+ * THE TIER CURVE: the bare profile in the reference fixture. Not M1 — see the header.
+ * `bossProfileForTier(tier)` takes no opt-ins, so this is AUTHORED_FLAT ammo, no
+ * cover-seeking and no tactical layer, and `runDuel` defaults to `referenceArena()`.
+ */
+function sweep(
+  tier: BossTier,
+  verdict: VerdictKind,
+  intents?: (side: DuelSide, view: CombatView) => CombatIntent,
+  key?: string,
+  seeds: readonly number[] = SEEDS,
+): Sweep {
+  const cacheKey = `tier${tier}:${verdict}:${key ?? "oracle"}:${seeds.length}`;
+  const cached = sweepCache.get(cacheKey);
+  if (cached) return cached;
+  const result = sweepFight(
+    bossProfileForTier(tier),
+    undefined,
+    verdict,
+    intents,
+    seeds,
+  );
   sweepCache.set(cacheKey, result);
   return result;
 }
+
+/**
+ * M1's boss, built exactly as the mission builds it: the tier-1 curve plus the three
+ * opt-ins the production sites pass. `M1_BOSS_OVERRIDES` is the shared constant those
+ * sites are pinned against (`apps/web/test/duelPathParity.test.ts`), so a fourth opt-in
+ * added to the mission and not here fails that pin instead of silently re-diverging
+ * this gate from the fight.
+ *
+ * `bossId` is the one field that legitimately differs between construction sites — the
+ * reducer reads it only into telemetry — so a distinct label here is not a divergence.
+ */
+const M1_BOSS: BossProfile = bossProfileForTier(
+  M1_BOSS_TIER,
+  "BOS.MD01.BOSS.WINNABILITY",
+  M1_BOSS_OVERRIDES,
+);
+
+/** M1'S SHIPPED FIGHT: the profile above, in the arena the mission actually uses. */
+function shipped(
+  path: AnswerPath,
+  intents?: (side: DuelSide, view: CombatView) => CombatIntent,
+  key?: string,
+  seeds: readonly number[] = SEEDS,
+): Sweep {
+  const cacheKey = `m1:${path}:${key ?? "oracle"}:${seeds.length}`;
+  const cached = sweepCache.get(cacheKey);
+  if (cached) return cached;
+  const result = sweepFight(M1_BOSS, ropewalkYardArena(), path, intents, seeds);
+  sweepCache.set(cacheKey, result);
+  return result;
+}
+
+const ANSWER_PATHS: readonly AnswerPath[] = ["CORRECT", "ALTERNATING", "WRONG"];
 
 /**
  * The instrument that can actually be hit.
@@ -442,12 +559,20 @@ test("A CORRECT ANSWER BUYS A CLIMAX, NOT AN EARLY EXIT", () => {
         `rounds. Below ${FLOOR} the reward for knowing the history is a deleted climax`,
     );
   }
-  // And for the instrument that models a student rather than an oracle, at the tier a
-  // student meets first. This is the exact number the fun audit measured at 2.1.
+  // And for the instrument that models a student rather than an oracle, at the bottom
+  // of the curve.
+  //
+  // THE 2.1 THIS COMMENT USED TO CITE IS PRE-FIX AND WAS LEFT BEHIND BY THE RETUNE that
+  // introduced the floor it sits under. Measured now: 3.8 rounds. The stale figure was
+  // the more misleading half of a stale sentence — it also called this "M1's boss",
+  // which it is not: `sweep` drives the BARE tier-1 profile in `referenceArena()`. M1's
+  // own fight is measured in the shipped-fight section below, and a fallible student who
+  // knows the answers gets 12.0 rounds there, not 3.8. Do not read this line as a fact
+  // about the mission.
   const student = sweep(1, "CORRECT", SLOPPY, "sloppy");
   assert.ok(
     student.rounds >= FLOOR,
-    `a fallible student who knows the answers finishes M1's boss in ` +
+    `a fallible student who knows the answers finishes the bare tier-1 boss in ` +
       `${student.rounds.toFixed(1)} rounds`,
   );
 });
@@ -532,6 +657,230 @@ test("THE PEDAGOGICAL INVARIANT: a player who knows the history beats one who do
   );
   assert.ok(rounds < DUEL_ROUND_CEILING, `head to head took ${rounds.toFixed(1)} rounds`);
 });
+
+// ---- M1's shipped fight ------------------------------------------------------
+//
+// The only measurements in this file that are evidence about the fight a student plays.
+// Everything above drives the bare tier curve in the reference fixture; these drive the
+// tier-1 profile WITH its three production opt-ins in the rope-walk yard.
+//
+// WHAT THE SHIPPED FIGHT MEASURES, over the eight seeds, reference player unless said:
+//
+//   answers      rounds  wins  resolved on health  boss HP left
+//   WRONG           5.8   8/8                 8/8            0%
+//   ALTERNATING     6.4   8/8                 8/8            0%
+//   CORRECT        11.5   8/8                 6/8            7%
+//   WRONG sloppy   10.4   6/8                 6/8           16%
+//   CORRECT sloppy 12.0   8/8                 5/8           12%
+//   WRONG passive   4.4   0/8                 8/8          100%
+//
+// The boss's own offence is in better shape than the tier curve suggests: it puts down a
+// passive player in 4.4 rounds where the bare profile needs 9.6. What is NOT healthy is
+// how the fight terminates, and the two assertions recording that are marked `todo` —
+// see the block above them.
+//
+// AND EIGHT SEEDS UNDERSTATE IT. The eight-seed set reports the backstop being reached on
+// the correct path only; over the 32-seed set it is reached on all three, which is the
+// honest picture and the reason the `todo` block quotes both:
+//
+//   answers      rounds  wins    resolved on health  reached the 24-round backstop
+//   CORRECT        10.8  32/32              25/32     7/32
+//   ALTERNATING     8.6  32/32              29/32     3/32
+//   WRONG           7.9  32/32              30/32     2/32
+//
+// Twelve of those ninety-six fights ran out of rounds with both fighters alive. The
+// eight-seed figures are kept as the assertion set because they are what the rest of the
+// file uses and they already fail; the wider set is the measurement to quote.
+
+test("the shipped-fight section really drives the shipped fight", () => {
+  // THE STRUCTURAL GUARD, and it is the one that would have caught the original defect.
+  //
+  // Every assertion below is only as good as the pairing `shipped()` chose, and the way
+  // this file went wrong was not a bad threshold — it was measuring the wrong fight while
+  // every threshold passed. A future edit that "simplifies" `shipped()` back to the
+  // reference fixture, or drops an opt-in, changes no assertion's text and would go
+  // unnoticed for exactly the same reason. So the pairing itself is pinned.
+  //
+  // The counterpart pin lives in `apps/web/test/duelPathParity.test.ts`, which checks
+  // that these constants still equal what the mission passes. This one checks they are
+  // what this file actually uses.
+  const arena = ropewalkYardArena();
+  assert.equal(arena.spec.arenaId, "DUEL.ARENA.ROPEWALK_YARD");
+  assert.equal(arena.spec.cover.length, 8, "the yard's eight pieces of cover");
+  assert.notEqual(
+    arena.spec.arenaId,
+    "DUEL.ARENA.REFERENCE",
+    "the shipped fight is not the tuning fixture",
+  );
+
+  assert.equal(M1_BOSS.tier, M1_BOSS_TIER);
+  assert.equal(M1_BOSS.ammoPolicy, "SYMMETRIC_COMPLEMENT");
+  assert.equal(M1_BOSS.takesCoverBeforeQuestion, true);
+  assert.equal(M1_BOSS.tactical, M1_BOSS_TACTICS);
+  // And the bare profile really is a different fight, so the two sections cannot be
+  // silently collapsed into one on the belief that the opt-ins do not matter.
+  const bare = bossProfileForTier(M1_BOSS_TIER);
+  assert.notEqual(bare.ammoPolicy, M1_BOSS.ammoPolicy);
+  assert.notEqual(bare.takesCoverBeforeQuestion, M1_BOSS.takesCoverBeforeQuestion);
+  assert.equal(bare.tactical, null);
+});
+
+test("M1'S BOSS CAN WIN, measured on the fight it actually fights", () => {
+  // The invariant that caught a tier-1 boss shipping unable to finish a duel, now asked
+  // of the boss that ships. It passes comfortably, and BETTER than the tier curve does:
+  // 4.4 rounds to put down a player who never fires, against 9.6 for the bare profile.
+  // The three opt-ins make the officer a more effective killer, not a less effective one,
+  // which is worth knowing before anyone reads the correct-path problem below as "the
+  // boss is too weak".
+  const result = shipped("WRONG", PASSIVE, "passive");
+  assert.equal(
+    result.deaths,
+    result.runs,
+    `M1's boss failed to finish a player who never fired a shot in ` +
+      `${result.runs - result.deaths}/${result.runs} runs. A boss that cannot win is a ` +
+      "duel that cannot end",
+  );
+  assert.ok(
+    result.rounds <= 12,
+    `M1's boss needed ${result.rounds.toFixed(1)} rounds to put down a passive player`,
+  );
+});
+
+test("M1'S WRONG-ANSWER PATH IS A HANDICAP, NEVER A LOCKOUT", () => {
+  // The design's one non-negotiable, on the shipped fight. Note that the projection is
+  // arena-independent and profile-only — SYMMETRIC_COMPLEMENT leaves `magazinePerRound`
+  // at the wrong-answer grant as the projection baseline — so the 1.68 margin is the
+  // same number the tier curve reports. The SIMULATION is what differs, and it differs a
+  // lot: a wrong answer arms this boss with 14 balls rather than a flat 7, so the wrong
+  // path here is a genuinely harder fight than any figure above it describes.
+  const projection = projectExchange(M1_BOSS, BULLETS_FOR_WRONG);
+  assert.ok(
+    projection.margin >= REQUIRED_WRONG_PATH_MARGIN,
+    `M1's boss projects a wrong-answer margin of ${projection.margin.toFixed(2)} ` +
+      `against a required ${REQUIRED_WRONG_PATH_MARGIN}`,
+  );
+  const wrong = shipped("WRONG");
+  assert.equal(
+    wrong.wins,
+    wrong.runs,
+    `a mechanically strong player answering everything wrong won ` +
+      `${wrong.wins}/${wrong.runs} against M1's boss`,
+  );
+  // And for the player who can be hit — the median first-mission student — it stays a
+  // fight rather than a wall: 6/8, and the losses are close (worst 24% of the boss's bar).
+  const sloppyWrong = shipped("WRONG", SLOPPY, "sloppy");
+  assert.ok(
+    sloppyWrong.wins > sloppyWrong.runs / 2,
+    `a fallible student answering everything wrong won ` +
+      `${sloppyWrong.wins}/${sloppyWrong.runs} against M1's boss`,
+  );
+  assert.ok(
+    sloppyWrong.worstLoss <= 0.35,
+    `the worst of ${sloppyWrong.deaths} losses left M1's boss on ` +
+      `${(sloppyWrong.worstLoss * 100).toFixed(0)}% health: a loss has to be a fight ` +
+      "that went to the wire, not a beating",
+  );
+});
+
+test("M1'S FIGHT GIVES A KNOWLEDGEABLE PLAYER A CLIMAX", () => {
+  // The floor, on the shipped fight. It is not in danger from below — the correct path
+  // measures 11.5 rounds against a floor of 3. It is the CEILING that is in trouble, and
+  // that is the `todo` below.
+  const FLOOR = 3;
+  for (const path of ANSWER_PATHS) {
+    const result = shipped(path);
+    assert.ok(
+      result.rounds >= FLOOR,
+      `M1's fight on the ${path} path lasts ${result.rounds.toFixed(1)} rounds. Below ` +
+        `${FLOOR} the reward for knowing the history is a deleted climax`,
+    );
+  }
+  // Every path must still be winnable by a strong player, on every answer pattern.
+  for (const path of ANSWER_PATHS) {
+    const result = shipped(path);
+    assert.equal(
+      result.wins,
+      result.runs,
+      `M1's fight on the ${path} path was won ${result.wins}/${result.runs}`,
+    );
+  }
+});
+
+// THE TWO PROPERTIES M1'S SHIPPED FIGHT DOES NOT SATISFY.
+//
+// Both are marked `todo`, which in node:test means they RUN, print the real assertion
+// failure with the real numbers on every test run, and do not fail the suite. That is
+// deliberate and it is not a way of hiding them:
+//
+//   - they are written as the invariant that SHOULD hold, not as a characterisation of
+//     the defect, so nothing here launders a broken fight into an expected one;
+//   - they execute, so the numbers cannot go quietly stale, and if the fight gets worse
+//     the printed figures move;
+//   - and the fix is a BALANCE decision that belongs to the owner, not to this lane. The
+//     owner has been explicit that he wants the boss aggressive, and every way of making
+//     these pass — more boss ammo on the correct path, less boss health, a shorter round
+//     ceiling, weaker cover-seeking — changes how the fight feels. Retuning until the
+//     gate goes green is exactly the move that produced the numbers this file just spent
+//     a header correcting.
+//
+// Promote each to a plain `test` the moment it holds.
+//
+// THE MECHANISM, traced rather than inferred. SYMMETRIC_COMPLEMENT gives the boss the
+// MIRROR of the player's award: answer correctly and the player gets 14 while the boss
+// gets 7. Seven balls is barely above `lowAmmoThreshold` (3), so the boss drops into LOW
+// and then EMPTY early in every round, and both of those states are fought from cover —
+// measured 22% of live combat in LOW and 27% in EMPTY on the correct path, against 6%
+// and 0% on the wrong path. A boss behind cover is a boss the PLAYER cannot hit either,
+// so the player's damage output collapses on exactly the path where their magazine is
+// largest. Hence: the better a student answers, the longer the fight, and 2 of 8 seeds
+// never finish it at all.
+
+test(
+  "a correct answer shortens M1's fight",
+  { todo: "M1 defect: it lengthens it, 11.5 rounds against 5.8. Owner's call — see block above." },
+  () => {
+    const correct = shipped("CORRECT");
+    const wrong = shipped("WRONG");
+    assert.ok(
+      correct.rounds < wrong.rounds,
+      `M1: ${correct.rounds.toFixed(1)} rounds on a correct answer against ` +
+        `${wrong.rounds.toFixed(1)} on a wrong one. The economy pays in rounds ` +
+        "survived, so a correct answer must not buy a LONGER fight",
+    );
+  },
+);
+
+test(
+  "M1'S FIGHT ENDS ON HEALTH, NOT ON THE ANTI-HANG BACKSTOP",
+  {
+    todo:
+      "M1 defect: the 24-round ceiling is reached on every answer path — 7/32 correct, " +
+      "3/32 alternating, 2/32 wrong. Owner's call — see block above.",
+  },
+  () => {
+    // `DUEL_ROUND_CEILING` is documented as unreachable in normal play, and reaching it
+    // is the failure this whole file was rewritten around: a duel that ends on the
+    // backstop is ~585 seconds of shooting plus two dozen untimed questions, which in a
+    // classroom is a match that outlasts the period. On the correct path it is reached
+    // by seeds 1 and 19, both times with the player alive and the boss still holding 20%
+    // and 33% of its bar — the player cannot finish it, so the clock does.
+    //
+    // This assertion runs on the eight-seed set, where only the CORRECT path fails.
+    // Over 32 seeds all three paths fail (7, 3 and 2 of 32), so the wrong-answer path is
+    // not immune either and the eight seeds simply miss its two. Do not read a green
+    // ALTERNATING or WRONG line here as those paths being sound.
+    for (const path of ANSWER_PATHS) {
+      const result = shipped(path);
+      assert.equal(
+        result.knockouts + result.deaths,
+        result.runs,
+        `M1's fight on the ${path} path resolved on health in only ` +
+          `${result.knockouts + result.deaths}/${result.runs} runs, averaging ` +
+          `${result.rounds.toFixed(1)} rounds against a ceiling of ${DUEL_ROUND_CEILING}`,
+      );
+    }
+  },
+);
 
 test("winning on points clears the mission", () => {
   // Settled: missions are optional-outcome fun and the assessment is the learning

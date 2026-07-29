@@ -104,6 +104,104 @@ export function referenceArena(): DuelArena {
   });
 }
 
+// ---- M1's shipped arena ------------------------------------------------------
+//
+// THE ARENA THE MISSION IS ACTUALLY FOUGHT IN, and it is not `referenceArena()`.
+//
+// `referenceArena()` above is a TUNING FIXTURE — 12x12 with four pieces of cover —
+// and for a long time it was also the only arena any balance test drove, while M1
+// shipped an 11x11 yard with eight. So every "winnability verified" claim in this
+// package described a fight nobody plays. That is the same defect class as the
+// replay harness ruled inadmissible for real-play claims: a test path that diverged
+// from the shipped path and stayed green.
+//
+// WHY THESE NUMBERS ARE RESTATED HERE RATHER THAN IMPORTED. The authoring lives in
+// `apps/web/src/duel/arenaSpec.ts`, because each piece of cover is "this imported
+// GLB, standing this tall" and its footprint is derived from the prop's own measured
+// proportions — `fitPropToHeight`. That is asset-pipeline data and a renderer
+// concern, and this package is the headless core that also runs the PvP authority;
+// it has no business knowing what a `crate-mound` is. But the core cannot import
+// from `apps/web` either (the dependency runs the other way), so the shipped
+// geometry has to exist here as plain rectangles.
+//
+// So the same fit arithmetic is applied to the same measured prop sizes, in the same
+// order of operations, and the result is PINNED BIT-FOR-BIT against the app's own
+// `yardArenaSpec()` by `apps/web/test/duelArena.test.ts`. Restating without pinning
+// is how the SYMMETRIC_COMPLEMENT opt-in went missing from the real mission path; if
+// a prop is added, moved or refitted, that pin fails and names this constant.
+
+/**
+ * One piece of yard cover, fitted the way the renderer fits it.
+ *
+ * `natural` is the prop's bounding size as exported (metres, off the GLB POSITION
+ * accessors), and the prop is scaled UNIFORMLY until it stands `heightM` tall — so
+ * the footprint is the asset's own aspect ratio, never a second set of numbers.
+ * Mirrors `fitPropToHeight` term for term so the two cannot round differently.
+ */
+function fittedYardCover(
+  id: string,
+  x: number,
+  z: number,
+  natural: readonly [number, number, number],
+  heightM: number,
+): CoverSpec {
+  const scale = heightM / natural[1];
+  return {
+    id,
+    x,
+    z,
+    halfX: (natural[0] * scale) / 2,
+    halfZ: (natural[2] * scale) / 2,
+    topY: heightM,
+  };
+}
+
+/** Measured natural sizes of the props M1's cover is fitted from. */
+const CRATE_MOUND: readonly [number, number, number] = [1.9, 1.21, 1.373];
+const CRATE_STACK: readonly [number, number, number] = [1.902, 1.368, 1.439];
+const BARREL_GROUP: readonly [number, number, number] = [1.9, 0.893, 1.446];
+const FIREWOOD_STACK: readonly [number, number, number] = [1.896, 1.476, 0.981];
+
+export const ROPEWALK_YARD_HALF_EXTENT = 11;
+
+/**
+ * The rope-walk yard's cover, in the authored order.
+ *
+ * The layout has 180-degree rotational symmetry on purpose, so it can serve PvP the
+ * day the arenas are unified. Heights are graded so a glance tells the player what a
+ * piece of cover does: an aimed shot travels at the target's chest, about 1.12 m for
+ * a standing fighter, so 1.30 m and above stops it and 0.85 m does not. The low
+ * pieces are still real — they block movement, which is what makes crossing the yard
+ * a decision.
+ */
+export function ropewalkYardArenaSpec(): ArenaSpec {
+  return {
+    arenaId: "DUEL.ARENA.ROPEWALK_YARD",
+    halfExtentX: ROPEWALK_YARD_HALF_EXTENT,
+    halfExtentZ: ROPEWALK_YARD_HALF_EXTENT,
+    cover: [
+      fittedYardCover("COVER.CRATE_MOUND_WEST", -3.6, 0.9, CRATE_MOUND, 1.3),
+      fittedYardCover("COVER.CRATE_MOUND_EAST", 3.6, -0.9, CRATE_MOUND, 1.3),
+      fittedYardCover("COVER.TIMBER_NORTHWEST", -6.6, -3.4, FIREWOOD_STACK, 1.45),
+      fittedYardCover("COVER.TIMBER_SOUTHEAST", 6.6, 3.4, FIREWOOD_STACK, 1.45),
+      fittedYardCover("COVER.BARRELS_NORTH", 2.1, 4.6, BARREL_GROUP, 0.85),
+      fittedYardCover("COVER.BARRELS_SOUTH", -2.1, -4.6, BARREL_GROUP, 0.85),
+      fittedYardCover("COVER.CRATES_WEST", -8.2, 4.2, CRATE_STACK, 1.4),
+      fittedYardCover("COVER.CRATES_EAST", 8.2, -4.2, CRATE_STACK, 1.4),
+    ],
+  };
+}
+
+/**
+ * M1's shipped arena. Drive balance measurements against THIS, paired with the
+ * shipped boss profile (`m1BossProfile` in boss.ts) — the two are one configuration
+ * and measuring either against the other's counterpart produces numbers that
+ * describe no fight at all.
+ */
+export function ropewalkYardArena(): DuelArena {
+  return buildArena(ropewalkYardArenaSpec());
+}
+
 /** An empty yard: no cover at all. Used to isolate ballistics in tests. */
 export function openArena(halfExtent = 14): DuelArena {
   return buildArena({
