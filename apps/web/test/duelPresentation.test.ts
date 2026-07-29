@@ -1101,6 +1101,41 @@ test("the exchange is readable AT the break, not one round behind it", () => {
   assert.ok(sawBreakWithDamage, "a round in which damage landed reached its own break");
 });
 
+test("breakUnspentA is the core's discarded-ball count at the break, and 0 elsewhere", () => {
+  // The one-time "unfired balls do not carry" notice names this number. It must be the
+  // core's own record of what the round's engagement ended with — read straight off the
+  // LINE_OF_SIGHT_BREAK state, never invented — and must read 0 in every other phase so
+  // nothing draws a stale count. The player is driven IDLE (never fires) after answering
+  // correctly, so a full magazine survives to the break and the count is non-zero there.
+  const runtime = runtimeForTest();
+  let sawBreakWithUnspent = false;
+  for (let frame = 0; frame < 60 * 400 && !sawBreakWithUnspent; frame++) {
+    const hud = runtime.getHud();
+    if (hud.phase === "DUEL_RESOLVED") break;
+    if (hud.phase === "QUESTION_PENDING" && hud.item) {
+      runtime.commitVerdict(
+        "A",
+        mintVerdict({
+          kind: "CORRECT",
+          itemId: hud.item.itemId,
+          itemVersion: hud.item.itemVersion,
+          source: "CLASSIFIER",
+        }),
+      );
+    }
+    runtime.advance(FIELD_DT);
+    const state = runtime.getState();
+    const after = runtime.getHud();
+    if (state.phase === "LINE_OF_SIGHT_BREAK") {
+      assert.equal(after.breakUnspentA, state.unspent.A, "the count is the core's own");
+      if (after.breakUnspentA > 0) sawBreakWithUnspent = true;
+    } else {
+      assert.equal(after.breakUnspentA, 0, "no stale unspent count outside the break");
+    }
+  }
+  assert.ok(sawBreakWithUnspent, "a break discarding unspent balls was reached");
+});
+
 test("the ledger opens on full health, so round one's damage is visible too", () => {
   const runtime = runtimeForTest();
   const hud = runtime.getHud();

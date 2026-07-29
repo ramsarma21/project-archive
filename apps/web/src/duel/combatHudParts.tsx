@@ -166,6 +166,9 @@ export function EnemyHealth(props: {
   role?: string;
   health: number;
   maxHealth: number;
+  /** Clean hits the opponent is from the ground; omitted draws no line. */
+  hitsToFall?: number;
+  downed?: boolean;
   round?: number;
   clockSeconds?: number | null;
   clockUrgent?: boolean;
@@ -177,6 +180,8 @@ export function EnemyHealth(props: {
   const { pulse, heal } = useDamagePulse(props.health);
   const shown = Math.max(0, Math.round(props.health));
   const max = Math.max(0, Math.round(props.maxHealth));
+  const hits = props.hitsToFall;
+  const standing = enemyStandingLine(hits, props.downed ?? false);
   return (
     <div className={toneClass("cbt-enemy", tone)}>
       {(props.round !== undefined || props.clockSeconds != null) && (
@@ -202,11 +207,39 @@ export function EnemyHealth(props: {
         </span>
       </div>
       <Bar prefix="cbt-enemy" fraction={fraction} chip={chip} pulse={pulse} heal={heal} />
+      {/* The clean-hits-to-the-ground read, persistent so it is legible WHILE shooting
+          rather than on a card after the fight stops. Escalates as it closes. */}
+      {standing && (
+        <div
+          className={`cbt-enemy-standing${
+            hits !== undefined && !props.downed && hits <= 3 ? " is-closing" : ""
+          }`}
+        >
+          {standing}
+        </div>
+      )}
       <p className="cbt-sr" role="status" aria-live="polite">
         {props.name} health {shown} of {max}, {healthToneLabel(tone)}
+        {standing ? `. ${standing}` : ""}
       </p>
     </div>
   );
+}
+
+/**
+ * The persistent clean-hits read, phrased to keep the retired card's character. Kept
+ * pronoun-free so it reads correctly for the boss and for a PvP opponent alike — the
+ * opponent's name sits directly above it, so "N clean hits from the ground" is plainly
+ * about them. Returns null when there is nothing to say.
+ */
+export function enemyStandingLine(
+  hitsToFall: number | undefined,
+  downed: boolean,
+): string | null {
+  if (downed) return "down";
+  if (hitsToFall === undefined) return null;
+  const hits = Math.max(0, Math.round(hitsToFall));
+  return `${hits} clean ${hits === 1 ? "hit" : "hits"} from the ground`;
 }
 
 /** The centre reticle and its hit marker. Fires once per authoritative enemy-health fall. */

@@ -34,6 +34,7 @@ import {
   HealthBar,
   HitMarker,
   ControlsLegend,
+  enemyStandingLine,
 } from "../src/duel/combatHudParts.js";
 import {
   PORTRAIT_SAMPLE_MAX_SECONDS,
@@ -280,6 +281,92 @@ test("the enemy display shows the name once and binds the authoritative health",
   // 40 / 200 is a quarter, so the pool reads critical (not colour-only: it is labelled).
   assert.ok(withClass(root, "cbt-enemy-critical").length > 0, "critical state is marked");
   assert.match(textOf(root), /40/);
+  act(() => renderer.unmount());
+});
+
+// ---- the persistent clean-hits read (moved off the retired break card) -----
+
+test("enemyStandingLine keeps the card's character, pronoun-free, and reads down", () => {
+  // The line that used to live only on the blocking break card. Pronoun-free so it is
+  // correct for the boss AND a PvP opponent — the name sits right above it.
+  assert.equal(enemyStandingLine(7, false), "7 clean hits from the ground");
+  assert.equal(enemyStandingLine(1, false), "1 clean hit from the ground", "singular reads");
+  assert.equal(enemyStandingLine(0, false), "0 clean hits from the ground");
+  // Down outranks the count, and a missing count draws nothing (PvP today).
+  assert.equal(enemyStandingLine(3, true), "down");
+  assert.equal(enemyStandingLine(undefined, false), null, "no count, no line");
+});
+
+test("the enemy HUD shows the clean-hits read and escalates as it closes", () => {
+  let renderer!: ReactTestRenderer;
+  act(() => {
+    renderer = TestRenderer.create(
+      React.createElement(EnemyHealth, {
+        name: "The King's officer",
+        health: 140,
+        maxHealth: 200,
+        hitsToFall: 7,
+        round: 1,
+        reducedMotion: true,
+      }),
+    );
+  });
+  const standing = withClass(renderer.root, "cbt-enemy-standing");
+  assert.equal(standing.length, 1, "the clean-hits read is drawn");
+  assert.match(textOf(renderer.root), /7 clean hits from the ground/);
+  assert.equal(
+    withClass(renderer.root, "is-closing").length,
+    0,
+    "seven hits out is not yet the closing state",
+  );
+
+  // Three or fewer clean hits: the read escalates (not colour-only — the words stay).
+  act(() => {
+    renderer.update(
+      React.createElement(EnemyHealth, {
+        name: "The King's officer",
+        health: 40,
+        maxHealth: 200,
+        hitsToFall: 2,
+        round: 3,
+        reducedMotion: true,
+      }),
+    );
+  });
+  assert.equal(withClass(renderer.root, "is-closing").length, 1, "the endgame is escalated");
+  assert.match(textOf(renderer.root), /2 clean hits from the ground/);
+  act(() => renderer.unmount());
+});
+
+test("a downed opponent's read is 'down', and an absent count draws no line", () => {
+  let renderer!: ReactTestRenderer;
+  act(() => {
+    renderer = TestRenderer.create(
+      React.createElement(EnemyHealth, {
+        name: "The King's officer",
+        health: 0,
+        maxHealth: 200,
+        hitsToFall: 0,
+        downed: true,
+        reducedMotion: true,
+      }),
+    );
+  });
+  assert.match(textOf(renderer.root), /down/);
+  act(() => renderer.unmount());
+
+  // PvP passes no count today: the line is simply absent, not "0 hits".
+  act(() => {
+    renderer = TestRenderer.create(
+      React.createElement(EnemyHealth, {
+        name: "duellist_7",
+        health: 200,
+        maxHealth: 200,
+        reducedMotion: true,
+      }),
+    );
+  });
+  assert.equal(withClass(renderer.root, "cbt-enemy-standing").length, 0, "no count, no line");
   act(() => renderer.unmount());
 });
 
