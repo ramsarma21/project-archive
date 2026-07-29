@@ -21,6 +21,70 @@
 >
 > Design the mission fresh. Consult the sections below only for facts, never for choices.
 
+---
+
+## The mission, designed fresh (PROVISIONAL — 29 Jul)
+
+Owner's constraints: start from the **concept**; keep the existing world and cast but assume any
+new beat, prop or interior can be built; teach **all** the concepts through checkpoints and
+cutscenes, while the **overarching task across the whole mission is the single most-missed
+topic** — the Port Act.
+
+### The design bar
+
+Not "a mission about the Port Act" but **gameplay only solvable by understanding it.** The
+measured misconception is not that students fail to know the harbour closed; it is that 41–43%
+read the closure as ordinary governance rather than as a punishment aimed at a whole town,
+guilty and innocent together. So the mechanic must test one thing: **can the player predict the
+blast radius?**
+
+### The core loop
+
+**Move relief supplies into a town whose harbour is shut, with less than everyone needs.**
+Historically real — other colonies sent rice, grain and sheep to Boston during the closure.
+
+The Act shapes both halves:
+
+- **The route.** The wharf is dead and the water is closed, so relief comes overland and every
+  yard of it crosses an occupied town. The closure is a traversal fact, not a caption.
+- **The destinations.** This is where the concept bites. A player who believes this punished the
+  tea-dumpers looks for the guilty and the political. A player who understands collective
+  punishment finds the ropemaker with no ships to rig, the fishmonger who never touched politics,
+  the carter with nothing to cart.
+
+**Scarcity is the mechanic, not a restriction.** With enough relief for everyone there is no
+judgment to make and nothing is tested.
+
+### The checkpoints carry the other concepts, through the cast authored for them
+
+| Checkpoint | Concept | Why this character |
+|---|---|---|
+| **Thomas** the merchant | The blast radius, *and* non-importation as resistance | Authored for boycott and trade; ruined by a closure he had no part in, and choosing not to import regardless |
+| **Pike** the clerk | Consent — Parliament legislated with no colonial voice | Authored for stamped and legal papers; he knows what the Act actually says |
+| **Clarke** the Loyalist | That the question was genuinely contested | Authored as informer; he thinks the town brought it on itself |
+| **The ropewalk** | The closure's reach into ordinary work | Idle ropemakers because no ship needs rigging |
+
+Per the annoyance budget and two-voices rule: each NPC argues their own position in their own
+1765 words, and the handler adds **at most one clipped line** naming the vocabulary afterwards.
+
+### Provisional calls (owner skipped the question; reverse freely)
+
+- **Mechanic:** scarce relief distribution, not the licence/exemption puzzle. The exemption route
+  teaches the Act's fine print; the distribution tests its *nature*, which is the measured error.
+- **Consequence:** the people you skipped remain in the world, visibly worse, and Clarke reporting
+  where the relief went costs you something. Without a reaction this degrades into a fetch quest
+  with a quiz attached, which is the one failure mode to design against.
+- **Failability:** finishing is never blocked. A wrong distribution is recorded as *not
+  understood* and gets re-taught — remediation, not a wall.
+
+### Open
+
+- Whether the relief is a single carry or several trips, which decides the mission's rhythm.
+- What "delivered wrong" looks like concretely enough to author and to grade.
+- Whether Abigail and the Rider have roles here or sit this mission out.
+
+---
+
 One lesson, one mission, one boss fight, one capstone. The product is **remediation of
 measured misconceptions**, not a survey of the Revolution. The world and its assets are
 cheap to retarget; the learning design is the expensive part, so the concepts lead and the
