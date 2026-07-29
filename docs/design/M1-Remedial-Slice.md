@@ -83,23 +83,50 @@ Shape: an opening objective, then **stop → cutscene → NEW objective**, repea
 and the boss challenge. The objective surface exists (`MissionHud.tsx`, `traversal.ts`,
 `levelPort.ts`) as does guidance (`packages/mission-m1/src/wayfind.ts`).
 
-**Proposed narrative spine (not yet settled):** carry a non-importation agreement across an
-occupied town and get it signed. It is gamified, physical, and *is itself* one of the four
-concepts — the player performs a form of resistance rather than reading about one.
+**The narrative spine:** June 1774. The Port Act has shut the harbour, troops are quartered, and
+town meetings are outlawed. The player is a courier for the Committee of Correspondence carrying
+the **Solemn League and Covenant** — the real non-importation pledge Boston circulated that
+month — and must get it signed and posted. The player therefore *performs* a form of resistance
+rather than reading about one, which is the concept a third of students get wrong.
 
-| Stop | The cutscene teaches | The new objective | Refutes |
+The gamified objective is legible: **a checklist of marks to collect, then post the thing.** The
+lesson hands the player that checklist, which is what its briefing job is for.
+
+### The rule that keeps the stops honest
+
+**The errand is why you are there; the concept is why it is hard.** A stop that exists so a
+cutscene can fire is the popup problem in a more expensive costume. Every location below is
+required to *complete the errand*, and the concept is the obstacle standing in the way.
+
+| Stop | Why the errand needs it | The concept as obstacle | Refutes |
 |---|---|---|---|
-| The Port Act notice | The port closure punished the whole town, not the men who dumped the tea | The dock route is dead — move overland | The 41–43% who read the coercive acts as ordinary governance |
-| The quartered house | The Crown took private homes, not barracks | The merchant you need is in a house full of soldiers; get to him unseen | That quartering was billeting-as-usual |
-| The banned assembly | With no lawful meeting, resistance takes other forms: petition, committee, non-importation | No gathering — carry word and signatures person to person | The 28% "declared war" and the 37% "colonies taxed imports" |
+| **The Shambles** (market, `B_SHAMBLES`) | A pledge not to sell British goods is worthless without the marks of the men who sell them | The traders are already ruined by the port closure — the fishmonger who never touched the tea wants to know why he starves beside those who did. Collective punishment, argued by someone with standing | The 41–43% who read the coercive acts as ordinary governance |
+| **A merchant's house** (needs an interior) | You need his mark | There are soldiers billeted in his parlour, so you cannot simply knock. Quartering is the *condition* of a signature, not a separate lesson | That quartering was billeting-as-usual |
+| **Hollis Meeting house** (`HOLLIS_MEETING__ROOF`, where `ROPEWALK_STOP` now sits) | The Covenant needs the Committee's endorsement to carry weight | There is no meeting — assembly is illegal. With no body to endorse it collectively, the objective *rewrites itself*: collect marks one at a time | The 28% "declared war" and the 37% "colonies taxed imports" |
+| **The Liberty Elm** (`LIBERTY_ELM_TRUNK`, F zone) | A pledge nobody can see binds nobody; the Elm is where Boston posts things | Posting it in the open under occupation is what brings the officer down on you | — |
 
-**Escalation needs no beat of its own.** It is the order the player walks through, which is why
-the mission can teach the 58%-zero skill without lecturing about it.
+**This gives the boss fight a cause rather than a location.** The duel is the consequence of the
+player's last action, not a gate they wandered into. The officer's challenge is also where
+*consent* enters directly — Parliament may lay what it likes, and the player has spent a mission
+learning why that is contested.
+
+**Escalation needs no beat of its own.** It is the order the player walked: the port shut, no
+lawful remedy left, so this is what remains, and defiance brings the reckoning. That is why the
+mission can teach the 58%-zero skill without lecturing about it.
 
 **Every stop must satisfy one test:** the new objective has to be impossible, or done wrong,
 without having understood the cutscene. If a player can skip it and still finish by ordinary
 navigation, it is a popup wearing a cutscene's costume — and the popups were removed for exactly
 that reason.
+
+**Consequence for the level:** the current level is `M1_EFFIGY_RUN`, an effigy hanging, which is
+a 1765 Stamp Act protest with no place in a 1774 Port Act premise. Retiring it also retires the
+finicky clicker minigame the owner complained about.
+
+**Possibly revivable rather than built:** `stealthStore.ts`, `stealth/alert.ts`,
+`StealthHud.tsx` and `consequenceReceipts.ts` all exist with tests and are currently unwired. An
+occupied town with patrols is what they are for. Their existence is confirmed; their quality is
+not.
 
 ### 3. Boss fight
 
