@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { MAX_MISSION_ATTEMPTS } from "@pa/contracts";
 import {
   DETECTION_CAUSE_LABEL,
@@ -291,6 +292,55 @@ function causeNote(view: MissionPresentation): string | null {
   return DETECTION_CAUSE_LABEL[cause];
 }
 
+/** How long the control legend stays up at the start of a run before it fades. */
+const CONTROLS_FADE_MS = 6000;
+/** How long the legend lingers after the help key is released, then re-fades. */
+const CONTROLS_RELINGER_MS = 900;
+/**
+ * Held to bring the control legend back after it has faded. "/" (Slash) reads as
+ * "help" and is bound to nothing in the game, so summoning the legend can never
+ * be confused with a move. It is a DISPLAY toggle only — it never reaches the
+ * runtime, so this stays inside the HUD's "reports, never asks" contract.
+ */
+const CONTROLS_HELP_CODE = "Slash";
+
+/**
+ * Whether the control legend is currently shown.
+ *
+ * The legend is shown on entry and then fades, rather than parking itself across
+ * the bottom of the screen for the whole run. That is the same wayfinding
+ * discipline the rest of the mission uses — a climb or a leap names its verb on
+ * the take-off (`MissionMarkAction`) and then gets out of the way — instead of a
+ * permanent strip a playtester reads once and then stares past for three
+ * minutes. A player who forgets a control holds "/" to bring it back for as long
+ * as they hold it.
+ */
+function useControlLegendShown(): boolean {
+  const [shown, setShown] = useState(true);
+  useEffect(() => {
+    let fade = window.setTimeout(() => setShown(false), CONTROLS_FADE_MS);
+    function onDown(event: KeyboardEvent) {
+      if (event.code !== CONTROLS_HELP_CODE || event.repeat) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      window.clearTimeout(fade);
+      setShown(true);
+    }
+    function onUp(event: KeyboardEvent) {
+      if (event.code !== CONTROLS_HELP_CODE) return;
+      window.clearTimeout(fade);
+      fade = window.setTimeout(() => setShown(false), CONTROLS_RELINGER_MS);
+    }
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.clearTimeout(fade);
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+    };
+  }, []);
+  return shown;
+}
+
 export function MissionHud(props: {
   title: string;
   attemptOrdinal: number;
@@ -299,6 +349,7 @@ export function MissionHud(props: {
 }) {
   const view = props.presentation;
   const cause = causeNote(view);
+  const keysShown = useControlLegendShown();
 
   // The exposure bar reads the LOUDER of the field's own suspicion and the
   // encounter-notice surge, so a stop arming after the drop drives the same bar
@@ -409,16 +460,27 @@ export function MissionHud(props: {
           whack-a-mole the player clicks — so it lives in `MissionBeatPanel`,
           rendered by the container beside this HUD, not on this read-only overlay. */}
 
-      {/* Generated from the binding table the key handler reads, so the two
-          cannot disagree. The list used to be a hand-written string, which is
-          how the dash came to be documented nowhere and bound to nothing. */}
-      <footer className="msn-hud-keys" aria-hidden="true">
+      {/* The control legend: shown on entry, then faded out of the way, and
+          held "/" brings it back. Generated from the binding table the key
+          handler reads, so the two cannot disagree — the list used to be a
+          hand-written string, which is how the dash came to be documented
+          nowhere and bound to nothing. The strike is NOT here: it is contextual,
+          and the beat panel teaches its own control on itself. */}
+      <footer
+        className={`msn-hud-keys${keysShown ? "" : " is-faded"}`}
+        aria-hidden="true"
+      >
         {MISSION_LEGEND.map((row) => (
           <span className="msn-hud-key" key={row.keys}>
             <kbd>{row.keys}</kbd>
             {row.does.split(" — ")[0]}
           </span>
         ))}
+        {/* Teaches its own re-summon while the legend is up, then fades with it. */}
+        <span className="msn-hud-key is-help">
+          <kbd>/</kbd>
+          hold for controls
+        </span>
       </footer>
     </div>
   );
