@@ -440,10 +440,32 @@ awaiting sequencing:
 hand-authored, accepted Liberty Elm scores **16040**, because a canopy of overlapping leaf cards is
 near-coincident by design. A whole-world gate would false-fail the elm.
 
-**A second sighting of the played-mission gate's wall-clock sensitivity:** a route run stalled
-transiently and cleared on re-run, which is the same shape as CI failing 8 progress-based checks on
-a GPU-less runner. The progress thresholds read a real-time sim, so a cold or headless run
-under-progresses. A frame-budgeted or timing-relative measure is the fix. Open.
+**The played-mission gate's wall-clock sensitivity — FIXED** (mission-presentation lane). CI's
+only failing job was the played-mission gate: 8 progress-and-time checks over ~12 min on a GPU-less
+runner. **Traced** (not inferred): the sim runs at a fixed 60 Hz and the body's motion is a pure
+function of the STEPS that executed, but `advanceFieldClock` runs at most `MAX_CATCHUP_STEPS` (5)
+per render frame and DISCARDS the rest (`diag.ts`: dropped sim time, not banked). On a software
+rasteriser the render loop is slow, so the sim runs in heavy slow-motion — measured ~1.5 sim-ticks
+/wall-second with scenery, ~24 bare — and a wall-clock budget ("reach x=60 in 95 s") measures the
+renderer, not the mission. The fix, entirely in `scripts/check-playthrough.mjs`: **budget every
+driven stage in SIM TICKS** (`window.__floor.ticks`, duel `clock.tick`), wall-clock surviving only
+as a 45 s liveness watchdog for a hung page; **drive the driven stages in bare mode** (`?bare=1` —
+authored verdicts unchanged, ~16× faster, WORLD keeps scenery and waits for texture load to
+stabilise); and a **bounded un-stick** (rotate aim + jump when the bot wedges at a parkour beat) so
+the transient the audit saw ("stalled at x≈29, cleared on re-run") recovers deterministically.
+Proven both ways: **ALL PASS under forced software WebGL** where the wall-clock gate failed 8
+checks; still **FAILS** on a genuine stall — an unanswered encounter at 1801 armed-but-unresolved
+ticks, and a pinned body at 1505 stall-ticks *despite 16 un-stick nudges* (a wedge cannot be nudged
+free; a transient clears in 2). A slow runner passes because it advances per tick; a stuck body
+fails because it does not.
+- **The grader-on-real-path failure was NOT collateral from the route** (the brief's supposition):
+  the DUEL stage is an independent page. It is the SAME wall-clock class — the duel's FACE_OFF
+  intro counts down 600 ticks on the field clock (`combat.tick` stays 0), so a slow renderer
+  reached the question past the harness's fixed 36 s wait (measured ~48 s under throttle). Now
+  budgeted on `clock.tick` too. Confirmed by reproduction, not assumed.
+- **Also fixed the cause of "no run ever completed":** CI `concurrency` cancelled in-flight `main`
+  runs on every push. Now `cancel-in-progress` is true only for pull requests; `main` pushes queue
+  and each finishes. Noted in `CI-AND-BROWSER-CHECKS.md` §1 and the workflow.
 
 **A pipeline finding, from three independent repairs today.** Every one traced to the generator's
 own output, not to the processing:

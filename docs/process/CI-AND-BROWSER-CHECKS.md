@@ -29,6 +29,17 @@ tracking whatever is newest locally.
 `verify` runs its steps with `if: ${{ !cancelled() }}`, so one failure does not
 hide the rest — a red run reports everything that is broken in a single pass.
 
+**Concurrency — do not cancel `main` runs.** The workflow's `concurrency` cancels
+a superseded run **only for pull requests** (`cancel-in-progress:
+${{ github.event_name == 'pull_request' }}`). It must stay that way. When it was
+`cancel-in-progress: true` for every ref, pushing to `main` after each merge
+cancelled the still-running CI for the previous merge, so during a burst of quick
+merges **no run ever completed** and `main` carried no green evidence — the
+played-mission gate never finished once. Cancelling a superseded run is right on a
+PR branch (only the newest commit matters) and wrong on `main` (every merged commit
+is a record that must be validated to completion). With cancellation off for
+pushes, consecutive `main` pushes **queue** and each runs to the end.
+
 ### Content verification
 
 `pnpm verify:content` runs the two content checkers — `content/m1/verify.mjs`
@@ -148,9 +159,11 @@ the branch (`contents: write`, and no branch protection blocking it). If a push 
 blocked the job warns rather than failing, and the issue + red run + artifact still
 fire — so a blocked push degrades the trend but never masks a real failure.
 
-**Timing sensitivity.** Unlike the `playthrough` gate — whose long free-run ROUTE
-stage is genuinely wall-clock-sensitive and can stall a driven bot on a loaded
-host — this job has **no real-time simulation stage**. Each case is an independent
+**Timing sensitivity.** The `playthrough` gate's driven stages used to be
+wall-clock-sensitive (a slow renderer under-progressed the sim inside a fixed
+second budget); that is fixed — they now budget in SIM TICKS (see "The played-mission
+gate" below). This job is simpler still: it has **no real-time simulation stage**.
+Each case is an independent
 model call bounded by its own ~20 s deadline, so there is no accumulating timing
 drift. Two couplings remain, both handled: (a) the **job wall-clock** — a slow,
 noisy runner plus a serialising gateway can stretch the ~10 min run, so
@@ -313,30 +326,72 @@ failure — `world-spawn.png`, `duel-live.png` (or `duel-live-fail.png`), and th
 `route.json` / `world-census.json` / `duel-grading.json` the check writes. This is
 the first CI job to upload an artifact; there was no prior pattern to match.
 
-**It is unweakened, and stays that way.** No retries that would mask a real failure,
-no reduced timeouts that would skip the soft-lock check, nothing degraded to a
-warning. Measured flakiness is zero across repeated runs with the decisive values
-stable to the decimal (177 draw calls, ~5,110,538 triangles, 147 textures, duel
-`botSky` 0.058, magazines 14 vs 7, penetration 0 m; and for the added checks:
-the ladder climb **arms** while the stripped-affordance climb **refuses** with
-`maxY` 1.23 m every run, the elm crown is reached and its beat reaches `ACTIVE`,
-and a live submit advances the grading window by exactly one gradeable round). The
-runtime is **~115 s** (up from ~90 s), the added ~17 s kept lean by folding the
-grader check onto the already-open live-duel page rather than a fresh boot. Two
-purely *informational* figures jitter harmlessly and feed no threshold: the
-positive climb's `maxY` (it breaks on the first climb, so it stops between ~0.05
-and ~0.2 m up) and the beat `maxY` (always past the 8.0 m crown line, 8.0–8.3 m).
+**The measure is SIM TICKS, not wall-clock — this is what makes it
+machine-independent.** The mission and duel sims run at a fixed 60 Hz
+(`FIELD_TICK_HZ`); the body's motion is a deterministic function of the fixed
+STEPS that executed, not of how long they took. Each render frame,
+`advanceFieldClock` runs at most `MAX_CATCHUP_STEPS` (5) and **discards** the rest
+(`diag.ts`: "a dropped step is sim time DISCARDED … slow motion"), so on a GPU-less
+runner the render loop is slow and the sim runs in heavy slow-motion — measured on
+this harness, a full-scenery run drops ~⅔ of its steps and advances ~1.5 sim-ticks
+per wall-second, a bare run ~24. A wall-clock budget ("reach x=60 in 95 s") therefore
+measures the RENDERER, which is exactly why a cold/loaded/headless run
+under-progressed and tripped a threshold a warm run cleared. Every budget in the
+driven stages is now counted in **sim ticks** (`window.__floor.ticks`,
+`window.__duel.getState().clock.tick`): a slow runner just takes more wall-clock to
+accrue the same ticks, and clears the same thresholds. Wall-clock survives in one
+place only — `SIM_DEAD_WALL_S` (45 s), a liveness watchdog that fails when the sim
+is not ticking AT ALL (a hung/crashed page), never on how far it got.
 
-The added checks are deterministic by construction: they spawn via named route
-nodes (no long free-run to accumulate timing drift) and drive short, bounded
-inputs. That matters because the **ROUTE** stage — a long real-time free-run from
-spawn — is the one part sensitive to a heavily loaded host: under a load average
-near 30 (a dev box with the game also being played) its driven bot can stall and
-the stage fails on a starved sim, not a real regression. On CI's dedicated runner
-that does not happen, which is why the gate measured zero flakiness there; if
-provisioning ever proves genuinely unreliable, the honest move is to make it
-report-only with the reason stated here — not to ship a flaky blocking gate. A
-gate people learn to ignore is worse than none.
+**Two supporting changes keep the wall-clock cost bounded and the run reliable:**
+
+- **The driven stages run in BARE mode** (`?bare=1`). The collision world, route,
+  encounters, ladders/grips, beat and field are authored data, unchanged by scenery
+  (`devEntry.tsx`: "the run is unchanged — this only stops the level's art loading"),
+  and `window.__diag` penetration is dev-gated, not scenery-gated — so a bare drive
+  reads the same authored verdicts ~16× faster, keeping the sim-tick budgets within
+  a sane wall-clock even on a software rasteriser. WORLD keeps scenery: it IS the
+  render census, and it now waits for the texture count to STABILISE (the scene has
+  finished loading) rather than a fixed 8 s, so a slow loader is not censused half-loaded.
+- **The ROUTE/YARD bots un-stick themselves.** The held-W + aim-at-waypoint +
+  jump-on-preview bot follows the guided line but is not a skilled parkour player;
+  when the sim runs slow the tick a press lands on shifts, and at a chained
+  climb/vault/leap the bot can wedge — the transient the sibling lane saw as
+  "stalled at x≈29, cleared on re-run". When the body makes no ground for
+  `UNSTICK_AFTER_TICKS`, the driver rotates its aim off the waypoint line and jumps,
+  cycling directions, exactly as a player wiggles free.
+
+**How it still catches a real stall — the whole point of the gate.** Three signals,
+distinguished by construction, so a slow runner is never confused with a stuck body:
+
+- **slow runner** — `ticks` advance (fewer per wall-second) and the body ADVANCES
+  per tick → PASS. Slowness alone cannot fail a tick-relative budget.
+- **real stall** — a genuinely wedged body makes no ground for `stallTicks` (1500)
+  EXECUTED ticks *despite* the un-stick nudges (a nudge cannot conjure an affordance
+  that is not there, so a real block does not yield), or an encounter sits
+  armed-but-unresolved past `encArmTimeoutTicks` (1800) — the PAST-DAWN soft-lock,
+  which drains in exactly these sim-tick units → FAIL. The un-stick fires only while
+  free-running, so it never touches an encounter.
+- **dead sim** — `ticks` stop advancing at all (page hung/crashed) → caught by
+  `SIM_DEAD_WALL_S`.
+
+**Proven both ways.** On a deliberately starved renderer (`PLAYTHROUGH_SOFTWARE_GL=1`,
+the CI SwiftShader rasteriser) the whole gate is **ALL PASS** — ROUTE reaches x=75
+with both stops resolved in ~4,250 sim ticks (~71 s of sim; 2 un-stick nudges,
+worst stall 280 t), every other stage green — where the wall-clock version failed 8
+checks. And it still FAILS on a genuine stall: an unanswered encounter fails "no
+encounter soft-lock" at 1801 armed-but-unresolved ticks, and a body pinned mid-route
+fails "no stall before the stops resolve" at 1505 ticks **despite 16 un-stick nudges**
+(the wedge cannot be nudged free, unlike the transient that cleared in 2). The
+repro knobs `PLAYTHROUGH_SOFTWARE_GL=1` and `PLAYTHROUGH_CPU_THROTTLE=<n>` (default
+off; the shipped gate and CI are unchanged) recreate the starved renderer so that
+proof is repeatable.
+
+**Runtime.** ~110 s on a GPU-ish dev box (unchanged from before); ~6 min under
+forced software WebGL on a loaded laptop — well inside the job's 20-minute cap,
+and it scales with the runner rather than racing a fixed budget. Informational
+figures that feed no threshold still jitter harmlessly (the positive climb's `maxY`,
+the beat `maxY` in the 8.0–8.3 m crown band, the exact draw-call/triangle counts).
 
 **Each added check has been shown to FAIL on a broken state** (a check nobody has
 seen fail is not a check): removing the ladder in the positive refusal run drops

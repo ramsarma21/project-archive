@@ -6,10 +6,23 @@ on:
   pull_request:
   workflow_dispatch:
 
-# A newer push to the same ref supersedes an in-flight run.
+# Concurrency, and the push-cancellation trap this encodes against.
+#
+# THE TRAP (observed): with `cancel-in-progress: true` for every ref, pushing to
+# `main` after each merge CANCELS the still-running CI for the previous merge, so
+# during a run of quick merges NO run ever completes and `main` has no green
+# evidence — the played-mission gate never gets to finish. On a PR branch,
+# cancelling a superseded run is correct (only the latest commit matters); on
+# `main` it is exactly wrong, because every merged commit is a record that must be
+# validated to completion.
+#
+# So: cancel superseded PR runs (saves minutes on rapid pushes to a PR), but NEVER
+# cancel a `main` run — with cancel-in-progress false, consecutive `main` pushes
+# QUEUE and each runs to completion instead of eating the one before it. See
+# docs/process/CI-AND-BROWSER-CHECKS.md §1.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   # The API runs on Node 24 in production (see apps/api/Dockerfile), so CI

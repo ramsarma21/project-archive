@@ -103,6 +103,21 @@ const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log(...a);
 
+// ---- reproduction knobs (default OFF; the shipped gate is unchanged) -------
+// The gate must be provable BOTH WAYS: that it PASSES on a deliberately starved
+// renderer (the CI shape — no GPU, software WebGL, a loaded CPU) and still FAILS
+// on a genuinely stalled body. These env knobs recreate the starved renderer
+// locally so that proof is reproducible; they are read only from the environment
+// and default off, so a normal `node scripts/check-playthrough.mjs` run — and CI
+// — behaves exactly as before.
+//   PLAYTHROUGH_SOFTWARE_GL=1     force software WebGL (SwiftShader) + no GPU —
+//                                 the CI runner's rasteriser, which is what makes
+//                                 the render loop slow and drops the sim's ticks.
+//   PLAYTHROUGH_CPU_THROTTLE=<n>  CDP CPU throttle multiplier (e.g. 4 = 4x slower)
+//                                 applied to every page, to amplify the slowdown.
+const SOFTWARE_GL = process.env.PLAYTHROUGH_SOFTWARE_GL === "1";
+const CPU_THROTTLE = Number(process.env.PLAYTHROUGH_CPU_THROTTLE ?? "") || 1;
+
 // ---- assertion bands ------------------------------------------------------
 // Read off a healthy run (172 draw calls, ~5.1M tris, 149 textures) and set wide
 // so only a genuine collapse (an empty scene, a texture wipe) or a runaway trips.
@@ -115,11 +130,65 @@ const WORLD = {
   // Skinned meshes (characters) and unlit MeshBasic (markers/UI) are exempt.
   whiteColorMin: 0.85,
 };
+// ---- the SIMULATION CLOCK is the measure, not wall-clock -------------------
+// WHY (traced, not inferred). The mission sim runs at a FIXED 60 Hz
+// (engine-world FIELD_TICK_HZ): every step is exactly 1/60 s of SIMULATED time,
+// and the body's position is a deterministic function of the STEPS that
+// EXECUTED, not of how long they took in wall-clock (traversal.ts:
+// "a 1/30, 1/60 or 1/120 frame delta over the same elapsed time visits the same
+// integer ticks"). Each render frame, advanceFieldClock runs at most
+// MAX_CATCHUP_STEPS (5) fixed steps and DISCARDS the rest — dropped sim time is
+// NOT banked (diag.ts: "a dropped step is sim time DISCARDED, i.e. slow motion").
+// So on a runner whose render loop is slow (no GPU → software WebGL), the sim
+// runs in heavy slow-motion. Measured on this harness: a full-scenery run drops
+// ~2/3 of its steps and advances ~1.5 sim-ticks per wall-second; a bare run ~24.
+// That is the whole flake: a wall-clock budget ("reach x=60 in 95 s") measures
+// the RENDERER, so a cold/loaded/headless run under-progresses and trips a
+// threshold a warm run clears.
+//
+// THE FIX, two parts, both here in the harness:
+//  (1) MEASURE IN SIM TICKS. Every budget below is counted in rt.ticks (mission)
+//      or combat.tick (duel), which advance identically per unit of SIMULATED
+//      progress on any machine. A slow runner simply takes more wall-clock to
+//      accrue the same ticks; metres-per-tick is unchanged, so it clears the same
+//      thresholds. This is what makes the gate machine-independent.
+//  (2) DRIVE THE DRIVEN STAGES IN BARE MODE (?bare=1). The collision world,
+//      route, encounters, ladders/grips, beat and field are AUTHORED DATA,
+//      unchanged by scenery (devEntry.tsx: "the run is unchanged — this only
+//      stops the level's art loading"); window.__diag penetration is dev-gated,
+//      not scenery-gated. Bare removes the GLB render cost that starves the loop,
+//      so the sim runs ~16x faster and the tick budgets clear in bounded
+//      wall-clock even on a GPU-less runner. WORLD keeps scenery (it IS the
+//      render census); nothing else needs the picture to assert its authored verdict.
+//
+// HOW THIS STILL CATCHES A REAL STALL (the point of the gate — the PAST-DAWN
+// soft-lock drained the mission clock while the body sat stuck). Three distinct
+// signals, distinguished by construction:
+//  - a SLOW runner: rt.ticks advances (fewer per wall-second), and the body
+//    ADVANCES per tick → passes. Tick-relative, so slowness alone never fails it.
+//  - a real STALL (wedged body / soft-lock): rt.ticks keeps advancing but the
+//    body does NOT move across `stallTicks` executed ticks, or an encounter sits
+//    armed-but-unresolved past `encArmTimeoutTicks` — both defined in SIM ticks,
+//    exactly the units the soft-lock clock drains in → fails.
+//  - a DEAD sim (hung/crashed page): rt.ticks stops advancing at all. Caught by
+//    SIM_DEAD_WALL_S, the ONLY wall-clock assertion — it asserts the process is
+//    ticking, never how far it got, so a slow renderer cannot trip it.
+const TICK_HZ = 60; // engine-world FIELD_TICK_HZ; the fixed step the sim runs at.
+const SIM_DEAD_WALL_S = 45; // rt.ticks not advancing for this long in REAL time is a
+                            // hung/crashed page — the one honest wall-clock failure.
 const ROUTE = {
   seed: "0xb057",
-  capS: 95, // > the encounter soft-lock timeout, so a stuck stop is caught not waited on
-  encArmTimeoutS: 30, // an encounter that armed but has not resolved this long is a soft-lock
-  stallLimitS: 8, // motionless this long, while free-running, is a hang
+  bare: true, // drive without scenery (authored verdicts unchanged; see the SIM CLOCK note)
+  // Sim-tick budgets. Calibrated from a healthy bare run (logged as "consumed"
+  // in route.json) and set to a generous multiple so a slow runner never trips
+  // the ceiling before the drive is done. See the SIM CLOCK note for why ticks.
+  capTicks: 12000,          // ~200 s of SIMULATED time; the whole-approach ceiling
+  encArmTimeoutTicks: 1800, // ~30 s of sim armed-but-unresolved is a soft-lock
+  // No 0.5 m of ground for this many EXECUTED sim ticks — DESPITE the un-stick
+  // nudges — is a genuine wedge, not a slow renderer (which advances per tick) and
+  // not a transient (which the un-stick clears in well under this; measured worst
+  // ~270 ticks under software WebGL). Well separated from a healthy worst stall (~90).
+  stallTicks: 1500,
   minProgressX: 60, // a driven run that never gets this far east never reached the ropewalk
   penInvariantLimitM: 0.3, // the shipped non-penetration invariant's tolerance
 };
@@ -127,7 +196,9 @@ const YARD = {
   // rect(88, 100, -6.5, 6.5) from mission-m1 geometry; the route's end line.
   minX: 88, maxX: 100, minZ: -6.5, maxZ: 6.5,
   at: "F_VAULT_OUT", toward: "G_SPAWN", // drop just outside the gate, facing in
-  capS: 25,
+  bare: true,
+  capTicks: 4000,   // ~65 s of sim to cover the short final stretch into the yard
+  stallTicks: 1500, // no xz progress across this many sim ticks, despite un-stick, is a wedge
 };
 const DUEL = {
   // botSky = fraction of the lower-centre band that is open sky. A real arena fills
@@ -145,7 +216,10 @@ const DUEL = {
 // packages/mission-m1/src/level/ladders.ts, not invented here.
 const REFUSAL = {
   at: "C_SCAFF_FOOT", toward: "C_SCAFF_1", climbSurface: "SCAFFOLD_D1",
-  driveS: 4.5, // long enough that a refusal that leaks would have climbed by now
+  bare: true,
+  driveTicks: 360, // ~6 s of SIM: long enough that a refusal that leaks would have
+                   // climbed by now, counted in sim ticks so a slow renderer that
+                   // executes them slowly gets the same 360 steps of driving.
 };
 // BEAT — the Liberty Elm posting beat must be REACHED BY CLIMBING, not assumed by
 // spawning on the bough (which is exactly what missionBeat.test.ts does). Drops in
@@ -154,8 +228,10 @@ const REFUSAL = {
 // old tight stance values — the tolerances were widened to 2.4 m / ±135°.
 const BEAT = {
   at: "F_LOW", toward: "F_CROWN",
+  bare: true,
   crownY: 8.0, // BOUGH_CROWN band is 8.3; 8.0 is "arrived at the crown"
-  climbS: 6, settleS: 5,
+  climbTicks: 600,  // ~10 s of SIM to climb bough → crown (counted in sim ticks)
+  settleTicks: 360, // ~6 s of SIM in the stance for the beat to arm
 };
 const JUMP_VERBS = ["JUMP", "JUMP_GAP", "LEAP_OF_FAITH", "DASH_JUMP"];
 
@@ -216,16 +292,106 @@ function originMismatchHint(denials) {
 }
 
 async function launch() {
-  const opts = {
-    headless: true,
-    args: [
-      "--headless=new", "--ignore-gpu-blocklist", "--enable-gpu-rasterization",
-      "--disable-background-timer-throttling", "--disable-renderer-backgrounding",
-    ],
-  };
+  const args = [
+    "--headless=new",
+    "--disable-background-timer-throttling", "--disable-renderer-backgrounding",
+  ];
+  if (SOFTWARE_GL) {
+    // The CI runner has no GPU, so WebGL is SwiftShader (software). Forcing it
+    // locally reproduces the slow render loop that drops the sim's ticks.
+    args.push("--use-gl=swiftshader", "--use-angle=swiftshader", "--disable-gpu");
+    log("  (repro) PLAYTHROUGH_SOFTWARE_GL=1 — forcing software WebGL (SwiftShader)");
+  } else {
+    args.push("--ignore-gpu-blocklist", "--enable-gpu-rasterization");
+  }
+  const opts = { headless: true, args };
   if (existsSync(CHROME)) opts.executablePath = CHROME;
   return chromium.launch(opts);
 }
+
+// Every page is opened through here so the optional CPU throttle is applied
+// uniformly. With the knob off this is just browser.newPage.
+async function openPage(browser, opts = { viewport: { width: 1280, height: 800 } }) {
+  const page = await browser.newPage(opts);
+  if (CPU_THROTTLE > 1) {
+    try {
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU_THROTTLE });
+    } catch {
+      /* CDP unavailable (non-Chromium): the knob is best-effort for local repro */
+    }
+  }
+  return page;
+}
+
+// A SIM-CLOCK watchdog, shared by every driven stage. It reads the fixed-step
+// tick counter each poll and tracks three things, so a caller's loop can be
+// written in SIM TICKS rather than wall-clock:
+//   - elapsed(): sim ticks since the first read (the machine-independent budget),
+//   - stalled(sinceTick, val): whether a progress value has not advanced for
+//     `stallTicks` EXECUTED ticks (a wedged body, not a slow one),
+//   - simDead(): whether rt.ticks has not advanced for SIM_DEAD_WALL_S REAL
+//     seconds (a hung/crashed page — the one honest wall-clock failure).
+function makeSimClock() {
+  let startTick = null, lastTick = null, lastTickWallMs = Date.now();
+  return {
+    /** Feed each poll's tick reading. Returns sim ticks elapsed since the first. */
+    tick(t) {
+      if (t == null) return this.elapsed;
+      if (startTick === null) startTick = t;
+      if (t !== lastTick) { lastTick = t; lastTickWallMs = Date.now(); }
+      this.elapsed = t - startTick;
+      this.current = t;
+      return this.elapsed;
+    },
+    elapsed: 0,
+    current: null,
+    /**
+     * REAL time since rt.ticks last advanced (or since the drive began, if it has
+     * never advanced) — the ONLY wall-clock signal in the gate. True means the
+     * page is hung or crashed: the sim is not stepping at all. A merely slow
+     * renderer keeps advancing rt.ticks (just fewer per wall-second) and never
+     * trips this, which is the whole point.
+     */
+    simDead() {
+      return (Date.now() - lastTickWallMs) / 1000 > SIM_DEAD_WALL_S;
+    },
+  };
+}
+
+// A human-like UN-STICK for the driven free-run. The bot drives with held-W +
+// aim-at-waypoint + jump-on-preview, which reliably follows the guided line but
+// is NOT a skilled parkour player: when the sim runs slow, the exact tick a press
+// lands on shifts (input is delivered at wall-clock poll boundaries, the sim runs
+// up to MAX_CATCHUP_STEPS per frame), and at a chained climb/vault/leap the bot can
+// mistime the chain and wedge — the transient the sibling lane saw as "stalled at
+// x≈29, cleared on re-run". This makes that recovery deterministic: while the body
+// is making no ground, rotate the aim off the waypoint line and force a jump,
+// cycling directions, exactly as a player wiggles out of a snag.
+//
+// WHY THIS DOES NOT MASK A REAL STALL. It is BOUNDED by the stall ceiling
+// (`stallTicks`): if the nudges do not restore progress within that many EXECUTED
+// sim ticks, the body is genuinely wedged and the stage still FAILS. A nudge
+// cannot conjure an affordance that is not there, so a real block does not yield
+// to it; and it fires ONLY while free-running (never during an encounter), so the
+// soft-lock the gate exists to catch — an encounter armed-but-unresolved, the
+// PAST-DAWN drain — is untouched and still trips `encArmTimeoutTicks`.
+function makeUnsticker() {
+  const OFFSETS = [1.2, -1.2, 2.4, Math.PI, 0.6, -0.6]; // radians off the waypoint line
+  const BURST_TICKS = 90; // ~1.5 s of sim per direction before trying the next
+  let untilTick = -1, offset = 0, seq = 0;
+  return {
+    /** Call each poll with the current sim tick and whether the body is stalling. */
+    step(tick, stalling) {
+      if (stalling && tick > untilTick) { offset = OFFSETS[seq % OFFSETS.length]; seq++; untilTick = tick + BURST_TICKS; }
+      const active = tick <= untilTick;
+      return { yawOffset: active ? offset : 0, forceJump: active };
+    },
+    reset() { untilTick = -1; }, // called when the body makes real ground again
+    get bursts() { return seq; },
+  };
+}
+const UNSTICK_AFTER_TICKS = 240; // no 0.5 m of ground for this many sim ticks → start wiggling
 
 // ---------------------------------------------------------------------------
 // STAGE: WORLD + ROUTE (share the spawn page).
@@ -244,6 +410,12 @@ const MISSION_READ = () => {
   }
   const ev = rt.encounterView;
   return {
+    // The FIXED-STEP simulation clock. Progress is measured against this, never
+    // wall-clock: rt.ticks advances one per 1/60 s of SIMULATED time, and the
+    // body's motion is a pure function of the ticks that executed (see the SIM
+    // CLOCK note by the config). A slow renderer runs fewer ticks per wall-second
+    // but the same metres per tick, so a tick-relative budget is machine-independent.
+    ticks: rt.ticks ?? null,
     pos: { x: m.pos.x, y: m.pos.y, z: m.pos.z },
     grounded: m.grounded,
     preview: rt.flow?.previewVerb ?? null,
@@ -267,6 +439,7 @@ const CLIMB_READ = () => {
   if (!rt || !rt.motion) return null;
   const m = rt.motion;
   return {
+    ticks: rt.ticks ?? null, // the fixed-step sim clock; see MISSION_READ / the SIM CLOCK note.
     pos: { x: m.pos.x, y: m.pos.y, z: m.pos.z },
     phase: m.phase,
     grounded: m.grounded,
@@ -298,11 +471,14 @@ async function fetchGrading() {
 // Boot a mission-floor drop-in at a named route node and wait for the runtime to
 // tick. No GLB settle is needed here (these stages read the collision world and
 // motion, not the render census), so the wait is short.
-async function bootMissionAt(browser, at, toward, settleMs = 2500) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+async function bootMissionAt(browser, at, toward, { settleMs = 2500, bare = false } = {}) {
+  const page = await openPage(browser);
   const pageErrors = [];
   page.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));
-  const url = `${BASE}/src/mission/floor.html?hold=0&at=${at}&toward=${toward}&encounterVerdict=correct`;
+  // Driven stages spawn in BARE mode so the sim is not slow-motioned by the GLB
+  // render cost (see the SIM CLOCK note); the authored world they read is identical.
+  const bareParam = bare ? "&bare=1" : "";
+  const url = `${BASE}/src/mission/floor.html?hold=0&at=${at}&toward=${toward}&encounterVerdict=correct${bareParam}`;
   await page.goto(url, { waitUntil: "commit", timeout: 120000 });
   let up = false;
   for (let i = 0; i < 300; i++) {
@@ -316,16 +492,20 @@ async function bootMissionAt(browser, at, toward, settleMs = 2500) {
 // Sprint the body forward (Shift+W) and buffer Space each grounded tick so a gated
 // upward ascent commits. Watches the climb observables for the whole window (or
 // until the first climb, when breakOnClimb is set). Returns what it saw.
-async function driveAndWatchClimb(page, seconds, { breakOnClimb = false } = {}) {
+async function driveAndWatchClimb(page, driveTicks, { breakOnClimb = false } = {}) {
   await page.mouse.click(640, 400).catch(() => {});
   await page.keyboard.down("ShiftLeft");
   await page.keyboard.down("KeyW");
   let climbArmed = false, climbOffered = false, maxY = -Infinity;
   const verbs = new Set();
-  const start = Date.now();
-  while ((Date.now() - start) / 1000 < seconds) {
+  // Drive for `driveTicks` SIM ticks, not wall-clock seconds: a slow renderer
+  // executes the same number of climb-arming steps, just over more wall time.
+  const clock = makeSimClock();
+  let simDead = false;
+  while (clock.elapsed < driveTicks) {
     const s = await page.evaluate(CLIMB_READ).catch(() => null);
     if (s) {
+      clock.tick(s.ticks);
       if (s.pos.y > maxY) maxY = s.pos.y;
       if (s.verb && s.verb !== "NONE") verbs.add(s.verb);
       if (s.climbOffered) climbOffered = true;
@@ -333,11 +513,12 @@ async function driveAndWatchClimb(page, seconds, { breakOnClimb = false } = {}) 
       if (s.grounded) await page.keyboard.press("Space").catch(() => {});
       if (breakOnClimb && climbArmed) break;
     }
+    if (clock.simDead()) { simDead = true; break; }
     await sleep(100);
   }
   await page.keyboard.up("KeyW").catch(() => {});
   await page.keyboard.up("ShiftLeft").catch(() => {});
-  return { climbArmed, climbSeen: climbArmed || climbOffered, maxY, verbs: [...verbs] };
+  return { climbArmed, climbSeen: climbArmed || climbOffered, maxY, verbs: [...verbs], simTicks: clock.elapsed, simDead };
 }
 
 function worldCensus() {
@@ -377,11 +558,19 @@ function worldCensus() {
   };
 }
 
+// WORLD needs the full scene (it IS the render census), so it runs on a SCENERY
+// page. ROUTE reads authored motion / encounter / penetration state, so it runs
+// on a separate BARE page where the sim is not slow-motioned by the GLB render
+// cost (see the SIM CLOCK note). They no longer share a page.
 async function stageWorldAndRoute(browser) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  if (wants("world")) await stageWorld(browser);
+  if (wants("route")) await stageRoute(browser);
+}
+
+async function stageWorld(browser) {
+  const page = await openPage(browser);
   const pageErrors = [];
   page.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));
-
   const url = `${BASE}/src/mission/floor.html?hold=0&seed=${ROUTE.seed}&encounterVerdict=correct`;
   await page.goto(url, { waitUntil: "commit", timeout: 120000 });
   let up = false;
@@ -394,156 +583,200 @@ async function stageWorldAndRoute(browser) {
     await page.close();
     return;
   }
-  await sleep(8000); // let every GLB load and the first frames settle
-
-  // ---- WORLD ----
-  if (wants("world")) {
-    log("\n[WORLD] mission scene census");
-    const c = await page.evaluate(worldCensus).catch((e) => ({ error: String(e).slice(0, 160) }));
-    writeFileSync(join(OUT, "world-census.json"), JSON.stringify(c, null, 2));
-    if (c.error) {
-      assert(false, "renderer + scene readable", c.error);
-    } else {
-      log(`        calls=${c.calls} tris=${c.triangles.toLocaleString()} textures=${c.textures} meshes=${c.meshes} (skinned ${c.skinned}, instanced ${c.instanced}/${c.instances}) whiteBoxes=${c.whiteBoxes}`);
-      assert(c.calls >= WORLD.minCalls && c.calls <= WORLD.maxCalls, "draw calls in a sane band",
-        `renderer.info.render.calls=${c.calls}, expected ${WORLD.minCalls}..${WORLD.maxCalls} (near-zero = empty scene)`);
-      assert(c.triangles >= WORLD.minTris && c.triangles <= WORLD.maxTris, "triangle count in a sane band",
-        `renderer.info.render.triangles=${c.triangles}, expected ${WORLD.minTris}..${WORLD.maxTris}`);
-      assert(c.textures >= WORLD.minTextures, "textures uploaded",
-        `only ${c.textures} textures on the GPU (a wiped scene would be near zero)`);
-      assert(c.whiteBoxes === 0, "no untextured white-box props",
-        `${c.whiteBoxes} lit mesh(es) with no base-color map and a near-white colour — the white-box signature: ${JSON.stringify(c.whiteExamples)}`);
-    }
-    await page.screenshot({ path: join(OUT, "world-spawn.png") }).catch(() => {});
+  // Wait for the scene to finish LOADING rather than a fixed sleep: on a slow
+  // loader (a GPU-less runner) the GLBs decode and upload late, and an 8 s census
+  // would count a half-loaded scene and false-fail the triangle/texture bands.
+  // Poll the texture count until it stops climbing for a few polls (loaded) or a
+  // generous cap. This is the render census's version of "measure, don't race the
+  // clock": settle on the observed state, not a guessed duration.
+  let texPrev = -1, texStable = 0;
+  for (let i = 0; i < 90; i++) {
+    const t = await page.evaluate(() => window.__stage?.gl?.info?.memory?.textures ?? 0).catch(() => 0);
+    if (t > 0 && t === texPrev) { if (++texStable >= 3) break; } else texStable = 0;
+    texPrev = t;
+    await sleep(1000);
   }
+  await sleep(1000); // a last frame or two after the uploads settle
 
-  // ---- ROUTE ----
-  if (wants("route")) {
-    log("\n[ROUTE] driven approach through the mandatory encounters");
-    await page.mouse.click(640, 400).catch(() => {});
-    await page.evaluate(() => window.__diag?.reset?.()).catch(() => {});
+  log("\n[WORLD] mission scene census");
+  const c = await page.evaluate(worldCensus).catch((e) => ({ error: String(e).slice(0, 160) }));
+  writeFileSync(join(OUT, "world-census.json"), JSON.stringify(c, null, 2));
+  if (c.error) {
+    assert(false, "renderer + scene readable", c.error);
+  } else {
+    log(`        calls=${c.calls} tris=${c.triangles.toLocaleString()} textures=${c.textures} meshes=${c.meshes} (skinned ${c.skinned}, instanced ${c.instanced}/${c.instances}) whiteBoxes=${c.whiteBoxes}`);
+    assert(c.calls >= WORLD.minCalls && c.calls <= WORLD.maxCalls, "draw calls in a sane band",
+      `renderer.info.render.calls=${c.calls}, expected ${WORLD.minCalls}..${WORLD.maxCalls} (near-zero = empty scene)`);
+    assert(c.triangles >= WORLD.minTris && c.triangles <= WORLD.maxTris, "triangle count in a sane band",
+      `renderer.info.render.triangles=${c.triangles}, expected ${WORLD.minTris}..${WORLD.maxTris}`);
+    assert(c.textures >= WORLD.minTextures, "textures uploaded",
+      `only ${c.textures} textures on the GPU (a wiped scene would be near zero)`);
+    assert(c.whiteBoxes === 0, "no untextured white-box props",
+      `${c.whiteBoxes} lit mesh(es) with no base-color map and a near-white colour — the white-box signature: ${JSON.stringify(c.whiteExamples)}`);
+  }
+  await page.screenshot({ path: join(OUT, "world-spawn.png") }).catch(() => {});
+  await page.close();
+}
 
-    const aim = async (wp, pos) => {
-      if (!wp) return;
-      const yaw = Math.atan2(wp.x - pos.x, wp.z - pos.z);
-      await page.evaluate((y) => { const L = window.__look; if (L?.look) L.look.yaw = y; }, yaw).catch(() => {});
-    };
-    const answer = async () => {
-      await page.keyboard.up("KeyW").catch(() => {});
-      for (let i = 0; i < 120; i++) {
-        const cur = await page.evaluate(MISSION_READ).catch(() => null);
-        if (!cur?.encView || cur.encView.phase === "RESOLVED") break;
-        const box = await page.$("#msn-enc-input");
-        if (box && !(await box.evaluate((el) => el.disabled).catch(() => true))) {
-          await box.click().catch(() => {});
-          await box.fill("Lawful business; the stamp is Parliament's and I carry cleared paper.").catch(() => {});
-        }
-        const btn = await page.$(".msn-enc-submit");
-        if (btn) await btn.click().catch(() => {});
-        await sleep(180);
-      }
-      await page.keyboard.down("KeyW").catch(() => {});
-    };
+async function stageRoute(browser) {
+  log("\n[ROUTE] driven approach through the mandatory encounters (bare; measured in sim ticks)");
+  const page = await openPage(browser);
+  const pageErrors = [];
+  page.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));
+  const bareParam = ROUTE.bare ? "&bare=1" : "";
+  const url = `${BASE}/src/mission/floor.html?hold=0&seed=${ROUTE.seed}&encounterVerdict=correct${bareParam}`;
+  await page.goto(url, { waitUntil: "commit", timeout: 120000 });
+  let up = false;
+  for (let i = 0; i < 300; i++) {
+    if ((await page.evaluate(() => window.__floor?.ticks ?? null).catch(() => null)) !== null) { up = true; break; }
+    await sleep(200);
+  }
+  if (!up) { assert(false, "mission runtime comes up (route)", `window.__floor never appeared at ${url}`); await page.close(); return; }
+  await sleep(1500); // bare has no GLBs to wait on; a short settle for the first ticks
 
-    await page.keyboard.down("ShiftLeft");
-    await page.keyboard.down("KeyW");
+  await page.mouse.click(640, 400).catch(() => {});
+  await page.evaluate(() => window.__diag?.reset?.()).catch(() => {});
 
-    const mandatory = new Map(); // id -> { armedAtS, resolvedAtS }
-    let maxProgressX = -Infinity, prevPos = null, stall = 0, maxStall = 0, softLock = null;
-    const start = Date.now();
-    let outcome = null;
-    while ((Date.now() - start) / 1000 < ROUTE.capS) {
-      const tS = (Date.now() - start) / 1000;
-      const s = await page.evaluate(MISSION_READ).catch(() => null);
-      if (!s) { await sleep(80); continue; }
-      for (const e of s.encounters) {
-        if (!mandatory.has(e.id)) mandatory.set(e.id, { armedAtS: null, resolvedAtS: null });
-        const rec = mandatory.get(e.id);
-        if (rec.armedAtS === null && e.phase !== "DORMANT") rec.armedAtS = tS;
-        if (rec.resolvedAtS === null && (e.phase === "RESOLVED" || e.phase === "RELEASED")) rec.resolvedAtS = tS;
-      }
-      if (s.pos.x > maxProgressX) maxProgressX = s.pos.x;
-      if (s.outcome) { outcome = s.outcome; break; }
-
-      // Soft-lock watch: an encounter that armed but has not resolved in time.
-      for (const [id, rec] of mandatory) {
-        if (rec.armedAtS !== null && rec.resolvedAtS === null && tS - rec.armedAtS > ROUTE.encArmTimeoutS) {
-          softLock = { id, armedForS: +(tS - rec.armedAtS).toFixed(1) };
-        }
-      }
-      if (softLock) break;
-
-      if (s.encView && s.encView.phase !== "RESOLVED" && s.encLocked) { await answer(); prevPos = null; stall = 0; continue; }
-      if (s.beat === "ACTIVE") await page.keyboard.press("KeyF").catch(() => {});
-      await aim(s.wp, s.pos);
-      if (s.grounded && JUMP_VERBS.includes(s.preview)) await page.keyboard.press("Space").catch(() => {});
-
-      // Hang watch (free-running only): motionless too long.
-      if (prevPos && !s.encLocked) {
-        const moved = Math.hypot(s.pos.x - prevPos.x, s.pos.z - prevPos.z);
-        stall = moved < 0.05 ? stall + 0.09 : 0;
-      }
-      if (stall > maxStall) maxStall = stall;
-      prevPos = s.pos;
-
-      // Stop once every mandatory stop has resolved — no need to drive into the
-      // skill-beat section the autonomous driver deliberately does not play.
-      const allResolved = mandatory.size > 0 && [...mandatory.values()].every((r) => r.resolvedAtS !== null);
-      if (allResolved && tS > 3) break;
-
-      // A genuine hang before the stops are done is a failure, not something to wait out.
-      if (stall > ROUTE.stallLimitS) break;
-      await sleep(80);
-    }
+  const aim = async (wp, pos, yawOffset = 0) => {
+    if (!wp) return;
+    const yaw = Math.atan2(wp.x - pos.x, wp.z - pos.z) + yawOffset;
+    await page.evaluate((y) => { const L = window.__look; if (L?.look) L.look.yaw = y; }, yaw).catch(() => {});
+  };
+  const answer = async () => {
     await page.keyboard.up("KeyW").catch(() => {});
-    await page.keyboard.up("ShiftLeft").catch(() => {});
-    const elapsedS = +((Date.now() - start) / 1000).toFixed(1);
-
-    const pen = await page.evaluate(() => {
-      const d = window.__diag;
-      if (!d) return { available: false };
-      let maxInv = 0, invId = null, maxStrict = 0, strictId = null;
-      for (const e of d.embeds) {
-        for (const s of e.invariant) if (s.depthM > maxInv) { maxInv = s.depthM; invId = s.id; }
-        for (const s of e.strict) if (s.depthM > maxStrict) { maxStrict = s.depthM; strictId = s.id; }
+    for (let i = 0; i < 120; i++) {
+      const cur = await page.evaluate(MISSION_READ).catch(() => null);
+      if (!cur?.encView || cur.encView.phase === "RESOLVED") break;
+      const box = await page.$("#msn-enc-input");
+      if (box && !(await box.evaluate((el) => el.disabled).catch(() => true))) {
+        await box.click().catch(() => {});
+        await box.fill("Lawful business; the stamp is Parliament's and I carry cleared paper.").catch(() => {});
       }
-      return { available: true, embedTicks: d.embeds.length, maxInv: +maxInv.toFixed(3), invId, maxStrict: +maxStrict.toFixed(3), strictId };
-    }).catch(() => ({ available: false }));
+      const btn = await page.$(".msn-enc-submit");
+      if (btn) await btn.click().catch(() => {});
+      await sleep(180);
+    }
+    await page.keyboard.down("KeyW").catch(() => {});
+  };
 
-    const encSummary = [...mandatory.entries()].map(([id, r]) =>
-      `${id}{armed:${r.armedAtS === null ? "no" : r.armedAtS.toFixed(0) + "s"},resolved:${r.resolvedAtS === null ? "NO" : r.resolvedAtS.toFixed(0) + "s"}}`);
-    log(`        elapsed=${elapsedS}s progressX=${maxProgressX.toFixed(0)} maxStall=${maxStall.toFixed(1)}s outcome=${outcome ? outcome.kind : "(stopped after stops resolved)"} penetration(invariant)=${pen.maxInv ?? "n/a"}m`);
-    log(`        encounters: ${encSummary.join("  ")}`);
-    writeFileSync(join(OUT, "route.json"), JSON.stringify({ url, elapsedS, maxProgressX, maxStall, outcome, mandatory: Object.fromEntries(mandatory), pen, pageErrors }, null, 2));
+  await page.keyboard.down("ShiftLeft");
+  await page.keyboard.down("KeyW");
 
-    // A stuck-then-timeout outcome is a HANG, not a normal loss.
-    const timedOutWhileStuck = outcome?.code === "TRAVERSAL_TIMEOUT" && (softLock || maxStall > ROUTE.stallLimitS);
+  // Every budget below is in SIM TICKS. armedAtTick / resolvedAtTick are read off
+  // the runtime's own fixed-step clock, so "armed but unresolved for N ticks" is
+  // the same soft-lock the PAST-DAWN drain is (the mission clock is ticks*FIELD_DT).
+  const mandatory = new Map(); // id -> { armedAtTick, resolvedAtTick }
+  let maxProgressX = -Infinity, outcome = null, softLock = null, simDead = false;
+  // Stall = no net xz progress across `stallTicks` EXECUTED sim ticks while
+  // free-running. Machine-independent: a slow renderer runs these ticks slower in
+  // wall-clock but the body still ADVANCES per tick, so only a wedged body trips.
+  const PROGRESS_EPS_M = 0.5;
+  let anchorTick = null, anchorPos = null, worstStallTicks = 0;
+  const clock = makeSimClock();
+  const unsticker = makeUnsticker();
 
-    assert(mandatory.size > 0, "mandatory encounters exist on the route",
-      "the run saw no authored encounters at all — the route or its stops are gone");
+  for (;;) {
+    const s = await page.evaluate(MISSION_READ).catch(() => null);
+    if (!s) { if (clock.simDead()) { simDead = true; break; } await sleep(80); continue; }
+    clock.tick(s.ticks);
+    if (clock.elapsed >= ROUTE.capTicks) break;
+
+    for (const e of s.encounters) {
+      if (!mandatory.has(e.id)) mandatory.set(e.id, { armedAtTick: null, resolvedAtTick: null });
+      const rec = mandatory.get(e.id);
+      if (rec.armedAtTick === null && e.phase !== "DORMANT") rec.armedAtTick = clock.current;
+      if (rec.resolvedAtTick === null && (e.phase === "RESOLVED" || e.phase === "RELEASED")) rec.resolvedAtTick = clock.current;
+    }
+    if (s.pos.x > maxProgressX) maxProgressX = s.pos.x;
+    if (s.outcome) { outcome = s.outcome; break; }
+
+    // Soft-lock watch, in SIM ticks.
     for (const [id, rec] of mandatory) {
-      assert(rec.armedAtS !== null, `encounter ${id} arms`,
-        `${id} never left DORMANT during the driven approach — the trigger did not fire or the section is unreachable`);
-      assert(rec.resolvedAtS !== null, `encounter ${id} resolves`,
-        `${id} armed at ${rec.armedAtS}s but never reached RESOLVED — the beat hangs (soft-lock); the speaker never closed / the question never opened`);
+      if (rec.armedAtTick !== null && rec.resolvedAtTick === null && clock.current - rec.armedAtTick > ROUTE.encArmTimeoutTicks) {
+        softLock = { id, armedForTicks: clock.current - rec.armedAtTick };
+      }
     }
-    assert(!softLock, "no encounter soft-lock",
-      softLock ? `encounter ${softLock.id} sat armed-but-unresolved for ${softLock.armedForS}s (> ${ROUTE.encArmTimeoutS}s)` : "");
-    assert(!timedOutWhileStuck, "no beat hang (stuck-then-timeout)",
-      `the run hit TRAVERSAL_TIMEOUT while stuck (maxStall=${maxStall.toFixed(1)}s) — the timer expired because the player was stranded, not because of a fair loss`);
-    assert(maxStall <= ROUTE.stallLimitS || outcome === null, "no hang before the stops resolve",
-      `the run was motionless for ${maxStall.toFixed(1)}s (> ${ROUTE.stallLimitS}s) while free-running`);
-    assert(maxProgressX >= ROUTE.minProgressX, "route advances through the street in order",
-      `the driven run only reached x=${maxProgressX.toFixed(0)} (< ${ROUTE.minProgressX}); it never got past the Shambles/ropewalk`);
-    if (pen.available) {
-      assert(pen.maxInv < ROUTE.penInvariantLimitM, "no penetration during play",
-        `a body was ${pen.maxInv}m inside solid hull "${pen.invId}" (invariant limit ${ROUTE.penInvariantLimitM}m) — window.__diag recorded a body inside solid geometry`);
-    } else {
-      notes.push("ROUTE: window.__diag penetration ring unavailable (non-dev build?) — penetration not checked");
-      log("        note: window.__diag unavailable; penetration not checked");
-    }
-  }
+    if (softLock) break;
 
+    if (s.encView && s.encView.phase !== "RESOLVED" && s.encLocked) { await answer(); anchorTick = null; anchorPos = null; unsticker.reset(); continue; }
+    if (s.beat === "ACTIVE") await page.keyboard.press("KeyF").catch(() => {});
+
+    // Stall watch (free-running only), in EXECUTED sim ticks. Reset the anchor
+    // whenever the body makes real ground; a wedged body never resets it. While
+    // stalling, drive an un-stick nudge so a transient parkour hiccup recovers
+    // like a player wiggling free — bounded by stallTicks (see makeUnsticker).
+    let stalling = false;
+    if (!s.encLocked && s.ticks != null) {
+      if (anchorTick === null || !anchorPos) { anchorTick = clock.current; anchorPos = s.pos; }
+      else if (Math.hypot(s.pos.x - anchorPos.x, s.pos.z - anchorPos.z) > PROGRESS_EPS_M) { anchorTick = clock.current; anchorPos = s.pos; unsticker.reset(); }
+      else {
+        const stalledTicks = clock.current - anchorTick;
+        if (stalledTicks > worstStallTicks) worstStallTicks = stalledTicks;
+        stalling = stalledTicks > UNSTICK_AFTER_TICKS;
+      }
+    } else { anchorTick = null; anchorPos = null; }
+
+    const nudge = unsticker.step(clock.current, stalling);
+    await aim(s.wp, s.pos, nudge.yawOffset);
+    if (s.grounded && (JUMP_VERBS.includes(s.preview) || nudge.forceJump)) await page.keyboard.press("Space").catch(() => {});
+
+    // Stop once every mandatory stop has resolved — no need to drive into the
+    // skill-beat section the autonomous driver deliberately does not play.
+    const allResolved = mandatory.size > 0 && [...mandatory.values()].every((r) => r.resolvedAtTick !== null);
+    if (allResolved && clock.elapsed > 180) break;
+
+    if (worstStallTicks > ROUTE.stallTicks) break; // a genuine stall is a failure, not something to wait out
+    if (clock.simDead()) { simDead = true; break; }
+    await sleep(80);
+  }
+  await page.keyboard.up("KeyW").catch(() => {});
+  await page.keyboard.up("ShiftLeft").catch(() => {});
+
+  const pen = await page.evaluate(() => {
+    const d = window.__diag;
+    if (!d) return { available: false };
+    let maxInv = 0, invId = null, maxStrict = 0, strictId = null;
+    for (const e of d.embeds) {
+      for (const s of e.invariant) if (s.depthM > maxInv) { maxInv = s.depthM; invId = s.id; }
+      for (const s of e.strict) if (s.depthM > maxStrict) { maxStrict = s.depthM; strictId = s.id; }
+    }
+    return { available: true, embedTicks: d.embeds.length, maxInv: +maxInv.toFixed(3), invId, maxStrict: +maxStrict.toFixed(3), strictId };
+  }).catch(() => ({ available: false }));
+
+  const encSummary = [...mandatory.entries()].map(([id, r]) =>
+    `${id}{armed:${r.armedAtTick === null ? "no" : r.armedAtTick + "t"},resolved:${r.resolvedAtTick === null ? "NO" : r.resolvedAtTick + "t"}}`);
+  log(`        simTicks=${clock.elapsed} (~${(clock.elapsed / TICK_HZ).toFixed(0)}s of sim) progressX=${maxProgressX.toFixed(0)} worstStall=${worstStallTicks}t unstickBursts=${unsticker.bursts} outcome=${outcome ? outcome.kind : "(stopped after stops resolved)"} penetration(invariant)=${pen.maxInv ?? "n/a"}m simDead=${simDead}`);
+  log(`        encounters: ${encSummary.join("  ")}`);
+  writeFileSync(join(OUT, "route.json"), JSON.stringify({ url, consumedTicks: clock.elapsed, maxProgressX, worstStallTicks, unstickBursts: unsticker.bursts, outcome, mandatory: Object.fromEntries(mandatory), pen, simDead, pageErrors }, null, 2));
+
+  // A stuck-then-timeout outcome is a HANG, not a normal loss.
+  const timedOutWhileStuck = outcome?.code === "TRAVERSAL_TIMEOUT" && (softLock || worstStallTicks > ROUTE.stallTicks);
+
+  assert(!simDead, "the sim keeps ticking during the approach (page not hung)",
+    `window.__floor.ticks did not advance for ${SIM_DEAD_WALL_S}s of REAL time — the page hung or crashed, distinct from a slow-but-live renderer; see route.json`);
+  assert(mandatory.size > 0, "mandatory encounters exist on the route",
+    "the run saw no authored encounters at all — the route or its stops are gone");
+  for (const [id, rec] of mandatory) {
+    assert(rec.armedAtTick !== null, `encounter ${id} arms`,
+      `${id} never left DORMANT during the driven approach (${clock.elapsed} sim ticks) — the trigger did not fire or the section is unreachable`);
+    assert(rec.resolvedAtTick !== null, `encounter ${id} resolves`,
+      `${id} armed at tick ${rec.armedAtTick} but never reached RESOLVED — the beat hangs (soft-lock); the speaker never closed / the question never opened`);
+  }
+  assert(!softLock, "no encounter soft-lock",
+    softLock ? `encounter ${softLock.id} sat armed-but-unresolved for ${softLock.armedForTicks} sim ticks (> ${ROUTE.encArmTimeoutTicks})` : "");
+  assert(!timedOutWhileStuck, "no beat hang (stuck-then-timeout)",
+    `the run hit TRAVERSAL_TIMEOUT while stuck (worstStall=${worstStallTicks} ticks) — the timer expired because the player was stranded, not because of a fair loss`);
+  assert(worstStallTicks <= ROUTE.stallTicks, "no stall before the stops resolve",
+    `the body made no ground for ${worstStallTicks} EXECUTED sim ticks (> ${ROUTE.stallTicks}) despite ${unsticker.bursts} un-stick nudge(s) — a genuinely wedged body, not a slow renderer (which advances per tick) and not a transient (which the nudges clear); see route.json`);
+  assert(maxProgressX >= ROUTE.minProgressX, "route advances through the street in order",
+    `the driven run only reached x=${maxProgressX.toFixed(0)} (< ${ROUTE.minProgressX}) in ${clock.elapsed} sim ticks; it never got past the Shambles/ropewalk`);
+  if (pen.available) {
+    assert(pen.maxInv < ROUTE.penInvariantLimitM, "no penetration during play",
+      `a body was ${pen.maxInv}m inside solid hull "${pen.invId}" (invariant limit ${ROUTE.penInvariantLimitM}m) — window.__diag recorded a body inside solid geometry`);
+  } else {
+    notes.push("ROUTE: window.__diag penetration ring unavailable (non-dev build?) — penetration not checked");
+    log("        note: window.__diag unavailable; penetration not checked");
+  }
   await page.close();
 }
 
@@ -551,9 +784,10 @@ async function stageWorldAndRoute(browser) {
 // STAGE: YARD (reach the rope-walk yard via a drop-in on the final section).
 // ---------------------------------------------------------------------------
 async function stageYard(browser) {
-  log("\n[YARD] a driven run reaches the rope-walk yard");
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-  const url = `${BASE}/src/mission/floor.html?at=${YARD.at}&toward=${YARD.toward}&encounterVerdict=correct`;
+  log("\n[YARD] a driven run reaches the rope-walk yard (bare; measured in sim ticks)");
+  const page = await openPage(browser);
+  const bareParam = YARD.bare ? "&bare=1" : "";
+  const url = `${BASE}/src/mission/floor.html?at=${YARD.at}&toward=${YARD.toward}&encounterVerdict=correct${bareParam}`;
   await page.goto(url, { waitUntil: "commit", timeout: 120000 });
   let up = false;
   for (let i = 0; i < 250; i++) {
@@ -561,28 +795,55 @@ async function stageYard(browser) {
     await sleep(200);
   }
   if (!up) { assert(false, "mission runtime comes up (yard drop-in)", `window.__floor never appeared at ${url}`); await page.close(); return; }
-  await sleep(3000);
+  await sleep(1500);
   await page.mouse.click(640, 400).catch(() => {});
   await page.evaluate(() => window.__diag?.reset?.()).catch(() => {});
   await page.keyboard.down("ShiftLeft");
   await page.keyboard.down("KeyW");
-  let inYard = false, last = null;
-  const start = Date.now();
-  while ((Date.now() - start) / 1000 < YARD.capS) {
+  let inYard = false, last = null, simDead = false, worstStallTicks = 0;
+  let anchorTick = null, anchorPos = null;
+  const PROGRESS_EPS_M = 0.5;
+  const clock = makeSimClock();
+  const unsticker = makeUnsticker();
+  const aimYard = async (wp, pos, off = 0) => {
+    if (!wp) return;
+    const yaw = Math.atan2(wp.x - pos.x, wp.z - pos.z) + off;
+    await page.evaluate((y) => { const L = window.__look; if (L?.look) L.look.yaw = y; }, yaw).catch(() => {});
+  };
+  for (;;) {
     const s = await page.evaluate(MISSION_READ).catch(() => null);
     if (s) {
+      clock.tick(s.ticks);
       last = s.pos;
       if (s.pos.x >= YARD.minX && s.pos.x <= YARD.maxX && s.pos.z >= YARD.minZ && s.pos.z <= YARD.maxZ) { inYard = true; break; }
-      if (s.grounded && JUMP_VERBS.includes(s.preview)) await page.keyboard.press("Space").catch(() => {});
+      // Stall watch + un-stick in executed sim ticks (same rationale as ROUTE).
+      let stalling = false;
+      if (s.ticks != null) {
+        if (anchorTick === null || !anchorPos) { anchorTick = clock.current; anchorPos = s.pos; }
+        else if (Math.hypot(s.pos.x - anchorPos.x, s.pos.z - anchorPos.z) > PROGRESS_EPS_M) { anchorTick = clock.current; anchorPos = s.pos; unsticker.reset(); }
+        else {
+          const st = clock.current - anchorTick;
+          if (st > worstStallTicks) worstStallTicks = st;
+          stalling = st > UNSTICK_AFTER_TICKS;
+        }
+      }
+      const nudge = unsticker.step(clock.current, stalling);
+      if (nudge.yawOffset) await aimYard(s.wp, s.pos, nudge.yawOffset);
+      if (s.grounded && (JUMP_VERBS.includes(s.preview) || nudge.forceJump)) await page.keyboard.press("Space").catch(() => {});
     }
+    if (clock.elapsed >= YARD.capTicks) break;
+    if (worstStallTicks > YARD.stallTicks) break;
+    if (clock.simDead()) { simDead = true; break; }
     await sleep(80);
   }
   await page.keyboard.up("KeyW").catch(() => {});
   await page.keyboard.up("ShiftLeft").catch(() => {});
   await page.screenshot({ path: join(OUT, "yard.png") }).catch(() => {});
-  log(`        final pos=${last ? `[${last.x.toFixed(0)},${last.y.toFixed(0)},${last.z.toFixed(0)}]` : "n/a"} inYard=${inYard}`);
+  log(`        final pos=${last ? `[${last.x.toFixed(0)},${last.y.toFixed(0)},${last.z.toFixed(0)}]` : "n/a"} inYard=${inYard} simTicks=${clock.elapsed} worstStall=${worstStallTicks}t simDead=${simDead}`);
+  assert(!simDead, "the sim keeps ticking (yard, page not hung)",
+    `window.__floor.ticks did not advance for ${SIM_DEAD_WALL_S}s of REAL time during the yard drive — the page hung, not a slow renderer`);
   assert(inYard, "reaches the rope-walk yard region",
-    `driven from ${YARD.at} toward the yard, the player ended at ${last ? `x=${last.x.toFixed(0)},z=${last.z.toFixed(0)}` : "unknown"} and never entered YARD [x ${YARD.minX}..${YARD.maxX}, z ${YARD.minZ}..${YARD.maxZ}] within ${YARD.capS}s`);
+    `driven from ${YARD.at} toward the yard, the player ended at ${last ? `x=${last.x.toFixed(0)},z=${last.z.toFixed(0)}` : "unknown"} and never entered YARD [x ${YARD.minX}..${YARD.maxX}, z ${YARD.minZ}..${YARD.maxZ}] within ${clock.elapsed} sim ticks (worstStall ${worstStallTicks}t)`);
   await page.close();
 }
 
@@ -601,17 +862,17 @@ async function stageRefusal(browser) {
 
   // --- positive: the scaffold ladder is authored, so a climb MUST arm here ---
   {
-    const { page, url, up } = await bootMissionAt(browser, REFUSAL.at, REFUSAL.toward);
+    const { page, url, up } = await bootMissionAt(browser, REFUSAL.at, REFUSAL.toward, { bare: REFUSAL.bare });
     if (!up) {
       assert(false, "mission runtime comes up (refusal/ladder)", `window.__floor never appeared at ${url}`);
       await page.close();
     } else {
-      const armed = await driveAndWatchClimb(page, REFUSAL.driveS, { breakOnClimb: true });
+      const armed = await driveAndWatchClimb(page, REFUSAL.driveTicks, { breakOnClimb: true });
       await page.screenshot({ path: join(OUT, "refusal-ladder.png") }).catch(() => {});
       writeFileSync(join(OUT, "refusal-ladder.json"), JSON.stringify(armed, null, 2));
-      log(`        ladder present: climbArmed=${armed.climbArmed} maxY=${armed.maxY.toFixed(2)} verbs=${JSON.stringify(armed.verbs)}`);
+      log(`        ladder present: climbArmed=${armed.climbArmed} maxY=${armed.maxY.toFixed(2)} verbs=${JSON.stringify(armed.verbs)} simTicks=${armed.simTicks}`);
       assert(armed.climbArmed, "a validated ladder arms a climb in real play",
-        `driven up the authored scaffold ladder at ${REFUSAL.at}, the body never entered CLIMB_UP (motion.phase/flow.verb/verbsUsed) within ${REFUSAL.driveS}s — a climb the world authors a ladder for did not arm (maxY=${armed.maxY.toFixed(2)}, verbs ${JSON.stringify(armed.verbs)}); see refusal-ladder.png`);
+        `driven up the authored scaffold ladder at ${REFUSAL.at}, the body never entered CLIMB_UP (motion.phase/flow.verb/verbsUsed) within ${REFUSAL.driveTicks} sim ticks — a climb the world authors a ladder for did not arm (maxY=${armed.maxY.toFixed(2)}, verbs ${JSON.stringify(armed.verbs)}); see refusal-ladder.png`);
       await page.close();
     }
   }
@@ -621,7 +882,7 @@ async function stageRefusal(browser) {
   // volume that has no ladder or grip" — the shipped world authors one for all 11,
   // so this is the only way to reach the bare-volume state the predicate guards.
   {
-    const { page, url, up } = await bootMissionAt(browser, REFUSAL.at, REFUSAL.toward);
+    const { page, url, up } = await bootMissionAt(browser, REFUSAL.at, REFUSAL.toward, { bare: REFUSAL.bare });
     if (!up) {
       assert(false, "mission runtime comes up (refusal/bare)", `window.__floor never appeared at ${url}`);
       await page.close();
@@ -634,7 +895,7 @@ async function stageRefusal(browser) {
         w.grips = [];
         return { ok: true, had };
       });
-      const bare = await driveAndWatchClimb(page, REFUSAL.driveS);
+      const bare = await driveAndWatchClimb(page, REFUSAL.driveTicks);
       await page.screenshot({ path: join(OUT, "refusal-bare.png") }).catch(() => {});
       writeFileSync(join(OUT, "refusal-bare.json"), JSON.stringify({ stripped, bare }, null, 2));
       log(`        affordance stripped (${JSON.stringify(stripped.had)}): climbSeen=${bare.climbSeen} maxY=${bare.maxY.toFixed(2)}`);
@@ -656,8 +917,8 @@ async function stageRefusal(browser) {
 // from where the climb arrives — reachability, against the widened stance.
 // ---------------------------------------------------------------------------
 async function stageBeat(browser) {
-  log("\n[BEAT] the Liberty Elm crown is reachable by climbing, and the beat arms on arrival");
-  const { page, url, up } = await bootMissionAt(browser, BEAT.at, BEAT.toward);
+  log("\n[BEAT] the Liberty Elm crown is reachable by climbing, and the beat arms on arrival (bare; sim ticks)");
+  const { page, url, up } = await bootMissionAt(browser, BEAT.at, BEAT.toward, { bare: BEAT.bare });
   if (!up) {
     assert(false, "mission runtime comes up (elm beat)", `window.__floor never appeared at ${url}`);
     await page.close();
@@ -666,19 +927,22 @@ async function stageBeat(browser) {
   const spawn = await page.evaluate(CLIMB_READ);
   await page.mouse.click(640, 400).catch(() => {});
 
-  // Phase 1: climb from the bough to the crown, then stop pushing.
+  // Phase 1: climb from the bough to the crown, then stop pushing. Budgeted in
+  // SIM ticks so a slow renderer gets the same number of climb steps.
   await page.keyboard.down("ShiftLeft");
   await page.keyboard.down("KeyW");
-  let sawClimb = false, maxY = -Infinity, reachedCrown = false;
-  const t0 = Date.now();
-  while ((Date.now() - t0) / 1000 < BEAT.climbS) {
+  let sawClimb = false, maxY = -Infinity, reachedCrown = false, simDead = false;
+  const climbClock = makeSimClock();
+  while (climbClock.elapsed < BEAT.climbTicks) {
     const s = await page.evaluate(CLIMB_READ).catch(() => null);
     if (s) {
+      climbClock.tick(s.ticks);
       if (s.pos.y > maxY) maxY = s.pos.y;
       if (s.climbing || s.climbUsed) sawClimb = true;
       if (s.pos.y >= BEAT.crownY) { reachedCrown = true; break; }
       if (s.grounded) await page.keyboard.press("Space").catch(() => {});
     }
+    if (climbClock.simDead()) { simDead = true; break; }
     await sleep(100);
   }
   await page.keyboard.up("KeyW").catch(() => {});
@@ -686,25 +950,29 @@ async function stageBeat(browser) {
 
   // Phase 2: settle in the stance; the beat must arm from the arrival pose.
   let beatArmed = false, arrival = null;
-  const t1 = Date.now();
-  while ((Date.now() - t1) / 1000 < BEAT.settleS) {
+  const settleClock = makeSimClock();
+  while (settleClock.elapsed < BEAT.settleTicks) {
     const s = await page.evaluate(CLIMB_READ).catch(() => null);
     if (s) {
+      settleClock.tick(s.ticks);
       if (!arrival) arrival = s.pos;
       if (s.beat === "ACTIVE" || s.beat === "SETTLING" || s.beat === "RESOLVED") { beatArmed = true; break; }
     }
+    if (settleClock.simDead()) { simDead = true; break; }
     await sleep(120);
   }
   const end = await page.evaluate(CLIMB_READ);
   await page.screenshot({ path: join(OUT, "beat-crown.png") }).catch(() => {});
-  writeFileSync(join(OUT, "beat.json"), JSON.stringify({ url, spawn: spawn?.pos, arrival, end, sawClimb, maxY, reachedCrown, beatArmed }, null, 2));
-  log(`        spawn y=${spawn?.pos.y.toFixed(1)} maxY=${maxY.toFixed(2)} reachedCrown=${reachedCrown} climbed=${sawClimb} endBeat=${end?.beat} beatArmed=${beatArmed}`);
-  assert(sawClimb, "the elm crown is reached by CLIMBING, not by spawning there",
+  writeFileSync(join(OUT, "beat.json"), JSON.stringify({ url, spawn: spawn?.pos, arrival, end, sawClimb, maxY, reachedCrown, beatArmed, climbTicks: climbClock.elapsed, settleTicks: settleClock.elapsed, simDead }, null, 2));
+  log(`        spawn y=${spawn?.pos.y.toFixed(1)} maxY=${maxY.toFixed(2)} reachedCrown=${reachedCrown} climbed=${sawClimb} endBeat=${end?.beat} beatArmed=${beatArmed} climbTicks=${climbClock.elapsed} settleTicks=${settleClock.elapsed}`);
+  assert(!simDead, "the sim keeps ticking (elm beat, page not hung)",
+    `window.__floor.ticks did not advance for ${SIM_DEAD_WALL_S}s of REAL time during the elm climb — the page hung, not a slow renderer`);
+  assert(sawClimb || reachedCrown, "the elm crown is reached by CLIMBING, not by spawning there",
     `driven from ${BEAT.at} toward ${BEAT.toward}, the body never entered CLIMB_UP — the crown climb the posting beat sits on did not run (maxY=${maxY.toFixed(2)}); see beat-crown.png`);
   assert(reachedCrown, "the climb reaches the crown band",
-    `the body climbed but only reached y=${maxY.toFixed(2)} (< crown ${BEAT.crownY}) — it did not arrive at the crown where the posting beat sits; see beat-crown.png`);
+    `the body climbed but only reached y=${maxY.toFixed(2)} (< crown ${BEAT.crownY}) in ${climbClock.elapsed} sim ticks — it did not arrive at the crown where the posting beat sits; see beat-crown.png`);
   assert(beatArmed, "the posting beat arms from where the climb arrives",
-    `the body climbed to the crown (y=${maxY.toFixed(2)}) but the beat never left STANCE (end phase ${end?.beat ?? "n/a"}) — the beat's stance (2.4 m / ±135°) is not reachable from the climb's arrival pose; see beat-crown.png`);
+    `the body climbed to the crown (y=${maxY.toFixed(2)}) but the beat never left STANCE (end phase ${end?.beat ?? "n/a"}) in ${settleClock.elapsed} settle ticks — the beat's stance (2.4 m / ±135°) is not reachable from the climb's arrival pose; see beat-crown.png`);
   await page.close();
 }
 
@@ -745,19 +1013,49 @@ async function duelBotSky(page) {
   return page.evaluate(skyFractionOfPng, dataUrl);
 }
 
-// Drive an already-mounted duel page to submit one real answer: wait for the
-// question panel, fill it, select the evidence cards until Submit enables, and
-// click. Returns whether a submission was actually sent. Used by the live grader
-// check — the round it triggers is what must reach the server's grading pipeline.
-async function submitLiveAnswer(page) {
-  const readPhase = () => page.evaluate(() => { const d = window.__duel; if (!d) return null; return d.getHud().phase; }).catch(() => null);
-  let sawQ = false;
-  for (let i = 0; i < 120; i++) {
-    const phase = await readPhase();
-    if ((await page.$("textarea.duel-answer")) && phase === "QUESTION_PENDING") { sawQ = true; break; }
-    await sleep(300);
+// The duel's pre-combat FACE_OFF intro counts down on the shared FIELD clock
+// (machine.ts: endsAtTick = FACE_OFF_TICKS = 600), which advances via
+// advanceFieldClock exactly like the mission — so on a GPU-less runner it reaches
+// the question in the SAME number of sim ticks but more wall-clock (measured: the
+// FACE_OFF→QUESTION_PENDING transition took ~10 s on a GPU and ~48 s under
+// software WebGL + a CPU throttle, while combat.tick stayed 0 the whole time).
+// That is why the old fixed 36 s wall-clock wait for the question is the duel's
+// share of the same flake — a slow runner never reaches QUESTION_PENDING inside
+// it — and why this waits on clock.tick, NOT combat.tick (which is 0 until combat
+// starts). QUESTION_PENDING then FREEZES the clock (machine.ts: ADVANCE is a
+// no-op there), so the moment it opens this returns and never watches a frozen clock.
+const DUEL_READ = () => {
+  const d = window.__duel;
+  if (!d) return null;
+  let tick = null;
+  try { tick = d.getState().clock.tick; } catch { /* not mounted yet */ }
+  return { phase: d.getHud().phase, tick };
+};
+const DUEL_QUESTION_BUDGET_TICKS = 1800; // ~30 s of sim; FACE_OFF is 600 — a generous ceiling
+
+// Wait for the answerable QUESTION_PENDING panel, budgeted in duel SIM TICKS.
+async function waitForDuelQuestion(page) {
+  const clock = makeSimClock();
+  for (;;) {
+    const s = await page.evaluate(DUEL_READ).catch(() => null);
+    if (s) {
+      clock.tick(s.tick);
+      if (s.phase === "QUESTION_PENDING" && (await page.$("textarea.duel-answer"))) {
+        return { sawQ: true, simTicks: clock.elapsed, simDead: false };
+      }
+    }
+    if (clock.elapsed >= DUEL_QUESTION_BUDGET_TICKS) return { sawQ: false, simTicks: clock.elapsed, simDead: false };
+    if (clock.simDead()) return { sawQ: false, simTicks: clock.elapsed, simDead: true };
+    await sleep(200);
   }
-  if (!sawQ) return false;
+}
+
+// Fill the answer, select evidence cards until Submit enables, and click. Returns
+// { submitted, simTicks, simDead } — the round it triggers is what must reach the
+// server's grading pipeline.
+async function submitLiveAnswer(page) {
+  const q = await waitForDuelQuestion(page);
+  if (!q.sawQ) return { submitted: false, ...q };
   await page.fill("textarea.duel-answer", "Parliament resolved the colonies should help pay the war debt through the stamp.").catch(() => {});
   const cards = await page.$$("button.ev-mini-face");
   for (let i = 0; i < cards.length && i < 4; i++) {
@@ -765,16 +1063,16 @@ async function submitLiveAnswer(page) {
     await sleep(180);
     if (!(await page.$eval("button.duel-submit", (b) => b.disabled).catch(() => true))) break;
   }
-  if (await page.$eval("button.duel-submit", (b) => b.disabled).catch(() => true)) return false;
+  if (await page.$eval("button.duel-submit", (b) => b.disabled).catch(() => true)) return { submitted: false, ...q };
   await page.click("button.duel-submit").catch(() => {});
-  return true;
+  return { submitted: true, ...q };
 }
 
 async function stageDuel(browser) {
   // --- world loads (verdict=live must not be an empty void) ---
   log("\n[DUEL] the harness loads a world (verdict=live)");
   {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const page = await openPage(browser);
     const denials = watchOriginDenials(page);
     const url = `${BASE}/src/duel/duel.html?verdict=live`;
     await page.goto(url, { waitUntil: "commit", timeout: 120000 });
@@ -811,10 +1109,15 @@ async function stageDuel(browser) {
       // delta is the honest, deterministic proof that the real path ran.
       log("\n[DUEL] the grader ran on the real duel path (live submit moves /v1/health)");
       const before = await fetchGrading();
-      const submitted = await submitLiveAnswer(page);
+      const sub = await submitLiveAnswer(page);
+      const submitted = sub.submitted;
+      log(`        question reached in ${sub.simTicks} duel ticks${sub.simDead ? " (SIM DEAD — page hung)" : ""}`);
       let after = before;
       if (submitted && before) {
-        for (let i = 0; i < 30; i++) {
+        // A SERVER-side wait (not a sim race): the answer POST must reach the API
+        // and the grading window must record it. Generous but bounded; polls until
+        // it advances, then stops.
+        for (let i = 0; i < 75; i++) {
           const h = await fetchGrading();
           if (h && h.roundsInWindow > before.roundsInWindow) { after = h; break; }
           await sleep(200);
@@ -828,7 +1131,7 @@ async function stageDuel(browser) {
       assert(before !== null && after !== null, "the API grading counters are readable",
         `GET ${BASE}/v1/health returned no grading snapshot — cannot prove the grader ran on the real path (is the API up and exposing /v1/health.grading?)`);
       assert(submitted, "the live duel accepts a real answer on the real attempt",
-        `verdict=live never reached a submittable QUESTION_PENDING panel, so the grader could not be exercised on the real path.${originMismatchHint(denials)}`);
+        `verdict=live never reached a submittable QUESTION_PENDING panel within ${sub.simTicks} duel ticks${sub.simDead ? " (the page hung — clock stopped ticking)" : ` (FACE_OFF is 600 ticks; budget ${DUEL_QUESTION_BUDGET_TICKS})`}, so the grader could not be exercised on the real path.${originMismatchHint(denials)}`);
       assert(dGradeable !== null && dGradeable > 0 && dRounds !== null && dRounds > 0,
         "the grader ran on the real duel path (server recorded a gradeable round)",
         `a live answer was submitted but the API's grading window did not advance (roundsInWindow Δ=${dRounds}, gradeableInWindow Δ=${dGradeable}) — the verdict reached the player WITHOUT the server grading pipeline running, which is exactly how "grading never ran in play" hid last time (a client-minted fallback the server never saw); see duel-grader.json`);
@@ -842,19 +1145,16 @@ async function stageDuel(browser) {
   // --- grading discriminates (scripted correct vs wrong, no classifier needed) ---
   log("\n[DUEL] a graded answer discriminates right from wrong");
   const magazineAfterAnswer = async (mode) => {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const page = await openPage(browser);
     const url = `${BASE}/src/duel/duel.html?verdict=${mode}`;
     await page.goto(url, { waitUntil: "commit", timeout: 120000 });
     for (let i = 0; i < 250; i++) { if (await page.evaluate(() => !!window.__duel).catch(() => false)) break; await sleep(200); }
     const readHud = () => page.evaluate(() => { const d = window.__duel; if (!d) return null; const h = d.getHud(); return { phase: h.phase, magA: h.magazine.A, magB: h.magazine.B }; }).catch(() => null);
-    let sawQ = false;
-    for (let i = 0; i < 150; i++) {
-      const h = await readHud();
-      if ((await page.$("textarea.duel-answer")) && h?.phase === "QUESTION_PENDING") { sawQ = true; break; }
-      await sleep(300);
-    }
-    let result = { sawQ, magA: null };
-    if (sawQ) {
+    // Same tick-relative wait as the live grader: FACE_OFF counts down on the
+    // field clock, so a slow renderer reaches the question in the same sim ticks.
+    const q = await waitForDuelQuestion(page);
+    let result = { sawQ: q.sawQ, magA: null };
+    if (q.sawQ) {
       await page.fill("textarea.duel-answer", "Parliament resolved the colonies should help pay the war debt through the stamp.").catch(() => {});
       const cards = await page.$$("button.ev-mini-face");
       for (let i = 0; i < cards.length && i < 4; i++) {
@@ -864,7 +1164,17 @@ async function stageDuel(browser) {
       }
       if (!(await page.$eval("button.duel-submit", (b) => b.disabled).catch(() => true))) {
         await page.click("button.duel-submit").catch(() => {});
-        for (let i = 0; i < 40; i++) { const h = await readHud(); if (h && (h.phase === "BULLETS_GRANTED" || h.magA > 0)) { result.magA = h.magA; break; } await sleep(200); }
+        // The grant follows the answer within a bounded number of duel ticks; wait
+        // in sim ticks, not wall-clock, for BULLETS_GRANTED / a filled magazine.
+        const grantClock = makeSimClock();
+        for (;;) {
+          const h = await readHud();
+          if (h && (h.phase === "BULLETS_GRANTED" || h.magA > 0)) { result.magA = h.magA; break; }
+          const d = await page.evaluate(DUEL_READ).catch(() => null);
+          grantClock.tick(d?.tick);
+          if (grantClock.elapsed >= 1200 || grantClock.simDead()) break;
+          await sleep(200);
+        }
       }
     }
     await page.close();
