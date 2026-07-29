@@ -112,3 +112,4 @@ apps/api/.diag-*.mts
 # into a commit by accident. Never loaded by anything; local to a worker.
 .affordwork/
 .cursor/locks/
+.affordwork/clips/
