@@ -26,9 +26,11 @@
 //   belt-and-suspenders, honestly labelled as bypassable.
 //
 // WHAT IT COVERS (every blocking gate; see docs/process/LANES.md "Verification"):
-//   lint, typecheck, test, build, verify:content, and the three assets:verify:*
-//   with the affordance debt list "held or shrunk, never grown"; plus
-//   check-playthrough WHERE THE CHANGE COULD AFFECT PLAY.
+//   lint, typecheck, test, build, verify:content, verify:units, and the three
+//   assets:verify:* with the affordance debt list "held or shrunk, never grown";
+//   plus check-playthrough WHERE THE CHANGE COULD AFFECT PLAY; plus
+//   check-lane-integrity, which is coordination rather than correctness and is
+//   here because a merge is exactly when a crossed lane stops being recoverable.
 //
 // USABILITY — a gate that is too slow gets skipped, which returns us to
 // discretion. Two things keep it usable:
@@ -97,6 +99,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PLAY_IRRELEVANT = [
   /^docs\//,
   /^\.github\//,
+  /^\.cursor\//, // agent config: hooks, rules, skills, the lane map. Never bundled.
   /^scripts\//,
   /^assets\/pipeline\//,
   /^apps\/web\/public\//,
@@ -267,7 +270,20 @@ const STATIC_STEPS = [
   { name: "assets:verify:collision", cmd: "pnpm", args: ["assets:verify:collision"] },
   { name: "assets:verify:placement", cmd: "pnpm", args: ["assets:verify:placement"] },
   { name: "verify:content", cmd: "pnpm", args: ["verify:content"] },
+  { name: "verify:units", cmd: "pnpm", args: ["verify:units"] },
   { name: "lint", cmd: "pnpm", args: ["lint"] },
+  // COORDINATION, not correctness — and it belongs here anyway, because here is
+  // the moment it protects. `check-lane-integrity` catches a crossed lane from
+  // git state after the fact, which is the ONLY enforcement available: the
+  // preToolUse guard does not fire for background subagents and cannot see an
+  // edit made through `Shell` at all (M1-STATUS.md, "Guard coverage"). Left to be
+  // remembered, a post-hoc detector protects nothing; the merge is the deadline.
+  //
+  // `--lane auto` scopes the FAILURE to the lane being gated. It still prints
+  // every finding, but a red caused by a different lane is not something the
+  // person merging can fix, and an unfixable red is how a gate gets muted. Run it
+  // bare (`pnpm verify:lanes`) for the orchestrator's audit, which fails on any.
+  { name: "lane-integrity", cmd: process.execPath, args: ["scripts/check-lane-integrity.mjs", "--lane", "auto"] },
 ];
 
 // --------------------------------------------------------------------------
@@ -458,6 +474,12 @@ function selftest() {
     ["docs only skips", playthroughDecision(["docs/process/M1-STATUS.md", "README.md"]).run === false],
     ["ci only skips", playthroughDecision([".github/workflows/ci.yml"]).run === false],
     ["scripts only skips", playthroughDecision(["scripts/merge-gate.mjs"]).run === false],
+    // Agent configuration is not shipped into the game by any path — no bundle
+    // imports it and no server reads it — so a lane-map or hook change cannot
+    // alter a route, refusal, beat or duel verdict. It was costing a full
+    // ~3-minute playthrough on every coordination-only change.
+    ["cursor config only skips", playthroughDecision([".cursor/lane-ownership.json", ".cursor/hooks/lane-guard.sh"]).run === false],
+    ["but package.json still runs", playthroughDecision([".cursor/lane-ownership.json", "package.json"]).run === true],
     ["asset pipeline only skips", playthroughDecision(["assets/pipeline/build_x.py", "apps/web/public/world/props/x.glb"]).run === false],
     ["test-only skips", playthroughDecision(["packages/duel/src/__tests__/x.test.ts", "apps/api/test/y.test.ts"]).run === false],
     ["app source runs", playthroughDecision(["apps/web/src/mission/floor.ts"]).run === true],
