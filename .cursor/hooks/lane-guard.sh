@@ -12,6 +12,22 @@
 # Fails OPEN by design. A guard bug must not be able to halt all work, so a parse
 # failure or a missing map allows the write. That means a silently broken guard is
 # possible: the standing audit loop re-tests it, and `--selftest` exists for that.
+#
+# WHAT `--selftest` CANNOT TELL YOU, measured from the hooks log on 29 Jul. This
+# guard's logic is correct and it does return verdicts (89 completed runs, 87
+# allow, 2 correct deny). It nevertheless protects only a MINORITY of writes:
+#   - 148 further invocations were CANCELLED at 0 ms with no verdict, and they
+#     split by session — foreground calls complete, whole background-subagent
+#     conversations abort and fall open. Most lane work is background subagents.
+#   - `Shell` is not in the hook matcher (`Write|StrReplace|Delete|EditNotebook`),
+#     so any edit made through python, sed, a heredoc, cp or a redirect fires no
+#     hook at all and does not even appear in the log. A shell command carries no
+#     file path to inspect, so this one is structural, not a bug to fix.
+# Prevention is therefore not available here; DETECTION is the enforcement point.
+# `scripts/check-lane-integrity.mjs` reads the same map out of git state after the
+# fact and catches both holes. Keep this guard — it is free and it works for
+# foreground writes — but do not treat a green selftest as coverage. A mechanism's
+# own selftest cannot tell you whether it runs in production.
 
 set -uo pipefail
 
@@ -36,7 +52,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   W=/Users/ramsarma/Projects/project-archive-worktrees
   # Ownership invariant, tested on an engine-world file no transient grant touches,
   # so retiring a grant cannot silently break this case (a grant CAN and does
-  # override ownership — see the collision.ts grant to camera-occluder — so the
+  # override ownership — see the module.json grant to module-lesson below — so the
   # structural test must stand on a path outside every grant).
   t "$W/mission-world/packages/engine-world/src/contact.ts" mission-world allow
   t "$W/mission-flow/packages/engine-world/src/contact.ts" mission-flow deny
@@ -45,15 +61,25 @@ if [[ "${1:-}" == "--selftest" ]]; then
   t "$W/boss-fight/packages/engine-world/src/contact.ts" boss-fight deny
   t "$W/world-audit/packages/mission-m1/src/level/route.ts" world-audit deny
   t "/Users/ramsarma/Projects/project-archive/packages/engine-world/src/contact.ts" main deny
-  # A grant overrides ownership: collision.ts is mission-world's, but while it is
-  # granted to camera-occluder that lane may write it and mission-world may not.
-  t "$W/camera-occluder/packages/engine-world/src/collision.ts" camera-occluder allow
-  t "$W/mission-world/packages/engine-world/src/collision.ts" mission-world deny
   t "/Users/ramsarma/Projects/project-archive/docs/process/M1-STATUS.md" main allow
   t "$W/mission-cinematic/apps/web/src/mission/duelPort.ts" mission-cinematic allow
   t "$W/mission-cinematic/apps/web/src/mission/traversal.ts" mission-cinematic deny
-  # Grants: a contested file handed to one lane is writable there and nowhere else.
-  t "$W/mission-flow/apps/web/src/mission/MissionHud.tsx" mission-flow allow
+  # A lane owns its own tree, and only its own.
+  t "$W/module-lesson/apps/web/src/module/ModulePlayer.tsx" module-lesson allow
+  t "$W/duel-hud/apps/web/src/module/ModulePlayer.tsx" duel-hud deny
+  # A grant OVERRIDES ownership, in both directions: content/** is boss-fight's,
+  # but while module.json is granted to module-lesson that lane may write it and
+  # boss-fight may not. These two cases are the grant mechanism itself, so they
+  # must be re-pointed at a LIVE grant whenever one is retired, never deleted.
+  t "$W/module-lesson/content/m1/module.json" module-lesson allow
+  t "$W/boss-fight/content/m1/module.json" boss-fight deny
+  # Retiring a grant must hand the file BACK, and these two pin that it did.
+  # collision.ts returns to mission-world's ownership (camera-occluder's grant
+  # retired 2026-07-29, work merged at d457081); MissionHud.tsx returns to
+  # contested, so the lane that held it is refused it like everyone else
+  # (mission-flow's elm-beat grant retired 2026-07-29, merged at 2c27d6a).
+  t "$W/mission-world/packages/engine-world/src/collision.ts" mission-world allow
+  t "$W/mission-flow/apps/web/src/mission/MissionHud.tsx" mission-flow deny
   t "$W/mission-cinematic/apps/web/src/mission/MissionHud.tsx" mission-cinematic deny
   [[ $fail -eq 0 ]] && echo "lane-guard selftest: OK" || echo "lane-guard selftest: FAILED"
   exit $fail

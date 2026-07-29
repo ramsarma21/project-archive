@@ -20,30 +20,16 @@
   "_grants": "A temporary, exclusive, auditable claim on a contested or otherwise-owned path, so a file that must change has a legal path to changing without being permanently re-owned. While a grant stands, the named lane may write the listed paths (this overrides contested AND another lane's ownership); every OTHER lane is denied them, exactly as if that lane owned them. Honoured by lane-guard.sh and reported by scripts/check-lane-integrity.mjs. Each entry states the lane, the exact paths, a reason, and the date granted, so the grant is visible and can be retired when the work lands. Keep the list short: a grant that outlives its work should be deleted, and if a lane keeps needing a path, give it the path outright instead.",
   "grants": [
     {
-      "lane": "mission-flow",
+      "lane": "module-lesson",
       "paths": [
-        "apps/web/src/mission/MissionHud.tsx",
-        "apps/web/src/mission/MissionBeatPanel.tsx",
-        "apps/web/src/mission/missionInput.ts",
-        "apps/web/src/mission/mission.css"
+        "content/m1/module.json",
+        "content/m1/schema/learning-module.schema.json"
       ],
-      "reason": "elm-beat presentation pass: the control legend fades instead of parking on screen, F leaves the persistent legend (its contextual hint stays in the beat panel), and a 'Handbill posted' completion seal is added. Presentation-only; verified 2026-07-29. Retire once merged.",
-      "granted": "2026-07-29"
-    },
-    {
-      "lane": "camera-occluder",
-      "paths": [
-        "apps/web/src/mission/MissionStage.tsx",
-        "packages/engine-world/src/playerLook.ts",
-        "packages/engine-world/src/__tests__/playerLook.test.ts",
-        "packages/engine-world/src/collision.ts",
-        "packages/mission-m1/src/compile.ts",
-        "packages/mission-m1/src/__tests__/elmDescent.test.ts"
-      ],
-      "reason": "engine-world camera-clearance / occlusion brief plus its MissionStage wiring. These files are inside mission-world's engine-world and mission-m1 ownership; this grant carves them out EXCLUSIVELY while both lanes are live, so a camera-clearance edit and mission-world's animation/sim edits cannot land on the same file unsequenced. Retire when the camera-clearance brief merges. Granted 2026-07-29.",
+      "reason": "The lesson-player rework needs the authored deck and the schema it validates against, and both sit inside boss-fight's content/** ownership. apps/web/src/module/m1Module.ts imports content/m1/module.json directly, so the deck IS the played lesson and a player change that needs a deck field cannot be made anywhere else. Granted by instruction on 2026-07-29 and recorded here on the same day, after scripts/check-lane-integrity.mjs reported the two files as an unrecorded cross-lane edit. Retire when the lesson rework merges.",
       "granted": "2026-07-29"
     }
   ],
+  "_retiredGrants": "Retired 2026-07-29, both because their work merged: `mission-flow`'s four elm-beat UI files (MissionHud/MissionBeatPanel/missionInput/mission.css, merged 2c27d6a — those files are contested again, denied to every lane) and `camera-occluder`'s engine-world/MissionStage carve-out (merged d457081; the lane has no branch or worktree left and its entry is gone from `lanes`). Kept as one line rather than as dead grant objects: a grant that outlives its work silently re-owns a file.",
   "mainCheckoutDenied": [
     "apps/**",
     "packages/**",
@@ -92,7 +78,9 @@
       "apps/web/test/combatHud.test.ts",
       "apps/web/test/duelPresentation.test.ts"
     ],
-    "camera-occluder": [],
+    "module-lesson": [
+      "apps/web/src/module/**"
+    ],
     "mission-encounters": [
       "packages/duel/**",
       "packages/netcode/**",
