@@ -80,6 +80,19 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm verify:content
 
+      # A unit is one lesson + mission + boss fight, and the owner's invariant is
+      # that the fight covers everything the lesson taught. This asserts it: every
+      # concept a unit's lesson deck teaches must have at least one encounter or
+      # duel item in the SAME unit. It has to be blocking rather than advisory
+      # because the failure is invisible and permanent — remediation reads absent
+      # evidence as "teach", so a taught-but-untested concept can never produce
+      # evidence, sits in the reteach set forever, and shows nothing wrong in play
+      # while every other gate here stays green. Static, ~4 s, no database, no
+      # browser, so it belongs beside verify:content.
+      - name: Unit concept coverage (the fight covers the lesson)
+        if: ${{ !cancelled() }}
+        run: pnpm verify:units
+
       - name: Typecheck
         if: ${{ !cancelled() }}
         run: pnpm typecheck
