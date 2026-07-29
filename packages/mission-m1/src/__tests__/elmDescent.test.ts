@@ -28,8 +28,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   CAPSULE_RADIUS,
+  cameraSegmentClear,
+  cameraSegmentOccluderIds,
   capsuleEmbeddedIn,
   deckThroughBody,
+  segmentClear,
   supportBelow,
   type Vec3,
 } from "@pa/engine-world/collision";
@@ -227,4 +230,61 @@ test("the Liberty Elm is drawn as one object at its declared tree size", () => {
       `the single elm draw omits ${part} — the boughs are no longer folded into the one tree`,
     );
   }
+});
+
+// 5 -----------------------------------------------------------------------
+// The elm canopy is a CAMERA OCCLUDER: the owner's second elm report.
+//
+//   "descending the elm the camera buries in the canopy — an orange/green smear
+//    filling the frame — and camInsideCollision is empty."
+//
+// The leaves and boughs are drawn with no collision (the body climbs and drops
+// through them), so the chase march, which reads solids only, sailed the lens
+// into the canopy while collision reported open air. The compiled world now
+// carries an invisible camera occluder over the crown; only the camera-clearance
+// queries see it, and the body / sight / cover queries do not.
+test("the compiled elm world registers a canopy camera occluder over the crown", () => {
+  const occ = (world.cameraOccluders ?? []).find(
+    (o) => o.id === "CANOPY_LIBERTY_ELM_TRUNK",
+  );
+  assert.ok(occ, "no camera occluder was registered for the elm canopy");
+  // Over the drawn crown (declared 16 x 18 x 16, centred on the trunk foot at
+  // ~81.0, 0.8): leaf mass in the upper two-thirds, wide enough to cover the
+  // boughs the camera follows the player down through.
+  assert.ok(occ!.baseY > 5 && occ!.baseY < 7, `leaf base y=${occ!.baseY}`);
+  assert.ok(occ!.topY >= 17.9, `crown top y=${occ!.topY}`);
+  assert.ok(occ!.minX <= 74 && occ!.maxX >= 88, `x span ${occ!.minX}..${occ!.maxX}`);
+  assert.ok(occ!.minZ <= -6 && occ!.maxZ >= 7, `z span ${occ!.minZ}..${occ!.maxZ}`);
+});
+
+test("a chase line through the elm canopy is clear to collision but not to the camera", () => {
+  // From a stance on the crown bough, out to where the full boom would sit — a
+  // point in the leaves, OUTSIDE the solid trunk footprint (x 80.1..81.9), so no
+  // blocker is on this line. This is the exact blind spot: solids say clear.
+  const focus: Vec3 = { x: 79.6, y: 9.5, z: 1.9 };
+  const boom: Vec3 = { x: 79.6, y: 10.8, z: -3.0 };
+  assert.ok(
+    segmentClear(world, focus, boom),
+    "the drawn canopy carries no blocker, so the sight-line test is clear — the defect",
+  );
+  assert.deepEqual(
+    cameraSegmentOccluderIds(world, focus, boom),
+    ["CANOPY_LIBERTY_ELM_TRUNK"],
+    "the camera query must catch the canopy the sight test misses",
+  );
+  assert.ok(!cameraSegmentClear(world, focus, boom));
+});
+
+test("a camera down at the elm base is not pulled by the canopy (no over-pull)", () => {
+  // A line at street height under the tree, inside the canopy footprint but below
+  // the leaf base. The camera must pass under it at full boom, or ordinary
+  // movement near the tree turns claustrophobic — a worse regression than the bug.
+  const low: Vec3[] = [
+    { x: 80, y: 1.2, z: 6 },
+    { x: 80, y: 2.5, z: 8 },
+  ];
+  assert.ok(
+    !cameraSegmentOccluderIds(world, low[0]!, low[1]!).includes("CANOPY_LIBERTY_ELM_TRUNK"),
+    "the canopy must not occlude a camera down at street height under the tree",
+  );
 });
