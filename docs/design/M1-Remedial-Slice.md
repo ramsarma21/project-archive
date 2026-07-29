@@ -182,6 +182,14 @@ and capstone item banks.
 - **Chronological fiction is not a constraint.** Boston across the period is in scope; the
   mission is not pinned to 14 August 1765.
 - **Anything built may change**, including the mission premise and the encounters.
+- **The mission has no time budget.** `Mission-Slate.md`'s "3:00 of mission, then a 2:00 boss
+  duel" no longer binds: this is a demo and nobody will finish the mission in front of an
+  audience, so the mission takes as long as it needs. Four stops with acted cutscenes are fine.
+- **The boss fight must stay short.** Target the round floor at exactly the concept count (4)
+  rather than padding it, which lands a full-coverage fight at roughly 4–6 rounds. Note this is
+  *shorter* than today's correct-answer path (11.5 rounds), because the ammo change and the
+  brevity goal pull the same way: starving the boss when the player answers correctly makes
+  competence fast. Answer well, win quickly.
 
 ## Known interactions — do not implement these blind
 
