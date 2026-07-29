@@ -297,6 +297,7 @@ All three of 28 Jul's regressions were introduced by the previous night's fixes.
 | Encounter soft-lock from a roof | relocating the beat to a roof | same-surface arming + 16 s abort |
 | Boss ignored all cover | arena swap exposing a missing opt-in | parity assertions in `missionDuel.test.ts` |
 | Ladders drawn floating, upright, ghosted | the ladder placement itself | *nothing yet — see Open* |
+| An ungraded round shown as "Correct" (the owner's headline complaint: told he was right when he was wrong) | a timeout/no-credential round is granted the max (`kind: CORRECT`) by design, and the HUD hardcoded the label off `kind` | landed on `main` from `boss-fight` (`76a6153`). `apps/web/src/duel/verdictLabel.ts` sources the label off `verdict.source`: `GRADING_TIMEOUT` → **"Not graded"**, only `source: CLASSIFIER` may read "Correct"/"Wrong". Pinned by `apps/web/test/duelVerdictLabel.test.ts`. **INVARIANT for the next agent: the ungraded-round label MUST read "Not graded". Any later duel-HUD rework of `DuelOverlay.tsx` has to keep rendering `verdictBeatTone(verdict).label` — do NOT reintroduce a hardcoded "Correct"/"Wrong" in `VerdictBeat`, or this regresses silently.** |
 
 ### Process errors, and the change that prevents each
 

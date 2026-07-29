@@ -63,10 +63,12 @@ is the backstop: it reads git state for every worktree lane and reports, most-da
 map forbids, then unclaimed drift. Run it in the standing loop; a non-zero exit is a crossed lane.
 
 **Live conflicts it is currently reporting (29 Jul), which the orchestrator must sequence:**
-- `boss-fight` and `duel-hud` are BOTH editing `apps/web/src/duel/{DuelOverlay.tsx,duel.css,devEntry.tsx}`
-  right now — a genuine clobber. The verdict-label rework (boss-fight) and the HUD overhaul (duel-hud)
-  cannot both hold these files; one must finish and merge before the other touches them, or the shared
-  overlay must be split.
+- `boss-fight` and `duel-hud` were BOTH editing `apps/web/src/duel/{DuelOverlay.tsx,duel.css,devEntry.tsx}`.
+  **Resolved by sequencing: `boss-fight` landed on `main` first (29 Jul, merge `540c0e3`).** `duel-hud`
+  must now `git merge main` and reconcile onto the landed verdict-label rework — and it MUST preserve the
+  "Not graded" label (`verdictBeatTone` in `verdictLabel.ts`); see the invariant row in `M1-STATUS.md`.
+  A HUD overhaul that reverts `VerdictBeat` to a hardcoded "Correct"/"Wrong" silently re-breaks the
+  owner's headline complaint.
 - The duel **card content** and the **grading policy** are the same file (`content/m1/duel-items.json`
   carries both), so a "duel cards" brief and a "grading" brief cannot run in parallel.
 - The `apps/api` health wiring reads grading health, so the grading work (`packages/grading`, boss-fight)
