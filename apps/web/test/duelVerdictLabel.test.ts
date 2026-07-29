@@ -12,6 +12,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
+import type { ReactTestRenderer } from "react-test-renderer";
 import { verdictBeatTone } from "../src/duel/verdictLabel.js";
 import { VerdictBeat } from "../src/duel/DuelOverlay.js";
 import type { DuelHud } from "../src/duel/duelRuntime.js";
@@ -59,7 +60,7 @@ function hudWith(verdict: { kind: string; source: string }): DuelHud {
 }
 
 function renderText(element: React.ReactElement): string {
-  let renderer!: TestRenderer.ReactTestRenderer;
+  let renderer!: ReactTestRenderer;
   act(() => {
     renderer = TestRenderer.create(element);
   });
