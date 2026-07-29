@@ -4,75 +4,118 @@ import {
   QuaternionKeyframeTrack,
 } from "three";
 
-// Levelling the duel's aim so the barrel is forward and BOTH hands are on the gun in
-// every combat pose — not only the standing rest.
+// Making the flintlock read as HELD in every combat pose, with the shooting arm
+// aimed level and the support arm settled instead of grabbing at empty air.
 //
-// THE PROBLEM, MEASURED. `standoff` is the one clip on both production rigs that holds
-// the pistol level and two-handed (.affordwork/probe-clip-aim-dir.mjs: the RightHand
-// +Y, which the socket makes the muzzle, sits at up-component ~0.05). `idleAim`,
-// `aimWalk`, `aimRun` and `fire` were baked with the shooting arm riding up and the
-// support hand drifting off the stock — 25–45° of muzzle rise on the officer — which
-// on screen is a pistol waved above the face, one-handed. The resting aim is fixed by
-// selecting `standoff` for it (see DUEL_CLIP_NAMES). The MOVING aim and the shot need
-// the same forward two-handed arms without losing their strides or their recoil.
+// THE PROBLEM, MEASURED (and re-confirmed in real play, .affordwork/observe-boss).
+// The pistol is seated correctly in the RIGHT hand by the weapon socket. The trouble
+// is the SUPPORT (left) arm: the aim clips on both production rigs were baked as a
+// two-handed LONG-GUN present, so the left hand reaches forward to a forestock a
+// short flintlock does not have. On screen the off-hand floats forward and below the
+// barrel with a visible gap — worst on the officer, whose left hand hangs open in
+// mid-air — which is exactly the "hands glitched off the weapon / holds with one
+// hand" the owner reported (clip 0:49, 0:52, 2:01, 2:07). Two earlier attempts to
+// force BOTH hands onto the gun by copying `standoff`'s arms did not fix it, because
+// `standoff` is itself that same long-gun pose: copying it just spread the defect to
+// the moving clips.
 //
-// THE FIX, AND WHY IT IS THIS ONE. The engine already corrects an over-open Mixamo
-// arm the same way (`compactPlayerAirborneClips`): keep every authored keyframe and
-// blend ONLY the arm rotation toward a known-good pose. Here the known-good pose is
-// `standoff`'s arms, and the layers that get it are the aim-locomotion cycles (fully,
-// so a strafing fighter aims forward with both hands while the legs keep striding
-// from the original clip) and the fire recoil (partially, so the shot reads forward
-// but still kicks). Nothing touches the legs, the spine, the socket or the aim
-// vector; this is a corrective on the arm bones, which is the approach the owner
-// asked for over fighting the clip with a static socket rotation.
+// THE FIX. Correct the two arms SEPARATELY, keeping every authored keyframe and
+// blending only the arm rotations (the approach the engine already uses for
+// `compactPlayerAirborneClips`):
+//
+//   * RIGHT (shooting) arm  -> the `standoff` pose, so the barrel stays level and
+//     forward in the aim-locomotion cycles and the shot (the muzzle rise that made
+//     `fire`/`idleAim` read as a pistol waved over the face is removed).
+//   * LEFT (support) arm    -> the relaxed `idle` pose, so it settles naturally at
+//     the side rather than reaching for a stock that is not there. The result is a
+//     clean, period-accurate one-handed duelling hold with NO floating hand.
+//
+// Nothing touches the legs, the spine, the socket or the aim vector.
+//
+// THE HONEST LIMIT, for whoever owns the cast next. This is the best a code-only
+// corrective can do with the clips that exist: it makes the hold read as a deliberate
+// one-handed aim. A genuinely TWO-HANDED pistol present — support hand cupped under
+// the firing hand — needs a purpose-baked pistol-aim clip (the current ones are
+// long-gun aims), or an off-hand IK target driven onto the weapon each frame. Either
+// is an asset/rig change out of this file's scope; if a two-handed look is wanted,
+// bake `standoff`/`aimWalk`/`aimRun`/`fire` with the left hand on the pistol and this
+// left-arm relax can be dropped.
 
-/** Arm chain that carries the weapon and the support hand. Fingers (…Index1) excluded by the anchor. */
-const ARM_TRACK = /(?:Left|Right)(?:Shoulder|Arm|ForeArm|Hand)\.quaternion$/;
+/** The shooting arm: leveled to the standoff aim so the barrel points forward. */
+const RIGHT_ARM_TRACK = /Right(?:Shoulder|Arm|ForeArm|Hand)\.quaternion$/;
+/** The support arm: settled to the relaxed idle pose so it stops grabbing at air. */
+const LEFT_ARM_TRACK = /Left(?:Shoulder|Arm|ForeArm|Hand)\.quaternion$/;
 
 /**
- * How far each clip's arms are pulled to the `standoff` aim.
- *   1  — the arms ARE the standoff aim (used for the aim-walk/run cycles).
- *   <1 — a blend that keeps some of the clip's own motion (used for the recoil).
+ * Clips whose SHOOTING (right) arm is pulled to the `standoff` level aim. `standoff`
+ * is not listed — it is the source pose, so leveling it to itself is a no-op — but
+ * its support arm is still relaxed below (see LEFT_RELAX_CLIPS).
  */
-const AIM_LEVEL_BLEND: Readonly<Record<string, number>> = {
+const RIGHT_LEVEL_BLEND: Readonly<Record<string, number>> = {
   aimWalk: 1,
   aimRun: 1,
   // The raw fire clip throws the muzzle up past the face (measured up-component ~0.6,
-  // and torso-driven so a partial arm blend cannot fully level it), which is exactly
-  // the look the owner rejected. Firing therefore holds the same forward two-handed
-  // aim as the rest; the shot reads from the muzzle flash and the projectile, not
-  // from swinging the barrel to the sky.
+  // torso-driven so a partial arm blend cannot fully level it). Firing therefore holds
+  // the same forward aim as the rest; the shot reads from the muzzle flash and the
+  // projectile, not from swinging the barrel to the sky.
   fire: 1,
 };
 
 /**
- * Return the rig's clips with the aim-locomotion and fire arms levelled to the
- * `standoff` two-handed forward aim. Clips without an entry in `AIM_LEVEL_BLEND` are
- * returned untouched (same object), so `standoff`, `draw`, `reload`, `hit`, `death`
- * and every traversal clip are unchanged. Pure over the clip list.
+ * Clips whose SUPPORT (left) arm is settled to the relaxed `idle` pose. `standoff` is
+ * included because the resting-aim role plays it directly, so the floating support
+ * hand has to be fixed there too, not only in the moving clips.
+ */
+const LEFT_RELAX_CLIPS: ReadonlySet<string> = new Set([
+  "standoff",
+  "aimWalk",
+  "aimRun",
+  "fire",
+]);
+
+function armPose(clip: AnimationClip, match: RegExp): Map<string, Quaternion> {
+  const pose = new Map<string, Quaternion>();
+  for (const track of clip.tracks) {
+    if (track instanceof QuaternionKeyframeTrack && match.test(track.name)) {
+      // A steady held pose, so the first keyframe is representative.
+      pose.set(track.name, new Quaternion().fromArray(track.values, 0));
+    }
+  }
+  return pose;
+}
+
+/**
+ * Return the rig's clips with the aim-family SHOOTING arm leveled to `standoff` and
+ * the SUPPORT arm settled to `idle`. Clips outside those sets (`draw`, `reload`,
+ * `hit`, `death`, `dodge`, and every traversal clip) are returned untouched (same
+ * object). Pure over the clip list; safe when a rig lacks `standoff` or `idle`.
  */
 export function levelAimArms(clips: readonly AnimationClip[]): AnimationClip[] {
   const standoff = clips.find((clip) => clip.name === "standoff");
-  if (!standoff) return [...clips];
-
-  // The standoff arm pose, one rotation per arm-bone track, taken from its first
-  // keyframe (the clip holds a steady forward aim, so any frame is representative).
-  const target = new Map<string, Quaternion>();
-  for (const track of standoff.tracks) {
-    if (track instanceof QuaternionKeyframeTrack && ARM_TRACK.test(track.name)) {
-      target.set(track.name, new Quaternion().fromArray(track.values, 0));
-    }
-  }
-  if (target.size === 0) return [...clips];
+  const idle = clips.find((clip) => clip.name === "idle");
+  const rightTarget = standoff ? armPose(standoff, RIGHT_ARM_TRACK) : new Map();
+  const leftTarget = idle ? armPose(idle, LEFT_ARM_TRACK) : new Map();
+  if (rightTarget.size === 0 && leftTarget.size === 0) return [...clips];
 
   const scratch = new Quaternion();
   return clips.map((source) => {
-    const blend = AIM_LEVEL_BLEND[source.name];
-    if (!blend) return source;
+    const rightBlend = RIGHT_LEVEL_BLEND[source.name];
+    const relaxLeft = LEFT_RELAX_CLIPS.has(source.name) && leftTarget.size > 0;
+    const levelRight = rightBlend !== undefined && rightTarget.size > 0;
+    if (!relaxLeft && !levelRight) return source;
+
     const clip = source.clone();
     for (const track of clip.tracks) {
       if (!(track instanceof QuaternionKeyframeTrack)) continue;
-      const goal = target.get(track.name);
+      let goal: Quaternion | undefined;
+      let blend = 1;
+      if (levelRight && RIGHT_ARM_TRACK.test(track.name)) {
+        goal = rightTarget.get(track.name);
+        blend = rightBlend;
+      } else if (relaxLeft && LEFT_ARM_TRACK.test(track.name)) {
+        goal = leftTarget.get(track.name);
+        blend = 1;
+      }
       if (!goal) continue;
       for (let index = 0; index < track.values.length; index += 4) {
         scratch.fromArray(track.values, index).slerp(goal, blend).toArray(track.values, index);
