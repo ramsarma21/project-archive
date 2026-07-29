@@ -80,6 +80,12 @@ function verdictOn(path: AnswerPath, round: number): VerdictKind {
 /** Movement below this in one tick is a body that is not going anywhere. */
 const PLANTED_EPS_M = 1e-4;
 
+/**
+ * Above this capsule height the body is standing rather than crouched. Halfway between
+ * the engine's two stances, so it does not depend on either exact number.
+ */
+const CROUCH_STAND_SPLIT_M = 1.2;
+
 interface RunMetrics {
   readonly died: boolean;
   readonly won: boolean;
@@ -216,12 +222,6 @@ function runShipped(
     bossHitsLanded: state.combat.fighters.B.hitsLanded,
   };
 }
-
-/**
- * Above this capsule height the body is standing rather than crouched. Halfway
- * between the engine's two stances, so it does not depend on either exact number.
- */
-const CROUCH_STAND_SPLIT_M = 1.2;
 
 // ---- instruments ------------------------------------------------------------
 
