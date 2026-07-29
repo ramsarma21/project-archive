@@ -105,6 +105,13 @@ export const PLAYER_CLIPS = [
   // Directed movement burst: an explosive push off one foot, low and forward,
   // recovering into a run. Mixamo "Idle To Sprint", appended 2026-07-27.
   "dash",
+  // Jump-hang vocabulary (Mixamo "Jump To Hang" / "Hanging Idle" / "Freehang
+  // Climb", appended 2026-07-29). The upward mirror of hangDrop: leap and catch a
+  // lip (jumpToHang, one-shot), hold on it (hangIdle, looped — the occupied hang),
+  // pull up over it (freehangClimb, one-shot). Baked root-neutral in the
+  // horizontal plane like every traversal clip; the world controller owns the
+  // leap arc, the hold position and the pull-up displacement.
+  "jumpToHang", "hangIdle", "freehangClimb",
   // Stealth.
   "crouchIdle", "crouchWalk", "crouchToStand", "blendWalk",
   // Handbill precision beat: knock is the nailing strike, reach the placement.
@@ -133,6 +140,10 @@ export const PLAYER_ACTION_CLIPS: ReadonlySet<string> = new Set([
   // The dash is a one-shot burst: it fires on a cooldown, plays out its launch,
   // and clamps into the run the motion layer is already driving.
   "dash",
+  // Jump-hang one-shots. The catch clamps into the hang; the pull-up clamps onto
+  // the ledge the motion layer is already placing the body on. hangIdle is NOT
+  // here — it is the looped occupied hold (see CYCLIC_VERB_CLIPS).
+  "jumpToHang", "freehangClimb",
 ]);
 
 /**
@@ -175,6 +186,11 @@ export const CLIP_AUTHORED_MS: Readonly<Record<string, number>> = {
   // Mixamo "Idle To Sprint", 25 frames at 30fps, measured off the baked rig by
   // measure_clip_rates.mjs.
   dash: 833,
+  // Jump-hang vocabulary, measured off the baked rig by measure_clip_rates.mjs
+  // (2026-07-29): file lengths at 30fps.
+  jumpToHang: 2033,
+  hangIdle: 4733,
+  freehangClimb: 3900,
 };
 
 /**
@@ -214,6 +230,13 @@ export const CLIP_CONTENT_MS: Readonly<Record<string, number>> = {
   // tail 0). Fitted to the 320ms dash window this rides just under 2.5x, below
   // the MAX_VERB_TIME_SCALE ceiling.
   dash: 796,
+  // Jump-hang vocabulary (measure_clip_rates.mjs, 2026-07-29). jumpToHang trims a
+  // 262ms held tail (the settled hang) from its content; freehangClimb is pure
+  // performance (183ms settle lead, no tail); hangIdle is a near-continuous loop.
+  // Content < file for each, as the ceiling test requires.
+  jumpToHang: 1733,
+  freehangClimb: 3713,
+  hangIdle: 4696,
 };
 
 /**
@@ -282,6 +305,9 @@ export const CYCLIC_VERB_CLIPS: ReadonlySet<string> = new Set([
   "climbUp",
   "climbDown",
   "leapOfFaith",
+  // The occupied hang: a held attitude looped for however long the player hangs,
+  // exactly like leapOfFaith's held descent. It must never be fitted to a window.
+  "hangIdle",
 ]);
 
 /**

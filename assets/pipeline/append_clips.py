@@ -42,6 +42,12 @@ IN_PLACE_HORIZONTAL = {
     "shout", "satchelSearch", "scolded", "ropePull", "read",
     "sitIdle", "sitTalk",
     "dash",
+    # Jump-hang vocabulary. These are authored TRANSITIONS: the world controller
+    # owns the leap arc, the hold position and the pull-up displacement, and the
+    # clips supply pose only (root-neutral, like every other traversal verb). Their
+    # forward/lateral drift must be frozen or the body double-moves; the vertical
+    # rise (the reach up, the pull over the lip) is the read and is kept.
+    "jumpToHang", "hangIdle", "freehangClimb",
 }
 
 MESHY_BONE_MAP = {
