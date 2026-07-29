@@ -84,6 +84,71 @@ tree is clean and `main` is 34 commits ahead of `origin/main`.
 
 ---
 
+## Trunk consolidation (29 Jul) — the ledger table above is now ACTIONED
+
+`main` was rebuilt into one clean M1-demo trunk so the owner has a single point to scope down from.
+**Nothing was destroyed:** every branch and worktree is left in place, and every branch head is
+captured in an annotated `archive/…-2026-07-29` tag (list + recovery below). Landed directly on
+`main`, fully reversible via `archive/main-preconsolidate-2026-07-29` (= `8595cc2`, main before any
+of this). **Trunk HEAD `82c88d6`** = `8595cc2` + the STAAR rescue + the six salvage items.
+
+**Landed** (cherry-picked `-x`; provenance in each message):
+
+| From | Branch commit(s) | On trunk | What |
+|---|---|---|---|
+| untracked | rescued from `boss-fight` worktree | `d762a63` | measured TEA statewide item-performance data (200 items × 5 admins) — was in **no** commit |
+| `api-hunt` | `ca2e345` | `4eb386a` | outage round enforces the deterministic card half ("told he was right when he was wrong") |
+| `boss-clip` | `f791a0a` `8399adb` | `cad7e6a` `8cf8aab` | support-hand fix + hit confirmation (sound, flinch, unified colour) |
+| `duel-hud` | `dab549b` `4296cf4` | `dd0c07c` `d798a61` | stat card retired, hits-to-win on the persistent HUD, hit marker legible |
+| `mission-encounters` | `c3db1b9` `33a7f2d` `76cfcc2` `5094c73` | `24d441b` `eba18ad` `7dc502d` `4ba5334` | question draw ordered by concept; winnability aimed at the fight M1 ships |
+| `module-lesson` | `72ab1c9` (**Deliverable A only**) | `86d6e1d` | lesson checks vary by distractor pool |
+| `mission-presentation` | `8a7e3bc` `5502d76` | `0d46e7c` `82c88d6` | one TrueFoundry key injected under both env names + docs |
+
+**The "Not graded" invariant survived the duel-HUD merge.** `duel-hud` predates boss-fight's
+`540c0e3`; its `DuelOverlay.tsx` hardcoded `correct ? "Correct" : "Wrong"`. The cherry-pick
+conflicted **only** on the import block (kept both `verdictBeatTone` and the new `useLearnOnce`); the
+auto-merge kept `main`'s `verdictBeatTone(verdict).label`. Verified: `verdictLabel.ts` byte-identical
+to baseline (GRADING_TIMEOUT → "Not graded"), `DuelOverlay.tsx` renders `verdictBeatTone(verdict).label`,
+`duelVerdictLabel.test.ts` 5/5 **run package-native** (cwd=`apps/web`; a root-cwd run false-fails on a
+JSX-runtime/tsconfig artifact — not a code defect).
+
+**module-lesson's inert half was DROPPED, not landed inert.** `72ab1c9`'s Deliverable B
+(`remediationDeck` + coherence gate appended to `moduleOrder.ts`, plus `remediationDeck.test.ts`) was
+wired to nothing; per this file's own instruction it was stripped before landing. Deliverable A stands
+alone (web 752/752, `verify:content` pass). B is recoverable from `archive/workflow/module-lesson-2026-07-29`.
+
+**Dropped from the trunk** (preserved on branch + archive tag):
+- `mission-world` jump-hang (`ab007f2` `07eb7d2` + clip commits) — clock ledge already works via its ladder.
+- `mission-encounters` `253b675` `2510c09` — PvP netcode catch-up bound (future).
+- `api-hunt` `a854ab9` `a459d89` — PvP card-access gate and `/join` reasons (future).
+- `boss-fight` `8b00e3c` — STAAR standards reporting / four-mission assignment (future). Its untracked
+  data file was rescued in `d762a63`; the commit itself is dropped.
+- `mission-encounters` **uncommitted WIP** — not taken (it hangs the duel suite); only the four committed M1 commits.
+
+**Archive tags — recover any dropped work** with `git checkout -b <name> <tag>`:
+`archive/main-preconsolidate-2026-07-29` (8595cc2), and `archive/workflow/<lane>-2026-07-29` for all
+twelve lanes (api-hunt, boss-clip, boss-fight, duel-hud, level-data, mission-cinematic,
+mission-encounters, mission-flow, mission-presentation, mission-world, module-lesson, world-audit).
+
+**Verification — measured this session from a worktree** (pnpm still hangs in the main checkout; gates
+belong in a worktree). typecheck 16/16 · lint green · full suite **2869 tests, 0 failing** · static
+gate GREEN (build, all `assets:verify:*`, lane-integrity, verify:content, verify:units) ·
+**check-playthrough ALL PASS** (WORLD/ROUTE/YARD/REFUSAL/BEAT/DUEL — the duel renders a real world,
+botSky 0.058, and grades on the real path; status UNGRADED locally with no TrueFoundry key). PvP left
+in playtest position: `M1_PVP_CARD_ACCESS="PLAYTEST_ALL"` and `M1_PVP_TRIAL_ACCESS=true` byte-identical
+to baseline; `poolHealth()` resolves (34 questions).
+
+**Open after consolidation.**
+- **M1 duel balance — owner's call.** `packages/duel` winnability marks two `todo` (non-failing, so
+  the suite is green): a *correct* answer **lengthens** the fight (11.5 rounds vs 5.8 wrong) because
+  `SYMMETRIC_COMPLEMENT` hands the boss mirror ammo so it camps in cover on the correct path, and the
+  24-round anti-hang ceiling is reached on some seeds. A balance decision, not a bug to silently retune.
+- **Remediation** (module Deliverable B) dropped, awaiting scope.
+- Audit finding #3 above (uncommitted `infra` edit) is **resolved** — captured by `8a7e3bc`, the
+  `mission-presentation` worktree is now clean. Finding #4's WIP-hang stands, but its WIP was not taken.
+
+---
+
 **The standing loop**, every 15 minutes, in this order:
 1. **Merge** every finished lane **whose work is M1** — see the freeze above; a future-scope lane
    stays on its branch. Verify `main` green; hunt for stranded or unmerged lane work.
