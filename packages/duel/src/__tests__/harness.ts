@@ -30,6 +30,34 @@ export function questionSet(size = 18): readonly DuelQuestionRef[] {
   }));
 }
 
+/**
+ * A bank shaped like a real mission's: `perConcept` authored items for each of
+ * `concepts`, which is what the draw's concept ordering acts on.
+ *
+ * `questionSet` above alternates just two concepts, so it cannot see whether a draw
+ * spreads across three — the shape M1 actually ships (three concepts, two items each
+ * per attempt). Coverage tests want this one.
+ */
+export function conceptBank(
+  concepts: readonly string[],
+  perConcept: number,
+): readonly DuelQuestionRef[] {
+  const bank: DuelQuestionRef[] = [];
+  for (const conceptId of concepts) {
+    for (let n = 1; n <= perConcept; n++) {
+      bank.push({ itemId: `${conceptId}#ITEM_${n}`, itemVersion: "v1", conceptId });
+    }
+  }
+  return bank;
+}
+
+/** M1's per-attempt bank shape: three concepts, two authored items each. */
+export const M1_ATTEMPT_CONCEPTS = [
+  "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+  "BOS.CONCEPT.STAMP_SCOPE.v1",
+  "BOS.CONCEPT.REPRESENTATION.v1",
+] as const;
+
 export function verdictFor(
   kind: VerdictKind,
   item: DuelQuestionRef,
@@ -52,6 +80,8 @@ export interface RunDuelOptions {
   /** The termination backstop, not a length. Duels end on health. */
   readonly roundCeiling?: number;
   readonly bankSize?: number;
+  /** Drive a specific bank rather than `questionSet(bankSize)`. */
+  readonly questions?: readonly DuelQuestionRef[];
   readonly arena?: DuelArena;
   readonly carryPolicy?: BulletCarryPolicy;
   readonly intents?: (side: DuelSide, view: CombatView) => CombatIntent;
@@ -73,7 +103,7 @@ export function runDuel(options: RunDuelOptions): RunDuelResult {
     seed: options.seed ?? 20260725,
     world: arena.world,
     opponent: options.opponent,
-    questions: questionSet(options.bankSize ?? 18),
+    questions: options.questions ?? questionSet(options.bankSize ?? 18),
     placement: arena.placement,
     ...(options.roundCeiling ? { roundCeiling: options.roundCeiling } : {}),
     ...(options.carryPolicy ? { carryPolicy: options.carryPolicy } : {}),
