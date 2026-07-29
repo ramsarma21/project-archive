@@ -10,7 +10,7 @@ ports, and an isolated database.
 > to a tag. Editing its source does nothing useful (there is no `--watch`, and it will be
 > thrown away on the next refresh). Do lane work in `../project-archive-worktrees/<lane>`
 > as usual. The only files that are *meant* to differ here from the tagged commit are the
-> untracked, gitignored `.env` and `*.log` files this server needs.
+> untracked files this server needs: `.env`, `playtest-start.mjs`, `playtest.pids`, `*.log`.
 
 Stood up 2026-07-29.
 
@@ -73,25 +73,41 @@ this server's `.env` so it targets `project_archive_playtest`.
 
 Launched **without `--watch`** so no file change can ever reload them.
 
-| Service | Launch command (run from the worktree) | Node PID at setup | Log |
-| --- | --- | --- | --- |
-| API | `node --import tsx src/server.ts` (in `apps/api`) | `45027` | `<worktree>/playtest-api.log` |
-| Web | `VITE_API_PROXY_TARGET=http://localhost:4301 ./node_modules/.bin/vite --port 4300 --strictPort` (in `apps/web`) | `45078` | `<worktree>/playtest-web.log` |
+Both are started by one script, which daemonises them properly:
 
-**PIDs are ephemeral** — they change on every restart. Find the current ones with:
+```bash
+node /Users/ramsarma/Projects/project-archive-worktrees/playtest/playtest-start.mjs
+```
+
+| Service | Process | Node PID at setup | Log |
+| --- | --- | --- | --- |
+| API | `node --import tsx src/server.ts` (cwd `apps/api`) | `54323` | `<worktree>/playtest-api.log` |
+| Web | `vite --port 4300 --strictPort`, `VITE_API_PROXY_TARGET=http://localhost:4301` (cwd `apps/web`) | `54324` | `<worktree>/playtest-web.log` |
+
+**PIDs are ephemeral** — they change on every restart. The script writes the current pair to
+`<worktree>/playtest.pids`; otherwise find them with:
 
 ```bash
 lsof -nP -iTCP:4301 -sTCP:LISTEN   # frozen API
 lsof -nP -iTCP:4300 -sTCP:LISTEN   # frozen web
 ```
 
-**Persistence caveat (honest):** these run as background jobs parented to the Cursor shell
-host (the same lifecycle that kept the previous dev servers alive across sessions). They
-survive an agent turn / chat ending, but they will **not** survive a machine reboot or Cursor
-being quit. `setsid` is unavailable on this macOS and a plain blocking `nohup` gets
-process-group-killed, so there is no true daemon; after a reboot, re-run the restart commands
-below. (For a fully reboot-proof daemon, a `launchd` plist would be the next step — not done
-here.)
+### Why a script and not `nohup … &` (learned the hard way)
+
+The first attempt launched the servers from an agent/tool shell with `nohup … & disown`. **They
+were killed the moment the launching job ended** — twice. `nohup` only blocks SIGHUP, and
+`disown` only removes the job from one shell's table; neither helps when the supervisor kills
+the whole process *group* or descendant tree. An earlier note in this file claiming these
+survive an agent session was wrong and has been corrected.
+
+`playtest-start.mjs` uses `spawn(..., { detached: true })` (which is `setsid(2)`) plus
+`unref()`, so each server gets its **own session and process group** and reparents to launchd.
+Verified after launch: `ppid = 1` and `pgid = pid` for both processes. Nothing in an editor or
+agent session can take them down now.
+
+**Still not reboot-proof.** A restart or shutdown ends them; re-run the script (below). A
+`launchd` LaunchAgent with `KeepAlive` would make it survive reboots and auto-restart — not
+done, ask if you want it.
 
 ## Verification (measured 2026-07-29, not inferred)
 
@@ -105,25 +121,24 @@ here.)
 - Headless-browser smoke load of `/`: 0 console errors, 0 page errors, 0 failed requests;
   landing renders "server online" and the local-profile flow (fresh DB, "No profiles yet").
 
-## Restart after a reboot or Cursor quit
+## Restart after a reboot
 
 1. Ensure the DB container is running: `docker start project_archive_pg`
    (or `docker compose up -d` from the main checkout).
-2. Start the API:
+2. Start both servers:
    ```bash
-   cd /Users/ramsarma/Projects/project-archive-worktrees/playtest/apps/api
-   nohup node --import tsx src/server.ts > ../playtest-api.log 2>&1 & disown
+   node /Users/ramsarma/Projects/project-archive-worktrees/playtest/playtest-start.mjs
    ```
-3. Start the web:
+3. Verify:
    ```bash
-   cd /Users/ramsarma/Projects/project-archive-worktrees/playtest/apps/web
-   VITE_API_PROXY_TARGET=http://localhost:4301 nohup ./node_modules/.bin/vite --port 4300 --strictPort > ../playtest-web.log 2>&1 & disown
+   curl -s http://127.0.0.1:4301/v1/health   # expect ok:true, database:true, grading.configured:true
+   curl -sI http://127.0.0.1:4300/ | head -1 # expect 200
    ```
-4. Verify: `curl -s http://127.0.0.1:4301/v1/health` shows `grading.configured:true`, and
-   `curl -sI http://127.0.0.1:4300/` returns 200. Then open http://localhost:4300/.
+   Then open http://localhost:4300/.
 
-(In a normal interactive terminal, `nohup … & disown` is sufficient for the process to outlive
-the shell.)
+The script is safe to re-run only when the servers are down — `--strictPort` means a second
+web instance fails rather than silently taking another port. Stop them first (Teardown step 1)
+if you are unsure.
 
 ## Refresh the snapshot to a newer commit (later)
 
@@ -141,7 +156,7 @@ When the owner likes a newer state (e.g. after merging lanes into `main`):
    the DB is not recreated).
 6. Restart the servers (Restart section above).
 
-The `.env` and logs in the worktree are untracked, so `checkout --detach` will not disturb them.
+The `.env`, start script, pidfile and logs are untracked, so `checkout --detach` leaves them alone.
 
 ## Teardown (remove the play-test server entirely)
 
