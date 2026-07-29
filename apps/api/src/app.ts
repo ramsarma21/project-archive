@@ -45,7 +45,7 @@ import {
   M1_MODULE_ID,
   bostonProgressionContent,
 } from "./progression/content.js";
-import { pvpCardResolver } from "./pvp/cardAccess.js";
+import { assessmentPassedFromSnapshot, pvpCardResolver } from "./pvp/cardAccess.js";
 import { postgresProgressionStore } from "./progression/postgresStore.js";
 import { postgresConceptRetrievalStore } from "./progression/retrievalStore.js";
 import { ProgressionService } from "./progression/service.js";
@@ -276,10 +276,8 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
     resolvePvpCardIds: pvpCardResolver({
       m1CardIds,
       log: app.log,
-      assessmentPassed: async (profileId) => {
-        const snapshot = await progression.snapshot(profileId);
-        return snapshot.activeChapter.assessmentPassedAt !== null;
-      },
+      assessmentPassed: async (profileId) =>
+        assessmentPassedFromSnapshot(await progression.snapshot(profileId)),
     }),
   });
   // The educator surface: three reads, no writes.

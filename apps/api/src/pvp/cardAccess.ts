@@ -11,6 +11,29 @@
 export type M1PvpCardAccess = "PLAYTEST_ALL" | "ASSESSMENT_PASSED";
 
 /**
+ * The shipping policy's whole reading of progression, in one place.
+ *
+ * `app.ts` wires this as `assessmentPassed`, and a test can drive the SAME
+ * function against a real snapshot. It lived as a two-line closure inside the
+ * app wiring, which made the one predicate the shipping gate turns on the only
+ * part of that gate no test could reach without re-typing it — and a re-typed
+ * predicate is a second implementation that agrees until it doesn't.
+ *
+ * NOTE WHAT IT READS: the ACTIVE chapter. `advanceChapter` makes the next
+ * chapter active with its own null `assessmentPassedAt`, while the Codex rows keep
+ * their `pvpLegalAt` forever — so under ASSESSMENT_PASSED this answers false again
+ * for a player who passed Boston and moved on, revoking access they earned. That is
+ * a live defect in the shipping branch, not an intended narrowing; it is pinned by
+ * `pvp-shipping-card-gate.test.ts` so the behaviour cannot change unnoticed while
+ * the owner decides whether access should follow the chapter or the card.
+ */
+export function assessmentPassedFromSnapshot(snapshot: {
+  readonly activeChapter: { readonly assessmentPassedAt: string | null };
+}): boolean {
+  return snapshot.activeChapter.assessmentPassedAt !== null;
+}
+
+/**
  * THE ONE VALUE TO CHANGE to open or close temporary M1 PvP card access.
  *
  *   PLAYTEST_ALL      Every caller carries all nine M1 Codex cards, whatever they
