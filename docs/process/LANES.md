@@ -101,9 +101,15 @@ each lane's copy against `main`'s, so a stale propagated copy is not a change th
 - **`api-hunt` carries two grading-integrity fixes that are NOT on `main`** and have been reported as
   landed: outage rounds enforcing the deterministic card half, and the encounter `/v1/health` blind
   spot. Merging that lane is worth more than it looks. See `M1-STATUS.md` → Open.
-- The ownership map only takes effect at the **hub**: the guard and the detector both read
-  `/Users/ramsarma/Projects/project-archive/.cursor/lane-ownership.json`. A map edit made on a lane
-  branch changes nothing until it merges to `main`.
+- **A map edit reaches the guard and the detector by two different routes, and both must happen.**
+  `.cursor/hooks.json` registers the guard as the **relative** path `.cursor/hooks/lane-guard.sh`,
+  so an agent working in a worktree runs *that worktree's* copy against *that worktree's* map.
+  `check-lane-integrity.mjs` instead always reads the **hub's** map
+  (`/Users/ramsarma/Projects/project-archive/.cursor/lane-ownership.json`). So editing the map on a
+  lane branch changes nothing anywhere until it merges to `main` **and** the reconciled `.cursor/`
+  is copied into each worktree. That copy is what the detector then reports as PROPAGATION.
+  Copy it only into worktrees whose current copy still matches the previous `main` blob — a
+  differing copy means somebody edited it, and that is theirs, not yours.
 
 ## Verification every lane must pass
 

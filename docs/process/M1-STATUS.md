@@ -356,6 +356,15 @@ worktrees, which do not exist on a runner, so a CI job would be a green light th
 nothing. `failClosed` was not set and the guard was not otherwise touched — it is free, and it
 works for foreground writes.
 
+**A second, quieter reason the guard was not enforcing what the map said.** `.cursor/hooks.json`
+registers it as the *relative* path `.cursor/hooks/lane-guard.sh`, so an agent in a worktree runs
+**that worktree's copy against that worktree's map**, while the detector reads the hub's. A map
+edit therefore changes nothing until it both merges to `main` and is copied into each worktree.
+Both were done on 29 Jul and verified live from the worktrees (`module-lesson` now allows its own
+tree and its granted `content/m1/module.json`, and denies `engine-world` and contested `duel.css`;
+`boss-fight` is now correctly denied the file granted away). Copy only into worktrees whose copy
+still matches the previous `main` blob — a differing copy is somebody's edit.
+
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran
 inside a harness that didn't grade, in the wrong arena, against a boss that ignored cover —
