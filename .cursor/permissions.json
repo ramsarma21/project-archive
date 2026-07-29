@@ -1,0 +1,19 @@
+{
+  // Steering for Auto-review's classifier on this repo.
+  //
+  // There is deliberately NO "terminalAllowlist" key here. Defining one would
+  // REPLACE the allowlist configured in the Cursor settings UI rather than
+  // merging with it, and would make that editor read-only — silently dropping
+  // whatever is already allowlisted there.
+  "autoRun": {
+    "allow_instructions": [
+      "Local git operations in this repository are fine to run without asking: status, diff, log, add, commit, branch, worktree, and merging a feature branch into main. This project's workflow routinely merges verified lane branches into main.",
+      "Running this repository's own verification is fine: pnpm lint, pnpm typecheck, pnpm test, pnpm build, and the scripts under assets/pipeline.",
+      "Probing the local dev servers on 127.0.0.1 ports 3001 and 5173 is fine."
+    ],
+    "block_instructions": [
+      "Force pushing, rewriting published history, or deleting branches still requires approval.",
+      "Sending this repository's credentials or API keys to an external host still requires approval, even for diagnosis."
+    ]
+  }
+}

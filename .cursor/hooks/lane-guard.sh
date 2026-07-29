@@ -34,16 +34,27 @@ if [[ "${1:-}" == "--selftest" ]]; then
     if [[ "$got" == "$3" ]]; then echo "  PASS  $3  $2 -> $1"; else echo "  FAIL  want $3 got $got  $2 -> $1"; fail=1; fi
   }
   W=/Users/ramsarma/Projects/project-archive-worktrees
-  t "$W/mission-world/packages/engine-world/src/collision.ts" mission-world allow
-  t "$W/mission-flow/packages/engine-world/src/collision.ts" mission-flow deny
+  # Ownership invariant, tested on an engine-world file no transient grant touches,
+  # so retiring a grant cannot silently break this case (a grant CAN and does
+  # override ownership — see the collision.ts grant to camera-occluder — so the
+  # structural test must stand on a path outside every grant).
+  t "$W/mission-world/packages/engine-world/src/contact.ts" mission-world allow
+  t "$W/mission-flow/packages/engine-world/src/contact.ts" mission-flow deny
   t "$W/mission-flow/apps/web/public/world/props/liberty-elm-hero.glb" mission-flow allow
   t "$W/boss-fight/content/m1/duel-items.json" boss-fight allow
-  t "$W/boss-fight/packages/engine-world/src/collision.ts" boss-fight deny
+  t "$W/boss-fight/packages/engine-world/src/contact.ts" boss-fight deny
   t "$W/world-audit/packages/mission-m1/src/level/route.ts" world-audit deny
-  t "/Users/ramsarma/Projects/project-archive/packages/engine-world/src/collision.ts" main deny
+  t "/Users/ramsarma/Projects/project-archive/packages/engine-world/src/contact.ts" main deny
+  # A grant overrides ownership: collision.ts is mission-world's, but while it is
+  # granted to camera-occluder that lane may write it and mission-world may not.
+  t "$W/camera-occluder/packages/engine-world/src/collision.ts" camera-occluder allow
+  t "$W/mission-world/packages/engine-world/src/collision.ts" mission-world deny
   t "/Users/ramsarma/Projects/project-archive/docs/process/M1-STATUS.md" main allow
   t "$W/mission-cinematic/apps/web/src/mission/duelPort.ts" mission-cinematic allow
   t "$W/mission-cinematic/apps/web/src/mission/traversal.ts" mission-cinematic deny
+  # Grants: a contested file handed to one lane is writable there and nowhere else.
+  t "$W/mission-flow/apps/web/src/mission/MissionHud.tsx" mission-flow allow
+  t "$W/mission-cinematic/apps/web/src/mission/MissionHud.tsx" mission-cinematic deny
   [[ $fail -eq 0 ]] && echo "lane-guard selftest: OK" || echo "lane-guard selftest: FAILED"
   exit $fail
 fi
@@ -101,9 +112,27 @@ if [[ "$lane" == "main" ]]; then
   allow
 fi
 
+# Grants come first: a grant is an explicit, temporary, exclusive claim the
+# orchestrator made, so it OVERRIDES both contested and another lane's ownership.
+# Granted to this lane -> allow. Granted to another lane -> deny (the grant is the
+# whole reason this file is off-limits to everyone else right now). Reported on by
+# scripts/check-lane-integrity.mjs.
+grant_lanes=$(jq -r '.grants // [] | .[].lane' "$MAP" 2>/dev/null | sort -u)
+for gl in $grant_lanes; do
+  gpaths=$(jq -c --arg l "$gl" '[.grants[] | select(.lane==$l) | .paths[]]' "$MAP" 2>/dev/null)
+  if matches_any "$rel" "$gpaths"; then
+    if [[ "$gl" == "$lane" ]]; then
+      allow
+    else
+      greason=$(jq -r --arg l "$gl" 'first(.grants[] | select(.lane==$l) | .reason) // "no reason recorded"' "$MAP" 2>/dev/null)
+      deny "LANE GUARD: $rel is GRANTED to lane '$gl' right now, not '$lane'. The orchestrator handed this file to '$gl' temporarily (reason: $greason). Editing it from another lane is exactly the clobber the grant exists to stop. Report what you need. See docs/process/LANES.md."
+    fi
+  fi
+done
+
 contested=$(jq -c '.contested // []' "$MAP" 2>/dev/null) || allow
 if matches_any "$rel" "$contested"; then
-  deny "LANE GUARD: $rel is CONTESTED - shared by several lanes and owned by none. Editing it in parallel is how work gets clobbered. Report what you need and let the orchestrator sequence it, or ask to be given the file explicitly. See docs/process/LANES.md."
+  deny "LANE GUARD: $rel is CONTESTED - shared by several lanes and owned by none. Editing it in parallel is how work gets clobbered. Report what you need and let the orchestrator sequence it, or ask to be given the file explicitly (a grant). See docs/process/LANES.md."
 fi
 
 owned=$(jq -c --arg l "$lane" '.lanes[$l] // empty' "$MAP" 2>/dev/null) || allow
