@@ -213,7 +213,17 @@ zero-evidence form pass (`1c4250f`).
     frustum deliberately unchanged — cover shadows are how a player reads where cover is.
   - **Watch item:** on a very fast arrival the dawn lift is low and the yard is dim. Legible in
     capture, but lit braziers would be the in-fiction floor if it reads badly in play.
-- **"Cannot run"** — unexplained. Every in-lane mechanism ruled out by two systematic
+- **"Cannot run" — measured from the owner's own recording, and it is probably not locomotion.**
+  Across the exact window he complained about: objective **39 m → 13 m** in **6 s of wall clock**,
+  i.e. ~4.3 m/s of straight-line closure on a curving path — **a normal sprint**. So the body was
+  not slow. But the **mission timer advanced 0:28 → 0:25 in those same 6 s** — 3 mission-seconds
+  per 6 real seconds. If the clock is meant to be 1:1, the *simulation* is running at half rate,
+  which animates everything in slow motion while distance-per-real-second stays normal — exactly
+  what "slow running" feels like, and exactly what `advanceFieldClock`'s catch-up discard produces.
+  **Unconfirmed:** whether the mission clock is deliberately scaled. Establish that before
+  concluding. The search has changed shape: stop looking for a mechanism that slows the body, look
+  for one that slows the sim. Frames: `.affordwork/clips/room-three/run{116,122}.jpg`.
+- ~~"Cannot run"~~ — previously unexplained. Every in-lane mechanism ruled out by two systematic
   passes; the per-leg speed cap is disproven (it releases ~3 m *early*). Needs a location
   or a live capture from the owner.
 
