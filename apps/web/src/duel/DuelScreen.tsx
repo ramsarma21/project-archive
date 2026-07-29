@@ -23,7 +23,7 @@ import { ammoReadout } from "./combatHudModel.js";
 import { useControlsLegend } from "./controlsLegend.js";
 import { QuestionPanel } from "./QuestionPanel.js";
 import {
-  BreakBeat,
+  BreakNotice,
   DamageVignette,
   FaceOffTitle,
   OutcomePanel,
@@ -297,6 +297,12 @@ export function DuelScreen(props: DuelScreenProps) {
           name: descriptor.opponentName,
           health: hud.health.B,
           maxHealth: hud.maxHealth.B,
+          // The one line worth keeping off the retired break card: how many clean
+          // hits the opponent is from the ground, now persistent so it reads WHILE
+          // shooting. The core's own termination arithmetic (duelRuntime.hitsToFall),
+          // never a number this layer invents.
+          hitsToFall: hud.hitsToFall.B,
+          downed: hud.downed.B,
         }}
         round={hud.round}
         clockSeconds={hud.phase === "ENGAGEMENT_LIVE" ? hud.secondsRemaining : null}
@@ -314,6 +320,13 @@ export function DuelScreen(props: DuelScreenProps) {
       {hud.phase === "FACE_OFF" && (
         <FaceOffTitle hud={hud} opponentName={descriptor.opponentName} />
       )}
+
+      {/* The break no longer raises a blocking card. This non-blocking notice teaches
+          the one real mechanic once (unfired balls do not carry) and renders nothing
+          otherwise. A direct child of `.duel` (NOT the bottom-anchored `.duel-beats`)
+          so it sits high-centre clear of the HUD clusters; mounted unconditionally so
+          its once-ever hook is stable. */}
+      <BreakNotice hud={hud} />
 
       <div className="duel-beats">
         {answering && item && (
@@ -338,7 +351,7 @@ export function DuelScreen(props: DuelScreenProps) {
             serverFallbackDiagnosis={lastGrant?.serverFallbackDiagnosis ?? null}
           />
         )}
-        {hud.phase === "LINE_OF_SIGHT_BREAK" && <BreakBeat hud={hud} />}
+
         {hud.phase === "DUEL_RESOLVED" && (
           <OutcomePanel
             hud={hud}

@@ -7,6 +7,7 @@ import {
 } from "@pa/duel";
 import { duelControls } from "./duelInput.js";
 import { grantSummary } from "./RoundHud.js";
+import { useLearnOnce } from "./learnOnce.js";
 import type { DuelHud } from "./duelRuntime.js";
 import type { VerdictOrigin } from "./duelGrading.js";
 
@@ -14,8 +15,16 @@ import type { VerdictOrigin } from "./duelGrading.js";
 //
 // The beats are the core's phases, one panel each, and they exist because the phase
 // boundaries are the design's dramatic structure rather than bookkeeping: the
-// line-of-sight break IS the reload that justifies the round ending, and the bullet
-// grant IS knowledge turning into ammunition. Both are told, not implied.
+// bullet grant IS knowledge turning into ammunition, told and not implied.
+//
+// THE LINE-OF-SIGHT BREAK NO LONGER STOPS THE FIGHT. It used to raise a blocking stat
+// card mid-round; the owner retired it because a fight should not pause to show a stat
+// block. What that card carried is now redistributed rather than dropped: the one
+// genuinely useful line — how many clean hits the opponent is from the ground — lives
+// on the persistent combat HUD so it is readable WHILE shooting; the raw damage
+// numerals are deleted (unitless, they told a player nothing); the reload narration is
+// deleted; and the single real mechanic, that unfired balls do not carry across the
+// break, is taught once by `BreakNotice` below and then never again.
 //
 // THE FACE-OFF NOW CARRIES THE TERMINATION RULE, which it did not have to when the
 // duel was six rounds. A player who is never told how the fight ends and cannot
@@ -114,64 +123,48 @@ export function VerdictBeat(props: {
   );
 }
 
+/** The persisted id of the one-time "unfired balls do not carry" lesson. */
+export const DUEL_UNSPENT_BALLS_HINT = "DUEL_UNSPENT_BALLS_EXPIRE";
+
 /**
- * What the round moved, in the only currency that ends the duel.
+ * The one mechanic the retired break card had to teach, told without stopping the
+ * fight and exactly once per player.
  *
- * This is the round boundary's job now that there is no round total: a player who
- * cannot count down to the end needs to see that the end got closer. A round that
- * moved nothing says so plainly, which is the honest report and also the right
- * nudge — standing off costs nothing but time, and time is no longer the resource.
+ * A player must learn once that balls left unfired when the round's engagement ends do
+ * not carry across the reload. It is shown the first time a break actually discards
+ * unspent balls — teaching it on a break that discarded nothing would be teaching a
+ * rule with no example — and `useLearnOnce` persists that it has been shown, per
+ * player, surviving a reload, using the same local-first store progression uses. After
+ * that it never appears again. The notice is non-blocking (see `.duel-learn`): it takes
+ * no input and does not pause the fight, unlike the card it replaces.
  */
-function ExchangeLedger(props: { hud: DuelHud }) {
-  const exchange = props.hud.roundExchange;
-  const dealt = Math.round(exchange.B);
-  const taken = Math.round(exchange.A);
-  if (dealt === 0 && taken === 0) {
-    return <p className="duel-ledger is-still">Neither of you is bleeding yet.</p>;
-  }
+export function BreakNotice(props: { hud: DuelHud }) {
+  const unspent = props.hud.breakUnspentA;
+  const active = props.hud.phase === "LINE_OF_SIGHT_BREAK" && unspent > 0;
+  const learn = useLearnOnce(DUEL_UNSPENT_BALLS_HINT);
+  // Latched per break, NOT read straight off `learn.seen`: `markSeen` flips `seen`
+  // the instant the notice appears, and reading `seen` directly would unmount it after
+  // one frame. So the reveal decision is taken once — the first eligible break for a
+  // player who has not seen it — and held for the life of THAT break; leaving the break
+  // phase clears the latch. Because `markSeen` has already persisted (and set `seen`),
+  // no later break, duel or reload can pass the `!learn.seen` gate again.
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    if (active && learn.ready && !learn.seen && !revealed) {
+      setRevealed(true);
+      learn.markSeen();
+    }
+  }, [active, learn.ready, learn.seen, learn.markSeen, revealed]);
+  useEffect(() => {
+    if (!active && revealed) setRevealed(false);
+  }, [active, revealed]);
+  if (!(revealed && active)) return null;
   return (
-    <p className="duel-ledger">
-      <span className={dealt > 0 ? "is-dealt" : ""}>
-        {dealt > 0 ? `You put ${dealt} into him` : "You did not touch him"}
+    <div className="duel-learn" role="status" aria-live="polite">
+      <span className="duel-learn-lead">
+        {unspent === 1 ? "One ball" : `${unspent} balls`} unfired
       </span>
-      {" · "}
-      <span className={taken > 0 ? "is-taken" : ""}>
-        {taken > 0 ? `he put ${taken} into you` : "he did not touch you"}
-      </span>
-    </p>
-  );
-}
-
-/** Who is closer to falling, stated as the hits that are actually left. */
-function Standing(props: { hud: DuelHud }) {
-  const { hitsToFall } = props.hud;
-  if (hitsToFall.A === hitsToFall.B) {
-    return <p className="duel-standing">Level: {hitsToFall.A} clean hits apiece.</p>;
-  }
-  const ahead = hitsToFall.B < hitsToFall.A;
-  const hits = ahead ? hitsToFall.B : hitsToFall.A;
-  return (
-    <p className={`duel-standing${ahead ? " is-ahead" : " is-behind"}`}>
-      {ahead
-        ? `He is ${hits} clean ${hits === 1 ? "hit" : "hits"} from the ground.`
-        : `You are ${hits} clean ${hits === 1 ? "hit" : "hits"} from the ground.`}
-    </p>
-  );
-}
-
-export function BreakBeat(props: { hud: DuelHud }) {
-  const unspent = props.hud.summary?.unspentA ?? 0;
-  return (
-    <div className="duel-panel duel-break">
-      <span className="duel-kicker">Line of sight broken</span>
-      <p>He drops behind cover to reload. A flintlock takes about that long.</p>
-      <ExchangeLedger hud={props.hud} />
-      <Standing hud={props.hud} />
-      {unspent > 0 && (
-        <p className="duel-notice">
-          {unspent === 1 ? "One ball" : `${unspent} balls`} unfired — they do not carry.
-        </p>
-      )}
+      <span className="duel-learn-rule"> — they do not carry.</span>
     </div>
   );
 }

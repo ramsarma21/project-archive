@@ -136,6 +136,14 @@ export interface DuelHud {
   readonly outcome: DuelOutcome | null;
   /** Whole seconds left on the phase's own countdown; null when untimed. */
   readonly secondsRemaining: number | null;
+  /**
+   * The player's balls that are being discarded at THIS line-of-sight break — the
+   * core's own record of what the round's engagement ended with, which the carry
+   * policy expires. Non-zero only during LINE_OF_SIGHT_BREAK; it is what the
+   * one-time "unfired balls do not carry" notice names, and it reads 0 everywhere
+   * else so nothing draws a stale count.
+   */
+  readonly breakUnspentA: number;
 }
 
 export interface ActorPose {
@@ -475,6 +483,7 @@ function buildHud(
       const seconds = phaseSecondsRemaining(state);
       return seconds === null ? null : Math.max(0, Math.ceil(seconds));
     })(),
+    breakUnspentA: state.phase === "LINE_OF_SIGHT_BREAK" ? state.unspent.A : 0,
   };
 }
 
@@ -498,7 +507,8 @@ function sameHud(a: DuelHud, b: DuelHud): boolean {
     a.grants === b.grants &&
     a.summary === b.summary &&
     a.outcome === b.outcome &&
-    a.secondsRemaining === b.secondsRemaining
+    a.secondsRemaining === b.secondsRemaining &&
+    a.breakUnspentA === b.breakUnspentA
   );
 }
 

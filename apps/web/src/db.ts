@@ -89,11 +89,29 @@ export interface StoredLoadout {
   updatedAt: string;
 }
 
+/**
+ * A one-time teaching hint the player has already seen.
+ *
+ * This is a PREFERENCE, not progress: it records that a rule was shown once so a
+ * non-blocking notice never nags again, and losing it costs the player one extra
+ * reminder and nothing else. It is keyed by profile for the same reason the tables
+ * above are — two accounts on one machine each learn the game for themselves — but
+ * carries no grant, so a hand-edited row can only re-show a hint, never unlock one.
+ */
+export interface StoredHint {
+  /** `<profileId>:<hintId>`. One row per (player, hint). */
+  key: string;
+  profileId: string;
+  hintId: string;
+  seenAt: string;
+}
+
 class ArchiveDB extends Dexie {
   profiles!: Table<LocalProfile, string>;
   progression!: Table<StoredProgression, string>;
   progressionOutbox!: Table<ProgressionOutboxEntry, string>;
   loadouts!: Table<StoredLoadout, [string, string]>;
+  hints!: Table<StoredHint, string>;
 
   constructor() {
     super("project-archive");
@@ -111,6 +129,9 @@ class ArchiveDB extends Dexie {
     // log for a world that no longer exists, and `null` is how Dexie is told to
     // delete a store instead of silently keeping it out of the schema.
     this.version(3).stores({ saves: null });
+    // Seen-once teaching hints, keyed by (profile, hint). A new store, not a new
+    // mechanism: it is per-profile local-first storage exactly like the three above.
+    this.version(4).stores({ hints: "key, profileId" });
   }
 }
 
@@ -145,19 +166,29 @@ export async function upsertProfile(p: LocalProfile): Promise<void> {
 }
 
 export async function deleteAllLocalProfiles(): Promise<number> {
-  return db.transaction("rw", db.profiles, db.progression, db.progressionOutbox, async () => {
-    const localProfiles = await db.profiles.where("source").equals("LOCAL").toArray();
-    const profileIds = localProfiles.map((profile) => profile.profileId);
-    // Progression goes with the profile. Leaving a cached snapshot or an
-    // unflushed outcome behind would let a recreated local profile inherit the
-    // deleted one's standing the moment it reused an id.
-    await db.progression.bulkDelete(profileIds);
-    for (const profileId of profileIds) {
-      await db.progressionOutbox.where("profileId").equals(profileId).delete();
-    }
-    await db.profiles.bulkDelete(profileIds);
-    return profileIds.length;
-  });
+  return db.transaction(
+    "rw",
+    db.profiles,
+    db.progression,
+    db.progressionOutbox,
+    db.hints,
+    async () => {
+      const localProfiles = await db.profiles.where("source").equals("LOCAL").toArray();
+      const profileIds = localProfiles.map((profile) => profile.profileId);
+      // Progression goes with the profile. Leaving a cached snapshot or an
+      // unflushed outcome behind would let a recreated local profile inherit the
+      // deleted one's standing the moment it reused an id.
+      await db.progression.bulkDelete(profileIds);
+      for (const profileId of profileIds) {
+        await db.progressionOutbox.where("profileId").equals(profileId).delete();
+        // Seen-once hints go with the profile too, so a recreated local id relearns
+        // the game from scratch rather than inheriting the deleted player's hints.
+        await db.hints.where("profileId").equals(profileId).delete();
+      }
+      await db.profiles.bulkDelete(profileIds);
+      return profileIds.length;
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -246,4 +277,38 @@ export async function readLoadout(
 
 export async function writeLoadout(row: StoredLoadout): Promise<void> {
   await db.loadouts.put(row);
+}
+
+// ---------------------------------------------------------------------------
+// Seen-once hints
+//
+// Keyed by (profile, hint) so the same read-refuses-a-foreign-row discipline the
+// progression accessors use holds here too: a hint learned by one profile is not
+// answered for another on a shared machine.
+// ---------------------------------------------------------------------------
+
+function hintKey(profileId: string, hintId: string): string {
+  return `${profileId}:${hintId}`;
+}
+
+/** Whether this profile has already been shown the named one-time hint. */
+export async function hasSeenHint(
+  profileId: string,
+  hintId: string,
+): Promise<boolean> {
+  const row = await db.hints.get(hintKey(profileId, hintId));
+  return row?.profileId === profileId;
+}
+
+/** Record that this profile has now seen the hint. Idempotent. */
+export async function markHintSeen(
+  profileId: string,
+  hintId: string,
+): Promise<void> {
+  await db.hints.put({
+    key: hintKey(profileId, hintId),
+    profileId,
+    hintId,
+    seenAt: new Date().toISOString(),
+  });
 }

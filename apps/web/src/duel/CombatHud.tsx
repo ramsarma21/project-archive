@@ -327,6 +327,15 @@ export interface CombatHudEnemy {
   readonly role?: string;
   readonly health: number;
   readonly maxHealth: number;
+  /**
+   * Clean hits this opponent is from the ground, at the player's own shot damage.
+   * When set it is drawn as a persistent line under the enemy pool — the useful read
+   * the retired line-of-sight break card used to give only after stopping the fight.
+   * Omitted (PvP today) draws nothing.
+   */
+  readonly hitsToFall?: number;
+  /** True once the opponent is down, so the line reads "down" rather than "0". */
+  readonly downed?: boolean;
 }
 
 export interface CombatHudControls {
@@ -359,6 +368,10 @@ export function CombatHud(props: CombatHudProps): ReactNode {
           {...(props.enemy.role ? { role: props.enemy.role } : {})}
           health={props.enemy.health}
           maxHealth={props.enemy.maxHealth}
+          {...(props.enemy.hitsToFall !== undefined
+            ? { hitsToFall: props.enemy.hitsToFall }
+            : {})}
+          {...(props.enemy.downed !== undefined ? { downed: props.enemy.downed } : {})}
           {...(props.round !== undefined ? { round: props.round } : {})}
           clockSeconds={props.clockSeconds ?? null}
           clockUrgent={props.clockUrgent ?? false}
