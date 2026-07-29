@@ -388,7 +388,10 @@ Entry points:
 
 The authoritative SE statements in `boston-coverage.json` are verbatim from *STAAR Grade 8 Social
 Studies Assessment Eligible Texas Essential Knowledge and Skills*, **Revised August 2024**. That
-document confirms 8.4(A) reads exactly as `packages/chapter-boston/src/teks.ts` already has it.
+document confirmed 8.4(A) read exactly as `packages/chapter-boston/src/teks.ts` had it — a file since
+deleted (`9f9a4d0`). All 23 statements are now also the `officialText` of
+`packages/curriculum/src/seRegistry.ts`, pinned string-for-string against this file by
+`packages/curriculum/src/__tests__/seRegistryText.test.ts`, so the two cannot drift apart.
 
 Boston's 23 SEs are taken from `docs/chapters/boston-1765/Concept-Delivery-Map.md`, section
 "All 23 SEs — classified": 6 gated facts, 14 load-bearing patterns, 3 ambient.

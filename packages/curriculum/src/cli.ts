@@ -47,9 +47,12 @@ function printHuman(result: ValidationReport): void {
       ` supporting ${s.seByStandardType.SUPPORTING ?? 0};` +
       ` once ${s.seByRecurrence.ONCE ?? 0}, spiral ${s.seByRecurrence.SPIRAL ?? 0})`,
   );
+  const withoutText = s.studentExpectations - s.seWithVerbatimText;
   console.log(
     `  verbatim text        ${s.seWithVerbatimText} of ${s.studentExpectations}` +
-      ` — the rest carry paraphrase only`,
+      (withoutText === 0
+        ? " — every standard holds its own words"
+        : ` — ${withoutText} carry paraphrase only`),
   );
   console.log(
     `concepts               ${s.concepts}` +

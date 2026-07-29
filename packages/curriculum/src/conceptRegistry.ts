@@ -55,9 +55,17 @@ const MICRO_CONCEPTS_DOC = "docs/chapters/boston-1765/Micro-Concepts.md";
 const MISSION_SLATE = "docs/chapters/boston-1765/Mission-Slate.md";
 const COVERAGE_MAP = "docs/chapters/boston-1765/STAAR-Coverage-Map.md";
 const CONCEPT_DELIVERY_MAP = "docs/chapters/boston-1765/Concept-Delivery-Map.md";
-const CHAPTER_IDS = "packages/chapter-boston/src/ids.ts";
-const CHAPTER_TEKS = "packages/chapter-boston/src/teks.ts";
-const CHAPTER_FIELD_IDS = "packages/chapter-boston/src/fieldIds.ts";
+const STAAR_COVERAGE = "content/staar/boston-coverage.json";
+
+// `packages/chapter-boston/*` was deleted in 9f9a4d0 and is absent from HEAD.
+// These two survive as a record of where a runtime id or field id was spelled,
+// which is a fact about history and stays true after the file goes. What was
+// removed is the citation of that package's `teks.ts` as an AUTHORITY for what a
+// standard says — see the 8.4(B) note in seRegistry.ts for the damage that did.
+// The remaining dead paths are reported, not load-bearing.
+const CHAPTER_IDS = "packages/chapter-boston/src/ids.ts (deleted in 9f9a4d0)";
+const CHAPTER_FIELD_IDS =
+  "packages/chapter-boston/src/fieldIds.ts (deleted in 9f9a4d0)";
 
 /** Chapter prefix used to mint Boston concept ids. */
 const BOS = "BOS";
@@ -140,7 +148,7 @@ const MACRO_SEEDS: ConceptSeed[] = [
       "BOS.MD01.CARD.COLONIAL_REVENUE.v1",
       "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1",
     ],
-    refs: [`${MISSION_SLATE} 4.7, 4.9 pool A`, CHAPTER_IDS, CHAPTER_TEKS],
+    refs: [`${MISSION_SLATE} 4.7, 4.9 pool A`, CHAPTER_IDS, STAAR_COVERAGE],
     notes: [
       "Six duel items are authored against this concept in Mission-Slate 4.9 " +
         "pool A.",
@@ -164,7 +172,7 @@ const MACRO_SEEDS: ConceptSeed[] = [
       "BOS.MD01.CARD.STAMP_DATE.v1",
       "BOS.MD01.CARD.PRINTER_IMPACT.v1",
     ],
-    refs: [`${MISSION_SLATE} 4.7, 4.9 pool B`, CHAPTER_IDS, CHAPTER_TEKS],
+    refs: [`${MISSION_SLATE} 4.7, 4.9 pool B`, CHAPTER_IDS, STAAR_COVERAGE],
     notes: [],
   },
   {
@@ -184,7 +192,7 @@ const MACRO_SEEDS: ConceptSeed[] = [
       "BOS.MD01.CARD.CONSENT_GROUND.v1",
       "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1",
     ],
-    refs: [`${MISSION_SLATE} 4.7, 4.9 pool C`, CHAPTER_IDS, CHAPTER_TEKS],
+    refs: [`${MISSION_SLATE} 4.7, 4.9 pool C`, CHAPTER_IDS, STAAR_COVERAGE],
     notes: [
       "The one M1 macro the existing registry marks SPIRAL with an Archive " +
         "safety net; consent recurs under 8.15(E) and 8.19(A) later in the chapter.",
@@ -204,15 +212,22 @@ const MACRO_SEEDS: ConceptSeed[] = [
     mission: null,
     surface: "UNALLOCATED",
     recurrence: "ONCE",
-    refs: [`${CONCEPT_DELIVERY_MAP} gated-facts table`, CHAPTER_TEKS],
+    refs: [`${CONCEPT_DELIVERY_MAP} gated-facts table`, STAAR_COVERAGE],
     notes: [
-      "GAP: this is a named clause of the chapter's top Readiness standard with " +
-        "no mission owner. " +
-        CHAPTER_TEKS +
-        " marks it SCHEDULED_LATER, " +
+      "GAP, STILL OPEN: this is a named clause of the chapter's top Readiness " +
+        "standard with no mission owner. " +
         CONCEPT_DELIVERY_MAP +
         " promotes it to a gated Act 2 concept, and no mission in the " +
-        "fourteen-mission slate claims it. One of the three must move.",
+        "fourteen-mission slate claims it, so either the map or the slate has " +
+        "to move. (The third party to the old conflict was " +
+        "packages/chapter-boston/src/teks.ts marking it SCHEDULED_LATER; that " +
+        "file is deleted, so it no longer has a vote.)",
+      "DELIBERATELY NOT RESOLVED HERE. Two staged proposals disagree about " +
+        "where this and RIGHTS_OF_ENGLISHMEN belong — one puts both in mission " +
+        "set 1, while the delivery map already gates this one in Act 2 and " +
+        "pulling both forward would make set 1 the heaviest unit in the chapter " +
+        "at 10 concepts. That reconciliation is the owner's, and adding the " +
+        "8.4(B) individuals did not touch it.",
     ],
   },
   {
@@ -228,7 +243,7 @@ const MACRO_SEEDS: ConceptSeed[] = [
     clause: "INTOLERABLE_ACTS",
     mission: "M11",
     recurrence: "ONCE",
-    refs: [`${MISSION_SLATE} 14`, CHAPTER_TEKS, CONCEPT_DELIVERY_MAP],
+    refs: [`${MISSION_SLATE} 14`, STAAR_COVERAGE, CONCEPT_DELIVERY_MAP],
     notes: [
       "M11's first valley check distinguishes the four acts from one another, so " +
         "items must be able to separate them rather than treat 'Intolerable Acts' " +
@@ -247,7 +262,7 @@ const MACRO_SEEDS: ConceptSeed[] = [
     clause: "MERCANTILISM",
     mission: "M11",
     recurrence: "ONCE",
-    refs: [`${MISSION_SLATE} 14`, COVERAGE_MAP, CHAPTER_TEKS],
+    refs: [`${MISSION_SLATE} 14`, COVERAGE_MAP, STAAR_COVERAGE],
     notes: [
       "The coverage map spreads mercantilism and non-importation across Acts 1-4 " +
         "while the slate assigns the 8.4(A) revisit to M11 only. Act 1 exposure " +
@@ -405,6 +420,182 @@ const MACRO_SEEDS: ConceptSeed[] = [
     notes: [
       "Scope guard from the slate: 'Remember the Ladies' is 1776 and too late " +
         "for this chapter, so no item may rest on it.",
+    ],
+  },
+
+  // -- 8.4(B), the four individuals STAAR names and nothing gated -----------
+  //
+  // The owner's decision, taken over recording 8.4(B) on existing concepts
+  // through `secondarySeCodes`: a dedicated gated concept per named individual,
+  // so every person is explicitly assessed rather than credited through a
+  // neighbour. Costs four concepts; takes the chapter from 32 assessable macros
+  // to 36.
+  //
+  // THE CONFUSABILITY CONSTRAINT, which is the whole design problem here. Two of
+  // these sit beside a concept that already teaches the same episode:
+  // CIVIC_VIRTUE_UNPOPULAR_DEFENSE is John Adams defending the soldiers, and
+  // WASHINGTON_COMMAND_PROBLEM is Washington taking command. The owner has twice
+  // reported that Codex topics are "too similar" and the cards "damn near the
+  // same thing", which is what made duel questions ambiguous, and a person
+  // concept next to its own principle concept is that failure in person form.
+  //
+  // So each pair is split on a stated facet, and the facet is carried by the
+  // QUESTION STEM rather than left to the answer — the same fix being applied to
+  // CONSENT_GROUND / LAWFUL_NOT_CONSENTED. The rule for every pair below:
+  //
+  //   the principle concept asks about the act, the reason, or the cost;
+  //   the person concept asks what office the individual held and what that
+  //   office required, and its stem must name the individual.
+  //
+  // An item that could be answered correctly from either concept's card is
+  // mis-scoped, not merely imprecise: mastery is kept per concept, so a stem
+  // that does not discriminate credits the wrong one.
+  {
+    slug: "SAMUEL_ADAMS_ORGANIZER",
+    label: "Samuel Adams and the standing committee",
+    definition:
+      "Samuel Adams's role was organisational rather than oratorical: as clerk " +
+      "of the Massachusetts House he drafted the Boston Committee of " +
+      "Correspondence in November 1772 and the circular letters it sent to the " +
+      "other towns, which gave resistance a standing body that could act " +
+      "between crises instead of only at a town meeting.",
+    parentSe: "8.4(B)",
+    clause: "IND_SAMUEL_ADAMS",
+    mission: "M8",
+    recurrence: "ONCE",
+    refs: [STAAR_COVERAGE, `${CONCEPT_DELIVERY_MAP} line 114`, COVERAGE_MAP],
+    notes: [
+      "ACT 3, the owner's explicit decision. The delivery map contradicted " +
+        "itself — line 114 gates him in Act 3, line 153 gives him an Act 1 " +
+        "intro — and he settled it on Act 3. The two lines are in fact " +
+        "compatible: an Act 1 exposure that introduces him and an Act 3 concept " +
+        "that assesses him. " +
+        STAAR_COVERAGE +
+        " independently calls him 'Boston's Act 3 gated individual'.",
+      "DISCRIMINATOR, and this mission is the crowded one — all three of M8's " +
+        "concepts touch the committee. Stems must be separable by their SUBJECT: " +
+        "8.3(A) TOWN_MEETING_AUTHORITY names the town meeting and asks what it " +
+        "may lawfully do; 8.10(C) HARBOR_COMMUNICATION_HUB names the harbour or " +
+        "the post roads and asks how word travelled; this concept names Samuel " +
+        "Adams and asks what office he held and what he personally produced. An " +
+        "item that asks 'how did Boston coordinate with other towns' answers to " +
+        "all three and belongs to none.",
+      "Distinct from WARREN_ADAMS_AUTHORSHIP, which is also about writing: " +
+        "Warren and Abigail Adams wrote anonymously and privately because " +
+        "attribution would have been ruinous, while Adams wrote from an elected " +
+        "office and signed for a body. Office versus anonymity is the contrast; " +
+        "do not let both become 'they wrote things'.",
+    ],
+  },
+  {
+    slug: "GEORGE_III_CROWN_AUTHORITY",
+    label: "King George III and whose authority it was",
+    definition:
+      "King George III's role was as sovereign, not as legislator: Parliament " +
+      "laid the Stamp Act, but it ran in the King's name, his government " +
+      "commissioned the distributors who had to enforce it, and in 1765 the " +
+      "colonists still petitioned him for relief against Parliament. Knowing " +
+      "which body taxed and which enforced is what makes the later charge " +
+      "against the King a change of position rather than a constant.",
+    parentSe: "8.4(B)",
+    clause: "IND_KING_GEORGE_III",
+    mission: "M1",
+    recurrence: "ONCE",
+    refs: [STAAR_COVERAGE, `${COVERAGE_MAP} line 140 Act 1 additions`],
+    notes: [
+      "PLACED IN SET 1, and the reason, since set 4 (coercion) was the other " +
+        "defensible home. Three things favour Act 1. The repo already decided " +
+        "it: " +
+        COVERAGE_MAP +
+        " line 140 instructs Act 1 to 'name King George III as the Crown's face " +
+        "on proclamations (→4B)', so set 1 is an allocation rather than a new " +
+        "decision. The mission fits the fiction exactly — M1 is 'Nailed to the " +
+        "Post', and the notice nailed up is the instrument carrying his name, " +
+        "which is also why line 180 can keep him offscreen as a portrait and a " +
+        "proclamation with no character rig. And a student needs a name for 'the " +
+        "Crown' from the first act, because three acts of petitioning him " +
+        "precede the coercion; introducing him at the coercion makes the earlier " +
+        "petitions unintelligible. Set 4 remains the right place for a SECOND " +
+        "exposure on the Coercive Acts, which costs no concept.",
+      "DISCRIMINATOR against M1's REPRESENTATION, which also talks about " +
+        "Parliament: 8.4(A) REPRESENTATION asks why a tax laid by a body the " +
+        "town did not elect lacks consent — a question about legitimacy. This " +
+        "concept asks who did what: Parliament legislated, the Crown " +
+        "commissioned and enforced, the colonists petitioned the Crown. A stem " +
+        "here must name George III and ask for his part; a stem about consent " +
+        "belongs to REPRESENTATION.",
+      "M1 is the chapter's only fully authored lesson, and its deck is bound by " +
+        "the whole-deck seconds rule, so an eighth concept in set 1 means " +
+        "re-cutting the authored windows rather than appending a card. Not done " +
+        "here: no lesson prose, cards or items are authored for these four yet, " +
+        "and content/m1/module.json is granted to another lane.",
+    ],
+  },
+  {
+    slug: "JOHN_ADAMS_DEFENSE_COUNSEL",
+    label: "John Adams as counsel for the accused",
+    definition:
+      "John Adams's role in the 1770 trials was retained defence counsel for " +
+      "Captain Preston and the soldiers — an advocate, not a judge, juror or " +
+      "officer of the Crown — so his duty ran to his clients' case and to the " +
+      "evidence he could put before a jury. That is the office that produced " +
+      "acquittals on the evidence rather than a verdict on the town's mood.",
+    parentSe: "8.4(B)",
+    clause: "IND_JOHN_ADAMS",
+    mission: "M7",
+    recurrence: "ONCE",
+    refs: [STAAR_COVERAGE, COVERAGE_MAP, `${MISSION_SLATE} 10`],
+    notes: [
+      "THE TIGHTEST PAIR OF THE FOUR, and judged separable — but only with the " +
+        "stem rule enforced. 8.20(A) CIVIC_VIRTUE_UNPOPULAR_DEFENSE asks why he " +
+        "took the case against his own town's wishes and what it cost him: a " +
+        "question about the principle and its price, answerable without the word " +
+        "'counsel'. This concept asks what he was in the proceeding and what " +
+        "that role obliged him to do: answerable without the words 'civic " +
+        "virtue'. If an author cannot write a stem that fails one of those two " +
+        "tests, the pair has collapsed and the right move is to delete this " +
+        "concept and record 8.4(B) on CIVIC_VIRTUE_UNPOPULAR_DEFENSE through " +
+        "secondarySeCodes instead — the option the owner declined but asked to " +
+        "be offered again if separation proved impossible.",
+      "M7 carries three trial concepts, so the third boundary matters too: " +
+        "8.19(C) JURY_ROLE_CITIZENSHIP is the jury's duty as an example of " +
+        "responsible citizenship. Jury, principle, advocate — three subjects, " +
+        "three stems.",
+      "An existing free-text item-lineage tag spelled JOHN_ADAMS resolves to " +
+        "CIVIC_VIRTUE_UNPOPULAR_DEFENSE, which pre-dates this concept and is " +
+        "now ambiguous by exactly the confusion described above. It is left " +
+        "pointing where it points; retagging banked items is an items pass.",
+    ],
+  },
+  {
+    slug: "WASHINGTON_CONTINENTAL_APPOINTMENT",
+    label: "Washington's appointment to command",
+    definition:
+      "George Washington's role at Boston began with an appointment, not a " +
+      "battle: the Second Continental Congress chose him in June 1775 as " +
+      "commander-in-chief, which put a Virginian in charge of a New England " +
+      "army already besieging the town. The appointment is what turned one " +
+      "colony's siege into a common war and what gave his orders authority over " +
+      "troops raised by other colonies.",
+    parentSe: "8.4(B)",
+    clause: "IND_GEORGE_WASHINGTON",
+    mission: "M14",
+    recurrence: "ONCE",
+    refs: [STAAR_COVERAGE, COVERAGE_MAP, `${MISSION_SLATE} 17`],
+    notes: [
+      "DISCRIMINATOR against 8.22(A) WASHINGTON_COMMAND_PROBLEM, which is the " +
+        "same man in the same month: that concept asks how he decided under " +
+        "uncertainty — information first, then a restrained order — and is a " +
+        "question about leadership judgement. This concept asks who appointed " +
+        "him, to what, and why the appointment mattered politically. 'How he " +
+        "led' versus 'how he came to be leading' is the split; a stem that " +
+        "merely names Washington at Boston does not choose between them and must " +
+        "be rewritten.",
+      "Placed in M14 because that is where WASHINGTON_COMMAND_PROBLEM already " +
+        "sits, per the brief's instruction to put a person beside the sibling " +
+        "concept that teaches him. Set 4 already carried nine macros and is the " +
+        "chapter's heaviest unit; this makes it ten, which is worth the owner's " +
+        "attention when the set-4 lesson is cut.",
     ],
   },
 

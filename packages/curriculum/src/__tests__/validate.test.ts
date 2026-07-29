@@ -30,8 +30,9 @@ test("the registry reports its known holes rather than hiding them", () => {
   const report = validateCurriculum();
   assert.equal(report.strictOk, false, "there are known content gaps");
   const codes = new Set(report.warnings.map((w) => w.code));
+  // SE_TEXT_UNVERIFIED was on this list until the 23 rows were populated from
+  // content/staar. It is now expected to be ABSENT, which the next test pins.
   for (const expected of [
-    "SE_TEXT_UNVERIFIED",
     "SE_WITHOUT_ASSESSABLE_CONCEPT",
     "SE_NOT_ASSIGNED_TO_ANY_MISSION",
     "CONCEPT_WITHOUT_MISSION_OWNER",
@@ -43,6 +44,18 @@ test("the registry reports its known holes rather than hiding them", () => {
   ]) {
     assert.ok(codes.has(expected as never), `expected a ${expected} warning`);
   }
+});
+
+test("no standard is still reported as missing its official text", () => {
+  const report = validateCurriculum();
+  const unverified = report.warnings
+    .filter((w) => w.code === "SE_TEXT_UNVERIFIED")
+    .map((w) => w.subject);
+  assert.deepEqual(
+    unverified,
+    [],
+    "every Boston row holds TEA's own words; a row here means one regressed",
+  );
 });
 
 test("8.21(A) is caught as a must-own standard carried only by enrichment", () => {
@@ -94,16 +107,45 @@ test("concept vocabulary is ready for thirteen of fourteen missions", () => {
   assert.deepEqual(blocked.map((m) => m.missionId), [MISSION_M3]);
 });
 
-test("only M1 has item depth, which is the bank's problem and not the registry's", () => {
-  const readiness = missionReadiness();
-  const withItems = readiness.filter((m) => m.itemDepthReady);
-  assert.deepEqual(withItems.map((m) => m.missionId), [MISSION_M1]);
-  const m1 = withItems[0]!;
+// M1 was the one mission with complete item depth, and registering King George
+// III under 8.4(B) ended that: a fourth assessable concept arrived with no items,
+// so `itemDepthReady` is now false everywhere. That is the honest state — the
+// concept is real and its items are not authored yet — but the old assertion
+// ("exactly M1 is ready") would pass again the moment anyone authored one item
+// for the new concept while leaving the other three alone. So this pins the
+// content facts underneath it instead, which is what the old test was really for.
+test("M1's three authored concepts each have item depth; the new one does not yet", () => {
+  const m1 = missionReadiness().find((m) => m.missionId === MISSION_M1)!;
   assert.equal(
     m1.itemCount,
     21,
     "eighteen authored duel items plus the three era-eligible owner items",
   );
+
+  const bare = m1.conceptIds.filter(
+    (id) => conceptItemDepth(id).eraEligiblePrimaryItems === 0,
+  );
+  assert.deepEqual(
+    bare,
+    ["BOS.CONCEPT.GEORGE_III_CROWN_AUTHORITY.v1"],
+    "only the newly registered 8.4(B) individual lacks items",
+  );
+  assert.equal(m1.itemDepthReady, false, "so the mission is not item-complete");
+});
+
+test("no mission has complete item depth, and every one of them says so", () => {
+  const readiness = missionReadiness();
+  assert.deepEqual(
+    readiness.filter((m) => m.itemDepthReady).map((m) => m.missionId),
+    [],
+    "authoring items for the four 8.4(B) individuals is what closes this",
+  );
+  for (const mission of readiness) {
+    assert.ok(
+      mission.blockers.some((b) => /item|concept/.test(b)),
+      `${mission.missionId} is item-incomplete without naming a blocker`,
+    );
+  }
 });
 
 test("every mission that is not ready says what is blocking it", () => {

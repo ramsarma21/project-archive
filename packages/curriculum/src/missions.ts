@@ -38,6 +38,21 @@ import type { MissionSlot } from "./types.js";
 
 const MISSION_SLATE = "docs/chapters/boston-1765/Mission-Slate.md";
 
+/**
+ * Prefix for an SE this table assigns that the slate table does not.
+ *
+ * The rest of `assignedSeCodes` is transcription. 8.4(B) is not: STAAR names
+ * fourteen individuals, the owner chose a dedicated gated concept per individual
+ * over recording them on neighbouring concepts, and a concept must be owned by a
+ * mission whose assigned standards include its parent — `validateCurriculum`
+ * raises CONCEPT_SE_NOT_ASSIGNED_TO_OWNER_MISSION as an ERROR otherwise. So the
+ * four placements carry four assignments, and each says so rather than passing
+ * for something the slate decided.
+ */
+const STAAR_ADDITION =
+  "8.4(B) is added here beyond the slate table, to carry STAAR's named " +
+  "individual";
+
 const ROWS: MissionSlot[] = [
   {
     missionId: MISSION_M1,
@@ -45,12 +60,13 @@ const ROWS: MissionSlot[] = [
     title: "Nailed to the Post",
     date: "14 Aug 1765",
     set: 1,
-    assignedSeCodes: [asSeCode("8.4(A)")],
+    assignedSeCodes: [asSeCode("8.4(A)"), asSeCode("8.4(B)")],
     assignmentStatus: "ASSIGNED",
     notes: [
       "The slate table names the three implemented BOS.MD01 macros rather than " +
         "an SE. All three sit under 8.4(A) clauses, so the assignment is " +
         "recorded as 8.4(A).",
+      STAAR_ADDITION + " King George III (GEORGE_III_CROWN_AUTHORITY).",
     ],
   },
   {
@@ -116,9 +132,18 @@ const ROWS: MissionSlot[] = [
     title: "Counsel for the Defense",
     date: "Oct-Dec 1770",
     set: 2,
-    assignedSeCodes: [asSeCode("8.20(A)"), asSeCode("8.19(C)")],
+    assignedSeCodes: [
+      asSeCode("8.20(A)"),
+      asSeCode("8.19(C)"),
+      asSeCode("8.4(B)"),
+    ],
     assignmentStatus: "ASSIGNED",
-    notes: [],
+    notes: [
+      STAAR_ADDITION + " John Adams (JOHN_ADAMS_DEFENSE_COUNSEL).",
+      "Now carries three concepts on one episode — the jury's duty, the " +
+        "principle Adams held, and the office he held. See the discriminator " +
+        "notes on JOHN_ADAMS_DEFENSE_COUNSEL before authoring any of the three.",
+    ],
   },
   {
     missionId: MISSION_M8,
@@ -126,9 +151,18 @@ const ROWS: MissionSlot[] = [
     title: "The Circular",
     date: "Winter 1772-73",
     set: 3,
-    assignedSeCodes: [asSeCode("8.10(C)"), asSeCode("8.3(A)")],
+    assignedSeCodes: [
+      asSeCode("8.10(C)"),
+      asSeCode("8.3(A)"),
+      asSeCode("8.4(B)"),
+    ],
     assignmentStatus: "ASSIGNED",
-    notes: [],
+    notes: [
+      STAAR_ADDITION + " Samuel Adams (SAMUEL_ADAMS_ORGANIZER).",
+      "The committees mission, so all three of its concepts touch the Committee " +
+        "of Correspondence from different sides: what the town meeting could " +
+        "lawfully do, how word travelled, and what Adams personally drafted.",
+    ],
   },
   {
     missionId: MISSION_M9,
@@ -192,9 +226,18 @@ const ROWS: MissionSlot[] = [
     title: "The Lines",
     date: "Apr-Jul 1775",
     set: 4,
-    assignedSeCodes: [asSeCode("8.4(C)"), asSeCode("8.22(A)")],
+    assignedSeCodes: [
+      asSeCode("8.4(C)"),
+      asSeCode("8.22(A)"),
+      asSeCode("8.4(B)"),
+    ],
     assignmentStatus: "ASSIGNED",
-    notes: [],
+    notes: [
+      STAAR_ADDITION + " George Washington (WASHINGTON_CONTINENTAL_APPOINTMENT).",
+      "Takes set 4 from nine macro concepts to ten, making it the heaviest unit " +
+        "in the chapter by a wider margin. Flagged for whoever cuts the set-4 " +
+        "lesson; nothing here changes the mission count.",
+    ],
   },
 ];
 

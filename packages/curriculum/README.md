@@ -89,27 +89,37 @@ different standard than it maps to, an item pointing at a concept that does not
 exist, a concept owned by a mission that does not teach its standard, or an item
 with more than one primary concept.
 
-**Warnings** mean the registry is coherent and the curriculum has a hole:
-unverified standards text, a standard with no assessable concept, a standard no
-mission claims, a concept nothing delivers, a proposed retag awaiting SME
-confirmation, a concept with no items, an item outside the chapter's era window.
+**Warnings** mean the registry is coherent and the curriculum has a hole: a
+standard with no assessable concept, a standard no mission claims, a concept
+nothing delivers, a proposed retag awaiting SME confirmation, a concept with no
+items, an item outside the chapter's era window. (`SE_TEXT_UNVERIFIED` is also a
+warning and no longer fires for any Boston row.)
 Warnings never fail the default run — a check that always fails is a check
 nobody reads.
 
 ## Honesty rules this package enforces
 
-1. **Standards text is either cited or absent.** One of the 23 standards holds
-   verbatim text, because one is all the repository ever held. The other 22 carry
-   `officialText: null`, `textStatus: "UNVERIFIED_MISSING"`, and a paraphrase in
-   `workingDescription`. `SE_UNVERIFIED_WITH_TEXT` is an error, so nothing can
-   quietly acquire uncited standards text. A fabricated standard in a
-   teacher-facing mastery report is a compliance problem, not a cosmetic one.
+1. **Standards text is either cited or absent.** All 23 standards now hold TEA's
+   verbatim text, quoted from `content/staar/boston-coverage.json`, whose source
+   document and sha256 are recorded in `content/staar/sources.json`. Until 29 Jul
+   only one row did and the other 22 carried `officialText: null` with
+   `textStatus: "UNVERIFIED_MISSING"` — which described the registry accurately
+   and the repository wrongly, because the verbatim text for every one of them
+   was already in `content/staar`. `SE_UNVERIFIED_WITH_TEXT` and
+   `SE_VERBATIM_WITHOUT_SOURCE` are both errors, so nothing can quietly acquire
+   uncited standards text in either direction. A fabricated standard in a
+   teacher-facing mastery report is a compliance problem, not a cosmetic one, and
+   `seRegistryText.test.ts` compares every string against its source so a
+   hand-edited quotation cannot pass.
 2. **A clause cannot quote words the standard does not use.**
    `SE_CLAUSE_TEXT_NOT_IN_OFFICIAL_TEXT` is an error.
 3. **Designations are marked second-hand.** Reporting category and
    readiness/supporting status come from an internal doc transcribing the TEA
    assessed curriculum, so every row is `SECONDARY_INTERNAL` with
-   `independentlyReverified: false`.
+   `independentlyReverified: false`. Both are now understated rather than wrong:
+   all 23 were checked against the primary document and all 23 agree, so the
+   upgrade to `PRIMARY_SOURCE` is evidenced. `independentlyReverified` stays
+   false regardless, because it means a *human* re-read the document.
 4. **A retag preserves what it moved from.** `sourceDraftTags` keeps the original
    tag; `parentSeStatus: "PROPOSED_RETAG"` warns until an SME confirms.
 5. **Nothing claims SME approval,** because nothing has it.

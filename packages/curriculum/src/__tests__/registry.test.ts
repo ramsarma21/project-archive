@@ -58,24 +58,84 @@ test("reporting-category totals match the coverage summary table", () => {
 // teacher-facing report.
 // ---------------------------------------------------------------------------
 
-test("only 8.4(A) claims the standard's own words, and it cites them", () => {
-  const verbatim = ALL_STUDENT_EXPECTATIONS.filter(
-    (se) => se.textStatus === "VERBATIM_CITED",
+test("every standard holds its own words, cited to the assessed-curriculum doc", () => {
+  const unverified = ALL_STUDENT_EXPECTATIONS.filter(
+    (se) => se.textStatus !== "VERBATIM_CITED",
   );
-  assert.deepEqual(verbatim.map((se) => se.code), ["8.4(A)"]);
-  const se = verbatim[0]!;
-  assert.ok(se.officialText, "verbatim text present");
+  assert.deepEqual(
+    unverified.map((se) => se.code),
+    [],
+    "all 23 rows were populated from content/staar/boston-coverage.json",
+  );
+  for (const se of ALL_STUDENT_EXPECTATIONS) {
+    assert.match(
+      se.provenance.textSource ?? "",
+      /Revised August 2024/,
+      `${se.code} must cite the document its text came from`,
+    );
+    assert.match(
+      se.provenance.textSource ?? "",
+      /dc48abcad536d4e47a9b54374324dd494f3ae870174d1bb08fe2c40a7b0483a5/,
+      `${se.code} must carry the source hash, so drift is detectable`,
+    );
+  }
+});
+
+test("8.4(A) keeps its second, independent citation", () => {
+  const se = STUDENT_EXPECTATIONS.get(asSeCode("8.4(A)"))!;
   assert.match(se.provenance.textSource ?? "", /113\.20/);
   assert.equal(se.provenance.adoption, "2022");
 });
 
-test("no unverified standard carries text that could be mistaken for official", () => {
+// This is the check that stops a fabricated standard reaching a teacher-facing
+// report, and it is written to hold in BOTH directions so it cannot go vacuous.
+// It used to test only the unverified branch; once every row was populated that
+// branch stopped executing, and a test that cannot fail is not evidence.
+test("text status and the text itself can never disagree", () => {
+  let verbatimSeen = 0;
+  let unverifiedSeen = 0;
   for (const se of ALL_STUDENT_EXPECTATIONS) {
-    if (se.textStatus === "UNVERIFIED_MISSING") {
+    assert.ok(se.workingDescription.length > 20, `${se.code} needs a paraphrase`);
+    if (se.textStatus === "VERBATIM_CITED") {
+      verbatimSeen += 1;
+      assert.ok(se.officialText, `${se.code} claims verbatim text but holds none`);
+      assert.ok(
+        se.provenance.textSource,
+        `${se.code} quotes a standard without citing where the words came from`,
+      );
+    } else {
+      unverifiedSeen += 1;
       assert.equal(se.officialText, null, `${se.code} must not hold text`);
       assert.equal(se.provenance.textSource, null, `${se.code} must not cite text`);
-      assert.ok(se.workingDescription.length > 20, `${se.code} needs a paraphrase`);
     }
+  }
+  assert.equal(
+    verbatimSeen + unverifiedSeen,
+    ALL_STUDENT_EXPECTATIONS.length,
+    "every row took one of the two branches",
+  );
+  assert.ok(verbatimSeen > 0, "the verbatim branch must actually execute");
+});
+
+test("no paraphrase asserts content the standard's own text does not carry", () => {
+  // The three that were wrong before the text was populated, each pinned by the
+  // word that gave it away. `officialText` is TEA's; a paraphrase may narrow it
+  // to Boston's scope but may not add to it.
+  const banned: [string, string][] = [
+    ["8.20(B)", "free speech"],
+    ["8.14(A)", "entrepreneurship"],
+    ["8.19(A)", "natural"],
+  ];
+  for (const [code, phrase] of banned) {
+    const se = STUDENT_EXPECTATIONS.get(asSeCode(code))!;
+    assert.ok(
+      !se.officialText!.toLowerCase().includes(phrase),
+      `${code}: TEA's text does not contain "${phrase}" — the premise of this check`,
+    );
+    assert.ok(
+      !se.workingDescription.toLowerCase().includes(phrase),
+      `${code} paraphrase reintroduced "${phrase}", which TEA does not say`,
+    );
   }
 });
 

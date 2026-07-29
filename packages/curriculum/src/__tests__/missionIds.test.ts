@@ -110,13 +110,15 @@ test("the runtime id reaches a mission's concepts, which is what used to be empt
   // The exact call that answered nothing: the id the client deploys against and
   // the database stores, asked of the registry that keyed missions `M1`.
   const byRuntimeId = conceptsForMission(CONTENT_M1_MISSION_ID);
-  assert.equal(byRuntimeId.length, 3);
   assert.deepEqual(
     byRuntimeId.map((concept) => concept.conceptId),
     [
       "BOS.CONCEPT.POSTWAR_REVENUE.v1",
       "BOS.CONCEPT.STAMP_SCOPE.v1",
       "BOS.CONCEPT.REPRESENTATION.v1",
+      // The three 8.4(A) macros M1 has always taught, plus the 8.4(B) individual
+      // STAAR requires the chapter to assess. Its lesson content is not authored.
+      "BOS.CONCEPT.GEORGE_III_CROWN_AUTHORITY.v1",
     ],
   );
   // And the slate label reaches the same three, rather than being a second

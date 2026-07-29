@@ -10,6 +10,19 @@ import { asSeCode } from "./seCode.js";
 //
 // Nothing here is resolved unilaterally. Where a source document declined to
 // invent an answer, this registry declines too.
+//
+// CLOSED AND DELETED, 29 Jul: `TEKS_8_4_B_TWO_PARTIAL_LISTS`, which set TEA's
+// enumeration of 8.4(B)'s individuals against a list of three in
+// `packages/chapter-boston/src/teks.ts` and concluded neither was verifiable. It
+// was never a defect. That file had been deleted (9f9a4d0), and its list never
+// claimed to be the standard's enumeration — its own comment called the three
+// "individuals the chapter surfaces as context (not gated concepts)". A dead
+// implementation file was being cited as a rival authority to TEA, which is why
+// the clause list sat undeclared and the roster question was asked three times.
+// The full record is on the 8.4(B) row in `seRegistry.ts`, where a reader of that
+// standard will meet it. Deleted rather than marked resolved, because this list
+// is what gets carried to the people who have to decide things, and a closed
+// question left on it gets asked again.
 // ============================================================================
 
 export type DefectKind =
@@ -45,8 +58,8 @@ const SLATE = "docs/chapters/boston-1765/Mission-Slate.md";
 const COVERAGE = "docs/chapters/boston-1765/STAAR-Coverage-Map.md";
 const MICRO = "docs/chapters/boston-1765/Micro-Concepts.md";
 const DELIVERY = "docs/chapters/boston-1765/Concept-Delivery-Map.md";
-const TEKS = "packages/chapter-boston/src/teks.ts";
 const BANK = "packages/chapter-boston/src/checkpoints/cp1Bank.ts";
+const STAAR_COVERAGE = "content/staar/boston-coverage.json";
 
 export const SOURCE_DEFECTS: readonly SourceDefect[] = [
   {
@@ -101,18 +114,23 @@ export const SOURCE_DEFECTS: readonly SourceDefect[] = [
   },
   {
     id: "PROCLAMATION_1763_NO_OWNER",
-    kind: "CONTRADICTION",
-    sources: [TEKS, DELIVERY, `${SLATE} section 3 table`],
+    kind: "MISSING_ASSIGNMENT",
+    sources: [DELIVERY, `${SLATE} section 3 table`],
     seCodes: [asSeCode("8.4(A)")],
     summary:
-      "Three sources disagree about the Proclamation of 1763. It is a named " +
-      "clause of the chapter's top Readiness standard. teks.ts marks it " +
-      "SCHEDULED_LATER, the concept-delivery map promotes it to a gated Act 2 " +
-      "concept, and the mission slate assigns it to no mission at all.",
+      "The Proclamation of 1763 is a named clause of the chapter's top Readiness " +
+      "standard that no mission teaches. The concept-delivery map promotes it to " +
+      "a gated Act 2 concept and the mission slate assigns it to no mission at " +
+      "all. Recorded as a CONTRADICTION between three sources until 29 Jul; the " +
+      "third was teks.ts marking it SCHEDULED_LATER, and that file is deleted, so " +
+      "what remains is a missing assignment between two live sources.",
     registryDisposition:
       "A concept exists for the clause with no mission owner and an UNALLOCATED " +
-      "delivery surface, so CONCEPT_WITHOUT_MISSION_OWNER fires. One of the three " +
-      "sources has to move.",
+      "delivery surface, so CONCEPT_WITHOUT_MISSION_OWNER fires. Either the map " +
+      "or the slate has to move. Deliberately untouched by the 8.4(B) alignment: " +
+      "two staged proposals disagree about whether this and RIGHTS_OF_ENGLISHMEN " +
+      "come forward into mission set 1, and pulling both in would make set 1 the " +
+      "chapter's heaviest unit.",
     owner: "PRODUCT_OWNER",
   },
   {
@@ -203,20 +221,34 @@ export const SOURCE_DEFECTS: readonly SourceDefect[] = [
     owner: "CONTENT_AUTHOR",
   },
   {
-    id: "TEKS_8_4_B_TWO_PARTIAL_LISTS",
+    id: "PARAPHRASE_SUCH_AS_AS_INCLUDING",
     kind: "CONTRADICTION",
-    sources: [TEKS, COVERAGE],
-    seCodes: [asSeCode("8.4(B)")],
+    sources: [
+      STAAR_COVERAGE,
+      "TEA, STAAR Grade 8 Social Studies Assessment Eligible TEKS, rev. Aug 2024",
+    ],
+    seCodes: [
+      asSeCode("8.10(C)"),
+      asSeCode("8.15(E)"),
+      asSeCode("8.20(B)"),
+      asSeCode("8.22(A)"),
+    ],
     summary:
-      "The repository holds two partial and mutually inconsistent lists of the " +
-      "individuals 8.4(B) enumerates. teks.ts names three and calls them context " +
-      "rather than gated concepts; the coverage map names eight followed by an " +
-      "ellipsis and states the standard enumerates fourteen.",
+      "TEKS enumerate under two connectives — 'including' and 'such as' — and " +
+      "whether that distinction means mandatory versus illustrative decides how " +
+      "much these four standards require. Seven of Boston's SEs use 'including' " +
+      "and these four use 'such as'. The convention is stated nowhere in the " +
+      "repository, and it is stated nowhere in TEA's assessed-curriculum document " +
+      "either: that PDF was read for this and carries no legend, no front matter " +
+      "defining the terms, and no note on either word.",
     registryDisposition:
-      "8.4(B) is registered with no clauses, because neither list is verifiable " +
-      "here and a clause list is exactly the kind of thing that must not be " +
-      "guessed. Its concepts name individuals the chapter teaches, not clauses of " +
-      "the standard.",
+      "Every paraphrase now uses TEA's own connective rather than converting one " +
+      "to the other, so the registry no longer takes a position it cannot support. " +
+      "What still depends on the answer: if 'such as' is illustrative, Boston's " +
+      "choice of Locke and Montesquieu over Hooker under 8.15(E) is fully " +
+      "legitimate and 8.10(C) may keep three of five factors. If it is not, four " +
+      "more standards acquire required rosters. Answerable from TEA's TEKS " +
+      "adoption rules in 19 Tex. Admin. Code, which the repository does not hold.",
     owner: "CURRICULUM_SME",
   },
   {
