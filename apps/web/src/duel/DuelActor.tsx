@@ -58,6 +58,26 @@ function characterUrl(glbKey: string): string {
 const ACTION_FADE_S = 0.09;
 const LOCOMOTION_FADE_S = 0.22;
 
+// A visual-only "took a hit" recoil, layered on top of the core-driven transform to
+// make the flinch read harder — the strengthening the owner asked for.
+//
+// PURELY PRESENTATION, AND DECOUPLED FROM STUN BY CONSTRUCTION. It offsets the DRAWN
+// body a few centimetres away from the shooter and leans it for a sixth of a second,
+// then returns; it is never written back to the core, so the authoritative position,
+// the capsule hitbox and the fight's timing are all untouched. The owner's caution
+// was that a longer flinch can mean a longer stun — here it cannot, because the core
+// has NO hit-stun tied to the flinch at all: the flinch clip's length
+// (`HIT_FLINCH_SECONDS`) is a presentation constant `selectActorVisual` reads to pick
+// a clip, and the reducer never sees it. So a harder-reading reaction changes how the
+// hit LOOKS and nothing about how the fight PLAYS.
+const FLINCH_JOLT_SECONDS = 0.16;
+/** Peak backward offset of the drawn body, metres. */
+const FLINCH_JOLT_M = 0.14;
+/** Peak downward dip, metres — the body rocks as well as recoils. */
+const FLINCH_DIP_M = 0.05;
+/** Peak backward lean, radians. */
+const FLINCH_LEAN_RAD = 0.16;
+
 export interface GripTuning {
   readonly offset: readonly [number, number, number];
   readonly trimEulerDeg: readonly [number, number, number];
@@ -230,6 +250,7 @@ function ActorRig(props: {
   const currentAction = useRef<THREE.AnimationAction | null>(null);
   const timeScale = useRef(1);
   const stabilizer = useRef(createVisualStabilizer());
+  const flinch = useRef<{ tick: number; t: number; dirX: number; dirZ: number } | null>(null);
 
   useFrame((_, delta) => {
     const runtime = props.runtime;
@@ -245,6 +266,35 @@ function ActorRig(props: {
     }
 
     const cues = runtime.getCues()[props.side];
+
+    // Visual-only hit recoil (see FLINCH_* above). Fires once per new authoritative
+    // hit on this side and decays; primed on the first frame so a mid-fight remount
+    // never jolts on a stale cue, and never written back to the core.
+    if (flinch.current === null) {
+      flinch.current = { tick: cues.lastHitTick, t: 0, dirX: 0, dirZ: 0 };
+    } else if (cues.lastHitTick > flinch.current.tick) {
+      const other = state.combat.fighters[props.side === "A" ? "B" : "A"];
+      const dx = fighter.motion.pos.x - other.motion.pos.x;
+      const dz = fighter.motion.pos.z - other.motion.pos.z;
+      const len = Math.hypot(dx, dz) || 1;
+      flinch.current = {
+        tick: cues.lastHitTick,
+        t: FLINCH_JOLT_SECONDS,
+        dirX: dx / len,
+        dirZ: dz / len,
+      };
+    }
+    if (group && flinch.current.t > 0) {
+      flinch.current.t = Math.max(0, flinch.current.t - delta);
+      const ease = (flinch.current.t / FLINCH_JOLT_SECONDS) ** 2;
+      group.position.x += flinch.current.dirX * FLINCH_JOLT_M * ease;
+      group.position.z += flinch.current.dirZ * FLINCH_JOLT_M * ease;
+      group.position.y = pose.y - FLINCH_DIP_M * ease;
+      group.rotation.x = FLINCH_LEAN_RAD * ease;
+    } else if (group) {
+      group.rotation.x = 0;
+    }
+
     // Debounced + speed-smoothed so the boss (and the player) do not flicker between
     // aim/aimWalk/aimRun as the interpolated speed grazes a threshold. Position and yaw
     // above are untouched — they are still the core's own interpolated transform.

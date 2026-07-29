@@ -14,6 +14,7 @@ import {
   AimMark,
   DodgeReadiness,
   FighterShadows,
+  HitFeedback,
   Impacts,
   MuzzleFlashes,
   Projectiles,
@@ -250,6 +251,7 @@ export function DuelStage(props: DuelStageProps) {
         <Projectiles runtime={props.runtime} />
         <MuzzleFlashes runtime={props.runtime} />
         <Impacts runtime={props.runtime} />
+        <HitFeedback runtime={props.runtime} />
         <DodgeReadiness runtime={props.runtime} />
         <AimMark runtime={props.runtime} aim={aimRef} />
       </Suspense>

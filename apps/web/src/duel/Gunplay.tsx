@@ -23,6 +23,7 @@ import {
   tracerTexture,
 } from "./duelTextures.js";
 import { AIM_PLANE_Y } from "./duelCamera.js";
+import { playDamageTaken, playHitConfirm } from "./duelAudio.js";
 
 // Making the ball the point.
 //
@@ -89,6 +90,18 @@ const IMPACT_SECONDS_BY_KIND: Readonly<Record<DuelImpact["kind"], number>> = {
   COVER: IMPACT_SECONDS,
   SPENT: IMPACT_SECONDS,
 };
+
+// HIT CONFIRMATION IS YELLOW; DAMAGE THE PLAYER TAKES IS RED. Two colours for the
+// one "someone got hit" event was confusing feedback, so colour now says WHO got
+// hit: a ball landing on the OPPONENT — you confirmed a hit — bursts yellow, the
+// same signal as the crosshair marker and the hit sound, and a ball landing on the
+// PLAYER bursts red, matching the red damage vignette. The struck side is read from
+// the core's own per-side `lastHitTick`, so it is the authoritative event and not a
+// guess from geometry (the struck body may have moved since the impact tick).
+const HIT_CONFIRM_PUFF = "#ffd23a";
+const HIT_CONFIRM_SHOCK = "#ffe08a";
+const HIT_TAKEN_PUFF = "#ff2a24";
+const HIT_TAKEN_SHOCK = "#ff6b6b";
 
 const projectedHead = new THREE.Vector3();
 const projectedTail = new THREE.Vector3();
@@ -258,6 +271,7 @@ export function Impacts(props: { runtime: DuelRuntime }) {
   useFrame(() => {
     const state = props.runtime.getState();
     const impacts = props.runtime.getImpacts();
+    const cues = props.runtime.getCues();
     const recent = impacts.slice(-IMPACT_POOL);
     for (let index = 0; index < IMPACT_POOL; index++) {
       const group = slots.current[index];
@@ -277,6 +291,10 @@ export function Impacts(props: { runtime: DuelRuntime }) {
       // A hit bursts bigger and brighter than a cover/spent tick; the others are
       // unchanged so their quieter reads stay legible.
       const hit = impact.kind === "HIT";
+      // Who was struck: this HIT lands on the PLAYER (red, damage taken) only when
+      // its tick is the tick side A was last hit on; every other hit is one the
+      // player landed on the opponent (yellow, confirmed).
+      const struckSelf = hit && impact.tick === cues.A.lastHitTick;
       const emphasis = hit ? HIT_EMPHASIS : 1;
       group.visible = true;
       group.position.set(impact.x, impact.y, impact.z);
@@ -287,10 +305,10 @@ export function Impacts(props: { runtime: DuelRuntime }) {
         const size = (0.3 + (1 - life) * 0.9) * emphasis;
         puff.scale.set(size, size, 1);
         const material = puff.material as THREE.SpriteMaterial;
-        // A hit opens near-opaque and holds, so it lands as a clear spatter of hurt
-        // on the body rather than a faint glow that fades before the eye reaches it.
+        // A hit opens near-opaque and holds, so it lands as a clear spatter on the
+        // body rather than a faint glow that fades before the eye reaches it.
         material.opacity = hit ? Math.min(1, 0.55 + life * 0.55) : life * 0.85;
-        material.color.set(hit ? "#ff2a24" : colour);
+        material.color.set(hit ? (struckSelf ? HIT_TAKEN_PUFF : HIT_CONFIRM_PUFF) : colour);
       }
       const shock = group.children[1] as THREE.Mesh | undefined;
       if (shock) {
@@ -298,7 +316,7 @@ export function Impacts(props: { runtime: DuelRuntime }) {
         shock.scale.set(size, size, size);
         const material = shock.material as THREE.MeshBasicMaterial;
         material.opacity = life * (hit ? 0.85 : 0.55);
-        material.color.set(colour);
+        material.color.set(hit ? (struckSelf ? HIT_TAKEN_SHOCK : HIT_CONFIRM_SHOCK) : colour);
       }
     }
   });
@@ -505,6 +523,35 @@ export function FighterShadows(props: { runtime: DuelRuntime }) {
       ))}
     </>
   );
+}
+
+/**
+ * Combat-sound feedback: a bright confirm tick the moment your shot lands on the
+ * opponent, and a duller thud the moment the player takes damage.
+ *
+ * It draws nothing — it lives in the render tree only because that is where a
+ * once-per-frame read of the core's cues is cheap and already happening. The signal
+ * is the core's own per-side `lastHitTick`: strictly increasing, so a rise is a new
+ * authoritative hit and a repeated/duplicated read is silently ignored. Primed on
+ * the first frame so a mid-fight remount never fires a stale cue.
+ */
+export function HitFeedback(props: { runtime: DuelRuntime }) {
+  const seen = useRef<{ a: number; b: number } | null>(null);
+
+  useFrame(() => {
+    const cues = props.runtime.getCues();
+    const a = cues.A.lastHitTick;
+    const b = cues.B.lastHitTick;
+    if (seen.current === null) {
+      seen.current = { a, b };
+      return;
+    }
+    if (b > seen.current.b) playHitConfirm();
+    if (a > seen.current.a) playDamageTaken();
+    seen.current = { a, b };
+  });
+
+  return null;
 }
 
 /** Height the aim plane sits at, re-exported so the stage and camera agree. */
