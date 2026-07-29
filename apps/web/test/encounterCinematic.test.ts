@@ -182,6 +182,43 @@ test("the conversation shot is an over-the-shoulder from behind the player, aime
   );
 });
 
+test("the shot is anchored to the actors' feet, so an elevated stop is not buried below", () => {
+  // The relocated ROPEWALK_STOP happens on the Hollis Meeting leads at y≈8.2.
+  // With absolute heights the camera sat at y≈1.5 — ~6.7m under the player,
+  // inside the meeting-house solid, so the player answered a speaker they could
+  // not see. The shot must frame from head/chest height ABOVE that roof.
+  const roofY = 8.2;
+  const player: CinePose = { x: 74.3, y: roofY, z: 9, yaw: 0 };
+  const speaker: CinePose = { x: 74.9, y: roofY, z: 11, yaw: Math.PI };
+  const shot = encounterConversationShot({
+    player,
+    speaker,
+    secondary: null,
+    reducedMotion: false,
+  });
+  // Camera sits a head above the roof, not down at absolute street height.
+  assert.ok(
+    shot.position.y > roofY + 1.3 && shot.position.y < roofY + 2.0,
+    `camera at head height above the roof, got ${shot.position.y}`,
+  );
+  // The look target is up on the roof too, not aimed ~7m below the conversation.
+  assert.ok(
+    shot.target.y > roofY + 0.8 && shot.target.y < roofY + 1.8,
+    `target at chest height above the roof, got ${shot.target.y}`,
+  );
+
+  // And a ground-level stop (y=0) is unchanged: heights collapse to the old
+  // absolute values, so the market shot is exactly as it was.
+  const ground = encounterConversationShot({
+    player: { x: 0, y: 0, z: 0, yaw: 0 },
+    speaker: { x: 0, y: 0, z: 2, yaw: Math.PI },
+    secondary: null,
+    reducedMotion: false,
+  });
+  assert.ok(ground.position.y > 1.4 && ground.position.y < 1.7, "ground camera unchanged");
+  assert.ok(ground.target.y > 1.2 && ground.target.y < 1.5, "ground target unchanged");
+});
+
 test("the shot chooses the side away from the secondary so both officers stay in frame", () => {
   const player: CinePose = { x: 0, y: 0, z: 0, yaw: 0 };
   const speaker: CinePose = { x: 0, y: 0, z: 2, yaw: Math.PI };

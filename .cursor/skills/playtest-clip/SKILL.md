@@ -13,6 +13,19 @@ instrument.** A clip is the highest-signal input there is; treat it accordingly.
 
 ## 1. Extract
 
+**If the link is a Clipy recording, fetch `<url>.md` first — do not download the video.**
+That page carries an AI summary, a **timestamped transcript**, and key-moment frames with
+direct `cdn.clipy.online` image URLs. `curl` those frames into
+`.affordwork/clips/<label>/` and read them. It is faster and better than frame extraction,
+and the transcript is the only source of the owner's words — there is no local
+transcription.
+
+Treat the summary and captions as *paraphrase*: the frames and the transcript are ground
+truth, and the summary has been wrong about which key was pressed. Quote UI labels from
+what is visible in a frame, never from a caption.
+
+For a raw file or a non-Clipy link, extract frames:
+
 ```bash
 .cursor/skills/playtest-clip/scripts/extract.sh <url-or-path> <label> [interval-seconds]
 ```
@@ -41,7 +54,18 @@ guessing — an illegible frame is a failed check, not a caption.
 available; work from his typed message and the frames. Ask for the key points in text
 rather than inventing them.
 
-## 3. Locate
+## 3. Trust the transcript, use the frames to locate
+
+**His words are the fact. The video shows where he is pointing.** Do not derive a measurement
+from the recording and use it to contradict him — a screen capture is variable frame rate, and
+one made during a performance problem drops frames, so wall-clock timing taken from frame
+timestamps measures the capture rather than the game. That instrument is corrupted by exactly
+the condition worth investigating.
+
+Frames are ground truth for **what is on screen** — geometry, a UI label, a camera inside a
+wall. They are not ground truth for **rates** — speed, frame time, how long something took.
+
+## 3b. Locate
 
 Frames carry a HUD with an objective, a distance and a section, and the mission is one
 guided west-east line — so a frame usually says where it is. Sections run
