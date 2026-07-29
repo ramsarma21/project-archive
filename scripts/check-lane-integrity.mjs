@@ -191,7 +191,10 @@ export function partitionCollisions(entries) {
       propagations.push({
         rel: entry.rel,
         lanes: diverging.map((l) => l.lane),
-        reason: `${diverging.length} lanes ahead of main with byte-identical content; whichever merges first, the rest are no-ops`,
+        // Covers both shapes of "same bytes, not main's": a cohort that has all
+        // made the same edit, and a cohort left holding one older copy after
+        // main moved on. Neither can destroy the other's work.
+        reason: `${diverging.length} lanes hold identical content that differs from main's; whichever merges first, the rest are no-ops`,
       });
     } else {
       clobbers.push({ rel: entry.rel, lanes: diverging.map((l) => l.lane) });
