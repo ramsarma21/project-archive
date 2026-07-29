@@ -12,6 +12,9 @@ Postgres on `55432`. Use your own ports and stop them when you finish.
 
 ## Standing rules for every lane
 
+- **The M1-only freeze is in force (29 Jul).** Future-scope work does not merge to `main` without
+  the owner's explicit approval, and no branch or worktree gets deleted to tidy up. The rule, and a
+  ledger classifying every pending branch, are in `docs/process/M1-STATUS.md` → M1-only freeze.
 - **One worker per worktree.** Never two at once, even for unrelated files.
 - `git merge main` first. Commit on your branch. The orchestrator merges to `main`.
 - If the honest fix needs a file another lane owns: **stop and report.** Do not edit it, and

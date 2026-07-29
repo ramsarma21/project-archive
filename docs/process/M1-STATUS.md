@@ -12,8 +12,81 @@ visibly broken.
 node scripts/check-playthrough.mjs`. After merging: update this file. A fix is not "done"
 because a worker reported it — it is done when it is merged, gated, and recorded here.
 
+---
+
+## M1-only freeze (owner decision, 29 Jul)
+
+**The project demos only M1 for now.** `main` is the clean M1-demo trunk: the vertical slice —
+route, traversal, encounters, the officer cutscene, the graded duel, the elm finale, and the module
+lesson that teaches into them.
+
+- **No broad or future-facing work merges to `main` without the owner saying so explicitly.** That
+  covers chapter infrastructure beyond M1, missions and chapters past M1, the four-mission collapse,
+  capstone and PvP shipping gates, standards/STAAR reporting, and question-generation pipeline work.
+  Merge it only if the M1 slice is broken without it.
+- **Nothing is reverted, deleted or abandoned.** Every branch and worktree stays. Paused work stays
+  committed on its lane branch and is named below, so resuming it is a merge and not a rebuild. Do
+  not delete a branch or a worktree to tidy up.
+- **Already on `main` and staying:** the `m4` asset pipeline, `content/staar`, `content/capstone` and
+  the 39-mission curriculum registry all arrived in the 22–27 Jul baseline, not in this week's
+  merges. Out of scope to remove — removing them is a larger risk than leaving them sitting unused.
+- Meta-work was already time-boxed (`M1-DONE.md`); the freeze tightens it. A merge that moves no line
+  of `M1-DONE.md` needs a reason.
+
+**The scope calls in the table are my classification, not the owner's — only the freeze itself is
+his.** Where a branch mixes scopes the exact commits are named, so splitting it is a cherry-pick
+rather than a judgement call made at merge time.
+
+| Pending | Scope | Do |
+|---|---|---|
+| `mission-world` — jump-hang clip vocabulary (`ab007f2`, `07eb7d2`) | **post-demo polish/risk** — the route already works via ladder | preserve on branch; do **not** merge for the M1 demo without browser capture and route/ladder gates |
+| `duel-hud` +2 — interstitial retired, hit marker legible (granted, `dab549b`) | **M1-critical**, demo-facing | merge when gated |
+| `api-hunt` `ca2e345` — an outage round enforces the deterministic card half | **M1-critical** — the "told he was right when he was wrong" class | cherry-pick alone; it is the branch's oldest commit, below the PvP pair |
+| `mission-encounters` `c3db1b9` `33a7f2d` `76cfcc2` `5094c73` — question draw ordered by concept, winnability aimed at the fight M1 ships | **M1**, but current branch also has unsafe WIP | preserve; do **not** merge/cherry-pick current WIP until the hang below is resolved |
+| `boss-clip` +2 — hit confirmation: sound, stronger flinch, unified colour | **nice-to-have M1** (the fight reads as a fight) | merge after the criticals |
+| `module-lesson` `72ab1c9` — lesson checks vary by distractor pool, plus an **inert** remediation subset | **M1, carrying debt** | the variation is M1; the inert subset is the dead-but-plausible shape this file warns about — wire it or drop it, do not merge it inert |
+| `api-hunt` `a854ab9` `a459d89` — PvP card access and `/join` reasons | **future** | pause on branch |
+| `mission-encounters` `253b675` `2510c09` — the PvP server's own catch-up bound | **future** | pause on branch |
+| `boss-fight` `8b00e3c` — STAAR standards reporting, `content/staar/README.md` | **future** | pause on branch |
+
+**Five findings from the audit, none of them fixed here.**
+1. **`mission-world` carries a bit-identical duplicate of the slow-running fix.** `2e617a0`/`c7cf212`
+   have the same `git patch-id` as `main`'s `cf262c9`/`a109930` — the same fix was committed on two
+   lanes and reached `main` from `boss-fight`. `main` is not an ancestor of the branch (27 behind),
+   so merge `main` into it first, expect the duplicate to resolve as a no-op, and confirm
+   `MAX_CATCHUP_STEPS` still derives 15 from the clamp afterwards.
+2. **The PvP server's catch-up bound is still wired to M1's frame clamp.** On `main`,
+   `packages/netcode/src/enginePort.ts` re-exports engine-world's `MAX_CATCHUP_STEPS` and
+   `server/host.ts` passes it as `maxCatchUpTicks`, so raising the cap 5 → 15 for the M1
+   slow-running fix silently retuned the PvP server too. The decoupling is the paused `2510c09`,
+   which despite its message ("back at 5") does **not** revert the engine constant. Harmless for the
+   M1 demo, since nothing in the slice runs the PvP host — recorded so it is not re-derived.
+3. **An uncommitted `infra/lib/project-archive-stack.ts` edit sits in the `mission-presentation`
+   worktree**, and `infra/**` appears in no lane's globs, so it is unowned. Whoever left it should
+   claim or discard it.
+4. **`workflow/mission-encounters` is not merge-ready after the boss duel WIP.** The reload-exposure
+   pass improved the correct-answer path, but the last edit (`directionToOpenLane` plus call sites)
+   leaves the duel suite hanging. The last known-good point is two edits earlier: 23s suite with one
+   `bossTactics.test.ts` failure (`exposedTicks` 179/360). The safe resume path is to revert only the
+   `policy.ts` addition and its two `bossAi.ts` call sites, then re-measure. The deeper M1 defect it
+   exposed is real and unresolved: firing uses eye-line LOS while balls are still eaten by cover, so
+   LOW-peek fights can look active while both sides shoot crates.
+5. **`workflow/mission-world` jump-hang is preserved but not demo-critical.** The clock ledge already
+   works on `main` via a ladder, so the branch replaces a working route action with an unproven one.
+   Engine and clip-fidelity checks passed, but there is no browser capture, no completed `check-playthrough`,
+   and the route/wayfind/ladder tests were killed mid-run. It should resume after the M1 demo unless the
+   owner explicitly wants the risk in the demo path.
+
+**Verified cheaply, not gated.** Both named invariants hold on `main`: `MAX_CATCHUP_STEPS =
+floor(MAX_FRAME_DT_S / FIELD_DT)`, and `verdictLabel.ts` returns "Not graded" with `DuelOverlay`
+still rendering `verdictBeatTone(verdict).label`. No gate was run for this audit. The hub working
+tree is clean and `main` is 34 commits ahead of `origin/main`.
+
+---
+
 **The standing loop**, every 15 minutes, in this order:
-1. **Merge** every finished lane; verify `main` green; hunt for stranded or unmerged lane work.
+1. **Merge** every finished lane **whose work is M1** — see the freeze above; a future-scope lane
+   stays on its branch. Verify `main` green; hunt for stranded or unmerged lane work.
 2. **Fix** — launch a worker on the highest-value open item no active lane is blocking.
    Player-facing before infrastructure. Launch, don't queue.
 3. **Hunt** a new area, rotating so coverage accumulates: mutation-test a package not yet
