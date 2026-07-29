@@ -321,16 +321,29 @@ export const GUARD_FILES = [
 ];
 
 /**
- * @param mainKey    main's current blob for the file.
- * @param laneKey    the worktree's working-tree copy; "(absent)" if it has none,
- *                   `null` if it could not be hashed.
- * @param laneEdited whether this lane itself changed the file (committed or dirty).
- * @returns "in-step" | "lane-edit" | "stale" | "unreadable"
+ * WHY THE DISCRIMINATOR IS "HAS MAIN EVER HELD THIS CONTENT", AND NOT "DID THE
+ * LANE TOUCH THE FILE". The first version of this asked git whether the lane had
+ * changed the path (`main...HEAD` or a dirty tree) and called that a lane edit.
+ * Run against the real worktrees it mislabelled TEN of eleven stale copies as
+ * "lane-edit" — because the previous propagation round was COMMITTED on each lane
+ * branch, so every lane legitimately "changed" the file relative to its merge
+ * base while carrying a copy it had merely been handed. That is the dangerous
+ * direction: it told the reader to leave a stale guard alone and suppressed the
+ * `cp` it needed. Content is the honest test — a copy main has held before was
+ * propagated or inherited, whatever the lane's history says about it.
+ *
+ * @param mainKey     main's CURRENT blob for the file.
+ * @param laneKey     the worktree's working-tree copy; "(absent)" if it has none,
+ *                    `null` if it could not be hashed.
+ * @param mainHasHeld whether main has EVER held the lane's exact copy (its blob
+ *                    appears in main's history for this path).
+ * @returns "in-step" | "stale" | "lane-edit" | "missing" | "unreadable"
  */
-export function classifyGuardCopy({ mainKey, laneKey, laneEdited }) {
+export function classifyGuardCopy({ mainKey, laneKey, mainHasHeld }) {
   if (laneKey === null) return "unreadable";
   if (laneKey === mainKey) return "in-step";
-  return laneEdited ? "lane-edit" : "stale";
+  if (laneKey === "(absent)") return "missing";
+  return mainHasHeld ? "stale" : "lane-edit";
 }
 
 // ---------------------------------------------------------------------------
@@ -392,14 +405,17 @@ function selftest(verbose = true) {
       { lane: "a", contentKey: "X" }, { lane: "b", contentKey: "Y" }, { lane: "stale", contentKey: "M" },
     ] }]).clobbers[0].lanes.join(",") === "a,b"],
 
-    // Guard drift. The case that matters is the QUIET one: a lane sitting clean
-    // on a copy main has moved past enforces a retired policy and says nothing,
-    // so "clean" must not be allowed to read as "in step".
-    ["a copy equal to main's is in step", guardCopy({ mainKey: "M", laneKey: "M", laneEdited: false }) === "in-step"],
-    ["a clean copy main moved past is STALE", guardCopy({ mainKey: "NEW", laneKey: "M", laneEdited: false }) === "stale"],
-    ["a lane's own edit of the guard is not stale", guardCopy({ mainKey: "M", laneKey: "NEW", laneEdited: true }) === "lane-edit"],
-    ["a missing copy is drift, not agreement", guardCopy({ mainKey: "M", laneKey: "(absent)", laneEdited: false }) === "stale"],
-    ["an unhashable copy is never 'in step'", guardCopy({ mainKey: "M", laneKey: null, laneEdited: false }) === "unreadable"],
+    // Guard drift. The case that matters is the QUIET one: a lane sitting on a
+    // copy main has moved past enforces a retired policy and says nothing, so
+    // "the lane has it committed" must not be allowed to read as "in step".
+    ["a copy equal to main's is in step", guardCopy({ mainKey: "M", laneKey: "M", mainHasHeld: true }) === "in-step"],
+    ["a copy main moved past is STALE", guardCopy({ mainKey: "NEW", laneKey: "OLD", mainHasHeld: true }) === "stale"],
+    ["content main never held is a lane edit", guardCopy({ mainKey: "M", laneKey: "NOVEL", mainHasHeld: false }) === "lane-edit"],
+    // The regression the first implementation shipped: a lane that COMMITTED a
+    // propagated copy is stale, not an author. Ten of eleven lanes were mislabelled.
+    ["a committed propagated copy is STALE, not a lane edit", guardCopy({ mainKey: "NEW", laneKey: "OLD", mainHasHeld: true }) !== "lane-edit"],
+    ["a deleted copy is reported, not treated as agreement", guardCopy({ mainKey: "M", laneKey: "(absent)", mainHasHeld: false }) === "missing"],
+    ["an unhashable copy is never 'in step'", guardCopy({ mainKey: "M", laneKey: null, mainHasHeld: false }) === "unreadable"],
 
     // The verdict, scoped and unscoped.
     ["unscoped fails on any violation", failureDecision({ perLane }).failed === true],
@@ -558,31 +574,44 @@ const { clobbers, propagations } = partitionCollisions(shared);
 // — a stale copy is stale precisely because the lane never touched it, so the
 // changed-file set is the one place it can never appear.
 // ---------------------------------------------------------------------------
-/** Did this lane itself change `rel`, either in a commit of its own or in its tree? */
-function laneTouched(dir, rel) {
+/**
+ * Every blob main has ever held for `rel`. Computed ONCE per path (not per lane),
+ * so this costs a handful of git calls rather than one per lane per file.
+ */
+function mainBlobHistory(rel, limit = 100) {
+  const blobs = new Set();
   try {
-    if (git(dir, ["diff", "--name-only", "main...HEAD", "--", rel]).trim()) return true;
+    const commits = git(HUB, ["log", `--max-count=${limit}`, "--format=%H", "main", "--", rel])
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const c of commits) {
+      try {
+        const blob = git(HUB, ["rev-parse", "--verify", "--quiet", `${c}:${rel}`]).trim();
+        if (blob) blobs.add(blob);
+      } catch {
+        // the path did not exist at that commit; nothing to record.
+      }
+    }
   } catch {
-    // no `main` ref or a detached state: fall through to the working tree.
+    // no `main` ref: leave the history empty, which reads every copy as a lane
+    // edit rather than silently as agreement.
   }
-  try {
-    if (git(dir, ["status", "--porcelain", "--", rel]).trim()) return true;
-  } catch {
-    // not a git worktree: nothing more to consult.
-  }
-  return false;
+  return blobs;
 }
 
 const mainGuardKeys = new Map(GUARD_FILES.map((rel) => [rel, mainContentKey(rel)]));
+const mainGuardHistory = new Map(GUARD_FILES.map((rel) => [rel, mainBlobHistory(rel)]));
 const guardDrift = [];
 for (const lane of laneDirs) {
   const dir = join(WORKTREES, lane);
   if (!existsSync(join(dir, ".git"))) continue;
   for (const rel of GUARD_FILES) {
+    const laneKey = contentKey(dir, rel);
     const state = classifyGuardCopy({
       mainKey: mainGuardKeys.get(rel),
-      laneKey: contentKey(dir, rel),
-      laneEdited: laneTouched(dir, rel),
+      laneKey,
+      mainHasHeld: mainGuardHistory.get(rel).has(laneKey),
     });
     if (state !== "in-step") guardDrift.push({ lane, rel, state });
   }
@@ -639,8 +668,9 @@ if (!JSON_OUT) {
   //     Printed before PROPAGATION because a stale guard is a reason a violation
   //     could happen unnoticed, and it is invisible to every other section here.
   if (guardDrift.length) {
-    const stale = [...new Set(guardDrift.filter((g) => g.state === "stale").map((g) => g.lane))];
-    const edited = [...new Set(guardDrift.filter((g) => g.state === "lane-edit").map((g) => g.lane))];
+    const laneSet = (state) => [...new Set(guardDrift.filter((g) => g.state === state).map((g) => g.lane))];
+    const stale = [...new Set([...laneSet("stale"), ...laneSet("missing")])].sort();
+    const edited = laneSet("lane-edit");
     const unreadable = guardDrift.filter((g) => g.state === "unreadable");
     console.log(`\n  GUARD DRIFT (reported, never failing): ${guardDrift.length} worktree copy(ies) differ from main's:`);
     for (const g of guardDrift) console.log(`    note: ${g.lane}  ${g.rel}  (${g.state})`);

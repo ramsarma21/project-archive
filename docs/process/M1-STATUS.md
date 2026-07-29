@@ -381,7 +381,15 @@ shape: a worktree sitting *clean* on a stale copy never appears in any changed-f
 could see it while its guard enforced a policy `main` had retired. `check-lane-integrity.mjs` now
 hashes each worktree's `.cursor/{lane-ownership.json,hooks.json,hooks/lane-guard.sh}` against `main`'s
 blob and reports **GUARD DRIFT**, separating a lane's own edit from a STALE copy and printing the `cp`
-for each stale lane. It **does not fail** —
+for each stale lane. Observed firing on exactly the condition it is for: after the `duel-hud` grant
+merged, all eleven sibling worktrees reported STALE, and all reported in-step after the copy.
+**Its first implementation was wrong in the dangerous direction, and only running it against the real
+worktrees caught it.** It asked git whether the lane had *touched* the path and called that a lane
+edit — but the previous propagation round was **committed** on every lane branch, so ten of eleven
+stale copies were labelled "lane-edit", i.e. "leave it alone", and their `cp` was suppressed. The
+discriminator is now **content**: a copy whose blob appears anywhere in `main`'s history for that path
+was propagated or inherited, whatever the lane's history claims. Pinned by a selftest case naming the
+regression. It **does not fail** —
 a lane cannot propagate `main`'s `.cursor/` into itself, so failing its gate would be the unfixable
 red that mutes a gate. **Still open, and deliberately not built:** the structural fix is an absolute
 hook registration or a symlink so one copy serves every worktree. Detection is not that.
