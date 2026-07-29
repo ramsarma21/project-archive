@@ -242,7 +242,27 @@ export function enemyStandingLine(
   return `${hits} clean ${hits === 1 ? "hit" : "hits"} from the ground`;
 }
 
-/** The centre reticle and its hit marker. Fires once per authoritative enemy-health fall. */
+/**
+ * The centre reticle and its hit marker. Fires once per authoritative enemy-health fall.
+ *
+ * THE MARKER IS ONE COLOUR — the confirm yellow — on every kind of hit. It used to be
+ * graded: white for a normal hit, gold at the critical threshold, red for the knockout.
+ * Two reasons it is now uniform:
+ *
+ * White did not read. Not because the sky washed it out — the reticle is pinned to
+ * screen centre, which in this arena sits below the horizon — but because it is drawn
+ * ON the opponent, and the King's Officer wears a white uniform, so an arm crossing him
+ * disappears into it. The fix that matters is in the stylesheet (a hard dark rim); the
+ * hue is what makes it *identifiable* rather than merely visible.
+ *
+ * And red now means the opposite thing: `8399adb` made the impact burst yellow when you
+ * strike the opponent and red when you take damage, so a red marker on a kill YOU landed
+ * would read as damage taken.
+ *
+ * The kind still reaches the DOM and still selects the knockout's heavier arms and
+ * longer hold — that says "they are down", not "this hit was worth more" — but it
+ * selects no colour.
+ */
 export function HitMarker(props: {
   enemyHealth: number;
   enemyMaxHealth: number;

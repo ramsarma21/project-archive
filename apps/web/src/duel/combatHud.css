@@ -2,9 +2,10 @@
    The Overwatch-style combat HUD — shared by the boss duel and the live arena.
 
    System language: cyan-blue holographic glass, sharp corner accents, wide-tracked
-   uppercase kickers, gold reserved for ammunition. Scoped under .cbt so it cannot
-   reach anything another surface owns. Non-interactive (pointer-events: none): it
-   reports, it never eats a click meant for the yard.
+   uppercase kickers, gold reserved for ammunition, and one hit-confirm yellow shared
+   with the 3D impact burst. Scoped under .cbt so it cannot reach anything another
+   surface owns. Non-interactive (pointer-events: none): it reports, it never eats a
+   click meant for the yard.
 
    Every element carries its own scrim/shadow so it survives over a bright daylit sky
    as well as a dark scene — this HUD sits over live gameplay, not a fixed backdrop.
@@ -20,6 +21,10 @@
   --cbt-gold: #ffcf5a;
   --cbt-amber: #ffb057;
   --cbt-blood: #ff6b6b;
+  /* Hit confirmation. Must stay equal to HIT_CONFIRM_PUFF in Gunplay.tsx: the crosshair
+     marker and the burst on the body are two halves of one signal, and two near-identical
+     yellows for a single event read worse than either alone. */
+  --cbt-hit: #ffd23a;
   --cbt-glass: linear-gradient(180deg, rgba(7, 24, 40, 0.9), rgba(4, 12, 22, 0.94));
   --cbt-shadow: 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 3px rgba(0, 0, 0, 0.9);
 
@@ -308,31 +313,41 @@
   background: rgba(159, 220, 255, 0.55);
   box-shadow: 0 0 6px rgba(159, 220, 255, 0.5);
 }
+/* ONE COLOUR FOR EVERY CONFIRMED HIT — see the note on `HitMarker` for why the severity
+   grade (white / gold / red) is gone.
+
+   THE DARK RIM IS WHAT MAKES IT LEGIBLE, NOT THE HUE, and that is measured rather than
+   assumed. Against the yard's own sky pixels (rgb 138,161,181) the glyph is weak either
+   way — yellow 1.85:1, white 2.67:1 — while the rim is 7.49:1. So no marker COLOUR
+   survives a bright background on luminance; only a hard dark edge does. The old arms
+   could not fall back on one, because a 10 px white bloom swallowed it: 31 dark rim
+   pixels in a captured hit frame, against 891 now. Hence the 2 px solid rim, the glow
+   recoloured from white to the marker's own yellow, and slightly heavier arms. */
 .cbt-hitmark {
   position: absolute;
   left: 0;
   top: 0;
-  color: #ffffff;
+  color: var(--cbt-hit);
   animation: cbt-hit-pop 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both;
-  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.95));
 }
 .cbt-hitmark-arm {
   position: absolute;
-  width: 22px;
-  height: 5px;
+  width: 24px;
+  height: 6px;
   border-radius: 1px;
   background: currentColor;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 3px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.88), 0 0 12px rgba(255, 210, 58, 0.8);
 }
 /* Four arms angled into a bold X, clearly offset from the centre dot. */
 .cbt-hitmark-tl { left: -26px; top: -26px; transform: rotate(45deg); }
 .cbt-hitmark-tr { left: 6px; top: -26px; transform: rotate(-45deg); }
 .cbt-hitmark-bl { left: -26px; top: 22px; transform: rotate(-45deg); }
 .cbt-hitmark-br { left: 6px; top: 22px; transform: rotate(45deg); }
-.cbt-hitmark-normal { color: #ffffff; }
-.cbt-hitmark-critical { color: var(--cbt-gold); }
-.cbt-hitmark-fatal { color: var(--cbt-blood); animation: cbt-hit-kill 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
-.cbt-hitmark-fatal .cbt-hitmark-arm { width: 30px; height: 6px; }
+/* The knockout keeps heavier arms and a longer hold — "they are down", not a colour
+   grade — so it takes no `color` of its own. */
+.cbt-hitmark-fatal { animation: cbt-hit-kill 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.cbt-hitmark-fatal .cbt-hitmark-arm { width: 32px; height: 7px; }
 .cbt-hitmark-fatal .cbt-hitmark-tl { left: -34px; top: -34px; }
 .cbt-hitmark-fatal .cbt-hitmark-tr { left: 8px; top: -34px; }
 .cbt-hitmark-fatal .cbt-hitmark-bl { left: -34px; top: 28px; }
