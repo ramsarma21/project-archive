@@ -27,6 +27,7 @@ const { createDuelGrading } = await import("../src/duels/grading.js");
 const { registerDuelRoutes } = await import("../src/routes/duels.js");
 const { inMemoryDuelVerdictStore } = await import("../src/duels/verdictStore.js");
 const { csrfTokenForSession } = await import("../src/auth.js");
+const { m1EvidencePolicy } = await import("@pa/mission-m1");
 
 const silent = {
   warn: () => undefined,
@@ -166,7 +167,17 @@ async function duelHarness() {
   return { app, retrieval };
 }
 
-function postRound(app: FastifyInstance, sid: string, round: number, answer: string) {
+// The relevant cards for ITEM_ID, so a test that wants a CORRECT during an outage can
+// satisfy the card half — which is now enforced regardless of grading source.
+const RELEVANT_CARDS = [...m1EvidencePolicy(ITEM_ID).relevantCardIds];
+
+function postRound(
+  app: FastifyInstance,
+  sid: string,
+  round: number,
+  answer: string,
+  selectedCardIds: readonly string[] = [],
+) {
   return app.inject({
     method: "POST",
     url: `/v1/duels/${encodeURIComponent(DUEL_ID)}/rounds/${round}/verdict`,
@@ -175,7 +186,7 @@ function postRound(app: FastifyInstance, sid: string, round: number, answer: str
       "x-pa-csrf-token": csrfTokenForSession(sid),
     },
     cookies: { pa_session: sid },
-    payload: { side: "A", itemId: ITEM_ID, itemVersion: "v1", conceptId: CONCEPT, answer },
+    payload: { side: "A", itemId: ITEM_ID, itemVersion: "v1", conceptId: CONCEPT, answer, selectedCardIds },
   });
 }
 
@@ -223,8 +234,16 @@ test("the duel lane's recycle marker is consumed, and a granted round is marked 
   const { app, retrieval } = await duelHarness();
   try {
     // Round 2 recycles an item (per the authority above); a non-blank answer with
-    // no classifier is the generous grant — CORRECT but NOT graded evidence.
-    const res = await postRound(app, ALICE, 2, "Parliament wanted the colonies to pay the war debt.");
+    // SATISFYING cards and no classifier is the generous PROSE grant — CORRECT but
+    // NOT graded evidence. The cards must be placed because the card half is now
+    // enforced during an outage; the prose half is what the outage grants.
+    const res = await postRound(
+      app,
+      ALICE,
+      2,
+      "Parliament wanted the colonies to pay the war debt.",
+      RELEVANT_CARDS,
+    );
     assert.equal(res.statusCode, 200, res.body);
     assert.equal(res.json().kind, "CORRECT");
 

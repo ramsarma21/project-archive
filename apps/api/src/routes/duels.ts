@@ -403,8 +403,10 @@ export async function registerDuelRoutes(
             // The server-selected item, never the client's claim.
             itemId: item.itemId,
             answer: submission.answer,
-            // Prose AND evidence: a CLASSIFIER CORRECT with unsatisfied evidence is
-            // minted as WRONG. A generous grant is untouched — grading owns that.
+            // Prose AND evidence: a CORRECT with unsatisfied evidence is minted as
+            // WRONG whatever the prose source, because the card half is deterministic
+            // and an outage is no reason to excuse it. An outage still grants the
+            // prose half (source stays GRADING_TIMEOUT), so right cards still pass.
             evidenceSatisfied: evidence.satisfied,
           });
           return {

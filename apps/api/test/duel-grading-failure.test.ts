@@ -65,11 +65,14 @@ test("with no classifier, a graded round grants CORRECT but is MARKED as a fallb
   assert.notEqual(result.provenance.fallbackReason, null, "the round names why it was not graded");
 });
 
-test("the evidence gate never downgrades a fallback CORRECT — a student is not punished for infrastructure", async () => {
+test("the evidence gate DOES downgrade a fallback CORRECT with wrong cards — the card half is deterministic", async () => {
   const grading = createDuelGrading(silent);
-  // Evidence explicitly unsatisfied. For a CLASSIFIER CORRECT this would fold to
-  // WRONG; for a generous grant it must not, because the student did nothing wrong.
-  const result = await grading.grade({
+  // Evidence explicitly unsatisfied during an outage. The card half is checked
+  // deterministically and needs no model, so an outage is no reason to excuse it:
+  // this folds to WRONG even though the prose was the generous grant. The source is
+  // left as GRADING_TIMEOUT — only the kind changes — so the round is still not
+  // counted as graded evidence of retrieval.
+  const wrongCards = await grading.grade({
     profileId: "p",
     duelId: "D#duel@2",
     roundIndex: 1,
@@ -77,8 +80,21 @@ test("the evidence gate never downgrades a fallback CORRECT — a student is not
     answer: "a real attempt at the answer",
     evidenceSatisfied: false,
   });
-  assert.equal(result.envelope.kind, "CORRECT");
-  assert.equal(result.envelope.source, "GRADING_TIMEOUT");
+  assert.equal(wrongCards.envelope.kind, "WRONG", "wrong cards fail even in an outage");
+  assert.equal(wrongCards.envelope.source, "GRADING_TIMEOUT", "still the marked grant, not a classifier read");
+
+  // Right cards during the same outage: the PROSE half is still granted, so a student
+  // who placed the deterministically-correct cards is not punished for infrastructure.
+  const rightCards = await grading.grade({
+    profileId: "p",
+    duelId: "D#duel@2b",
+    roundIndex: 1,
+    itemId: ITEM,
+    answer: "a real attempt at the answer",
+    evidenceSatisfied: true,
+  });
+  assert.equal(rightCards.envelope.kind, "CORRECT", "right cards keep the prose grant");
+  assert.equal(rightCards.envelope.source, "GRADING_TIMEOUT");
 });
 
 test("the health signal reports the outage rather than hiding it as OK", async () => {

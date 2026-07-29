@@ -218,6 +218,13 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
   // never the client's claim, and a wrong answer still resolves so a stop cannot
   // soft-lock the route.
   await registerEncounterRoutes(app, {
+    // Shares the DUEL's grading signal, so encounter rounds fold into the same
+    // rolling fallback rate `/v1/health` reads. The encounter route builds its own
+    // grading (its bank differs), and without this its signal stayed private — so a
+    // real encounter-grading outage read as healthy on the one endpoint meant to
+    // report it. Passing the shared signal closes that blind spot; nothing here ever
+    // changes the health status code.
+    signal: duelGrading.signal,
     resolveAttempt: async (profileId) => {
       try {
         const snapshot = await progression.snapshot(profileId);

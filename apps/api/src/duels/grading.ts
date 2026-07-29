@@ -76,14 +76,32 @@ const CLIENT_ROUND_TRIP_ALLOWANCE_MS = 250;
  * Combine the prose verdict with the evidence gate, explicitly and in one place so
  * PvE and PvP agree.
  *
- * The rule: a CORRECT the CLASSIFIER minted becomes WRONG when the evidence does not
- * satisfy the policy. Two guards keep it honest:
+ * The rule: a CORRECT becomes WRONG when the evidence does not satisfy the policy,
+ * WHATEVER MINTED THE PROSE. The card half is checked deterministically and needs
+ * no model, so a grading outage is not a reason to excuse it — only the prose half
+ * gets the generous infrastructure grant. A student is still never punished for
+ * infrastructure, because a card check is not infrastructure: an outage-sourced
+ * CORRECT with the right cards keeps its grant, and only wrong cards fail it.
  *
- *   * `evidenceSatisfied === false` only — `undefined` means the caller ran no gate
- *     (an encounter, a legacy path) and leaves the verdict untouched.
- *   * `source === "CLASSIFIER"` only — a generous grant (GRADING_TIMEOUT, ABSTAINED)
- *     is the infrastructure fallback, and a student is never punished for it. It
- *     keeps the maximum whatever cards were placed.
+ * One guard keeps it honest, and it is NOT the verdict's source:
+ *
+ *   * `evidenceSatisfied === false` only. `undefined` means the caller ran no gate
+ *     at all (an encounter, a legacy path) and the verdict is left untouched — so
+ *     encounters, which never place cards, are never affected by this. `true`
+ *     leaves it untouched too; the gate only ever downgrades.
+ *
+ * WHY THIS DOES NOT KEY ON `source`. It used to fire for `source === "CLASSIFIER"`
+ * only, which let an outage-sourced round (GRADING_TIMEOUT) skip card enforcement
+ * entirely — a wrong-carded answer scored CORRECT the moment the classifier was
+ * unreachable. Enumerating which sources excuse cards is a maintenance trap: the
+ * next source value anyone adds silently reopens the hole, the same shape of defect
+ * as a check that can only report success. So the card half is enforced for every
+ * source. The reachable sources here (`verdictEnvelope` of a local grade —
+ * CLASSIFIER, GRADING_TIMEOUT, ABSTAINED) are all covered; `ABSTAINED` is always a
+ * WRONG the `kind` guard already skips, and the empty-answer / "no answer placed"
+ * case is exactly that WRONG, so nothing that legitimately keeps a CORRECT is
+ * downgraded. `OPPONENT_AUTHORITY` is a relay source that never reaches this
+ * function.
  *
  * A WRONG stays WRONG; the gate can only ever downgrade, never upgrade.
  */
@@ -91,11 +109,7 @@ export function combineWithEvidence(
   envelope: VerdictEnvelope,
   evidenceSatisfied: boolean | undefined,
 ): VerdictEnvelope {
-  if (
-    evidenceSatisfied === false &&
-    envelope.kind === "CORRECT" &&
-    envelope.source === "CLASSIFIER"
-  ) {
+  if (evidenceSatisfied === false && envelope.kind === "CORRECT") {
     return { ...envelope, kind: "WRONG" };
   }
   return envelope;
@@ -141,12 +155,14 @@ export interface DuelGrading {
      * The evidence gate's result for this round, when the route runs one.
      *
      * A duel answer is prose AND placed cards, combined explicitly: the verdict is
-     * CORRECT only when the classifier grades the prose CORRECT *and* the evidence
-     * satisfies the authored policy. `false` here downgrades a CLASSIFIER-graded
-     * CORRECT to WRONG *before* the envelope is minted, so the receipt signs the
-     * combined verdict. `true` or omitted leaves grading exactly as it was — and a
-     * GENEROUS GRANT (source ≠ CLASSIFIER) is never downgraded, because a student is
-     * never punished for infrastructure.
+     * CORRECT only when the prose is CORRECT *and* the evidence satisfies the
+     * authored policy. `false` here downgrades a CORRECT to WRONG *before* the
+     * envelope is minted, so the receipt signs the combined verdict — and it does so
+     * WHATEVER the prose source, because the card half is deterministic and an
+     * infrastructure outage is no reason to excuse it. `true` or omitted leaves
+     * grading exactly as it was; the gate only ever downgrades. An outage still
+     * grants the PROSE half (`source` stays GRADING_TIMEOUT), so a student with the
+     * right cards is not punished for infrastructure.
      */
     readonly evidenceSatisfied?: boolean;
   }): Promise<DuelRoundGrade>;
@@ -190,6 +206,20 @@ export interface DuelGradingOptions {
   readonly reviewLog?: ReviewLog;
   /** Overridden only by tests that must not wait 1.25 seconds for a fallback. */
   readonly budgetMs?: number;
+  /**
+   * A grading signal to record this instance's rounds into, so it CONTRIBUTES TO
+   * THE SHARED HEALTH DIAGNOSTICS instead of keeping a private count `/v1/health`
+   * cannot see.
+   *
+   * The encounter route builds a SECOND `createDuelGrading` (its bank differs), and
+   * left to itself that second instance keeps its own signal, which `/v1/health`
+   * never reads — so a real encounter-grading outage read as healthy, a health
+   * endpoint blind to the thing it reports on. app.ts passes `duelGrading.signal`
+   * here (exactly as it does for PvP) so encounter rounds fold into the same rolling
+   * rate the boss duel reports, and the outage becomes observable. Left unset, the
+   * instance builds its own signal as before.
+   */
+  readonly signal?: GradingSignal;
 }
 
 export function createDuelGrading(
@@ -265,7 +295,9 @@ export function createDuelGrading(
   ): boolean =>
     verifyVerdictReceipt(envelope, binding, receipt, verdictReceiptSecret());
 
-  const signal = new GradingSignal({ configured });
+  // Its own by default; the one app.ts shares when this instance's rounds must show
+  // up on /v1/health beside the boss duel's (the encounter route uses this).
+  const signal = options.signal ?? new GradingSignal({ configured });
 
   return {
     grade: async (input) => {
