@@ -13,15 +13,40 @@
 export const FIELD_TICK_HZ = 60;
 export const FIELD_DT = 1 / FIELD_TICK_HZ; // seconds per fixed step
 
-// Bounded catch-up: never simulate more than this many fixed steps in one
-// frame. Prevents the "spiral of death" when a frame is very long (a hitch, or
-// a backgrounded tab resuming) — excess steps are dropped, not queued.
-export const MAX_CATCHUP_STEPS = 5;
-
 // Any single frame delta above this is treated as a stall (backgrounded tab,
 // breakpoint, GC pause) and clamped before entering the accumulator, so a
-// multi-second gap cannot inject a huge burst of ticks.
+// multi-second gap cannot inject a huge burst of ticks. This is the real
+// spiral-of-death guard: it bounds the *time* one frame may inject.
 export const MAX_FRAME_DT_S = 0.25;
+
+// Bounded catch-up: the most fixed steps one frame may run before the remainder
+// is discarded. This bounds the *step count*; `MAX_FRAME_DT_S` already bounds the
+// injected time, so the two must be sized in agreement, and here they are.
+//
+// WHY THIS IS DERIVED FROM THE FRAME CLAMP, AND NOT 5. The old value was 5 — an
+// 83 ms window — which sat BELOW the frame clamp (0.25 s). So any render frame
+// heavier than 83 ms had its excess sim ticks DISCARDED rather than run: sim time
+// thrown away, which the sim advances *through* as slow motion. Late in a run,
+// with the whole street and the crowd drawn, a shader-link stall or a GC pause of
+// 40-120 ms lands above 83 ms routinely (MissionStage's shader-warm note and
+// docs/design/Physics-Audit.md both measure it), so the body animated at the
+// right rate per tick while wall-clock progress crawled — the owner's "the
+// running is like slow running." That is a frame-rate symptom, not a locomotion
+// one, which is why no locomotion mechanism was ever found for it.
+//
+// Sizing the catch-up to the number of steps the frame clamp itself admits means
+// no frame the clamp lets through ever discards a tick: the clamp is the only
+// thing that drops time, and only for a genuine multi-second stall. A clamped
+// frame is worth exactly `floor(MAX_FRAME_DT_S / FIELD_DT)` steps, and the most a
+// single admitted frame can ever want (its own steps plus the sub-step the
+// accumulator carries in) rounds down to that same count — so this covers every
+// admitted frame. Fixed steps are cheap analytic work — THREE-free, no render, no
+// wall-clock read — so running fifteen of them costs nothing next to the frame
+// that was already slow; there is no spiral of death here that the frame clamp
+// does not already prevent. It also WIDENS the fps range over which fixed-step
+// equivalence holds (identical ticks at 30/60/120 and now down to 4 fps), which
+// is strictly better for the hashed replay/PvP paths.
+export const MAX_CATCHUP_STEPS = Math.floor(MAX_FRAME_DT_S / FIELD_DT);
 
 export interface FieldClock {
   seed: number; // authored/projected per-attempt seed (32-bit)

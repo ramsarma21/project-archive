@@ -62,11 +62,16 @@ test("the same run is the same run at 30, 60 and 120 frames a second", () => {
 
 test("a long frame is bounded rather than queued", () => {
   const runtime = createMissionRuntime({ instance: testInstance(), seed: 7 });
-  // A backgrounded tab resuming. The clamp and the catch-up bound between them
-  // mean a multi-second gap cannot inject a burst of simulation.
+  // A backgrounded tab resuming. The frame-delta clamp discards the multi-second
+  // gap BEFORE the accumulator, so it injects at most the clamp's worth of steps
+  // (MAX_CATCHUP_STEPS) and no burst. The catch-up bound now covers that clamp, so
+  // no step is DISCARDED here: the clamp bounds the time, not the step cap. (A
+  // discard now requires a frame heavier than the 0.25s clamp itself admits, which
+  // a single wake cannot produce — the very thing that stopped the mission running
+  // in slow motion under heavy frames.)
   stepMissionRuntime(runtime, frame({ dtS: 30 }));
   assert.equal(runtime.ticks, MAX_CATCHUP_STEPS);
-  assert.ok(runtime.droppedSteps > 0, "and the loss is reported, not hidden");
+  assert.equal(runtime.droppedSteps, 0, "the clamp bounds the gap; no sim time is discarded");
 });
 
 test("reaching every required objective ends the floor and arms the duel", () => {

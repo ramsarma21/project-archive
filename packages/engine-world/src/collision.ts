@@ -168,9 +168,54 @@ export interface ClimbVolume {
   toSurface: string;
 }
 
+/**
+ * A volume that stops the CAMERA but never the body.
+ *
+ * The chase and cinematic cameras keep themselves clear of geometry by marching
+ * in until the line from the focus to the lens is unobstructed. That march reads
+ * `blockers` — the solids a body collides with. But a great deal of the world is
+ * DRAWN without any collision: a tree's leaf canopy and boughs, a market awning,
+ * a hanging sign, a bolt of cloth. A body is meant to pass those, so they carry
+ * no blocker; the camera then sails straight into them and the frame fills with
+ * leaves or canvas while `camInsideCollision` reports nothing, because to the
+ * collision world the camera is in open air. The owner hit exactly this
+ * descending the Liberty Elm: the lens buried in the canopy, a green/orange
+ * smear, collision "clear".
+ *
+ * A camera occluder is the missing half: an INVISIBLE box (an XZ rect with a
+ * vertical span) that represents that drawn mass to the camera alone. It is not
+ * a blocker and must never become one — the body still walks through the leaves,
+ * the awning is still steppable, nothing about traversal, sight lines, cover or
+ * projectiles changes, because only the camera-clearance queries
+ * (`cameraSegmentOccluderIds` / `cameraSegmentClear`) consult it. It is also not
+ * drawn: it is pure simulation, allowed under the imported-world rule the same
+ * way an invisible wall or a trigger is, and it must stay that way — never a
+ * visible fallback shell.
+ *
+ * Absent in worlds that have no drawn-only geometry (the duel arena, most
+ * tests): no occluder simply means the camera treats only solids as obstacles,
+ * which is the pre-existing behaviour.
+ */
+export interface CameraOccluder {
+  id: string;
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+  /** Bottom of the drawn mass the camera should not enter. */
+  baseY: number;
+  /** Top of it. */
+  topY: number;
+}
+
 export interface CollisionWorld {
   blockers: Blocker[];
   platforms: Platform[];
+  // Invisible volumes that stop the CAMERA but not the body: drawn-only geometry
+  // (a tree canopy, an awning, a sign) that carries no blocker because a body
+  // passes it, yet the camera must not sit inside. Only the camera-clearance
+  // queries read this; every body/sight/cover/projectile query ignores it.
+  cameraOccluders?: CameraOccluder[];
   // Outer world clamp (walkable bounds); horizontal sweeps clamp to it.
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   // Authored vertical ascents. Absent in worlds that have none (the duel arena,
@@ -1323,6 +1368,66 @@ export function segmentClear(
   ignore?: ReadonlySet<string>,
 ): boolean {
   return segmentOccluderIds(world, a, b, ignore).length === 0;
+}
+
+/**
+ * Everything the CAMERA is blocked by along a->b: the solids `segmentOccluderIds`
+ * finds, PLUS the drawn-only `cameraOccluders` a body would pass through.
+ *
+ * This is deliberately a separate entry point from `segmentOccluderIds`. That
+ * one decides sight lines, cover and projectiles, where an invisible box with no
+ * collision must NOT count — a guard cannot be blinded by a volume that stops
+ * nothing, and a thrown object cannot be stopped by one. The camera is the one
+ * consumer for which "drawn but not solid" is still an obstacle, so it gets its
+ * own query and nothing else inherits the canopy.
+ *
+ * Camera occluders are few (one per canopy/awning), so they are scanned
+ * linearly; the solid broad phase inside `segmentOccluderIds` is unchanged.
+ */
+export function cameraSegmentOccluderIds(
+  world: CollisionWorld,
+  a: Vec3,
+  b: Vec3,
+  ignore?: ReadonlySet<string>,
+): string[] {
+  const ids = segmentOccluderIds(world, a, b, ignore);
+  const occluders = world.cameraOccluders;
+  if (occluders) {
+    for (const occ of occluders) {
+      if (ignore?.has(occ.id)) continue;
+      const vertical = segmentSpanInterval(a.y, b.y, occ.baseY, occ.topY);
+      if (!vertical) continue;
+      const startX = a.x + (b.x - a.x) * vertical[0];
+      const startZ = a.z + (b.z - a.z) * vertical[0];
+      const endX = a.x + (b.x - a.x) * vertical[1];
+      const endZ = a.z + (b.z - a.z) * vertical[1];
+      if (
+        segmentIntersectsRect(
+          startX,
+          startZ,
+          endX,
+          endZ,
+          occ.minX,
+          occ.maxX,
+          occ.minZ,
+          occ.maxZ,
+        )
+      ) {
+        ids.push(occ.id);
+      }
+    }
+  }
+  return ids;
+}
+
+/** Is the camera's line a->b clear of both solids and drawn-only occluders? */
+export function cameraSegmentClear(
+  world: CollisionWorld,
+  a: Vec3,
+  b: Vec3,
+  ignore?: ReadonlySet<string>,
+): boolean {
+  return cameraSegmentOccluderIds(world, a, b, ignore).length === 0;
 }
 
 // ---- segment vs actor ------------------------------------------------------

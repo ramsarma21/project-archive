@@ -213,7 +213,19 @@ zero-evidence form pass (`1c4250f`).
     frustum deliberately unchanged — cover shadows are how a player reads where cover is.
   - **Watch item:** on a very fast arrival the dawn lift is low and the yard is dim. Legible in
     capture, but lit braziers would be the in-fiction floor if it reads badly in play.
-- **"Cannot run"** — unexplained. Every in-lane mechanism ruled out by two systematic
+- **"Cannot run" — the owner confirms the timing IS slow at 1:56.** Take that as the fact.
+  My attempt to measure it from the recording was **inadmissible**: the clip is a
+  variable-frame-rate screen capture (avg 27.5 fps, nominal timebase `2000/1`), and a capture made
+  *during* a performance problem drops frames, so wall-clock distance derived from two frame
+  timestamps measures the capture, not the game. The instrument is corrupted by the condition under
+  investigation.
+  - The observation still worth checking, since it came from the HUD rather than from frame timing:
+    the **mission timer advanced 0:28 → 0:25 across a stretch he describes as slow.** If the clock
+    is meant to be 1:1 with real time, the *simulation* is running at reduced rate, which animates
+    everything in slow motion — the shape of the complaint. `advanceFieldClock` caps catch-up at 5
+    steps and discards the remainder, which produces exactly that.
+  - **Search for a mechanism that slows the sim, not one that slows the body.**
+ Every in-lane mechanism ruled out by two systematic
   passes; the per-leg speed cap is disproven (it releases ~3 m *early*). Needs a location
   or a live capture from the owner.
 
@@ -285,6 +297,7 @@ All three of 28 Jul's regressions were introduced by the previous night's fixes.
 | Encounter soft-lock from a roof | relocating the beat to a roof | same-surface arming + 16 s abort |
 | Boss ignored all cover | arena swap exposing a missing opt-in | parity assertions in `missionDuel.test.ts` |
 | Ladders drawn floating, upright, ghosted | the ladder placement itself | *nothing yet — see Open* |
+| An ungraded round shown as "Correct" (the owner's headline complaint: told he was right when he was wrong) | a timeout/no-credential round is granted the max (`kind: CORRECT`) by design, and the HUD hardcoded the label off `kind` | landed on `main` from `boss-fight` (`76a6153`). `apps/web/src/duel/verdictLabel.ts` sources the label off `verdict.source`: `GRADING_TIMEOUT` → **"Not graded"**, only `source: CLASSIFIER` may read "Correct"/"Wrong". Pinned by `apps/web/test/duelVerdictLabel.test.ts`. **INVARIANT for the next agent: the ungraded-round label MUST read "Not graded". Any later duel-HUD rework of `DuelOverlay.tsx` has to keep rendering `verdictBeatTone(verdict).label` — do NOT reintroduce a hardcoded "Correct"/"Wrong" in `VerdictBeat`, or this regresses silently.** |
 
 ### Process errors, and the change that prevents each
 
@@ -295,7 +308,7 @@ the orchestrator actually made, and the specific change made in response.
 |---|---|
 | Merged the ladder facade on captures the worker itself called too dark to read | Open the artifact, never the caption. An illegible frame is a failed check. |
 | Two workers in one worktree; an interrupt swept a sibling's files into a stray commit | `subagentStart` lock: one worker per worktree, `--status` makes activity visible |
-| Cross-lane writes prevented only by prose in briefs, which drifted every time | `preToolUse` lane guard reads one enforced map; ownership stopped being retyped |
+| Cross-lane writes prevented only by prose in briefs, which drifted every time | `preToolUse` lane guard reads one enforced map; ownership stopped being retyped. **Correction (29 Jul): the guard does not fire for background-subagent tool calls, so prevention alone was never sufficient** — `scripts/check-lane-integrity.mjs` now detects crossed lanes post-hoc from git state, and `grants` gives contested files a legal temporary owner. |
 | Asserted a mechanism from adjacent code three times; twice wrong, one proposed fix would have worsened the defect | Briefs give **candidates to distinguish**, never conclusions, and say when untraced |
 | Ten of fifteen open conditions serialised behind one lane's files | Split `mission-world`; ownership now sized to the work, not to a theme |
 | Granted a worker a path the enforced map assigned elsewhere, blocking it | Update the map *before* writing the brief that depends on it |
@@ -306,8 +319,10 @@ the orchestrator actually made, and the specific change made in response.
 | Accepted a local green as evidence for a cross-platform property; the first Linux run failed on a baked-constant guard comparing against the host's own `Math.sin` | A determinism claim cannot be verified on one platform. Reason about the runner, not the laptop. |
 | Quoted the affordance debt count as a fixed number to a lane whose branch predated three retirements | A moving count needs its baseline named. Say "22 on `main` as of X", not "22". |
 | Told a lane the elm climb **anchors** ran through the trunk; standing at every anchor was clean and it was the **swept paths** threading the canopy | Name the measured thing, not the inferred cause. The instrument reported per-transition depth, not per-anchor. |
+| Derived a speed from two frames of a variable-frame-rate screen capture and used it to contradict the owner's direct report | **Trust his report first**; use the video to locate what he is pointing at, not to re-measure it. A capture made during a performance problem cannot time that problem. |
 | Built a pacing case on the 24-round duel ceiling; it is an anti-hang backstop that never fires, and duels end on health at 4–7 rounds | Check whether a limit is *reached* before treating it as the cost. A ceiling is not a duration. |
 | Told the owner M1 owns "~23 concepts" and built a broken-ratio argument on it — the number was a grep of lines containing "M1". M1 owns **2–3**; the 46 belong to 14 modules | Never quote a count from a text search. Call the function that computes it. |
+| Dispatched four workers into `apps/web/src/mission/**` — paths the enforced map assigns to other lanes or marks **contested** — without reading `lane-ownership.json` first. Nothing was clobbered only because the `preToolUse` guard did not fire for the background subagents at all: a stale-brief error and a silently-dead guard cancelled out, which is luck, not safety. Two live lanes (`boss-fight`/`duel-hud`) are in fact editing the same three duel files right now, and only a merge accident away from destroying one side. | Read `lane-ownership.json` **before** writing a brief, and name the lane in the brief. And because the guard fails open — and here failed silent — a post-hoc detector now backstops it: `scripts/check-lane-integrity.mjs` finds a crossed lane (and the same-file-on-two-lanes clobber) from git state even when the guard never runs. `grants` gives a contested file a legal, recorded, temporary owner so "it had to change" stops meaning "change it off the books". |
 
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran

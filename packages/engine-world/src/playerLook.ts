@@ -27,7 +27,7 @@
 // platform concern and this is the simulation's.
 
 import {
-  segmentOccluderIds,
+  cameraSegmentOccluderIds,
   type CollisionWorld,
   type Vec3,
 } from "./collision.js";
@@ -197,7 +197,7 @@ export function chaseCameraDistance(
   ignore?: ReadonlySet<string>,
 ): number {
   const full = chaseCameraPosition(look, focus, desiredDistanceM);
-  if (segmentOccluderIds(world, focus, full, ignore).length === 0) {
+  if (cameraSegmentOccluderIds(world, focus, full, ignore).length === 0) {
     return desiredDistanceM;
   }
   // Walk in from the far end and take the last distance with a clear line. The
@@ -209,7 +209,7 @@ export function chaseCameraDistance(
     distance -= step
   ) {
     const candidate = chaseCameraPosition(look, focus, distance);
-    if (segmentOccluderIds(world, focus, candidate, ignore).length === 0) {
+    if (cameraSegmentOccluderIds(world, focus, candidate, ignore).length === 0) {
       return distance;
     }
   }

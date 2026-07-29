@@ -16,6 +16,7 @@ import {
   STAND_HEIGHT,
   STEALTH_TUNING,
   VERB_CLIP,
+  cameraSegmentOccluderIds,
   chaseCameraDistance,
   chaseCameraPosition,
   chaseFocus,
@@ -24,7 +25,6 @@ import {
   lookMoveIntent,
   playerClipFor,
   registerCharacterClips,
-  segmentOccluderIds,
   strideTimeScale,
   verbTimeScale,
 } from "@pa/engine-world";
@@ -100,13 +100,18 @@ function lerp(a: number, b: number, t: number): number {
  * sit inside a market stall or awning. Marches from the desired point toward the
  * target and takes the first clear candidate; falls back to a point close to the
  * target (which is out in the open between the two figures) if none is clear.
+ *
+ * Uses `cameraSegmentOccluderIds`, not the plain sight-line test, so it inherits
+ * the same drawn-only occluders (a tree canopy, an awning) the chase camera now
+ * respects — the conversation shot marched against solids alone had the identical
+ * blind spot and would have sat the two-shot inside a canopy just the same.
  */
 function clearCameraPoint(
   world: MissionRuntime["instance"]["world"],
   target: { x: number; y: number; z: number },
   desired: { x: number; y: number; z: number },
 ): { x: number; y: number; z: number } {
-  if (segmentOccluderIds(world, target, desired).length === 0) return desired;
+  if (cameraSegmentOccluderIds(world, target, desired).length === 0) return desired;
   let fallback = desired;
   for (let t = 0.18; t <= 0.86; t += 0.17) {
     const candidate = {
@@ -115,7 +120,7 @@ function clearCameraPoint(
       z: lerp(desired.z, target.z, t),
     };
     fallback = candidate;
-    if (segmentOccluderIds(world, target, candidate).length === 0) return candidate;
+    if (cameraSegmentOccluderIds(world, target, candidate).length === 0) return candidate;
   }
   return fallback;
 }

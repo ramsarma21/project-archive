@@ -48,7 +48,17 @@ export interface EncounterShot {
   readonly target: CineVec;
 }
 
-/** Eye height the shot is framed at. Head-ish on a ~1.8m body. */
+/**
+ * Camera height, as metres ABOVE THE ACTOR'S FEET — never an absolute world Y.
+ *
+ * Head-ish on a ~1.8m body. This is added to the player's own ground height, so
+ * the shot frames from head height whether the stop is on the cobbles (y≈0) or up
+ * on a meeting-house roof (y≈8.2). It used to be a hardcoded absolute world Y,
+ * which was correct only for the ground-level market stop: on the ROPEWALK_STOP,
+ * relocated onto the Hollis Meeting leads at y=8.20, an absolute 1.52 put the
+ * camera ~6.7m BELOW the player, buried inside the meeting-house solid — the
+ * player answered a speaker he could not see, looking at the inside of a wall.
+ */
 const HEAD_Y = 1.52;
 const HEAD_Y_REDUCED = 1.58;
 /**
@@ -68,6 +78,12 @@ const BEHIND_M_REDUCED = 3.0;
 const SIDE_M = 0.55;
 /** The look target sits between the two, biased toward the speaker (the talker). */
 const TARGET_TOWARD_SPEAKER_M = 0.35;
+/**
+ * Look-target height, as metres ABOVE THE ACTORS' FEET — chest-ish, so the aim
+ * lands on the conversation rather than the ground. Added to the mean of the two
+ * feet heights for the same reason `HEAD_Y` is actor-relative: an absolute value
+ * aimed the camera at a point 7m below a rooftop stop.
+ */
 const TARGET_Y = 1.32;
 
 function len2(x: number, z: number): number {
@@ -128,14 +144,22 @@ export function encounterConversationShot(input: {
   const behind = reducedMotion ? BEHIND_M_REDUCED : BEHIND_M;
   const headY = reducedMotion ? HEAD_Y_REDUCED : HEAD_Y;
 
+  // Heights are ANCHORED TO THE ACTORS' OWN GROUND, not to absolute world Y: the
+  // camera at head height above the player's surface, the target at chest height
+  // above the mean of the two. On the ground (y≈0) this is identical to the old
+  // absolute placement; on the elevated Hollis-Meeting stop it keeps the whole
+  // shot on the roof instead of dropping it into the building below.
+  const cameraFeetY = player.y;
+  const targetFeetY = (player.y + speaker.y) / 2;
+
   const position: CineVec = {
     x: player.x - axisX * behind + sideX * SIDE_M,
-    y: headY,
+    y: cameraFeetY + headY,
     z: player.z - axisZ * behind + sideZ * SIDE_M,
   };
   const target: CineVec = {
     x: midX + axisX * TARGET_TOWARD_SPEAKER_M,
-    y: TARGET_Y,
+    y: targetFeetY + TARGET_Y,
     z: midZ + axisZ * TARGET_TOWARD_SPEAKER_M,
   };
   return { position, target };
