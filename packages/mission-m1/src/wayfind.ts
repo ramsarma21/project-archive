@@ -66,6 +66,14 @@ const COMPLETION_KINDS: Readonly<Record<string, ReadonlyArray<LinkKind>>> = {
   CLIMB_UP: ["CLIMB", "MANTLE"],
   CLIMB_DOWN: ["CLIMB", "DROP"],
   CLIMB_OVER: ["CLIMB"],
+  // A jump-catch completes an authored CLIMB link exactly as a climb does. The
+  // level authors the ascent and places (or omits) a ladder; whether the body
+  // rides one or catches the lip is the engine's answer to what is there, and the
+  // link is the same link either way. Absent from here, the clock ledge's
+  // completion would prove nothing, the gateway would stay held on a take-off the
+  // body had already left, and the cornice climb above it would never arm — the
+  // node-distance soft-lock this table's own note describes.
+  JUMP_HANG: ["CLIMB", "MANTLE"],
   VAULT: ["VAULT"],
   JUMP: ["JUMP", "DASH_JUMP"],
   JUMP_GAP: ["JUMP", "DASH_JUMP"],
@@ -113,8 +121,14 @@ const ACTION_VERBS: Partial<Record<LinkKind, readonly TraversalVerb[]>> = {
   // authored CLIMB genuinely goes down. HANG_DROP is the verb the reader answers
   // a lowering rim with (there is no CLIMB_DOWN verb; a controlled descent off a
   // ledge is a hang drop), so it is the one downward member the family needs.
-  CLIMB: ["CLIMB_UP", "CLIMB_OVER", "HANG_DROP"],
-  MANTLE: ["CLIMB_UP"],
+  // JUMP_HANG is in the CLIMB family for the same reason CLIMB_UP is: it is what
+  // the reader answers an upward authored ascent with when the ascent has no
+  // ladder. Omitting it would have the commit filter drop the only verb available
+  // at the clock ledge while the gateway is held on its axis — the body would
+  // stand at a lip it can reach, with the guidance pointing at it, and be offered
+  // nothing.
+  CLIMB: ["CLIMB_UP", "JUMP_HANG", "CLIMB_OVER", "HANG_DROP"],
+  MANTLE: ["CLIMB_UP", "JUMP_HANG"],
   JUMP: ["JUMP", "JUMP_GAP"],
   DASH_JUMP: ["DASH", "JUMP_GAP"],
   LEAP_OF_FAITH: ["LEAP_OF_FAITH"],

@@ -270,6 +270,13 @@ export function verbCaption(verb: TraversalVerb): string | null {
       return "Over the top · keep running";
     case "CLIMB_UP":
       return "Climb it · keep running";
+    // The catch needs its own words, and "climb it" would be the wrong promise:
+    // there is nothing bolted here to climb, which is precisely why the body is
+    // about to jump instead. It also has no "keep running" tail — a hang is a
+    // held beat and telling the player otherwise sets up the wrong expectation
+    // about how long they lose control for.
+    case "JUMP_HANG":
+      return "Jump and catch the ledge";
     case "SLIDE":
       return "Slide under · keep running";
     case "JUMP_GAP":
