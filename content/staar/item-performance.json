@@ -1,0 +1,4652 @@
+{
+  "note": "TEA's PUBLISHED statewide percent-responding data for Grade 8 Social Studies, joined to item-index.json so every percentage sits next to the standard TEA tested with it. This is the answer to 'which concepts do Texas students actually miss', and it is measured rather than inferred. It was missing from this directory: the first research pass captured item text, keys, standards and rationales but never these reports, so until now every difficulty claim about a standard here was a proxy.",
+  "publisher": "Texas Education Agency (TEA), Student Assessment Division",
+  "reportFamily": "Statewide Item Analysis Summary Report",
+  "indexPage": "https://tea.texas.gov/data-reports/student-assessment-results/statewide-item-analysis-reports",
+  "termsPage": "https://tea.texas.gov/about-tea/welcome-and-overview/site-policies",
+  "retrievedAt": "2026-07-29T20:43Z",
+  "whatTeaPublishesHere": "Per TEA's own description of these reports: 'These reports show the question number, the reporting category measured by the question, and the percentage of students selecting each possible answer choice for that test question. Use the item analysis summary reports in conjunction with the released test forms.' So the per-option distribution is official, statewide, and covers every item on the form — including the 2023+ items whose TEXT is permanently unpublished.",
+  "licensingPosture": "These are percentages, item positions, reporting categories and standard labels — facts ABOUT the test, not TEA's expressive content. No item text, stem, option text or rubric language is reproduced in this file. README.md section 4.3 recommendation 3 identifies exactly this category as the safest and still very valuable use, needing no permission. The licensing question in section 4 still governs items/*.json; it is not reopened or resolved here.",
+  "howTheJoinIsSelfChecking": "A report row is accepted for an item only when BOTH the reporting category and the starred (correct) column agree with the official answer key already recorded in item-index.json from a TEA key document. The reports do not name the subject per row and, in 2022 and 2023, interleave Science and Social Studies in two columns that the PDF text layer flattens — so the key and the reporting category are what distinguish a Social Studies row from a Science row that happens to share an item number. Where that still leaves more than one candidate the item is written to `unresolved` and NOT to `items`.",
+  "readingCaveats": [
+    "Percentages are TEA's published integers and need not sum to 100: they are rounded, and TEA excludes some populations from percent-responding (2018-2022 footnote: 'Students who took the paper STAAR with embedded supports version of the test are not included'; 2023 footnote: 'Results for students who took the test on Paper, Braille or ASL are not included').",
+    "percentCorrect is a DIFFICULTY figure for one item, not a mastery figure for a standard. A standard with one item has one measurement, and a hard item and a hard standard are not the same claim.",
+    "Partial-credit and non-multiple-choice items are in `partialCredit`, not `items`, because column A means 'full credit' rather than 'option A' for those — see each row's `legend`. Mixing them into a percentCorrect ranking would compare different quantities.",
+    "There is no 2020 administration (STAAR was cancelled). 2024 and 2025 statewide item analysis reports were not located at this URL family during this pass and are NOT captured here; absence in this file is not evidence they do not exist.",
+    "No aggregate per-standard mean is stored in this file on purpose. A derived table sitting beside its source is how the module deck acquired four hand-copies; recompute it from `items`."
+  ],
+  "studentsTestedSocialStudies": {
+    "2018": 389036,
+    "2019": 395567,
+    "2021": 338478,
+    "2022": 414931,
+    "2023": 414692
+  },
+  "sources": [
+    {
+      "documentId": "2018-staar-8-sci-ss-item-analysis",
+      "fileName": "2018-staar-8-sci-ss-item-analysis.pdf",
+      "kind": "statewide-item-analysis-summary-report",
+      "url": "https://tea.texas.gov/data-reports/student-assessment-results/statewide-item-analysis-reports/2018-staar-8-sci-ss-item-analysis.pdf",
+      "sha256": "95c9210ddf06698a545a96c81b32c0f029121469a7e3faadcf4d7fe17300ad10",
+      "bytes": 186761,
+      "retrievedAt": "2026-07-29T20:43Z",
+      "administration": "2018 May",
+      "studentsTestedSocialStudies": 389036,
+      "layout": "section-split",
+      "provides": "Grade 8 Science + Social Studies, single-column layout, Social Studies block first"
+    },
+    {
+      "documentId": "grade-8-science-social-studies-statewidetx-staar38-spr19-itemsummary-tagged-part9",
+      "fileName": "grade-8-science-social-studies-statewidetx-staar38-spr19-itemsummary-tagged-part9.pdf",
+      "kind": "statewide-item-analysis-summary-report",
+      "url": "https://tea.texas.gov/data-reports/student-assessment-results/statewide-item-analysis-reports/grade-8-science-social-studies-statewidetx-staar38-spr19-itemsummary-tagged-part9.pdf",
+      "sha256": "cd7048afcdac4835ef5ddf359974eee349c2acfedae847c1a9aa14df86dd6b8f",
+      "bytes": 595452,
+      "retrievedAt": "2026-07-29T20:43Z",
+      "administration": "2019 May",
+      "studentsTestedSocialStudies": 395567,
+      "layout": "section-split",
+      "provides": "Grade 8 Science + Social Studies, single-column layout, Social Studies block first"
+    },
+    {
+      "documentId": "statewidetx-staar38-spr21-itemsummary-grade8",
+      "fileName": "statewidetx-staar38-spr21-itemsummary-grade8.pdf",
+      "kind": "statewide-item-analysis-summary-report",
+      "url": "https://tea.texas.gov/data-reports/student-assessment-results/statewide-item-analysis-reports/statewidetx-staar38-spr21-itemsummary-grade8.pdf",
+      "sha256": "3f81f8e18f48e31d30b8bc4759880e1e63eee7d3440ba6ec1d4364c29745b528",
+      "bytes": 191190,
+      "retrievedAt": "2026-07-29T20:43Z",
+      "administration": "2021 May",
+      "studentsTestedSocialStudies": 338478,
+      "layout": "section-split",
+      "provides": "Grade 8 all subjects, single-column layout, Social Studies block precedes Science"
+    },
+    {
+      "documentId": "statewidetx-staar38-spr22-itemsummary-grade8-science-social",
+      "fileName": "statewidetx-staar38-spr22-itemsummary-grade8-science-social.pdf",
+      "kind": "statewide-item-analysis-summary-report",
+      "url": "https://tea.texas.gov/data-reports/student-assessment-results/statewide-item-analysis-reports/statewidetx-staar38-spr22-itemsummary-grade8-science-social.pdf",
+      "sha256": "5b8ba2eee7d5c86b7cff360441f914c21af48f1ed29db3204bae1c2835be621d",
+      "bytes": 264905,
+      "retrievedAt": "2026-07-29T20:43Z",
+      "administration": "2022 Spring",
+      "studentsTestedSocialStudies": 414931,
+      "layout": "two-column-interleaved",
+      "provides": "Grade 8 Science + Social Studies, TWO-COLUMN interleaved layout (Science left, Social Studies right)"
+    },
+    {
+      "documentId": "2022-2023-staar-8-statewide-item-analysis-report",
+      "fileName": "2022-2023-staar-8-statewide-item-analysis-report.pdf",
+      "kind": "statewide-item-analysis-summary-report",
+      "url": "https://tea.texas.gov/data-reports/student-assessment-results/statewide-item-analysis-reports/2022-2023-staar-8-statewide-item-analysis-report.pdf",
+      "sha256": "678feef61ea866063894f5e57587b5d58f70e8cb3ed231ed11cc4d582e1cc762",
+      "bytes": 2060911,
+      "retrievedAt": "2026-07-29T20:43Z",
+      "administration": "2023 Spring",
+      "studentsTestedSocialStudies": 414692,
+      "layout": "two-column-interleaved",
+      "provides": "Grade 8 all subjects, redesign era, two-column layout; partial-credit items use a different legend"
+    }
+  ],
+  "itemCount": 200,
+  "partialCreditCount": 8,
+  "unresolvedCount": 8,
+  "items": [
+    {
+      "administration": "2018 May",
+      "itemNumber": 1,
+      "studentExpectation": "8.5(E)",
+      "teksAsPublished": "8.5(E)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 85,
+        "B/G": 6,
+        "C/H": 5,
+        "D/J": 4
+      },
+      "percentCorrect": 85,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 6
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 2,
+      "studentExpectation": "8.10(A)",
+      "teksAsPublished": "8.10(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 7,
+        "B/G": 16,
+        "C/H": 13,
+        "D/J": 64
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 3,
+      "studentExpectation": "8.27(D)",
+      "teksAsPublished": "8.27(D)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 9,
+        "B/G": 16,
+        "C/H": 73,
+        "D/J": 3
+      },
+      "percentCorrect": 73,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 4,
+      "studentExpectation": "8.4(C)",
+      "teksAsPublished": "8.4(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 10,
+        "B/G": 74,
+        "C/H": 8,
+        "D/J": 8
+      },
+      "percentCorrect": 74,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 10
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 5,
+      "studentExpectation": "8.4(A)",
+      "teksAsPublished": "8.4(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 7,
+        "B/G": 16,
+        "C/H": 60,
+        "D/J": 16
+      },
+      "percentCorrect": 60,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 6,
+      "studentExpectation": "8.2(A)",
+      "teksAsPublished": "8.2(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 9,
+        "B/G": 65,
+        "C/H": 19,
+        "D/J": 6
+      },
+      "percentCorrect": 65,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 7,
+      "studentExpectation": "8.5(C)",
+      "teksAsPublished": "8.5(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 58,
+        "B/G": 14,
+        "C/H": 13,
+        "D/J": 14
+      },
+      "percentCorrect": 58,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 14
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 8,
+      "studentExpectation": "8.11(A)",
+      "teksAsPublished": "8.11(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 3,
+        "B/G": 4,
+        "C/H": 23,
+        "D/J": 70
+      },
+      "percentCorrect": 70,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 23
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 9,
+      "studentExpectation": "8.6(D)",
+      "teksAsPublished": "8.6(D)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 9,
+        "B/G": 6,
+        "C/H": 72,
+        "D/J": 13
+      },
+      "percentCorrect": 72,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 10,
+      "studentExpectation": "8.9(C)",
+      "teksAsPublished": "8.9(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 27,
+        "B/G": 11,
+        "C/H": 41,
+        "D/J": 21
+      },
+      "percentCorrect": 41,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 27
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 11,
+      "studentExpectation": "8.8(B)",
+      "teksAsPublished": "8.8(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 71,
+        "B/G": 11,
+        "C/H": 5,
+        "D/J": 12
+      },
+      "percentCorrect": 71,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 12
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 12,
+      "studentExpectation": "8.12(B)",
+      "teksAsPublished": "8.12(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 7,
+        "B/G": 25,
+        "C/H": 6,
+        "D/J": 63
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 25
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 13,
+      "studentExpectation": "8.6(A)",
+      "teksAsPublished": "8.6(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 31,
+        "B/G": 9,
+        "C/H": 50,
+        "D/J": 9
+      },
+      "percentCorrect": 50,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 31
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 14,
+      "studentExpectation": "8.3(A)",
+      "teksAsPublished": "8.3(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 46,
+        "B/G": 18,
+        "C/H": 16,
+        "D/J": 20
+      },
+      "percentCorrect": 46,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 15,
+      "studentExpectation": "8.5(D)",
+      "teksAsPublished": "8.5(D)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 16,
+        "B/G": 17,
+        "C/H": 13,
+        "D/J": 54
+      },
+      "percentCorrect": 54,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 16,
+      "studentExpectation": "8.10(C)",
+      "teksAsPublished": "8.10(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 82,
+        "B/G": 11,
+        "C/H": 3,
+        "D/J": 4
+      },
+      "percentCorrect": 82,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 11
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 17,
+      "studentExpectation": "8.26(A)",
+      "teksAsPublished": "8.26(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 18,
+        "B/G": 8,
+        "C/H": 54,
+        "D/J": 20
+      },
+      "percentCorrect": 54,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 18,
+      "studentExpectation": "8.9(A)",
+      "teksAsPublished": "8.9(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 22,
+        "B/G": 18,
+        "C/H": 54,
+        "D/J": 6
+      },
+      "percentCorrect": 54,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 22
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 19,
+      "studentExpectation": "8.23(A)",
+      "teksAsPublished": "8.23(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 14,
+        "B/G": 19,
+        "C/H": 20,
+        "D/J": 47
+      },
+      "percentCorrect": 47,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 20,
+      "studentExpectation": "8.5(G)",
+      "teksAsPublished": "8.5(G)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 24,
+        "B/G": 50,
+        "C/H": 10,
+        "D/J": 15
+      },
+      "percentCorrect": 50,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 21,
+      "studentExpectation": "8.17(B)",
+      "teksAsPublished": "8.17(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 10,
+        "B/G": 50,
+        "C/H": 21,
+        "D/J": 19
+      },
+      "percentCorrect": 50,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 21
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 22,
+      "studentExpectation": "8.12(A)",
+      "teksAsPublished": "8.12(A)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 19,
+        "B/G": 28,
+        "C/H": 9,
+        "D/J": 44
+      },
+      "percentCorrect": 44,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 28
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 23,
+      "studentExpectation": "8.1(A)",
+      "teksAsPublished": "8.1(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 64,
+        "B/G": 14,
+        "C/H": 17,
+        "D/J": 6
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 24,
+      "studentExpectation": "8.16(A)",
+      "teksAsPublished": "8.16(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 10,
+        "B/G": 14,
+        "C/H": 33,
+        "D/J": 43
+      },
+      "percentCorrect": 43,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 33
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 25,
+      "studentExpectation": "8.12(D)",
+      "teksAsPublished": "8.12(D)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 59,
+        "B/G": 17,
+        "C/H": 8,
+        "D/J": 17
+      },
+      "percentCorrect": 59,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 26,
+      "studentExpectation": "8.24(A)",
+      "teksAsPublished": "8.24(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 15,
+        "B/G": 42,
+        "C/H": 8,
+        "D/J": 36
+      },
+      "percentCorrect": 42,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 36
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 27,
+      "studentExpectation": "8.18(A)",
+      "teksAsPublished": "8.18(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 2,
+        "B/G": 17,
+        "C/H": 19,
+        "D/J": 62
+      },
+      "percentCorrect": 62,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 28,
+      "studentExpectation": "8.14(B)",
+      "teksAsPublished": "8.14(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 66,
+        "B/G": 15,
+        "C/H": 8,
+        "D/J": 12
+      },
+      "percentCorrect": 66,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 15
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 29,
+      "studentExpectation": "8.5(A)",
+      "teksAsPublished": "8.5(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 27,
+        "B/G": 14,
+        "C/H": 3,
+        "D/J": 56
+      },
+      "percentCorrect": 56,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 27
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 30,
+      "studentExpectation": "8.17(A)",
+      "teksAsPublished": "8.17(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 5,
+        "B/G": 19,
+        "C/H": 62,
+        "D/J": 13
+      },
+      "percentCorrect": 62,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 31,
+      "studentExpectation": "8.21(C)",
+      "teksAsPublished": "8.21(C)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 10,
+        "B/G": 63,
+        "C/H": 14,
+        "D/J": 12
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 14
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 32,
+      "studentExpectation": "8.11(C)",
+      "teksAsPublished": "8.11(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 7,
+        "B/G": 17,
+        "C/H": 69,
+        "D/J": 7
+      },
+      "percentCorrect": 69,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 33,
+      "studentExpectation": "8.19(D)",
+      "teksAsPublished": "8.19(D)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 33,
+        "B/G": 50,
+        "C/H": 4,
+        "D/J": 13
+      },
+      "percentCorrect": 50,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 33
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 34,
+      "studentExpectation": "8.16(B)",
+      "teksAsPublished": "8.16(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 22,
+        "B/G": 10,
+        "C/H": 64,
+        "D/J": 4
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 22
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 35,
+      "studentExpectation": "8.15(D)",
+      "teksAsPublished": "8.15(D)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 23,
+        "C/H": 53,
+        "D/J": 16
+      },
+      "percentCorrect": 53,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 23
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 36,
+      "studentExpectation": "8.23(E)",
+      "teksAsPublished": "8.23(E)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 11,
+        "B/G": 8,
+        "C/H": 25,
+        "D/J": 55
+      },
+      "percentCorrect": 55,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 25
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 37,
+      "studentExpectation": "8.6(B)",
+      "teksAsPublished": "8.6(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 20,
+        "B/G": 7,
+        "C/H": 57,
+        "D/J": 16
+      },
+      "percentCorrect": 57,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 38,
+      "studentExpectation": "8.27(B)",
+      "teksAsPublished": "8.27(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 53,
+        "B/G": 25,
+        "C/H": 9,
+        "D/J": 13
+      },
+      "percentCorrect": 53,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 25
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 39,
+      "studentExpectation": "8.20(C)",
+      "teksAsPublished": "8.20(C)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 11,
+        "B/G": 70,
+        "C/H": 13,
+        "D/J": 6
+      },
+      "percentCorrect": 70,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 40,
+      "studentExpectation": "8.7(C)",
+      "teksAsPublished": "8.7(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 16,
+        "B/G": 16,
+        "C/H": 52,
+        "D/J": 16
+      },
+      "percentCorrect": 52,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 41,
+      "studentExpectation": "8.10(B)",
+      "teksAsPublished": "8.10(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 13,
+        "B/G": 10,
+        "C/H": 69,
+        "D/J": 8
+      },
+      "percentCorrect": 69,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 42,
+      "studentExpectation": "8.25(C)",
+      "teksAsPublished": "8.25(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 19,
+        "B/G": 12,
+        "C/H": 12,
+        "D/J": 57
+      },
+      "percentCorrect": 57,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 43,
+      "studentExpectation": "8.13(B)",
+      "teksAsPublished": "8.13(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 67,
+        "C/H": 10,
+        "D/J": 14
+      },
+      "percentCorrect": 67,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 14
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2018 May",
+      "itemNumber": 44,
+      "studentExpectation": "8.22(B)",
+      "teksAsPublished": "8.22(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 6,
+        "B/G": 12,
+        "C/H": 71,
+        "D/J": 12
+      },
+      "percentCorrect": 71,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 12
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 1,
+      "studentExpectation": "8.27(B)",
+      "teksAsPublished": "8.27(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 4,
+        "B/G": 88,
+        "C/H": 4,
+        "D/J": 4
+      },
+      "percentCorrect": 88,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 4
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 2,
+      "studentExpectation": "8.10(B)",
+      "teksAsPublished": "8.10(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 4,
+        "B/G": 86,
+        "C/H": 7,
+        "D/J": 4
+      },
+      "percentCorrect": 86,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 7
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 3,
+      "studentExpectation": "8.16(B)",
+      "teksAsPublished": "8.16(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 12,
+        "B/G": 5,
+        "C/H": 70,
+        "D/J": 13
+      },
+      "percentCorrect": 70,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 4,
+      "studentExpectation": "8.8(B)",
+      "teksAsPublished": "8.8(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 16,
+        "B/G": 11,
+        "C/H": 6,
+        "D/J": 67
+      },
+      "percentCorrect": 67,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 5,
+      "studentExpectation": "8.24(B)",
+      "teksAsPublished": "8.24(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 4,
+        "B/G": 3,
+        "C/H": 4,
+        "D/J": 90
+      },
+      "percentCorrect": 90,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 4
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 6,
+      "studentExpectation": "8.4(E)",
+      "teksAsPublished": "8.4(E)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 15,
+        "B/G": 9,
+        "C/H": 64,
+        "D/J": 13
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 15
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 7,
+      "studentExpectation": "8.2(A)",
+      "teksAsPublished": "8.2(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 15,
+        "B/G": 13,
+        "C/H": 9,
+        "D/J": 63
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 15
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 8,
+      "studentExpectation": "8.27(D)",
+      "teksAsPublished": "8.27(D)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 26,
+        "B/G": 6,
+        "C/H": 20,
+        "D/J": 48
+      },
+      "percentCorrect": 48,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 26
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 9,
+      "studentExpectation": "8.3(A)",
+      "teksAsPublished": "8.3(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 19,
+        "B/G": 62,
+        "C/H": 9,
+        "D/J": 11
+      },
+      "percentCorrect": 62,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 10,
+      "studentExpectation": "8.15(D)",
+      "teksAsPublished": "8.15(D)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 44,
+        "B/G": 16,
+        "C/H": 32,
+        "D/J": 8
+      },
+      "percentCorrect": 44,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 32
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 11,
+      "studentExpectation": "8.16(A)",
+      "teksAsPublished": "8.16(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 12,
+        "B/G": 11,
+        "C/H": 13,
+        "D/J": 64
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 12,
+      "studentExpectation": "8.5(A)",
+      "teksAsPublished": "8.5(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 13,
+        "B/G": 13,
+        "C/H": 62,
+        "D/J": 12
+      },
+      "percentCorrect": 62,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 13,
+      "studentExpectation": "8.18(A)",
+      "teksAsPublished": "8.18(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 8,
+        "C/H": 17,
+        "D/J": 67
+      },
+      "percentCorrect": 67,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 14,
+      "studentExpectation": "8.14(A)",
+      "teksAsPublished": "8.14(A)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 27,
+        "B/G": 6,
+        "C/H": 19,
+        "D/J": 47
+      },
+      "percentCorrect": 47,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 27
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 15,
+      "studentExpectation": "8.19(E)",
+      "teksAsPublished": "8.19(E)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 6,
+        "B/G": 21,
+        "C/H": 63,
+        "D/J": 10
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 21
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 16,
+      "studentExpectation": "8.23(B)",
+      "teksAsPublished": "8.23(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 33,
+        "B/G": 22,
+        "C/H": 23,
+        "D/J": 22
+      },
+      "percentCorrect": 33,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 23
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 17,
+      "studentExpectation": "8.26(C)",
+      "teksAsPublished": "8.26(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 4,
+        "B/G": 68,
+        "C/H": 17,
+        "D/J": 11
+      },
+      "percentCorrect": 68,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 18,
+      "studentExpectation": "8.10(C)",
+      "teksAsPublished": "8.10(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 28,
+        "B/G": 14,
+        "C/H": 20,
+        "D/J": 38
+      },
+      "percentCorrect": 38,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 28
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 19,
+      "studentExpectation": "8.5(G)",
+      "teksAsPublished": "8.5(G)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 20,
+        "B/G": 53,
+        "C/H": 12,
+        "D/J": 14
+      },
+      "percentCorrect": 53,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 20,
+      "studentExpectation": "8.9(B)",
+      "teksAsPublished": "8.9(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 29,
+        "B/G": 31,
+        "C/H": 19,
+        "D/J": 22
+      },
+      "percentCorrect": 31,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 29
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 21,
+      "studentExpectation": "8.1(A)",
+      "teksAsPublished": "8.1(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 62,
+        "B/G": 9,
+        "C/H": 20,
+        "D/J": 9
+      },
+      "percentCorrect": 62,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 22,
+      "studentExpectation": "8.12(B)",
+      "teksAsPublished": "8.12(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 4,
+        "B/G": 82,
+        "C/H": 7,
+        "D/J": 7
+      },
+      "percentCorrect": 82,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 7
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 23,
+      "studentExpectation": "8.22(A)",
+      "teksAsPublished": "8.22(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 26,
+        "B/G": 49,
+        "C/H": 13,
+        "D/J": 11
+      },
+      "percentCorrect": 49,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 26
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 24,
+      "studentExpectation": "8.4(A)",
+      "teksAsPublished": "8.4(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 38,
+        "B/G": 12,
+        "C/H": 41,
+        "D/J": 8
+      },
+      "percentCorrect": 41,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 38
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 25,
+      "studentExpectation": "8.6(A)",
+      "teksAsPublished": "8.6(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 54,
+        "B/G": 28,
+        "C/H": 7,
+        "D/J": 12
+      },
+      "percentCorrect": 54,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 28
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 26,
+      "studentExpectation": "8.14(B)",
+      "teksAsPublished": "8.14(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 9,
+        "B/G": 49,
+        "C/H": 13,
+        "D/J": 29
+      },
+      "percentCorrect": 49,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 29
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 27,
+      "studentExpectation": "8.25(C)",
+      "teksAsPublished": "8.25(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 56,
+        "B/G": 8,
+        "C/H": 13,
+        "D/J": 24
+      },
+      "percentCorrect": 56,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 28,
+      "studentExpectation": "8.17(B)",
+      "teksAsPublished": "8.17(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 18,
+        "B/G": 14,
+        "C/H": 16,
+        "D/J": 52
+      },
+      "percentCorrect": 52,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 18
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 29,
+      "studentExpectation": "8.25(B)",
+      "teksAsPublished": "8.25(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 13,
+        "B/G": 10,
+        "C/H": 14,
+        "D/J": 63
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 14
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 30,
+      "studentExpectation": "8.15(C)",
+      "teksAsPublished": "8.15(C)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 7,
+        "B/G": 63,
+        "C/H": 16,
+        "D/J": 15
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 31,
+      "studentExpectation": "8.6(D)",
+      "teksAsPublished": "8.6(D)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 72,
+        "B/G": 5,
+        "C/H": 14,
+        "D/J": 9
+      },
+      "percentCorrect": 72,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 14
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 32,
+      "studentExpectation": "8.5(E)",
+      "teksAsPublished": "8.5(E)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 15,
+        "B/G": 12,
+        "C/H": 18,
+        "D/J": 55
+      },
+      "percentCorrect": 55,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 18
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 33,
+      "studentExpectation": "8.5(C)",
+      "teksAsPublished": "8.5(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 4,
+        "B/G": 9,
+        "C/H": 14,
+        "D/J": 73
+      },
+      "percentCorrect": 73,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 14
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 34,
+      "studentExpectation": "8.21(B)",
+      "teksAsPublished": "8.21(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 63,
+        "B/G": 4,
+        "C/H": 5,
+        "D/J": 28
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 28
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 35,
+      "studentExpectation": "8.4(C)",
+      "teksAsPublished": "8.4(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 18,
+        "B/G": 15,
+        "C/H": 60,
+        "D/J": 6
+      },
+      "percentCorrect": 60,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 18
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 36,
+      "studentExpectation": "8.13(B)",
+      "teksAsPublished": "8.13(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 9,
+        "B/G": 38,
+        "C/H": 37,
+        "D/J": 15
+      },
+      "percentCorrect": 38,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 37
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 37,
+      "studentExpectation": "8.23(C)",
+      "teksAsPublished": "8.23(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 54,
+        "B/G": 21,
+        "C/H": 15,
+        "D/J": 9
+      },
+      "percentCorrect": 54,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 21
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 38,
+      "studentExpectation": "8.5(F)",
+      "teksAsPublished": "8.5(F)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 24,
+        "B/G": 18,
+        "C/H": 21,
+        "D/J": 36
+      },
+      "percentCorrect": 36,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 39,
+      "studentExpectation": "8.7(C)",
+      "teksAsPublished": "8.7(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 18,
+        "C/H": 59,
+        "D/J": 15
+      },
+      "percentCorrect": 59,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 18
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 40,
+      "studentExpectation": "8.11(A)",
+      "teksAsPublished": "8.11(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 59,
+        "C/H": 25,
+        "D/J": 8
+      },
+      "percentCorrect": 59,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 25
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 41,
+      "studentExpectation": "8.9(C)",
+      "teksAsPublished": "8.9(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 17,
+        "B/G": 13,
+        "C/H": 55,
+        "D/J": 15
+      },
+      "percentCorrect": 55,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 42,
+      "studentExpectation": "8.12(D)",
+      "teksAsPublished": "8.12(D)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 28,
+        "B/G": 9,
+        "C/H": 50,
+        "D/J": 14
+      },
+      "percentCorrect": 50,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 28
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 43,
+      "studentExpectation": "8.20(B)",
+      "teksAsPublished": "8.20(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 69,
+        "B/G": 10,
+        "C/H": 19,
+        "D/J": 2
+      },
+      "percentCorrect": 69,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2019 May",
+      "itemNumber": 44,
+      "studentExpectation": "8.26(B)",
+      "teksAsPublished": "8.26(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 4,
+        "B/G": 6,
+        "C/H": 83,
+        "D/J": 7
+      },
+      "percentCorrect": 83,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 7
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 1,
+      "studentExpectation": "8.11(B)",
+      "teksAsPublished": "8.11(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 5,
+        "B/G": 2,
+        "C/H": 5,
+        "D/J": 87
+      },
+      "percentCorrect": 87,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 5
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 2,
+      "studentExpectation": "8.25(C)",
+      "teksAsPublished": "8.25(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 76,
+        "B/G": 13,
+        "C/H": 7,
+        "D/J": 3
+      },
+      "percentCorrect": 76,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 3,
+      "studentExpectation": "8.3(A)",
+      "teksAsPublished": "8.3(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 19,
+        "B/G": 59,
+        "C/H": 13,
+        "D/J": 8
+      },
+      "percentCorrect": 59,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 4,
+      "studentExpectation": "8.26(A)",
+      "teksAsPublished": "8.26(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 11,
+        "B/G": 7,
+        "C/H": 18,
+        "D/J": 64
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 18
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 5,
+      "studentExpectation": "8.16(B)",
+      "teksAsPublished": "8.16(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 26,
+        "B/G": 17,
+        "C/H": 52,
+        "D/J": 5
+      },
+      "percentCorrect": 52,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 26
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 6,
+      "studentExpectation": "8.1(A)",
+      "teksAsPublished": "8.1(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 12,
+        "B/G": 5,
+        "C/H": 9,
+        "D/J": 75
+      },
+      "percentCorrect": 75,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 12
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 7,
+      "studentExpectation": "8.18(A)",
+      "teksAsPublished": "8.18(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 13,
+        "B/G": 7,
+        "C/H": 64,
+        "D/J": 16
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 8,
+      "studentExpectation": "8.11(A)",
+      "teksAsPublished": "8.11(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 64,
+        "B/G": 13,
+        "C/H": 12,
+        "D/J": 11
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 9,
+      "studentExpectation": "8.5(C)",
+      "teksAsPublished": "8.5(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 26,
+        "B/G": 10,
+        "C/H": 11,
+        "D/J": 54
+      },
+      "percentCorrect": 54,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 26
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 10,
+      "studentExpectation": "8.24(B)",
+      "teksAsPublished": "8.24(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 65,
+        "B/G": 17,
+        "C/H": 9,
+        "D/J": 9
+      },
+      "percentCorrect": 65,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 11,
+      "studentExpectation": "8.6(B)",
+      "teksAsPublished": "8.6(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 10,
+        "B/G": 20,
+        "C/H": 63,
+        "D/J": 7
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 12,
+      "studentExpectation": "8.4(C)",
+      "teksAsPublished": "8.4(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 20,
+        "B/G": 17,
+        "C/H": 8,
+        "D/J": 55
+      },
+      "percentCorrect": 55,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 13,
+      "studentExpectation": "8.9(C)",
+      "teksAsPublished": "8.9(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 24,
+        "B/G": 18,
+        "C/H": 19,
+        "D/J": 39
+      },
+      "percentCorrect": 39,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 14,
+      "studentExpectation": "8.12(C)",
+      "teksAsPublished": "8.12(C)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 56,
+        "C/H": 16,
+        "D/J": 20
+      },
+      "percentCorrect": 56,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 15,
+      "studentExpectation": "8.5(A)",
+      "teksAsPublished": "8.5(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 65,
+        "B/G": 11,
+        "C/H": 10,
+        "D/J": 14
+      },
+      "percentCorrect": 65,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 14
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 16,
+      "studentExpectation": "8.10(B)",
+      "teksAsPublished": "8.10(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 20,
+        "B/G": 4,
+        "C/H": 9,
+        "D/J": 66
+      },
+      "percentCorrect": 66,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 17,
+      "studentExpectation": "8.1(B)",
+      "teksAsPublished": "8.1(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 15,
+        "B/G": 60,
+        "C/H": 17,
+        "D/J": 7
+      },
+      "percentCorrect": 60,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 18,
+      "studentExpectation": "8.15(C)",
+      "teksAsPublished": "8.15(C)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 35,
+        "B/G": 18,
+        "C/H": 24,
+        "D/J": 23
+      },
+      "percentCorrect": 35,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 19,
+      "studentExpectation": "8.7(C)",
+      "teksAsPublished": "8.7(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 17,
+        "B/G": 22,
+        "C/H": 45,
+        "D/J": 17
+      },
+      "percentCorrect": 45,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 22
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 20,
+      "studentExpectation": "8.23(A)",
+      "teksAsPublished": "8.23(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 16,
+        "B/G": 12,
+        "C/H": 12,
+        "D/J": 60
+      },
+      "percentCorrect": 60,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 21,
+      "studentExpectation": "8.22(B)",
+      "teksAsPublished": "8.22(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 46,
+        "B/G": 10,
+        "C/H": 24,
+        "D/J": 20
+      },
+      "percentCorrect": 46,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 22,
+      "studentExpectation": "8.24(A)",
+      "teksAsPublished": "8.24(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 11,
+        "B/G": 64,
+        "C/H": 13,
+        "D/J": 11
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 23,
+      "studentExpectation": "8.21(A)",
+      "teksAsPublished": "8.21(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 20,
+        "B/G": 12,
+        "C/H": 55,
+        "D/J": 13
+      },
+      "percentCorrect": 55,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 24,
+      "studentExpectation": "8.2(B)",
+      "teksAsPublished": "8.2(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 46,
+        "B/G": 37,
+        "C/H": 9,
+        "D/J": 8
+      },
+      "percentCorrect": 37,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 46
+      },
+      "distractorOutdrewKey": true
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 25,
+      "studentExpectation": "8.27(A)",
+      "teksAsPublished": "8.27(A)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 5,
+        "B/G": 12,
+        "C/H": 31,
+        "D/J": 52
+      },
+      "percentCorrect": 52,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 31
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 26,
+      "studentExpectation": "8.5(G)",
+      "teksAsPublished": "8.5(G)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 30,
+        "B/G": 16,
+        "C/H": 40,
+        "D/J": 14
+      },
+      "percentCorrect": 40,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 30
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 27,
+      "studentExpectation": "8.10(C)",
+      "teksAsPublished": "8.10(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 22,
+        "B/G": 58,
+        "C/H": 6,
+        "D/J": 14
+      },
+      "percentCorrect": 58,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 22
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 28,
+      "studentExpectation": "8.13(B)",
+      "teksAsPublished": "8.13(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 51,
+        "B/G": 8,
+        "C/H": 18,
+        "D/J": 22
+      },
+      "percentCorrect": 51,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 22
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 29,
+      "studentExpectation": "8.15(E)",
+      "teksAsPublished": "8.15(E)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 24,
+        "B/G": 10,
+        "C/H": 38,
+        "D/J": 28
+      },
+      "percentCorrect": 38,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 28
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 30,
+      "studentExpectation": "8.8(C)",
+      "teksAsPublished": "8.8(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 40,
+        "B/G": 19,
+        "C/H": 30,
+        "D/J": 11
+      },
+      "percentCorrect": 40,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 30
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 31,
+      "studentExpectation": "8.19(A)",
+      "teksAsPublished": "8.19(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 28,
+        "B/G": 12,
+        "C/H": 48,
+        "D/J": 12
+      },
+      "percentCorrect": 48,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 28
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 32,
+      "studentExpectation": "8.17(A)",
+      "teksAsPublished": "8.17(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 3,
+        "B/G": 60,
+        "C/H": 8,
+        "D/J": 30
+      },
+      "percentCorrect": 60,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 30
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 33,
+      "studentExpectation": "8.4(D)",
+      "teksAsPublished": "8.4(D)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 22,
+        "B/G": 19,
+        "C/H": 11,
+        "D/J": 48
+      },
+      "percentCorrect": 22,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 48
+      },
+      "distractorOutdrewKey": true
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 34,
+      "studentExpectation": "8.28(B)",
+      "teksAsPublished": "8.28(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 11,
+        "B/G": 13,
+        "C/H": 16,
+        "D/J": 59
+      },
+      "percentCorrect": 59,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 35,
+      "studentExpectation": "8.17(B)",
+      "teksAsPublished": "8.17(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 15,
+        "B/G": 10,
+        "C/H": 17,
+        "D/J": 58
+      },
+      "percentCorrect": 58,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 36,
+      "studentExpectation": "8.23(C)",
+      "teksAsPublished": "8.23(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 19,
+        "B/G": 36,
+        "C/H": 33,
+        "D/J": 12
+      },
+      "percentCorrect": 33,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 36
+      },
+      "distractorOutdrewKey": true
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 37,
+      "studentExpectation": "8.2(A)",
+      "teksAsPublished": "8.2(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 48,
+        "B/G": 12,
+        "C/H": 9,
+        "D/J": 31
+      },
+      "percentCorrect": 48,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 31
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 38,
+      "studentExpectation": "8.4(A)",
+      "teksAsPublished": "8.4(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 28,
+        "B/G": 17,
+        "C/H": 41,
+        "D/J": 14
+      },
+      "percentCorrect": 41,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 28
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 39,
+      "studentExpectation": "8.12(B)",
+      "teksAsPublished": "8.12(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 17,
+        "B/G": 6,
+        "C/H": 23,
+        "D/J": 54
+      },
+      "percentCorrect": 54,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 23
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 40,
+      "studentExpectation": "8.8(D)",
+      "teksAsPublished": "8.8(D)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 39,
+        "B/G": 24,
+        "C/H": 22,
+        "D/J": 16
+      },
+      "percentCorrect": 39,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 41,
+      "studentExpectation": "8.14(B)",
+      "teksAsPublished": "8.14(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 46,
+        "B/G": 9,
+        "C/H": 25,
+        "D/J": 21
+      },
+      "percentCorrect": 46,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 25
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 42,
+      "studentExpectation": "8.9(A)",
+      "teksAsPublished": "8.9(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 17,
+        "B/G": 20,
+        "C/H": 54,
+        "D/J": 9
+      },
+      "percentCorrect": 54,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 43,
+      "studentExpectation": "8.19(B)",
+      "teksAsPublished": "8.19(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 10,
+        "B/G": 58,
+        "C/H": 12,
+        "D/J": 19
+      },
+      "percentCorrect": 58,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2021 May",
+      "itemNumber": 44,
+      "studentExpectation": "8.28(A)",
+      "teksAsPublished": "8.28(A)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 4,
+        "C/H": 6,
+        "D/J": 81
+      },
+      "percentCorrect": 81,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 8
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 1,
+      "studentExpectation": "8.6(B)",
+      "teksAsPublished": "8.6(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 13,
+        "B/G": 3,
+        "C/H": 83,
+        "D/J": 1
+      },
+      "percentCorrect": 83,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 2,
+      "studentExpectation": "8.15(D)",
+      "teksAsPublished": "8.15(D)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 10,
+        "B/G": 5,
+        "C/H": 6,
+        "D/J": 79
+      },
+      "percentCorrect": 79,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 10
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 3,
+      "studentExpectation": "8.12(C)",
+      "teksAsPublished": "8.12(C)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 18,
+        "B/G": 67,
+        "C/H": 10,
+        "D/J": 4
+      },
+      "percentCorrect": 67,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 18
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 4,
+      "studentExpectation": "8.4(A)",
+      "teksAsPublished": "8.4(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 14,
+        "B/G": 5,
+        "C/H": 37,
+        "D/J": 43
+      },
+      "percentCorrect": 43,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 37
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 5,
+      "studentExpectation": "8.26(B)",
+      "teksAsPublished": "8.26(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 11,
+        "B/G": 16,
+        "C/H": 68,
+        "D/J": 6
+      },
+      "percentCorrect": 68,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 6,
+      "studentExpectation": "8.11(A)",
+      "teksAsPublished": "8.11(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 21,
+        "B/G": 59,
+        "C/H": 9,
+        "D/J": 10
+      },
+      "percentCorrect": 59,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 21
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 7,
+      "studentExpectation": "8.19(B)",
+      "teksAsPublished": "8.19(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 61,
+        "B/G": 7,
+        "C/H": 15,
+        "D/J": 17
+      },
+      "percentCorrect": 61,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 8,
+      "studentExpectation": "8.24(A)",
+      "teksAsPublished": "8.24(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 14,
+        "B/G": 21,
+        "C/H": 48,
+        "D/J": 18
+      },
+      "percentCorrect": 48,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 21
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 9,
+      "studentExpectation": "8.1(A)",
+      "teksAsPublished": "8.1(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 16,
+        "B/G": 45,
+        "C/H": 35,
+        "D/J": 4
+      },
+      "percentCorrect": 45,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 35
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 10,
+      "studentExpectation": "8.27(A)",
+      "teksAsPublished": "8.27(A)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 62,
+        "C/H": 25,
+        "D/J": 5
+      },
+      "percentCorrect": 62,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 25
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 11,
+      "studentExpectation": "8.15(A)",
+      "teksAsPublished": "8.15(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 60,
+        "B/G": 9,
+        "C/H": 6,
+        "D/J": 24
+      },
+      "percentCorrect": 60,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 13,
+      "studentExpectation": "8.17(B)",
+      "teksAsPublished": "8.17(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 57,
+        "C/H": 15,
+        "D/J": 21
+      },
+      "percentCorrect": 57,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 21
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 14,
+      "studentExpectation": "8.25(C)",
+      "teksAsPublished": "8.25(C)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 15,
+        "B/G": 22,
+        "C/H": 41,
+        "D/J": 22
+      },
+      "percentCorrect": 22,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 41
+      },
+      "distractorOutdrewKey": true
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 15,
+      "studentExpectation": "8.8(A)",
+      "teksAsPublished": "8.8(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 21,
+        "B/G": 34,
+        "C/H": 23,
+        "D/J": 22
+      },
+      "percentCorrect": 34,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 23
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 16,
+      "studentExpectation": "8.27(C)",
+      "teksAsPublished": "8.27(C)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 62,
+        "B/G": 10,
+        "C/H": 14,
+        "D/J": 13
+      },
+      "percentCorrect": 62,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 14
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 17,
+      "studentExpectation": "8.8(B)",
+      "teksAsPublished": "8.8(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 47,
+        "B/G": 12,
+        "C/H": 24,
+        "D/J": 17
+      },
+      "percentCorrect": 47,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 18,
+      "studentExpectation": "8.5(E)",
+      "teksAsPublished": "8.5(E)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 12,
+        "B/G": 52,
+        "C/H": 25,
+        "D/J": 11
+      },
+      "percentCorrect": 52,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 25
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 19,
+      "studentExpectation": "8.2(A)",
+      "teksAsPublished": "8.2(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 27,
+        "B/G": 13,
+        "C/H": 6,
+        "D/J": 55
+      },
+      "percentCorrect": 55,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 27
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 20,
+      "studentExpectation": "8.23(E)",
+      "teksAsPublished": "8.23(E)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 7,
+        "B/G": 61,
+        "C/H": 16,
+        "D/J": 16
+      },
+      "percentCorrect": 61,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 21,
+      "studentExpectation": "8.3(B)",
+      "teksAsPublished": "8.3(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 7,
+        "B/G": 12,
+        "C/H": 13,
+        "D/J": 67
+      },
+      "percentCorrect": 67,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 22,
+      "studentExpectation": "8.16(A)",
+      "teksAsPublished": "8.16(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 49,
+        "B/G": 24,
+        "C/H": 14,
+        "D/J": 12
+      },
+      "percentCorrect": 49,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 24,
+      "studentExpectation": "8.6(C)",
+      "teksAsPublished": "8.6(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 8,
+        "B/G": 6,
+        "C/H": 63,
+        "D/J": 23
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 23
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 25,
+      "studentExpectation": "8.12(B)",
+      "teksAsPublished": "8.12(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 12,
+        "B/G": 27,
+        "C/H": 58,
+        "D/J": 3
+      },
+      "percentCorrect": 58,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 27
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 26,
+      "studentExpectation": "8.3(A)",
+      "teksAsPublished": "8.3(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 6,
+        "B/G": 70,
+        "C/H": 11,
+        "D/J": 13
+      },
+      "percentCorrect": 70,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 13
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 27,
+      "studentExpectation": "8.5(D)",
+      "teksAsPublished": "8.5(D)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A/F": 6,
+        "B/G": 36,
+        "C/H": 38,
+        "D/J": 20
+      },
+      "percentCorrect": 20,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 38
+      },
+      "distractorOutdrewKey": true
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 28,
+      "studentExpectation": "8.21(C)",
+      "teksAsPublished": "8.21(C)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "F",
+      "percentByOption": {
+        "A/F": 61,
+        "B/G": 19,
+        "C/H": 13,
+        "D/J": 7
+      },
+      "percentCorrect": 61,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 29,
+      "studentExpectation": "8.5(B)",
+      "teksAsPublished": "8.5(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 12,
+        "B/G": 56,
+        "C/H": 12,
+        "D/J": 20
+      },
+      "percentCorrect": 56,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 30,
+      "studentExpectation": "8.13(B)",
+      "teksAsPublished": "8.13(B)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 14,
+        "B/G": 9,
+        "C/H": 33,
+        "D/J": 44
+      },
+      "percentCorrect": 44,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 33
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 31,
+      "studentExpectation": "8.16(B)",
+      "teksAsPublished": "8.16(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 17,
+        "B/G": 66,
+        "C/H": 13,
+        "D/J": 5
+      },
+      "percentCorrect": 66,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 32,
+      "studentExpectation": "8.10(B)",
+      "teksAsPublished": "8.10(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 6,
+        "B/G": 14,
+        "C/H": 21,
+        "D/J": 59
+      },
+      "percentCorrect": 59,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 21
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 33,
+      "studentExpectation": "8.23(B)",
+      "teksAsPublished": "8.23(B)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 14,
+        "B/G": 34,
+        "C/H": 45,
+        "D/J": 8
+      },
+      "percentCorrect": 34,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 45
+      },
+      "distractorOutdrewKey": true
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 34,
+      "studentExpectation": "8.9(B)",
+      "teksAsPublished": "8.9(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "H",
+      "percentByOption": {
+        "A/F": 12,
+        "B/G": 12,
+        "C/H": 60,
+        "D/J": 17
+      },
+      "percentCorrect": 60,
+      "topDistractor": {
+        "option": "D/J",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 35,
+      "studentExpectation": "8.18(B)",
+      "teksAsPublished": "8.18(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A/F": 18,
+        "B/G": 49,
+        "C/H": 15,
+        "D/J": 18
+      },
+      "percentCorrect": 49,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 18
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 36,
+      "studentExpectation": "8.8(C)",
+      "teksAsPublished": "8.8(C)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "G",
+      "percentByOption": {
+        "A/F": 16,
+        "B/G": 62,
+        "C/H": 10,
+        "D/J": 12
+      },
+      "percentCorrect": 62,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 37,
+      "studentExpectation": "8.14(A)",
+      "teksAsPublished": "8.14(A)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 31,
+        "B/G": 13,
+        "C/H": 41,
+        "D/J": 16
+      },
+      "percentCorrect": 41,
+      "topDistractor": {
+        "option": "A/F",
+        "percent": 31
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 39,
+      "studentExpectation": "8.13(A)",
+      "teksAsPublished": "8.13(A)",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A/F": 16,
+        "B/G": 23,
+        "C/H": 44,
+        "D/J": 18
+      },
+      "percentCorrect": 44,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 23
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 40,
+      "studentExpectation": "8.22(A)",
+      "teksAsPublished": "8.22(A)",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 15,
+        "B/G": 17,
+        "C/H": 11,
+        "D/J": 56
+      },
+      "percentCorrect": 56,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 41,
+      "studentExpectation": "8.6(A)",
+      "teksAsPublished": "8.6(A)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 55,
+        "B/G": 10,
+        "C/H": 23,
+        "D/J": 11
+      },
+      "percentCorrect": 55,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 23
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 42,
+      "studentExpectation": "8.7(B)",
+      "teksAsPublished": "8.7(B)",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 10,
+        "B/G": 19,
+        "C/H": 12,
+        "D/J": 59
+      },
+      "percentCorrect": 59,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 43,
+      "studentExpectation": "8.23(A)",
+      "teksAsPublished": "8.23(A)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A/F": 80,
+        "B/G": 9,
+        "C/H": 7,
+        "D/J": 4
+      },
+      "percentCorrect": 80,
+      "topDistractor": {
+        "option": "B/G",
+        "percent": 9
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 44,
+      "studentExpectation": "8.23(D)",
+      "teksAsPublished": "8.23(D)",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": null,
+      "correctAnswerFromOfficialKey": "J",
+      "percentByOption": {
+        "A/F": 4,
+        "B/G": 6,
+        "C/H": 11,
+        "D/J": 79
+      },
+      "percentCorrect": 79,
+      "topDistractor": {
+        "option": "C/H",
+        "percent": 11
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 1,
+      "studentExpectation": "8.25(C)",
+      "teksAsPublished": "8.25.C",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A": 75,
+        "B": 10,
+        "C": 11,
+        "D": 5
+      },
+      "percentCorrect": 75,
+      "topDistractor": {
+        "option": "C",
+        "percent": 11
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 2,
+      "studentExpectation": "8.5(C)",
+      "teksAsPublished": "8.5.C",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A": 9,
+        "B": 15,
+        "C": 64,
+        "D": 12
+      },
+      "percentCorrect": 64,
+      "topDistractor": {
+        "option": "B",
+        "percent": 15
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 4,
+      "studentExpectation": "8.4(D)",
+      "teksAsPublished": "8.4.D",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A": 10,
+        "B": 36,
+        "C": 9,
+        "D": 45
+      },
+      "percentCorrect": 45,
+      "topDistractor": {
+        "option": "B",
+        "percent": 36
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 6,
+      "studentExpectation": "8.2(A)",
+      "teksAsPublished": "8.2.A",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A": 34,
+        "B": 12,
+        "C": 5,
+        "D": 49
+      },
+      "percentCorrect": 49,
+      "topDistractor": {
+        "option": "A",
+        "percent": 34
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 8,
+      "studentExpectation": "8.15(C)",
+      "teksAsPublished": "8.15.C",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A": 44,
+        "B": 29,
+        "C": 16,
+        "D": 11
+      },
+      "percentCorrect": 44,
+      "topDistractor": {
+        "option": "B",
+        "percent": 29
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 10,
+      "studentExpectation": "8.11(A)",
+      "teksAsPublished": "8.11.A",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A": 13,
+        "B": 30,
+        "C": 43,
+        "D": 13
+      },
+      "percentCorrect": 43,
+      "topDistractor": {
+        "option": "B",
+        "percent": 30
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 11,
+      "studentExpectation": "8.13(B)",
+      "teksAsPublished": "8.13.B",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A": 16,
+        "B": 12,
+        "C": 15,
+        "D": 57
+      },
+      "percentCorrect": 57,
+      "topDistractor": {
+        "option": "A",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 12,
+      "studentExpectation": "8.10(A)",
+      "teksAsPublished": "8.10.A",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Supporting",
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A": 9,
+        "B": 23,
+        "C": 31,
+        "D": 38
+      },
+      "percentCorrect": 38,
+      "topDistractor": {
+        "option": "C",
+        "percent": 31
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 14,
+      "studentExpectation": "8.9(C)",
+      "teksAsPublished": "8.9.C",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A": 19,
+        "B": 60,
+        "C": 11,
+        "D": 10
+      },
+      "percentCorrect": 60,
+      "topDistractor": {
+        "option": "A",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 16,
+      "studentExpectation": "8.14(A)",
+      "teksAsPublished": "8.14.A",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Supporting",
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A": 24,
+        "B": 21,
+        "C": 30,
+        "D": 25
+      },
+      "percentCorrect": 25,
+      "topDistractor": {
+        "option": "C",
+        "percent": 30
+      },
+      "distractorOutdrewKey": true
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 17,
+      "studentExpectation": "8.8(C)",
+      "teksAsPublished": "8.8.C",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A": 6,
+        "B": 63,
+        "C": 14,
+        "D": 17
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "D",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 19,
+      "studentExpectation": "8.1(A)",
+      "teksAsPublished": "8.1.A",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A": 12,
+        "B": 14,
+        "C": 50,
+        "D": 24
+      },
+      "percentCorrect": 50,
+      "topDistractor": {
+        "option": "D",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 21,
+      "studentExpectation": "8.6(B)",
+      "teksAsPublished": "8.6.B",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A": 22,
+        "B": 32,
+        "C": 27,
+        "D": 18
+      },
+      "percentCorrect": 32,
+      "topDistractor": {
+        "option": "C",
+        "percent": 27
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 23,
+      "studentExpectation": "8.17(B)",
+      "teksAsPublished": "8.17.B",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A": 56,
+        "B": 17,
+        "C": 11,
+        "D": 17
+      },
+      "percentCorrect": 56,
+      "topDistractor": {
+        "option": "B",
+        "percent": 17
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 25,
+      "studentExpectation": "8.3(A)",
+      "teksAsPublished": "8.3.A",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A": 33,
+        "B": 15,
+        "C": 30,
+        "D": 22
+      },
+      "percentCorrect": 33,
+      "topDistractor": {
+        "option": "C",
+        "percent": 30
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 26,
+      "studentExpectation": "8.26(B)",
+      "teksAsPublished": "8.26.B",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Supporting",
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A": 19,
+        "B": 59,
+        "C": 13,
+        "D": 9
+      },
+      "percentCorrect": 59,
+      "topDistractor": {
+        "option": "A",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 28,
+      "studentExpectation": "8.23(A)",
+      "teksAsPublished": "8.23.A",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A": 20,
+        "B": 10,
+        "C": 13,
+        "D": 56
+      },
+      "percentCorrect": 56,
+      "topDistractor": {
+        "option": "A",
+        "percent": 20
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 29,
+      "studentExpectation": "8.20(B)",
+      "teksAsPublished": "8.20.B",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Supporting",
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A": 24,
+        "B": 15,
+        "C": 21,
+        "D": 40
+      },
+      "percentCorrect": 21,
+      "topDistractor": {
+        "option": "D",
+        "percent": 40
+      },
+      "distractorOutdrewKey": true
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 30,
+      "studentExpectation": "8.6(C)",
+      "teksAsPublished": "8.6.C",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A": 16,
+        "B": 12,
+        "C": 10,
+        "D": 62
+      },
+      "percentCorrect": 62,
+      "topDistractor": {
+        "option": "A",
+        "percent": 16
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 32,
+      "studentExpectation": "8.24(B)",
+      "teksAsPublished": "8.24.B",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A": 63,
+        "B": 11,
+        "C": 22,
+        "D": 4
+      },
+      "percentCorrect": 63,
+      "topDistractor": {
+        "option": "C",
+        "percent": 22
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 33,
+      "studentExpectation": "8.7(D)",
+      "teksAsPublished": "8.7.D",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Supporting",
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A": 22,
+        "B": 29,
+        "C": 33,
+        "D": 16
+      },
+      "percentCorrect": 33,
+      "topDistractor": {
+        "option": "B",
+        "percent": 29
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 34,
+      "studentExpectation": "8.10(C)",
+      "teksAsPublished": "8.10.C",
+      "reportingCategory": 2,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A": 13,
+        "B": 8,
+        "C": 14,
+        "D": 65
+      },
+      "percentCorrect": 65,
+      "topDistractor": {
+        "option": "C",
+        "percent": 14
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 35,
+      "studentExpectation": "8.4(C)",
+      "teksAsPublished": "8.4.C",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Readiness",
+      "correctAnswerFromOfficialKey": "A",
+      "percentByOption": {
+        "A": 41,
+        "B": 20,
+        "C": 24,
+        "D": 15
+      },
+      "percentCorrect": 41,
+      "topDistractor": {
+        "option": "C",
+        "percent": 24
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 36,
+      "studentExpectation": "8.12(A)",
+      "teksAsPublished": "8.12.A",
+      "reportingCategory": 4,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Supporting",
+      "correctAnswerFromOfficialKey": "D",
+      "percentByOption": {
+        "A": 20,
+        "B": 18,
+        "C": 21,
+        "D": 40
+      },
+      "percentCorrect": 40,
+      "topDistractor": {
+        "option": "C",
+        "percent": 21
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 38,
+      "studentExpectation": "8.21(B)",
+      "teksAsPublished": "8.21.B",
+      "reportingCategory": 3,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Supporting",
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A": 13,
+        "B": 19,
+        "C": 57,
+        "D": 11
+      },
+      "percentCorrect": 57,
+      "topDistractor": {
+        "option": "B",
+        "percent": 19
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 39,
+      "studentExpectation": "8.8(D)",
+      "teksAsPublished": "8.8.D",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Supporting",
+      "correctAnswerFromOfficialKey": "C",
+      "percentByOption": {
+        "A": 21,
+        "B": 10,
+        "C": 54,
+        "D": 15
+      },
+      "percentCorrect": 54,
+      "topDistractor": {
+        "option": "A",
+        "percent": 21
+      },
+      "distractorOutdrewKey": false
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 40,
+      "studentExpectation": "8.7(B)",
+      "teksAsPublished": "8.7.B",
+      "reportingCategory": 1,
+      "itemType": "Multiple Choice",
+      "readinessOrSupporting": "Supporting",
+      "correctAnswerFromOfficialKey": "B",
+      "percentByOption": {
+        "A": 7,
+        "B": 76,
+        "C": 6,
+        "D": 10
+      },
+      "percentCorrect": 76,
+      "topDistractor": {
+        "option": "D",
+        "percent": 10
+      },
+      "distractorOutdrewKey": false
+    }
+  ],
+  "partialCredit": [
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 3,
+      "studentExpectation": "8.24(A)",
+      "reportingCategory": 2,
+      "itemType": "Multipart",
+      "readinessOrSupporting": "Readiness",
+      "percentFullCredit": 67,
+      "percentZeroCredit": 27,
+      "percentPartialCredit": 6,
+      "legend": "§ = Item is not a multiple-choice item. For this item, the letter \"A\" represents the full credit answer, \"B\" represents a zero credit answer, and \"C\" represents a partial credit answer."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 7,
+      "studentExpectation": "8.4(A)",
+      "reportingCategory": 1,
+      "itemType": "Short Constructed Response",
+      "readinessOrSupporting": "Readiness",
+      "percentFullCredit": 18,
+      "percentZeroCredit": 58,
+      "percentPartialCredit": 23,
+      "legend": "§ = Item is not a multiple-choice item. For this item, the letter \"A\" represents the full credit answer, \"B\" represents a zero credit answer, and \"C\" represents a partial credit answer."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 20,
+      "studentExpectation": "8.23(E)",
+      "reportingCategory": 2,
+      "itemType": "Drag and Drop",
+      "readinessOrSupporting": "Supporting",
+      "percentFullCredit": 38,
+      "percentZeroCredit": 42,
+      "percentPartialCredit": 20,
+      "legend": "§ = Item is not a multiple-choice item. For this item, the letter \"A\" represents the full credit answer, \"B\" represents a zero credit answer, and \"C\" represents a partial credit answer."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 22,
+      "studentExpectation": "8.18(B)",
+      "reportingCategory": 3,
+      "itemType": "Multiselect",
+      "readinessOrSupporting": "Supporting",
+      "percentFullCredit": 12,
+      "percentZeroCredit": 38,
+      "percentPartialCredit": 49,
+      "legend": "§ = Item is not a multiple-choice item. For this item, the letter \"A\" represents the full credit answer, \"B\" represents a zero credit answer, and \"C\" represents a partial credit answer."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 24,
+      "studentExpectation": "8.17(A)",
+      "reportingCategory": 3,
+      "itemType": "Multipart",
+      "readinessOrSupporting": "Readiness",
+      "percentFullCredit": 47,
+      "percentZeroCredit": 39,
+      "percentPartialCredit": 14,
+      "legend": "§ = Item is not a multiple-choice item. For this item, the letter \"A\" represents the full credit answer, \"B\" represents a zero credit answer, and \"C\" represents a partial credit answer."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 27,
+      "studentExpectation": "8.15(D)",
+      "reportingCategory": 3,
+      "itemType": "Drag and Drop",
+      "readinessOrSupporting": "Readiness",
+      "percentFullCredit": 16,
+      "percentZeroCredit": 40,
+      "percentPartialCredit": 44,
+      "legend": "§ = Item is not a multiple-choice item. For this item, the letter \"A\" represents the full credit answer, \"B\" represents a zero credit answer, and \"C\" represents a partial credit answer."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 31,
+      "studentExpectation": "8.14(B)",
+      "reportingCategory": 4,
+      "itemType": "Short Constructed Response",
+      "readinessOrSupporting": "Supporting",
+      "percentFullCredit": 51,
+      "percentZeroCredit": 25,
+      "percentPartialCredit": 23,
+      "legend": "§ = Item is not a multiple-choice item. For this item, the letter \"A\" represents the full credit answer, \"B\" represents a zero credit answer, and \"C\" represents a partial credit answer."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 37,
+      "studentExpectation": "8.22(A)",
+      "reportingCategory": 3,
+      "itemType": "Hot Text",
+      "readinessOrSupporting": "Supporting",
+      "percentCorrect": 66,
+      "percentIncorrect": 34,
+      "legend": "† = Item is not a multiple-choice item. For this item, the letter \"A\" represents the correct answer and \"B\" represents an incorrect answer."
+    }
+  ],
+  "unresolved": [
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 12,
+      "studentExpectation": "8.4(D)",
+      "itemType": "Multiple Choice",
+      "why": "2 candidate rows matched item 12 at reporting category 1 with the key in column 0; the layout is two-column-interleaved and the Science table carries a row identical on every field this join can check. Left unresolved rather than guessed."
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 23,
+      "studentExpectation": "8.20(A)",
+      "itemType": "Multiple Choice",
+      "why": "2 candidate rows matched item 23 at reporting category 3 with the key in column 1; the layout is two-column-interleaved and the Science table carries a row identical on every field this join can check. Left unresolved rather than guessed."
+    },
+    {
+      "administration": "2022 Spring",
+      "itemNumber": 38,
+      "studentExpectation": "8.10(C)",
+      "itemType": "Multiple Choice",
+      "why": "2 candidate rows matched item 38 at reporting category 2 with the key in column 0; the layout is two-column-interleaved and the Science table carries a row identical on every field this join can check. Left unresolved rather than guessed."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 5,
+      "studentExpectation": "8.12(B)",
+      "itemType": "Multiple Choice",
+      "why": "2 candidate rows matched item 5 at reporting category 4 with the key in column 1; the layout is two-column-interleaved and the Science table carries a row identical on every field this join can check. Left unresolved rather than guessed."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 9,
+      "studentExpectation": "8.8(B)",
+      "itemType": "Multiple Choice",
+      "why": "2 candidate rows matched item 9 at reporting category 1 with the key in column 3; the layout is two-column-interleaved and the Science table carries a row identical on every field this join can check. Left unresolved rather than guessed."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 13,
+      "studentExpectation": "8.15(B)",
+      "itemType": "Drag and Drop",
+      "why": "2 candidate rows matched item 13 at reporting category 3 (no keyed option, so the key cannot discriminate); the layout is two-column-interleaved and the Science table carries a row identical on every field this join can check. Left unresolved rather than guessed."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 15,
+      "studentExpectation": "8.3(C)",
+      "itemType": "Inline Choice",
+      "why": "2 candidate rows matched item 15 at reporting category 1 (no keyed option, so the key cannot discriminate); the layout is two-column-interleaved and the Science table carries a row identical on every field this join can check. Left unresolved rather than guessed."
+    },
+    {
+      "administration": "2023 Spring",
+      "itemNumber": 18,
+      "studentExpectation": "8.28(B)",
+      "itemType": "Multiple Choice",
+      "why": "2 candidate rows matched item 18 at reporting category 4 with the key in column 2; the layout is two-column-interleaved and the Science table carries a row identical on every field this join can check. Left unresolved rather than guessed."
+    }
+  ]
+}
