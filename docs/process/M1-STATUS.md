@@ -466,6 +466,16 @@ fails because it does not.
 - **Also fixed the cause of "no run ever completed":** CI `concurrency` cancelled in-flight `main`
   runs on every push. Now `cancel-in-progress` is true only for pull requests; `main` pushes queue
   and each finishes. Noted in `CI-AND-BROWSER-CHECKS.md` §1 and the workflow.
+- **Confirmed on a real CI runner** (first cross-platform verification): 4/5 jobs green incl.
+  `verify`, and **no progress check failed** — the tick-relative measure holds on a GPU-less runner.
+  The playthrough job then **hit its 20 m `timeout-minutes` cap mid-gate** (provisioning clean, it
+  just did not finish). Cap raised to **50 m** to learn the true figure from one completed run;
+  per-stage wall-clock is now logged (`stage wall-clock: …`). Local software-WebGL breakdown: ROUTE
+  135 s + DUEL 141 s dominate (≈75%), WORLD 57 s (scene *load*, not "fast" on CI), rest trivial.
+  Recommendation: **keep it per-push and blocking** — one dev, no queue, so a 20–30 m gate blocks
+  nobody, and ROUTE/DUEL are the stages that catch the soft-lock/void/grader class; do not defer
+  them to nightly, and do not shrink tick budgets to fit a cap. Reasoning in `CI-AND-BROWSER-CHECKS.md`.
+  Still pending: the actual completed-run number (`gh` unauthenticated here).
 
 **A pipeline finding, from three independent repairs today.** Every one traced to the generator's
 own output, not to the processing:
