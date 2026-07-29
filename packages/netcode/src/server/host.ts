@@ -34,7 +34,6 @@ import {
   type CombatIntent,
   type DuelSide,
 } from "@pa/duel";
-import { MAX_CATCHUP_STEPS } from "../enginePort.js";
 import {
   advanceMatch,
   forfeitMatch,
@@ -82,6 +81,37 @@ import {
 /** Every third tick: 20 Hz of snapshots against a 60 Hz simulation. */
 export const DEFAULT_SNAPSHOT_EVERY_TICKS = 3;
 
+// How many 60 Hz ticks a stalled server may fast-forward in ONE wake before it
+// gives up on the missed time and drops it. This is the server's stall-recovery
+// bound, and it is deliberately its OWN number rather than engine-world's
+// `MAX_CATCHUP_STEPS`.
+//
+// WHY IT IS NOT THE ENGINE'S BOUND, WHICH IS 15. The two look like the same
+// quantity and are answers to different questions; the difference is structural,
+// not a matter of taste.
+//
+// The mission's `advanceFieldClock` CLAMPS the frame delta to `MAX_FRAME_DT_S`
+// (0.25 s) BEFORE the accumulator sees it, and its 15 is *derived* as
+// `floor(MAX_FRAME_DT_S / FIELD_DT)` — precisely the number of steps that clamp can
+// admit. So there the cap is a deliberate no-op: it means "never discard a tick the
+// clamp already let in", and it is tuned for SLOW RENDER FRAMES, where discarding a
+// tick shows up as the world crawling in slow motion.
+//
+// `advanceTo` below has NO clamp. This cap is the ONLY bound on how far one wake may
+// run, so it is not a no-op — it is a direct answer to "how much combat may a
+// stalled server simulate in one wake that no client ever rendered, before dropping
+// the time is the fairer failure?" That is a FAIRNESS question rather than a
+// smoothness one, and this file's answer is already written on `advanceTo`: bursting
+// is the wrong failure mode, because a duel that catches up in a burst is a duel
+// where somebody was shot during a frame that never rendered. Five ticks is 83 ms of
+// unseen combat. The engine's fifteen would be 250 ms of it.
+//
+// The two shared one symbol until 29 Jul, when raising the engine constant 5 -> 15
+// to fix the mission's slow running tripled this server's unrendered burst as a side
+// effect nobody chose. Restored to 5 and decoupled. If you are about to point this
+// back at the engine constant, `__tests__/catchUp.test.ts` fails and says why.
+export const SERVER_MAX_CATCHUP_TICKS = 5;
+
 export interface HostConfig {
   readonly snapshotEveryTicks: number;
   /**
@@ -102,9 +132,9 @@ export function hostConfig(
 ): HostConfig {
   return {
     snapshotEveryTicks: DEFAULT_SNAPSHOT_EVERY_TICKS,
-    // The engine's own catch-up bound rather than a second opinion about how much
-    // a stalled process may fast-forward.
-    maxCatchUpTicks: MAX_CATCHUP_STEPS,
+    // The server's own stall-recovery bound, NOT the engine's catch-up constant.
+    // They are different questions; see SERVER_MAX_CATCHUP_TICKS above.
+    maxCatchUpTicks: SERVER_MAX_CATCHUP_TICKS,
     graceMs: RESUME_GRACE_MS,
     ...overrides,
     mintResumeToken,

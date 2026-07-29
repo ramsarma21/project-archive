@@ -57,7 +57,7 @@ package implements it rather than reopening it.
 
 Search this package for a position update and you will not find one. Client prediction
 calls `stepCombat` — the real one, the same function the authoritative server calls,
-with the same arguments. `src/enginePort.ts` is three symbols wide and `src/pvpPort.ts`
+with the same arguments. `src/enginePort.ts` is two symbols wide and `src/pvpPort.ts`
 names the entire dependency on the match authority in one file.
 
 Prediction is **stateless**, which is stronger than "reconciled". There is no running
@@ -237,7 +237,7 @@ src/divergence.ts          the report, and its reduction to a replay
 src/barrier.ts             the inter-round resync barrier
 src/protocol.ts            the wire vocabulary, both directions
 src/pvpPort.ts             the single import surface onto @pa/pvp
-src/enginePort.ts          the three engine symbols @pa/duel does not re-export
+src/enginePort.ts          the two engine symbols @pa/duel does not re-export
 src/server/host.ts         authority + sessions + history + outbox, as a value
 src/server/loop.ts         the only timer, and the only clock read
 src/server/session.ts      presence, resume tokens, the disconnect policy
