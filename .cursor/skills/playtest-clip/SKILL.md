@@ -13,6 +13,19 @@ instrument.** A clip is the highest-signal input there is; treat it accordingly.
 
 ## 1. Extract
 
+**If the link is a Clipy recording, fetch `<url>.md` first — do not download the video.**
+That page carries an AI summary, a **timestamped transcript**, and key-moment frames with
+direct `cdn.clipy.online` image URLs. `curl` those frames into
+`.affordwork/clips/<label>/` and read them. It is faster and better than frame extraction,
+and the transcript is the only source of the owner's words — there is no local
+transcription.
+
+Treat the summary and captions as *paraphrase*: the frames and the transcript are ground
+truth, and the summary has been wrong about which key was pressed. Quote UI labels from
+what is visible in a frame, never from a caption.
+
+For a raw file or a non-Clipy link, extract frames:
+
 ```bash
 .cursor/skills/playtest-clip/scripts/extract.sh <url-or-path> <label> [interval-seconds]
 ```
