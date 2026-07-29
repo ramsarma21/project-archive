@@ -57,16 +57,84 @@ ask about 1–3, not only stand alone.
 
 ## The loop
 
-1. **Lesson** — teaches all four. Its checks are also the **baseline measurement**: they must
-   record per-concept correctness, which today they do not (only a count of acknowledged
-   checks persists). Without this the demo cannot show improvement, so it is demo-critical,
-   not a remediation nicety. Distractor pools already vary options between runs (`86d6e1d`).
-2. **Mission** — depth where being in the place is the point. Both existing encounters are
-   currently pointed at the two *least*-missed concepts and will be retargeted. The world is
-   malleable; the concepts are not.
-3. **Boss fight** — the main assessment surface. Card half deterministic, prose half graded,
-   asked in the two-causes-with-reasons shape of concept 4.
-4. **Capstone** — after the mission and fight, to close the loop and write mastery.
+All four surfaces carry the same four concepts. Nothing gets a surface to itself.
+
+### 1. Lesson — cinematic, and the pre-measure
+
+Built already, needs a script rather than engineering: `SystemPresenter.tsx` (rigged presenter),
+`moduleShots.ts`, `moduleTimeline.ts`, `moduleVoiceover.ts`, `moduleLipSync.ts`,
+`presenterGaze.ts`, `presenterHologram.ts`.
+
+It does three jobs, and the third is easy to forget:
+
+1. **Teach all four concepts** as cinematic beats, each one refuting a named distractor.
+2. **Ask baseline questions** — the pre-measure the capstone is later compared against.
+3. **Brief the mission in world** — what the occupation is and what the player is about to do,
+   so they arrive oriented instead of being taught cold mid-level.
+
+### 2. Mission — one physical spine, with stops that re-task you
+
+The spine is **coercion of Boston**, chosen because it is tied-weakest *and* the only concept
+that is physically traversable: a shut harbour, a house full of billeted soldiers, an assembly
+that is now illegal. "Who may lawfully levy a tax" has nothing to walk through, so it belongs
+to the presenter.
+
+Shape: an opening objective, then **stop → cutscene → NEW objective**, repeating, then the yard
+and the boss challenge. The objective surface exists (`MissionHud.tsx`, `traversal.ts`,
+`levelPort.ts`) as does guidance (`packages/mission-m1/src/wayfind.ts`).
+
+**Proposed narrative spine (not yet settled):** carry a non-importation agreement across an
+occupied town and get it signed. It is gamified, physical, and *is itself* one of the four
+concepts — the player performs a form of resistance rather than reading about one.
+
+| Stop | The cutscene teaches | The new objective | Refutes |
+|---|---|---|---|
+| The Port Act notice | The port closure punished the whole town, not the men who dumped the tea | The dock route is dead — move overland | The 41–43% who read the coercive acts as ordinary governance |
+| The quartered house | The Crown took private homes, not barracks | The merchant you need is in a house full of soldiers; get to him unseen | That quartering was billeting-as-usual |
+| The banned assembly | With no lawful meeting, resistance takes other forms: petition, committee, non-importation | No gathering — carry word and signatures person to person | The 28% "declared war" and the 37% "colonies taxed imports" |
+
+**Escalation needs no beat of its own.** It is the order the player walks through, which is why
+the mission can teach the 58%-zero skill without lecturing about it.
+
+**Every stop must satisfy one test:** the new objective has to be impossible, or done wrong,
+without having understood the cutscene. If a player can skip it and still finish by ordinary
+navigation, it is a popup wearing a cutscene's costume — and the popups were removed for exactly
+that reason.
+
+### 3. Boss fight
+
+The main assessment surface. Card half deterministic, prose half graded, asked in the
+two-causes-with-reasons shape. The round floor guarantees every concept is asked.
+
+### 4. Capstone — the post-measure
+
+Closes the loop and writes `concept_mastery`, which is the only thing the teacher report reads.
+
+## Parallel forms — load-bearing, and easy to botch
+
+The lesson baseline and the capstone must be **parallel forms**: the same concepts at matched
+difficulty, drawn from **different items**. Identical items measure memorisation of four
+questions; non-comparable items make growth uncomputable. The whole "we improve knowledge"
+claim rests on this one property, so it belongs in the authoring rules and in a gate, not in
+someone's memory.
+
+## Authoring versus building
+
+**Authoring only — the system already works.** The lesson cutscene script and shot list; the
+boss-challenge lines (`BOSS_CHALLENGE_BEATS` is a plain `{phase, line, holdS}` array with
+staging, a hard cap and a skip already proven); the stop cutscene lines and questions; the duel
+and capstone item banks.
+
+**Needs building.**
+- Per-concept persistence for lesson checks. Today only a count of acknowledged checks
+  survives, so there is no baseline to improve from. This is the demo's foundation.
+- An encounter resolution that sets a **world objective**. The graded encounter machine
+  (`packages/mission-m1/src/encounters`) currently branches into reprieve or pursuit; it needs
+  to be able to re-task the player.
+- The capstone guard removal, plus parallel-form item authoring.
+- The duel round floor, wired to the authored `roundSchedule`.
+- The boss ammo policy (wrong arms it, correct starves it) with the empty-boss cover fix it
+  depends on.
 
 ## Decisions taken (owner, 29 Jul)
 
