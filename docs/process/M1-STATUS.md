@@ -28,7 +28,7 @@ lesson that teaches into them.
   committed on its lane branch and is named below, so resuming it is a merge and not a rebuild. Do
   not delete a branch or a worktree to tidy up.
 - **Already on `main` and staying:** the `m4` asset pipeline, `content/staar`, `content/capstone` and
-  the 39-mission curriculum registry all arrived in the 22–27 Jul baseline, not in this week's
+  the 14-mission curriculum registry (`registry.test.ts` pins `ALL_MISSIONS.length === 14`) all arrived in the 22–27 Jul baseline, not in this week's
   merges. Out of scope to remove — removing them is a larger risk than leaving them sitting unused.
 - Meta-work was already time-boxed (`M1-DONE.md`); the freeze tightens it. A merge that moves no line
   of `M1-DONE.md` needs a reason.
@@ -146,6 +146,52 @@ to baseline; `poolHealth()` resolves (34 questions).
 - **Remediation** (module Deliverable B) dropped, awaiting scope.
 - Audit finding #3 above (uncommitted `infra` edit) is **resolved** — captured by `8a7e3bc`, the
   `mission-presentation` worktree is now clean. Finding #4's WIP-hang stands, but its WIP was not taken.
+
+---
+
+## Conservative prune (29 Jul) — on `workflow/m1-prune`, NOT yet merged
+
+A small, fixed-scope removal of three genuinely dead things, each in its own commit so any one reverts
+alone. Branched off `4c16caf`; **not merged** — the orchestrator merges it when the owner is not
+mid-session. Gated from the worktree (measured, not relayed): full suite **2869 tests, 0 failing**
+(unchanged from baseline), `typecheck` 16/16, `lint`, `build`, `verify:content`, `verify:units` and all
+three `assets:verify:*` green. The only static-gate red is `check-lane-integrity`, flagging the prune
+lane's own `apps/api` edits as cross-lane — an expected artifact of a one-off prune lane that is not in
+the ownership map, not a correctness failure.
+
+**Removed** (commit; the evidence that made each safe):
+- `bbdfbdb` — `SubmissionRateLimiter` (`apps/api/src/assessment/requestPolicy.ts`, 26 LOC). Defined,
+  never instantiated / imported / tested; only its definition and two docs referenced it. The file and
+  its live sibling `validAssessmentMutationRequest` stay; a two-line note now points to `routes/duels.ts`,
+  which already explains why a naive 429 limiter must not be added (a 4xx on the grading wire grants the
+  full magazine).
+- `499ca86` — `apps/api/src/routes/grading.ts` (258 LOC). Never mounted: `app.ts` registers progression,
+  duels, encounters, pvp, reporting, localSession, devReset; grading is absent, and
+  `registerGradingRoutes`/`routes/grading` appear only in this file and docs. Its unique value — the
+  `RoundItemAuthority` anti-cheat — is already enforced on the LIVE duel path (`routes/duels.ts` computes
+  `expectedItemId` and grades the server's item, never the client's claim). The sibling
+  `apps/api/src/duels/grading.ts` is live and was untouched.
+- `232d25c` — 11 `assets/pipeline/qa_*.mjs` scripts (qa_wave2_exchange, qa_slice, qa_m4, qa_m3,
+  qa_m1_chase, qa_locomotion, qa_inspect_card, qa_fixwave2_feel, qa_design2_continuous,
+  qa_density_traversal, qa_cognitive_learning). Each statically imports the deleted
+  `packages/chapter-boston(-world)`, gone from disk, so it throws on load. None are in `package.json`, CI
+  (`*.test.mjs` + `verify_m1_placements.mjs` only), or `run-tests.mjs` discovery — the suite never loaded
+  them. Only doc mentions remain.
+
+**Deliberately NOT removed — recorded so it is not rediscovered or re-litigated:**
+- **`@pa/netcode` is PARKED by owner decision, not dead.** Zero importers (no file outside the package
+  imports `@pa/netcode`; the few mentions are comments), ~4.3k lines of non-test source (measured 4,347)
+  plus ~2.5k of tests, fully tested against a simulated link. Not part of the M1 demo — live PvP uses HTTP
+  polling (`apps/web/src/pvp/arenaFeed.ts`) — and the owner chose to keep it against the named future seam
+  (`docs/design/Unwired-Systems.md` §3.2). Do not "tidy it up".
+- The **curriculum registry** (`packages/curriculum/src/{conceptRegistry,missions,missionIds,aliases}.ts`):
+  its 14 mission rows and their `set` field feed the blocking `verify:units` gate, `validate.ts`, reporting
+  and ~a dozen tests. Its stale `chapter-boston` path constants stay too.
+- **Dead code inside protected directories**, by owner instruction: the orphaned `engine-world` modules
+  (`traversalResolver.ts`, `noticeArbiter.ts`, `cameraOwnership.ts`, `QuestMarkerHud.tsx`),
+  `moduleOrder.ts`'s `retryOrderedModule`, and `arenaPlacement()` in `mission-m1/src/runtime.ts`.
+- **`MISSION_BINDINGS.strike.does` cannot be removed** — `TraversalBinding.does` is a required field, so
+  removal is a compile error, not a prune.
 
 ---
 
@@ -456,10 +502,10 @@ zero-evidence form pass (`1c4250f`).
   `setInterval` against a fake clock and used wall-clock sleeps as a proxy for "a tick ran". The
   test now injects a scheduler driver and controls time; one assertion was tightened rather than
   any loosened. Production backoff was never fragile.
-- **Two latent traps in `apps/api`**, found while hunting, not fixed: `SubmissionRateLimiter` in
-  `assessment/requestPolicy.ts` is defined but never wired in and never tested — dead code that
-  reads as a live protection. And `matchesById`/`passes` in the pvp route are module-global, so
-  live matches leak across tests in that file.
+- **A latent trap in `apps/api`**, found while hunting, not fixed: `matchesById`/`passes` in the pvp
+  route are module-global, so live matches leak across tests in that file. (Its former neighbour
+  `SubmissionRateLimiter` — dead code that read as a live protection — was removed on
+  `workflow/m1-prune`; see "Conservative prune".)
 
 ---
 
