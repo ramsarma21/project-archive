@@ -21,13 +21,16 @@
 // (the route node lives there), so the affordance stays the authored climb
 // volume and the ladder is purely the thing the player sees themselves grip.
 //
-// TWO climbs are deliberately NOT laddered, and the owner agreed:
+// THREE climbs are deliberately NOT laddered. Two are GRIPS below; the third is
+// the clock ledge, which is CAUGHT — see the note where its entry used to be.
 //   - F_LOW->F_CROWN (the Liberty Elm): a bolted ladder up a tree crown is
 //     nonsense. Left for a branch-GRIP follow-up (honest holds up the bole), not
 //     forced here — there is no grip asset yet and the predicate models a ladder.
 //   - D2_OUTSIDE->E_BUTTRESS: onto the SOLID `buttress-stepped-stone`, which
 //     already draws as masonry set-offs the body grips. A bolted ladder would
 //     read worse than the stone that is already there, so it keeps its stone.
+//   - C_GALLERY_EMID->C_CLOCK: a reachable lip with a real edge, so the honest
+//     answer is a jump and a catch rather than a ladder bolted to a clock face.
 
 import type { GripPlacementSpec, LadderPlacementSpec } from "../types.js";
 
@@ -54,13 +57,26 @@ export const LADDERS: LadderPlacementSpec[] = [
   // the wall (+X outward). ladder-findings marked these AMBIGUOUS — the volume
   // is centred under its destination, so its (0,-1) was the platform's nearest
   // edge, not a wall to lean on; the wall is the east face at 57.5.
-  {
-    id: "CLOCK",
-    at: [58.3, 5.6, -4.0],
-    onto: "CLOCK_LEDGE",
-    faceX: 1,
-    faceZ: 0,
-  },
+  //
+  // CLOCK IS DELIBERATELY GONE, and this is the one climb in the mission that is
+  // now CAUGHT rather than climbed.
+  //
+  // The rise is 2.30m — CLOCK_LEDGE at 7.9 off GALLERY_E at 5.6 — and the ledge's
+  // own north lip sits at z=-4.5, half a metre in front of the take-off. So the
+  // body is standing at an edge it can reach, which is the one case the ladder law
+  // refuses and a human plainly answers: you jump and catch it. The engine offers
+  // that (JUMP_HANG) precisely because no ladder or grip validates here, so
+  // deleting this entry IS the conversion — there is nothing to switch on.
+  //
+  // Why this one and not the others: it is the only ascent that is both inside the
+  // standing-catch envelope (MOVEMENT_CAPABILITIES.maxHangCatchRiseM, 2.5m) and
+  // visibly a ledge rather than a face. CORNICE_E is the same 2.30m rise but sits
+  // 5.7m inside its own deck with no lip within reach, so it has nothing to catch
+  // and keeps its ladder. Five more (scaffold 2 at 2.70, the lean-to and the
+  // buttress grip at 2.60, the tower plinth and the louvre at 2.80) would need a
+  // committed run-up; three (the scaffold foot at 2.90, both meeting-house ridges
+  // at 3.00) are out of reach of any catch. All eight keep what they have until
+  // the owner has seen this one.
   {
     id: "CORNICE_E",
     at: [58.3, 7.9, 0],

@@ -17,6 +17,7 @@ import {
   CROUCH_SPEED,
   DASH_DURATION_MS,
   GRAVITY,
+  HANG_TOTAL_MS,
   RUNNING_JUMP_VY,
   RUN_SPEED,
   STEP_DOWN,
@@ -51,6 +52,16 @@ import type { TraversalClassifierConfig } from "../traversalClassifier.js";
 // contract level design budgets gaps against. Cutting a verb must not enlarge
 // another's envelope; the two thin-crossing bands stay two verbs. DASH stays
 // (the owner asked for it and a real clip is baked). See select.rankObstacle.
+//
+// JUMP_HANG is the upward mirror of HANG_DROP and the ONE verb the geometry
+// infers from the ABSENCE of something. Under the owner's ladder law a climb
+// volume with no ladder and no grip refuses (probe.readRaisedSurface), which is
+// correct and leaves the body with no answer at a lip it can plainly reach. A
+// human answers such a lip by jumping and catching it, so that is what is
+// offered: a reachable lip with nothing bolted to it is a catch, not a refusal.
+// It is a separate verb rather than a flavour of CLIMB_UP because it is a
+// different performance (three clips, not one), a different noise, a different
+// window, and a different thing for a HUD to name.
 export type TraversalVerb =
   | "NONE"
   | "STEP_UP"
@@ -58,6 +69,7 @@ export type TraversalVerb =
   | "VAULT"
   | "CLIMB_OVER"
   | "CLIMB_UP"
+  | "JUMP_HANG"
   | "JUMP"
   | "JUMP_GAP"
   | "DASH"
@@ -86,6 +98,25 @@ export const FAILURE_VERBS: ReadonlySet<TraversalVerb> = new Set<TraversalVerb>(
 ]);
 
 /**
+ * Verbs the ENGINE decides on, which a route can neither author nor name.
+ *
+ * A fourth kind, and it needed a name of its own. The vocabulary used to divide
+ * cleanly into three — what a level authors, what the player presses, and what
+ * the reader reports when it has no answer — and `JUMP_HANG` is none of them. A
+ * level authors a CLIMB link and places (or omits) a ladder; whether that ascent
+ * is ridden or CAUGHT is the engine's answer to what is actually there, decided
+ * from the absence of a visible means rather than from anything authored. So no
+ * route link can be a jump-hang, level tooling must not demand one, and it is not
+ * a failure either — it is the mechanic working.
+ *
+ * Kept as its own set rather than folded into `AUTHORABLE_VERBS` because that
+ * list is what level tooling asserts a route exercises, and adding a verb no route
+ * can contain would make that assertion permanently unsatisfiable.
+ */
+export const ENGINE_INFERRED_VERBS: ReadonlySet<TraversalVerb> =
+  new Set<TraversalVerb>(["JUMP_HANG"]);
+
+/**
  * Every verb a level's geometry can actually ask for.
  *
  * This exists so level tooling can assert "the route exercises the whole
@@ -94,6 +125,12 @@ export const FAILURE_VERBS: ReadonlySet<TraversalVerb> = new Set<TraversalVerb>(
  * vocabulary grows, at which point a level fails a test for not authoring a
  * verb that is not authorable.
  */
+// JUMP_HANG is deliberately ABSENT. A level authors a CLIMB link and places (or
+// does not place) a ladder; whether that ascent is climbed or caught is the
+// engine's answer to what is actually there, so no route link can be a jump-hang
+// and level tooling must not go looking for one. It is published in
+// MOVEMENT_CAPABILITIES.maxHangCatchRiseM instead, which is the number level
+// design does need: how tall an unladdered lip may be and still be answerable.
 export const AUTHORABLE_VERBS: readonly TraversalVerb[] = [
   "STEP_UP",
   "SLIDE",
@@ -152,6 +189,34 @@ export interface ParkourTuning {
   climbOverMaxDepthM: number;
   /** Tallest wall climbed. Above this the geometry is BLOCKED. */
   climbMaxHeightM: number;
+
+  /**
+   * Tallest UNLADDERED lip a standing body catches with a jump.
+   *
+   * Not a second climb ceiling: `climbMaxHeightM` is what a body can climb when
+   * something is bolted there to climb, and this is what it can reach and CATCH
+   * when nothing is. Lower, because a catch spends its whole budget on one leap
+   * with no purchase on the way up — an overhead reach plus the controlled part
+   * of a jump, judged conservatively rather than at the apex, since a hand that
+   * arrives at the apex arrives with no grip strength left.
+   *
+   * A rise above this is not a defect and not a refusal to fix in code: it is a
+   * lip that genuinely needs a ladder, and the three that exceed it keep theirs.
+   */
+  hangCatchMaxRiseM: number;
+  /**
+   * How far below the caught lip a hanging body's FEET (the capsule origin) sit.
+   *
+   * MEASURED OFF THE RIG, not chosen. It is `lipY - localHandY` in the rig's own
+   * settled hang: fit playerboy-rigged to STAND_HEIGHT, pose `hangIdle`, and the
+   * hands sit 1.881m above the capsule origin; `freehangClimb`'s opening hang
+   * reads 1.899m. So a body whose feet are pinned this far under the lip has the
+   * CLIP'S OWN HANDS within a centimetre of it, and the presentation grip has a
+   * centimetre to close rather than a metre — which matters, because
+   * `solveTwoBoneIkGuarded` refuses a correction over 0.4m as doing more harm
+   * than good, and a hang whose IK is refused is a body floating beside a ledge.
+   */
+  hangFeetBelowLipM: number;
 
   /** Minimum overhead clearance a slide needs (crouch capsule plus margin). */
   slideMinHeadroomM: number;
@@ -324,6 +389,13 @@ export const PARKOUR_TUNING: ParkourTuning = {
   climbOverMaxDepthM: 0.9,
   climbMaxHeightM: 3.2,
 
+  // 2.5m: the standing-catch ceiling from the reach survey. Of M1's nine authored
+  // ascents only the clock ledge (2.30m) and the east cornice (2.30m) sit under
+  // it; five more (2.60-2.80m) would need a committed run-up and three (2.90m,
+  // 3.00m twice) are out of reach of any catch and keep their ladders.
+  hangCatchMaxRiseM: 2.5,
+  hangFeetBelowLipM: 1.89,
+
   slideMinHeadroomM: 1,
   slideMaxHeadroomM: 1.45,
   slideMaxDepthM: 2.6,
@@ -409,6 +481,14 @@ export const PARKOUR_TUNING: ParkourTuning = {
     // 2567ms of content over 650ms is 3.95x, under the 4.0x ceiling (100% shown).
     CLIMB_OVER: 650,
     CLIMB_UP: 900,
+    // DERIVED, not authored here: the three stage lengths in playerMotion are the
+    // source of truth for how long a catch, a hold and a pull-up read for, and
+    // this is their sum. Writing 1700 here as well is how two numbers that must
+    // agree stop agreeing. 1.7s against CLIMB_UP's 0.9s is the honest cost of a
+    // performance with a held beat in the middle of it, and the pacing argument
+    // above applies unchanged: one climb on the guaranteed line, +0.8s, against
+    // ~135s of unspent clock.
+    JUMP_HANG: HANG_TOTAL_MS,
     // Ballistic and burst verbs are timed by the integrator, not authored.
     JUMP: 0,
     JUMP_GAP: 0,
@@ -440,6 +520,11 @@ export const PARKOUR_TUNING: ParkourTuning = {
     VAULT: 0.3,
     CLIMB_OVER: 0.35,
     CLIMB_UP: 0.2,
+    // A leap, a slap of both hands on stone, then a scramble over the lip: louder
+    // than riding a ladder (0.2), quieter than throwing a body over an obstacle
+    // (0.3). It is also the only climb the tower watch could plausibly hear, which
+    // is the right trade for taking a ladder away.
+    JUMP_HANG: 0.25,
     JUMP: 0.3,
     JUMP_GAP: 0.3,
     // Scuffed boots over three tenths of a second: quieter than a vault, louder
@@ -621,6 +706,16 @@ export const MOVEMENT_CAPABILITIES = {
   maxVaultDepthM: PARKOUR_TUNING.vaultMaxDepthM,
   maxMantleHeightM: PARKOUR_TUNING.mantleMaxHeightM,
   maxClimbHeightM: PARKOUR_TUNING.climbMaxHeightM,
+  /**
+   * Tallest lip that is answerable with NOTHING BOLTED TO IT.
+   *
+   * This is the number the ladder law makes level design's business. Under the
+   * law a climb volume without a ladder or a grip refuses, so an authored ascent
+   * either gets a visible means or it gets a jump-catch — and only up to here.
+   * Author an unladdered ascent taller than this and the body has no answer at
+   * all, which is a soft-lock rather than a difficulty.
+   */
+  maxHangCatchRiseM: PARKOUR_TUNING.hangCatchMaxRiseM,
   /** Absorbed silently by grounded motion, no verb required. */
   freeStepDownM: STEP_DOWN,
   freeStepUpM: STEP_UP,

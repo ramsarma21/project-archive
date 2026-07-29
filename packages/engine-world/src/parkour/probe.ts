@@ -63,6 +63,24 @@ export interface ObstacleRead {
   farSide: { point: Vec3; dropM: number; standable: boolean } | null;
   /** Present when the obstacle is overhead rather than underfoot. */
   lowSpan: LowSpanRead | null;
+  /**
+   * This ledge is an AUTHORED ASCENT WITH NOTHING TO CLIMB — a climb volume whose
+   * ladder or grip does not validate at this foot — but its own lip is in front of
+   * the body and within catching reach. So the read is kept rather than discarded,
+   * and the verb ladder answers it with a jump-catch instead of a climb.
+   *
+   * The distinction from a plain refusal is the LIP. `readRaisedSurface` finds a
+   * ledge by walking forward until the ground steps up, so a read that gets this
+   * far has located the ledge's own edge — something a hand can close on. The
+   * overhead read has no edge to offer (its whole job is the case where the
+   * surface is over the player's head and its rim is out of reach), so it still
+   * refuses outright: there is nothing there to hang from, and offering a catch
+   * would be a body gripping the middle of a soffit.
+   *
+   * False everywhere else, including on every ordinary ledge — those are climbed,
+   * and were never refused.
+   */
+  unladderedLip: boolean;
 }
 
 /** A ledge ahead: the ground stops or steps down further than a stride. */
@@ -421,6 +439,9 @@ function readObstacle(
     topLanding,
     farSide,
     lowSpan,
+    // A solid blocker is never an authored climb-volume ascent: the ladder law
+    // gates the two SUPPORT-SURFACE reads below, not crates and walls.
+    unladderedLip: false,
   };
 }
 
@@ -499,16 +520,6 @@ function readRaisedSurface(
   if (!hit) return null;
 
   const hitId = hit.id;
-  // REFUSAL. A climb-volume ascent onto this surface may arm only where a visible
-  // means — a ladder or an honest grip — validates at this foot. Everywhere else
-  // (an ordinary ledge with a lip the body pulls onto) is untouched, so this
-  // refuses walking up a bare authored face without pulling any normal parkour.
-  if (
-    climbVolumeAt(world, origin.x, origin.y, origin.z, hitId) !== null &&
-    climbAffordanceAt(world, origin.x, origin.y, origin.z, hitId) === null
-  ) {
-    return null;
-  }
   const topY = hit.y;
   let low = clearDistance;
   let high = hitDistance;
@@ -519,6 +530,46 @@ function readRaisedSurface(
     else low = mid;
   }
   const faceDistanceM = high;
+
+  // REFUSAL. A climb-volume ascent onto this surface may arm only where a visible
+  // means — a ladder or an honest grip — validates. Everywhere else (an ordinary
+  // ledge with a lip the body pulls onto) is untouched, so this refuses walking up
+  // a bare authored face without pulling any normal parkour.
+  //
+  // ASKED AT THE LIP AS WELL AS AT THE FOOT, and asking only at the foot was a
+  // hole big enough to drive the whole mechanic through. A verb commits from
+  // `commitDistanceM` back (0.55m of clearance, ~0.90m centre-to-face), and an
+  // authored volume only has to cover the standing spot — the clock's reaches
+  // 0.70m north of the lip it serves. So there was a 0.20m band in which the body
+  // was outside the volume, looking at the same unladdered ledge, and the law did
+  // not apply: measured, the climb committed at z=-5.40 against a volume starting
+  // at z=-5.20 and rode up a ledge with nothing on it. The ascent is a property of
+  // the LEDGE, not of which centimetre the body happens to stand on, so both ends
+  // of the read are tested and either one finding the volume is enough.
+  //
+  // The affordance is tested at both points for the same symmetry, and it cannot
+  // over-refuse: `climbAffordanceAt` already matches a ladder within 3m of the
+  // point, fifteen times the band this closes.
+  const lip = pointAt(origin, dirX, dirZ, faceDistanceM);
+  const authoredAscent =
+    climbVolumeAt(world, origin.x, origin.y, origin.z, hitId) !== null ||
+    climbVolumeAt(world, lip.x, origin.y, lip.z, hitId) !== null;
+  const visibleMeans =
+    climbAffordanceAt(world, origin.x, origin.y, origin.z, hitId) !== null ||
+    climbAffordanceAt(world, lip.x, origin.y, lip.z, hitId) !== null;
+  // A REFUSED CLIMB IS NOT THE SAME AS NO ANSWER. Refusing was the whole of it
+  // before, and it is right about the climb and silent about the body: a lip two
+  // metres up with nothing bolted to it is not something you ride, and it is
+  // something you jump at and catch. So the refusal now returns the read TAGGED
+  // when the rise is inside the catch envelope, and the verb ladder offers a
+  // jump-hang for it; above the envelope it still returns null exactly as before,
+  // because a three-metre lip has no honest answer but a ladder.
+  //
+  // Returning null above the envelope also keeps the blast radius of this change
+  // to the one shape that changed: nothing about the edge read, the obstacle
+  // ranking or the fall-through is different for an ascent that is still refused.
+  const refused = authoredAscent && !visibleMeans;
+  if (refused && topY - origin.y > tuning.hangCatchMaxRiseM) return null;
 
   // How far the surface runs on, along the travel direction.
   const depthLimit = Math.max(
@@ -595,6 +646,7 @@ function readRaisedSurface(
     // considers blockers, so anything overhead here is already reported by the
     // blocker read; inventing a span from a platform would double-count it.
     lowSpan: null,
+    unladderedLip: refused,
   };
 }
 
@@ -631,13 +683,21 @@ function readRaisedSurface(
  * finish is worse than a reader that is too generous, so the bound came back
  * out.
  *
- * What made it shippable is that those links no longer depend on it. They are
- * pure vertical ascents whose standing point is metres inside its own deck —
- * the clock is 3.5m in and the cornice 5.7m — and no reading of "you are at a
- * lip" was ever going to find them, because they are not at one. They are
- * authored now, as climb volumes, and a body standing in one skips this bound
+ * What made it shippable is that those links no longer depend on it: they are
+ * authored as climb volumes, and a body standing in one skips this bound
  * entirely. So the bound only has to answer the case inference can answer, and
  * it can be set to what an arm actually reaches.
+ *
+ * THE CLOCK IS NO LONGER ONE OF THE DEEP-SET CASES, and the note that used to sit
+ * here said it was ("the clock stands 3.5m inside its own ledge"). That was true
+ * of the old take-off at the mid-gallery interior; `C_GALLERY_EMID` was moved to
+ * the real north lip and now stands at z=-4.0 against a CLOCK_LEDGE that begins
+ * at z=-4.5 — half a metre in, exactly this bound, measured off the compiled
+ * world. The cornice (5.7m in) genuinely is deep-set and still needs its volume.
+ * The correction matters because a lip within reach is a lip a body can CATCH,
+ * which is what JUMP_HANG is for; a reader that believes the clock has no edge
+ * would never offer it. The same stale sentence is repeated in
+ * `mission-m1/src/level/climbs.ts`, which is the level-data lane's file.
  */
 const OVERHEAD_REACH_M = 0.5;
 
@@ -749,6 +809,10 @@ function readOverhead(
     topStandable: true,
     topLanding: candidate,
     farSide: null,
+    // A vertical reach has no lip in front of the body to catch, which is the
+    // whole reason this read exists. See `ObstacleRead.unladderedLip`: a refused
+    // ascent here has genuinely nothing to hang from and stays refused above.
+    unladderedLip: false,
     lowSpan: null,
   };
 }

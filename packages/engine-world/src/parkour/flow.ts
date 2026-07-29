@@ -51,6 +51,7 @@ import {
   canDash,
   cancelDash,
   dashSpeed,
+  hangStageAt,
   isDashing,
   type MotionState,
   assertFieldDt,
@@ -58,7 +59,12 @@ import {
   stepMotion,
 } from "../playerMotion.js";
 import type { NoiseEvent } from "../stealth/noise.js";
-import { LANDING_CLIP, VERB_CLIP } from "./clips.js";
+import {
+  HANG_STAGE_CLIP,
+  LANDING_CLIP,
+  LOOPED_VERB_CLIPS,
+  VERB_CLIP,
+} from "./clips.js";
 import {
   leapCaptured,
   leapRestPosition,
@@ -478,6 +484,13 @@ function verbClip(
 ): string {
   if (verb === "JUMP" && motion.phase === "RUNNING_JUMP") {
     return VERB_CLIP.JUMP_GAP;
+  }
+  // A jump-hang is three performances over one window, and which one is on screen
+  // is a fact about how far through the action the body is — the same shape as
+  // JUMP's two silhouettes above, read off the motion rather than kept as flow
+  // state that could disagree with it.
+  if (verb === "JUMP_HANG" && motion.action) {
+    return HANG_STAGE_CLIP[hangStageAt(motion.action).stage];
   }
   // CLIMB_UP is the mantle by default (VERB_CLIP.CLIMB_UP), a one-shot pull. A
   // rise above the mantle band is the >1.9m climb band — a ladder-style ascent
@@ -1020,7 +1033,7 @@ export function stepFlow(
       : flow.verb !== "NONE"
         ? verbClip(motion, flow.verb, tuning)
         : locomotionClip(motion, input, tuning);
-    flow.clipOnce = flow.landingTicks > 0 || flow.verb !== "NONE";
+    flow.clipOnce = clipPlaysOnce(flow);
     return { motion, flow, events, noise, probe };
   }
 
@@ -1146,10 +1159,19 @@ export function stepFlow(
     // above) but do not commit it without a buffered jump. Only the commit is
     // gated — the ladder falls through to whatever is ranked below (a same-height
     // run past the face, the VAULT that clears the obstacle, or the edge brake if
-    // the read is a fall). MANTLE and CLIMB_UP are the two inferred UPWARD verbs;
+    // the read is a fall). CLIMB_UP and JUMP_HANG are the inferred UPWARD verbs;
     // VAULT and CLIMB_OVER cross an obstacle rather than mount a deck and stay
     // automatic, and a buffered Space commits either gated verb outright.
-    if (!inferredAscentAllowed && !jumpWanted && verb === "CLIMB_UP") {
+    //
+    // JUMP_HANG is gated with CLIMB_UP and not exempted: it is the same claim on
+    // the player — the world taking hold of a body and putting it somewhere higher
+    // — and a catch is if anything the more startling of the two to receive
+    // unasked. Taking a ladder away must not also take away the consent test.
+    if (
+      !inferredAscentAllowed &&
+      !jumpWanted &&
+      (verb === "CLIMB_UP" || verb === "JUMP_HANG")
+    ) {
       continue;
     }
     // THE COOLDOWN IS FOR VERBS, AND THE BRAKE IS NOT ONE. It exists so a chain
@@ -1275,9 +1297,24 @@ export function stepFlow(
       : flow.landingTicks > 0
         ? LANDING_CLIP[flow.landing]
         : locomotionClip(motion, input, tuning);
-  flow.clipOnce = flow.verb !== "NONE" || flow.landingTicks > 0;
+  flow.clipOnce = clipPlaysOnce(flow);
 
   return { motion, flow, events, noise, probe };
+}
+
+/**
+ * Should the clip just chosen play once and clamp?
+ *
+ * A verb or a landing owns the body, so its performance is a beat and clamps —
+ * with one exception, and it has to be keyed on the CLIP rather than on the verb.
+ * A jump-hang's middle stage is a held attitude covering however long the hold
+ * lasts; clamped on its first frame it is a freeze rather than a hang, and the
+ * mixer would also stop advancing it. `LOOPED_VERB_CLIPS` is the same fact the
+ * rig manifest already records as cyclic, stated where this can read it.
+ */
+function clipPlaysOnce(flow: FlowState): boolean {
+  if (LOOPED_VERB_CLIPS.has(flow.clip)) return false;
+  return flow.verb !== "NONE" || flow.landingTicks > 0;
 }
 
 /** The best candidate that plans against this world, or null. Read only. */

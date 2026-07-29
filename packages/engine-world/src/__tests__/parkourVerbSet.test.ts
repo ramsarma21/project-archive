@@ -25,6 +25,7 @@ import {
 import {
   AUTHORABLE_VERBS,
   DASH_ENVELOPE,
+  ENGINE_INFERRED_VERBS,
   FAILURE_VERBS,
   MOVEMENT_CAPABILITIES,
   PARKOUR_TUNING,
@@ -523,19 +524,33 @@ test("the vocabulary partitions into what the world asks for and what the player
   // Level tooling asserts that a route exercises the whole vocabulary. That is
   // only a meaningful assertion if the vocabulary it checks excludes the verbs a
   // route cannot author, which is what this partition is for.
+  //
+  // FOUR buckets, not three. ENGINE_INFERRED_VERBS is the one a level can neither
+  // author nor press: a jump-catch is the engine's answer to an authored ascent
+  // with no ladder on it, so it belongs to no route link and is not a failure.
+  // This test is what forced the distinction to be named — a verb added to the
+  // table and to none of the buckets fails here, which is exactly its job.
   const all = new Set(Object.keys(PARKOUR_TUNING.verbNoise) as TraversalVerb[]);
   all.delete("NONE");
   const covered = new Set<TraversalVerb>([
     ...AUTHORABLE_VERBS,
     ...PLAYER_NAMED_VERBS,
     ...FAILURE_VERBS,
+    ...ENGINE_INFERRED_VERBS,
   ]);
   assert.deepEqual(
     [...all].filter((verb) => !covered.has(verb)),
     [],
-    "a verb in none of the three buckets is a verb nothing knows how to reason about",
+    "a verb in none of the four buckets is a verb nothing knows how to reason about",
   );
   for (const verb of AUTHORABLE_VERBS) {
+    assert.ok(!PLAYER_NAMED_VERBS.has(verb));
+    assert.ok(!FAILURE_VERBS.has(verb));
+    assert.ok(!ENGINE_INFERRED_VERBS.has(verb));
+  }
+  // The engine-inferred bucket is disjoint from the other two as well, so a verb
+  // cannot be both something the player presses and something the world infers.
+  for (const verb of ENGINE_INFERRED_VERBS) {
     assert.ok(!PLAYER_NAMED_VERBS.has(verb));
     assert.ok(!FAILURE_VERBS.has(verb));
   }

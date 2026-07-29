@@ -21,6 +21,7 @@ import {
   chaseCameraPosition,
   chaseFocus,
   clipStartSeconds,
+  hangStageAt,
   lookForward,
   lookMoveIntent,
   playerClipFor,
@@ -206,6 +207,18 @@ function clipTimeScale(runtime: MissionRuntime, requested: string): number {
   }
 
   const verb = runtime.flow.verb;
+  // A JUMP-HANG IS THREE PERFORMANCES OVER ONE WINDOW, so each is fitted to its
+  // OWN stage and not to the verb's total. Asking for the whole 1700ms would run
+  // the 1733ms catch at 1.02x — four tenths of a second of reach played over most
+  // of two seconds — and the same mistake in the other direction on the pull. The
+  // stage boundaries come from the engine (hangStageAt), which is also what chose
+  // the clip, so the rate and the clip cannot disagree about which beat this is.
+  const action = runtime.motion.action;
+  if (verb === "JUMP_HANG" && action) {
+    const stage = hangStageAt(action);
+    const fitted = verbTimeScale(clip, stage.windowMs);
+    if (fitted !== null) return fitted;
+  }
   if (verb !== "NONE" && playerClipFor(VERB_CLIP[verb]) === clip) {
     const fitted = verbTimeScale(clip, PARKOUR_TUNING.durationsMs[verb]);
     if (fitted !== null) return fitted;
@@ -1073,8 +1086,32 @@ function ShaderWarmup() {
 // clip-fidelity instrument measured a real slide on — VAULT 6.78 m/s, CLIMB_UP
 // 2.94). CLIMB_OVER and HANG_DROP grip but have no ground plant to pin; SLIDE and
 // STEP_UP play a locomotion clip whose feet must ride the ground untouched.
-const IK_GRIP_VERBS = new Set(["VAULT", "CLIMB_OVER", "CLIMB_UP", "HANG_DROP"]);
+//
+// JUMP_HANG grips and is NOT pinned: for most of its window the feet are hanging
+// in air, and the live plant detector latches whichever toe happens to be lowest,
+// which on a hanging body is not a plant at all.
+const IK_GRIP_VERBS = new Set([
+  "VAULT",
+  "CLIMB_OVER",
+  "CLIMB_UP",
+  "HANG_DROP",
+  "JUMP_HANG",
+]);
 const IK_PIN_VERBS = new Set(["VAULT", "CLIMB_UP"]);
+
+/**
+ * How thick a slab of the caught ledge the hands are given to grip.
+ *
+ * A deck is a support PLANE with no solid span, so there is no box for a hand to
+ * close on and `gripHands` has nothing to snap to — the reason the hands would
+ * otherwise reach for the building's own wall a metre to the west. A hanging body
+ * grips the lip, which is the top few centimetres of the moulding the deck is
+ * drawn on, so that is what is handed to the solver. Thin on purpose: deep enough
+ * that a hand a few centimetres proud reads as being ON it, shallow enough that a
+ * hand nearer the underside is projected to the FACE rather than dragged down the
+ * side of the building.
+ */
+const GRIP_LIP_DEPTH_M = 0.08;
 
 /**
  * The current frame's IK request, or null when no gripping verb is mid-flight —
@@ -1088,16 +1125,35 @@ function playerIkFrame(runtime: MissionRuntime): RiggedIkFrame | null {
   const action = runtime.motion.action;
   const verb = runtime.flow.verb;
   if (!action || !IK_GRIP_VERBS.has(verb)) return null;
-  const blockers = runtime.instance.world.blockers;
+  const world = runtime.instance.world;
   const boxes: { min: [number, number, number]; max: [number, number, number] }[] = [];
   for (const id of action.ignore) {
-    const b = blockers.find((x) => x.id === id);
-    if (!b) continue;
-    // A full-height wall's topY is Infinity; clamp it so the box has a finite
-    // centre for the body-side face test. The face the limb exits is lateral, so
-    // the exact top never matters, only that it is above the limb.
-    const topY = Number.isFinite(b.topY) ? b.topY : b.baseY + 20;
-    boxes.push({ min: [b.minX, b.baseY, b.minZ], max: [b.maxX, topY, b.maxZ] });
+    const b = world.blockers.find((x) => x.id === id);
+    if (b) {
+      // A full-height wall's topY is Infinity; clamp it so the box has a finite
+      // centre for the body-side face test. The face the limb exits is lateral, so
+      // the exact top never matters, only that it is above the limb.
+      const topY = Number.isFinite(b.topY) ? b.topY : b.baseY + 20;
+      boxes.push({ min: [b.minX, b.baseY, b.minZ], max: [b.maxX, topY, b.maxZ] });
+      continue;
+    }
+    // A DECK IN THE IGNORE SET IS THE THING BEING GRIPPED, and it is not a
+    // blocker, so the loop above passes straight over it. That is right for a
+    // vault (its ignore set names the crate it crosses) and wrong for a catch: the
+    // clock ledge IS a deck, and without this the hang would have no hold in the
+    // solver's world at all. Only a jump-hang needs it — every other gripping verb
+    // acts on a solid — so it is scoped to that verb rather than changing what a
+    // vault's hands may reach for.
+    if (verb !== "JUMP_HANG") continue;
+    const deck = world.platforms.find((p) => p.id === id);
+    // The lip being caught is ABOVE the body; the deck it jumped from is also in
+    // the ignore set and is not a hold. One comparison separates them, and it
+    // keeps the floor the body just left out of the hands' candidate list.
+    if (!deck || deck.y <= action.startPos.y) continue;
+    boxes.push({
+      min: [deck.minX, deck.y - GRIP_LIP_DEPTH_M, deck.minZ],
+      max: [deck.maxX, deck.y, deck.maxZ],
+    });
   }
   if (boxes.length === 0) return null;
   return {

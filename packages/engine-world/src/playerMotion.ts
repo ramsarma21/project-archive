@@ -292,6 +292,7 @@ export type MotionPhase =
   | "CLIMB_UP"
   | "CLIMB_DOWN"
   | "DUCK_UNDER"
+  | "JUMP_HANG"
   | "MANTLE"; // permanently disabled; never entered
 
 export const AIRBORNE_PHASES: ReadonlySet<MotionPhase> = new Set<MotionPhase>([
@@ -304,7 +305,63 @@ export const AUTHORED_PHASES: ReadonlySet<MotionPhase> = new Set<MotionPhase>([
   "CLIMB_UP",
   "CLIMB_DOWN",
   "DUCK_UNDER",
+  "JUMP_HANG",
 ]);
+
+// ---- the occupied hang -----------------------------------------------------
+//
+// A jump-catch is one authored action with three stages: leap and catch the lip,
+// hold on it, pull up over it. It is deliberately NOT three actions and NOT a
+// state the player is held in until they ask to leave.
+//
+// WHY ONE TIMED ACTION IS THE SAFETY. A held hang is a state, and a state needs
+// an exit for every way of arriving in it — which is how the encounter soft-lock
+// and the scaffold-gap soft-lock happened (M1-STATUS). An authored action cannot
+// outlive `durationMs`: `stepAuthored` either completes it onto the validated
+// endpoint or `cancelAction` snaps it back to a validated start. There is no tick
+// on which the body is hanging and nothing is going to move it, so the "hard
+// timeout that auto-pulls-up" is the window itself rather than a second timer
+// watching the first.
+//
+// THE HOLD IS A PINNED CONSTANT, and that is what keeps the hashed motion path
+// exact. `samplePath` returns the hang anchor's own three doubles verbatim during
+// the hold — no interpolation, no integration, not even a multiply — so every
+// tick of the hold hashes identically on every engine, and the only arithmetic in
+// the whole move is the two straight-line segments either side of it.
+//
+// The stage lengths live here rather than in PARKOUR_TUNING because the sampler
+// is what consumes them and `tuning.durationsMs.JUMP_HANG` is DERIVED from their
+// sum — one source of truth for "how long is a jump-hang", not two that drift.
+// Each is sized so its baked clip's measured content fits under the 4.0x playback
+// ceiling (characterAnimation.CLIP_CONTENT_MS): jumpToHang 1733ms over 450ms is
+// 3.85x, mantle 3729ms over 950ms is 3.93x, and the looped hangIdle is unscaled.
+export const HANG_CATCH_MS = 450;
+export const HANG_HOLD_MS = 300;
+export const HANG_PULL_MS = 950;
+export const HANG_TOTAL_MS = HANG_CATCH_MS + HANG_HOLD_MS + HANG_PULL_MS;
+
+/** Which beat of a jump-hang is on screen. */
+export type HangStage = "CATCH" | "HOLD" | "PULL";
+
+/**
+ * The stage a jump-hang is in, and the window that stage occupies.
+ *
+ * Read by the flow controller to pick the clip and by the presentation layer to
+ * pick its playback rate, so both answer "which beat is this" from one place.
+ * Progress is taken off `elapsedMs` rather than off a normalised t, because the
+ * boundaries are authored in milliseconds.
+ */
+export function hangStageAt(action: AuthoredAction): {
+  stage: HangStage;
+  windowMs: number;
+} {
+  const elapsed = action.elapsedMs;
+  if (elapsed < HANG_CATCH_MS) return { stage: "CATCH", windowMs: HANG_CATCH_MS };
+  if (elapsed < HANG_CATCH_MS + HANG_HOLD_MS) {
+    return { stage: "HOLD", windowMs: HANG_HOLD_MS };
+  }
+  return { stage: "PULL", windowMs: HANG_PULL_MS };
+}
 /**
  * Velocity-driven bursts. Deliberately NOT an authored phase: an authored action
  * follows a fixed anchored trajectory, while a burst is ordinary grounded motion
@@ -330,7 +387,9 @@ export interface AuthoredAnchor {
 }
 
 export interface AuthoredAction {
-  kind: "VAULT" | "CLIMB_UP" | "CLIMB_DOWN" | "DUCK_UNDER";
+  // JUMP_HANG's chain is exactly three anchors — start, the pinned hang at the
+  // lip, the top-out — and `samplePath` stages it rather than walking arc length.
+  kind: "VAULT" | "CLIMB_UP" | "CLIMB_DOWN" | "DUCK_UNDER" | "JUMP_HANG";
   anchors: AuthoredAnchor[];
   durationMs: number;
   elapsedMs: number;
@@ -969,7 +1028,7 @@ function outwardNormal(a: AuthoredAnchor, b: AuthoredAnchor, kind: AuthoredActio
   // b - a. Vault/duck cross through, use travel direction as a fallback.
   let dx: number;
   let dz: number;
-  if (kind === "CLIMB_UP") {
+  if (kind === "CLIMB_UP" || kind === "JUMP_HANG") {
     dx = a.x - b.x;
     dz = a.z - b.z;
   } else if (kind === "CLIMB_DOWN") {
@@ -1636,9 +1695,55 @@ export function sampleAuthoredPath(
   return samplePath(action, t);
 }
 
+/**
+ * A jump-hang's pose: catch, then the pinned hold, then the pull-up.
+ *
+ * Staged in TIME rather than in arc length, which is the whole point. Arc-length
+ * parameterisation has no way to express a dwell — two coincident anchors
+ * contribute no length and are passed through in one step — and a dwell is
+ * exactly what a hang is.
+ *
+ * THE HOLD RETURNS THE ANCHOR'S OWN DOUBLES. Not `a + (b - a) * 0`, which is
+ * arithmetic and therefore something to reason about; the three numbers the
+ * planner wrote, unchanged. So the position a hanging body reports is bit-exact
+ * on every engine by construction rather than by argument, and the hashed motion
+ * path reads one fixed value for the whole hold however many ticks it lasts.
+ *
+ * Facing is the travel yaw throughout: the lip a hang catches is the thing in
+ * front of the body, so facing the way it is going IS facing the wall, and the
+ * top-out carries on in the same direction rather than turning back the way it
+ * came (which is what a CLIMB_DOWN-style obstacle-facing derivation would give).
+ */
+function sampleHang(
+  action: AuthoredAction,
+  t: number,
+): { x: number; y: number; z: number; yaw: number } {
+  const anchors = action.anchors;
+  const start = anchors[0]!;
+  const hang = anchors[1] ?? anchors[anchors.length - 1]!;
+  const end = anchors[anchors.length - 1]!;
+  const yaw = end.yaw ?? action.startYaw;
+  const catchEnd = HANG_CATCH_MS / HANG_TOTAL_MS;
+  const holdEnd = (HANG_CATCH_MS + HANG_HOLD_MS) / HANG_TOTAL_MS;
+  const lerp = (a: AuthoredAnchor, b: AuthoredAnchor, k: number) => ({
+    x: a.x + (b.x - a.x) * k,
+    y: a.y + (b.y - a.y) * k,
+    z: a.z + (b.z - a.z) * k,
+    yaw,
+  });
+  const ease = (k: number) => {
+    const c = k < 0 ? 0 : k > 1 ? 1 : k;
+    return c * c * (3 - 2 * c);
+  };
+  if (t < catchEnd) return lerp(start, hang, ease(t / catchEnd));
+  if (t < holdEnd) return { x: hang.x, y: hang.y, z: hang.z, yaw };
+  return lerp(hang, end, ease((t - holdEnd) / (1 - holdEnd)));
+}
+
 // Deterministic piecewise-linear sample along the anchor chain, with an
 // authored vault loft. Root-neutral: the clip adds no displacement of its own.
 function samplePath(action: AuthoredAction, t: number): { x: number; y: number; z: number; yaw: number } {
+  if (action.kind === "JUMP_HANG") return sampleHang(action, t);
   const eased = t * t * (3 - 2 * t);
   const anchors = action.anchors;
   const lengths: number[] = [];

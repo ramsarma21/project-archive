@@ -110,7 +110,8 @@ const parkourIk = await imp("packages/engine-world/src/parkourIk.ts");
 const worldScale = await imp("./scripts/check-world-scale.mjs");
 
 const { PARKOUR_TUNING, AUTHORABLE_VERBS } = tuning;
-const { VERB_CLIP, LANDING_CLIP, PARKOUR_CLIP_TARGET_MS } = clips;
+const { VERB_CLIP, LANDING_CLIP, PARKOUR_CLIP_TARGET_MS, HANG_STAGE_CLIP } = clips;
+const { HANG_CATCH_MS, HANG_HOLD_MS, HANG_PULL_MS } = motion;
 const {
   verbTimeScale,
   playerClipFor,
@@ -371,6 +372,31 @@ function canonicalMove(verb) {
         note: `slide under ${head.toFixed(2)}m of headroom`,
       };
     }
+    case "JUMP_HANG": {
+      // The catch is measured at the TOP of its own envelope (the tallest
+      // unladdered lip a standing body may be offered), on a ledge placed exactly
+      // where select.planVerb's anchors put it. Three anchors, and the middle one
+      // is the hang: feet `hangFeetBelowLipM` under the lip, a capsule radius
+      // short of the face — the pinned hold.
+      //
+      // THE GRIP BOX IS A THIN SLAB AT THE LIP, not the whole ledge mass, because
+      // that is what MissionStage hands the renderer: a caught deck has no solid
+      // span, so the presentation layer synthesises the top few centimetres of the
+      // moulding as the hold. Reproducing that here rather than a full-height box
+      // is what makes the hand numbers below the ones that are actually drawn.
+      const h = PARKOUR_TUNING.hangCatchMaxRiseM; // 2.5
+      const lipDepth = 0.08; // MissionStage.GRIP_LIP_DEPTH_M
+      const hangAlong = Math.max(0, FACE - r);
+      const hang = { x: 0, y: h - PARKOUR_TUNING.hangFeetBelowLipM, z: hangAlong };
+      const land = { x: 0, y: h, z: FACE + INSET, yaw: 0 };
+      return {
+        kind: "JUMP_HANG", arcHeight: 0, capsule: STAND_HEIGHT,
+        anchors: [start, hang, land],
+        boxes: [box(-wide, wide, h - lipDepth, h, FACE, FACE + INSET + 1.0, "lip")],
+        gripHands: true, plantFeetOnTop: false, expectFootLift: true,
+        note: `jump-catch and mantle a ${h.toFixed(2)}m unladdered lip`,
+      };
+    }
     case "HANG_DROP": {
       const drop = PARKOUR_TUNING.hangDropMaxDropM; // 3.2
       const contact = 0.1;
@@ -477,9 +503,56 @@ function timingFor(verb, clipName, windowMs) {
  * authored verb and measure contact / sliding / clipping. Pure over (rig,
  * move, window, rate); reads the engine's own path sampler for the root.
  */
-function sampleVerb(rig, move, clipName, windowMs, rate, startOffsetMs, useIk, plants) {
+/**
+ * A verb whose window is covered by SEVERAL clips in sequence — the jump-hang's
+ * catch, hold and pull-up — as a per-frame resolver. Returns the clip, its own
+ * stage window and the rate the renderer will play it at, so the reconstruction
+ * switches performance exactly where `flow.verbClip` does.
+ *
+ * Returns null for the ordinary one-clip verbs, which keeps their sampling byte
+ * for byte what it was.
+ */
+function stagesFor(verb) {
+  if (verb !== "JUMP_HANG") return null;
+  const stages = [
+    { stage: "CATCH", ms: HANG_CATCH_MS },
+    { stage: "HOLD", ms: HANG_HOLD_MS },
+    { stage: "PULL", ms: HANG_PULL_MS },
+  ];
+  let at = 0;
+  return stages.map((s) => {
+    const from = at;
+    at += s.ms;
+    const requested = HANG_STAGE_CLIP[s.stage];
+    const clipName = playerClipFor(requested);
+    return {
+      ...s,
+      from,
+      to: at,
+      requested,
+      clipName,
+      rate: verbTimeScale(clipName, s.ms) ?? 1,
+      startOffsetMs: CLIP_CONTENT_START_MS[clipName] ?? 0,
+    };
+  });
+}
+
+function sampleVerb(rig, move, clipName, windowMs, rate, startOffsetMs, useIk, plants, stages) {
   const clip = rig.clips.find((c) => c.name === clipName);
   if (!clip) return { error: `rig has no clip '${clipName}'` };
+  // A staged verb resolves its clip per frame; a one-clip verb keeps the single
+  // clip resolved above. Missing any stage's clip is an error, not a fallback:
+  // silently sampling the wrong performance is what this instrument exists to
+  // catch elsewhere.
+  const staged = stages
+    ? stages.map((s) => ({ ...s, clip: rig.clips.find((c) => c.name === s.clipName) }))
+    : null;
+  if (staged) {
+    const absent = staged.filter((s) => !s.clip);
+    if (absent.length) {
+      return { error: `rig has no clip(s) ${absent.map((s) => `'${s.clipName}'`).join(", ")}` };
+    }
+  }
   const action = actionFor(move, windowMs);
   const frames = Math.max(2, Math.round(windowMs / 1000 / SAMPLE_DT));
   const isCyclic = CYCLIC_VERB_CLIPS.has(clipName);
@@ -500,11 +573,22 @@ function sampleVerb(rig, move, clipName, windowMs, rate, startOffsetMs, useIk, p
     const elapsedMs = (i / (frames - 1)) * windowMs;
     const t = Math.min(1, elapsedMs / windowMs);
     const root = sampleAuthoredPath(action, t); // engine's own eased path sample
+    // Which performance is on screen, and how far into it. A staged verb restarts
+    // its clip at each stage boundary — the renderer crossfades a new action in —
+    // so the clip clock is measured from the stage's own start, not the verb's.
+    const stage = staged
+      ? staged.find((s) => elapsedMs < s.to) ?? staged[staged.length - 1]
+      : null;
+    const frameClip = stage ? stage.clip : clip;
+    const frameRate = stage ? stage.rate : rate ?? 1;
+    const frameOffset = stage ? stage.startOffsetMs : startOffsetMs;
+    const intoStage = stage ? elapsedMs - stage.from : elapsedMs;
+    const frameCyclic = CYCLIC_VERB_CLIPS.has(frameClip.name);
     // Clip time: the renderer advances the clip at `rate` from its content start;
     // a once-clip clamps at its end, a cyclic clip loops.
-    let clipTimeS = (startOffsetMs + elapsedMs * (rate ?? 1)) / 1000;
-    if (isCyclic) clipTimeS = clip.duration > 0 ? clipTimeS % clip.duration : 0;
-    else clipTimeS = Math.min(clipTimeS, clip.duration);
+    let clipTimeS = (frameOffset + intoStage * frameRate) / 1000;
+    if (frameCyclic) clipTimeS = frameClip.duration > 0 ? clipTimeS % frameClip.duration : 0;
+    else clipTimeS = Math.min(clipTimeS, frameClip.duration);
     // In the fitted frame the posed bones ARE the local overlay, so the boxes and
     // plant pins are the world geometry minus this frame's root path.
     let ik = null;
@@ -521,7 +605,7 @@ function sampleVerb(rig, move, clipName, windowMs, rate, startOffsetMs, useIk, p
         }),
       };
     }
-    const local = poseBones(rig, clip, clipTimeS, ik);
+    const local = poseBones(rig, frameClip, clipTimeS, ik);
     // World = root path position + local bone offset (travel yaw is 0 here).
     const toWorld = (p) => ({ x: root.x + p.x, y: root.y + p.y, z: root.z + p.z });
 
@@ -720,31 +804,43 @@ async function run(rigFile, useIk) {
   const rows = [];
 
   // Surface verbs — the full overlay.
-  const SURFACE = ["STEP_UP", "SLIDE", "VAULT", "CLIMB_OVER", "CLIMB_UP", "HANG_DROP"];
+  const SURFACE = ["STEP_UP", "SLIDE", "VAULT", "CLIMB_OVER", "CLIMB_UP", "JUMP_HANG", "HANG_DROP"];
   for (const verb of SURFACE) {
     const move = canonicalMove(verb);
+    const stages = stagesFor(verb);
     const requested = VERB_CLIP[verb];
     const clipName = playerClipFor(requested);
-    const onRig = clipNames.has(clipName);
+    const onRig = stages
+      ? stages.every((st) => clipNames.has(st.clipName))
+      : clipNames.has(clipName);
     const windowMs = PARKOUR_TUNING.durationsMs[verb];
-    const timing = timingFor(verb, clipName, windowMs);
+    // A staged verb has no single timing story: each stage is fitted to its own
+    // window, so the row carries all three rather than pretending one clip covers
+    // 1700ms. `timing` stays the FIRST stage so the existing verdict logic has
+    // something honest to read; `stageTiming` is the whole picture.
+    const timing = timingFor(verb, stages ? stages[0].clipName : clipName, stages ? stages[0].ms : windowMs);
+    const stageTiming = stages
+      ? stages.map((st) => ({ stage: st.stage, ...timingFor(verb, st.clipName, st.ms) }))
+      : null;
     const rate = timing.actualRate ?? 1; // locomotion fallback plays ~stride; use 1 for the overlay
     const startOffset = CLIP_CONTENT_START_MS[clipName] ?? 0;
     const applyIk = useIk && rig.parkourLimbs && move.gripHands !== undefined;
     // Foot pins hold a genuinely PLANTED foot still (the vault/mantle push-off).
     // A slide's feet are MEANT to travel the ground (feetSlideExpected) and a
-    // locomotion substitute has no authored plant, so those get no pin.
+    // locomotion substitute has no authored plant, so those get no pin. A hang has
+    // no plant at all — the feet are in the air for most of the window and the
+    // live detector would latch whichever toe hangs lowest.
     const plants =
-      applyIk && move.gripHands && !move.feetSlideExpected
+      applyIk && move.gripHands && !move.feetSlideExpected && !stages
         ? detectPlants(rig, move, clipName, windowMs, rate, startOffset)
         : null;
     const s = onRig
-      ? sampleVerb(rig, move, clipName, windowMs, rate, startOffset, applyIk, plants)
+      ? sampleVerb(rig, move, clipName, windowMs, rate, startOffset, applyIk, plants, stages)
       : { error: `clip '${clipName}' (from ${requested}) not baked on rig` };
     const verdict = verdictForSurfaceVerb(verb, move, timing, s);
     rows.push({
       verb, requested, clipName, fallback: requested !== clipName,
-      windowMs, kind: "SURFACE", move: move.note, timing, sample: s, verdict,
+      windowMs, kind: "SURFACE", move: move.note, timing, stageTiming, sample: s, verdict,
     });
   }
 
@@ -790,13 +886,31 @@ function landingVerdict(timing) {
   return { rank: flags.length ? 1 : 0, label: flags.length ? "FLAGGED" : "OK", flags };
 }
 
-/** Baked performance clips no verb or landing actually plays (a bake nothing uses). */
+/**
+ * Baked performance clips no verb or landing actually plays (a bake nothing uses).
+ *
+ * THE CANDIDATE LIST IS DERIVED, NOT TYPED. It used to be a hand-written array of
+ * clip names, which means a clip baked onto the rig and wired to nothing was
+ * invisible to the one instrument whose job is to notice — the failure this check
+ * exists to prevent, in the check itself. `CLIP_CONTENT_MS` is the rig's own list
+ * of measured one-shot performances (a locomotion cycle has no entry), so every
+ * baked performance is a candidate by construction and a new bake shows up here
+ * the moment it lands without being played.
+ */
 function findOrphanClips(clipNames) {
   const used = new Set();
   for (const v of Object.values(VERB_CLIP)) used.add(playerClipFor(v));
   for (const v of Object.values(LANDING_CLIP)) used.add(playerClipFor(v));
-  const performanceClips = ["mantle", "climbOver", "hangDrop", "slide", "stepUp", "dash", "dropRoll", "landRun", "landHard", "leapOfFaith", "leapOfFaithDive", "leapOfFaithLand"];
-  return performanceClips.filter((c) => clipNames.has(c) && !used.has(c));
+  for (const v of Object.values(HANG_STAGE_CLIP)) used.add(playerClipFor(v));
+  // Played by systems this instrument does not model, so their absence from the
+  // traversal tables is not an orphan. Named individually rather than by a
+  // pattern, so a clip that stops being played somewhere else still surfaces:
+  // `dodge` is the duel's evade, `throwLight` the handbill toss (MissionStage's
+  // THROW_CLIP), `land` the alias `landHard` resolves through.
+  const playedElsewhere = new Set(["dodge", "throwLight", "land"]);
+  return Object.keys(CLIP_CONTENT_MS)
+    .filter((c) => clipNames.has(c) && !used.has(c) && !playedElsewhere.has(c))
+    .sort();
 }
 
 // ---------------------------------------------------------------- report
@@ -836,7 +950,13 @@ function report(data) {
   console.log("  (clip overlaid on the smoothstep anchor path over a canonical envelope obstacle)\n");
   for (const r of surface) {
     console.log(`  ${r.verdict.label.padEnd(8)} ${r.verb.padEnd(11)} ${r.move}`);
-    console.log(`      ${fmtTiming(r.timing)}`);
+    if (r.stageTiming) {
+      for (const st of r.stageTiming) {
+        console.log(`      ${st.stage.padEnd(5)} ${fmtTiming(st)}`);
+      }
+    } else {
+      console.log(`      ${fmtTiming(r.timing)}`);
+    }
     if (r.sample && !r.sample.error) {
       const s = r.sample;
       console.log(`      hands: closest ${s.handMinDist?.toFixed(2)}m to object (top-plane gap ${s.handMinTopGap?.toFixed(2)}m); foot lift ${(s.footPeakLift * 100).toFixed(1)}cm`);

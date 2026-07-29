@@ -168,6 +168,27 @@ function rankObstacle(
 ): void {
   const { heightM, depthM, lowSpan, topStandable, farSide } = obstacle;
 
+  // AN AUTHORED ASCENT WITH NOTHING BOLTED TO IT OFFERS EXACTLY ONE VERB.
+  //
+  // The read reached here refused (the ladder law: a climb volume with no ladder
+  // and no grip may not be climbed) and kept the geometry because its own lip is
+  // in front of the body — see `ObstacleRead.unladderedLip`. A jump-catch is the
+  // answer and it is the ONLY answer: returning early is what stops the ladder
+  // quietly handing the same face to CLIMB_UP, STEP_UP or a climb-over by another
+  // route, which would make the refusal decorative. The catch envelope is checked
+  // here as well as in the read, because ranking is where a verb's own limits
+  // belong and the read's check is the one that keeps the blast radius small.
+  if (obstacle.unladderedLip) {
+    if (
+      heightM > tuning.stepUpMaxHeightM &&
+      heightM <= tuning.hangCatchMaxRiseM &&
+      topStandable
+    ) {
+      ranked.push("JUMP_HANG");
+    }
+    return;
+  }
+
   // Duck under before climbing over: a low span is never scaled.
   if (
     slideAllowed &&
@@ -540,6 +561,14 @@ function durationFor(
   tuning: ParkourTuning,
 ): number {
   const base = tuning.durationsMs[verb];
+  // A JUMP_HANG IS A STANDING MOVE, so the slow-entry stretch has nothing to say
+  // about it. The multiplier exists because a verb approached at a walk should
+  // read more deliberately than the same verb hit at a sprint; a jump-catch has
+  // no fast entry to be slower than — it is taken from a stop, or near one, every
+  // time. Stretching it by 1.35x would mean the window is never the authored
+  // 1700ms, which quietly falsifies the three stage lengths the clips are fitted
+  // to and puts the fidelity instrument's numbers a third away from what plays.
+  if (verb === "JUMP_HANG") return base;
   return probe.speedMps < tuning.sprintThresholdMps
     ? Math.round(base * tuning.slowEntryDurationMultiplier)
     : base;
@@ -675,6 +704,43 @@ export function planVerb(
           contactDistanceM: obstacle.contactDistanceM,
           commitDistanceM: tuning.commitDistanceM,
           reason: `${verb.toLowerCase()} onto ${obstacle.heightM.toFixed(2)}m top`,
+        },
+      );
+    }
+
+    case "JUMP_HANG": {
+      if (!obstacle?.topLanding) return null;
+      // Three anchors, and the middle one is the whole verb: start, the pinned
+      // hang, the top-out. `samplePath` stages them in time (see sampleHang), so
+      // the body leaps to the second anchor, holds AT it, and pulls to the third.
+      //
+      // The hang sits a capsule radius SHORT of the face, tangent to it — the same
+      // inset the CLIMB_UP rise uses and for the same reason: `faceDistanceM` is
+      // centre-to-near-face, so hanging AT the face would plant the capsule centre
+      // a radius inside the ledge for the whole hold and leave the depenetration
+      // solver arguing with a position that is meant to be fixed. Clamped at zero
+      // so a body already touching the lip hangs straight up rather than behind
+      // itself.
+      const hangAlong = Math.max(0, obstacle.faceDistanceM - CAPSULE_RADIUS);
+      const hang = ahead(
+        start,
+        probe,
+        hangAlong,
+        obstacle.topY - tuning.hangFeetBelowLipM,
+      );
+      return authored(
+        "JUMP_HANG",
+        [
+          anchor(start, travelYaw),
+          anchor(hang, travelYaw),
+          anchor(obstacle.topLanding, travelYaw),
+        ],
+        {
+          ignore: [obstacle.id],
+          arcHeight: 0,
+          contactDistanceM: obstacle.contactDistanceM,
+          commitDistanceM: tuning.commitDistanceM,
+          reason: `catch and mantle a ${obstacle.heightM.toFixed(2)}m unladdered lip`,
         },
       );
     }
