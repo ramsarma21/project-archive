@@ -22,12 +22,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { M1_BOSS_TACTICS, projectFieldSeed, type BossProfile, type OpponentSource } from "@pa/duel";
+import {
+  M1_BOSS_OVERRIDES,
+  M1_BOSS_TACTICS,
+  M1_BOSS_TIER,
+  bossProfileForTier,
+  projectFieldSeed,
+  ropewalkYardArenaSpec,
+  type BossProfile,
+  type OpponentSource,
+} from "@pa/duel";
 
 import { M1_MISSION_ID, duelBrief } from "../src/chapter/m1Mission.js";
 import { m1DuelDescriptor } from "../src/duel/m1Duel.js";
 import { missionCast, missionDuelDescriptor } from "../src/duel/missionBrief.js";
-import { yardArena } from "../src/duel/arenaSpec.js";
+import { yardArena, yardArenaSpec } from "../src/duel/arenaSpec.js";
 
 const SEED = projectFieldSeed(["MISSION.DUEL.PARITY.TEST"]);
 
@@ -107,4 +116,40 @@ test("both paths fight in the one shared rope-walk arena", () => {
       .sort();
   assert.deepEqual(coverOf(standalone.world), coverOf(shared.world));
   assert.deepEqual(coverOf(mission.world), coverOf(shared.world));
+});
+
+// ---- and the third construction: the core's balance gate --------------------
+//
+// THERE IS A THIRD PLACE M1'S FIGHT IS BUILT, and until now nothing pinned it. The
+// balance gate (`packages/duel/src/__tests__/winnability.test.ts`) has to drive the
+// shipped fight or its "winnability verified" claims describe a fight nobody plays —
+// which is exactly what they did while it measured `bossProfileForTier(tier)` in
+// `referenceArena()`. So @pa/duel now carries the shipped configuration itself:
+// `M1_BOSS_OVERRIDES` for the three opt-ins and `ropewalkYardArenaSpec()` for the yard.
+//
+// It carries them as a RESTATEMENT, not an import, and that is forced rather than
+// chosen: the authoring lives in `arenaSpec.ts` because each piece of cover is an
+// imported GLB fitted to a height, which is asset-pipeline data the headless core has
+// no business knowing — and the core cannot import from `apps/web` anyway, since the
+// dependency runs the other way. A restatement with no pin is how the
+// SYMMETRIC_COMPLEMENT opt-in went missing from the real mission path in the first
+// place, so these two tests are that pin. If they fail, the gate is measuring something
+// M1 does not ship, and the fix is to update @pa/duel — never to relax the assertion.
+
+test("the core's copy of M1's arena is M1's arena, bit for bit", () => {
+  // Deep equality, not a tolerance: both sides apply the same uniform fit to the same
+  // measured prop sizes in the same order of operations, so they must agree exactly. A
+  // tolerance here would let a genuinely refitted prop through.
+  assert.deepEqual(ropewalkYardArenaSpec(), yardArenaSpec());
+});
+
+test("the core's copy of M1's boss opt-ins is what the mission passes", () => {
+  // Built through the same factory the two production sites use, so this compares the
+  // OVERRIDES rather than restating the resulting profile. A fourth opt-in added to
+  // `m1Duel.ts` and `m1Mission.ts` but not to `M1_BOSS_OVERRIDES` fails here.
+  const fromCore = bossProfileForTier(M1_BOSS_TIER, "PIN", M1_BOSS_OVERRIDES);
+  assert.deepEqual(loadBearing(fromCore), loadBearing(missionBoss()));
+  assert.deepEqual(loadBearing(fromCore), loadBearing(standaloneBoss()));
+  // And the tier is the one the mission authors, not just whatever the constant says.
+  assert.equal(M1_BOSS_TIER, missionBoss().tier);
 });
