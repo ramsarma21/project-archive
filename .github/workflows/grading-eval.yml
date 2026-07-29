@@ -97,11 +97,12 @@ jobs:
       #                  the play cap, or it measures timeouts instead of the model.
       # These flags live in the `grading:eval:gate` package.json script so the
       # workflow and a human's local run cannot drift apart.
-      # The shared key is fed under its own name. packages/grading/src/provider.ts
+      # The one key is fed under its canonical name. packages/grading/src/provider.ts
       # reads TRUEFOUNDRY_GRADING_API_KEY first and falls back to TRUEFOUNDRY_API_KEY
-      # when NODE_ENV is not "production" — and NODE_ENV is unset here, so the shared
-      # key is what grades. Same for the base URL (TRUEFOUNDRY_GRADING_BASE_URL ??
-      # TRUEFOUNDRY_BASE_URL). The model can still be overridden by a repo variable.
+      # when NODE_ENV is not "production" — NODE_ENV is unset here, so this key is
+      # what grades, and no second secret is needed. Same for the base URL
+      # (TRUEFOUNDRY_GRADING_BASE_URL ?? TRUEFOUNDRY_BASE_URL). The model can still
+      # be overridden by a repo variable.
       - name: Run grading eval (live model)
         id: eval
         env:
