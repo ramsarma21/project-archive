@@ -188,6 +188,32 @@ function readScene(
   return { beats, visuals };
 }
 
+/** One check option, or null (with a defect pushed) when malformed. */
+function readOption(
+  raw: unknown,
+  cardId: string,
+  checkId: string,
+  label: string,
+  defects: string[],
+): ModuleCheckOption | null {
+  if (!isRecord(raw)) {
+    defects.push(`${cardId}: check ${checkId} ${label} is not an object`);
+    return null;
+  }
+  const optionId = stringAt(raw, "id");
+  const text = stringAt(raw, "text");
+  const feedback = stringAt(raw, "feedback");
+  const correct = raw["correct"];
+  if (!optionId || !text || !feedback || typeof correct !== "boolean") {
+    defects.push(
+      `${cardId}: check ${checkId} ${label} (${optionId ?? "?"}) needs an id, text, ` +
+        "boolean correct and feedback",
+    );
+    return null;
+  }
+  return { id: optionId, text, correct, feedback };
+}
+
 /** A card's mastery check, or a defect (null) when present but malformed. */
 function readCheck(
   value: unknown,
@@ -202,33 +228,56 @@ function readCheck(
   const id = stringAt(value, "id");
   const prompt = stringAt(value, "prompt");
   const reinforcement = stringAt(value, "reinforcement");
-  const rawOptions = value["options"];
   if (!id || !prompt || !reinforcement) {
     defects.push(`${cardId}: check needs an id, prompt and reinforcement`);
     return null;
   }
-  if (!Array.isArray(rawOptions) || rawOptions.length === 0) {
-    defects.push(`${cardId}: check ${id} needs a non-empty options array`);
-    return null;
-  }
-  const options: ModuleCheckOption[] = [];
-  for (const [index, raw] of rawOptions.entries()) {
-    if (!isRecord(raw)) {
-      defects.push(`${cardId}: check ${id} option ${index} is not an object`);
+
+  const rawOptions = value["options"];
+  const rawCorrect = value["correctOption"];
+  const rawPool = value["distractorPool"];
+  const rawDrawCount = value["drawCount"];
+  // Pooled shape: a separate answer plus a bank of distractors, drawn per sitting.
+  // Detected by the presence of either pooled key; the fixed-list shape otherwise.
+  const pooled = rawCorrect !== undefined || rawPool !== undefined;
+
+  let options: ModuleCheckOption[] | undefined;
+  let correctOption: ModuleCheckOption | undefined;
+  let distractorPool: ModuleCheckOption[] | undefined;
+  let drawCount: number | undefined;
+
+  if (pooled) {
+    const answer = readOption(rawCorrect, cardId, id, "correctOption", defects);
+    if (!answer) return null;
+    correctOption = answer;
+    if (!Array.isArray(rawPool) || rawPool.length === 0) {
+      defects.push(`${cardId}: check ${id} needs a non-empty distractorPool`);
       return null;
     }
-    const optionId = stringAt(raw, "id");
-    const text = stringAt(raw, "text");
-    const feedback = stringAt(raw, "feedback");
-    const correct = raw["correct"];
-    if (!optionId || !text || !feedback || typeof correct !== "boolean") {
-      defects.push(
-        `${cardId}: check ${id} option ${optionId ?? index} needs an id, text, ` +
-          "boolean correct and feedback",
-      );
+    distractorPool = [];
+    for (const [index, raw] of rawPool.entries()) {
+      const opt = readOption(raw, cardId, id, `distractor ${index}`, defects);
+      if (!opt) return null;
+      distractorPool.push(opt);
+    }
+    if (rawDrawCount !== undefined) {
+      if (typeof rawDrawCount !== "number" || !Number.isInteger(rawDrawCount)) {
+        defects.push(`${cardId}: check ${id} drawCount must be an integer`);
+        return null;
+      }
+      drawCount = rawDrawCount;
+    }
+  } else {
+    if (!Array.isArray(rawOptions) || rawOptions.length === 0) {
+      defects.push(`${cardId}: check ${id} needs a non-empty options array`);
       return null;
     }
-    options.push({ id: optionId, text, correct, feedback });
+    options = [];
+    for (const [index, raw] of rawOptions.entries()) {
+      const opt = readOption(raw, cardId, id, `option ${index}`, defects);
+      if (!opt) return null;
+      options.push(opt);
+    }
   }
 
   // `selection` is optional and defaults to single. A present value that is not
@@ -248,9 +297,13 @@ function readCheck(
   }
 
   const conceptId = stringAt(value, "conceptId");
-  let check: ModuleCheck = { id, prompt, options, reinforcement };
-  // Assigned conditionally so a check that omits either key stays deep-equal to
-  // one authored without it — the same rule the card fields follow.
+  let check: ModuleCheck = { id, prompt, reinforcement };
+  // Assigned conditionally so a check that omits a key stays deep-equal to one
+  // authored without it — the same rule the card fields follow.
+  if (options) check = { ...check, options };
+  if (correctOption) check = { ...check, correctOption };
+  if (distractorPool) check = { ...check, distractorPool };
+  if (drawCount !== undefined) check = { ...check, drawCount };
   if (selection) check = { ...check, selection };
   if (conceptId) check = { ...check, conceptId };
   return check;

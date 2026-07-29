@@ -61,6 +61,18 @@ export interface ModuleConceptVerdict {
    * one upstream cannot silently stop the reorder from firing.
    */
   readonly verdict: string;
+  /**
+   * Whether this round was actually graded. An infrastructure grant — a grading
+   * outage that credited the answer without the classifier running — carries
+   * `false`, and such a round is NEVER evidence, either way: a concept whose only
+   * "correct" came from an outage must still be re-taught. Absent means graded,
+   * so a genuine round recorded before this field existed keeps counting.
+   *
+   * This is only read by the remediation narrowing (`understoodConcepts`), not by
+   * `missedConceptTally`/`retryOrderedModule`, which replay the WHOLE deck and so
+   * cannot silently skip a concept an outage falsely credited.
+   */
+  readonly graded?: boolean;
 }
 
 /**
@@ -223,4 +235,251 @@ export function retryOrderedModule(
     subtitle: RETRY_SUBTITLE,
     cards: withRecutWindows(cards, next),
   };
+}
+
+// ===========================================================================
+// Remediation subset playback (INERT — nothing calls this yet).
+//
+// The next step on the same rail as `retryOrderedModule`. Today a redo replays
+// the FULL deck reordered to open on what was missed. This builds the SUBSET a
+// redo could play instead: only the concepts the student has not shown they
+// understand, bracketed by the deck's own frames.
+//
+// It ships inert on purpose (exactly as `retryOrderedModule` first did), because
+// wiring it is a cross-lane change: a subset run only acknowledges its own cards,
+// and `completeModuleRun` + the server's re-derived required set demand the WHOLE
+// cue/check set, so a subset cannot mint a completion and the mission would stay
+// locked. That completion contract is `apps/api` + `packages/contracts` and is
+// routed to those lanes (see the remediation plan §6 slice 2). Until then this is
+// a pure, tested transform with a coherence gate in front of it.
+//
+// THE LOAD-BEARING INVARIANT: absent evidence means TEACH, never skip. A concept
+// leaves the reteach set only on POSITIVE, GRADED, correct evidence — never on an
+// empty record and never on an outage grant. `remediationDeck` is written as a
+// narrowing of the full concept set for exactly this reason: there is no branch
+// where a missing record produces a skip.
+// ===========================================================================
+
+/** Said in the remediation pass's own voice. */
+const REMEDIATION_SUBTITLE = "Three minutes, cut to what you missed.";
+
+/** The deck grouped into the three structural kinds the reorder already knows. */
+export interface ModuleSegments {
+  /** Cards teaching no concept: the opening/closing bookends. */
+  readonly frames: readonly ModuleCard[];
+  /** Cards teaching some-but-not-all concepts: the movable concept segments. */
+  readonly conceptSegments: readonly ModuleCard[];
+  /** Cards teaching every concept the deck teaches: the synthesis. */
+  readonly synthesis: readonly ModuleCard[];
+}
+
+/**
+ * Groups the deck by the same frame/synthesis/concept classification the reorder
+ * pins on, so a subset builder never has to re-derive "which card is a bookend".
+ */
+export function moduleSegments(definition: LearningModuleDefinition): ModuleSegments {
+  const deckConceptCount = moduleConceptIds(definition).length;
+  const frames: ModuleCard[] = [];
+  const conceptSegments: ModuleCard[] = [];
+  const synthesis: ModuleCard[] = [];
+  for (const card of definition.cards) {
+    if (card.conceptIds.length === 0) frames.push(card);
+    else if (card.conceptIds.length >= deckConceptCount) synthesis.push(card);
+    else conceptSegments.push(card);
+  }
+  return { frames, conceptSegments, synthesis };
+}
+
+/**
+ * The concepts a student has POSITIVELY shown they understand, so they are
+ * eligible to be narrowed out of a reteach.
+ *
+ * The standard (remediation plan §4): `>= 1` graded-correct AND `0` graded-wrong.
+ * Infrastructure-grant rounds (`graded === false`) are dropped before counting,
+ * so they are evidence NEITHER way — a concept whose only "correct" came from an
+ * outage has zero graded-correct signals and is therefore NOT understood, i.e. it
+ * is re-taught. Any graded-wrong round disqualifies the concept, matching the
+ * repo's mastery rule that "asked twice, right once" is not mastery.
+ */
+export function understoodConcepts(
+  rounds: readonly ModuleConceptVerdict[],
+): Set<string> {
+  const gradedCorrect = new Map<string, number>();
+  const gradedWrong = new Map<string, number>();
+  for (const round of rounds) {
+    // An ungraded (outage-granted) round is not evidence either way.
+    if (round.graded === false) continue;
+    const bucket = round.verdict === "CORRECT" ? gradedCorrect : gradedWrong;
+    bucket.set(round.conceptId, (bucket.get(round.conceptId) ?? 0) + 1);
+  }
+  const understood = new Set<string>();
+  for (const [conceptId, correct] of gradedCorrect) {
+    if (correct >= 1 && (gradedWrong.get(conceptId) ?? 0) === 0) {
+      understood.add(conceptId);
+    }
+  }
+  return understood;
+}
+
+/**
+ * The concepts a redo should re-teach: the deck's concepts MINUS the ones
+ * positively understood. Empty/undefined evidence narrows nothing, so the whole
+ * set comes back — the teach-everything default, expressed as a narrowing rather
+ * than a special case.
+ */
+export function reteachConcepts(
+  definition: LearningModuleDefinition,
+  priorRounds: readonly ModuleConceptVerdict[] | undefined,
+): Set<string> {
+  const understood = understoodConcepts(priorRounds ?? []);
+  return new Set(moduleConceptIds(definition).filter((c) => !understood.has(c)));
+}
+
+/**
+ * The deck a redo should PLAY, narrowed to the concepts still owed understanding.
+ *
+ * Returns the authored definition UNCHANGED whenever there is nothing to narrow —
+ * both when nothing is understood (first run, all-granted, all-wrong: reteach is
+ * the whole set) and when everything is understood (reteach is empty). A subset is
+ * built ONLY for a proper, non-empty partial reteach. This is where "teach
+ * everything on absent/ungraded evidence" is guaranteed structurally.
+ *
+ * A subset always includes the opening and closing frames (so it opens on the
+ * ESTABLISH room shot — `planCardShots` keys that off card index 0 — and ends on
+ * the mission hand-off), the concept card for every reteach concept, and the
+ * synthesis only when two or more concepts are retaught. Windows travel with their
+ * cards via `withRecutWindows`; the subset deliberately no longer totals 180s,
+ * because it is a PLAYBACK object, not an authorable module.
+ */
+export function remediationDeck(
+  definition: LearningModuleDefinition | undefined,
+  priorRounds: readonly ModuleConceptVerdict[] | undefined,
+): LearningModuleDefinition | undefined {
+  if (!definition) return definition;
+
+  const concepts = moduleConceptIds(definition);
+  const reteach = reteachConcepts(definition, priorRounds);
+  // Nothing to narrow: teach everything (identical default to retryOrderedModule).
+  if (reteach.size === 0 || reteach.size === concepts.length) return definition;
+
+  const deckConceptCount = concepts.length;
+  const openingFrame = definition.cards.find((c) => c.conceptIds.length === 0);
+  const closingFrame = [...definition.cards]
+    .reverse()
+    .find((c) => c.conceptIds.length === 0);
+  const includeSynthesis = reteach.size >= 2;
+
+  const kept = definition.cards.filter((card) => {
+    if (card.conceptIds.length === 0) {
+      return card === openingFrame || card === closingFrame;
+    }
+    if (card.conceptIds.length >= deckConceptCount) {
+      return includeSynthesis;
+    }
+    return card.conceptIds.some((conceptId) => reteach.has(conceptId));
+  });
+
+  return {
+    ...definition,
+    subtitle: REMEDIATION_SUBTITLE,
+    cards: withRecutWindows(definition.cards, kept),
+  };
+}
+
+/**
+ * STRUCTURAL coherence defects that would make a subset play incoherently — the
+ * hard gate. A subset with any of these must never be played; `remediationDeck`
+ * is built so its output has none, and the gate is the proof (and the backstop
+ * for any future caller that assembles a subset by hand).
+ *
+ * Detects the three couplings the plan named:
+ *   · OPENING: the first card must be a frame, or card 0's hardcoded ESTABLISH
+ *     shot (in `planCardShots`) would misframe a concept card as the room.
+ *   · SYNTHESIS: an "all concepts" card ("three facts, one chain") needs at least
+ *     two of its facts present to be coherent.
+ *   · DANGLING CHECK: a check may not gate on a concept no included card teaches.
+ */
+export function remediationCoherenceDefects(
+  full: LearningModuleDefinition,
+  subset: LearningModuleDefinition,
+): string[] {
+  const defects: string[] = [];
+  // Synthesis is classified against the FULL deck's concept count, not the
+  // subset's: in a single-concept subset the one concept card teaches "all" of
+  // the subset's concepts and would otherwise look like a synthesis.
+  const deckConceptCount = moduleConceptIds(full).length;
+  const cards = subset.cards;
+
+  if (cards.length === 0) {
+    defects.push("subset has no cards");
+    return defects;
+  }
+  if (cards[0]!.conceptIds.length !== 0) {
+    defects.push(
+      `subset opens on ${cards[0]!.id}, a concept card; card 0 is forced to the ` +
+        "ESTABLISH room shot and would misframe it. Include the opening frame.",
+    );
+  }
+
+  const conceptSegmentCount = cards.filter(
+    (c) => c.conceptIds.length > 0 && c.conceptIds.length < deckConceptCount,
+  ).length;
+  const hasSynthesis = cards.some((c) => c.conceptIds.length >= deckConceptCount);
+  if (hasSynthesis && conceptSegmentCount < 2) {
+    defects.push(
+      "subset includes the synthesis card but fewer than two concept segments; " +
+        '"three facts, one chain" is incoherent without at least two of its facts',
+    );
+  }
+
+  const taught = new Set(cards.flatMap((c) => c.conceptIds));
+  for (const card of cards) {
+    const conceptId = card.check?.conceptId;
+    if (conceptId && !taught.has(conceptId)) {
+      defects.push(
+        `${card.id}'s check gates on ${conceptId}, which no included card teaches`,
+      );
+    }
+  }
+  return defects;
+}
+
+/** A demonstrative back-reference in narration, e.g. "this tax", "that debt". */
+const REFERENT_MARKER = /\b(this|that|the)\s+(tax|act|duty|stamp|debt|claim|revenue)\b/i;
+
+/**
+ * HEURISTIC, non-fatal detection of narration that refers back to a concept the
+ * subset dropped — the "some cards say 'this tax'" coupling. Reported rather than
+ * refused: the plan's judgement is that a redo student saw the full deck once this
+ * attempt-chain, so a residual referent lands on prior exposure rather than on
+ * nothing, and the airtight fix is an authored per-segment lead-in beat (a slice-2
+ * content change), not a runtime block. Surfacing them here is what lets an author
+ * decide, and keeps the coupling from being invisible.
+ *
+ * Conservative by design: it only flags a concept card that carries a referent
+ * marker when an EARLIER concept card in the authored order was dropped, so the
+ * referent could have pointed at the missing one.
+ */
+export function remediationResidualReferents(
+  full: LearningModuleDefinition,
+  subset: LearningModuleDefinition,
+): string[] {
+  const found: string[] = [];
+  const keptIds = new Set(subset.cards.map((c) => c.id));
+  const conceptCards = full.cards.filter((c) => c.conceptIds.length > 0);
+  conceptCards.forEach((card, index) => {
+    if (!keptIds.has(card.id)) return;
+    const earlierDropped = conceptCards
+      .slice(0, index)
+      .some((earlier) => !keptIds.has(earlier.id));
+    if (!earlierDropped) return;
+    const prose = (card.scene?.beats ?? []).map((b) => b.text).join(" ");
+    if (REFERENT_MARKER.test(prose)) {
+      found.push(
+        `${card.id} narration refers back ("${(REFERENT_MARKER.exec(prose) ?? [])[0]}") ` +
+          "while an earlier concept card was dropped; consider an authored lead-in beat",
+      );
+    }
+  });
+  return found;
 }

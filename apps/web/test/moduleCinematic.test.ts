@@ -123,25 +123,28 @@ test("a reconstruction that calls itself 'actual' is a defect", () => {
   assert.ok(defects.some((d) => /actual/i.test(d)), "the false claim is reported");
 });
 
-test("a check with no correct option, or two, is refused", () => {
+test("a pooled check with no correct answer, or a correct distractor, is refused", () => {
+  // M1's checks are pooled ({correctOption, distractorPool}). The answer must be
+  // the one correct option and the pool must hold only wrong ones.
   const none = reload((env) => {
     const card = env.module.cards.find((c) => c.check)!;
-    for (const option of card.check!.options) (option as { correct: boolean }).correct = false;
+    (card.check!.correctOption as { correct: boolean }).correct = false;
   });
   assert.equal(none.ok, false);
-  assert.ok(!none.ok && none.defects.some((d) => /exactly one/.test(d)));
+  assert.ok(!none.ok && none.defects.some((d) => /must be marked correct/i.test(d)));
 
   const two = reload((env) => {
     const card = env.module.cards.find((c) => c.check)!;
-    for (const option of card.check!.options) (option as { correct: boolean }).correct = true;
+    (card.check!.distractorPool![0] as { correct: boolean }).correct = true;
   });
   assert.equal(two.ok, false);
+  assert.ok(!two.ok && two.defects.some((d) => /marked correct/i.test(d)));
 });
 
-test("a check option with no feedback is refused", () => {
+test("a pooled check option with no feedback is refused", () => {
   const loaded = reload((env) => {
     const card = env.module.cards.find((c) => c.check)!;
-    (card.check!.options[1] as { feedback: string }).feedback = "";
+    (card.check!.distractorPool![1] as { feedback: string }).feedback = "";
   });
   assert.equal(loaded.ok, false);
   assert.ok(!loaded.ok && loaded.defects.some((d) => /feedback/.test(d)));

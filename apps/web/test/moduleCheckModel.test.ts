@@ -2,14 +2,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { M1_CONTENT } from "../src/module/m1Module.js";
 import { loadAuthoredModule } from "../src/module/moduleContent.js";
+import { MAX_MISSION_ATTEMPTS } from "@pa/contracts";
 import {
   checkCorrectOptionIds,
   checkDefects,
+  checkDrawCount,
   checkSelection,
   isExactCheckSelection,
+  isPooledCheck,
   type LearningModuleDefinition,
   type ModuleCheck,
 } from "../src/module/moduleFormat.js";
+import { drawCheckOptions } from "../src/module/checkDraw.js";
 
 // The mastery-check MODEL: how truth is carried (per stable option id, not by
 // position), how a single- and a multiple-select are validated, and how an
@@ -157,53 +161,55 @@ test("loading the same envelope twice is deep-equal, with stable option order", 
 // The authored M1 checks
 // ---------------------------------------------------------------------------
 
-test("the Stamp Act check is a genuine multiple-select", () => {
+test("the Stamp Act check is a pooled single-select with a deep distractor pool", () => {
+  // It was authored as a multiple-select; it is now a pooled single-select so the
+  // "exactly one defensible answer per drawable subset" property holds. See
+  // checkDraw.test.ts for the enumerated proof.
   const stamp = CHECKS.find((c) => c.id.includes("STAMP_SCOPE"))!;
-  assert.equal(checkSelection(stamp), "multiple");
-  const correct = checkCorrectOptionIds(stamp);
-  assert.ok(correct.length >= 2 && correct.length <= 3, "two or three independently correct");
-  assert.ok(stamp.options.length - correct.length >= 2, "at least two plausible distractors");
+  assert.ok(isPooledCheck(stamp), "stamp scope is authored as a distractor pool");
+  assert.equal(checkSelection(stamp), "single");
+  assert.equal(stamp.correctOption?.correct, true, "exactly one defensible answer");
+  assert.ok(
+    (stamp.distractorPool?.length ?? 0) >= checkDrawCount(stamp),
+    "the pool is at least as deep as one drawn option set",
+  );
 });
+
+/** A check's authored options, resolving the pooled shape to answer + pool. */
+function authoredOptions(check: ModuleCheck) {
+  return check.options ?? [check.correctOption!, ...(check.distractorPool ?? [])];
+}
 
 test("every authored M1 check is well formed and free of em/en dashes", () => {
   for (const check of CHECKS) {
     assert.deepEqual(checkDefects("m1", check), [], `${check.id} is well formed`);
+    const opts = authoredOptions(check);
     // No em/en dashes anywhere a learner reads: prompt, options, feedback,
     // reinforcement. The dash is the most obvious tell of synthetic prose.
-    const prose = [
-      check.prompt,
-      check.reinforcement,
-      ...check.options.flatMap((o) => [o.text, o.feedback]),
-    ];
+    const prose = [check.prompt, check.reinforcement, ...opts.flatMap((o) => [o.text, o.feedback])];
     for (const line of prose) {
       assert.doesNotMatch(line, DASH, `em/en dash in ${check.id}: "${line}"`);
     }
     // Option ids are unique within the check.
-    const ids = check.options.map((o) => o.id);
+    const ids = opts.map((o) => o.id);
     assert.equal(new Set(ids).size, ids.length, `${check.id} option ids are unique`);
-    // Every option carries feedback (a wrong one a misconception, the right one
-    // a reinforcement), and there is at least one correct and one distractor.
-    assert.ok(check.options.every((o) => o.feedback.trim().length > 0));
-    assert.ok(check.options.some((o) => o.correct) && check.options.some((o) => !o.correct));
+    // Every option carries feedback, and there is at least one correct and one distractor.
+    assert.ok(opts.every((o) => o.feedback.trim().length > 0));
+    assert.ok(opts.some((o) => o.correct) && opts.some((o) => !o.correct));
   }
 });
 
-test("correct positions vary across checks and are not uniformly first", () => {
-  // The index of each check's first correct option. Authoring rule: they do not
-  // all sit at 0, and a single-select never leaves its answer as the first
-  // option, so "the answer is always A" cannot be a valid strategy.
-  const firstCorrect = CHECKS.map((c) =>
-    c.options.findIndex((o) => o.correct),
-  );
-  assert.ok(!firstCorrect.every((i) => i === 0), "not every correct answer is first");
-  assert.ok(new Set(firstCorrect).size >= 2, "correct positions vary across checks");
+test("a drawn check never leaves its answer at a fixed position across attempts", () => {
+  // With pooled checks, option order is DRAWN per attempt, not authored — so
+  // "the answer is always A" is defeated by the drawer rather than by authoring.
+  // The full id-keyed grading proof lives in checkDraw.test.ts.
   for (const check of CHECKS) {
-    if (checkSelection(check) === "single") {
-      assert.notEqual(
-        check.options.findIndex((o) => o.correct),
-        0,
-        `${check.id} does not leave its single correct answer first`,
-      );
+    if (!isPooledCheck(check)) continue;
+    const positions = new Set<number>();
+    for (let ordinal = 1; ordinal <= MAX_MISSION_ATTEMPTS; ordinal += 1) {
+      const drawn = drawCheckOptions(check, ordinal);
+      positions.add((drawn.options ?? []).findIndex((o) => o.correct));
     }
+    assert.ok(positions.size > 1, `${check.id}: answer sat at one position across all attempts`);
   }
 });
