@@ -157,10 +157,22 @@ test("a CLASSIFIER CORRECT with failed evidence becomes WRONG; with passed evide
   assert.equal(combineWithEvidence(env("CORRECT", "CLASSIFIER"), undefined).kind, "CORRECT");
 });
 
-test("a generous grant is NEVER downgraded, whatever the evidence", () => {
-  // The outage fallback. A student is not punished for infrastructure.
-  assert.equal(combineWithEvidence(env("CORRECT", "GRADING_TIMEOUT"), false).kind, "CORRECT");
-  assert.equal(combineWithEvidence(env("CORRECT", "ABSTAINED"), false).kind, "CORRECT");
+test("the card half is enforced for EVERY source — an outage grant with wrong cards is WRONG", () => {
+  // The card half is deterministic and needs no model, so an infrastructure outage
+  // is no reason to excuse it: a CORRECT with FAILED evidence folds to WRONG whatever
+  // minted the prose, not only a CLASSIFIER one. This is the behaviour the owner
+  // asked for — a wrong answer marked wrong even with no classifier credential.
+  assert.equal(combineWithEvidence(env("CORRECT", "GRADING_TIMEOUT"), false).kind, "WRONG");
+  assert.equal(combineWithEvidence(env("CORRECT", "ABSTAINED"), false).kind, "WRONG");
+});
+
+test("an outage still grants the PROSE half — right cards keep the grant, no gate leaves it alone", () => {
+  // Only the card half is enforced during an outage; the prose half is still granted,
+  // so a student who placed the deterministically-correct cards is not punished for
+  // infrastructure.
+  assert.equal(combineWithEvidence(env("CORRECT", "GRADING_TIMEOUT"), true).kind, "CORRECT");
+  // A gate that never ran (undefined) — an encounter, a legacy path — is untouched.
+  assert.equal(combineWithEvidence(env("CORRECT", "GRADING_TIMEOUT"), undefined).kind, "CORRECT");
 });
 
 test("the gate only ever downgrades — a WRONG stays WRONG", () => {
@@ -324,14 +336,28 @@ test("route: the first answer's cards are final — a changed resubmission canno
   }
 });
 
-test("route: a grading OUTAGE is never downgraded by evidence — the generous grant survives", async () => {
-  // The REAL offline grader: no classifier, so a non-blank answer is the generous
-  // grant (source ≠ CLASSIFIER). Even with no evidence placed, it must stay CORRECT.
+test("route: a grading OUTAGE still enforces the cards — wrong cards WRONG, right cards keep the prose grant", async () => {
+  // The REAL offline grader: no classifier credential, so a non-blank answer is the
+  // generous PROSE grant (source GRADING_TIMEOUT). The CARD half is still enforced —
+  // this is the acceptance criterion: with no TRUEFOUNDRY_GRADING_API_KEY present, a
+  // wrong (here: missing) card selection is marked WRONG, while a right one passes.
   const app = await harness({ grading: createDuelGrading(silent) as never });
   try {
-    const res = await post(app, 6, "any answer at all", []);
-    assert.equal(res.statusCode, 200, res.body);
-    assert.equal(res.json().kind, "CORRECT", "a student is not punished for an outage");
+    // No cards placed → the card half fails → WRONG, even during the outage. The
+    // owner can see a wrong answer marked wrong today, without a credential.
+    const missing = await post(app, 6, "any answer at all", []);
+    assert.equal(missing.statusCode, 200, missing.body);
+    assert.equal(missing.json().kind, "WRONG", "wrong cards are wrong even in an outage");
+    assert.equal(missing.headers["x-pa-evidence"], "MISSING");
+
+    // Right cards → the prose half is still granted → CORRECT. A student who placed
+    // the deterministically-correct cards is not failed closed by the outage...
+    const satisfied = await post(app, 7, "any answer at all", RELEVANT);
+    assert.equal(satisfied.statusCode, 200, satisfied.body);
+    assert.equal(satisfied.json().kind, "CORRECT", "right cards keep the prose grant");
+    // ...and the round is still MARKED as the generous grant, not a classifier read,
+    // so the ledger's `graded` flag stays false and mastery is never inflated by it.
+    assert.equal(satisfied.json().source, "GRADING_TIMEOUT");
   } finally {
     await app.close();
   }

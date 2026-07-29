@@ -34,6 +34,7 @@ process.env.CSRF_SECRET = "test-secret-for-encounter-csrf";
 resetVerdictReceiptSecretCache();
 
 const { createDuelGrading } = await import("../src/duels/grading.js");
+const { GradingSignal } = await import("../src/duels/gradingSignal.js");
 const { registerEncounterRoutes, defaultEncounterQuestionAuthority } = await import(
   "../src/routes/encounters.js"
 );
@@ -217,6 +218,49 @@ test("concurrent submissions converge on one stored verdict and receipt", async 
       a.headers["x-pa-verdict-receipt"],
       b.headers["x-pa-verdict-receipt"],
     );
+  } finally {
+    await app.close();
+  }
+});
+
+test("encounter grading records into a SHARED signal, so an outage is visible on /v1/health", async () => {
+  // The gap Task 2 closes: the encounter route builds its OWN createDuelGrading (its
+  // bank differs), and a private signal is one /v1/health never reads — so a real
+  // encounter-grading outage read as healthy on the one endpoint meant to report it.
+  // app.ts now passes duelGrading.signal here so encounter rounds fold into the same
+  // rolling rate the boss duel reports. This pins that seam: a round graded through
+  // the encounter route must show up on the signal app.ts shares.
+  const shared = new GradingSignal({ configured: false, announceToConsole: false });
+  const before = shared.snapshot().ungradedSinceBoot;
+
+  const app = Fastify({ logger: false });
+  await app.register(cookie);
+  await registerEncounterRoutes(app, {
+    // The signal app.ts injects via duelGrading.signal. The route builds its own
+    // encounter-bank grading around it, exactly as production does.
+    signal: shared,
+    authenticate: async (sid) => (sid ? { profileId: sid } : null),
+    resolveAttempt: async (profileId) => attempts[profileId] ?? null,
+    questionAuthority: defaultEncounterQuestionAuthority(),
+    verdictStore: inMemoryDuelVerdictStore(),
+  });
+  await app.ready();
+  try {
+    // Offline (no credential): a non-blank answer takes the generous grant, which is
+    // an ungraded round — the exact condition the signal exists to surface.
+    const res = await post(app, ALICE, "SHAMBLES_STOP", {
+      answer: "the colonies were defended and should share the war's cost",
+    });
+    assert.equal(res.statusCode, 200, res.body);
+    assert.equal(res.headers["x-pa-encounter-granted"], "true");
+
+    const after = shared.snapshot();
+    assert.equal(
+      after.ungradedSinceBoot,
+      before + 1,
+      "the encounter round reached the shared signal /v1/health reads",
+    );
+    assert.equal(after.status, "UNGRADED", "no credential pins the shared signal UNGRADED");
   } finally {
     await app.close();
   }

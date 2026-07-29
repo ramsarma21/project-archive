@@ -14,8 +14,10 @@
 //     racer, a reload all get the first stored verdict and receipt back.
 //
 // Offline by design, like duel-verdict.test.ts: with no classifier a non-blank
-// answer is granted (CORRECT) and a blank abstains (WRONG), which is enough to make
-// "honest CORRECT and honest WRONG" deterministic without a model credential.
+// answer takes the generous PROSE grant and a blank abstains (WRONG). The card half
+// is still enforced during that outage, so a CORRECT here also places the round's
+// satisfying cards — which is enough to make "honest CORRECT and honest WRONG"
+// deterministic without a model credential.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -32,6 +34,7 @@ import {
   M1_DUEL_ITEMS,
   duelItemCodexCardIds,
   m1DuelId,
+  m1EvidencePolicy,
   m1ExpectedDuelCardIds,
   m1ExpectedDuelItem,
 } from "@pa/mission-m1";
@@ -147,15 +150,31 @@ function post(
   });
 }
 
-function answerBody(itemId: string, answer: string): Record<string, unknown> {
+function answerBody(
+  itemId: string,
+  answer: string,
+  selectedCardIds?: readonly string[],
+): Record<string, unknown> {
   return {
     side: "A",
     itemId,
     itemVersion: "v1",
     conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
     answer,
+    // Only included when a test places cards, so callers that assert the body's
+    // allowlist behaviour are byte-identical to before.
+    ...(selectedCardIds ? { selectedCardIds } : {}),
   };
 }
+
+// The satisfying cards for round 5's SERVER-selected item (not the client's claim):
+// the route grades the item the round asks, so the evidence policy is that item's.
+const EXPECTED_ROUND_5 = m1ExpectedDuelItem({
+  attemptSeedHex: SEED_HEX,
+  attemptOrdinal: 1,
+  round: 5,
+}).item.itemId;
+const ROUND_5_RELEVANT = [...m1EvidencePolicy(EXPECTED_ROUND_5).relevantCardIds];
 
 test("a forged easier item cannot change the item that is graded", async () => {
   const { app } = await harness();
@@ -292,8 +311,16 @@ test("honest CORRECT and WRONG still drive the 14/7 economy, and the receipt ver
     assert.equal(economy.CORRECT, 14);
     assert.equal(economy.WRONG, 7);
 
-    const correct = await post(app, ALICE, CANONICAL_ALICE, 5, answerBody(EXPECTED_ROUND_1, "a real answer"));
-    assert.equal(correct.json().kind, "CORRECT");
+    // A real answer WITH the round's satisfying cards: the prose is granted (outage)
+    // and the card half passes, so the round is an honest CORRECT.
+    const correct = await post(
+      app,
+      ALICE,
+      CANONICAL_ALICE,
+      5,
+      answerBody(EXPECTED_ROUND_1, "a real answer", ROUND_5_RELEVANT),
+    );
+    assert.equal(correct.json().kind, "CORRECT", correct.body);
     const wrong = await post(app, ALICE, CANONICAL_ALICE, 6, answerBody(EXPECTED_ROUND_1, ""));
     assert.equal(wrong.json().kind, "WRONG");
 

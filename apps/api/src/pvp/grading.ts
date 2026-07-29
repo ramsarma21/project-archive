@@ -208,9 +208,10 @@ export function createPvpGrading(
         fallbackDiagnosis: verdict.provenance.fallbackDiagnosis,
         fallbackStatus: verdict.provenance.fallbackStatus,
       });
-      // Prose AND evidence, combined exactly as the boss duel does: a CLASSIFIER
-      // CORRECT with unsatisfied evidence becomes WRONG before the receipt is minted;
-      // a generous grant is never downgraded.
+      // Prose AND evidence, combined exactly as the boss duel does: a CORRECT with
+      // unsatisfied evidence becomes WRONG before the receipt is minted, whatever the
+      // prose source — the card half is deterministic and an outage does not excuse
+      // it. An outage still grants the prose half, so right cards still pass.
       const envelope = combineWithEvidence(
         verdictEnvelope(verdict),
         input.evidenceSatisfied,
