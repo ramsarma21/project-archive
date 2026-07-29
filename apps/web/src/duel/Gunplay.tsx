@@ -76,6 +76,20 @@ const IMPACT_COLOUR: Readonly<Record<DuelImpact["kind"], string>> = {
   SPENT: "#8ea6bb",
 };
 
+// A LANDED HIT HAS TO BE UNMISTAKABLE. The owner's report was "shot them three times,
+// no reaction happened": the damage registered on the bar, but on a chase camera at
+// duelling range the old feedback — a 0.36s pea-sized puff plus a subtle flinch — was
+// easy to miss entirely. Cover and spent balls stay quiet on purpose (that quiet is
+// the "which crates are chest-high" read); only the HIT is amplified, so a hit reads
+// as a hit and the two other outcomes still read as themselves. Presentation only:
+// nothing here changes damage, health, or the fight.
+const HIT_EMPHASIS = 2.1;
+const IMPACT_SECONDS_BY_KIND: Readonly<Record<DuelImpact["kind"], number>> = {
+  HIT: 0.55,
+  COVER: IMPACT_SECONDS,
+  SPENT: IMPACT_SECONDS,
+};
+
 const projectedHead = new THREE.Vector3();
 const projectedTail = new THREE.Vector3();
 
@@ -253,30 +267,37 @@ export function Impacts(props: { runtime: DuelRuntime }) {
         group.visible = false;
         continue;
       }
+      const duration = IMPACT_SECONDS_BY_KIND[impact.kind];
       const age = (state.combat.tick - impact.tick) / FIELD_TICK_HZ;
-      if (age < 0 || age > IMPACT_SECONDS) {
+      if (age < 0 || age > duration) {
         group.visible = false;
         continue;
       }
-      const life = 1 - age / IMPACT_SECONDS;
+      const life = 1 - age / duration;
+      // A hit bursts bigger and brighter than a cover/spent tick; the others are
+      // unchanged so their quieter reads stay legible.
+      const hit = impact.kind === "HIT";
+      const emphasis = hit ? HIT_EMPHASIS : 1;
       group.visible = true;
       group.position.set(impact.x, impact.y, impact.z);
       group.rotation.y = Math.atan2(impact.dirX, impact.dirZ);
       const colour = IMPACT_COLOUR[impact.kind];
       const puff = group.children[0] as THREE.Sprite | undefined;
       if (puff) {
-        const size = 0.3 + (1 - life) * 0.9;
+        const size = (0.3 + (1 - life) * 0.9) * emphasis;
         puff.scale.set(size, size, 1);
         const material = puff.material as THREE.SpriteMaterial;
-        material.opacity = life * 0.85;
-        material.color.set(colour);
+        // A hit opens near-opaque and holds, so it lands as a clear spatter of hurt
+        // on the body rather than a faint glow that fades before the eye reaches it.
+        material.opacity = hit ? Math.min(1, 0.55 + life * 0.55) : life * 0.85;
+        material.color.set(hit ? "#ff2a24" : colour);
       }
       const shock = group.children[1] as THREE.Mesh | undefined;
       if (shock) {
-        const size = 0.25 + (1 - life) * 1.5;
+        const size = (0.25 + (1 - life) * 1.5) * emphasis;
         shock.scale.set(size, size, size);
         const material = shock.material as THREE.MeshBasicMaterial;
-        material.opacity = life * 0.55;
+        material.opacity = life * (hit ? 0.85 : 0.55);
         material.color.set(colour);
       }
     }
