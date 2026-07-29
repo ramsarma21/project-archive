@@ -324,6 +324,29 @@ the orchestrator actually made, and the specific change made in response.
 | Told the owner M1 owns "~23 concepts" and built a broken-ratio argument on it — the number was a grep of lines containing "M1". M1 owns **2–3**; the 46 belong to 14 modules | Never quote a count from a text search. Call the function that computes it. |
 | Dispatched four workers into `apps/web/src/mission/**` — paths the enforced map assigns to other lanes or marks **contested** — without reading `lane-ownership.json` first. Nothing was clobbered only because the `preToolUse` guard did not fire for the background subagents at all: a stale-brief error and a silently-dead guard cancelled out, which is luck, not safety. Two live lanes (`boss-fight`/`duel-hud`) are in fact editing the same three duel files right now, and only a merge accident away from destroying one side. | Read `lane-ownership.json` **before** writing a brief, and name the lane in the brief. And because the guard fails open — and here failed silent — a post-hoc detector now backstops it: `scripts/check-lane-integrity.mjs` finds a crossed lane (and the same-file-on-two-lanes clobber) from git state even when the guard never runs. `grants` gives a contested file a legal, recorded, temporary owner so "it had to change" stops meaning "change it off the books". |
 
+**Guard coverage, measured from the hooks log (29 Jul) — two wrong diagnoses settled.**
+The claim "the guard never returns a verdict" (from 129 exec ≈ 129 `canceled by signal abort`
+lines) is **wrong**, and so is the follow-up guess that the abort is teardown after a success.
+Counting the `preToolUse` log by exit code: of ~237 logged `Write`/`Delete` calls, **89 ran to
+completion and returned a verdict (87 allow, 2 deny)** — the guard works, and both denies were
+correct (`duel-hud`→contested `duel.css`; `main`→`packages/netcode/**`). The other **148 were
+canceled at 0 ms (`Hook 1 canceled by signal abort`), exit N/A, returning no verdict → fail-open
+allow.** The aborts are **not** teardown-after-success: they share **zero** `tool_use_id`s with
+the completed runs, and they split cleanly **by session** — whole background-subagent
+conversations abort while foreground/root calls complete. So the guard effectively guards only
+foreground writes; the majority of lane work (background Opus subagents) passes unevaluated. Two
+holes, both left unfixed by request (with lanes live, `failClosed:true` would halt every worker):
+1. **Subagent fail-open.** A contested write from a background subagent is canceled and allowed.
+   This — not a matcher/payload/relative-path bug — is how the contested mission/duel writes
+   landed: every one came through `Write` with an absolute `file_path` the guard reads fine; the
+   hook just never got to run. (The same `duel.css` was correctly *denied* once from a foreground
+   call and silently *allowed* twice from aborted subagent calls — the mechanism in one file.)
+2. **`Shell` is not in the matcher** (`Write|StrReplace|Delete|EditNotebook`). Any edit via the
+   `Shell` tool (`python`, `sed`, a heredoc, `cp`, `>`) fires **no hook at all** and is invisible
+   even to this log — a whole class of edits the guard structurally cannot see, and a larger hole
+   than the fail-open. `scripts/check-lane-integrity.mjs` (post-hoc, git-state) is the only
+   backstop for both; it is the thing that must be run, since the guard cannot be trusted to fire.
+
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran
 inside a harness that didn't grade, in the wrong arena, against a boss that ignored cover —

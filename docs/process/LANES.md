@@ -74,6 +74,24 @@ map forbids, then unclaimed drift. Run it in the standing loop; a non-zero exit 
 - The `apps/api` health wiring reads grading health, so the grading work (`packages/grading`, boss-fight)
   and the health work (`apps/api`, api-hunt) are one change split across two lanes — sequence or grant.
 
+**Detector caveat you WILL hit:** once the orchestrator propagates the reconciled `.cursor/` guard +
+map into the worktrees (required for enforcement to be live there), the detector reports a `.cursor/*`
+**CLOBBER across every lane**. It is benign — those copies are byte-identical, so the "clobber" merges
+as a no-op — but it makes the run exit non-zero. **Read past it: the real signal is any NON-`.cursor`
+file on two lanes.** (The detector has no `.cursor/**` exclusion; adding one is the clean fix, owned by
+`mission-presentation`.)
+
+**Handoff state (29 Jul, post-merge round):**
+- **Landed on `main`:** `boss-fight` (`540c0e3`), `mission-presentation` detector (`eeedfd0`),
+  `mission-flow` elm-beat (`2c27d6a`, full gate GREEN incl. build + check-playthrough on a throwaway
+  stack). `mission-world` and `api-hunt` deliberately NOT merged — their agents are still working.
+- **Grants now retire-eligible** (work merged), left in place only because the guard `--selftest` pins
+  cases to them — retire the grant AND its selftest case together: `mission-flow` (elm-beat UI, merged),
+  `camera-occluder` (no branch/worktree exists; its camera work is in `main` at `d457081`).
+- **`module-lesson` is a live worktree/branch NOT in `lane-ownership.json`.** The guard allow-alls an
+  unknown lane, so it is unguarded; it is editing `apps/web/src/module/**` (currently unclaimed/open).
+  Add it to the map with its intended ownership.
+
 ## Verification every lane must pass
 
 `pnpm lint && pnpm typecheck && pnpm test && pnpm build`, plus `verify:content` and the three
