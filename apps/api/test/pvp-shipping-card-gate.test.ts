@@ -2,10 +2,10 @@
 // while the live constant is still `PLAYTEST_ALL`.
 //
 // WHY THIS FILE EXISTS SEPARATELY FROM `pvp-card-gate.test.ts`. That file proves the
-// resolver's two branches against a STUB predicate (`assessmentPassed: async () =>
-// passed`). That is worth having and it is not the same claim: it cannot see whether
-// the predicate the server actually wires is reachable, whether real progression ever
-// makes it true, or what the routes do when the two sides' card sets differ. Every
+// resolver's two branches against a STUB card set (`pvpLegalCardIds: async () =>
+// minted`). That is worth having and it is not the same claim: it cannot see whether
+// the derivation the server actually wires is reachable, whether real progression ever
+// mints anything, or what the routes do when the two sides' card sets differ. Every
 // test here drives the real progression service over the REAL shipped content pack,
 // or the real routes, and asserts on what a player can actually reach.
 //
@@ -15,13 +15,29 @@
 //
 // WHAT THESE TESTS FOUND, recorded here because a reader arrives at the test before
 // the report: over the shipped content pack the capstone CANNOT BE SAT
-// (`chapterConceptIds("boston-1765")` is `[]`, `assessmentId` is `null`), so
-// `assessmentPassedAt` is unreachable and `ASSESSMENT_PASSED` grants nobody anything.
+// (`chapterConceptIds("boston-1765")` is `[]`, `assessmentId` is `null`), so no card
+// can be minted and `ASSESSMENT_PASSED` grants nobody anything.
 // `openChapterAssessment` refusing PACKAGE_MISSING is asserted below so that the day
 // the capstone is authored, that assertion fails and points here.
+//
+// THE TWO RULES THIS FILE NOW PINS, both of which it was written to measure and which
+// the owner then decided:
+//
+//   1. ACCESS FOLLOWS THE CARD. Eligibility reads each Codex row's own `pvpLegalAt`,
+//      never `activeChapter.assessmentPassedAt`, so advancing a chapter does not
+//      revoke what a capstone minted. A test below advances and asserts the nine
+//      survive; it fails the moment eligibility goes back to reading the chapter.
+//   2. MINTING DID NOT GET EASIER. `markCodexCardsPvpLegal` stays reachable only from
+//      `submitChapterAssessment` — asserted structurally AND by driving every other
+//      progression mutation a player can reach and finding nothing minted. Widening
+//      who may mint would make thin question intersections normal, and a thin pool is
+//      measured here rather than assumed.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
 import { LEARNING_MODULE_SECONDS } from "@pa/contracts";
@@ -35,7 +51,7 @@ import {
   bostonProgressionContent,
 } from "../src/progression/content.js";
 import {
-  assessmentPassedFromSnapshot,
+  pvpLegalCardIdsFromSnapshot,
   pvpCardResolver,
 } from "../src/pvp/cardAccess.js";
 import {
@@ -95,8 +111,8 @@ function progression(overrides: Partial<ProgressionContent> = {}) {
 /**
  * The card resolver EXACTLY as `app.ts` wires it, with only the policy forced.
  *
- * `assessmentPassedFromSnapshot` is the production predicate, imported rather than
- * re-typed — a re-typed predicate is a second implementation that agrees until it
+ * `pvpLegalCardIdsFromSnapshot` is the production derivation, imported rather than
+ * re-typed — a re-typed rule is a second implementation that agrees until it
  * doesn't, and this gate's whole correctness lives in that one line.
  */
 function shippingResolver(service: ProgressionService) {
@@ -104,8 +120,8 @@ function shippingResolver(service: ProgressionService) {
     m1CardIds: M1_CARDS,
     policy: "ASSESSMENT_PASSED",
     log: { warn: () => {} },
-    assessmentPassed: async (profileId) =>
-      assessmentPassedFromSnapshot(await service.snapshot(profileId)),
+    pvpLegalCardIds: async (profileId) =>
+      pvpLegalCardIdsFromSnapshot(await service.snapshot(profileId)),
   });
 }
 
@@ -144,6 +160,102 @@ async function clearM1(service: ProgressionService, profileId: string): Promise<
   assert.equal(committed.ok, true, `M1 must clear: ${JSON.stringify(committed)}`);
 }
 
+// ---------------------------------------------------------------------------
+// The capstone the shipped pack does not author.
+// ---------------------------------------------------------------------------
+
+const CAPSTONE_ASSESSMENT = "BOS.CAP.ASSESSMENT.v1";
+
+/** M1's real chapter concepts, in the authored order. */
+const CAPSTONE_CONCEPTS = [
+  "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+  "BOS.CONCEPT.STAMP_SCOPE.v1",
+  "BOS.CONCEPT.REPRESENTATION.v1",
+] as const;
+
+/**
+ * A pack that authors ONLY the capstone, over M1's real concepts.
+ *
+ * Everything about cards and mastery stays the real thing — the authored cards, the
+ * card→concept mapping, the 100%-or-nothing rule — and only the missing authoring is
+ * supplied, because the shipped pack's capstone half does not exist. A reserve of four
+ * items per concept comfortably covers the two a form draws plus a retry.
+ */
+function capstonePack(conceptIds: readonly string[]): Partial<ProgressionContent> {
+  const reserve = new Map(
+    conceptIds.map((conceptId, index) => [
+      conceptId,
+      [1, 2, 3, 4].map((n) => `CAP.${index}.${n}`),
+    ]),
+  );
+  return {
+    chapterConceptIds: () => [...conceptIds],
+    assessmentId: () => CAPSTONE_ASSESSMENT,
+    assessmentModuleId: () => "BOS.CAP.MODULE.v1",
+    itemReserve: (_assessmentId, conceptId) => reserve.get(conceptId) ?? [],
+    itemConcept: (itemId) => {
+      for (const [conceptId, itemIds] of reserve) {
+        if (itemIds.includes(itemId)) return conceptId;
+      }
+      return null;
+    },
+    itemFormat: () => "SELECTED_RESPONSE",
+    isCorrectOption: (_itemId, optionId) => optionId === "OPT.RIGHT",
+  };
+}
+
+interface CapstoneRun {
+  readonly attemptOrdinal: number;
+  readonly scopedConceptIds: readonly string[];
+  readonly passed: boolean;
+  readonly newlyPvpLegalCardIds: readonly string[];
+}
+
+/**
+ * Sit the whole capstone and submit it, answering CORRECTLY only on
+ * `masterConceptIds` and wrongly on the rest.
+ *
+ * Answering wrongly rather than skipping is what a student who tried and missed
+ * actually produces, and a partial mint is the case per-card eligibility has to get
+ * right — so it is driven here rather than simulated by writing rows.
+ */
+async function sitCapstone(
+  service: ProgressionService,
+  profileId: string,
+  masterConceptIds: readonly string[],
+): Promise<CapstoneRun> {
+  const attempt = await service.openChapterAssessment(profileId, {
+    chapterId: BOSTON_RUNTIME_CHAPTER_ID,
+    assessmentId: CAPSTONE_ASSESSMENT,
+  });
+  assert.equal(attempt.ok, true, `the authored capstone opens: ${JSON.stringify(attempt)}`);
+  if (!attempt.ok) throw new Error("unreachable");
+  for (const entry of attempt.value.form) {
+    const mastering = masterConceptIds.includes(entry.conceptId);
+    for (const itemId of entry.itemIds) {
+      const answered = await service.answerAssessmentItem(profileId, {
+        attemptId: attempt.value.attemptId,
+        itemId,
+        itemFormat: "SELECTED_RESPONSE",
+        selectedOptionId: mastering ? "OPT.RIGHT" : "OPT.WRONG",
+      });
+      assert.equal(answered.ok, true, `${itemId} answered: ${JSON.stringify(answered)}`);
+    }
+  }
+  const submitted = await service.submitChapterAssessment(
+    profileId,
+    attempt.value.attemptId,
+  );
+  assert.equal(submitted.ok, true, `submitted: ${JSON.stringify(submitted)}`);
+  if (!submitted.ok) throw new Error("unreachable");
+  return {
+    attemptOrdinal: attempt.value.attemptOrdinal,
+    scopedConceptIds: attempt.value.scopedConceptIds,
+    passed: submitted.value.passed,
+    newlyPvpLegalCardIds: submitted.value.newlyPvpLegalCardIds,
+  };
+}
+
 // ===========================================================================
 // 1. The shipping branch against real progression.
 // ===========================================================================
@@ -175,9 +287,12 @@ test("nine cards learned and M1 cleared first try still leaves NOTHING PvP-legal
   assert.equal(m1?.outcome, "CLEARED");
   assert.equal(m1?.clearedOnAttempt, 1, "cleared on the first attempt");
 
-  // The production predicate reads false, so the shipping resolver hands out nothing.
+  // The production derivation finds nothing minted, so the shipping resolver hands
+  // out nothing. THIS IS THE "minting did not get easier" GUARD: the whole module and
+  // a first-try mission clear is the most a player can do short of the capstone, and
+  // it must still grant zero.
   assert.equal(snapshot.activeChapter.assessmentPassedAt, null);
-  assert.equal(assessmentPassedFromSnapshot(snapshot), false);
+  assert.deepEqual([...pvpLegalCardIdsFromSnapshot(snapshot)], []);
   assert.deepEqual(
     [...(await shippingResolver(service)(profileId))],
     [],
@@ -227,70 +342,22 @@ test("over the SHIPPED content pack the capstone cannot be opened at all, so no 
 
 test("once a capstone IS authored and passed, all nine mint PvP-legal and the shipping policy grants all nine", async () => {
   // The capstone half of the shipped pack is unauthored, so the reachable grant
-  // path is demonstrated over a pack that authors ONLY the capstone and keeps M1's
-  // real cards, concepts and card→concept mapping. Everything about cards and
-  // mastery is therefore the real thing; only the missing authoring is supplied.
-  const concepts = [
-    "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-    "BOS.CONCEPT.STAMP_SCOPE.v1",
-    "BOS.CONCEPT.REPRESENTATION.v1",
-  ] as const;
-  const ASSESSMENT = "BOS.CAP.ASSESSMENT.v1";
-  const reserve: Record<string, string[]> = {
-    [concepts[0]]: ["CAP.PR.1", "CAP.PR.2", "CAP.PR.3", "CAP.PR.4"],
-    [concepts[1]]: ["CAP.SS.1", "CAP.SS.2", "CAP.SS.3", "CAP.SS.4"],
-    [concepts[2]]: ["CAP.RE.1", "CAP.RE.2", "CAP.RE.3", "CAP.RE.4"],
-  };
-  const conceptOf = (itemId: string): string | null => {
-    if (itemId.startsWith("CAP.PR.")) return concepts[0];
-    if (itemId.startsWith("CAP.SS.")) return concepts[1];
-    if (itemId.startsWith("CAP.RE.")) return concepts[2];
-    return null;
-  };
-  const { store, service } = progression({
-    chapterConceptIds: () => [...concepts],
-    assessmentId: () => ASSESSMENT,
-    assessmentModuleId: () => "BOS.CAP.MODULE.v1",
-    itemReserve: (_assessmentId, conceptId) => reserve[conceptId] ?? [],
-    itemConcept: conceptOf,
-    itemFormat: () => "SELECTED_RESPONSE",
-    isCorrectOption: (_itemId, optionId) => optionId === "OPT.RIGHT",
-  });
+  // path is demonstrated over a pack that authors ONLY the capstone — see
+  // `capstonePack`, which keeps M1's real cards, concepts and card→concept mapping.
+  const concepts = [...CAPSTONE_CONCEPTS];
+  const { store, service } = progression(capstonePack(concepts));
   const profileId = newProfileId();
 
   await completeM1Module(service, profileId);
   await clearM1(service, profileId);
 
-  const attempt = await service.openChapterAssessment(profileId, {
-    chapterId: BOSTON_RUNTIME_CHAPTER_ID,
-    assessmentId: ASSESSMENT,
-  });
-  assert.equal(attempt.ok, true, `the authored capstone opens: ${JSON.stringify(attempt)}`);
-  if (!attempt.ok) return;
-  assert.equal(attempt.value.attemptOrdinal, 1);
-  assert.deepEqual([...attempt.value.scopedConceptIds], [...concepts]);
-
   // 100% on every concept — the only thing that mints PvP legality.
-  for (const entry of attempt.value.form) {
-    for (const itemId of entry.itemIds) {
-      const answered = await service.answerAssessmentItem(profileId, {
-        attemptId: attempt.value.attemptId,
-        itemId,
-        itemFormat: "SELECTED_RESPONSE",
-        selectedOptionId: "OPT.RIGHT",
-      });
-      assert.equal(answered.ok, true, `${itemId} answered`);
-    }
-  }
-  const submitted = await service.submitChapterAssessment(
-    profileId,
-    attempt.value.attemptId,
-  );
-  assert.equal(submitted.ok, true, `submitted: ${JSON.stringify(submitted)}`);
-  if (!submitted.ok) return;
-  assert.equal(submitted.value.passed, true);
+  const run = await sitCapstone(service, profileId, concepts);
+  assert.equal(run.attemptOrdinal, 1);
+  assert.deepEqual([...run.scopedConceptIds], [...concepts]);
+  assert.equal(run.passed, true);
   assert.deepEqual(
-    [...submitted.value.newlyPvpLegalCardIds].sort(),
+    [...run.newlyPvpLegalCardIds].sort(),
     [...M1_CARDS].sort(),
     "100% on all three concepts mints exactly the nine M1 cards",
   );
@@ -301,7 +368,10 @@ test("once a capstone IS authored and passed, all nine mint PvP-legal and the sh
   }
   const snapshot = await service.snapshot(profileId);
   assert.ok(snapshot.activeChapter.assessmentPassedAt);
-  assert.equal(assessmentPassedFromSnapshot(snapshot), true);
+  assert.deepEqual(
+    [...pvpLegalCardIdsFromSnapshot(snapshot)].sort(),
+    [...M1_CARDS].sort(),
+  );
   assert.deepEqual(
     [...(await shippingResolver(service)(profileId))].sort(),
     [...M1_CARDS].sort(),
@@ -309,70 +379,224 @@ test("once a capstone IS authored and passed, all nine mint PvP-legal and the sh
   );
 });
 
-test("the shipping policy reads the ACTIVE chapter, so advancing revokes PvP access the capstone earned", async () => {
-  // Not a redesign proposal — a measurement. `assessmentPassedFromSnapshot` reads
-  // `activeChapter`, and `advanceChapter` makes the NEXT chapter active with its own
-  // null `assessmentPassedAt`, while the Codex rows keep their `pvpLegalAt` forever.
-  // So under ASSESSMENT_PASSED a player who passes Boston and moves on loses the
-  // nine cards they earned, and their durable Codex says they still hold them.
-  const ASSESSMENT = "BOS.CAP.ASSESSMENT.v1";
-  const concepts = ["BOS.CONCEPT.POSTWAR_REVENUE.v1"] as const;
-  const { store, service } = progression({
-    chapterConceptIds: () => [...concepts],
-    assessmentId: () => ASSESSMENT,
-    assessmentModuleId: () => "BOS.CAP.MODULE.v1",
-    itemReserve: () => ["CAP.PR.1", "CAP.PR.2", "CAP.PR.3", "CAP.PR.4"],
-    itemConcept: () => concepts[0],
-    itemFormat: () => "SELECTED_RESPONSE",
-    isCorrectOption: (_itemId, optionId) => optionId === "OPT.RIGHT",
-  });
+test("ADVANCING A CHAPTER KEEPS the PvP access the capstone minted", async () => {
+  // The defect this replaces, for the record: eligibility used to read
+  // `activeChapter.assessmentPassedAt`, and `advanceChapter` makes the NEXT chapter
+  // active with its own null value while the Codex rows keep `pvpLegalAt` forever. So
+  // a player who passed Boston and moved on lost the cards they earned, while their
+  // Codex screen went on showing them as PvP-legal — the server refusing what the UI
+  // promised. Access now follows the CARD.
+  //
+  // THIS TEST IS THE GUARD on that. Point the derivation back at the active chapter
+  // and the final assertion fails, because the advanced chapter has passed nothing.
+  const concepts = [CAPSTONE_CONCEPTS[0]];
+  const { store, service } = progression(capstonePack(concepts));
   const profileId = newProfileId();
   await completeM1Module(service, profileId);
-
-  const attempt = await service.openChapterAssessment(profileId, {
-    chapterId: BOSTON_RUNTIME_CHAPTER_ID,
-    assessmentId: ASSESSMENT,
-  });
-  assert.equal(attempt.ok, true);
-  if (!attempt.ok) return;
-  for (const entry of attempt.value.form) {
-    for (const itemId of entry.itemIds) {
-      await service.answerAssessmentItem(profileId, {
-        attemptId: attempt.value.attemptId,
-        itemId,
-        itemFormat: "SELECTED_RESPONSE",
-        selectedOptionId: "OPT.RIGHT",
-      });
-    }
-  }
-  const submitted = await service.submitChapterAssessment(
-    profileId,
-    attempt.value.attemptId,
+  const run = await sitCapstone(service, profileId, concepts);
+  assert.equal(run.passed, true, "every scoped concept was mastered");
+  const minted = run.newlyPvpLegalCardIds;
+  assert.deepEqual(
+    [...minted].sort(),
+    [...SHIPPED.codexCardsForConcept(concepts[0]!)].sort(),
+    "mastering the one scoped concept mints its cards",
   );
-  assert.equal(submitted.ok, true);
+
   const resolve = shippingResolver(service);
-  assert.equal((await resolve(profileId)).length, 9, "access is open after the capstone");
+  const before = await resolve(profileId);
+  assert.deepEqual(
+    [...before].sort(),
+    [...minted].sort(),
+    "access is open on exactly the minted cards after the capstone",
+  );
 
   const advanced = await service.advanceChapter(profileId, "boston-1766");
   assert.equal(advanced.ok, true, `advance: ${JSON.stringify(advanced)}`);
 
-  // The durable Codex still says PvP-legal…
+  // The active chapter genuinely has passed nothing — so this is not a test that
+  // would still pass if eligibility went back to reading the chapter.
+  const after = await service.snapshot(profileId);
+  assert.equal(after.activeChapter.chapterId, "boston-1766");
+  assert.equal(after.activeChapter.assessmentPassedAt, null);
+
+  // The durable Codex says PvP-legal…
   const stillLegal = [...store.codex.values()]
     .filter((card) => card.pvpLegalAt !== null)
     .map((card) => card.cardId);
   assert.deepEqual(
     stillLegal.sort(),
-    [...SHIPPED.codexCardsForConcept(concepts[0])].sort(),
+    [...minted].sort(),
     "the cards the mastered concept minted keep their pvpLegalAt across chapters",
   );
-  // …and the shipping resolver now says the player holds nothing.
-  const after = await service.snapshot(profileId);
-  assert.equal(after.activeChapter.chapterId, "boston-1766");
-  assert.equal(after.activeChapter.assessmentPassedAt, null);
+  // …and the server now agrees with it, which is what makes the Codex screen truthful
+  // rather than a promise the server refuses.
   assert.deepEqual(
-    [...(await resolve(profileId))],
+    [...(await resolve(profileId))].sort(),
+    [...minted].sort(),
+    "advancing a chapter must NOT revoke the PvP access the capstone earned",
+  );
+});
+
+test("a PARTIAL capstone grants exactly the mastered concept's cards and withholds the rest", async () => {
+  // The case the old all-or-nothing reading could not express: `assessmentPassedAt` is
+  // written only when EVERY scoped concept is mastered, so a student who masters one
+  // of three got nothing while their Codex showed three cards as PvP-legal. Per-card
+  // eligibility grants the three they earned and none of the six they did not.
+  const concepts = [...CAPSTONE_CONCEPTS];
+  const { service } = progression(capstonePack(concepts));
+  const profileId = newProfileId();
+  await completeM1Module(service, profileId);
+
+  const mastered = [concepts[0]!];
+  const run = await sitCapstone(service, profileId, mastered);
+  assert.equal(run.passed, false, "two of three concepts were missed, so it did not pass");
+  const expected = [...SHIPPED.codexCardsForConcept(concepts[0]!)];
+  assert.ok(expected.length > 0, "the concept authors cards to mint");
+  assert.deepEqual([...run.newlyPvpLegalCardIds].sort(), [...expected].sort());
+
+  const snapshot = await service.snapshot(profileId);
+  assert.equal(
+    snapshot.activeChapter.assessmentPassedAt,
+    null,
+    "a partial capstone passes no chapter, which is why the old reading granted nothing",
+  );
+  const granted = await shippingResolver(service)(profileId);
+  assert.deepEqual([...granted].sort(), [...expected].sort(), "exactly the earned three");
+  assert.ok(granted.length < M1_CARDS.length, "and strictly fewer than the whole deck");
+
+  // Not merely "fewer": the specific cards of the UNMASTERED concepts are withheld.
+  const withheld = concepts
+    .slice(1)
+    .flatMap((conceptId) => [...SHIPPED.codexCardsForConcept(conceptId)]);
+  assert.ok(withheld.length > 0);
+  for (const cardId of withheld) {
+    assert.equal(
+      granted.includes(cardId),
+      false,
+      `${cardId} belongs to a concept that was not mastered and must not be granted`,
+    );
+  }
+
+  // What a thin grant costs, MEASURED rather than assumed, because "thin pools" is the
+  // exact reason widening who may mint is a separate decision. The measured figures
+  // across the three concepts are 9 / 7 / 9 items, against 25 for the whole deck.
+  //
+  // WHY THAT IS FINE HERE and would not be for a lesson: mastery is per CONCEPT, so the
+  // smallest grant this path can produce is a concept's three cards, not an arbitrary
+  // single one. The degenerate 0–4 item pools that make thin intersections a problem
+  // come from granting arbitrary subsets, which nothing here does.
+  const pool = eligiblePvpItems({
+    askable: askableItems(pvpQuestionBank(), { A: granted, B: granted }),
+    mastered: { A: [], B: [] },
+  });
+  assert.equal(
+    pool.length,
+    9,
+    `one mastered concept yields a playable pool; got ${pool.length} items`,
+  );
+});
+
+test("minting stays reachable ONLY from submitChapterAssessment — one call site, in one method", async () => {
+  // THE LOAD-BEARING INVARIANT behind per-card eligibility. Access now follows
+  // `pvpLegalAt`, so whatever can write it decides who may be asked what. A prior
+  // measurement is why this is guarded rather than trusted: a lesson granting subsets
+  // would make thin question intersections normal, yielding as few as 0–4 askable
+  // items against @pa/duel's 24-round ceiling.
+  //
+  // Structural, because behaviour cannot prove the ABSENCE of a call site on a path no
+  // test drives. A second caller anywhere fails the count; moving the one caller out of
+  // `submitChapterAssessment` fails the boundary.
+  const source = readFileSync(
+    resolve(dirname(fileURLToPath(import.meta.url)), "../src/progression/service.ts"),
+    "utf8",
+  );
+  const callSites = [...source.matchAll(/markCodexCardsPvpLegal\s*\(/g)];
+  assert.equal(callSites.length, 1, "exactly one place mints a PvP-legal card");
+
+  const submit = source.indexOf("async submitChapterAssessment(");
+  assert.ok(submit > 0, "submitChapterAssessment is still where minting belongs");
+  const nextMethod = source.indexOf("\n  async ", submit + 1);
+  assert.ok(nextMethod > submit, "found the end of submitChapterAssessment");
+  const at = callSites[0]!.index!;
+  assert.ok(
+    at > submit && at < nextMethod,
+    "the one call site sits inside submitChapterAssessment and nowhere else",
+  );
+});
+
+test("no progression mutation OTHER than submitting mints a card, over a pack where minting is possible", async () => {
+  // The behavioural half. The capstone is authored here, so minting is genuinely
+  // reachable — this is not a vacuous pass over a pack that can never mint.
+  const concepts = [...CAPSTONE_CONCEPTS];
+  const { store, service } = progression(capstonePack(concepts));
+  const profileId = newProfileId();
+  const nothingMinted = (after: string): void => {
+    for (const card of store.codex.values()) {
+      if (card.profileId !== profileId) continue;
+      assert.equal(card.pvpLegalAt, null, `${card.cardId} was minted by ${after}`);
+    }
+  };
+
+  await completeM1Module(service, profileId);
+  nothingMinted("completing the learning module");
+  await clearM1(service, profileId);
+  nothingMinted("clearing the mission");
+  await service.resetMissionAttempts(profileId, {
+    chapterId: BOSTON_RUNTIME_CHAPTER_ID,
+    missionId: M1_MISSION_ID,
+  });
+  nothingMinted("resetting the mission");
+  await completeM1Module(service, profileId);
+  await clearM1(service, profileId);
+  nothingMinted("re-running the module and mission");
+
+  // The sharpest case: sit the capstone and answer EVERY item correctly, then walk
+  // away instead of submitting. The student demonstrably knew all of it; only the
+  // submission mints, so nothing is minted.
+  const attempt = await service.openChapterAssessment(profileId, {
+    chapterId: BOSTON_RUNTIME_CHAPTER_ID,
+    assessmentId: CAPSTONE_ASSESSMENT,
+  });
+  assert.equal(attempt.ok, true, `the capstone opens: ${JSON.stringify(attempt)}`);
+  if (!attempt.ok) return;
+  nothingMinted("opening the capstone");
+  for (const entry of attempt.value.form) {
+    for (const itemId of entry.itemIds) {
+      const answered = await service.answerAssessmentItem(profileId, {
+        attemptId: attempt.value.attemptId,
+        itemId,
+        itemFormat: "SELECTED_RESPONSE",
+        selectedOptionId: "OPT.RIGHT",
+      });
+      assert.equal(answered.ok, true, `${itemId} answered`);
+      nothingMinted(`answering ${itemId} correctly`);
+    }
+  }
+  const abandoned = await service.abandonChapterAssessment(profileId, {
+    attemptId: attempt.value.attemptId,
+    reason: "WALKED_AWAY",
+  });
+  assert.equal(abandoned.ok, true, `abandon: ${JSON.stringify(abandoned)}`);
+  nothingMinted("abandoning a fully-correct capstone");
+
+  assert.deepEqual(
+    [...(await shippingResolver(service)(profileId))],
     [],
-    "REGRESSION RISK: advancing a chapter revokes the PvP access the capstone earned",
+    "and the shipping resolver grants nothing to any of it",
+  );
+
+  // The same pack, a fresh profile, submitting: nine minted. So the assertions above
+  // were measuring a live mint path rather than an inert one. A second profile rather
+  // than a retry on this one, because a retry needs its own assessment-module
+  // completion (MODULE_REQUIRED) and that gate is not what this test is about.
+  const other = newProfileId();
+  await completeM1Module(service, other);
+  const run = await sitCapstone(service, other, concepts);
+  assert.equal(run.passed, true);
+  assert.equal(
+    run.newlyPvpLegalCardIds.length,
+    M1_CARDS.length,
+    "submitting a mastered capstone is the one thing that mints",
   );
 });
 
@@ -610,9 +834,16 @@ function post(app: FastifyInstance, url: string, session: string, payload: unkno
 const get = (app: FastifyInstance, url: string, session: string) =>
   app.inject({ method: "GET", url, cookies: { pa_session: session } });
 
-test("EMPTY INTERSECTION: an unentitled guest cannot start a match, and nothing is left half-built", async () => {
-  // The case PLAYTEST_ALL can never produce, and therefore the case nothing has
-  // ever executed. The host is entitled; the guest holds nothing.
+test("AN UNENTITLED GUEST is refused with the entitlement reason, not a content gap, and nothing is left half-built", async () => {
+  // The case PLAYTEST_ALL can never produce, and therefore the case nothing had ever
+  // executed. The host is entitled; the guest holds nothing.
+  //
+  // THE DEFECT THIS GUARDS: `/join` never called `assertPvpEligible`, so the guest
+  // fell through to the empty intersection and was refused 409 NO_QUESTIONS — "no
+  // question could be drawn", which reads as the bank running out. The refusal was
+  // right and the reason was misleading, and it would send somebody debugging content
+  // when the answer is progression. Revert the check and this test fails on the code
+  // AND on the reason.
   const all = allAskableCardIds(pvpQuestionBank());
   const host = sid("host");
   const guest = sid("guest");
@@ -623,11 +854,16 @@ test("EMPTY INTERSECTION: an unentitled guest cannot start a match, and nothing 
   const code = created.json().code as string;
 
   const joined = await post(app, `/api/pvp/lobby/${code}/join`, guest);
-  assert.equal(joined.statusCode, 409, joined.body);
+  assert.equal(joined.statusCode, 403, joined.body);
   assert.equal(
     joined.json().error,
-    "NO_QUESTIONS",
-    "an empty intersection refuses the match rather than starting an unplayable one",
+    "NO_PVP_LEGAL_CARDS",
+    "the guest is told what is true of THEM, not that the question bank is empty",
+  );
+  assert.match(
+    String(joined.json().message),
+    /mastered/,
+    "and the detail names progression rather than content",
   );
 
   // Nothing half-built: no match id came back, the lobby is still the host's to
@@ -658,6 +894,48 @@ test("EMPTY INTERSECTION: an unentitled host is refused at the lobby, with the e
   const res = await post(app, "/api/pvp/lobby", sid("host"));
   assert.equal(res.statusCode, 403);
   assert.equal(res.json().error, "NO_PVP_LEGAL_CARDS");
+  await app.close();
+});
+
+test("the guest's entitlement is decided BEFORE any lobby state is read", async () => {
+  // Which is what makes the refusal cost nothing: no lobby is looked up, no profile
+  // lock is taken, so a refused join cannot leave a lobby half-started or spend the
+  // host's one commitment slot. Provable from outside: an unentitled caller joining a
+  // code that does not exist is still refused on their own standing, not with 404.
+  const { app } = await routes(() => []);
+  const res = await post(app, "/api/pvp/lobby/QQQQQQ/join", sid("guest"));
+  assert.equal(res.statusCode, 403, res.body);
+  assert.equal(res.json().error, "NO_PVP_LEGAL_CARDS");
+  await app.close();
+});
+
+test("NO_QUESTIONS still means what it says: two ENTITLED players whose cards do not overlap", async () => {
+  // The reason for the fix was that one refusal was wearing the other's name, so the
+  // fix is only right if BOTH remain reachable and distinguishable. Here each side
+  // genuinely holds minted cards — neither is refused at the gate — and the pool is
+  // empty only because their holdings are disjoint. That is a content-shaped answer
+  // and NO_QUESTIONS is the honest one.
+  const host = sid("host");
+  const guest = sid("guest");
+  const hostCards = ["BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1", "BOS.MD01.CARD.STAMP_DATE.v1"];
+  const guestCards = ["BOS.MD01.CARD.WAR_DEBT.v1"];
+  const { app } = await routes((profileId) =>
+    profileId === host ? hostCards : guestCards,
+  );
+
+  const created = await post(app, "/api/pvp/lobby", host);
+  assert.equal(created.statusCode, 200, created.body);
+  const code = created.json().code as string;
+
+  const joined = await post(app, `/api/pvp/lobby/${code}/join`, guest);
+  assert.equal(joined.statusCode, 409, joined.body);
+  assert.equal(joined.json().error, "NO_QUESTIONS");
+
+  // Same "nothing half-built" contract on this path too, which is the behaviour the
+  // NO_QUESTIONS refusal already had and must keep.
+  const hostView = await get(app, `/api/pvp/lobby/${code}`, host);
+  assert.equal(hostView.json().status, "OPEN");
+  assert.equal(hostView.json().matchId, null);
   await app.close();
 });
 

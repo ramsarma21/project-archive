@@ -59,9 +59,9 @@ test("PLAYTEST_ALL returns exactly the nine M1 cards and never reads progression
   const resolve = pvpCardResolver({
     m1CardIds: M1_CARDS,
     policy: "PLAYTEST_ALL",
-    assessmentPassed: async () => {
+    pvpLegalCardIds: async () => {
       readProgression = true; // must never run under PLAYTEST_ALL
-      return true;
+      return M1_CARDS;
     },
   });
   const cards = await resolve("any-profile");
@@ -69,23 +69,58 @@ test("PLAYTEST_ALL returns exactly the nine M1 cards and never reads progression
   assert.equal(readProgression, false, "PLAYTEST_ALL must not mutate or even read progression");
 });
 
-test("ASSESSMENT_PASSED refuses before the assessment and grants the nine after it", async () => {
-  let passed = false;
+test("ASSESSMENT_PASSED grants exactly the minted cards, and nothing before any are minted", async () => {
+  let minted: readonly string[] = [];
   const resolve = pvpCardResolver({
     m1CardIds: M1_CARDS,
     policy: "ASSESSMENT_PASSED",
-    assessmentPassed: async () => passed,
+    pvpLegalCardIds: async () => minted,
   });
-  assert.deepEqual([...(await resolve("p"))], [], "no cards before the assessment is passed");
-  passed = true;
+  assert.deepEqual([...(await resolve("p"))], [], "no cards before any is minted");
+  minted = M1_CARDS;
   assert.deepEqual([...(await resolve("p"))].sort(), [...M1_CARDS].sort(), "all nine after");
+
+  // Per-card, not all-or-nothing: the grant is exactly what was minted. This is what
+  // makes a minted card survive advancing a chapter — access follows the card.
+  minted = ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.STAMP_DATE.v1"];
+  assert.deepEqual([...(await resolve("p"))].sort(), [...minted].sort(), "exactly the two");
+});
+
+test("ASSESSMENT_PASSED cannot be widened by a card the M1 bank has never heard of", async () => {
+  // The resolver filters THROUGH `m1CardIds`, so a snapshot carrying an id from some
+  // other chapter — or a typo, or a row this bank cannot ask about — is dropped rather
+  // than handed to `askableItems`, which would treat it as a card and find no item.
+  const resolve = pvpCardResolver({
+    m1CardIds: M1_CARDS,
+    policy: "ASSESSMENT_PASSED",
+    pvpLegalCardIds: async () => [
+      "BOS.MD01.CARD.WAR_DEBT.v1",
+      "SOMEWHERE.ELSE.CARD.NOT_M1.v1",
+    ],
+  });
+  assert.deepEqual(
+    [...(await resolve("p"))],
+    ["BOS.MD01.CARD.WAR_DEBT.v1"],
+    "only the M1 card survives the filter",
+  );
+});
+
+test("ASSESSMENT_PASSED returns the authored card order, not the snapshot's row order", async () => {
+  // The match's evidence deck is derived positionally from these arrays, so the grant
+  // must not vary with database row order. Feed the ids reversed and expect authored.
+  const resolve = pvpCardResolver({
+    m1CardIds: M1_CARDS,
+    policy: "ASSESSMENT_PASSED",
+    pvpLegalCardIds: async () => [...M1_CARDS].reverse(),
+  });
+  assert.deepEqual([...(await resolve("p"))], [...M1_CARDS]);
 });
 
 test("ASSESSMENT_PASSED fails closed when the snapshot cannot be read", async () => {
   const resolve = pvpCardResolver({
     m1CardIds: M1_CARDS,
     policy: "ASSESSMENT_PASSED",
-    assessmentPassed: async () => {
+    pvpLegalCardIds: async () => {
       throw new Error("db down");
     },
     log: { warn: () => {} },

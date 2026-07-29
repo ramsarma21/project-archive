@@ -1019,7 +1019,8 @@ export async function registerPvpRoutes(
     if (!csrfOk(request, reply)) return;
     // The caller's PvP-legal cards, server-derived. The card gate is live, so a
     // caller who holds nothing cannot open a lobby (NO_PVP_LEGAL_CARDS) — which under
-    // ASSESSMENT_PASSED is exactly what closes access until the assessment is passed.
+    // ASSESSMENT_PASSED is exactly what closes access until a concept is mastered.
+    // `/join` runs the same check on the guest; see the note there for why.
     const cardIds = await resolvePvpCardIds(caller.profileId);
     const eligible = assertPvpEligible({
       profileId: caller.profileId,
@@ -1073,6 +1074,31 @@ export async function registerPvpRoutes(
     // The guest's cards are resolved server-side too — never from the join body — so
     // both sides of the intersection `askableItems` computes are server-derived.
     const cardIds = await resolvePvpCardIds(caller.profileId);
+
+    // THE GUEST'S OWN ENTITLEMENT, checked exactly as the host's is on create, and
+    // for the reason the wrong answer here was so misleading: without it an
+    // unentitled guest joining an ENTITLED host's lobby fell through to the empty
+    // intersection below and was refused 409 NO_QUESTIONS — "the bank ran out, a
+    // content gap" — when the truth is that this player has not mastered a concept
+    // yet. Same refusal, and it would send somebody debugging content when the answer
+    // is progression.
+    //
+    // Decided BEFORE the lobby is read or any profile lock is taken, so a refused
+    // join touches no shared state at all: the lobby stays OPEN and the host keeps
+    // their one commitment slot to cancel and reopen. It also answers on the caller's
+    // own standing without revealing whether the code exists.
+    //
+    // NO_QUESTIONS stays reachable and still means what it says — two ENTITLED players
+    // whose card sets do not overlap. The two refusals are now distinguishable.
+    const eligible = assertPvpEligible({
+      profileId: caller.profileId,
+      completedChapterIds: [],
+      pvpLegalCardIds: cardIds,
+    });
+    if (!eligible.ok) {
+      return reply.code(403).send({ error: eligible.reason, message: eligible.detail });
+    }
+
     const member = memberFor(caller, request.body, cardIds);
     if ("error" in member) return reply.code(400).send({ error: member.error });
 

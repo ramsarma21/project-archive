@@ -8,29 +8,38 @@
 // power — so it is derived here from an explicit access policy and, when the policy
 // demands it, from the authoritative progression snapshot.
 
+import { isCodexCardPvpLegal } from "@pa/contracts";
+
 export type M1PvpCardAccess = "PLAYTEST_ALL" | "ASSESSMENT_PASSED";
 
 /**
  * The shipping policy's whole reading of progression, in one place.
  *
- * `app.ts` wires this as `assessmentPassed`, and a test can drive the SAME
+ * `app.ts` wires this as `pvpLegalCardIds`, and a test can drive the SAME
  * function against a real snapshot. It lived as a two-line closure inside the
- * app wiring, which made the one predicate the shipping gate turns on the only
+ * app wiring, which made the one rule the shipping gate turns on the only
  * part of that gate no test could reach without re-typing it — and a re-typed
- * predicate is a second implementation that agrees until it doesn't.
+ * rule is a second implementation that agrees until it doesn't. For the same
+ * reason the per-card predicate is @pa/contracts' `isCodexCardPvpLegal` rather
+ * than a `!== null` written out here.
  *
- * NOTE WHAT IT READS: the ACTIVE chapter. `advanceChapter` makes the next
- * chapter active with its own null `assessmentPassedAt`, while the Codex rows keep
- * their `pvpLegalAt` forever — so under ASSESSMENT_PASSED this answers false again
- * for a player who passed Boston and moved on, revoking access they earned. That is
- * a live defect in the shipping branch, not an intended narrowing; it is pinned by
- * `pvp-shipping-card-gate.test.ts` so the behaviour cannot change unnoticed while
- * the owner decides whether access should follow the chapter or the card.
+ * ACCESS FOLLOWS THE CARD, NOT THE ACTIVE CHAPTER. This used to read
+ * `activeChapter.assessmentPassedAt`, which `advanceChapter` resets to null on the
+ * next chapter while the Codex rows keep their `pvpLegalAt` forever — so a student
+ * who passed Boston and moved to chapter two lost the nine cards they had earned,
+ * while their Codex screen went on showing them as PvP-legal. The server refused
+ * what the UI promised. A minted card is now kept for good, which is both the
+ * owner's decision and what the durable record already said.
+ *
+ * WHAT THIS DOES NOT DO: make minting easier. It reads `pvpLegalAt`; only
+ * `submitChapterAssessment` ever writes it, at 100% mastery of the card's concept.
+ * Widening who may mint is a separate, load-bearing decision — see the invariant
+ * in `pvp-shipping-card-gate.test.ts`.
  */
-export function assessmentPassedFromSnapshot(snapshot: {
-  readonly activeChapter: { readonly assessmentPassedAt: string | null };
-}): boolean {
-  return snapshot.activeChapter.assessmentPassedAt !== null;
+export function pvpLegalCardIdsFromSnapshot(snapshot: {
+  readonly codex: readonly { readonly cardId: string; readonly pvpLegalAt: string | null }[];
+}): readonly string[] {
+  return snapshot.codex.filter(isCodexCardPvpLegal).map((card) => card.cardId);
 }
 
 /**
@@ -42,24 +51,29 @@ export function assessmentPassedFromSnapshot(snapshot: {
  *                     mutates NOTHING durable — no Codex DB row is written to fake a
  *                     grant, so reverting is genuinely one value.
  *
- *   ASSESSMENT_PASSED The shipping position. A caller carries the nine M1 cards ONLY
- *                     when the authoritative progression snapshot says the chapter
- *                     assessment (the capstone) has passed; otherwise none. It gates
- *                     on the assessment result and NOT on mission clear. Flip this one
- *                     value and access closes until the assessment is passed.
+ *   ASSESSMENT_PASSED The shipping position. A caller carries exactly the M1 cards
+ *                     the authoritative progression snapshot says the chapter
+ *                     assessment (the capstone) has MINTED PvP-legal for them, and
+ *                     no others. It gates on assessment mastery and NOT on mission
+ *                     clear. Flip this one value and access closes until a concept
+ *                     has been mastered.
+ *
+ *                     The name is about what MINTS the card — 100% concept mastery on
+ *                     the chapter assessment — not about a whole assessment having
+ *                     been passed. `assessmentPassedAt` is deliberately not read; see
+ *                     `pvpLegalCardIdsFromSnapshot`.
  */
 export const M1_PVP_CARD_ACCESS: M1PvpCardAccess = "PLAYTEST_ALL";
 
 export interface PvpCardResolverDeps {
-  /** The full M1 card set the policy grants, server-derived (never hand-listed). */
+  /** The full M1 card set the policy may grant, server-derived (never hand-listed). */
   readonly m1CardIds: readonly string[];
   /**
-   * Whether the caller's authoritative progression snapshot says the chapter
-   * assessment has passed. Only consulted under ASSESSMENT_PASSED — under
-   * PLAYTEST_ALL nothing reads the snapshot, so the temporary grant has no
-   * progression dependency at all.
+   * Every card the caller's authoritative progression snapshot records as PvP-legal.
+   * Only consulted under ASSESSMENT_PASSED — under PLAYTEST_ALL nothing reads the
+   * snapshot, so the temporary grant has no progression dependency at all.
    */
-  readonly assessmentPassed: (profileId: string) => Promise<boolean>;
+  readonly pvpLegalCardIds: (profileId: string) => Promise<readonly string[]>;
   /** Overridable so a test can drive both policy branches. Defaults to the constant. */
   readonly policy?: M1PvpCardAccess;
   readonly log?: { warn: (obj: unknown, msg: string) => void };
@@ -69,10 +83,17 @@ export interface PvpCardResolverDeps {
  * Build the resolver the PvP routes call to learn a caller's server-side PvP card ids.
  *
  * Under PLAYTEST_ALL it returns the full M1 set unconditionally. Under
- * ASSESSMENT_PASSED it returns the full set only once the assessment has passed, and
+ * ASSESSMENT_PASSED it returns the M1 cards the caller has actually had minted, and
  * FAILS CLOSED — a snapshot that cannot be read grants nothing rather than leaking
  * access, matching how `masteredConcepts` withholds capstone items on an unreadable
  * profile.
+ *
+ * TWO NARROWINGS, both deliberate. The result is filtered THROUGH `m1CardIds`, so a
+ * card minted by some future chapter cannot leak into a pool built from M1's bank,
+ * and a card id the snapshot carries that the bank has never heard of is dropped
+ * rather than handed to `askableItems`. Filtering the authored M1 order (rather than
+ * mapping the snapshot's rows) also makes the result independent of database row
+ * order, which the match's evidence deck is derived from positionally.
  */
 export function pvpCardResolver(
   deps: PvpCardResolverDeps,
@@ -81,12 +102,12 @@ export function pvpCardResolver(
   return async (profileId: string): Promise<readonly string[]> => {
     if (policy === "PLAYTEST_ALL") return deps.m1CardIds;
     try {
-      const passed = await deps.assessmentPassed(profileId);
-      return passed ? deps.m1CardIds : [];
+      const minted = new Set(await deps.pvpLegalCardIds(profileId));
+      return deps.m1CardIds.filter((cardId) => minted.has(cardId));
     } catch (cause) {
       deps.log?.warn(
         { cause, profileId },
-        "pvp: assessment state unreadable; withholding M1 cards",
+        "pvp: codex state unreadable; withholding M1 cards",
       );
       return [];
     }

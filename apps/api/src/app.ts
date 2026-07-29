@@ -45,7 +45,7 @@ import {
   M1_MODULE_ID,
   bostonProgressionContent,
 } from "./progression/content.js";
-import { assessmentPassedFromSnapshot, pvpCardResolver } from "./pvp/cardAccess.js";
+import { pvpLegalCardIdsFromSnapshot, pvpCardResolver } from "./pvp/cardAccess.js";
 import { postgresProgressionStore } from "./progression/postgresStore.js";
 import { postgresConceptRetrievalStore } from "./progression/retrievalStore.js";
 import { ProgressionService } from "./progression/service.js";
@@ -270,14 +270,16 @@ export async function buildApp(options: { runMigrations?: boolean } = {}): Promi
     },
     // The server-side card resolver. Today's policy (M1_PVP_CARD_ACCESS) is
     // PLAYTEST_ALL, so this hands every caller the nine M1 cards without reading the
-    // snapshot. Flip that one value to ASSESSMENT_PASSED and this grants the cards
-    // only once the caller's chapter assessment has passed — the snapshot read below
-    // is what makes that authoritative rather than trusting the client.
+    // snapshot. Flip that one value to ASSESSMENT_PASSED and this grants only the
+    // cards the caller's capstone has minted PvP-legal — the snapshot read below is
+    // what makes that authoritative rather than trusting the client, and reading the
+    // Codex rows rather than the active chapter is what stops advancing a chapter
+    // revoking access the student earned.
     resolvePvpCardIds: pvpCardResolver({
       m1CardIds,
       log: app.log,
-      assessmentPassed: async (profileId) =>
-        assessmentPassedFromSnapshot(await progression.snapshot(profileId)),
+      pvpLegalCardIds: async (profileId) =>
+        pvpLegalCardIdsFromSnapshot(await progression.snapshot(profileId)),
     }),
   });
   // The educator surface: three reads, no writes.
