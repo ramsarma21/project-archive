@@ -40,10 +40,11 @@ and again in a private one, and sign in as a different account in each. Two wind
 are needed because a duel is between two accounts and one browser context holds one
 session — joining your own lobby is refused by name.
 
-Grading needs a TrueFoundry credential. `packages/grading` accepts the generic
-`TRUEFOUNDRY_API_KEY` outside production, so a working `.env` is enough; without one,
-answers fall back to granting the maximum, which looks like working grading and is
-not. See `.env.example`.
+Grading needs a TrueFoundry credential, and there is exactly one: set
+`TRUEFOUNDRY_API_KEY` in `.env` and nothing else. The same key serves grading, the
+nightly grading eval and the concept-art pipeline. Without it, answers fall back to
+granting the maximum, which looks like working grading and is not. See
+`.env.example`.
 
 ```sh
 # verify

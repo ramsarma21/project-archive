@@ -26,7 +26,7 @@ pnpm aws:secrets:check
 | `project-archive/google-oauth` | `clientId`, `clientSecret` | Google Cloud console. `pnpm aws:secret` uploads the pair already in `.env`. |
 | `project-archive/formative-grading` | `csrfSecret` | 32 random bytes, yours to generate. |
 | `project-archive/verdict-receipt` | `receiptSecret` | 32 random bytes, yours to generate. **New.** |
-| `project-archive/grading-credential` | `apiKey` | A TrueFoundry API key **provisioned with its own rate limit**, separate from the image-pipeline key. |
+| `project-archive/grading-credential` | `apiKey` | The TrueFoundry gateway key — **the same one key** as `TRUEFOUNDRY_API_KEY` in `.env`. Not a second credential. |
 
 ### `project-archive/verdict-receipt`
 
@@ -47,25 +47,30 @@ verdicts of duels in progress at that moment. Do it between lessons.
 
 ### `project-archive/grading-credential`
 
-This must be a **dedicated grading credential with its own quota**, not the key
-`assets/pipeline` uses for image generation. The reason is measured, not
-cosmetic: the gateway serialises, at 622 ms median serially and 1516 ms at
-concurrency 3 against a 1.5-second cap, so a class of thirty sharing a key with
-an asset render sits on the cap and takes the generous fallback — which grants a
-full magazine for any answer. `@pa/grading` refuses to fall back to
-`TRUEFOUNDRY_API_KEY` in production for the same reason.
-
-Provision a TrueFoundry virtual key scoped to the grading model
-(`gemini-group/gemini-3.5-flash-lite`) with a per-minute limit sized for a class:
-six rounds per student per duel, thirty students, so roughly 180 requests per
-lesson with bursts of thirty. Then:
+**Put your one TrueFoundry key here** — the same value as `TRUEFOUNDRY_API_KEY`
+in `.env` and the same repository secret the nightly grading eval uses. There is
+no second key to provision. The task injects this one value under both
+`TRUEFOUNDRY_API_KEY` and the legacy `TRUEFOUNDRY_GRADING_API_KEY`, so nothing
+in the deployed stack needs a dedicated credential.
 
 ```bash
 aws secretsmanager create-secret \
   --name project-archive/grading-credential \
-  --description "TrueFoundry grading key, own quota" \
+  --description "TrueFoundry gateway key (the one shared key)" \
   --secret-string '{"apiKey":"<the key>"}'
 ```
+
+The name still says "grading" because renaming it would mean creating a second
+Secrets Manager entry, which is exactly what one key is meant to avoid.
+
+**What one key costs, recorded rather than waved away.** This was a dedicated
+grading credential, on a measured argument: the gateway serialises, at 622 ms
+median and 1516 ms at concurrency 3 against a 1.5-second cap, so a class of
+thirty sharing a key with an asset render sits on the cap and takes the generous
+fallback — a full magazine for any answer. That measurement still stands; the
+owner has one key and has accepted the risk. It is not silent: the
+`GradingFallbackRateHigh` alarm below fires at 25% ungraded rounds. If a lesson
+and an asset render ever have to run together, do the render afterwards.
 
 Until it exists and holds a working key, every duel round is granted the maximum
 without being graded. That state is now **alarmed** rather than silent — see

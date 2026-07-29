@@ -60,15 +60,21 @@ const APP_SECRET = "project-archive/formative-grading";
  */
 const VERDICT_RECEIPT_SECRET = "project-archive/verdict-receipt";
 /**
- * The classifier credential, on its own.
+ * The TrueFoundry credential. ONE key for everything — the owner has exactly
+ * one — so this holds the same gateway key `.env` uses locally and the nightly
+ * grading eval uses in CI.
  *
- * Separate from the image-generation key (`TRUEFOUNDRY_API_KEY`) on purpose, and
- * @pa/grading refuses to fall back to that one in production. The measured
- * reason is capacity rather than tidiness: the gateway serialises, 1516ms at
- * concurrency 3 against a 1.5-second cap, so a class of thirty sitting behind
- * the same virtual key as an asset render takes the generous fallback instead of
- * a grade. This secret's value must be a TrueFoundry key provisioned with its
- * own rate limit.
+ * It was introduced as a *dedicated* grading key, separate from the
+ * image-generation `TRUEFOUNDRY_API_KEY`, on a measured rather than cosmetic
+ * argument: the gateway serialises, 1516ms at concurrency 3 against a
+ * 1.5-second cap, so a class of thirty sitting behind the same virtual key as
+ * an asset render takes the generous fallback instead of a grade. That cost is
+ * now ACCEPTED, not disproven — a lesson run while assets are rendering will
+ * see fallbacks rise, and `GradingFallbackRateHigh` below is what makes that
+ * loud instead of silent.
+ *
+ * The secret NAME is deliberately unchanged. Renaming it would make the owner
+ * create a second Secrets Manager entry, which is the thing being removed.
  */
 const GRADING_CREDENTIAL_SECRET = "project-archive/grading-credential";
 
@@ -377,6 +383,18 @@ export class ProjectArchiveStack extends Stack {
         DB_PASSWORD: ecs.Secret.fromSecretsManager(database.secret!, "password"),
         GOOGLE_CLIENT_ID: ecs.Secret.fromSecretsManager(googleOAuthSecret, "clientId"),
         GOOGLE_CLIENT_SECRET: ecs.Secret.fromSecretsManager(googleOAuthSecret, "clientSecret"),
+        // One secret, injected under both names, and the second one is not
+        // redundant: @pa/grading's `credential()` reads
+        // TRUEFOUNDRY_GRADING_API_KEY first and refuses the canonical
+        // TRUEFOUNDRY_API_KEY while NODE_ENV is "production", so injecting only
+        // the canonical name would leave the deployed task unable to grade.
+        // Injecting both is correct before AND after that gate is lifted, so the
+        // infra and the library can move independently. Delete the alias once
+        // packages/grading accepts TRUEFOUNDRY_API_KEY in production.
+        TRUEFOUNDRY_API_KEY: ecs.Secret.fromSecretsManager(
+          gradingCredentialSecret,
+          "apiKey",
+        ),
         TRUEFOUNDRY_GRADING_API_KEY: ecs.Secret.fromSecretsManager(
           gradingCredentialSecret,
           "apiKey",
@@ -519,7 +537,7 @@ export class ProjectArchiveStack extends Stack {
         alarmDescription:
           "More than a quarter of duel rounds were granted the maximum without " +
           "being graded. Students are being handed full magazines for any answer. " +
-          "Check TRUEFOUNDRY_GRADING_API_KEY and the gateway before the next lesson.",
+          "Check TRUEFOUNDRY_API_KEY and the gateway before the next lesson.",
         metric: new cloudwatch.MathExpression({
           expression: "IF(rounds >= 5, 100 * fallbacks / rounds, 0)",
           usingMetrics: { rounds: roundsMetric, fallbacks: fallbacksMetric },
