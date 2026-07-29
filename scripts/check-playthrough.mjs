@@ -115,8 +115,22 @@ const log = (...a) => console.log(...a);
 //                                 the render loop slow and drops the sim's ticks.
 //   PLAYTHROUGH_CPU_THROTTLE=<n>  CDP CPU throttle multiplier (e.g. 4 = 4x slower)
 //                                 applied to every page, to amplify the slowdown.
+//   PLAYTHROUGH_POLL_MS=<n>       the driven stages' control-loop poll interval
+//                                 (default 80). This knob exists because the two
+//                                 previous ones slow the PAGE, and the sensitivity
+//                                 that actually bites this gate is on the
+//                                 CONTROLLER side: the sim runs at a fixed 60 Hz
+//                                 that tracks wall time (MAX_CATCHUP_STEPS now
+//                                 covers the frame clamp, so a slow frame still
+//                                 runs every tick it is owed), while the bot's
+//                                 aim/jump decisions are delivered once per
+//                                 Node-side poll. Raising this simulates a
+//                                 CONTENDED machine — a full-speed sim with a
+//                                 controller that cannot keep up — which no
+//                                 page-side throttle reproduces.
 const SOFTWARE_GL = process.env.PLAYTHROUGH_SOFTWARE_GL === "1";
 const CPU_THROTTLE = Number(process.env.PLAYTHROUGH_CPU_THROTTLE ?? "") || 1;
+const POLL_MS = Number(process.env.PLAYTHROUGH_POLL_MS ?? "") || 80;
 
 // ---- assertion bands ------------------------------------------------------
 // Read off a healthy run (172 draw calls, ~5.1M tris, 149 textures) and set wide
@@ -389,6 +403,40 @@ function makeSimClock() {
   };
 }
 
+// ---- CONTROL RESOLUTION: the gate's one remaining wall-clock coupling -------
+// The budgets are all in sim ticks, but the BOT is driven from Node: each poll
+// reads state over CDP, aims at the waypoint, and maybe presses a key. So the sim
+// advances on wall time (a fixed 60 Hz, and since MAX_CATCHUP_STEPS was raised to
+// cover the frame clamp a slow frame now runs every tick it is OWED instead of
+// discarding the excess) while STEERING advances once per poll. The ratio between
+// them — sim ticks per control update — is therefore load-dependent in a way no
+// tick budget can fix, and a coarse ratio means a staler aim and jump windows
+// sampled too rarely to hit at the chained parkour beats.
+//
+// This measures it. It asserts nothing: it is the number that says whether a red
+// run was the WORLD or the MACHINE, which is exactly what a red run could not
+// distinguish before — the reason a route failure read as a coin flip.
+function makeControlMeter() {
+  const gaps = [];
+  let lastTick = null;
+  return {
+    polls: 0,
+    sample(tick) {
+      this.polls++;
+      if (tick == null) return;
+      if (lastTick !== null && tick > lastTick) gaps.push(tick - lastTick);
+      lastTick = tick;
+    },
+    /** Sim ticks between consecutive control updates. Calibrated healthy: ~6. */
+    summary() {
+      if (gaps.length === 0) return { polls: this.polls, medianGap: null, p95Gap: null, worstGap: null };
+      const s = [...gaps].sort((a, b) => a - b);
+      const at = (f) => s[Math.min(s.length - 1, Math.floor(s.length * f))];
+      return { polls: this.polls, medianGap: at(0.5), p95Gap: at(0.95), worstGap: s[s.length - 1] };
+    },
+  };
+}
+
 // A human-like UN-STICK for the driven free-run. The bot drives with held-W +
 // aim-at-waypoint + jump-on-preview, which reliably follows the guided line but
 // is NOT a skilled parkour player: when the sim runs slow, the exact tick a press
@@ -399,12 +447,28 @@ function makeSimClock() {
 // is making no ground, rotate the aim off the waypoint line and force a jump,
 // cycling directions, exactly as a player wiggles out of a snag.
 //
-// WHY THIS DOES NOT MASK A REAL STALL. It is BOUNDED by the stall ceiling
-// (`stallTicks`): if the nudges do not restore progress within that many EXECUTED
-// sim ticks, the body is genuinely wedged and the stage still FAILS. A nudge
-// cannot conjure an affordance that is not there, so a real block does not yield
-// to it; and it fires ONLY while free-running (never during an encounter), so the
-// soft-lock the gate exists to catch — an encounter armed-but-unresolved, the
+// WHAT BOUNDS IT, CORRECTED. This used to claim it was bounded by the stall
+// ceiling (`stallTicks`): "if the nudges do not restore progress within that many
+// EXECUTED ticks the body is genuinely wedged and the stage still FAILS." That
+// bound does not exist, and tracing it is what explained the flake. The stall
+// anchor resets whenever the body moves 0.5 m from it — and a forced jump moves
+// the body well over 0.5 m. So every burst resets the anchor and calls reset(),
+// `worstStallTicks` restarts from zero, and it can only ever reach 1500 if the
+// body is so wedged that a jump cannot displace it at all. A body that is
+// RECOVERABLE but making no ROUTE progress therefore loops — stall 240, nudge,
+// move 0.5 m, reset, stall 240 — burning the whole 12000-tick cap (~200 s of
+// wall-clock) and then failing on three downstream assertions that say nothing
+// about it. That is the 5x-duration red run.
+//
+// So the real bound is a BURST BUDGET against route progress that a nudge cannot
+// fake: `UNSTICK_BURST_BUDGET` bursts since the body last gained ground on its
+// eastward high-water mark. A high-water mark is the point — a nudge that shoves
+// the body sideways or backwards cannot reset it, which is exactly the property
+// the 0.5 m anchor lacks. Exceed it and the stage fails FAST and by name.
+//
+// It still cannot mask a real stall: a nudge cannot conjure an affordance that is
+// not there, and it fires ONLY while free-running (never during an encounter), so
+// the soft-lock the gate exists to catch — an encounter armed-but-unresolved, the
 // PAST-DAWN drain — is untouched and still trips `encArmTimeoutTicks`.
 function makeUnsticker() {
   const OFFSETS = [1.2, -1.2, 2.4, Math.PI, 0.6, -0.6]; // radians off the waypoint line
@@ -422,6 +486,13 @@ function makeUnsticker() {
   };
 }
 const UNSTICK_AFTER_TICKS = 240; // no 0.5 m of ground for this many sim ticks → start wiggling
+// Bursts allowed since the body last gained ground on its eastward high-water
+// mark. A healthy run fires 0; the worst measured degradation that still recovers
+// (control resolution starved to 91 ticks/update, 18x coarser than healthy) fired
+// 1 and recovered immediately. 8 therefore sits far above every observed recovery
+// and far below the ~50 a full-cap wander produces, so it separates "recovering"
+// from "looping" without shortening any legitimate run.
+const UNSTICK_BURST_BUDGET = 8;
 
 // ---------------------------------------------------------------------------
 // STAGE: WORLD + ROUTE (share the spawn page).
@@ -701,12 +772,32 @@ async function stageRoute(browser) {
   let anchorTick = null, anchorPos = null, worstStallTicks = 0;
   const clock = makeSimClock();
   const unsticker = makeUnsticker();
+  const control = makeControlMeter();
+  const wallStartMs = Date.now();
+  // WHY A TRACE AND AN EXIT REASON. A red run used to record where the body got
+  // to and nothing about how it got there or why the loop stopped, so "reached
+  // x=29" could equally be a wedge, a wander, or a budget simply running out —
+  // indistinguishable, which is how a red became something to re-run and shrug at.
+  const trace = [];
+  let lastTraceTick = -Infinity;
+  let exitReason = null;
+  // The un-stick's real bound (see makeUnsticker): bursts since the body last
+  // gained ground on its eastward high-water mark, which a nudge cannot fake.
+  let progressHighWater = -Infinity, burstsAtHighWater = 0, unstickExhausted = false;
 
   for (;;) {
     const s = await page.evaluate(MISSION_READ).catch(() => null);
-    if (!s) { if (clock.simDead()) { simDead = true; break; } await sleep(80); continue; }
+    if (!s) { if (clock.simDead()) { simDead = true; exitReason = "sim dead (page hung) while unreadable"; break; } await sleep(POLL_MS); continue; }
     clock.tick(s.ticks);
-    if (clock.elapsed >= ROUTE.capTicks) break;
+    control.sample(s.ticks);
+    if (clock.current != null && clock.current - lastTraceTick >= 240) {
+      lastTraceTick = clock.current;
+      trace.push({
+        t: clock.current, x: +s.pos.x.toFixed(1), y: +s.pos.y.toFixed(1), z: +s.pos.z.toFixed(1),
+        wpX: s.wp ? +s.wp.x.toFixed(0) : null, preview: s.preview, encLocked: s.encLocked, satisfied: s.satisfied.length,
+      });
+    }
+    if (clock.elapsed >= ROUTE.capTicks) { exitReason = `capTicks exhausted (${ROUTE.capTicks} sim ticks) without every stop resolving`; break; }
 
     for (const e of s.encounters) {
       if (!mandatory.has(e.id)) mandatory.set(e.id, { armedAtTick: null, resolvedAtTick: null });
@@ -715,7 +806,7 @@ async function stageRoute(browser) {
       if (rec.resolvedAtTick === null && (e.phase === "RESOLVED" || e.phase === "RELEASED")) rec.resolvedAtTick = clock.current;
     }
     if (s.pos.x > maxProgressX) maxProgressX = s.pos.x;
-    if (s.outcome) { outcome = s.outcome; break; }
+    if (s.outcome) { outcome = s.outcome; exitReason = `the mission ended: ${s.outcome.kind}${s.outcome.code ? ` (${s.outcome.code})` : ""}`; break; }
 
     // Soft-lock watch, in SIM ticks.
     for (const [id, rec] of mandatory) {
@@ -723,7 +814,7 @@ async function stageRoute(browser) {
         softLock = { id, armedForTicks: clock.current - rec.armedAtTick };
       }
     }
-    if (softLock) break;
+    if (softLock) { exitReason = `soft-lock: ${softLock.id} armed but unresolved for ${softLock.armedForTicks} sim ticks`; break; }
 
     if (s.encView && s.encView.phase !== "RESOLVED" && s.encLocked) { await answer(); anchorTick = null; anchorPos = null; unsticker.reset(); continue; }
     if (s.beat === "ACTIVE") await page.keyboard.press("KeyF").catch(() => {});
@@ -747,14 +838,22 @@ async function stageRoute(browser) {
     await aim(s.wp, s.pos, nudge.yawOffset);
     if (s.grounded && (JUMP_VERBS.includes(s.preview) || nudge.forceJump)) await page.keyboard.press("Space").catch(() => {});
 
+    // Route progress the un-stick cannot fake, and the budget it is bounded by.
+    if (s.pos.x > progressHighWater + PROGRESS_EPS_M) { progressHighWater = s.pos.x; burstsAtHighWater = unsticker.bursts; }
+    if (unsticker.bursts - burstsAtHighWater > UNSTICK_BURST_BUDGET) {
+      unstickExhausted = true;
+      exitReason = `un-stick exhausted: ${unsticker.bursts - burstsAtHighWater} bursts since the body last gained ground east of x=${progressHighWater.toFixed(1)}`;
+      break;
+    }
+
     // Stop once every mandatory stop has resolved — no need to drive into the
     // skill-beat section the autonomous driver deliberately does not play.
     const allResolved = mandatory.size > 0 && [...mandatory.values()].every((r) => r.resolvedAtTick !== null);
-    if (allResolved && clock.elapsed > 180) break;
+    if (allResolved && clock.elapsed > 180) { exitReason = "every mandatory stop resolved (the healthy exit)"; break; }
 
-    if (worstStallTicks > ROUTE.stallTicks) break; // a genuine stall is a failure, not something to wait out
-    if (clock.simDead()) { simDead = true; break; }
-    await sleep(80);
+    if (worstStallTicks > ROUTE.stallTicks) { exitReason = `wedged: no ground for ${worstStallTicks} sim ticks despite ${unsticker.bursts} un-stick nudge(s)`; break; }
+    if (clock.simDead()) { simDead = true; exitReason = `sim dead: ticks stopped advancing for ${SIM_DEAD_WALL_S}s of real time`; break; }
+    await sleep(POLL_MS);
   }
   await page.keyboard.up("KeyW").catch(() => {});
   await page.keyboard.up("ShiftLeft").catch(() => {});
@@ -772,9 +871,59 @@ async function stageRoute(browser) {
 
   const encSummary = [...mandatory.entries()].map(([id, r]) =>
     `${id}{armed:${r.armedAtTick === null ? "no" : r.armedAtTick + "t"},resolved:${r.resolvedAtTick === null ? "NO" : r.resolvedAtTick + "t"}}`);
+
+  // ---- the self-diagnosis --------------------------------------------------
+  // Everything a red run needs in order to be informative rather than a coin
+  // flip: how long it really took, how fast the sim ran, how finely the bot could
+  // actually be steered, why the loop stopped, and what was still outstanding.
+  const wallS = (Date.now() - wallStartMs) / 1000;
+  const ctl = control.summary();
+  const ticksPerWallS = wallS > 0 ? clock.elapsed / wallS : null;
+  const unresolved = [...mandatory.entries()].filter(([, r]) => r.resolvedAtTick === null).map(([id]) => id);
+  const neverArmed = [...mandatory.entries()].filter(([, r]) => r.armedAtTick === null).map(([id]) => id);
+  const lastSeen = trace.length ? trace[trace.length - 1] : null;
+  // Named so a failure detail can carry it verbatim. A red that does not say what
+  // it was waiting on is the thing this whole block exists to stop.
+  const waitingOn =
+    `exit=${exitReason ?? "(unknown)"}; ` +
+    `wall=${wallS.toFixed(0)}s, sim=${clock.elapsed} ticks (${ticksPerWallS ? ticksPerWallS.toFixed(1) : "n/a"} ticks/wall-s), ` +
+    `control resolution=${ctl.medianGap ?? "n/a"} ticks/update median, ${ctl.p95Gap ?? "n/a"} p95, ${ctl.worstGap ?? "n/a"} worst over ${ctl.polls} polls (healthy ~6); ` +
+    `unresolved=[${unresolved.join(",") || "none"}], neverArmed=[${neverArmed.join(",") || "none"}], ` +
+    `lastSeen=${lastSeen ? `tick ${lastSeen.t} at x=${lastSeen.x},z=${lastSeen.z} heading for x=${lastSeen.wpX} preview=${lastSeen.preview}` : "n/a"}`;
+
   log(`        simTicks=${clock.elapsed} (~${(clock.elapsed / TICK_HZ).toFixed(0)}s of sim) progressX=${maxProgressX.toFixed(0)} worstStall=${worstStallTicks}t unstickBursts=${unsticker.bursts} outcome=${outcome ? outcome.kind : "(stopped after stops resolved)"} penetration(invariant)=${pen.maxInv ?? "n/a"}m simDead=${simDead}`);
   log(`        encounters: ${encSummary.join("  ")}`);
-  writeFileSync(join(OUT, "route.json"), JSON.stringify({ url, consumedTicks: clock.elapsed, maxProgressX, worstStallTicks, unstickBursts: unsticker.bursts, outcome, mandatory: Object.fromEntries(mandatory), pen, simDead, pageErrors }, null, 2));
+  log(`        exit: ${exitReason ?? "(unknown)"}`);
+  log(`        wall-clock ${wallS.toFixed(0)}s at ${ticksPerWallS ? ticksPerWallS.toFixed(1) : "n/a"} sim-ticks/wall-second; ` +
+      `control resolution ${ctl.medianGap ?? "n/a"}t median / ${ctl.p95Gap ?? "n/a"}t p95 / ${ctl.worstGap ?? "n/a"}t worst over ${ctl.polls} polls (pollMs=${POLL_MS})`);
+  writeFileSync(join(OUT, "route.json"), JSON.stringify({
+    url, consumedTicks: clock.elapsed, maxProgressX, worstStallTicks, unstickBursts: unsticker.bursts, outcome,
+    mandatory: Object.fromEntries(mandatory), pen, simDead, pageErrors,
+    exitReason, wallClockS: +wallS.toFixed(1), simTicksPerWallSecond: ticksPerWallS ? +ticksPerWallS.toFixed(2) : null,
+    control: { ...ctl, pollMs: POLL_MS }, unresolved, neverArmed, unstickExhausted, progressHighWater, trace,
+  }, null, 2));
+
+  // HEADROOM, the precursor signal. The flake's mechanism is that the tick budget
+  // a driven run NEEDS grows sharply as control resolution coarsens, while the cap
+  // is only ~5x the healthy figure. Measured on this harness, same machine, same
+  // day: control resolution 5t/update -> 2460 ticks; 24t -> 2360; 91t -> 4342;
+  // 192t -> 11558, i.e. 96% of the 12000 cap and a 202 s stage that still PASSED.
+  // A little more and the cap is exceeded, ROPEWALK_STOP never arms, and the stage
+  // fails on three assertions that each describe a symptom and none the cause.
+  // So a run that passes with little headroom left is the warning the flake gives
+  // BEFORE it goes red, and it used to be invisible: a green is a green. This says
+  // so out loud rather than widening the cap, which would hide the signal and slow
+  // every genuine soft-lock down at the same time.
+  const headroomUsed = clock.elapsed / ROUTE.capTicks;
+  if (headroomUsed > 0.7) {
+    notes.push(
+      `ROUTE HEADROOM: the drive consumed ${(headroomUsed * 100).toFixed(0)}% of its ${ROUTE.capTicks}-tick cap ` +
+        `(${clock.elapsed} ticks, ${wallS.toFixed(0)} s wall) at a control resolution of ${ctl.medianGap ?? "n/a"} ticks/update ` +
+        `(healthy ~6, pollMs=${POLL_MS}). This PASSED, but it is the precursor to the intermittent ROUTE failure: the ` +
+        `tick budget a driven run needs grows sharply as the Node-side control loop falls behind a sim that holds ` +
+        `real time, and past the cap ROPEWALK_STOP never arms. Suspect machine contention, not the route.`,
+    );
+  }
 
   // A stuck-then-timeout outcome is a HANG, not a normal loss.
   const timedOutWhileStuck = outcome?.code === "TRAVERSAL_TIMEOUT" && (softLock || worstStallTicks > ROUTE.stallTicks);
@@ -785,18 +934,23 @@ async function stageRoute(browser) {
     "the run saw no authored encounters at all — the route or its stops are gone");
   for (const [id, rec] of mandatory) {
     assert(rec.armedAtTick !== null, `encounter ${id} arms`,
-      `${id} never left DORMANT during the driven approach (${clock.elapsed} sim ticks) — the trigger did not fire or the section is unreachable`);
+      `${id} never left DORMANT during the driven approach (${clock.elapsed} sim ticks) — the trigger did not fire or the section is unreachable. ${waitingOn}`);
     assert(rec.resolvedAtTick !== null, `encounter ${id} resolves`,
-      `${id} armed at tick ${rec.armedAtTick} but never reached RESOLVED — the beat hangs (soft-lock); the speaker never closed / the question never opened`);
+      `${id} armed at tick ${rec.armedAtTick} but never reached RESOLVED — the beat hangs (soft-lock); the speaker never closed / the question never opened. ${waitingOn}`);
   }
   assert(!softLock, "no encounter soft-lock",
     softLock ? `encounter ${softLock.id} sat armed-but-unresolved for ${softLock.armedForTicks} sim ticks (> ${ROUTE.encArmTimeoutTicks})` : "");
   assert(!timedOutWhileStuck, "no beat hang (stuck-then-timeout)",
     `the run hit TRAVERSAL_TIMEOUT while stuck (worstStall=${worstStallTicks} ticks) — the timer expired because the player was stranded, not because of a fair loss`);
+  // The wedge the stall ceiling structurally cannot see: a body the un-stick keeps
+  // displacing 0.5 m without ever regaining route ground. Before this, that ran to
+  // the 12000-tick cap and reported itself as three unrelated-looking failures.
+  assert(!unstickExhausted, "the un-stick recovers the body, or this fails by name",
+    `the un-stick fired ${unsticker.bursts - burstsAtHighWater} bursts without the body regaining 0.5 m east of x=${progressHighWater.toFixed(1)} — a body that is recoverable enough to keep moving but is making no ROUTE progress, which the stall ceiling (${ROUTE.stallTicks} ticks) cannot catch because every nudge resets its anchor. ${waitingOn}`);
   assert(worstStallTicks <= ROUTE.stallTicks, "no stall before the stops resolve",
-    `the body made no ground for ${worstStallTicks} EXECUTED sim ticks (> ${ROUTE.stallTicks}) despite ${unsticker.bursts} un-stick nudge(s) — a genuinely wedged body, not a slow renderer (which advances per tick) and not a transient (which the nudges clear); see route.json`);
+    `the body made no ground for ${worstStallTicks} EXECUTED sim ticks (> ${ROUTE.stallTicks}) despite ${unsticker.bursts} un-stick nudge(s) — a genuinely wedged body, not a slow renderer (which advances per tick) and not a transient (which the nudges clear); see route.json. ${waitingOn}`);
   assert(maxProgressX >= ROUTE.minProgressX, "route advances through the street in order",
-    `the driven run only reached x=${maxProgressX.toFixed(0)} (< ${ROUTE.minProgressX}) in ${clock.elapsed} sim ticks; it never got past the Shambles/ropewalk`);
+    `the driven run only reached x=${maxProgressX.toFixed(0)} (< ${ROUTE.minProgressX}) in ${clock.elapsed} sim ticks; it never got past the Shambles/ropewalk. ${waitingOn}`);
   if (pen.available) {
     assert(pen.maxInv < ROUTE.penInvariantLimitM, "no penetration during play",
       `a body was ${pen.maxInv}m inside solid hull "${pen.invId}" (invariant limit ${ROUTE.penInvariantLimitM}m) — window.__diag recorded a body inside solid geometry`);

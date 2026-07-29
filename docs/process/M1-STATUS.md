@@ -451,7 +451,7 @@ Read this before concluding a green run means the game is correct.
 | `assets:verify:collision` | a collision solid that isn't drawn (invisible walls) | whether a surface exists at an authored height |
 | `assets:verify:placement` | route surfaces having their asset's shape | non-route geometry |
 | `assets:verify:affordances` | real mesh geometry at each authored affordance | whether a human could make the move |
-| `check-playthrough` — **blocking in CI** (`8eb2393`) | world renders, route advances, stops resolve, no hang, no hull penetration | climbing through *drawn* geometry, animation fidelity, the terminal elm beat (deliberately unplayed — a bot that could reliably hit it would itself be flaky) |
+| `check-playthrough` — **blocking in CI** (`8eb2393`) | world renders, route advances, stops resolve, no hang, no hull penetration | climbing through *drawn* geometry, animation fidelity, the terminal elm beat (deliberately unplayed — a bot that could reliably hit it would itself be flaky). **And it cannot tell a broken route from a contended machine**: ROUTE's tick budget is machine-independent but the bot is steered from Node, so heavy load coarsens control and inflates the ticks the drive needs. It now reports control resolution, an exit reason and a headroom note instead of failing silently at random — see the ROUTE entry above |
 | `check-clip-fidelity` | hands/feet vs surfaces, plant slide, clip timing | not yet a gate — red by construction |
 
 **Disproven, do not re-derive:** the elm is *not* drawn four times — trunk and all three
@@ -564,6 +564,74 @@ fails because it does not.
   nobody, and ROUTE/DUEL are the stages that catch the soft-lock/void/grader class; do not defer
   them to nightly, and do not shrink tick budgets to fit a cap. Reasoning in `CI-AND-BROWSER-CHECKS.md`.
   Still pending: the actual completed-run number (`gh` unauthenticated here).
+
+**`check-playthrough`'s intermittent ROUTE failure — MECHANISM FOUND AND MEASURED, not widened**
+(29 Jul, mission-presentation lane). The symptom was three `ROPEWALK_STOP` / route failures on a red
+run whose ROUTE stage took **206 s against 42 s on both green runs**. A prior agent had already
+disproven "regression" by stashing its diff and re-running on clean `main`.
+
+**The 5x duration is not a slowdown — it is the tick cap being reached.** Green runs consume ~2,360–2,460
+sim ticks in ~42 s, i.e. **60.0 sim-ticks per wall-second**, exactly real time; `ROUTE.capTicks` is
+12,000, which at that rate is ~206 s. So the red run burned its whole budget. The sim never slowed:
+since `MAX_CATCHUP_STEPS` was raised to cover the frame clamp (`cf262c9`), a slow frame runs every tick
+it is *owed* instead of discarding the excess, so the sim holds real time under load. That is the
+opposite of the load-dependent slow-motion the brief expected, and it matters: the slow-running fix
+**removed the coupling that used to keep the harness's controller and the sim degrading together.**
+
+**The mechanism is the one wall-clock coupling the tick-budget rewrite left behind.** Budgets are in
+sim ticks, but the bot is driven from Node — each poll reads state over CDP, aims, maybe presses a key —
+so *steering* advances once per poll while the sim advances on wall time. Measured on one machine, one
+day, varying only the control cadence (`PLAYTHROUGH_POLL_MS`, a new repro knob) with the sim at full
+speed throughout:
+
+| control resolution | sim ticks needed | ROUTE wall-clock | verdict |
+|---|---|---|---|
+| 5 t/update (healthy) | 2,460 | 41 s | PASS |
+| 24 t/update | 2,360 | 39 s | PASS |
+| 91 t/update | 4,342 | 72 s | PASS (1 un-stick burst) |
+| 192 t/update | **11,558** | **202 s** | PASS — at **96% of the 12,000 cap** |
+| 151 t/update | **12,003** | **209 s** | **FAIL — the red run reproduced** |
+
+Sharply non-linear, and the cap is only ~5x the healthy figure. The last row **is** the reported red:
+cap exhausted, `ROPEWALK_STOP` never armed, 209 s against the report's 206 s. **So it is load
+contention** — but with a real defect underneath: the gate had no way to say so, and a near-miss was
+indistinguishable from a healthy green. (Ordering above is by cadence, not by run; 151 t failing while
+192 t passed is the run-to-run variance you would expect this close to the cap.)
+
+Fixed, all in `scripts/check-playthrough.mjs`:
+- **It diagnoses itself.** ROUTE now records and prints its wall-clock, sim-ticks-per-wall-second,
+  **control resolution** (median/p95/worst ticks per control update), an **exit reason** (previously
+  absent — a red could not distinguish a wedge from a wander from a budget simply running out), what
+  was still unresolved or never armed, and a sampled position trace. Every route failure detail carries
+  that line verbatim. **Verified on the reproduced red**, which now reports: `exit=capTicks exhausted`,
+  `sim=12003 ticks (57.4 ticks/wall-s)`, `control resolution=151 ticks/update median (healthy ~6)`,
+  `neverArmed=[ROPEWALK_STOP]`, `lastSeen=tick 12088 at x=61,z=-6.8 heading for x=51 preview=BLOCKED`.
+  That last field is a finding in itself: the bot was being aimed **west** (waypoint x=51) from x=61
+  with `preview=BLOCKED`, so the waypoint had flipped behind it. Worth a look by whoever owns the route
+  guidance; not chased here.
+- **A HEADROOM note above 70% of the cap.** The 192 t run above *passed* at 96% — the flake's precursor,
+  previously invisible because a green is a green. This is why the cap was **not** widened: widening
+  hides the precursor and slows every genuine soft-lock at the same time.
+- **The un-stick's claimed bound did not exist, and now does.** Its comment said it was bounded by the
+  stall ceiling (`stallTicks`, 1500) — but the stall anchor resets whenever the body moves 0.5 m, and a
+  forced jump moves it much further, so every burst reset the anchor. `worstStall` peaked at 599 even in
+  the 202 s run, so 1500 was never approachable. A recoverable-but-not-progressing body could therefore
+  loop to the cap untouched. It is now bounded by bursts since the body last gained ground on its
+  **eastward high-water mark**, which a nudge cannot fake, and fails by name. Latent, not the flake's
+  cause (only 3 bursts fired at 192 t) — but it was the assertion supposedly covering this class.
+  **Mutation-tested**, because a guard that never fires is not evidence: with the budget forced to 0 it
+  fails by name and exits at 2,698 ticks / 48 s instead of grinding to the cap, and `worstStall` was
+  nowhere near 1500 at the time — the ceiling could not have caught it.
+
+**Not done, and this is the honest remaining gap.** The fix that would make ROUTE genuinely
+load-independent is to stop driving it from Node: either an in-page per-tick driver (a rAF loop reading
+`window.__floor` and dispatching synthetic key events — possible entirely within `scripts/`, but a large
+change to a *blocking* gate that would need every tick budget recalibrated) or a sim-pause handle so the
+harness can step the sim explicitly, which needs a handle in contested `MissionRun.tsx`/`devEntry.tsx`.
+Until one of those, ROUTE's verdict remains sensitive to machine load — it now says so loudly instead
+of failing at random. Running six or seven agents plus the owner's dev servers is enough to reach the
+degraded regime; the two default-poll runs measured for this entry took 41 s and 64 s on the same
+machine minutes apart.
 
 **A pipeline finding, from three independent repairs today.** Every one traced to the generator's
 own output, not to the processing:
