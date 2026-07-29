@@ -8,12 +8,14 @@
 
 import type {
   Blocker,
+  CameraOccluder,
   ClimbVolume,
   CollisionWorld,
   GripSpec,
   LadderSpec,
   Platform,
 } from "@pa/engine-world/collision";
+import { ASSETS } from "./assets.js";
 import { rampStrips } from "./authoring.js";
 import { LADDER_COLLISION_HALF_M, ladderLines } from "./level/ladderGeom.js";
 import type { CrowdCluster } from "@pa/engine-world/stealth";
@@ -185,6 +187,56 @@ function ladderBlockers(level: MissionLevel): Blocker[] {
   });
 }
 
+// The drawn crown of a tree begins about a third of the way up the trunk — below
+// that is bare bole, above it is leaf. Sized from the trunk foot so the leaf box
+// sits over the canopy the camera buries in when the player is up among the
+// boughs, while a camera down at street height under the tree stays below it and
+// is not pulled in. (For the Liberty Elm, 18m drawn -> leaf from ~6.1m, just
+// under its lowest 6.4m bough, and clear of the 3.2m awning below.)
+const CANOPY_LEAF_START_FRACTION = 0.34;
+const ASSET_BY_KEY = new Map(ASSETS.map((asset) => [asset.key, asset]));
+
+/**
+ * Invisible camera occluders for the level's drawn-only canopies.
+ *
+ * A tree is drawn as a solid trunk (a blocker) wrapped in a leaf crown and boughs
+ * that carry NO collision, because the body climbs and walks through them. That
+ * leaves the camera free to sail into the canopy — the owner's elm-descent burial.
+ * For every mass the level tags `tree`, this emits ONE box over its leaf crown,
+ * sized from the tree's own declared draw size so it tracks the drawn mass rather
+ * than a hand-typed guess, and registered on `world.cameraOccluders` where only
+ * the camera-clearance queries see it. The body, sight lines and cover are
+ * untouched.
+ *
+ * This is the general mechanism, not an elm special case: any drawn-only mass a
+ * body passes but the camera must not (a tree here; an awning, a hung sign or a
+ * bolt of cloth next) gets a camera occluder the same way. The elm is simply the
+ * first, being the one the owner recorded.
+ */
+function canopyCameraOccluders(level: MissionLevel): CameraOccluder[] {
+  const out: CameraOccluder[] = [];
+  for (const mass of level.masses) {
+    if (!mass.tags.includes("tree") || !mass.asset) continue;
+    const declared = ASSET_BY_KEY.get(mass.asset);
+    if (!declared) continue;
+    const [drawWidth, drawHeight, drawDepth] = declared.sizeM;
+    // Centre on the trunk footprint, the same anchor the renderer draws the tree
+    // from (`sceneryPlacements` centres a several-entry cluster on its footing).
+    const cx = (mass.rect.minX + mass.rect.maxX) / 2;
+    const cz = (mass.rect.minZ + mass.rect.maxZ) / 2;
+    out.push({
+      id: `CANOPY_${mass.id}`,
+      minX: cx - drawWidth / 2,
+      maxX: cx + drawWidth / 2,
+      minZ: cz - drawDepth / 2,
+      maxZ: cz + drawDepth / 2,
+      baseY: mass.baseY + CANOPY_LEAF_START_FRACTION * drawHeight,
+      topY: mass.baseY + drawHeight,
+    });
+  }
+  return out;
+}
+
 export interface CompiledLevel {
   world: CollisionWorld;
   /** Every deck including the strips a ramp expands into. */
@@ -238,6 +290,7 @@ export function compileLevel(level: MissionLevel): CompiledLevel {
     climbVolumes: level.climbs.map(climbVolumeFrom),
     ladders,
     grips,
+    cameraOccluders: canopyCameraOccluders(level),
   };
 
   return {

@@ -18,7 +18,14 @@ import {
 } from "../playerMotion.js";
 import { createFlowState, stepFlow, type FlowState } from "../parkour/flow.js";
 import { FIELD_DT } from "../fieldSimulation.js";
-import { wallFromRect, type CollisionWorld } from "../collision.js";
+import {
+  cameraSegmentClear,
+  cameraSegmentOccluderIds,
+  segmentClear,
+  wallFromRect,
+  type CameraOccluder,
+  type CollisionWorld,
+} from "../collision.js";
 
 const OPEN_GROUND: CollisionWorld = {
   blockers: [],
@@ -167,5 +174,95 @@ test("the camera pulls in rather than sitting inside a wall", () => {
   assert.equal(
     chaseCameraDistance(OPEN_GROUND, look, focus),
     LOOK_TUNING.chaseDistanceM,
+  );
+});
+
+// ---- camera occluders: drawn-only geometry the camera must not enter --------
+//
+// The elm-descent burial in one shape: a leaf canopy is drawn with NO collision
+// (a body climbs and drops through it), so the chase march — which read solids
+// only — sailed the lens straight into the leaves while collision reported open
+// air. A camera occluder is an invisible box the camera treats as solid and the
+// body/sight/cover queries do not.
+
+/** A canopy behind the player: no blocker (a body passes it), a camera occluder. */
+function worldWithCanopy(): CollisionWorld {
+  const canopy: CameraOccluder = {
+    id: "CANOPY",
+    minX: -6,
+    maxX: 6,
+    minZ: -6,
+    maxZ: -1,
+    baseY: -2,
+    topY: 12,
+  };
+  return {
+    blockers: [],
+    platforms: [],
+    bounds: { minX: -50, maxX: 50, minZ: -50, maxZ: 50 },
+    cameraOccluders: [canopy],
+  };
+}
+
+test("the chase camera pulls in for a drawn canopy that carries no collision", () => {
+  const world = worldWithCanopy();
+  const look = createLookState(0);
+  const focus = chaseFocus({ x: 0, y: 0, z: 0 });
+
+  // The full boom sits behind the player at -Z, inside the canopy box.
+  const full = chaseCameraPosition(look, focus);
+  assert.ok(full.z < -1, "the test canopy must actually be behind the full boom");
+
+  // Solids-only clearance sees nothing (this IS the bug: collision "clear").
+  assert.ok(
+    segmentClear(world, focus, full),
+    "a canopy with no blocker is invisible to the sight-line test — the defect",
+  );
+  // The camera-aware clearance sees it, and names it.
+  assert.deepEqual(cameraSegmentOccluderIds(world, focus, full), ["CANOPY"]);
+
+  // So the boom shortens instead of burying the lens in leaves.
+  const pulled = chaseCameraDistance(world, look, focus);
+  assert.ok(
+    pulled < LOOK_TUNING.chaseDistanceM,
+    "the camera must pull in from a drawn canopy, not sit inside it",
+  );
+});
+
+test("camera occluders never touch sight lines, cover or projectiles", () => {
+  const world = worldWithCanopy();
+  const a = { x: 0, y: 1, z: 0 };
+  const b = { x: 0, y: 1, z: -5 };
+  // The very line the camera is blocked on is STILL clear to the sight test:
+  // a guard is not blinded, and a ball is not stopped, by a volume that stops
+  // nothing. Only the camera query counts the canopy.
+  assert.ok(segmentClear(world, a, b), "segmentClear must ignore camera occluders");
+  assert.ok(!cameraSegmentClear(world, a, b), "the camera query must see it");
+});
+
+test("a camera line below the canopy is not pulled (no over-pull at ground)", () => {
+  // Same canopy, but its base is up in the leaves (baseY 6). A camera down at
+  // street height passes underneath and is left at full boom — the guard against
+  // an over-eager clearance test making ordinary movement claustrophobic.
+  const world: CollisionWorld = {
+    blockers: [],
+    platforms: [],
+    bounds: { minX: -50, maxX: 50, minZ: -50, maxZ: 50 },
+    cameraOccluders: [
+      { id: "CROWN", minX: -8, maxX: 8, minZ: -8, maxZ: 8, baseY: 6, topY: 18 },
+    ],
+  };
+  const look = createLookState(0);
+  const groundFocus = chaseFocus({ x: 0, y: 0, z: 0 }); // focus ~1.2m, cam ~2.5m
+  assert.equal(
+    chaseCameraDistance(world, look, groundFocus),
+    LOOK_TUNING.chaseDistanceM,
+    "a camera under the canopy must keep its full boom",
+  );
+  // Up among the boughs, the same canopy pulls it in.
+  const boughFocus = chaseFocus({ x: 0, y: 8, z: 0 });
+  assert.ok(
+    chaseCameraDistance(world, look, boughFocus) < LOOK_TUNING.chaseDistanceM,
+    "a camera up in the canopy must pull in",
   );
 });
