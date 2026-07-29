@@ -324,6 +324,33 @@ async function openPage(browser, opts = { viewport: { width: 1280, height: 800 }
   return page;
 }
 
+// A smaller canvas for the stages that read SIM STATE rather than pixels. On a
+// software rasteriser (the CI shape) fragment shading is a real per-frame cost, so
+// fewer pixels = a higher sim tick rate = less wall-clock for the same sim
+// progress. Not the pixel-reading stages: WORLD (render census + legible artifact)
+// and the DUEL void check keep the full 1280×800.
+const DRIVE_VIEWPORT = { viewport: { width: 800, height: 600 } };
+
+// Drop the render cost the sim is throttled by on a software rasteriser, for a
+// page whose stage asserts SIM STATE and never the picture: shadow-map generation
+// and shadow cast/receive. Measured ~+40% sim ticks/second under software WebGL.
+// A cheaper RENDERER, not a weaker TEST — the sim is headless of rendering (fixed
+// step, deterministic), so this cannot change a route/encounter/climb/penetration
+// verdict. No-op if the stage handle is absent. Never called on WORLD or the DUEL
+// void page, whose assertions do read the rendered frame.
+async function lightenRender(page) {
+  await page.evaluate(() => {
+    const st = window.__stage;
+    if (!st?.gl) return;
+    st.gl.shadowMap.enabled = false;
+    st.gl.shadowMap.autoUpdate = false;
+    st.scene.traverse((o) => {
+      if (o.isLight) o.castShadow = false;
+      if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; }
+    });
+  }).catch(() => {});
+}
+
 // A SIM-CLOCK watchdog, shared by every driven stage. It reads the fixed-step
 // tick counter each poll and tracks three things, so a caller's loop can be
 // written in SIM TICKS rather than wall-clock:
@@ -472,7 +499,7 @@ async function fetchGrading() {
 // tick. No GLB settle is needed here (these stages read the collision world and
 // motion, not the render census), so the wait is short.
 async function bootMissionAt(browser, at, toward, { settleMs = 2500, bare = false } = {}) {
-  const page = await openPage(browser);
+  const page = await openPage(browser, DRIVE_VIEWPORT);
   const pageErrors = [];
   page.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));
   // Driven stages spawn in BARE mode so the sim is not slow-motioned by the GLB
@@ -485,7 +512,7 @@ async function bootMissionAt(browser, at, toward, { settleMs = 2500, bare = fals
     if ((await page.evaluate(() => window.__floor?.ticks ?? null).catch(() => null)) !== null) { up = true; break; }
     await sleep(200);
   }
-  if (up) await sleep(settleMs);
+  if (up) { await lightenRender(page); await sleep(settleMs); }
   return { page, url, up, pageErrors };
 }
 
@@ -561,12 +588,8 @@ function worldCensus() {
 // WORLD needs the full scene (it IS the render census), so it runs on a SCENERY
 // page. ROUTE reads authored motion / encounter / penetration state, so it runs
 // on a separate BARE page where the sim is not slow-motioned by the GLB render
-// cost (see the SIM CLOCK note). They no longer share a page.
-async function stageWorldAndRoute(browser) {
-  if (wants("world")) await stageWorld(browser);
-  if (wants("route")) await stageRoute(browser);
-}
-
+// cost (see the SIM CLOCK note). They no longer share a page, and main() times
+// each independently.
 async function stageWorld(browser) {
   const page = await openPage(browser);
   const pageErrors = [];
@@ -620,7 +643,7 @@ async function stageWorld(browser) {
 
 async function stageRoute(browser) {
   log("\n[ROUTE] driven approach through the mandatory encounters (bare; measured in sim ticks)");
-  const page = await openPage(browser);
+  const page = await openPage(browser, DRIVE_VIEWPORT);
   const pageErrors = [];
   page.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));
   const bareParam = ROUTE.bare ? "&bare=1" : "";
@@ -632,6 +655,7 @@ async function stageRoute(browser) {
     await sleep(200);
   }
   if (!up) { assert(false, "mission runtime comes up (route)", `window.__floor never appeared at ${url}`); await page.close(); return; }
+  await lightenRender(page);
   await sleep(1500); // bare has no GLBs to wait on; a short settle for the first ticks
 
   await page.mouse.click(640, 400).catch(() => {});
@@ -785,7 +809,7 @@ async function stageRoute(browser) {
 // ---------------------------------------------------------------------------
 async function stageYard(browser) {
   log("\n[YARD] a driven run reaches the rope-walk yard (bare; measured in sim ticks)");
-  const page = await openPage(browser);
+  const page = await openPage(browser, DRIVE_VIEWPORT);
   const bareParam = YARD.bare ? "&bare=1" : "";
   const url = `${BASE}/src/mission/floor.html?at=${YARD.at}&toward=${YARD.toward}&encounterVerdict=correct${bareParam}`;
   await page.goto(url, { waitUntil: "commit", timeout: 120000 });
@@ -795,6 +819,7 @@ async function stageYard(browser) {
     await sleep(200);
   }
   if (!up) { assert(false, "mission runtime comes up (yard drop-in)", `window.__floor never appeared at ${url}`); await page.close(); return; }
+  await lightenRender(page);
   await sleep(1500);
   await page.mouse.click(640, 400).catch(() => {});
   await page.evaluate(() => window.__diag?.reset?.()).catch(() => {});
@@ -1145,10 +1170,12 @@ async function stageDuel(browser) {
   // --- grading discriminates (scripted correct vs wrong, no classifier needed) ---
   log("\n[DUEL] a graded answer discriminates right from wrong");
   const magazineAfterAnswer = async (mode) => {
-    const page = await openPage(browser);
+    // Reads the HUD magazine, never pixels — so it takes the cheaper renderer too.
+    const page = await openPage(browser, DRIVE_VIEWPORT);
     const url = `${BASE}/src/duel/duel.html?verdict=${mode}`;
     await page.goto(url, { waitUntil: "commit", timeout: 120000 });
     for (let i = 0; i < 250; i++) { if (await page.evaluate(() => !!window.__duel).catch(() => false)) break; await sleep(200); }
+    await lightenRender(page);
     const readHud = () => page.evaluate(() => { const d = window.__duel; if (!d) return null; const h = d.getHud(); return { phase: h.phase, magA: h.magazine.A, magB: h.magazine.B }; }).catch(() => null);
     // Same tick-relative wait as the live grader: FACE_OFF counts down on the
     // field clock, so a slow renderer reaches the question in the same sim ticks.
@@ -1206,18 +1233,27 @@ async function main() {
     process.exit(2);
   }
 
+  // Per-stage WALL-CLOCK timing — diagnostic only, feeds no assertion. It is how
+  // you tell where a slow (e.g. GPU-less CI) run spends its minutes: the driven
+  // stages are sim-tick-paced (slower renderer → more wall-clock), WORLD is
+  // scenery-load-bound, DUEL renders a real arena through its 10 s FACE_OFF thrice.
+  const timings = [];
+  const timed = async (name, fn) => { const t = Date.now(); await fn(); timings.push([name, (Date.now() - t) / 1000]); };
+
   const browser = await launch();
   try {
-    if (wants("world") || wants("route")) await stageWorldAndRoute(browser);
-    if (wants("yard")) await stageYard(browser);
-    if (wants("refusal")) await stageRefusal(browser);
-    if (wants("beat")) await stageBeat(browser);
-    if (wants("duel")) await stageDuel(browser);
+    if (wants("world")) await timed("world", () => stageWorld(browser));
+    if (wants("route")) await timed("route", () => stageRoute(browser));
+    if (wants("yard")) await timed("yard", () => stageYard(browser));
+    if (wants("refusal")) await timed("refusal", () => stageRefusal(browser));
+    if (wants("beat")) await timed("beat", () => stageBeat(browser));
+    if (wants("duel")) await timed("duel", () => stageDuel(browser));
   } finally {
     await browser.close();
   }
 
   log("\n==================== PLAYTHROUGH ====================");
+  log(`  stage wall-clock: ${timings.map(([n, s]) => `${n} ${s.toFixed(0)}s`).join("  ·  ")}  (total ${timings.reduce((a, [, s]) => a + s, 0).toFixed(0)}s)`);
   for (const n of notes) log(`  note: ${n}`);
   if (failures.length === 0) {
     log(`ALL PASS — the mission renders, the route advances, every stop resolves, a climb refuses without a ladder and arms with one, the elm crown is reachable and its beat arms, and the duel loads a graded world whose grader runs on the real path.`);

@@ -210,7 +210,15 @@ jobs:
   playthrough:
     name: playthrough (played-mission gate)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Raised from 20 to 50 to LEARN the real CI runtime: the first tick-relative run
+    # hit the 20 m cap and was cancelled mid-gate (provisioning clean, it simply did
+    # not finish), so 20 was a censoring cap, not a measurement. A GitHub runner's
+    # SwiftShader is far slower than the ~6 min this took under forced software WebGL
+    # on a dev laptop, and the tick-relative gate waits as long as needed to accrue
+    # the sim ticks — so the honest move is a generous cap, read the real figure off
+    # a completed run, then tune deliberately. Do NOT shrink the tick budgets to fit
+    # a cap: that tests less of the route, which is where the defects were.
+    timeout-minutes: 50
     services:
       postgres:
         image: postgres:17-alpine # matches docker-compose.yml and api-postgres

@@ -388,10 +388,63 @@ off; the shipped gate and CI are unchanged) recreate the starved renderer so tha
 proof is repeatable.
 
 **Runtime.** ~110 s on a GPU-ish dev box (unchanged from before); ~6 min under
-forced software WebGL on a loaded laptop — well inside the job's 20-minute cap,
-and it scales with the runner rather than racing a fixed budget. Informational
-figures that feed no threshold still jitter harmlessly (the positive climb's `maxY`,
-the beat `maxY` in the 8.0–8.3 m crown band, the exact draw-call/triangle counts).
+forced software WebGL on a loaded laptop. It now scales with the runner (it waits
+to accrue sim ticks) rather than racing a fixed budget, so wall-clock varies with
+the rasteriser. Per-stage wall-clock is logged each run (`stage wall-clock: …`),
+which is how you localise a slow run. Two measured points:
+
+| stage | GPU dev box | forced software WebGL (loaded laptop) |
+|---|---|---|
+| world  |  9 s | **57 s** (loads the full 174-texture scene for the census) |
+| route  | 42 s | **135 s** (the long free-run to both stops) |
+| yard   |  4 s |   8 s |
+| refusal| 13 s |  20 s |
+| beat   |  4 s |   6 s |
+| duel   | 36 s | **141 s** (three arena renders through the 10 s FACE_OFF) |
+| total  | **~110 s** | **~367 s** |
+
+Two things follow. First, **WORLD is not the cheap stage on a GPU-less runner** —
+its 57 s is scene *load*, not the census. Second, the cost is dominated by ROUTE
+and DUEL (≈75 %), which are inherent (the mission is that long; each duel has a
+fixed 10 s FACE_OFF ×3), not per-frame render cost — so the render-cost levers
+below barely move the total on a fast CPU, though they may help a weaker one.
+
+**`timeout-minutes` is 50, deliberately generous, to LEARN the real CI figure.**
+The first tick-relative run on a real GitHub runner **hit the old 20 m cap and was
+cancelled mid-gate** (provisioning clean; it just didn't finish), so 20 was a
+*censoring* cap, not a measurement — a GitHub SwiftShader runner is slower than the
+~6 min this took under forced software WebGL on a laptop. Read the true total off
+the next completed run's `stage wall-clock` line, then set the cap to ~2× it. **Do
+not shrink the tick budgets to fit a cap** — that tests less of the route, which is
+where the defects were.
+
+**Placement (recommendation).** Keep it **per-push and blocking**, with the
+generous cap. This repo has one developer and no PR queue, so a 20–30 min gate
+blocks nobody, and the two expensive stages (ROUTE, DUEL) are *exactly* the ones
+that catch the class that reached the owner — the encounter soft-lock (ROUTE) and
+the duel void / grader-wiring (DUEL). Deferring them to a nightly reintroduces the
+up-to-a-day window on `main` that the gate was promoted to close. A fast/slow
+**split is technically clean** — every stage opens its own page against the shared
+stack and shares no in-process state, so any subset can be its own job — but do not
+split by "fast per-push, slow nightly": the slow half is the high-value half, and
+WORLD (the supposed cheap half) is itself 57 s on CI. If wall-clock ever does bite,
+split for *parallelism* (all stages per-push, in parallel jobs), at the cost of
+provisioning each — not by deferring coverage.
+
+**Render-cost levers (applied, honest effect).** The driven stages and the duel
+discrimination runs assert SIM STATE, never pixels, so they run on a smaller canvas
+and with shadows disabled (`lightenRender`) — a cheaper *renderer*, not a weaker
+*test* (the sim is headless of rendering, fixed-step and deterministic). In
+isolation that is ~+40 % sim-ticks/second under software WebGL; on the full run it
+is within noise here, because the total is bound by inherent sim length and scene
+load, not shading. The pixel-reading stages — WORLD's census and the DUEL void
+check — keep the full 1280×800 and their shadows. The one change that *would* cut
+ROUTE/DUEL materially (a lighter duel arena, or skipping the FACE_OFF intro in the
+harness) is app-side and out of this lane; flagged, not hacked.
+
+Informational figures that feed no threshold still jitter harmlessly (the positive
+climb's `maxY`, the beat `maxY` in the 8.0–8.3 m crown band, the exact
+draw-call/triangle counts).
 
 **Each added check has been shown to FAIL on a broken state** (a check nobody has
 seen fail is not a check): removing the ladder in the positive refusal run drops
