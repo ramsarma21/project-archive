@@ -262,6 +262,16 @@ zero-evidence form pass (`1c4250f`).
   node_modules mid-run. `merge-gate.mjs`'s frozen-install preflight catches that state
   and refuses rather than purging. The CI `lockfile`/`api-image` advisory jobs should
   now pass; flip the main installs to `--frozen-lockfile` after the first real run.
+  - **Observed, not diagnosed (29 Jul): `pnpm <script>` HANGS in the MAIN checkout.**
+    `pnpm verify:units` there produced no output in ~235 s and was killed; the same script
+    run directly (`node --import tsx scripts/check-unit-coverage.mjs`) finished in seconds
+    in that same checkout, and `pnpm verify:units` finished in **1 s** in a worktree. So the
+    stall is pnpm, it is specific to `/Users/ramsarma/Projects/project-archive`, and it is
+    not the script. It is the shape the caveat above predicts — a drifted tree making pnpm
+    try to repair `node_modules` mid-run — but that was NOT confirmed, because confirming it
+    means letting pnpm act on the owner's checkout, which can purge. **Do not run `pnpm` in
+    the main checkout to investigate.** Reconcile deliberately (`CI=true pnpm install`) when
+    the owner is not playing, or run gates from a worktree, which is where they belong anyway.
 - Ground support is a point query, so a body can float off a roof edge (audit P4,
   deliberately deferred).
 - **Simulation is bit-exact across browsers**, motion (`35ab20c`) and duel (`4a467eb`).
