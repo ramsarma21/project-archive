@@ -137,9 +137,12 @@ const WORLD = {
 // EXECUTED, not of how long they took in wall-clock (traversal.ts:
 // "a 1/30, 1/60 or 1/120 frame delta over the same elapsed time visits the same
 // integer ticks"). Each render frame, advanceFieldClock runs at most
-// MAX_CATCHUP_STEPS (5) fixed steps and DISCARDS the rest — dropped sim time is
-// NOT banked (diag.ts: "a dropped step is sim time DISCARDED, i.e. slow motion").
-// So on a runner whose render loop is slow (no GPU → software WebGL), the sim
+// MAX_CATCHUP_STEPS fixed steps and DISCARDS the rest — dropped sim time is NOT
+// banked (diag.ts: "a dropped step is sim time DISCARDED, i.e. slow motion").
+// That cap was 5 when the measurements below were taken and is now 15, derived
+// from the frame clamp (cf262c9, the slow-running fix); it raises the fps floor
+// at which nothing is dropped, and changes nothing about why this harness must
+// budget in ticks. So on a runner whose render loop is slow (no GPU → software WebGL), the sim
 // runs in heavy slow-motion. Measured on this harness: a full-scenery run drops
 // ~2/3 of its steps and advances ~1.5 sim-ticks per wall-second; a bare run ~24.
 // That is the whole flake: a wall-clock budget ("reach x=60 in 95 s") measures

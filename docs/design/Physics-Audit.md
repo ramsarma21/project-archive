@@ -184,7 +184,7 @@ The 15 Hz figure is `MAX_DT = 0.05` (`playerMotion.ts:46`) clamping and the simu
 Two smaller determinism notes:
 
 - `broadPhaseCandidates` returns a **shared mutable scratch array** (`collision.ts:240`). No current consumer holds it across a second query, so nothing is broken today, but it is one careless call away from silent corruption. Worth a defensive copy or a comment.
-- The browser probe reported **`dropped fixed steps so far: 20`**. `MAX_CATCHUP_STEPS = 5` (`fieldSimulation.ts:19`) discards excess steps rather than queueing them (`fieldSimulation.ts:88–89`). Simulation time is being silently thrown away during hitches — 20 steps is a third of a second of world that did not happen. For the mission that is a feel bug; for the duel the server will not have dropped the same steps.
+- The browser probe reported **`dropped fixed steps so far: 20`**. `MAX_CATCHUP_STEPS` was **5** when this audit ran, and `advanceFieldClock` discards excess steps rather than queueing them. Simulation time is being silently thrown away during hitches — 20 steps is a third of a second of world that did not happen. For the mission that is a feel bug; for the duel the server will not have dropped the same steps. **This one was right, and it is now FIXED** (`cf262c9`): the cap is derived from the frame clamp, `floor(MAX_FRAME_DT_S / FIELD_DT)` = **15**, so no frame the clamp admits discards a tick. It turned out to be the mechanism behind the owner's "the running is like slow running" — see M1-STATUS.md.
 
 ### Q7. Input timing
 
@@ -284,12 +284,10 @@ Ordered by owner-visible improvement per unit of risk.
 **Cost:** ~1 day.
 **Risk:** low, but it will change every trajectory in the last few ulps, so any golden-value tests will need rebaselining. Do it in one commit.
 
-### P6 — Stop silently discarding simulation time
-**Fixes:** "the physics isn't consistent" under load.
-**What is wrong:** `advanceFieldClock` drops steps beyond `MAX_CATCHUP_STEPS = 5` (`fieldSimulation.ts:88`). Live measurement showed 20 dropped in one short probe run.
-**Fix:** surface `droppedSteps` (already tracked at `traversal.ts:809`) in the dev HUD so it stops being invisible, and consider raising the bound — 5 steps is 83 ms, which a single GC pause exceeds.
-**Cost:** an hour.
-**Risk:** very low. Raising the bound trades a longer hitch for lost time; measure before choosing.
+### P6 — Stop silently discarding simulation time — **DONE** (`cf262c9`)
+**Fixed:** "the physics isn't consistent" under load, and the owner's separate "the running is like slow running".
+**What was wrong:** `advanceFieldClock` dropped steps beyond `MAX_CATCHUP_STEPS`, then **5** — an 83 ms window, below the 0.25 s frame-delta clamp, which a single GC pause exceeds. Live measurement showed 20 dropped in one short probe run.
+**What was done:** the bound is now derived from the clamp rather than chosen — `floor(MAX_FRAME_DT_S / FIELD_DT)` = **15** — so no frame the clamp admits discards a tick, and fixed-step equivalence now holds down to ~4 fps. Reproduced in real play: cap 5 dropped 87 ticks, cap 15 dropped 0. The recommendation to surface `droppedSteps` in the dev HUD was **not** taken and is still open; the counter exists and nothing displays it.
 
 ### P7 — Lengthen the jump buffer, and hold a press across an authored verb
 **Fixes:** the residue of "jumps are delayed".

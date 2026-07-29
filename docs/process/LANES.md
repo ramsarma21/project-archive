@@ -26,10 +26,10 @@ Postgres on `55432`. Use your own ports and stop them when you finish.
 | Lane | Owns |
 |---|---|
 | `mission-world` | `packages/engine-world/*`, `packages/mission-m1/*`, ladder files in `assets/pipeline/*` and `apps/web/public/world/*`, `apps/web/src/chapter/M1Scenery.tsx`, `apps/web/src/mission/MissionStage.tsx`, `scripts/check-world-affordances.mjs`, `scripts/check-clip-fidelity.mjs` |
-| `mission-flow` | `apps/web/public/world/props/liberty-elm-hero.glb` and its `assets/pipeline/*liberty_elm*` pipeline files. **Its elm-beat UI pass (`MissionHud`/`MissionBeatPanel`/`missionInput`/`mission.css`) is held under a GRANT, not ownership** — see Grants. |
-| `boss-fight` | `content/*`, `packages/grading/*`, `packages/curriculum/*`, `apps/web/src/codex/*`, `apps/web/src/pvp/*`, `apps/web/src/duel/duelItems.ts`, `apps/web/src/duel/verdictLabel.ts` and its test |
+| `mission-flow` | `apps/web/public/world/props/liberty-elm-hero.glb` and its `assets/pipeline/*liberty_elm*` pipeline files. (Its elm-beat UI grant is **retired** — merged `2c27d6a` — so those four files are contested again and denied to it like everyone else.) |
+| `boss-fight` | `content/*`, `packages/grading/*`, `packages/curriculum/*`, `apps/web/src/codex/*`, `apps/web/src/pvp/*`, `apps/web/src/duel/duelItems.ts`, `apps/web/src/duel/verdictLabel.ts` and its test. **Less `content/m1/module.json` and its schema, granted to `module-lesson`** — see Grants. |
 | `duel-hud` | the duel 3-D HUD + interstitial presentation: `apps/web/src/duel/CombatHud.tsx`, `DuelScreen.tsx`, `combatHud.css`, `combatHudParts.tsx`, `combatHudModel.ts`, `duelRuntime.ts`, `learnOnce.ts`, and `apps/web/test/{combatHud,duelPresentation}.test.ts` |
-| `camera-occluder` | nothing permanently; its whole footprint is a GRANT carved out of `mission-world` (camera-clearance in `engine-world` + `MissionStage`). See Grants. |
+| `module-lesson` | `apps/web/src/module/**`, plus a GRANT on `content/m1/module.json` and `content/m1/schema/learning-module.schema.json` (see Grants). Its tests under `apps/web/test/{checkDraw,moduleCheckModel,moduleCinematic,remediationDeck}.test.ts` are **unclaimed**, so the guard allows them; claim them if that stops being what is wanted. |
 | `mission-encounters` | `packages/duel/*` (incl. `combat.ts`, `policy.ts`, `bossAi.ts`, `cover.ts`, `machine.ts`), `packages/netcode/*` |
 | `mission-cinematic` | `apps/web/src/mission/duelPort.ts`, `missionDuelSky.ts`, `bossCutscene.ts`, `BossChallenge.tsx`, `MissionEncounter.tsx`, `encounterCinematic.ts`, `missionEncounter.css`, `apps/web/src/chapter/m1Mission.ts` |
 | `api-hunt` | `apps/api/*`, `packages/pvp/*` |
@@ -50,53 +50,68 @@ change with no legal way to change it — so the change happened anyway, off the
 exclusively**: while it stands, that lane may write them (overriding contested *and* another lane's
 ownership) and every other lane is denied them. Each grant carries a lane, the exact paths, a reason,
 and the date. The guard honours it; `scripts/check-lane-integrity.mjs` reports on it. **Retire a grant
-when its work merges** — a grant that outlives its work is a silent re-owning. Live grants (29 Jul):
-`mission-flow` holds the four elm-beat UI files; `camera-occluder` holds its camera-clearance carve-out
-of `engine-world` + `MissionStage`.
+when its work merges** — a grant that outlives its work is a silent re-owning, and retiring one means
+re-pointing the guard's `--selftest` cases at a live grant in the same edit, or the mechanism stops
+being tested. One live grant (29 Jul): `module-lesson` holds `content/m1/module.json` and its schema.
+Retired the same day, both merged: `mission-flow`'s elm-beat UI four (`2c27d6a`) and
+`camera-occluder`'s engine-world/MissionStage carve-out (`d457081`; that lane no longer exists).
 
-## Detection when prevention fails open
+## Detection, because prevention is not available
 
-The guard is prevention and it fails **open** by design; on 29 Jul it did not fire at all for a
-background subagent, and four contested writes landed unnoticed. `node scripts/check-lane-integrity.mjs`
-is the backstop: it reads git state for every worktree lane and reports, most-dangerous first, the
-**same file modified on two live lanes at once** (the real clobber), then writes a lane made that the
-map forbids, then unclaimed drift. Run it in the standing loop; a non-zero exit is a crossed lane.
+**The guard cannot protect this repo, and that is now measured rather than suspected.** Its logic is
+right — 89 completed invocations, 87 allow, 2 correct deny — but 148 more were cancelled at 0 ms with
+no verdict, and they split **by session**: foreground calls complete, whole background-subagent
+conversations abort and fall open. Most lane work is background subagents. Worse, `Shell` is not in
+the hook matcher, so an edit made with python, `sed`, a heredoc, `cp` or `>` fires no hook at all and
+never even reaches the log — and a shell command carries no file path to inspect, so that hole cannot
+be closed. The guard stays (free, and it works for foreground writes); do not set `failClosed` and do
+not add `Shell` to the matcher, which would look stronger and not be. Details in `M1-STATUS.md`.
+
+**So the enforcement point is the detector.** `scripts/check-lane-integrity.mjs` reads the same map out
+of git state and reports, most-dangerous first: **CLOBBER** (one file, two lanes, *differing* content —
+the thing that destroys work), **VIOLATION** (a write the guard would refuse), **PROPAGATION** (shared
+but harmless), then unclaimed **OPEN** drift. It self-tests before it measures.
+
+- `pnpm verify:lanes` — the orchestrator's audit. Fails on any crossing anywhere. Run it in the loop.
+- `pnpm gate` runs it with `--lane auto`, which prints everything but fails only on findings involving
+  the lane being gated. A red a merger cannot fix is how a gate gets muted.
+- **Not in CI, deliberately:** it reads local sibling worktrees, which do not exist on a runner, so a
+  CI job would be a green light that can see nothing.
+
+The old "`.cursor/*` clobber on every lane, read past it" caveat is **gone** — the detector now compares
+each lane's copy against `main`'s, so a stale propagated copy is not a change the lane is bringing.
 
 **Live conflicts it is currently reporting (29 Jul), which the orchestrator must sequence:**
-- `boss-fight` and `duel-hud` were BOTH editing `apps/web/src/duel/{DuelOverlay.tsx,duel.css,devEntry.tsx}`.
-  **Resolved by sequencing: `boss-fight` landed on `main` first (29 Jul, merge `540c0e3`).** `duel-hud`
-  must now `git merge main` and reconcile onto the landed verdict-label rework — and it MUST preserve the
-  "Not graded" label (`verdictBeatTone` in `verdictLabel.ts`); see the invariant row in `M1-STATUS.md`.
-  A HUD overhaul that reverts `VerdictBeat` to a hardcoded "Correct"/"Wrong" silently re-breaks the
-  owner's headline complaint.
+- **`duel-hud` is editing contested `apps/web/src/duel/{DuelOverlay.tsx,duel.css}` with no grant.**
+  `boss-fight` landed first (`540c0e3`), so the sequencing is settled and `duel-hud` is now the single
+  lane on those files — but that is not recorded, so it reads as an off-the-books cross-lane edit and
+  fails the audit. **It needs a grant, or the files reassigned.** Not done here: nobody asked for it,
+  and inventing a grant is exactly the unrecorded authorisation the map exists to prevent. When
+  `duel-hud` reconciles it MUST preserve the "Not graded" label (`verdictBeatTone` in
+  `verdictLabel.ts`) — see the invariant row in `M1-STATUS.md`.
 - The duel **card content** and the **grading policy** are the same file (`content/m1/duel-items.json`
   carries both), so a "duel cards" brief and a "grading" brief cannot run in parallel.
 - The `apps/api` health wiring reads grading health, so the grading work (`packages/grading`, boss-fight)
   and the health work (`apps/api`, api-hunt) are one change split across two lanes — sequence or grant.
 
-**Detector caveat you WILL hit:** once the orchestrator propagates the reconciled `.cursor/` guard +
-map into the worktrees (required for enforcement to be live there), the detector reports a `.cursor/*`
-**CLOBBER across every lane**. It is benign — those copies are byte-identical, so the "clobber" merges
-as a no-op — but it makes the run exit non-zero. **Read past it: the real signal is any NON-`.cursor`
-file on two lanes.** (The detector has no `.cursor/**` exclusion; adding one is the clean fix, owned by
-`mission-presentation`.)
-
 **Handoff state (29 Jul, post-merge round):**
 - **Landed on `main`:** `boss-fight` (`540c0e3`), `mission-presentation` detector (`eeedfd0`),
   `mission-flow` elm-beat (`2c27d6a`, full gate GREEN incl. build + check-playthrough on a throwaway
   stack). `mission-world` and `api-hunt` deliberately NOT merged — their agents are still working.
-- **Grants now retire-eligible** (work merged), left in place only because the guard `--selftest` pins
-  cases to them — retire the grant AND its selftest case together: `mission-flow` (elm-beat UI, merged),
-  `camera-occluder` (no branch/worktree exists; its camera work is in `main` at `d457081`).
-- **`module-lesson` is a live worktree/branch NOT in `lane-ownership.json`.** The guard allow-alls an
-  unknown lane, so it is unguarded; it is editing `apps/web/src/module/**` (currently unclaimed/open).
-  Add it to the map with its intended ownership.
+- **`api-hunt` carries two grading-integrity fixes that are NOT on `main`** and have been reported as
+  landed: outage rounds enforcing the deterministic card half, and the encounter `/v1/health` blind
+  spot. Merging that lane is worth more than it looks. See `M1-STATUS.md` → Open.
+- The ownership map only takes effect at the **hub**: the guard and the detector both read
+  `/Users/ramsarma/Projects/project-archive/.cursor/lane-ownership.json`. A map edit made on a lane
+  branch changes nothing until it merges to `main`.
 
 ## Verification every lane must pass
 
-`pnpm lint && pnpm typecheck && pnpm test && pnpm build`, plus `verify:content` and the three
-`assets:verify:*` with the 25 affordance debt entries **held or shrunk, never grown**, plus
-`check-playthrough` ALL PASS where the change could affect play.
+`pnpm gate` runs all of it in one command and refuses on any failure: `lint`, `typecheck`, `test`,
+`build`, `verify:content`, `verify:units`, the three `assets:verify:*` with the 25 affordance debt
+entries **held or shrunk, never grown**, `check-lane-integrity` scoped to your lane, plus
+`check-playthrough` where the change could affect play (skipped, with its reason printed, when it
+cannot).
 
 **Environment quirks that will otherwise cost you an hour.** `pnpm build` may throw `EPERM` on
 `packages/*/dist` under the sandbox — re-run unsandboxed. If `pnpm` refuses to install for

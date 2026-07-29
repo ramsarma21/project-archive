@@ -71,7 +71,17 @@ you collided with was air; 6% → 73% fill (`e77ef51`) · the watch post stood 3
 roofline (`d166733`) · movement lurches were **synchronous shader compilation**, a frame
 blocking 96–118 ms past the 83 ms window that discards ~10 ticks (`1e47247`, `74c432e`) ·
 street draw calls 177 → 60, crowd 1.7M → 0.44M triangles (`324f26c`, `3200cd0`) · the yard
-stage sat a metre under the duel plane and catches landed on a heaped crown (`922f2e5`).
+stage sat a metre under the duel plane and catches landed on a heaped crown (`922f2e5`) ·
+**"the running is like slow running" — CLOSED** (`cf262c9`, test `a109930`): `advanceFieldClock`
+capped catch-up at `MAX_CATCHUP_STEPS = 5`, an 83 ms window sitting *below* the 0.25 s
+frame-delta clamp, so every frame heavier than 83 ms had its excess fixed steps **discarded** —
+sim time thrown away, which the sim advances through as slow motion. The cap is now derived
+from the clamp, `floor(MAX_FRAME_DT_S / FIELD_DT)` = **15**, so no frame the clamp admits
+discards a tick. Reproduced in real play both ways: **cap 5 dropped 87 ticks, cap 15 dropped 0**.
+It was a frame-rate symptom all along, which is why two systematic passes looking for a
+*locomotion* mechanism found nothing — the search was in the wrong subsystem, not incomplete ·
+the chase and cinematic cameras now know about drawn-only occluders (`d457081`, was the
+`camera-occluder` lane; that lane is finished and its grant is retired).
 
 **The elm beat** — it was failing to *arm*, not rendering wrong: a 1.1 m circle plus a ±60°
 facing arc rejected the pose a player arrives in, and the facing gate was meaningless because
@@ -166,6 +176,18 @@ zero-evidence form pass (`1c4250f`).
   positives are **not**, so every pressure in the system points toward leniency, which is why
   these survived. This is the owner's own complaint ("it keeps … granting right") in another
   form. In flight, with the hard constraint that FN must not leave 0.00% to fix it.
+- **Two grading-integrity fixes are DONE ON `workflow/api-hunt` AND NOT ON `main`.** Both were
+  handed to me as landed; they are not. Read from the branch, 29 Jul (`main` still has the old
+  behaviour, so neither is in anything the owner plays):
+  1. **An outage round no longer excuses the card half.** A `GRADING_TIMEOUT` round is granted
+     the maximum by design — a student is not punished for infrastructure — but the evidence
+     gate skipped card enforcement for that source, so an outage granted CORRECT with the wrong
+     cards placed. The card half is deterministic and needs no model, so it is now enforced for
+     *every* verdict source; the prose half is still granted, so right cards still pass.
+  2. **The encounter `/v1/health` blind spot is closed.** `registerEncounterRoutes` built its
+     own grading (its bank differs) and kept a private signal, so an encounter-grading outage
+     read as healthy on the one endpoint meant to report it. It now shares `duelGrading.signal`.
+  Merge `api-hunt` and this pair becomes real; until then, do not cite either as prevention.
 - **The live classifier gate is now wired to run without anyone remembering — but
   unverified in a real runner.** `.github/workflows/grading-eval.yml` runs `pnpm
   grading:eval:gate` (`--repeats 3 --concurrency 3 --timeout 20000`) nightly (08:00 UTC) and
@@ -213,21 +235,6 @@ zero-evidence form pass (`1c4250f`).
     frustum deliberately unchanged — cover shadows are how a player reads where cover is.
   - **Watch item:** on a very fast arrival the dawn lift is low and the yard is dim. Legible in
     capture, but lit braziers would be the in-fiction floor if it reads badly in play.
-- **"Cannot run" — the owner confirms the timing IS slow at 1:56.** Take that as the fact.
-  My attempt to measure it from the recording was **inadmissible**: the clip is a
-  variable-frame-rate screen capture (avg 27.5 fps, nominal timebase `2000/1`), and a capture made
-  *during* a performance problem drops frames, so wall-clock distance derived from two frame
-  timestamps measures the capture, not the game. The instrument is corrupted by the condition under
-  investigation.
-  - The observation still worth checking, since it came from the HUD rather than from frame timing:
-    the **mission timer advanced 0:28 → 0:25 across a stretch he describes as slow.** If the clock
-    is meant to be 1:1 with real time, the *simulation* is running at reduced rate, which animates
-    everything in slow motion — the shape of the complaint. `advanceFieldClock` caps catch-up at 5
-    steps and discards the remainder, which produces exactly that.
-  - **Search for a mechanism that slows the sim, not one that slows the body.**
- Every in-lane mechanism ruled out by two systematic
-  passes; the per-leg speed cap is disproven (it releases ~3 m *early*). Needs a location
-  or a live capture from the owner.
 
 **Measured, subtler**
 - Nine traversal moments at a human threshold: three drops land 1.9–2.2 m on hard cobbles
@@ -322,30 +329,32 @@ the orchestrator actually made, and the specific change made in response.
 | Derived a speed from two frames of a variable-frame-rate screen capture and used it to contradict the owner's direct report | **Trust his report first**; use the video to locate what he is pointing at, not to re-measure it. A capture made during a performance problem cannot time that problem. |
 | Built a pacing case on the 24-round duel ceiling; it is an anti-hang backstop that never fires, and duels end on health at 4–7 rounds | Check whether a limit is *reached* before treating it as the cost. A ceiling is not a duration. |
 | Told the owner M1 owns "~23 concepts" and built a broken-ratio argument on it — the number was a grep of lines containing "M1". M1 owns **2–3**; the 46 belong to 14 modules | Never quote a count from a text search. Call the function that computes it. |
-| Dispatched four workers into `apps/web/src/mission/**` — paths the enforced map assigns to other lanes or marks **contested** — without reading `lane-ownership.json` first. Nothing was clobbered only because the `preToolUse` guard did not fire for the background subagents at all: a stale-brief error and a silently-dead guard cancelled out, which is luck, not safety. Two live lanes (`boss-fight`/`duel-hud`) are in fact editing the same three duel files right now, and only a merge accident away from destroying one side. | Read `lane-ownership.json` **before** writing a brief, and name the lane in the brief. And because the guard fails open — and here failed silent — a post-hoc detector now backstops it: `scripts/check-lane-integrity.mjs` finds a crossed lane (and the same-file-on-two-lanes clobber) from git state even when the guard never runs. `grants` gives a contested file a legal, recorded, temporary owner so "it had to change" stops meaning "change it off the books". |
+| Asserted twice, from the hooks log, that the lane guard "never returns a verdict" — then, corrected, guessed that its 148 zero-millisecond aborts were harmless teardown after a success. Both wrong. The guard completes 89 runs and denies correctly; the aborts share **zero** `tool_use_id`s with those and split **by session**, so the truth is worse than either guess: background-subagent writes — most lane work — are entirely unguarded, and `Shell`-mediated edits fire no hook at all and never even reach the log. Nothing was lost only because the contested writes happened to be benign. | Read the instrument's own output properly before theorising about it; both wrong answers came from counting one line pattern instead of joining the log by id and session. And the general form: **a mechanism's own selftest cannot tell you whether it runs in production.** `lane-guard.sh --selftest` was green throughout — it tests the decision, and the decision was never reached. So the selftest now says so in its header, and the coverage question is answered by a post-hoc detector wired into `pnpm gate`, not by the guard's own report on itself. |
+| Dispatched four workers into `apps/web/src/mission/**` — paths the enforced map assigns to other lanes or marks **contested** — without reading `lane-ownership.json` first. The writes landed; nothing was destroyed only because the guard never ran for those background subagents, so a stale-brief error and an unenforced guard cancelled out. That is luck, not safety. | Read `lane-ownership.json` **before** writing a brief, and name the lane in the brief. `grants` gives a contested file a legal, recorded, temporary owner, so "it had to change" stops meaning "change it off the books" — and a grant is retired the day its work merges, together with the selftest case pinning it. |
 
-**Guard coverage, measured from the hooks log (29 Jul) — two wrong diagnoses settled.**
-The claim "the guard never returns a verdict" (from 129 exec ≈ 129 `canceled by signal abort`
-lines) is **wrong**, and so is the follow-up guess that the abort is teardown after a success.
-Counting the `preToolUse` log by exit code: of ~237 logged `Write`/`Delete` calls, **89 ran to
-completion and returned a verdict (87 allow, 2 deny)** — the guard works, and both denies were
-correct (`duel-hud`→contested `duel.css`; `main`→`packages/netcode/**`). The other **148 were
-canceled at 0 ms (`Hook 1 canceled by signal abort`), exit N/A, returning no verdict → fail-open
-allow.** The aborts are **not** teardown-after-success: they share **zero** `tool_use_id`s with
-the completed runs, and they split cleanly **by session** — whole background-subagent
-conversations abort while foreground/root calls complete. So the guard effectively guards only
-foreground writes; the majority of lane work (background Opus subagents) passes unevaluated. Two
-holes, both left unfixed by request (with lanes live, `failClosed:true` would halt every worker):
-1. **Subagent fail-open.** A contested write from a background subagent is canceled and allowed.
-   This — not a matcher/payload/relative-path bug — is how the contested mission/duel writes
-   landed: every one came through `Write` with an absolute `file_path` the guard reads fine; the
-   hook just never got to run. (The same `duel.css` was correctly *denied* once from a foreground
-   call and silently *allowed* twice from aborted subagent calls — the mechanism in one file.)
-2. **`Shell` is not in the matcher** (`Write|StrReplace|Delete|EditNotebook`). Any edit via the
-   `Shell` tool (`python`, `sed`, a heredoc, `cp`, `>`) fires **no hook at all** and is invisible
-   even to this log — a whole class of edits the guard structurally cannot see, and a larger hole
-   than the fail-open. `scripts/check-lane-integrity.mjs` (post-hoc, git-state) is the only
-   backstop for both; it is the thing that must be run, since the guard cannot be trusted to fire.
+**Guard coverage, measured from the hooks log (29 Jul), and what was done about it.**
+Of ~237 logged `Write`/`Delete` calls, **89 completed and returned a verdict (87 allow, 2 correct
+deny)** — the guard's logic works. The other **148 were cancelled at 0 ms with no verdict → a
+fail-open allow.** They are not teardown after success: they share zero `tool_use_id`s with the
+completed runs and split cleanly **by session** — foreground calls complete, whole
+background-subagent conversations abort. Two holes, neither fixable in the guard:
+1. **Subagent fail-open**, which is how the contested mission/duel writes landed: every one came
+   through `Write` with an absolute path the guard parses fine; the hook never ran. (The same
+   `duel.css` was correctly denied once from a foreground call and silently allowed twice from
+   aborted subagent calls — the whole mechanism visible in one file.)
+2. **`Shell` is not in the matcher** (`Write|StrReplace|Delete|EditNotebook`), so an edit made
+   with python, sed, a heredoc, `cp` or `>` fires no hook at all and is invisible even to that
+   log. A shell command carries no file path to inspect, so this is structural, not a bug. Adding
+   `Shell` to the matcher would produce a guard that *looks* stronger and is not.
+
+**So prevention is unavailable and detection is the enforcement point** —
+`scripts/check-lane-integrity.mjs`, which reads the same map out of git state after the fact and
+catches both holes. It now **runs inside `pnpm gate`** (`--lane auto`: prints every finding, fails
+only on ones involving the lane being gated, so an unfixable red from a sibling cannot mute it)
+and self-tests before it measures. It is deliberately **not** a CI job: it reads local sibling
+worktrees, which do not exist on a runner, so a CI job would be a green light that can see
+nothing. `failClosed` was not set and the guard was not otherwise touched — it is free, and it
+works for foreground writes.
 
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran
@@ -399,6 +408,8 @@ Read this before concluding a green run means the game is correct.
 |---|---|---|
 | `lint`, `typecheck`, `build`, ~2,719 tests | logic, types, contracts | anything about the rendered game |
 | `verify:content` | authored content against its own contracts | geometry, rendering, feel |
+| `verify:units` (`check-unit-coverage`) | every concept a unit's lesson teaches has ≥1 encounter or duel item **in that unit** — the gap that would sit in the reteach set forever | whether the item is any *good*, whether the student can reach it, and any unit whose lesson deck is not authored yet (it requires nothing, correctly) |
+| `verify:lanes` (`check-lane-integrity`) | a crossed lane and a same-file-two-lanes clobber, from git state, *after* the fact | anything on a machine with no sibling worktrees; and it is post-hoc by construction — it reports the crossing, it cannot stop it |
 | `assets:verify:collision` | a collision solid that isn't drawn (invisible walls) | whether a surface exists at an authored height |
 | `assets:verify:placement` | route surfaces having their asset's shape | non-route geometry |
 | `assets:verify:affordances` | real mesh geometry at each authored affordance | whether a human could make the move |
@@ -481,8 +492,9 @@ near-coincident by design. A whole-world gate would false-fail the elm.
 **The played-mission gate's wall-clock sensitivity — FIXED** (mission-presentation lane). CI's
 only failing job was the played-mission gate: 8 progress-and-time checks over ~12 min on a GPU-less
 runner. **Traced** (not inferred): the sim runs at a fixed 60 Hz and the body's motion is a pure
-function of the STEPS that executed, but `advanceFieldClock` runs at most `MAX_CATCHUP_STEPS` (5)
-per render frame and DISCARDS the rest (`diag.ts`: dropped sim time, not banked). On a software
+function of the STEPS that executed, but `advanceFieldClock` ran at most `MAX_CATCHUP_STEPS` —
+**5 at the time; now 15**, derived from the frame clamp (`cf262c9`, the slow-running fix) — per
+render frame and DISCARDS the rest (`diag.ts`: dropped sim time, not banked). On a software
 rasteriser the render loop is slow, so the sim runs in heavy slow-motion — measured ~1.5 sim-ticks
 /wall-second with scenery, ~24 bare — and a wall-clock budget ("reach x=60 in 95 s") measures the
 renderer, not the mission. The fix, entirely in `scripts/check-playthrough.mjs`: **budget every

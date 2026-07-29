@@ -124,8 +124,14 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[x]** No synchronous shader compilation mid-route; spawn spikes 3 → 0.
 - **[~]** Residual mid-route frame spikes trace to GPU rasterisation, not compilation. Needs a
   capture on the owner's hardware to settle magnitude.
-- **[ ]** **"Cannot run"** — unexplained. Every in-lane mechanism ruled out. Needs a location or
-  a live capture from the owner.
+- **[x]** **"Cannot run"** — **found and fixed** (`cf262c9`, test `a109930`). It was never a
+  locomotion mechanism, which is why two systematic passes through locomotion found nothing:
+  `advanceFieldClock` capped catch-up at `MAX_CATCHUP_STEPS = 5` (an 83 ms window) *below* the
+  0.25 s frame-delta clamp, so every frame heavier than 83 ms — routine late in a run with the
+  street and crowd drawn — had its excess fixed steps **discarded**. Discarded sim time is slow
+  motion. The cap is now derived from the clamp, `floor(MAX_FRAME_DT_S / FIELD_DT)` = 15, so no
+  admitted frame drops a tick. Reproduced in real play both ways: **cap 5 dropped 87 ticks, cap
+  15 dropped 0.**
 
 ## 7. The finale works
 
@@ -141,7 +147,19 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[x]** The played mission is a blocking gate. **[ ]** Verified to run in a real CI runner —
   `gh` is unauthenticated locally, so this is unconfirmed.
 - **[x]** Dev and harness paths are pinned to the real paths they mirror.
-- **[x]** Cross-lane and main-checkout writes are mechanically refused; one worker per worktree.
+- **[~]** Cross-lane and main-checkout writes are caught; one worker per worktree.
+  **This line said [x] and "mechanically refused", and that was false** — corrected 29 Jul from
+  the hooks log. The `preToolUse` guard returns a verdict for 89 of ~237 logged writes; the other
+  148 are cancelled at 0 ms and fall open, and they split **by session**, so foreground calls are
+  guarded and whole **background-subagent** conversations are not. Most lane work is background
+  subagents. Separately, `Shell` is not in the matcher, so an edit made with python, `sed`, a
+  heredoc, `cp` or `>` fires no hook at all and never reaches the log — and a shell command
+  carries no path to inspect, so that one cannot be fixed. **Prevention is structurally
+  unavailable here.** What is true: `scripts/check-lane-integrity.mjs` detects a crossed lane and
+  a same-file-two-lanes clobber from git state after the fact, and it now runs inside `pnpm gate`
+  rather than when someone remembers. Detection at merge time, not refusal at write time — which
+  is why this is `[~]`.
+  - The `subagentStart` one-worker-per-worktree lock is unaffected and still holds.
 - **[x]** Climb refusal is asserted end to end, in real play: a controlled A/B where the same
   climb volume arms with its ladder and refuses without it (`08b4ec6`).
 - **[x]** The grader is asserted to run on the live duel path — the API's own grading window
@@ -154,8 +172,9 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
   — a production gate deliberately held open for playtesting, which must not ship that way.
 - **[~]** The full gate is run before every merge, not at the orchestrator's
   discretion. `scripts/merge-gate.mjs` (`pnpm gate`) now runs **every** blocking
-  gate — lint, typecheck, test, build, verify:content, the three assets:verify:*
-  (affordance debt held-or-shrunk), and check-playthrough where the change could
+  gate — lint, typecheck, test, build, verify:content, verify:units, the three
+  assets:verify:* (affordance debt held-or-shrunk), check-lane-integrity scoped to
+  the lane, and check-playthrough where the change could
   affect play — and exits non-zero (MERGE REFUSED) on any failure. Validated end to
   end: static gates ~200 s parallel, a provisioned throwaway-stack playthrough
   ~118 s, ALL PASS. **Honestly still [~], not [x]:** local enforcement can only be a
@@ -203,8 +222,9 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
    ever do contend, fallbacks rise and the harness's 90% classification floor fails the run
    loudly rather than lying (the acceptable failure mode). Until the secret exists the nightly
    grading gate fails loudly at preflight. See `CI-AND-BROWSER-CHECKS.md` §1a for the trade-off.
-3. **A location or a live capture for "cannot run."** Every in-lane mechanism is ruled out.
-4. **A frame-trace on the owner's hardware** to settle whether residual GPU spikes are real.
+3. **A frame-trace on the owner's hardware** to settle whether residual GPU spikes are real.
+
+(~~A location or a live capture for "cannot run"~~ — no longer needed; §6 above.)
 
 ## How the loop uses this
 
@@ -267,7 +287,7 @@ and it removes the model from the evidence half entirely.
 **Owner decisions taken 28 Jul:** build end-effector IK rather than re-baking clips, because
 limbs landing on the geometry is the last thing between the parkour and looking real. Widen the
 climb-over window to ~650 ms so the move reads complete. Make the market stall body the cover.
-He will capture "cannot run" in play, since every in-lane mechanism is ruled out.
+(He was to capture "cannot run" in play; that is no longer needed — §6.)
 
 **Meta-work is time-boxed.** Process, guards and instruments exist to make the list above
 shrink. If a tick produces only process, that is a failed tick.

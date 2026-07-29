@@ -54,6 +54,52 @@ package source — so they need no build, no database, no network, and no
 credentials. The step is placed near the front of `verify` so a broken invariant
 fails in about a second rather than after the test suite.
 
+### Unit concept coverage
+
+`pnpm verify:units` (`scripts/check-unit-coverage.mjs`, under `tsx`) asserts the
+owner's chapter invariant: a unit is one lesson + mission + boss fight, and
+**every concept a unit's lesson deck teaches must have at least one encounter
+item or duel item in that same unit.**
+
+It is blocking, not advisory, and the reason is specific. Adaptive remediation
+is built on the rule that *absent evidence means teach*. A concept that is taught
+but tested nowhere can never produce evidence, so it sits in the reteach set
+permanently — re-taught on every replay, unclearable by any student, and showing
+nothing wrong from play while every other gate here stays green. That is a
+silent, permanent degradation introduced by an ordinary authoring edit (retire an
+item, add a card), which is exactly the class a warning in a log does not survive.
+
+It generalises over units rather than hardcoding M1: units come from the mission
+registry's `set: 1|2|3|4`, and lessons (`content/*/module.json`), duel banks
+(`content/*/duel-items.json`) and encounter banks
+(`packages/mission-*/src/encounters/bank.ts`) are discovered. A mission with no
+lesson deck teaches nothing and therefore requires nothing, so the thirteen
+unauthored missions cost no false failures. Concept ids are canonicalised through
+`@pa/curriculum`, so a legacy `BOS.MD01.CONCEPT.*` in one source and a canonical
+`BOS.CONCEPT.*` in another are compared as one concept rather than as a gap. An
+**unreadable source is a hard failure**, never a skip: silently dropping an
+assessment source would manufacture the exact defect the check exists to catch.
+It self-tests (18 cases) before it measures, and the selftest was verified to
+fail by deleting M1's six `REPRESENTATION` duel items from a scratch copy of the
+tree — the check named the concept, both cards that teach it, and exited 1.
+
+**On M1 today it PASSES**, all three concepts covered. Worth knowing anyway:
+`REPRESENTATION` is carried by the boss fight alone (6 duel items, 0 encounter
+items), where the other two have three encounter items each. That is legal under
+the invariant and thin under it.
+
+### Lane integrity is NOT a CI job, on purpose
+
+`scripts/check-lane-integrity.mjs` is the only working enforcement of lane
+ownership (the `preToolUse` guard does not fire for background subagents and
+cannot see a `Shell`-mediated edit at all — `M1-STATUS.md`, "Guard coverage"), so
+the instinct to put it in CI is right and the placement is wrong. It reads the
+git state of **sibling worktrees on the developer's machine**. A GitHub runner
+has none, so the job would report "0 lanes, OK" forever: a green light that can
+see nothing, which is the failure pattern this repo keeps paying for. It is wired
+into `pnpm gate` instead — the merge is the deadline it protects — and it prints
+`NOT APPLICABLE` rather than passing quietly when there is no worktrees root.
+
 ### Migration checksums
 
 Nothing in CI edits or re-checksums migrations. Two existing suites cover them,
@@ -197,9 +243,19 @@ node scripts/merge-gate.mjs --all                 # force the playthrough
 node scripts/merge-gate.mjs --playthrough-base http://127.0.0.1:5273  # reuse a stack
 ```
 
-It covers `lint`, `typecheck`, `test`, `build`, `verify:content`, the three
-`assets:verify:*` (with the affordance debt list held-or-shrunk), and
-`check-playthrough`.
+It covers `lint`, `typecheck`, `test`, `build`, `verify:content`, `verify:units`,
+the three `assets:verify:*` (with the affordance debt list held-or-shrunk),
+`check-lane-integrity --lane auto`, and `check-playthrough`.
+
+**Why a coordination check sits in a correctness gate.** `check-lane-integrity` is
+not about whether the code works; it is about whether two lanes are about to
+destroy each other's work, and a merge is the moment that stops being recoverable.
+It is here because the prevention it backstops does not run (see "Lane integrity
+is NOT a CI job" above), and a post-hoc detector nobody remembers to run protects
+nothing. `--lane auto` prints every finding but fails only on ones involving the
+lane being gated: a red caused by a sibling lane is not something the person
+merging can fix, and an unfixable red is how a gate gets muted. Use `pnpm
+verify:lanes` for the unscoped audit, which fails on any crossing anywhere.
 
 **Where the enforcement can honestly live.** A git hook is the obvious idea and the
 wrong one: `git merge` **fast-forwards run no hook at all** (the orchestrator's lane
@@ -330,8 +386,11 @@ the first CI job to upload an artifact; there was no prior pattern to match.
 machine-independent.** The mission and duel sims run at a fixed 60 Hz
 (`FIELD_TICK_HZ`); the body's motion is a deterministic function of the fixed
 STEPS that executed, not of how long they took. Each render frame,
-`advanceFieldClock` runs at most `MAX_CATCHUP_STEPS` (5) and **discards** the rest
-(`diag.ts`: "a dropped step is sim time DISCARDED … slow motion"), so on a GPU-less
+`advanceFieldClock` runs at most `MAX_CATCHUP_STEPS` and **discards** the rest
+(`diag.ts`: "a dropped step is sim time DISCARDED … slow motion"). That cap was
+**5** when this was measured and is now **15**, derived from the frame clamp
+(`cf262c9`, the slow-running fix), which raises the fps floor at which nothing is
+dropped but does not change the argument: on a GPU-less
 runner the render loop is slow and the sim runs in heavy slow-motion — measured on
 this harness, a full-scenery run drops ~⅔ of its steps and advances ~1.5 sim-ticks
 per wall-second, a bare run ~24. A wall-clock budget ("reach x=60 in 95 s") therefore
