@@ -295,6 +295,45 @@ export function classify(map, lane, rel) {
 }
 
 // ---------------------------------------------------------------------------
+// GUARD DRIFT — is a lane's copy of the guard the one main says to enforce?
+//
+// `.cursor/hooks.json` registers the guard by RELATIVE path, so an agent working
+// in a worktree runs THAT worktree's guard against THAT worktree's map, while
+// this detector reads the hub's. A map edit therefore changes nothing in a lane
+// until the reconciled `.cursor/` is copied in, and twelve hand-kept copies are
+// themselves the drift class the map exists to catch.
+//
+// Nothing reported it before, and the blind spot had exactly the wrong shape:
+// these copies reach `changedFiles` only when a lane's branch changed them or its
+// tree is dirty, so a worktree sitting CLEAN on a stale copy was invisible —
+// enforcing a policy main had retired, and silent about it.
+//
+// This is DETECTION, not a fix. The structural fix is an absolute hook
+// registration or a symlink so one copy serves every worktree; that is not done
+// here. It REPORTS and never fails: a lane cannot propagate main's `.cursor/`
+// into itself, so failing its gate on this would be precisely the red a merger
+// cannot fix, which is how a gate gets muted.
+// ---------------------------------------------------------------------------
+export const GUARD_FILES = [
+  ".cursor/lane-ownership.json",
+  ".cursor/hooks.json",
+  ".cursor/hooks/lane-guard.sh",
+];
+
+/**
+ * @param mainKey    main's current blob for the file.
+ * @param laneKey    the worktree's working-tree copy; "(absent)" if it has none,
+ *                   `null` if it could not be hashed.
+ * @param laneEdited whether this lane itself changed the file (committed or dirty).
+ * @returns "in-step" | "lane-edit" | "stale" | "unreadable"
+ */
+export function classifyGuardCopy({ mainKey, laneKey, laneEdited }) {
+  if (laneKey === null) return "unreadable";
+  if (laneKey === mainKey) return "in-step";
+  return laneEdited ? "lane-edit" : "stale";
+}
+
+// ---------------------------------------------------------------------------
 // Selftest — the pure logic only, no repository, no worktrees. Every case that
 // asserts an ALLOW is paired with the mutation that must turn it into a failure,
 // because a check that cannot fail is not evidence.
@@ -311,6 +350,7 @@ function selftest(verbose = true) {
   };
   const kind = (lane, rel) => classify(map, lane, rel).kind;
   const part = (entries) => partitionCollisions(entries);
+  const guardCopy = (o) => classifyGuardCopy(o);
   // `mainKey: "M"` throughout, so a copy keyed "M" is one main already has.
   const two = (rel, aKey, bKey) => [
     { rel, mainKey: "M", lanes: [{ lane: "a", contentKey: aKey }, { lane: "b", contentKey: bKey }] },
@@ -351,6 +391,15 @@ function selftest(verbose = true) {
     ["a clobber names only the diverging lanes", part([{ rel: "p", mainKey: "M", lanes: [
       { lane: "a", contentKey: "X" }, { lane: "b", contentKey: "Y" }, { lane: "stale", contentKey: "M" },
     ] }]).clobbers[0].lanes.join(",") === "a,b"],
+
+    // Guard drift. The case that matters is the QUIET one: a lane sitting clean
+    // on a copy main has moved past enforces a retired policy and says nothing,
+    // so "clean" must not be allowed to read as "in step".
+    ["a copy equal to main's is in step", guardCopy({ mainKey: "M", laneKey: "M", laneEdited: false }) === "in-step"],
+    ["a clean copy main moved past is STALE", guardCopy({ mainKey: "NEW", laneKey: "M", laneEdited: false }) === "stale"],
+    ["a lane's own edit of the guard is not stale", guardCopy({ mainKey: "M", laneKey: "NEW", laneEdited: true }) === "lane-edit"],
+    ["a missing copy is drift, not agreement", guardCopy({ mainKey: "M", laneKey: "(absent)", laneEdited: false }) === "stale"],
+    ["an unhashable copy is never 'in step'", guardCopy({ mainKey: "M", laneKey: null, laneEdited: false }) === "unreadable"],
 
     // The verdict, scoped and unscoped.
     ["unscoped fails on any violation", failureDecision({ perLane }).failed === true],
@@ -505,6 +554,41 @@ const shared = [...fileToLanes.entries()]
 const { clobbers, propagations } = partitionCollisions(shared);
 
 // ---------------------------------------------------------------------------
+// Guard drift, measured per worktree. Deliberately NOT limited to `changedFiles`
+// — a stale copy is stale precisely because the lane never touched it, so the
+// changed-file set is the one place it can never appear.
+// ---------------------------------------------------------------------------
+/** Did this lane itself change `rel`, either in a commit of its own or in its tree? */
+function laneTouched(dir, rel) {
+  try {
+    if (git(dir, ["diff", "--name-only", "main...HEAD", "--", rel]).trim()) return true;
+  } catch {
+    // no `main` ref or a detached state: fall through to the working tree.
+  }
+  try {
+    if (git(dir, ["status", "--porcelain", "--", rel]).trim()) return true;
+  } catch {
+    // not a git worktree: nothing more to consult.
+  }
+  return false;
+}
+
+const mainGuardKeys = new Map(GUARD_FILES.map((rel) => [rel, mainContentKey(rel)]));
+const guardDrift = [];
+for (const lane of laneDirs) {
+  const dir = join(WORKTREES, lane);
+  if (!existsSync(join(dir, ".git"))) continue;
+  for (const rel of GUARD_FILES) {
+    const state = classifyGuardCopy({
+      mainKey: mainGuardKeys.get(rel),
+      laneKey: contentKey(dir, rel),
+      laneEdited: laneTouched(dir, rel),
+    });
+    if (state !== "in-step") guardDrift.push({ lane, rel, state });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Report.
 // ---------------------------------------------------------------------------
 const verdict = failureDecision({ clobbers, perLane, strict: STRICT, lane: SCOPE_LANE });
@@ -512,7 +596,7 @@ const verdict = failureDecision({ clobbers, perLane, strict: STRICT, lane: SCOPE
 if (JSON_OUT) {
   console.log(
     JSON.stringify(
-      { hub: HUB, worktrees: WORKTREES, map: MAP_PATH, scopedToLane: SCOPE_LANE, perLane, clobbers, propagations, verdict },
+      { hub: HUB, worktrees: WORKTREES, map: MAP_PATH, scopedToLane: SCOPE_LANE, perLane, clobbers, propagations, guardDrift, verdict },
       null,
       2,
     ),
@@ -549,6 +633,28 @@ if (!JSON_OUT) {
     console.error("\n  Each of these is a write the lane guard would refuse. If the work is legitimate,");
     console.error("  the orchestrator grants the file to the lane (an entry in `grants`, with a reason)");
     console.error("  or reassigns ownership — it does not stay an unrecorded cross-lane edit.");
+  }
+
+  // 2b. GUARD DRIFT — a worktree whose guard enforces a different map than main's.
+  //     Printed before PROPAGATION because a stale guard is a reason a violation
+  //     could happen unnoticed, and it is invisible to every other section here.
+  if (guardDrift.length) {
+    const stale = [...new Set(guardDrift.filter((g) => g.state === "stale").map((g) => g.lane))];
+    const edited = [...new Set(guardDrift.filter((g) => g.state === "lane-edit").map((g) => g.lane))];
+    const unreadable = guardDrift.filter((g) => g.state === "unreadable");
+    console.log(`\n  GUARD DRIFT (reported, never failing): ${guardDrift.length} worktree copy(ies) differ from main's:`);
+    for (const g of guardDrift) console.log(`    note: ${g.lane}  ${g.rel}  (${g.state})`);
+    if (stale.length) {
+      console.log(`  STALE means the lane is CLEAN on a copy main has moved past, so its guard enforces a`);
+      console.log(`  RETIRED policy — a grant recorded on main today is not honoured there. The hook registers`);
+      console.log(`  the guard by RELATIVE path, so each worktree runs its own copy against its own map.`);
+      console.log(`  Copy main's into the STALE lanes only (a lane-edit copy is that lane's work — leave it):`);
+      for (const lane of stale) console.log(`    cp -R ${HUB}/.cursor/. ${join(WORKTREES, lane)}/.cursor/`);
+    }
+    if (edited.length) console.log(`  LANE-EDIT (${edited.join(", ")}) is that lane changing the guard itself; sequence its merge, do not overwrite it.`);
+    if (unreadable.length) console.log(`  ${unreadable.length} copy(ies) could not be hashed, reported as drift rather than as agreement.`);
+    console.log(`  DETECTION only: the structural fix is an absolute hook registration or a symlink, so one`);
+    console.log(`  copy serves every worktree. Not done here.`);
   }
 
   // 3. PROPAGATION — the same file on several lanes, byte-identical. Not a

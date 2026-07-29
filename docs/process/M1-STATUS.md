@@ -375,6 +375,17 @@ tree and its granted `content/m1/module.json`, and denies `engine-world` and con
 `boss-fight` is now correctly denied the file granted away). Copy only into worktrees whose copy
 still matches the previous `main` blob — a differing copy is somebody's edit.
 
+**That twelve-copy requirement is now DETECTED rather than remembered** (29 Jul). Keeping twelve hand-
+copied maps in step is itself the drift class the map exists to catch, and it had the worst possible
+shape: a worktree sitting *clean* on a stale copy never appears in any changed-file set, so nothing
+could see it while its guard enforced a policy `main` had retired. `check-lane-integrity.mjs` now
+hashes each worktree's `.cursor/{lane-ownership.json,hooks.json,hooks/lane-guard.sh}` against `main`'s
+blob and reports **GUARD DRIFT**, separating a lane's own edit from a STALE copy and printing the `cp`
+for each stale lane. It **does not fail** —
+a lane cannot propagate `main`'s `.cursor/` into itself, so failing its gate would be the unfixable
+red that mutes a gate. **Still open, and deliberately not built:** the structural fix is an absolute
+hook registration or a symlink so one copy serves every worktree. Detection is not that.
+
 **The pattern behind all three:** a dev, harness or standalone path was correct while the
 real path it mirrored had drifted. The owner's entire boss-fight playtesting history ran
 inside a harness that didn't grade, in the wrong arena, against a boss that ignored cover —
@@ -428,7 +439,7 @@ Read this before concluding a green run means the game is correct.
 | `lint`, `typecheck`, `build`, ~2,719 tests | logic, types, contracts | anything about the rendered game |
 | `verify:content` | authored content against its own contracts | geometry, rendering, feel |
 | `verify:units` (`check-unit-coverage`) | every concept a unit's lesson teaches has ≥1 encounter or duel item **in that unit** — the gap that would sit in the reteach set forever | whether the item is any *good*, whether the student can reach it, and any unit whose lesson deck is not authored yet (it requires nothing, correctly) |
-| `verify:lanes` (`check-lane-integrity`) | a crossed lane and a same-file-two-lanes clobber, from git state, *after* the fact | anything on a machine with no sibling worktrees; and it is post-hoc by construction — it reports the crossing, it cannot stop it |
+| `verify:lanes` (`check-lane-integrity`) | a crossed lane, a same-file-two-lanes clobber, and a worktree whose guard copy has drifted from `main`'s, from git state, *after* the fact | anything on a machine with no sibling worktrees; and it is post-hoc by construction — it reports the crossing, it cannot stop it. GUARD DRIFT reports but never fails, so a stale worktree does not redden any gate |
 | `assets:verify:collision` | a collision solid that isn't drawn (invisible walls) | whether a surface exists at an authored height |
 | `assets:verify:placement` | route surfaces having their asset's shape | non-route geometry |
 | `assets:verify:affordances` | real mesh geometry at each authored affordance | whether a human could make the move |

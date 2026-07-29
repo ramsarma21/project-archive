@@ -73,6 +73,15 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # must be re-pointed at a LIVE grant whenever one is retired, never deleted.
   t "$W/module-lesson/content/m1/module.json" module-lesson allow
   t "$W/boss-fight/content/m1/module.json" boss-fight deny
+  # A grant also overrides CONTESTED, which is the other half of the mechanism:
+  # DuelOverlay.tsx and duel.css are denied to every lane by default, and while
+  # they are granted to duel-hud that lane may write them and no other may. Same
+  # re-pointing rule as above — retiring this grant means moving these cases to a
+  # live one, not deleting them.
+  t "$W/duel-hud/apps/web/src/duel/DuelOverlay.tsx" duel-hud allow
+  t "$W/duel-hud/apps/web/src/duel/duel.css" duel-hud allow
+  t "$W/boss-fight/apps/web/src/duel/duel.css" boss-fight deny
+  t "$W/mission-cinematic/apps/web/src/duel/DuelOverlay.tsx" mission-cinematic deny
   # Retiring a grant must hand the file BACK, and these two pin that it did.
   # collision.ts returns to mission-world's ownership (camera-occluder's grant
   # retired 2026-07-29, work merged at d457081); MissionHud.tsx returns to

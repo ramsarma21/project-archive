@@ -52,8 +52,18 @@ ownership) and every other lane is denied them. Each grant carries a lane, the e
 and the date. The guard honours it; `scripts/check-lane-integrity.mjs` reports on it. **Retire a grant
 when its work merges** — a grant that outlives its work is a silent re-owning, and retiring one means
 re-pointing the guard's `--selftest` cases at a live grant in the same edit, or the mechanism stops
-being tested. One live grant (29 Jul): `module-lesson` holds `content/m1/module.json` and its schema.
-Retired the same day, both merged: `mission-flow`'s elm-beat UI four (`2c27d6a`) and
+being tested. Two live grants (29 Jul):
+- `module-lesson` holds `content/m1/module.json` and its schema — a grant over another lane's
+  **ownership** (`content/**` is `boss-fight`'s).
+- `duel-hud` holds `apps/web/src/duel/DuelOverlay.tsx` and `duel.css` — a grant over **contested**,
+  for the HUD rework already committed at `dab549b` (interstitial retired, hits-to-win moved onto the
+  persistent HUD, raw damage numerals deleted, unfired-balls rule shown once ever). The sequencing
+  that made them contested is settled: `boss-fight` landed first (`540c0e3`) to protect the
+  "Not graded" verdict label. Granted by the owner on 2026-07-29. **It must keep rendering
+  `verdictBeatTone(verdict).label` in `VerdictBeat`** — see the invariant row in `M1-STATUS.md`.
+
+The two together are the whole mechanism, which is why the guard's `--selftest` pins both directions
+(21 cases). Retired 29 Jul, both merged: `mission-flow`'s elm-beat UI four (`2c27d6a`) and
 `camera-occluder`'s engine-world/MissionStage carve-out (`d457081`; that lane no longer exists).
 
 ## Detection, because prevention is not available
@@ -69,8 +79,20 @@ not add `Shell` to the matcher, which would look stronger and not be. Details in
 
 **So the enforcement point is the detector.** `scripts/check-lane-integrity.mjs` reads the same map out
 of git state and reports, most-dangerous first: **CLOBBER** (one file, two lanes, *differing* content —
-the thing that destroys work), **VIOLATION** (a write the guard would refuse), **PROPAGATION** (shared
-but harmless), then unclaimed **OPEN** drift. It self-tests before it measures.
+the thing that destroys work), **VIOLATION** (a write the guard would refuse), **GUARD DRIFT** (a
+worktree enforcing a different map than `main`'s), **PROPAGATION** (shared but harmless), then
+unclaimed **OPEN** drift. It self-tests before it measures (31 cases).
+
+**GUARD DRIFT, added 29 Jul, closes the blind spot the twelve-copy propagation rule creates.** It
+hashes each worktree's `.cursor/{lane-ownership.json,hooks.json,hooks/lane-guard.sh}` against `main`'s
+current blob and separates a lane's **own edit** (leave it alone, sequence its merge) from a **STALE**
+copy — a lane sitting *clean* on a map `main` has moved past, so its guard enforces a retired policy
+and a grant recorded today is not honoured there. Stale was invisible to every other section by
+construction: the copies reach the changed-file set only when a lane touched them, and a stale copy is
+stale precisely because it never did. It **reports and never fails**, because a lane cannot propagate
+`main`'s `.cursor/` into itself and an unfixable red is how a gate gets muted; it prints the exact
+`cp` for each stale lane. This is detection only — the structural fix is an absolute hook registration
+or a symlink so one copy serves every worktree, and that is **not done**.
 
 - `pnpm verify:lanes` — the orchestrator's audit. Fails on any crossing anywhere. Run it in the loop.
 - `pnpm gate` runs it with `--lane auto`, which prints everything but fails only on findings involving
@@ -82,13 +104,10 @@ The old "`.cursor/*` clobber on every lane, read past it" caveat is **gone** —
 each lane's copy against `main`'s, so a stale propagated copy is not a change the lane is bringing.
 
 **Live conflicts it is currently reporting (29 Jul), which the orchestrator must sequence:**
-- **`duel-hud` is editing contested `apps/web/src/duel/{DuelOverlay.tsx,duel.css}` with no grant.**
-  `boss-fight` landed first (`540c0e3`), so the sequencing is settled and `duel-hud` is now the single
-  lane on those files — but that is not recorded, so it reads as an off-the-books cross-lane edit and
-  fails the audit. **It needs a grant, or the files reassigned.** Not done here: nobody asked for it,
-  and inventing a grant is exactly the unrecorded authorisation the map exists to prevent. When
-  `duel-hud` reconciles it MUST preserve the "Not graded" label (`verdictBeatTone` in
-  `verdictLabel.ts`) — see the invariant row in `M1-STATUS.md`.
+- ~~`duel-hud` editing contested `DuelOverlay.tsx`/`duel.css` with no grant~~ — **granted by the owner
+  on 29 Jul and recorded** (see Grants), which was the last remaining lane-integrity failure. The
+  grant, not the audit, is what makes the edit legal; a prior agent correctly refused to issue it
+  itself, because a self-issued grant is the unrecorded authorisation this map exists to prevent.
 - The duel **card content** and the **grading policy** are the same file (`content/m1/duel-items.json`
   carries both), so a "duel cards" brief and a "grading" brief cannot run in parallel.
 - The `apps/api` health wiring reads grading health, so the grading work (`packages/grading`, boss-fight)
@@ -109,7 +128,8 @@ each lane's copy against `main`'s, so a stale propagated copy is not a change th
   lane branch changes nothing anywhere until it merges to `main` **and** the reconciled `.cursor/`
   is copied into each worktree. That copy is what the detector then reports as PROPAGATION.
   Copy it only into worktrees whose current copy still matches the previous `main` blob — a
-  differing copy means somebody edited it, and that is theirs, not yours.
+  differing copy means somebody edited it, and that is theirs, not yours. **You no longer have to
+  remember:** GUARD DRIFT (above) names every stale worktree and prints its `cp`.
 
 ## Verification every lane must pass
 

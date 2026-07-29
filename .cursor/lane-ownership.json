@@ -27,6 +27,15 @@
       ],
       "reason": "The lesson-player rework needs the authored deck and the schema it validates against, and both sit inside boss-fight's content/** ownership. apps/web/src/module/m1Module.ts imports content/m1/module.json directly, so the deck IS the played lesson and a player change that needs a deck field cannot be made anywhere else. Granted by instruction on 2026-07-29 and recorded here on the same day, after scripts/check-lane-integrity.mjs reported the two files as an unrecorded cross-lane edit. Retire when the lesson rework merges.",
       "granted": "2026-07-29"
+    },
+    {
+      "lane": "duel-hud",
+      "paths": [
+        "apps/web/src/duel/DuelOverlay.tsx",
+        "apps/web/src/duel/duel.css"
+      ],
+      "reason": "The duel-HUD presentation rework retires the mid-fight interstitial card, moves hits-to-win onto the persistent HUD, deletes the raw damage numerals, and shows the unfired-balls rule once ever. The interstitial IS DuelOverlay.tsx and its styling IS duel.css, so the work cannot be done anywhere else. Both files are contested because boss-fight also had to touch the verdict label; that sequencing is now settled — boss-fight landed FIRST (540c0e3) specifically to protect the 'Not graded' verdict label, verified present on main afterwards — leaving duel-hud the single lane on these two files. Granted by the owner's explicit instruction on 2026-07-29 and recorded here the same day; the work is already committed on workflow/duel-hud at dab549b. A prior agent correctly REFUSED to grant this itself: a self-issued grant is the unrecorded authorisation the map exists to prevent. duel-hud MUST keep rendering verdictBeatTone(verdict).label in VerdictBeat — see the invariant row in docs/process/M1-STATUS.md. Retire when the HUD rework merges.",
+      "granted": "2026-07-29"
     }
   ],
   "_retiredGrants": "Retired 2026-07-29, both because their work merged: `mission-flow`'s four elm-beat UI files (MissionHud/MissionBeatPanel/missionInput/mission.css, merged 2c27d6a — those files are contested again, denied to every lane) and `camera-occluder`'s engine-world/MissionStage carve-out (merged d457081; the lane has no branch or worktree left and its entry is gone from `lanes`). Kept as one line rather than as dead grant objects: a grant that outlives its work silently re-owns a file.",
