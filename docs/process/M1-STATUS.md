@@ -213,17 +213,19 @@ zero-evidence form pass (`1c4250f`).
     frustum deliberately unchanged — cover shadows are how a player reads where cover is.
   - **Watch item:** on a very fast arrival the dawn lift is low and the yard is dim. Legible in
     capture, but lit braziers would be the in-fiction floor if it reads badly in play.
-- **"Cannot run" — measured from the owner's own recording, and it is probably not locomotion.**
-  Across the exact window he complained about: objective **39 m → 13 m** in **6 s of wall clock**,
-  i.e. ~4.3 m/s of straight-line closure on a curving path — **a normal sprint**. So the body was
-  not slow. But the **mission timer advanced 0:28 → 0:25 in those same 6 s** — 3 mission-seconds
-  per 6 real seconds. If the clock is meant to be 1:1, the *simulation* is running at half rate,
-  which animates everything in slow motion while distance-per-real-second stays normal — exactly
-  what "slow running" feels like, and exactly what `advanceFieldClock`'s catch-up discard produces.
-  **Unconfirmed:** whether the mission clock is deliberately scaled. Establish that before
-  concluding. The search has changed shape: stop looking for a mechanism that slows the body, look
-  for one that slows the sim. Frames: `.affordwork/clips/room-three/run{116,122}.jpg`.
-- ~~"Cannot run"~~ — previously unexplained. Every in-lane mechanism ruled out by two systematic
+- **"Cannot run" — the owner confirms the timing IS slow at 1:56.** Take that as the fact.
+  My attempt to measure it from the recording was **inadmissible**: the clip is a
+  variable-frame-rate screen capture (avg 27.5 fps, nominal timebase `2000/1`), and a capture made
+  *during* a performance problem drops frames, so wall-clock distance derived from two frame
+  timestamps measures the capture, not the game. The instrument is corrupted by the condition under
+  investigation.
+  - The observation still worth checking, since it came from the HUD rather than from frame timing:
+    the **mission timer advanced 0:28 → 0:25 across a stretch he describes as slow.** If the clock
+    is meant to be 1:1 with real time, the *simulation* is running at reduced rate, which animates
+    everything in slow motion — the shape of the complaint. `advanceFieldClock` caps catch-up at 5
+    steps and discards the remainder, which produces exactly that.
+  - **Search for a mechanism that slows the sim, not one that slows the body.**
+ Every in-lane mechanism ruled out by two systematic
   passes; the per-leg speed cap is disproven (it releases ~3 m *early*). Needs a location
   or a live capture from the owner.
 
@@ -316,6 +318,7 @@ the orchestrator actually made, and the specific change made in response.
 | Accepted a local green as evidence for a cross-platform property; the first Linux run failed on a baked-constant guard comparing against the host's own `Math.sin` | A determinism claim cannot be verified on one platform. Reason about the runner, not the laptop. |
 | Quoted the affordance debt count as a fixed number to a lane whose branch predated three retirements | A moving count needs its baseline named. Say "22 on `main` as of X", not "22". |
 | Told a lane the elm climb **anchors** ran through the trunk; standing at every anchor was clean and it was the **swept paths** threading the canopy | Name the measured thing, not the inferred cause. The instrument reported per-transition depth, not per-anchor. |
+| Derived a speed from two frames of a variable-frame-rate screen capture and used it to contradict the owner's direct report | **Trust his report first**; use the video to locate what he is pointing at, not to re-measure it. A capture made during a performance problem cannot time that problem. |
 | Built a pacing case on the 24-round duel ceiling; it is an anti-hang backstop that never fires, and duels end on health at 4–7 rounds | Check whether a limit is *reached* before treating it as the cost. A ceiling is not a duration. |
 | Told the owner M1 owns "~23 concepts" and built a broken-ratio argument on it — the number was a grep of lines containing "M1". M1 owns **2–3**; the 46 belong to 14 modules | Never quote a count from a text search. Call the function that computes it. |
 
