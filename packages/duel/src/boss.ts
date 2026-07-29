@@ -332,6 +332,30 @@ export interface BossProfileOverrides {
   readonly tactical?: BossTacticalProfile | null;
 }
 
+/**
+ * THE THREE OPT-INS M1'S OFFICER ACTUALLY SHIPS WITH.
+ *
+ * `bossProfileForTier(tier)` on its own is not any boss that ships — it is the bare
+ * tier curve, AUTHORED_FLAT, no cover-seeking, no tactical layer. M1 passes all three
+ * of these, and the difference is not cosmetic: the ammo policy changes what the boss
+ * is armed with on each answer path, and the tactical layer changes where it stands.
+ *
+ * Named here so the balance gate can drive the shipped configuration rather than a
+ * plausible-looking approximation of it. `apps/web` builds M1's boss from
+ * `bossProfileForTier(1, <id>, ...)` at two sites (the stand-alone descriptor and the
+ * mission brief); both are pinned against this constant, and against each other, by
+ * `apps/web/test/duelPathParity.test.ts`. A fourth opt-in added there and not here
+ * fails that pin rather than silently re-diverging the gate from the fight.
+ */
+export const M1_BOSS_OVERRIDES: BossProfileOverrides = {
+  ammoPolicy: "SYMMETRIC_COMPLEMENT",
+  takesCoverBeforeQuestion: true,
+  tactical: M1_BOSS_TACTICS,
+};
+
+/** M1's tier. The mission has one difficulty and it is the bottom of the curve. */
+export const M1_BOSS_TIER: BossTier = 1;
+
 export function bossProfileForTier(
   tier: BossTier,
   bossId = `BOSS.TIER_${tier}`,
