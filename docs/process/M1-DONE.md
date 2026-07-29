@@ -234,9 +234,12 @@ cost is the **prose answer** (45–90 s to compose) plus a ~20 s engagement wind
     player — reuse is fine, reuse you can't tell from a fresh question is a small lie. Replaced when
     generation reaches a few hundred items per chapter, at which point exhaustion stops being
     reachable in practice.
-  - **An answer is 1–2 cards plus one sentence.** The evidence placement *is* the reasoning; the
-    sentence says why. ~20–25 s instead of 45–90, and it suits the deterministic-card /
-    short-prose-comparison architecture far better than a paragraph.
+  - **An answer is 1–2 cards plus one sentence.** Client invites a sentence; the ten long required
+    cores now match that shape, with FN and FP held at 0.00%. **Honest limit:** every item's accept
+    bar was *already* satisfiable in one sentence, so the win is players writing less because they
+    are asked to — a behavioural change, not a mechanical one. And Tier 1 deterministic accept
+    currently fires **0 of 140** times: the core is not one of its inputs, so that "no model call"
+    saving belongs to the generator producing many short reference phrasings, not to this pass.
   - ~~Engagement window 20 s → 10–12 s~~ — **cannot ship**, measured. The coupling isn't the 7-ball
     path (7 balls fit any window over ~7 s) but the 14-ball ones: reaching 12 s needs a faster
     reload, after which the reference skilled player is **knocked out on the wrong-answer path** at
