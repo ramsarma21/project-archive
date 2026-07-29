@@ -159,11 +159,19 @@ worst case of key contention is a **loud red run that says "this run does not
 measure the grader,"** never a green run that quietly lied. That is the acceptable
 failure mode, which is why one key is fine here.
 
-The workflow feeds the shared key under its own name; `packages/grading/src/provider.ts`
+The workflow feeds the key under its canonical name. `packages/grading/src/provider.ts`
 reads `TRUEFOUNDRY_GRADING_API_KEY` first and falls back to `TRUEFOUNDRY_API_KEY`
-when `NODE_ENV` is not `production` (unset in this job), so the shared key is what
-grades. Production duel grading still uses its own Secrets-Manager credential — the
-shared-key fallback is a dev/CI convenience the code gates on `NODE_ENV`.
+only when `NODE_ENV` is not `production` — unset in this job, so the shared key is
+what grades here.
+
+**That `NODE_ENV` gate is the last place two keys are still required, and it is
+open.** Production is not covered by the CI arrangement above: a deployed task
+runs with `NODE_ENV=production`, so `TRUEFOUNDRY_API_KEY` alone would leave it
+unable to grade. The deployed stack works around it — `infra/` injects the single
+`project-archive/grading-credential` value under **both** env names, so one key
+does serve production — but the library still has a `NODE_ENV` branch that exists
+for a rationale the owner has overruled. Lifting it belongs to `packages/grading`
+(the `boss-fight` lane); see the routed entry in `M1-STATUS.md`.
 
 **How the job behaves without the secret: it fails loudly, it does not skip.** A
 skipped nightly is indistinguishable from a passing one on a dashboard, which is

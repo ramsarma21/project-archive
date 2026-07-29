@@ -208,6 +208,27 @@ zero-evidence form pass (`1c4250f`).
   (`gh` unauthenticated locally, no run observed), the same unverified basis the `playthrough`
   gate already blocks on. Wired and merged is not "works": the first real run, or the first
   missing date, settles it. Reasoning and the one-key trade-off in `CI-AND-BROWSER-CHECKS.md` §1a.
+- **One TrueFoundry key now works everywhere the owner touches — the last two-key requirement
+  is a `NODE_ENV` branch in `packages/grading`, and it must be routed to `boss-fight`.**
+  `TRUEFOUNDRY_API_KEY` is canonical: local dev, the nightly eval and the asset pipeline
+  already ran on it, and `infra/` now injects the single `project-archive/grading-credential`
+  value under **both** `TRUEFOUNDRY_API_KEY` and the legacy `TRUEFOUNDRY_GRADING_API_KEY`, so
+  the deployed task grades on one key with no second secret. Docs, `.env.example`, `README.md`
+  and `infra/README.md` now say to set only `TRUEFOUNDRY_API_KEY`.
+  **What is NOT done, and where it lives:** `credential()` in
+  `packages/grading/src/provider.ts` still accepts `TRUEFOUNDRY_API_KEY` only when `NODE_ENV
+  !== "production"`, so the library alone would refuse the canonical key in a deployed task.
+  That file is `boss-fight`'s and was not touched. The fix is to read
+  `TRUEFOUNDRY_GRADING_API_KEY ?? TRUEFOUNDRY_API_KEY` unconditionally and re-word the
+  `NO_CREDENTIAL` advice in `src/verdict.ts`, the message in `src/eval/cli.ts` and the table in
+  `README.md`. **Keep the string `TRUEFOUNDRY_GRADING_API_KEY` somewhere in that advice** —
+  `apps/api/test/grading-signal.test.ts:193` (api-hunt, unmerged work in flight) asserts on it,
+  and naming both keys keeps that test passing without a cross-lane edit. There is no test for
+  `credential()` today; add one. Until it lands the double injection in `infra/` is load-bearing
+  — do not delete it as redundant.
+  The dedicated-key rationale is **accepted-and-overruled, not disproven**: the gateway
+  serialises (1516 ms at concurrency 3 against a 1.5 s cap), so a lesson run during an asset
+  render still raises fallbacks. `GradingFallbackRateHigh` at 25% is what makes that loud.
 - **The merge gate exists (`scripts/merge-gate.mjs`, `pnpm gate`) — the last regression
   condition, partly.** One loud command runs every blocking gate and refuses (exit non-zero)
   on any failure; the playthrough is provisioned on a throwaway stack and skipped only when the

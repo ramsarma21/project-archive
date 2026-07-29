@@ -44,10 +44,11 @@ pnpm --filter @pa/api grading:benchmark:live
 
 The script requires model discovery to confirm every candidate, emits only
 fixture IDs and aggregate metrics, and never writes student text, provider
-prompts, or credentials. Production must inject
-`TRUEFOUNDRY_GRADING_API_KEY` as a separate secret. The existing
-`TRUEFOUNDRY_API_KEY` fallback is allowed only when `NODE_ENV` is not
-`production`.
+prompts, or credentials. It runs on `TRUEFOUNDRY_API_KEY` like everything else —
+there is one TrueFoundry key. (This paragraph used to require a *separate*
+`TRUEFOUNDRY_GRADING_API_KEY` in production; the owner overruled that. The
+deployed task still receives the alias, injected by `infra/` from the same single
+secret, because `packages/grading` has not yet dropped its `NODE_ENV` branch.)
 
 ## Canonical five-operation probe
 
