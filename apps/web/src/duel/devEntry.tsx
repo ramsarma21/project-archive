@@ -22,6 +22,7 @@ import {
 } from "../api.js";
 import type { InspectFraming } from "./duelCamera.js";
 import type { GripTuning } from "./DuelActor.js";
+import { withDevSessionHeader } from "../devSession.js";
 import "../styles.css";
 
 // WHY LIVE MODE NOW OPENS A REAL ATTEMPT.
@@ -46,6 +47,33 @@ import "../styles.css";
 // one and nothing a real player owns is ever spent.
 
 const CHAPTER_ID = "boston-1765";
+
+/**
+ * Is the server actually able to grade, or will every round be granted ungraded?
+ *
+ * `?verdict=live` opens a real attempt and posts real answers, but if the API has no
+ * classifier credential the grading service falls back to the generous grant on
+ * EVERY round (Mission-Slate §1.7) — a wrong answer pays the same fourteen balls as a
+ * right one. The banner used to promise "just like real play" unconditionally, which
+ * is a lie in that state and is exactly what led the boss-fight owner to read a
+ * granted wrong answer as "still getting the right answer". This probes
+ * `/v1/duels/grading/health` (session-gated, so it runs after the attempt's session
+ * exists) and returns whether a model call is possible at all. `null` means the probe
+ * itself could not be read, which the banner reports as unknown rather than as fine.
+ */
+async function probeGradingConfigured(): Promise<boolean | null> {
+  try {
+    const response = await fetch("/v1/duels/grading/health", {
+      credentials: "include",
+      headers: withDevSessionHeader(),
+    });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { configured?: unknown };
+    return typeof body.configured === "boolean" ? body.configured : null;
+  } catch {
+    return null;
+  }
+}
 
 // The module gate's inputs, DERIVED from the authored deck rather than hand-copied.
 //
@@ -209,13 +237,25 @@ function Harness() {
   // gradeable. Until it is ready there is nothing to fight, and if it fails the
   // harness says why rather than mounting a duel that would grant everything.
   const [live, setLive] = useState<LiveAttempt>({ status: "loading" });
+  // Whether the server can actually grade. `undefined` while unknown (before the
+  // probe), `false` when there is no classifier credential and every round will be
+  // granted ungraded, `true` when a model call is possible. The banner reads this so
+  // it cannot claim "just like real play" while grading is off.
+  const [gradingConfigured, setGradingConfigured] = useState<boolean | null | undefined>(
+    undefined,
+  );
   useEffect(() => {
     if (!isLive) return undefined;
     let cancelled = false;
     setLive({ status: "loading" });
+    setGradingConfigured(undefined);
     void openLivePracticeDuel()
-      .then((descriptor) => {
-        if (!cancelled) setLive({ status: "ready", descriptor });
+      .then(async (descriptor) => {
+        if (cancelled) return;
+        setLive({ status: "ready", descriptor });
+        // The session exists now, so the grading-health probe can authenticate.
+        const configured = await probeGradingConfigured();
+        if (!cancelled) setGradingConfigured(configured);
       })
       .catch((cause: unknown) => {
         if (!cancelled) {
@@ -299,7 +339,7 @@ function Harness() {
 
   return (
     <>
-      <HarnessBanner mode={mode} />
+      <HarnessBanner mode={mode} gradingConfigured={gradingConfigured} />
       {isLive && (
         <DevResetControl
           onReset={resetMyM1}
@@ -441,8 +481,39 @@ function BootstrapNotice(props: { children: ReactNode; error?: boolean }) {
  * mistaken for the shipped, graded duel. It is dev-only; nothing renders it in the
  * production build, whose entry is `/index.html`.
  */
-function HarnessBanner(props: { mode: string }) {
+function HarnessBanner(props: {
+  mode: string;
+  /**
+   * Whether the server can grade. Only meaningful in live mode: `undefined` while the
+   * probe is in flight, `false` when there is no classifier credential (every round
+   * granted ungraded), `true` when grading is live, `null` when the probe could not be
+   * read. The banner must never claim "just like real play" unless this is `true`.
+   */
+  gradingConfigured?: boolean | null;
+}) {
   const live = props.mode === "live";
+  // A live attempt whose grader is OFF is the state that misled the owner: real
+  // answers are posted, but every one is granted ungraded. Warn in that state (and
+  // while it is unknown) rather than promising real grading unconditionally.
+  const gradingOff = live && props.gradingConfigured === false;
+  const gradingUnknown =
+    live && (props.gradingConfigured === undefined || props.gradingConfigured === null);
+  const bg = !live ? "#FFC24B" : gradingOff ? "#FF7A7A" : gradingUnknown ? "#FFC24B" : "#7CFC9A";
+  const border = !live ? "#a65" : gradingOff ? "#a11" : gradingUnknown ? "#a65" : "#0a6";
+  const fg = !live ? "#2a1400" : gradingOff ? "#2a0606" : gradingUnknown ? "#2a1400" : "#04210f";
+  let text: string;
+  if (!live) {
+    text = `DEV DUEL HARNESS · verdict=${props.mode} · SCRIPTED — answers are NOT graded; bullets follow a fixed script, not your answer. This is not the shipped duel — play the game at /index.html, or add ?verdict=live to grade here.`;
+  } else if (gradingOff) {
+    text =
+      "DEV DUEL HARNESS · verdict=live · GRADING IS OFF — no classifier credential, so EVERY answer (right or wrong) is granted the maximum ungraded. This is NOT real play. Set TRUEFOUNDRY_GRADING_API_KEY (or TRUEFOUNDRY_API_KEY) in a local .env to grade for real.";
+  } else if (gradingUnknown) {
+    text =
+      "DEV DUEL HARNESS · verdict=live · checking whether the grader is configured… until confirmed, do not trust a verdict — an unconfigured grader grants every answer ungraded.";
+  } else {
+    text =
+      "DEV DUEL HARNESS · verdict=live · a real graded attempt is opened on a throwaway profile, so a wrong answer costs half the magazine, just like real play.";
+  }
   return (
     <div
       role="note"
@@ -455,16 +526,14 @@ function HarnessBanner(props: { mode: string }) {
         padding: "6px 12px",
         font: "600 12px/1.4 ui-monospace, monospace",
         letterSpacing: "0.02em",
-        color: live ? "#04210f" : "#2a1400",
-        background: live ? "#7CFC9A" : "#FFC24B",
-        borderBottom: `2px solid ${live ? "#0a6" : "#a65"}`,
+        color: fg,
+        background: bg,
+        borderBottom: `2px solid ${border}`,
         textAlign: "center",
         pointerEvents: "none",
       }}
     >
-      {live
-        ? "DEV DUEL HARNESS · verdict=live · a real graded attempt is opened on a throwaway profile, so a wrong answer costs half the magazine, just like real play."
-        : `DEV DUEL HARNESS · verdict=${props.mode} · SCRIPTED — answers are NOT graded; bullets follow a fixed script, not your answer. This is not the shipped duel — play the game at /index.html, or add ?verdict=live to grade here.`}
+      {text}
     </div>
   );
 }
