@@ -444,6 +444,10 @@
   min-width: 7rem;
 }
 
+/* Shown on entry and then faded, rather than parked across the bottom of the
+   screen for the whole run — the strip is the opposite of the take-off cues the
+   rest of the mission wayfinds with, so it teaches once and gets out of the way.
+   Held "/" (see MissionHud) brings it back. */
 .msn-hud-keys {
   grid-area: keys;
   justify-self: center;
@@ -454,12 +458,26 @@
   font-size: 0.68rem;
   letter-spacing: 0.06em;
   color: rgba(150, 178, 202, 0.6);
+  transition: opacity 600ms ease;
+}
+
+.msn-hud-keys.is-faded {
+  opacity: 0;
 }
 
 .msn-hud-key {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+/* The re-summon hint sits quietly at the end of the legend and teaches how to
+   bring the legend back once it has faded. */
+.msn-hud-key.is-help {
+  color: rgba(150, 178, 202, 0.42);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.6rem;
 }
 
 .msn-hud-key kbd {
@@ -665,6 +683,142 @@
 .msn-wam.is-reduced .msn-wam-flare,
 .pa-reduced-motion .msn-wam-flare {
   transition: none;
+}
+
+/* ---- the completion acknowledgement ------------------------------------- */
+/*
+ * The finished beat. Not a celebration — the mission is timed against dawn — but
+ * a moment that says "done, and here is how it went" before the player runs for
+ * the yard. It replaces the grid of spent cells with a single holographic seal
+ * in the System's teal, holds for a couple of seconds, and parts on its own.
+ */
+.msn-wam.is-done {
+  /* Nothing to click here, so the card must not eat the click that re-locks the
+     pointer for the run out. */
+  pointer-events: none;
+  width: min(30rem, 84vw);
+  animation: msn-wam-post-in 300ms ease both;
+}
+
+.msn-wam.is-done.is-parting {
+  animation: msn-wam-post-out 460ms ease both;
+}
+
+@keyframes msn-wam-post-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes msn-wam-post-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+}
+
+.msn-wam-complete {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0 0.2rem;
+  text-align: center;
+}
+
+/* A drawn holo seal: a teal ring with a check struck through it. Procedural UI,
+   which the imported-world rule allows. */
+.msn-wam-seal {
+  position: relative;
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 50%;
+  border: 2px solid rgba(126, 227, 216, 0.85);
+  box-shadow:
+    0 0 22px rgba(126, 227, 216, 0.4),
+    inset 0 0 18px rgba(126, 227, 216, 0.16);
+  animation: msn-wam-seal-in 440ms 120ms ease both;
+}
+
+.msn-wam-seal::after {
+  content: "";
+  position: absolute;
+  left: 34%;
+  top: 20%;
+  width: 26%;
+  height: 50%;
+  border-right: 2px solid #7ee3d8;
+  border-bottom: 2px solid #7ee3d8;
+  transform: rotate(45deg);
+}
+
+/* A torn sheet is not a clean post: the seal turns rose and the check becomes a
+   single struck line. */
+.msn-wam.is-torn .msn-wam-seal {
+  border-color: rgba(255, 176, 160, 0.85);
+  box-shadow:
+    0 0 22px rgba(255, 176, 160, 0.36),
+    inset 0 0 18px rgba(255, 176, 160, 0.14);
+}
+
+.msn-wam.is-torn .msn-wam-seal::after {
+  left: 26%;
+  top: 48%;
+  width: 48%;
+  height: 0;
+  border-right: none;
+  border-bottom: 2px solid #ffb0a0;
+  transform: none;
+}
+
+@keyframes msn-wam-seal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.msn-wam-complete-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #eaf8ff;
+}
+
+.msn-wam.is-torn .msn-wam-complete-title {
+  color: #ffb0a0;
+}
+
+.msn-wam-complete-tally {
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: #9fdcff;
+}
+
+/* Reduced motion: the seal and card still appear (and still part, so the strip
+   leaves), they just do not scale or crossfade in. */
+.msn-wam.is-reduced.is-done,
+.pa-reduced-motion .msn-wam.is-done,
+.msn-wam.is-reduced.is-done.is-parting,
+.pa-reduced-motion .msn-wam.is-done.is-parting,
+.msn-wam.is-reduced .msn-wam-seal,
+.pa-reduced-motion .msn-wam .msn-wam-seal {
+  animation: none;
 }
 
 /* ---- confirm and block -------------------------------------------------- */
@@ -944,6 +1098,13 @@
 /* The app sets .pa-reduced-motion on the document root. The only transition here
    is the suspicion meter's width; holding it still keeps the readout legible. */
 .pa-reduced-motion .msn-hud-meter-fill {
+  transition: none;
+}
+
+/* The control legend still shows on entry and still fades out of the way, it
+   just snaps rather than crossfades — the meaning (a strip that leaves) is kept,
+   the animation is not. */
+.pa-reduced-motion .msn-hud-keys {
   transition: none;
 }
 

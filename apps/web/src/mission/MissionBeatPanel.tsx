@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BeatPresentation } from "@pa/beat";
 import { MISSION_BINDINGS } from "./missionInput.js";
 import type { MissionInputState } from "./missionInput.js";
@@ -29,10 +29,29 @@ import type { MissionInputState } from "./missionInput.js";
 // no cursor and there would be nothing to click. Looking around reverts to the
 // drag fallback for those few seconds, which is fine: the player is standing
 // still on the bough doing the work.
+//
+// WHEN IT RESOLVES the grid gives way to a short "the handbill is up" seal — a
+// beat of acknowledgement that holds briefly and parts on its own, rather than a
+// grid of spent cells or nothing at all. See the completion block below.
 // ---------------------------------------------------------------------------
 
 /** A comfortable 3-wide grid; six cells fall into two rows. */
 const COLUMNS = 3;
+
+// ---- the completion acknowledgement ----------------------------------------
+//
+// When the beat resolves, the whack-a-mole grid has nothing left to click, so it
+// gives way to a short "the handbill is up" seal instead of just sitting there
+// with six dark cells. It is a beat of acknowledgement, not a celebration: the
+// mission is timed against dawn, so it holds for a moment and then parts on its
+// own. Presentation only — it reads the resolved grade off the projection and
+// writes nothing back to the run, so it cannot touch the beat's difficulty.
+/** How long the "posted" seal holds before it begins to part. */
+const COMPLETION_HOLD_MS = 2000;
+/** The fade-out that follows the hold, after which the card unmounts. */
+const COMPLETION_PART_MS = 480;
+
+type CompletionPhase = "hold" | "parting" | "gone";
 
 function statusLine(beat: BeatPresentation): string {
   if (beat.phase === "RESOLVED") {
@@ -63,7 +82,30 @@ export function MissionBeatPanel(props: {
   const { beat, inStance, input } = props;
   const live = beat.phase === "ACTIVE" || beat.phase === "SETTLING";
   const clickable = live || (beat.phase === "STANCE" && inStance);
-  const shown = clickable || (beat.phase === "RESOLVED" && inStance);
+  const resolved = beat.phase === "RESOLVED";
+
+  // The completion seal holds, then parts, then unmounts, so the acknowledgement
+  // never lingers into the run for the yard even if the player stays put on the
+  // bough. Driven off the resolved phase alone, so a retry (a fresh run back in
+  // STANCE) resets it.
+  const [completion, setCompletion] = useState<CompletionPhase>("hold");
+  useEffect(() => {
+    if (!resolved) {
+      setCompletion("hold");
+      return undefined;
+    }
+    const part = window.setTimeout(() => setCompletion("parting"), COMPLETION_HOLD_MS);
+    const gone = window.setTimeout(
+      () => setCompletion("gone"),
+      COMPLETION_HOLD_MS + COMPLETION_PART_MS,
+    );
+    return () => {
+      window.clearTimeout(part);
+      window.clearTimeout(gone);
+    };
+  }, [resolved]);
+
+  const shown = clickable || (resolved && inStance && completion !== "gone");
 
   // The lit cell, kept in a ref so the one keydown listener below always reads
   // the latest without re-binding every sample.
@@ -98,16 +140,38 @@ export function MissionBeatPanel(props: {
 
   if (!shown) return null;
 
+  const torn = beat.grade === "TORN";
   const className = [
     "msn-wam",
     live ? "is-live" : "",
-    beat.phase === "RESOLVED" ? "is-done" : "",
-    beat.grade === "TORN" && beat.phase === "RESOLVED" ? "is-torn" : "",
+    resolved ? "is-done" : "",
+    resolved && completion === "parting" ? "is-parting" : "",
+    torn && resolved ? "is-torn" : "",
     props.reducedMotion ? "is-reduced" : "",
     beat.heard ? "is-heard" : "",
   ]
     .filter(Boolean)
     .join(" ");
+
+  // The finished beat: a short seal rather than a grid of dark cells. It names
+  // the outcome, keeps the running tally the tests pin (`beat.struck`/`total`),
+  // and carries the same flavour line the live panel used, then parts on its own.
+  if (resolved) {
+    return (
+      <section className={className} aria-label="Nail the handbill to the Liberty Tree">
+        <div className="msn-wam-complete" role="status" aria-live="polite">
+          <span className="msn-wam-seal" aria-hidden="true" />
+          <span className="msn-wam-complete-title">
+            {torn ? "Sheet torn" : "Handbill posted"}
+          </span>
+          <span className="msn-wam-complete-tally">
+            {beat.struck} of {beat.total} struck
+          </span>
+          <span className="msn-wam-status">{statusLine(beat)}</span>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={className} aria-label="Nail the handbill to the Liberty Tree">
