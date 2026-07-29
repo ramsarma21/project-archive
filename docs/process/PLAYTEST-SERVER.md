@@ -73,41 +73,47 @@ this server's `.env` so it targets `project_archive_playtest`.
 
 Launched **without `--watch`** so no file change can ever reload them.
 
-Both are started by one script, which daemonises them properly:
+**`launchd` is the one and only supervisor.** Do not start these by hand and do not run
+`playtest-start.mjs` (see the history below) — the ports are held by the services, `--strictPort`
+makes a second vite fail, and two APIs cannot share 4301.
 
-```bash
-node /Users/ramsarma/Projects/project-archive-worktrees/playtest/playtest-start.mjs
-```
-
-| Service | Process | Node PID at setup | Log |
+| Service | Label | Plist | Log |
 | --- | --- | --- | --- |
-| API | `node --import tsx src/server.ts` (cwd `apps/api`) | `54323` | `<worktree>/playtest-api.log` |
-| Web | `vite --port 4300 --strictPort`, `VITE_API_PROXY_TARGET=http://localhost:4301` (cwd `apps/web`) | `54324` | `<worktree>/playtest-web.log` |
+| API | `com.projectarchive.playtest.api` | `~/Library/LaunchAgents/com.projectarchive.playtest.api.plist` | `<worktree>/playtest-api.log` |
+| Web | `com.projectarchive.playtest.web` | `~/Library/LaunchAgents/com.projectarchive.playtest.web.plist` | `<worktree>/playtest-web.log` |
 
-**PIDs are ephemeral** — they change on every restart. The script writes the current pair to
-`<worktree>/playtest.pids`; otherwise find them with:
+Properties: `RunAtLoad` (starts at login), `KeepAlive` (restarts on crash — which also covers the
+API losing a start-up race against Postgres after a reboot), and `ThrottleInterval` 10s so a
+genuinely broken config cannot spin hot. The web plist sets
+`VITE_API_PROXY_TARGET=http://localhost:4301`; **without it the browser silently talks to the dev
+API on 3001 instead of the frozen one**, which looks like the snapshot working when it is not.
 
 ```bash
-lsof -nP -iTCP:4301 -sTCP:LISTEN   # frozen API
-lsof -nP -iTCP:4300 -sTCP:LISTEN   # frozen web
+U=$(id -u)
+launchctl print gui/$U/com.projectarchive.playtest.api          # state, pid, run count
+launchctl kickstart -k gui/$U/com.projectarchive.playtest.web    # force restart
+launchctl bootout gui/$U/com.projectarchive.playtest.api         # stop and unload
+launchctl bootstrap gui/$U ~/Library/LaunchAgents/com.projectarchive.playtest.api.plist  # load
+lsof -nP -iTCP:4301 -sTCP:LISTEN   # who really holds the API port
+lsof -nP -iTCP:4300 -sTCP:LISTEN   # who really holds the web port
 ```
 
-### Why a script and not `nohup … &` (learned the hard way)
+### Process-supervision history (three failures, so nobody repeats them)
 
-The first attempt launched the servers from an agent/tool shell with `nohup … & disown`. **They
-were killed the moment the launching job ended** — twice. `nohup` only blocks SIGHUP, and
-`disown` only removes the job from one shell's table; neither helps when the supervisor kills
-the whole process *group* or descendant tree. An earlier note in this file claiming these
-survive an agent session was wrong and has been corrected.
-
-`playtest-start.mjs` uses `spawn(..., { detached: true })` (which is `setsid(2)`) plus
-`unref()`, so each server gets its **own session and process group** and reparents to launchd.
-Verified after launch: `ppid = 1` and `pgid = pid` for both processes. Nothing in an editor or
-agent session can take them down now.
-
-**Still not reboot-proof.** A restart or shutdown ends them; re-run the script (below). A
-`launchd` LaunchAgent with `KeepAlive` would make it survive reboots and auto-restart — not
-done, ask if you want it.
+1. **`nohup … & disown` from an agent shell — died twice.** `nohup` only blocks SIGHUP and
+   `disown` only edits one shell's job table; neither helps when the harness kills the whole
+   process *group*. The server was found dead minutes after the launching agent finished. An
+   earlier revision of this file claimed these survive an agent session; that was wrong.
+2. **`playtest-start.mjs` (`spawn` with `detached: true` + `unref()`) — worked, but not
+   reboot-proof.** It genuinely daemonises via `setsid(2)`, giving each server its own session
+   (`ppid = 1`). It is kept in the tree for reference only. **Do not run it** — it would race
+   `launchd` for the ports.
+3. **`launchd` installed while the setsid pair still held the ports — crash-looped.** The
+   services could not bind, `KeepAlive` respawned them every 10s, and the log filled with
+   `EADDRINUSE` on 4301. Resolved by killing the setsid pair and running `kickstart`. The lesson:
+   **pick one supervisor**, and always confirm with `lsof` which process actually owns the port
+   rather than trusting `launchctl print` saying `state = running` — a crash-looping service also
+   reports as running.
 
 ## Verification (measured 2026-07-29, not inferred)
 
@@ -123,28 +129,40 @@ done, ask if you want it.
 
 ## Restart after a reboot
 
-1. Ensure the DB container is running: `docker start project_archive_pg`
-   (or `docker compose up -d` from the main checkout).
-2. Start both servers:
-   ```bash
-   node /Users/ramsarma/Projects/project-archive-worktrees/playtest/playtest-start.mjs
-   ```
-3. Verify:
-   ```bash
-   curl -s http://127.0.0.1:4301/v1/health   # expect ok:true, database:true, grading.configured:true
-   curl -sI http://127.0.0.1:4300/ | head -1 # expect 200
-   ```
-   Then open http://localhost:4300/.
+**Nothing to do in the normal case.** `RunAtLoad` starts both services at login and `KeepAlive`
+retries the API until Postgres accepts connections. Just confirm Docker came up:
 
-The script is safe to re-run only when the servers are down — `--strictPort` means a second
-web instance fails rather than silently taking another port. Stop them first (Teardown step 1)
-if you are unsure.
+```bash
+docker start project_archive_pg   # only if the container is not already running
+```
+
+If the game is not answering, diagnose in this order — the port check first, because a
+crash-looping service still reports `state = running`:
+
+```bash
+U=$(id -u)
+lsof -nP -iTCP:4300 -sTCP:LISTEN                # is anything serving?
+launchctl print gui/$U/com.projectarchive.playtest.api | grep -E "state|pid|runs"
+tail -30 /Users/ramsarma/Projects/project-archive-worktrees/playtest/playtest-api.log
+launchctl kickstart -k gui/$U/com.projectarchive.playtest.api    # force a restart
+launchctl kickstart -k gui/$U/com.projectarchive.playtest.web
+```
+
+Then verify, and note that the **proxy** check is the one that proves the browser reaches the
+frozen API rather than a dev server that happens to be running:
+
+```bash
+curl -s http://127.0.0.1:4301/v1/health   # expect ok:true, database:true, grading.configured:true
+curl -s http://127.0.0.1:4300/v1/health   # same, THROUGH the proxy — proves 4301, not 3001
+curl -sI http://127.0.0.1:4300/ | head -1 # expect 200
+```
 
 ## Refresh the snapshot to a newer commit (later)
 
 When the owner likes a newer state (e.g. after merging lanes into `main`):
 
-1. Stop the servers (see Teardown step 1).
+1. Stop the services: `U=$(id -u); launchctl bootout gui/$U/com.projectarchive.playtest.web;
+   launchctl bootout gui/$U/com.projectarchive.playtest.api`
 2. Tag the new commit: `git tag -a playtest/frozen-<yyyy-mm-dd> <commit> -m "…"`.
 3. Repoint the worktree (it is detached, so just move HEAD):
    ```bash
@@ -154,16 +172,22 @@ When the owner likes a newer state (e.g. after merging lanes into `main`):
 5. If there are new migrations: `cd <worktree>/apps/api && node --import tsx src/migrate.ts`
    (runs against `project_archive_playtest`; **existing play-test progress is preserved** —
    the DB is not recreated).
-6. Restart the servers (Restart section above).
+6. Reload the services:
+   `launchctl bootstrap gui/$U ~/Library/LaunchAgents/com.projectarchive.playtest.api.plist` and
+   the same for `.web.plist`. The plists reference the worktree path, not the commit, so they need
+   no edit when the snapshot moves.
 
 The `.env`, start script, pidfile and logs are untracked, so `checkout --detach` leaves them alone.
 
 ## Teardown (remove the play-test server entirely)
 
-1. Stop the servers:
+1. Stop and unload the services (this must come first — `KeepAlive` would otherwise respawn
+   anything you kill by pid):
    ```bash
-   lsof -nP -iTCP:4301 -sTCP:LISTEN -t | xargs -r kill
-   lsof -nP -iTCP:4300 -sTCP:LISTEN -t | xargs -r kill
+   U=$(id -u)
+   launchctl bootout gui/$U/com.projectarchive.playtest.web
+   launchctl bootout gui/$U/com.projectarchive.playtest.api
+   rm ~/Library/LaunchAgents/com.projectarchive.playtest.{api,web}.plist
    ```
 2. Remove the worktree (untracked `.env`/logs make it "dirty", so force):
    `git worktree remove --force ../project-archive-worktrees/playtest`
