@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
 import type { ReactTestRenderer, ReactTestInstance } from "react-test-renderer";
@@ -413,6 +414,8 @@ test("the hit marker fires on a fall and stays silent on a duplicate", () => {
     );
   });
   assert.equal(withClass(renderer.root, "cbt-hitmark").length, 1, "a hit shows the marker");
+  // The kind still reaches the DOM; it no longer selects a colour. See the stylesheet
+  // test below, which is where "always yellow" can actually be asserted.
   assert.equal(withClass(renderer.root, "cbt-hitmark-normal").length, 1);
   act(() => renderer.unmount());
 });
@@ -432,6 +435,62 @@ test("a knockout marker is differentiated, and reduced motion is a calmer varian
   assert.equal(withClass(renderer.root, "cbt-hitmark-fatal").length, 1, "a knockout is a distinct cue");
   assert.equal(withClass(renderer.root, "is-reduced").length, 1, "reduced motion is respected");
   act(() => renderer.unmount());
+});
+
+// ---- the marker's colour, pinned where it ships ----------------------------
+//
+// A component test cannot see a colour: the class reaches the DOM either way, and the
+// marker was already firing on every hit while rendering white. So the assertion has to
+// be on the stylesheet the duel actually loads, the same way `missionBeat.test.ts` pins
+// the beat panel's plate.
+
+const HITMARK_CSS = readFileSync(
+  new URL("../src/duel/combatHud.css", import.meta.url),
+  "utf8",
+);
+
+test("every confirmed hit marks in one colour, and it is the confirm yellow", () => {
+  assert.match(
+    HITMARK_CSS,
+    /\.cbt-hitmark\s*\{[^}]*color:\s*var\(--cbt-hit\)/,
+    "the marker takes the shared confirm colour",
+  );
+  // No kind may reintroduce a severity grade. White read as nothing against the daylit
+  // yard — the owner's complaint — and red now means "you took damage" (8399adb), so a
+  // red knockout would say the opposite of what just happened.
+  assert.doesNotMatch(
+    HITMARK_CSS,
+    /\.cbt-hitmark-(?:normal|critical|fatal)[^{]*\{[^}]*\bcolor:/,
+    "no hit kind sets a colour of its own",
+  );
+  // The value is pinned to the literal because the other half of this signal — the 3D
+  // burst's HIT_CONFIRM_PUFF in Gunplay.tsx — is still on the unmerged boss-clip branch
+  // and cannot be read from here yet. Replace this with an equality against that
+  // constant once both land; until then a drift in either is silent.
+  assert.match(HITMARK_CSS, /--cbt-hit:\s*#ffd23a/, "and it is the burst's own yellow");
+});
+
+test("the marker stays legible over a bright sky, not merely yellow", () => {
+  // Yellow alone does not fix this. Against a daylit sky it is close in LUMINANCE
+  // however far apart the two are in hue, so what carries the shape is the dark rim on
+  // each arm and the dark drop-shadow around the whole X. Losing either regresses the
+  // marker to invisible while leaving it technically yellow, which is the failure this
+  // change exists to end.
+  assert.match(
+    HITMARK_CSS,
+    /\.cbt-hitmark\s*\{[^}]*filter:\s*drop-shadow\([^)]*rgba\(0,\s*0,\s*0/,
+    "the whole marker keeps a dark drop-shadow",
+  );
+  assert.match(
+    HITMARK_CSS,
+    /\.cbt-hitmark-arm\s*\{[^}]*box-shadow:[^;]*rgba\(0,\s*0,\s*0/,
+    "and each arm keeps a dark rim",
+  );
+  assert.doesNotMatch(
+    HITMARK_CSS,
+    /\.cbt-hitmark-arm\s*\{[^}]*box-shadow:[^;]*rgba\(255,\s*255,\s*255/,
+    "with no white bloom, which is what washed the colour out",
+  );
 });
 
 test("the enemy damage chip trails a fall and eases to the new health", () => {
