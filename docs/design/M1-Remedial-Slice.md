@@ -145,6 +145,77 @@ questions; non-comparable items make growth uncomputable. The whole "we improve 
 claim rests on this one property, so it belongs in the authoring rules and in a gate, not in
 someone's memory.
 
+## Reconciliation with the design bible (read this before authoring)
+
+This document was written without the pre-existing design bible and then reconciled against it.
+Three things matter more than the rest.
+
+### This is a THIRD mission container, deliberately
+
+The repo already holds two incompatible models, and `docs/design/Gameplay-Design.md` (~L449–453)
+records the conflict as unresolved:
+
+- **`docs/chapters/boston-1765/Day-1.md`** — an open ~25–30 minute Mission Day: four order-free
+  errands, a day clock, People/Notes/Routes panels, in-world Syncs between errands.
+- **`docs/chapters/boston-1765/Mission-Slate.md`** (25 Jul, declares itself authoritative) — a
+  five-minute instanced sequence, 3:00 traversal + 2:00 duel, and explicitly **"zero knowledge
+  checks … nothing in the three minutes stops for text."**
+
+**The slice in this document contradicts both** — it keeps Mission-Slate's module→duel→capstone
+loop but reintroduces Day-1-style in-mission teaching stops that Mission-Slate forbids, with no
+time budget. That is an accepted owner decision, not an oversight, but it must be stated rather
+than merged quietly. **When authoring the demo, this document wins.** Do not naively merge
+Day-1's errand structure or Mission-Slate's 3:00/zero-checks rules into it.
+
+Also stale and not to be followed: `Mission-Slate.md` §2.5 "the duel does not exist" (the duel
+ships), `PRODUCT-REQUIREMENTS.md` §7's mid-day Sync loop, and `Game-Concept-The-System.md`
+(superseded by its own banner).
+
+### Use the authored cast — it exists, with rigs
+
+Five characters are authored *and* have rigs in `apps/web/public/world/characters/`, which makes
+the earlier suggestion of casting the King's officer as a lesson lecturer both unnecessary and
+wrong (he would breach the two-voices rule the moment he spoke in meta terms).
+
+| Character | Rig | Authored for | Role in this slice |
+|---|---|---|---|
+| **Abigail Mercer** | `abigail-rigged` | Chapter anchor, print-shop owner, gives errands | Prints the Covenant and hands over the errand |
+| **Thomas** | `thomas-rigged` | Merchant; boycott/economics; opens the dock route | The merchant whose mark you need — non-importation *is* his concept |
+| **Pike** | `pike-rigged` | Clerk; stamped/legal papers | What the Acts actually say; the legality of assembly |
+| **Clarke** | `clarke-rigged` | Loyalist informer; stealth heat | Why posting publicly gets you caught; the quartered-house pressure |
+| **Rider** | `rider-rigged` | Timed courier; network trust | The courier network the Covenant travels |
+
+The learning module's presenter stays `system-presenter-rigged` (`SystemPresenter.tsx`,
+`content/m1/module.json`). The duel opponent is the constable/officer. Do not cross those.
+
+### Adopt the established vocabulary rather than inventing parallel terms
+
+The bible has a full assessment lifecycle: a **tracked read** (a deliberate interact, never
+proximity), an **Archive Sync** (the understanding gate, after ≥3 exposures), **Understood** and
+a **Notes** entry, a **demonstration** (applied in-world, not a second quiz), and **filing**
+("before we file, what actually changed here?"). The capstone reports the **first-attempt**
+score, with fresh items on retry.
+
+Our **baseline / parallel forms** is genuinely *new architecture*, not a relabel of Syncs — the
+bible has no lesson pre-test. That is fine, but the growth claim needs its own machinery and
+should be named in the bible's register where it overlaps.
+
+Two established rules are non-negotiable and our stop design must obey them:
+1. **Two voices.** NPCs know nothing of the Archive, the AR overlay, filing, or time travel.
+   Only the handler speaks in meta/assessment terms.
+2. **The annoyance budget.** The Archive is not the teaching instrument — prefer the world to
+   teach, keep spacing between Syncs, and use the **implicit→explicit bridge**: the mechanic
+   teaches the feeling, then one clipped handler line names the label. So at each stop the NPC
+   argues their own ruin in their own words, and the handler adds at most one line of vocabulary.
+   A handler-narrated concept lecture violates the design's own law.
+
+### One chronology consequence
+
+`Concept-Delivery-Map.md` places coercion and the Port Act in **A4 (1774–75)**, while M1 as
+authored is the 1765 Stamp Act handbill run. A 1774 spine therefore relocates M1 in the chapter's
+own timeline. The owner has ruled that acceptable ("Boston is Boston"), but the Act-level
+delivery map no longer maps onto M1 and should not be followed for it.
+
 ## Authoring versus building
 
 **Authoring only — the system already works.** The lesson cutscene script and shot list; the
