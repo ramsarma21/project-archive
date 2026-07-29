@@ -160,7 +160,7 @@
       "referenceAnswer": "A debt. The war cost far more than Britain had, so it came out of a victory owing an enormous amount of money, and the stamp is one way it means to get some of that back.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHAT_IT_LEFT.v1",
-        "requiredCore": "Two parts, and a half-answer fails: the war left Britain owing money, and Parliament's fix is to raise part of it from the colonies through the stamp.",
+        "requiredCore": "The war left Britain owing money, and Parliament's fix is to raise part of it from the colonies through the stamp.",
         "line": "The question asks two things, so a correct answer carries both: the money problem the war left, and how Parliament means to solve it, by raising revenue from the colonies. Naming only the debt answers the problem but not the fix; naming only the tax answers the fix but not the problem. Any financial wording earns the first half, and any wording of making the colonies pay or the stamp raising it here earns the second.",
         "acceptExamples": [
           { "text": "they came out owing a fortune, so theyre making us cover part of it with the stamp", "why": "Both halves: the war debt and the colonies made to pay it." },
@@ -189,7 +189,7 @@
       "referenceAnswer": "The colonies. Parliament decided that people here — Boston and the rest of America — should supply part of the revenue.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHO_PAYS.v1",
-        "requiredCore": "Two parts, and a half-answer fails: the payer is the colonies (America, us, the colonists), and what that money clears is Britain's war debt.",
+        "requiredCore": "The payer is the colonies (America, us, the colonists), and the money clears Britain's war debt.",
         "line": "The question asks who pays and what the money clears, so both must be present. The payer must land on this side of the Atlantic, the colonies or America or us, not inside Britain and not 'everyone'. The thing cleared must be the war debt, the money the war with France left owing. Naming only the payer, or only the debt, is half an answer.",
         "acceptExamples": [
           { "text": "us over here, and its going to pay down what the war cost them", "why": "Payer plus the war debt it clears." },
@@ -281,7 +281,7 @@
       "referenceAnswer": "Britain needs revenue to pay down the debt, Parliament decided part of that revenue should come from the colonies, so a debt in London becomes a tax collected here. Our money goes against their bill.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.POSTWAR.DEBT_TO_TAX.v1",
-        "requiredCore": "Two parts, and a one-ended answer fails: the money is raised from the colonies (our taxes, the stamp), and it goes toward Britain's war debt.",
+        "requiredCore": "The money is raised from the colonies (our taxes, the stamp) and goes toward Britain's war debt.",
         "line": "The join runs money from the colonies to Britain's debt: our payment here, reducing what Britain owes there. An answer that names only the colonial payment, or only the debt, has not joined them. Any wording of colonial money reducing the British debt counts, however rough; a different motive, trade or punishment or authority, does not join the two things named.",
         "acceptExamples": [
           { "text": "we pay the stamp here and that money goes against what they owe from the war", "why": "Both ends: colonial payment and the war debt." },
@@ -341,7 +341,7 @@
       "referenceAnswer": "Because the stamp is not owed yet. The Act became law in the spring, but the duty does not begin until the first of November, so tonight there is still time to fight it before it takes hold.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.FROM_WHEN.v1",
-        "requiredCore": "The tax has not taken effect yet: the stamp is not owed until later this year (the first of November), so there is still time to resist it before it begins. A law already passed has not yet begun to bite.",
+        "requiredCore": "The tax has not taken effect yet — a law already passed has not yet begun to bite — so the stamp is not owed until later this year (the first of November) and there is still time to resist it before it begins.",
         "line": "The rewrite of this item. It was a bare date-recall question, which the owner's new direction retired as trivia; it now asks the student to reason from a fact they were taught (the duty begins 1 November) to why the mission is happening at all tonight. The answer has to say the duty has not started yet, which is why the argument is still live. Any wording that the stamp is not owed until November, that the tax has not taken effect, or that there is still time before it begins earns it, and the exact date need not be named because 'it hasnt started yet' already locates the duty in the future. What does not earn it is a bare date with no claim attached, since the question asks what has not happened rather than when the duty starts, and a grievance about the tax that never touches the timing. The date fact is still tested, but as the ground of a causal claim rather than as a string to recall.",
         "acceptExamples": [
           { "text": "the tax hasnt even started yet, it doesnt kick in till november so we still got time", "why": "The window, with the date and the stakes." },
@@ -400,7 +400,7 @@
       "referenceAnswer": "He is wrong. The stamp falls on printed paper and legal paper — newspapers, handbills, deeds, court papers, licences. Bread and cloth and nails are ordinary goods, and ordinary goods are not what the Act taxes.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.CORRECT_THE_APPRENTICE.v1",
-        "requiredCore": "An asserted correction: the answer must SAY that ordinary goods are not taxed and/or that what the Act taxes is printed or legal paper — as a claim, not a word list. A bare run of the boundary's own terms (paper, legal, printed, goods, not taxed) with no correction made asserts nothing and does not carry it.",
+        "requiredCore": "An asserted correction that ordinary goods are not taxed and/or that the Act taxes printed or legal paper — as a claim, not a bare run of the boundary's own terms (paper, legal, printed, goods, not taxed) with no correction made, which asserts nothing.",
         "line": "The correction must name what is actually taxed, not merely deny the apprentice. An incomplete enumeration still holds the boundary and earns it — a student who says 'only newspapers and stuff like that' has separated paper from goods, which is the concept. A bare contradiction has not.",
         "acceptExamples": [
           { "text": "no its just paper things", "why": "Denies and names the category." },
@@ -431,7 +431,7 @@
       "referenceAnswer": "Any two of: a newspaper, a printed handbill, a deed, a court paper, a licence, a pack of playing cards — printed paper or legal paper.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.STAMP.NAME_TWO.v1",
-        "requiredCore": "Two distinct things, and BOTH must fall inside the taxed category: printed matter or a legal or official paper. If either named thing is an ordinary good or a private handwritten letter, only one of the two is inside the line and the answer fails, because two were asked for.",
+        "requiredCore": "Two distinct things, both of which fall inside the taxed category of printed matter or a legal or official paper.",
         "line": "Credit any category-correct instantiation rather than matching a list of nouns. The module names six examples; a student who supplies a seventh the module never mentioned — a pamphlet, a will, a marriage licence, a ship's papers, an almanac — has demonstrated more, not less. What fails is an ordinary good, private handwriting, or one thing said twice.",
         "acceptExamples": [
           { "text": "newspapers and deeds", "why": "Two, both inside." },
@@ -493,7 +493,7 @@
       "referenceAnswer": "The right not to be taxed except by a body the town elected. Boston elects no member of Parliament, so a tax Parliament lays on Boston is laid without the town's consent.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.WHAT_RIGHT.v1",
-        "requiredCore": "The right not to be taxed except by a body the town elected: no taxation without representation, or consent. The consent element is required — the answer must object to WHO lays the tax (no vote, no say, an unelected Parliament), not merely to being taxed. A bare refusal of taxation, with no who-lays-it element, is a different and wrong claim.",
+        "requiredCore": "The right not to be taxed except by a body the town elected — no taxation without representation or consent — which objects to WHO lays the tax, not merely to being taxed.",
         "line": "The slogan is the answer here, so it earns it; this is the one item where the memorised phrase is the proposition rather than a substitute for it. What fails is a right the sheet does not claim: refusing all taxation, independence from Britain, or an objection to the amount.",
         "acceptExamples": [
           { "text": "no taxation without representation", "why": "The claim, in its own words." },
@@ -553,7 +553,7 @@
       "referenceAnswer": "It is not the price. The objection is to who laid the tax — Parliament, a body this town did not choose. The town would object the same if the stamp cost a farthing.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.NOT_THE_MONEY.v1",
-        "requiredCore": "Two parts, and a half-answer fails: the objection is not the price but who laid the tax without the town's consent, and the town's standing is that Boston elected none of them (no member in Parliament).",
+        "requiredCore": "The objection is not the price but who laid the tax without the town's consent, and the town's standing is that Boston elected none of them (no member in Parliament).",
         "line": "The answer must move the ground from cost to who laid the tax, and give the town's standing to object: that Boston chose none of the men who laid it. Moving off cost without the standing is half; giving the standing without leaving cost is half. The two can be said in many words, and 'taxed by men we never chose' carries both at once. Any wording of not-elected, no member there, no vote in it earns the standing.",
         "acceptExamples": [
           { "text": "its not the money, its that parliament laid it and we elected nobody there", "why": "The ground moved, and the standing given." },
@@ -647,7 +647,7 @@
       "referenceAnswer": "Because the vote was taken in a body Boston never chose. Lawful passage in Parliament is not this town's consent — a vote we had no part in binds us to nothing we agreed to.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.LAWFUL_BUT_UNJUST.v1",
-        "requiredCore": "Two parts, and a half-answer fails: a lawful vote in Parliament is still not Boston's consent, and the reason is that Boston elected none of the men who passed it.",
+        "requiredCore": "A lawful vote in Parliament is still not Boston's consent, because Boston elected none of the men who passed it.",
         "line": "The answer must separate lawful passage from consent, and give the ground: that Boston had no part in the vote, electing none of those who cast it. 'Legal for them but we chose nobody there' does both. Conceding it is lawful without the electoral ground is half; giving the electoral ground without conceding the lawful vote is half. Denying the vote happened, denying Parliament's authority entirely, or arguing cost all fail.",
         "acceptExamples": [
           { "text": "its a real law for them, but we chose none of the men who voted it, so its not our consent", "why": "Lawful conceded, and the electoral ground given." },
@@ -814,7 +814,7 @@
         "referenceAnswer": "A different one. Boston objects to a tax laid by a body it did not elect, not to taxation itself — the town's own assembly could tax it tomorrow. He has turned a claim about consent into a refusal to be taxed at all.",
         "rubric": {
           "rubricId": "BOS.MD01.RUBRIC.REP.HOW_FAR_IT_GOES.v1",
-          "requiredCore": "Two parts, and a half-answer fails: it is a different argument, Boston objects to who lays the tax and not to taxation itself, and where he goes past is refusing every tax, further than the town's claim.",
+          "requiredCore": "It is a different argument — Boston objects to who lays the tax, not to taxation itself — and the man goes past the town by refusing every tax.",
           "line": "The answer must separate the two positions and say where the man overshoots. Boston would pay a tax its own body voted; he refuses every tax there is. Naming only 'different' without the overshoot is half, and so is naming the overshoot without the town's own position. Conceding he speaks for Boston fails. Any wording of 'we would pay one our own men passed' plus 'he is against all taxes' carries both.",
           "acceptExamples": [
             { "text": "different. wed pay a tax our own assembly voted, hes refusing every tax there is", "why": "The town's position and the man's overshoot, separated." },
