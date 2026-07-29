@@ -1,5 +1,26 @@
 # M1 remedial slice — the design of record
 
+> ## ⚠ CONTENT DECISIONS RESET — 29 Jul, owner
+>
+> *"forget anything weve decided about game and conent before this, we are at a fresh blank
+> slate now in designing the mission"*
+>
+> **Void — do not author against these.** The four-concept slate; coercion-of-Boston as the
+> physical spine; the June 1774 Port Act premise; the Solemn League and Covenant signature run;
+> the four stops and their table; the signature-checklist objective; the casting proposals; and
+> the duel/capstone mechanics chosen on 29 Jul (round floor, arm/starve ammo, capstone inclusion,
+> baseline-in-the-lesson). All of it is preserved below as history, not as instruction.
+>
+> **Still true, because it is evidence or inventory rather than a decision:** the measured TEA
+> item-analysis data and everything derived from *it*; the technical inventory of what exists and
+> what is missing; the bible reconciliation (the Day-1 ↔ Mission-Slate conflict, the authored
+> cast and their rigs, the two-voices rule, the annoyance budget, the stale cross-references).
+>
+> **Still true as product intent:** one lesson, one mission, one boss fight, one capstone, aimed
+> at the most-missed concepts, and able to *show* measured improvement.
+>
+> Design the mission fresh. Consult the sections below only for facts, never for choices.
+
 One lesson, one mission, one boss fight, one capstone. The product is **remediation of
 measured misconceptions**, not a survey of the Revolution. The world and its assets are
 cheap to retarget; the learning design is the expensive part, so the concepts lead and the
