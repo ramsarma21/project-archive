@@ -26,6 +26,7 @@ import {
   type ModuleVoiceoverProvider,
 } from "./moduleVoiceover.js";
 import { completeModuleRun, type ModuleRunCompletion } from "./moduleGate.js";
+import { drawCheckOptions } from "./checkDraw.js";
 import { ModuleCheckPanel } from "./ModuleCheckPanel.js";
 import { SystemPresenter } from "./SystemPresenter.js";
 import "./module.css";
@@ -88,6 +89,14 @@ export function ModulePlayer(props: {
   // scene-end handler reads the current value without re-subscribing.
   const check = card.check;
   const checkMastered = check ? masteredChecks.includes(check.id) : true;
+  // The options this sitting shows. A pooled check draws a different subset and
+  // order per attempt ordinal; a legacy fixed-list check returns unchanged. The
+  // id is preserved either way, so mastery and the gate (keyed by check.id) are
+  // untouched — only which options are on screen changes.
+  const drawnCheck = useMemo(
+    () => (check ? drawCheckOptions(check, props.attemptOrdinal) : undefined),
+    [check, props.attemptOrdinal],
+  );
   const masteredRef = useRef<readonly string[]>(masteredChecks);
   useEffect(() => {
     masteredRef.current = masteredChecks;
@@ -421,9 +430,9 @@ export function ModulePlayer(props: {
 
       {/* The mastery check: a focused holographic overlay that pauses the
           cutscene, never a permanent dashboard. */}
-      {phase === "CHECK" && check && (
+      {phase === "CHECK" && check && drawnCheck && (
         <ModuleCheckOverlay
-          check={check}
+          check={drawnCheck}
           mastered={checkMastered}
           reducedMotion={props.reducedMotion}
           onMastered={() => masterCheck(check.id)}

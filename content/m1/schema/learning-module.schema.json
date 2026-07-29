@@ -132,34 +132,55 @@
     },
     "check": {
       "type": "object",
-      "description": "A short pre-authored mastery check placed after a concept card. Truth is carried per option by its stable `correct` flag, not by position, so the answer need not be first. A single-select (the default) marks exactly one option correct; a multiple-select marks two or three and the learner must choose the exact correct set. The learner cannot advance past the concept until they answer correctly. Pays no XP and is not timed.",
-      "required": ["id", "prompt", "options", "reinforcement"],
+      "description": "A short pre-authored mastery check placed after a concept card. Truth is carried per option by its stable `correct` flag, not by position, so the answer need not be first. Two authored shapes: a FIXED-LIST check (`options`) — single-select marks one correct, multiple-select two or three and the learner picks the exact set; or a POOLED check (`correctOption` + `distractorPool`, single-select only) that draws a different subset of distractors and a fresh order each mission attempt, so three playthroughs never present the same option set. The learner cannot advance past the concept until they answer correctly. Pays no XP and is not timed.",
+      "required": ["id", "prompt", "reinforcement"],
       "additionalProperties": false,
+      "oneOf": [
+        { "required": ["options"], "not": { "required": ["correctOption"] } },
+        { "required": ["correctOption", "distractorPool"], "not": { "required": ["options"] } }
+      ],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "prompt": { "type": "string", "minLength": 1 },
         "selection": {
           "enum": ["single", "multiple"],
-          "description": "Single- or multiple-select. Optional; an absent value is 'single', so content authored before this field keeps its meaning."
+          "description": "Single- or multiple-select. Optional; an absent value is 'single', so content authored before this field keeps its meaning. A pooled check is always single-select."
         },
         "conceptId": { "type": "string", "pattern": "^[A-Z]{3}\\.CONCEPT\\.[A-Z][A-Z0-9_]*\\.v\\d+$" },
         "reinforcement": { "type": "string", "minLength": 1 },
+        "drawCount": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 5,
+          "description": "Pooled checks only: how many options a sitting shows (the answer plus drawn distractors). Default 4."
+        },
+        "correctOption": {
+          "$ref": "#/$defs/checkOption",
+          "description": "Pooled checks only: the one defensible answer, always shown. Must be marked correct."
+        },
+        "distractorPool": {
+          "type": "array",
+          "minItems": 4,
+          "description": "Pooled checks only: the misconception-encoded wrong options. Every entry must be `correct: false`, and the pool must be at least `drawCount` deep so three attempts never repeat an option set.",
+          "items": { "$ref": "#/$defs/checkOption" }
+        },
         "options": {
           "type": "array",
           "minItems": 3,
           "maxItems": 5,
-          "items": {
-            "type": "object",
-            "required": ["id", "text", "correct", "feedback"],
-            "additionalProperties": false,
-            "properties": {
-              "id": { "type": "string", "minLength": 1 },
-              "text": { "type": "string", "minLength": 1 },
-              "correct": { "type": "boolean" },
-              "feedback": { "type": "string", "minLength": 1 }
-            }
-          }
+          "items": { "$ref": "#/$defs/checkOption" }
         }
+      }
+    },
+    "checkOption": {
+      "type": "object",
+      "required": ["id", "text", "correct", "feedback"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 },
+        "correct": { "type": "boolean" },
+        "feedback": { "type": "string", "minLength": 1 }
       }
     }
   }

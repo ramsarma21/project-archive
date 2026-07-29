@@ -74,7 +74,7 @@ export function ModuleCheckPanel(props: {
   // nudge — "some correct choices are still unchecked" — without naming which.
   const missingCorrect =
     submitted !== null &&
-    check.options.some((option) => option.correct && !submitted.has(option.id));
+    (check.options ?? []).some((option) => option.correct && !submitted.has(option.id));
 
   const toggle = (optionId: string) => {
     if (showAsMastered) return;
@@ -112,7 +112,7 @@ export function ModuleCheckPanel(props: {
             <span className="mod-check-instruction">Select all that apply.</span>
           )}
         </legend>
-        {check.options.map((option) => {
+        {(check.options ?? []).map((option) => {
           const isRevealed = submitted !== null && submitted.has(option.id);
           return (
             <label

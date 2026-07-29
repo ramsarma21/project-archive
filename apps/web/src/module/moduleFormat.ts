@@ -166,16 +166,54 @@ export type ModuleCheckSelection = (typeof MODULE_CHECK_SELECTIONS)[number];
 export interface ModuleCheck {
   id: string;
   prompt: string;
-  options: readonly ModuleCheckOption[];
+  /**
+   * The concrete options a learner sees. Present on a legacy authored check and
+   * on any check AFTER it has been drawn for a sitting (see `drawCheckOptions`).
+   * Absent on a pooled check as authored — it carries `correctOption` +
+   * `distractorPool` instead, and the drawer materialises `options` from them.
+   */
+  options?: readonly ModuleCheckOption[];
+  /**
+   * Pooled shape (single-select only): the one defensible answer.
+   *
+   * Truth stays on the option (`correct: true`) so nothing downstream is keyed
+   * by position. The answer is ALWAYS included in the drawn set, and the pool
+   * below holds only distractors, so "exactly one option is correct" holds for
+   * every drawable subset by construction rather than by an author remembering.
+   */
+  correctOption?: ModuleCheckOption;
+  /**
+   * Pooled shape: the misconception-encoded wrong options. Each sitting draws a
+   * subset of these; a pool sized `>= drawCount` guarantees the three mission
+   * attempts never present the same option set (see `drawCheckOptions`). Every
+   * pool entry must be `correct: false`.
+   */
+  distractorPool?: readonly ModuleCheckOption[];
+  /** How many options a sitting shows (correct + drawn distractors). Default 4. */
+  drawCount?: number;
   /**
    * Single- or multiple-select. Optional: an absent value is "single", so
-   * existing content keeps its meaning without being rewritten.
+   * existing content keeps its meaning without being rewritten. A pooled check
+   * is always single-select.
    */
   selection?: ModuleCheckSelection;
   /** The concept this check reinforces. Display/authoring evidence only. */
   conceptId?: string;
   /** Shown once, concisely, when the correct set is chosen. */
   reinforcement: string;
+}
+
+/** Default number of options a check shows per sitting (correct + distractors). */
+export const DEFAULT_CHECK_DRAW_COUNT = 4;
+
+/** A check authored as a distractor pool rather than a fixed option list. */
+export function isPooledCheck(check: ModuleCheck): boolean {
+  return check.correctOption !== undefined && check.distractorPool !== undefined;
+}
+
+/** How many options a pooled check shows per sitting; the fixed list otherwise. */
+export function checkDrawCount(check: ModuleCheck): number {
+  return check.drawCount ?? DEFAULT_CHECK_DRAW_COUNT;
 }
 
 /** A check's selection mode, defaulting to single for content that omits it. */
@@ -185,7 +223,7 @@ export function checkSelection(check: ModuleCheck): ModuleCheckSelection {
 
 /** The stable ids of a check's correct options, in authored order. */
 export function checkCorrectOptionIds(check: ModuleCheck): string[] {
-  return check.options.filter((option) => option.correct).map((option) => option.id);
+  return (check.options ?? []).filter((option) => option.correct).map((option) => option.id);
 }
 
 /**
@@ -200,7 +238,7 @@ export function isExactCheckSelection(
   chosenIds: Iterable<string>,
 ): boolean {
   const chosen = new Set(chosenIds);
-  const optionIds = new Set(check.options.map((option) => option.id));
+  const optionIds = new Set((check.options ?? []).map((option) => option.id));
   for (const id of chosen) {
     if (!optionIds.has(id)) return false;
   }
@@ -513,9 +551,18 @@ export function checkDefects(cardId: string, check: ModuleCheck): string[] {
     );
   }
 
+  // A pooled check carries its answer separately and a bank of distractors, and
+  // is drawn per sitting. Its invariants are different from a fixed list: the
+  // answer must be the one correct option, the pool must hold ONLY distractors,
+  // and it must be deep enough that three attempts never draw the same set.
+  if (isPooledCheck(check)) {
+    defects.push(...pooledCheckDefects(cardId, check));
+    return defects;
+  }
+
   const optionIds = new Set<string>();
   let correct = 0;
-  for (const option of check.options) {
+  for (const option of check.options ?? []) {
     if (optionIds.has(option.id)) {
       defects.push(`${cardId}: check ${check.id} has duplicate option id ${option.id}`);
     }
@@ -529,16 +576,20 @@ export function checkDefects(cardId: string, check: ModuleCheck): string[] {
     }
     if (option.correct) correct += 1;
   }
+  if ((check.options ?? []).length === 0) {
+    defects.push(`${cardId}: check ${check.id} has no options`);
+  }
 
   // Single- and multiple-select carry different shape rules. A single-select is
   // a radio group with one right answer; a multiple-select must have a genuine
   // set to assemble — two or three correct, and at least two distractors so the
   // exact-set gate is not trivially "check everything".
   const selection = checkSelection(check);
+  const optionCount = (check.options ?? []).length;
   if (selection === "single") {
-    if (check.options.length < 3 || check.options.length > 4) {
+    if (optionCount < 3 || optionCount > 4) {
       defects.push(
-        `${cardId}: check ${check.id} has ${check.options.length} options; a ` +
+        `${cardId}: check ${check.id} has ${optionCount} options; a ` +
           `single-select check authors 3 or 4`,
       );
     }
@@ -549,9 +600,9 @@ export function checkDefects(cardId: string, check: ModuleCheck): string[] {
       );
     }
   } else {
-    if (check.options.length < 4 || check.options.length > 5) {
+    if (optionCount < 4 || optionCount > 5) {
       defects.push(
-        `${cardId}: check ${check.id} has ${check.options.length} options; a ` +
+        `${cardId}: check ${check.id} has ${optionCount} options; a ` +
           `multiple-select check authors 4 or 5`,
       );
     }
@@ -561,12 +612,79 @@ export function checkDefects(cardId: string, check: ModuleCheck): string[] {
           `multiple-select check must mark two or three`,
       );
     }
-    if (check.options.length - correct < 2) {
+    if ((check.options ?? []).length - correct < 2) {
       defects.push(
-        `${cardId}: check ${check.id} has ${check.options.length - correct} ` +
+        `${cardId}: check ${check.id} has ${(check.options ?? []).length - correct} ` +
           `distractors; a multiple-select check needs at least two`,
       );
     }
   }
+  return defects;
+}
+
+/**
+ * Everything wrong with a POOLED check, as sentences.
+ *
+ * The pooled shape is `{ stem (=prompt), correctOption, distractorPool[] }`, drawn
+ * per sitting by `drawCheckOptions`. The invariants here are what make the drawer
+ * safe: exactly one answer (kept out of the pool and always shown), a pool of only
+ * distractors, unique ids across answer + pool (so grading by id is unambiguous),
+ * and a pool deep enough that the three mission attempts never repeat an option set.
+ */
+export function pooledCheckDefects(cardId: string, check: ModuleCheck): string[] {
+  const defects: string[] = [];
+  const where = `${cardId}: check ${check.id}`;
+
+  // Pooled is single-select by definition; a "multiple" here is an authoring error.
+  if (check.selection !== undefined && check.selection !== "single") {
+    defects.push(`${where} is pooled, which is single-select; remove selection "${check.selection}"`);
+  }
+  if (check.options !== undefined) {
+    defects.push(`${where} is pooled (correctOption + distractorPool); it must not also author a fixed options list`);
+  }
+
+  const drawCount = checkDrawCount(check);
+  if (!Number.isInteger(drawCount) || drawCount < 3 || drawCount > 5) {
+    defects.push(`${where} has drawCount ${drawCount}; a pooled check shows 3 to 5 options`);
+  }
+
+  const answer = check.correctOption;
+  if (!answer) {
+    defects.push(`${where} is missing its correctOption`);
+  } else {
+    if (!answer.correct) defects.push(`${where} correctOption ${answer.id} must be marked correct`);
+    if (answer.id.trim() === "") defects.push(`${where} correctOption has no id`);
+    if (answer.text.trim() === "") defects.push(`${where} correctOption ${answer.id} has no text`);
+    if (answer.feedback.trim() === "") defects.push(`${where} correctOption ${answer.id} has no feedback`);
+  }
+
+  const pool = check.distractorPool ?? [];
+  const seen = new Set<string>();
+  if (answer) seen.add(answer.id);
+  let poolCorrect = 0;
+  for (const option of pool) {
+    if (seen.has(option.id)) defects.push(`${where} has duplicate option id ${option.id}`);
+    seen.add(option.id);
+    if (option.id.trim() === "") defects.push(`${where} has a distractor with no id`);
+    if (option.text.trim() === "") defects.push(`${where} distractor ${option.id} has no text`);
+    if (option.feedback.trim() === "") defects.push(`${where} distractor ${option.id} has no feedback`);
+    if (option.correct) poolCorrect += 1;
+  }
+  if (poolCorrect > 0) {
+    defects.push(
+      `${where} has ${poolCorrect} distractor(s) marked correct; the pool must hold only ` +
+        `wrong options so exactly one answer is ever shown`,
+    );
+  }
+  // Depth: to guarantee the three attempts draw three DISTINCT option sets, the
+  // pool must exceed the number of distractors shown, i.e. pool >= drawCount
+  // (shown = drawCount, of which one is the answer, so distractors shown = drawCount-1).
+  if (pool.length < drawCount) {
+    defects.push(
+      `${where} has a ${pool.length}-distractor pool; a check showing ${drawCount} options ` +
+        `needs at least ${drawCount} so three attempts never repeat an option set`,
+    );
+  }
+
   return defects;
 }
