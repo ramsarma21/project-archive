@@ -10,6 +10,7 @@ import {
   FIELD_TICK_HZ,
   FIELD_DT,
   MAX_CATCHUP_STEPS,
+  MAX_FRAME_DT_S,
 } from "../fieldSimulation.js";
 
 // Drive the clock for `seconds` of wall time at a fixed render fps, collecting
@@ -68,15 +69,60 @@ test("accumulator carries fractional time deterministically", () => {
   assert.ok(clock.accumulatorS >= 0 && clock.accumulatorS < FIELD_DT);
 });
 
-test("bounded catch-up caps steps and reports the dropped remainder", () => {
-  const clock = createFieldClock(0);
-  // A 1-second hitch = 60 pending steps, capped to MAX_CATCHUP_STEPS.
-  const r = advanceFieldClock(clock, 1.0);
-  assert.equal(r.steps, MAX_CATCHUP_STEPS);
-  // 1.0s is clamped to MAX_FRAME_DT_S (0.25) -> 15 raw steps, 5 run, 10 dropped.
-  assert.equal(r.steps + r.dropped, Math.floor(0.25 / FIELD_DT));
-  assert.equal(r.dropped, Math.floor(0.25 / FIELD_DT) - MAX_CATCHUP_STEPS);
-  assert.equal(r.clock.tick, MAX_CATCHUP_STEPS);
+test("a frame the clamp admits discards NO ticks; the cap only guards beyond the clamp", () => {
+  // A 1-second hitch is clamped to MAX_FRAME_DT_S (0.25s) BEFORE the accumulator,
+  // = 15 pending steps. The catch-up cap covers the clamp, so all 15 run and none
+  // are discarded. This is the slow-running fix: sim time an admitted frame is
+  // owed is never thrown away.
+  const clamped = Math.floor(MAX_FRAME_DT_S / FIELD_DT);
+  const r = advanceFieldClock(createFieldClock(0), 1.0);
+  assert.equal(r.steps, clamped, "every step the clamped frame is owed runs");
+  assert.equal(r.dropped, 0, "no admitted frame discards a tick");
+  assert.equal(r.clock.tick, clamped);
+  assert.ok(clamped <= MAX_CATCHUP_STEPS, "the cap covers the frame clamp");
+
+  // The cap still exists and still guards: raising the frame-clamp option past
+  // the cap (a caller that permits a longer burst) is the only way to drop, and
+  // then the remainder is discarded, not queued.
+  const uncapped = advanceFieldClock(createFieldClock(0), 10, {
+    maxFrameDtS: 10,
+  });
+  assert.equal(uncapped.steps, MAX_CATCHUP_STEPS);
+  assert.ok(uncapped.dropped > 0, "beyond the clamp the cap discards the rest");
+});
+
+test("a sustained slow renderer keeps real-time pace (the slow-running fix)", () => {
+  // 8 fps = 125 ms frames, well past the old 83 ms five-step window. Over 3 wall
+  // seconds the sim owes 180 ticks (3s * 60 Hz).
+  const FPS = 8;
+  const SECONDS = 3;
+  const owed = SECONDS * FIELD_TICK_HZ;
+
+  // The OLD behaviour, reproduced by pinning the cap back to 5: each 125 ms frame
+  // wants ~7.5 steps, runs 5, discards the rest — the sim advances in slow motion.
+  let old = createFieldClock(0);
+  let oldDropped = 0;
+  for (let i = 0; i < FPS * SECONDS; i++) {
+    const r = advanceFieldClock(old, 1 / FPS, { maxCatchUpSteps: 5 });
+    old = r.clock;
+    oldDropped += r.dropped;
+  }
+  // Each 125 ms frame is owed ~7.5 steps but the old cap runs at most 5, so the
+  // sim tops out at 5 * frames = 120 of the 180 owed and discards the rest.
+  assert.ok(old.tick <= FPS * SECONDS * 5, `old cap ran slow: ${old.tick} of ${owed} ticks`);
+  assert.ok(old.tick < owed, "old cap fell behind wall time");
+  assert.ok(oldDropped >= owed - old.tick, `old cap discarded the shortfall: ${oldDropped}`);
+
+  // The NEW default keeps pace: every owed tick runs, nothing is discarded.
+  let now = createFieldClock(0);
+  let nowDropped = 0;
+  for (let i = 0; i < FPS * SECONDS; i++) {
+    const r = advanceFieldClock(now, 1 / FPS);
+    now = r.clock;
+    nowDropped += r.dropped;
+  }
+  assert.equal(now.tick, owed, "the sim advances one tick per owed tick");
+  assert.equal(nowDropped, 0, "no sim time is discarded under a slow renderer");
 });
 
 test("pause freezes ticks and does not bank time; resume continues", () => {
@@ -98,7 +144,10 @@ test("non-finite / negative frame deltas are ignored, huge deltas clamp", () => 
   assert.equal(advanceFieldClock(clock, -1).steps, 0);
   assert.equal(advanceFieldClock(clock, Infinity).steps, 0);
   const big = advanceFieldClock(clock, 60);
-  assert.equal(big.steps, MAX_CATCHUP_STEPS, "a 60s gap cannot flood the sim");
+  // A 60s gap is clamped to MAX_FRAME_DT_S before it reaches the accumulator, so
+  // it yields the clamp's worth of steps (not the whole gap) and discards nothing.
+  assert.equal(big.steps, Math.floor(MAX_FRAME_DT_S / FIELD_DT), "a 60s gap cannot flood the sim");
+  assert.equal(big.dropped, 0);
 });
 
 test("fieldRandom is deterministic, in [0,1), and varies by tick/salt/seed", () => {
