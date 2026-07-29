@@ -25,17 +25,54 @@ Postgres on `55432`. Use your own ports and stop them when you finish.
 
 | Lane | Owns |
 |---|---|
-| `mission-world` | `packages/engine-world/*`, `packages/mission-m1/*`, ladder files in `assets/pipeline/*` and `apps/web/public/world/*`, `apps/web/src/chapter/M1Scenery.tsx`, `scripts/check-world-affordances.mjs` |
-| `mission-flow` | `apps/web/public/world/props/liberty-elm-hero.glb` and its own new pipeline script |
-| `boss-fight` | `content/*`, `packages/grading/*`, `packages/curriculum/*`, `apps/web/src/codex/*`, `apps/web/src/duel/duelItems.ts` |
-| `mission-encounters` | `packages/duel/src/combat.ts`, `policy.ts` and their tests, `packages/netcode/*` |
+| `mission-world` | `packages/engine-world/*`, `packages/mission-m1/*`, ladder files in `assets/pipeline/*` and `apps/web/public/world/*`, `apps/web/src/chapter/M1Scenery.tsx`, `apps/web/src/mission/MissionStage.tsx`, `scripts/check-world-affordances.mjs`, `scripts/check-clip-fidelity.mjs` |
+| `mission-flow` | `apps/web/public/world/props/liberty-elm-hero.glb` and its `assets/pipeline/*liberty_elm*` pipeline files. **Its elm-beat UI pass (`MissionHud`/`MissionBeatPanel`/`missionInput`/`mission.css`) is held under a GRANT, not ownership** — see Grants. |
+| `boss-fight` | `content/*`, `packages/grading/*`, `packages/curriculum/*`, `apps/web/src/codex/*`, `apps/web/src/pvp/*`, `apps/web/src/duel/duelItems.ts`, `apps/web/src/duel/verdictLabel.ts` and its test |
+| `duel-hud` | the duel 3-D HUD + interstitial presentation: `apps/web/src/duel/CombatHud.tsx`, `DuelScreen.tsx`, `combatHud.css`, `combatHudParts.tsx`, `combatHudModel.ts`, `duelRuntime.ts`, `learnOnce.ts`, and `apps/web/test/{combatHud,duelPresentation}.test.ts` |
+| `camera-occluder` | nothing permanently; its whole footprint is a GRANT carved out of `mission-world` (camera-clearance in `engine-world` + `MissionStage`). See Grants. |
+| `mission-encounters` | `packages/duel/*` (incl. `combat.ts`, `policy.ts`, `bossAi.ts`, `cover.ts`, `machine.ts`), `packages/netcode/*` |
 | `mission-cinematic` | `apps/web/src/mission/duelPort.ts`, `missionDuelSky.ts`, `bossCutscene.ts`, `BossChallenge.tsx`, `MissionEncounter.tsx`, `encounterCinematic.ts`, `missionEncounter.css`, `apps/web/src/chapter/m1Mission.ts` |
-| `mission-presentation` | `scripts/*`, `.github/*`, `docs/process/*`, `package.json` scripts, tests under `packages/{assessment,contracts,reporting,abilities,netcode}` |
-| `world-audit` | **audit only** — one new script in `scripts/` plus `.affordwork/` output. Edits nothing else. |
+| `api-hunt` | `apps/api/*`, `packages/pvp/*` |
+| `mission-presentation` | `scripts/*`, `.github/*`, `docs/*`, `package.json` scripts, tests under `packages/{assessment,contracts,reporting,abilities}` |
+| `world-audit` | **audit only** — `scripts/check-world-visual*` plus named building GLBs and their pipeline files. |
 
-**Contested, needs sequencing rather than a claim:** `packages/mission-m1/src/assets.ts` and
-`runtime.ts` (ladder work holds uncommitted edits); `apps/web/src/duel/ArenaView.tsx` and
-`MissionDuel.tsx` (lighting seams); `apps/web/src/duel/missionBrief.ts`.
+**Contested — denied to everyone by default, needs sequencing rather than a claim:**
+`apps/web/src/mission/{MissionRun,MissionHud,MissionBeatPanel,missionInput,mission.css,traversal,devEntry}`,
+`apps/web/src/duel/{ArenaView,MissionDuel,missionBrief,DuelOverlay,duel.css,devEntry}`, `pnpm-lock.yaml`.
+A contested file that *must* change now has a legal path: a **grant** (below). It stays contested;
+the grant is the temporary, recorded exception.
+
+## Grants — the temporary, exclusive, auditable escape hatch
+
+`contested` used to mean "denied to everyone, full stop", which left a file that genuinely had to
+change with no legal way to change it — so the change happened anyway, off the books. A **grant**
+(`grants` in `.cursor/lane-ownership.json`) hands one lane the listed paths **temporarily and
+exclusively**: while it stands, that lane may write them (overriding contested *and* another lane's
+ownership) and every other lane is denied them. Each grant carries a lane, the exact paths, a reason,
+and the date. The guard honours it; `scripts/check-lane-integrity.mjs` reports on it. **Retire a grant
+when its work merges** — a grant that outlives its work is a silent re-owning. Live grants (29 Jul):
+`mission-flow` holds the four elm-beat UI files; `camera-occluder` holds its camera-clearance carve-out
+of `engine-world` + `MissionStage`.
+
+## Detection when prevention fails open
+
+The guard is prevention and it fails **open** by design; on 29 Jul it did not fire at all for a
+background subagent, and four contested writes landed unnoticed. `node scripts/check-lane-integrity.mjs`
+is the backstop: it reads git state for every worktree lane and reports, most-dangerous first, the
+**same file modified on two live lanes at once** (the real clobber), then writes a lane made that the
+map forbids, then unclaimed drift. Run it in the standing loop; a non-zero exit is a crossed lane.
+
+**Live conflicts it is currently reporting (29 Jul), which the orchestrator must sequence:**
+- `boss-fight` and `duel-hud` were BOTH editing `apps/web/src/duel/{DuelOverlay.tsx,duel.css,devEntry.tsx}`.
+  **Resolved by sequencing: `boss-fight` landed on `main` first (29 Jul, merge `540c0e3`).** `duel-hud`
+  must now `git merge main` and reconcile onto the landed verdict-label rework — and it MUST preserve the
+  "Not graded" label (`verdictBeatTone` in `verdictLabel.ts`); see the invariant row in `M1-STATUS.md`.
+  A HUD overhaul that reverts `VerdictBeat` to a hardcoded "Correct"/"Wrong" silently re-breaks the
+  owner's headline complaint.
+- The duel **card content** and the **grading policy** are the same file (`content/m1/duel-items.json`
+  carries both), so a "duel cards" brief and a "grading" brief cannot run in parallel.
+- The `apps/api` health wiring reads grading health, so the grading work (`packages/grading`, boss-fight)
+  and the health work (`apps/api`, api-hunt) are one change split across two lanes — sequence or grant.
 
 ## Verification every lane must pass
 

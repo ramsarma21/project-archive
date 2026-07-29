@@ -185,12 +185,12 @@
       "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
       "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-      "question": "Say plainly who Parliament decided should help pay this down, and what that money is meant to clear.",
-      "referenceAnswer": "The colonies. Parliament decided that people here — Boston and the rest of America — should supply part of the revenue.",
+      "question": "A dockhand grumbles that this bill will fall on London's merchants and the King's own household, not on us. Is he right about who Parliament means to pay it, and what is that money meant to clear?",
+      "referenceAnswer": "No — Parliament decided the colonies, us over here, should supply part of it, not London's merchants or the King's household. What the money clears is Britain's war debt from the fight with France.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHO_PAYS.v1",
         "requiredCore": "The payer is the colonies (America, us, the colonists), and the money clears Britain's war debt.",
-        "line": "The question asks who pays and what the money clears, so both must be present. The payer must land on this side of the Atlantic, the colonies or America or us, not inside Britain and not 'everyone'. The thing cleared must be the war debt, the money the war with France left owing. Naming only the payer, or only the debt, is half an answer.",
+        "line": "The question hands the student a wrong payer to reject and asks for both halves in the doing. The payer must land on this side of the Atlantic, the colonies or America or us, not inside Britain and not 'everyone'. The thing cleared must be the war debt, the money the war with France left owing. Naming only the payer, or only the debt, is half an answer.",
         "acceptExamples": [
           { "text": "us over here, and its going to pay down what the war cost them", "why": "Payer plus the war debt it clears." },
           { "text": "the colonies, to cover the debt from fighting france", "why": "Both halves, plainly." },
@@ -214,12 +214,12 @@
       "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
       "codexCardIds": ["BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1", "BOS.MD01.CARD.WAR_DEBT.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1", "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1"],
-      "question": "Which came first, the debt or the tax? And which one is the answer to the other?",
-      "referenceAnswer": "The debt came first. The tax is Parliament's answer to the debt — the debt is not a result of the tax.",
+      "question": "A loyalist at my board swears Parliament ran this war debt up on purpose, as a pretext, and that the tax was the plan all along with the debt invented after to excuse it. Set him straight: which truly came first, and which is the answer to the other?",
+      "referenceAnswer": "He has it backwards. The debt came first — Britain owed it from the war with France — and the tax is Parliament's answer to that debt, not the other way about.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHICH_CAME_FIRST.v1",
         "requiredCore": "The debt came before the tax — equivalently, the tax was made because of the debt.",
-        "line": "Getting the order right is getting the item right. The second half of the question is the same claim said twice, so an answer that only fixes the order is CORRECT and no second sentence is required. What fails is a reversal, a tie, or an answer that never resolves the pair the question named.",
+        "line": "Getting the order right is getting the item right, and this framing hands the student the reversal to refute rather than a blank to fill. An answer that fixes the order is CORRECT and no second sentence is required. What fails is siding with the loyalist's reversal, a tie, or an answer that never resolves the pair the question named.",
         "acceptExamples": [
           { "text": "debt then tax", "why": "Three words, the ordering, done." },
           { "text": "the debt", "why": "Answers the question as asked." },
@@ -578,12 +578,12 @@
       "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
       "codexCardIds": ["BOS.MD01.CARD.CONSENT_GROUND.v1", "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1"],
       "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"],
-      "question": "Finish the claim your sheet makes. A tax on this town may rightly be laid only by whom?",
-      "referenceAnswer": "— a body the town itself elected. Its own representatives; men Boston chose.",
+      "question": "Say London kept its word and appointed the fairest, most honest men in all England to set Boston's taxes, men who would never take a penny more than the town could bear. Would that answer the claim on your sheet? Tell me who alone may rightly lay a tax here, and why upright men chosen in London still fall short.",
+      "referenceAnswer": "No — fairness is not the point. A tax on Boston is rightful only when it is laid by a body the town itself elected, and honest men appointed in London are still men the town never chose, so the tax is still laid without its consent.",
       "rubric": {
         "rubricId": "BOS.MD01.RUBRIC.REP.FINISH_THE_CLAIM.v1",
         "requiredCore": "A body or persons elected, voted for, or chosen by the people being taxed.",
-        "line": "The completion must carry the idea of being chosen by the taxed. Naming a local body counts, because a town meeting is elected by definition here. What fails is an unelected authority, a refusal of taxation altogether, or a body so unspecified that the answer does not distinguish the claim from the thing it objects to — 'the government' is precisely what is in dispute.",
+        "line": "The answer must land on WHO does the taxing — a body chosen by the taxed — not on how fair or moderate that body is. Naming a local body counts, because a town meeting is elected by definition here. What fails is accepting the appointed men because they are honest (fairness is not consent), an unelected authority, a refusal of taxation altogether, or a body so unspecified that the answer does not distinguish the claim from the thing it objects to — 'the government' is precisely what is in dispute.",
         "acceptExamples": [
           { "text": "people we voted for", "why": "The principle." },
           { "text": "our own assembly", "why": "An elected body named." },
@@ -592,6 +592,7 @@
           { "text": "us, the people who have to pay it", "why": "Consent stated at its root." }
         ],
         "rejectExamples": [
+          { "text": "yes, so long as the men they send are fair and honest", "why": "The trap this scenario sets. It grants the tax on the quality of the taxers, which is exactly the misconception the item now corrects: consent turns on who chose them, not on how upright they are. It names no elected body, so it does not carry the core." },
           { "text": "the king", "why": "Unelected, and the opposite of the claim." },
           { "text": "parliament", "why": "The body the sheet objects to." },
           { "text": "nobody, taxes are wrong", "why": "Refuses taxation as such, which the sheet does not." },

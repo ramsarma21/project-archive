@@ -44,15 +44,22 @@ export const MISSION_BINDINGS = {
 export type MissionAction = keyof typeof MISSION_BINDINGS;
 
 /**
- * The legend, in teaching order, with the strike appended.
+ * The legend, in teaching order.
  *
- * The engine's own ordering is kept — it puts what a player needs first, first —
- * and the strike goes last because it is the only entry that is not always
- * available: it does nothing until the player is standing at the work.
+ * The strike is DELIBERATELY NOT HERE, and that is the fix for two things at
+ * once. It is the one verb that is contextual — it does nothing until the player
+ * is standing at the work — so a control live for a few seconds of one beat does
+ * not belong on a strip carried for the whole run. And it advertised a keyboard
+ * key on a mechanic that is a click: the beat is a reaction panel the player
+ * clicks (`MissionBeatPanel`), and that panel teaches its own control, on
+ * itself, only while it is up — the same contextual discipline `MissionMarkAction`
+ * uses to name a climb or a leap on the take-off. The keyboard binding itself
+ * survives (see `MISSION_BINDINGS.strike`) so a player who cannot use a pointer
+ * can still play the beat; it is simply taught where and when it applies rather
+ * than parked on the HUD as if F were a thing to press in open traversal.
  */
 export const MISSION_LEGEND: readonly { keys: string; does: string }[] = [
   ...TRAVERSAL_LEGEND,
-  { keys: MISSION_BINDINGS.strike.label, does: MISSION_BINDINGS.strike.does },
 ];
 
 export interface MissionInputState {

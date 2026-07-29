@@ -7,6 +7,7 @@ import {
 } from "@pa/duel";
 import { duelControls } from "./duelInput.js";
 import { grantSummary } from "./RoundHud.js";
+import { verdictBeatTone } from "./verdictLabel.js";
 import type { DuelHud } from "./duelRuntime.js";
 import type { VerdictOrigin } from "./duelGrading.js";
 
@@ -88,7 +89,7 @@ export function VerdictBeat(props: {
   const grant = hud.grants?.A;
   const verdict = hud.lastVerdict;
   if (!grant) return null;
-  const correct = verdict?.kind === "CORRECT";
+  const { label, cssModifier } = verdictBeatTone(verdict);
   const notice =
     verdict?.source === "GRADING_TIMEOUT"
       ? generousGrantNotice(
@@ -97,10 +98,8 @@ export function VerdictBeat(props: {
         )
       : null;
   return (
-    <div className={`duel-panel duel-verdict${correct ? " is-correct" : " is-wrong"}`}>
-      <span className="duel-kicker">
-        {verdict ? (correct ? "Correct" : "Wrong") : "Verdict in"}
-      </span>
+    <div className={`duel-panel duel-verdict${cssModifier}`}>
+      <span className="duel-kicker">{label}</span>
       <p className="duel-verdict-grant">
         <strong>{grant.magazine}</strong>
         {grant.magazine === 1 ? " ball" : " balls"} loaded
