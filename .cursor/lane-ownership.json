@@ -22,8 +22,6 @@
     {
       "lane": "m1-1774",
       "paths": [
-        "content/m1/module.json",
-        "content/m1/schema/learning-module.schema.json",
         "apps/api/src/progression/content.ts",
         "apps/api/test/capstone-e2e.test.ts",
         "apps/api/test/capstone-content-parity.test.ts",
@@ -37,6 +35,8 @@
     {
       "lane": "archive-room",
       "paths": [
+        "content/m1/module.json",
+        "content/m1/schema/learning-module.schema.json",
         "apps/web/src/module/ArchiveRoom.tsx",
         "apps/web/src/module/archiveHologram.ts",
         "apps/web/src/module/archiveAudio.ts",
@@ -47,7 +47,7 @@
         "apps/web/package.json",
         "pnpm-lock.yaml"
       ],
-      "reason": "The holographic Archive room replaces the lesson index's flat DOM card list with a real 3D room (procedural shaders and postprocessing, which the asset rule explicitly permits for UI/Archive highlights). Deliberately the FIVE exact files it touches, not the apps/web/src/module/** glob: granting the glob is exclusive and therefore denies it to module-lesson and m1-lesson, which broke lane-guard's own ownership selftest case on ModulePlayer.tsx — the 'a grant overrides ownership in both directions' trap the map documents. A narrow grant records the writer without evicting the co-owners. apps/web/package.json and the CONTESTED pnpm-lock.yaml are included because the room needs @react-three/postprocessing, added via pnpm add in a worktree (the sanctioned path); the lockfile is contested precisely because a silent parallel edit there is unrecoverable, so this makes the change attributable. Granted by the orchestrator on 2026-07-30. Retire when the room merges — and note pnpm-lock.yaml returns to contested, denied to every lane, the moment it does.",
+      "reason": "The holographic Archive room replaces the lesson index's flat DOM card list with a real 3D room (procedural shaders and postprocessing, which the asset rule explicitly permits for UI/Archive highlights). Deliberately the FIVE exact files it touches, not the apps/web/src/module/** glob: granting the glob is exclusive and therefore denies it to module-lesson and m1-lesson, which broke lane-guard's own ownership selftest case on ModulePlayer.tsx — the 'a grant overrides ownership in both directions' trap the map documents. A narrow grant records the writer without evicting the co-owners. apps/web/package.json and the CONTESTED pnpm-lock.yaml are included because the room needs @react-three/postprocessing, added via pnpm add in a worktree (the sanctioned path); the lockfile is contested precisely because a silent parallel edit there is unrecoverable, so this makes the change attributable. Granted by the orchestrator on 2026-07-30. Retire when the room merges — and note pnpm-lock.yaml returns to contested, denied to every lane, the moment it does. EXTENDED 2026-07-30: content/m1/module.json + its schema moved here from the retired m1-1774 content grant, for the IRIS naming, the game-open intro cutscene, and the lesson-opening ramp — the same worker owns the presenter/room and the deck it narrates. module.json is now granted ONLY to archive-room.",
       "granted": "2026-07-30"
     },
     {
@@ -60,7 +60,7 @@
       "granted": "2026-07-29"
     }
   ],
-  "_retiredGrants": "Retired 2026-07-29, both because their work merged: `mission-flow`'s four elm-beat UI files (MissionHud/MissionBeatPanel/missionInput/mission.css, merged 2c27d6a — those files are contested again, denied to every lane) and `camera-occluder`'s engine-world/MissionStage carve-out (merged d457081; the lane has no branch or worktree left and its entry is gone from `lanes`). Retired 2026-07-30, all three because their work is contained in main: `module-lesson`'s deck+schema grant (its own condition was 'retire when the lesson rework merges'; that rework merged at 73a4b58 and the deck grant is now re-pointed to `m1-1774` for the 1774 migration), `m1-sources`'s historical-sources.json (merged f6e5caf), and `m1-lesson`'s schema mirror (merged 73a4b58). Kept as prose rather than as dead grant objects: a grant that outlives its work silently re-owns a file. NOTE: `duel-hud`'s grant also describes merged work (dd0c07c/d798a61) and is a retirement candidate, but it is the live case lane-guard.sh's contested-override selftest stands on, so retiring it means re-pointing those cases too — deliberately left for a pass that owns the guard.",
+  "_retiredGrants": "Retired 2026-07-29, both because their work merged: `mission-flow`'s four elm-beat UI files (MissionHud/MissionBeatPanel/missionInput/mission.css, merged 2c27d6a — those files are contested again, denied to every lane) and `camera-occluder`'s engine-world/MissionStage carve-out (merged d457081; the lane has no branch or worktree left and its entry is gone from `lanes`). Retired 2026-07-30, all three because their work is contained in main: `module-lesson`'s deck+schema grant (its own condition was 'retire when the lesson rework merges'; that rework merged at 73a4b58 and the deck grant is now re-pointed to `m1-1774` for the 1774 migration), `m1-sources`'s historical-sources.json (merged f6e5caf), and `m1-lesson`'s schema mirror (merged 73a4b58). Kept as prose rather than as dead grant objects: a grant that outlives its work silently re-owns a file. NOTE: `duel-hud`'s grant also describes merged work (dd0c07c/d798a61) and is a retirement candidate, but it is the live case lane-guard.sh's contested-override selftest stands on, so retiring it means re-pointing those cases too — deliberately left for a pass that owns the guard. UPDATE 2026-07-30: the 1774 migration and capstone-enable both merged (d19028c, 38e8a58), so m1-1774's content deck (module.json + schema) moved to archive-room for the IRIS/intro/lesson-ramp work and was removed from m1-1774; m1-1774's residual apps/api + curriculum paths describe merged work and are inert (api-hunt and boss-fight are paused), pending a clean full retirement.",
   "mainCheckoutDenied": [
     "apps/**",
     "packages/**",
