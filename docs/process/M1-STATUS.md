@@ -224,6 +224,35 @@ GPU at dpr 2 at BOTH ~16:9 and the owner's ~1024×860: crown in frame with headr
 mouth closed. Note (not acted on): `dc501d4` records that cutscenes should read as clean realistic
 footage, not hologram-filtered — a separate future change; the framing holds either way.
 
+### IRIS naming, the game-open intro, the lesson ramp, and the hub label (30 Jul, archive-room)
+
+- **IRIS naming.** The presenter is named **IRIS** (Immersive Reconstruction & Instruction System):
+  `module.json` presenter `displayName` → "IRIS", and she introduces herself by name in the intro.
+  Judgement call taken: the hub/visor wordmark **"THE SYSTEM" stays as the apparatus/product
+  surface** (also the duel questioner label and the system-error voice) while **IRIS is the AI
+  persona** — a clean apparatus-vs-voice split, no code-symbol/file renames.
+- **Game-open intro** (`apps/web/src/pages/intro/GameIntro.tsx`, wired in `App.tsx`): an intake
+  cutscene between `enterPlay` and the hub, **every launch, no persistence flag**, with Skip →
+  hub. Three beats (what Project Archive is / your role / meet IRIS), grounded in PRD + Day-1 B0.
+  Beats 1-2 are **pending `ModuleVideo` slots** (no `src` → `ModuleVideoStage` renders nothing;
+  IRIS narrates over a clean frame) so it works now with no MP4; beat 3 is IRIS live 3D. Honours
+  the media decisions: no hologram coat on cutscene video, that stays on IRIS/UI. Dev bypasses:
+  `?intro=1` opens the intro (review/capture); `?hub=1` deliberately **skips** it (lands on hub).
+- **Lesson opening ramp** (`module.json` IDENTITY card, same `cueId` BRIEF_IDENTITY, **no new
+  cues/checks — receipt still 6/4**): world (June 1774, occupied Boston, harbour shut eight
+  months) → courier cover for the Committee + the non-importation Covenant → "read these four
+  records." Windows re-cut (IDENTITY 24→38s, absorbed from the roomy BRIEF window) to satisfy the
+  verify:content reading-time gate; total still 180s. Killed "three minutes" at source (subtitle +
+  beat), so the `framedLede()` display workaround in `ModuleArchive.tsx` is deleted as dead.
+- **Hub label** (`bostonChapter.ts`): M1 node "Nailed to the Post / 14 August 1765" → **"The
+  Covenant / June 1774"** to match the lesson.
+- **FLAG for the `m1-1774` lane:** `apps/web/src/chapter/m1Mission.ts` (its file) is **still the
+  1765 Effigy Run** — `title: "Nailed to the Post"`, old concept ids, a "14 August 1765" briefing.
+  The hub node and the lesson now read 1774, but the *deployed mission internals* are 1765. The
+  1774 migration is the atomic pass the design doc describes (module+duel+codex+capstone+mission);
+  the lesson/hub half now leads it. `missionAttempt.test.ts` still asserts the mission title
+  "Nailed to the Post", so that half must move together.
+
 ### A structural flaw in the guard's own selftest, found while managing grants
 
 `lane-guard.sh --selftest` tests the grant-override mechanism using whichever grant is live, with the

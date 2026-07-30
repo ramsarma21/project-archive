@@ -1,0 +1,10 @@
+/* The intake cutscene reuses the lesson's cinematic chrome (mod-cine-*); only the
+   top bar differs. There is nothing behind the intro to return to, so it drops
+   the Archive/Leave pair for a left wordmark and a right-aligned Skip. */
+.mod-intro-top {
+  grid-template-columns: 1fr auto;
+}
+.mod-intro-title {
+  justify-items: start;
+  text-align: left;
+}

@@ -19,16 +19,18 @@
     "chapterId": "boston-1765",
     "missionId": "PA.SEA01.CH02.BOSTON.MD01",
     "title": "Four Signatures, Then the Elm",
-    "subtitle": "Three minutes. Everything a patrol can ask you is in here.",
+    "subtitle": "Everything a patrol can ask you is in these four records.",
     "cards": [
       {
         "id": "BOS.MD01.MODULE.CARD.IDENTITY.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_IDENTITY.v1",
-        "throughSeconds": 24,
+        "throughSeconds": 38,
         "kicker": "Identity",
         "body": [
-          "Boston, June 1774. Eight months the harbour has been shut. You run papers through this town for the Committee of Correspondence, and nobody looks at you twice.",
-          "Tonight you carry one sheet that matters. Read it before you carry it. Everything a patrol can ask you is in the next three minutes."
+          "Boston, June 1774. The harbour has been shut for eight months. Soldiers are quartered in the houses and the town meeting is banned.",
+          "You run papers through these streets for the Committee of Correspondence. No patrol looks at you twice.",
+          "Tonight you carry the Covenant, Boston's pledge to stop buying British goods until the port reopens. Worthless unless signed and posted.",
+          "Read these four records before you carry it. Everything a patrol can ask you is in them."
         ],
         "conceptIds": [],
         "codexCardIds": [],
@@ -37,11 +39,19 @@
           "beats": [
             {
               "id": "BOS.MD01.BEAT.IDENTITY_1.v1",
-              "text": "Boston, June 1774. Eight months the harbour has been shut. You run papers through this town for the Committee of Correspondence, and nobody looks at you twice."
+              "text": "Boston, June 1774. The harbour has been shut for eight months. Soldiers are quartered in the houses and the town meeting is banned."
             },
             {
               "id": "BOS.MD01.BEAT.IDENTITY_2.v1",
-              "text": "Tonight you carry one sheet that matters. Read it before you carry it. Everything a patrol can ask you is in the next three minutes."
+              "text": "You run papers through these streets for the Committee of Correspondence. No patrol looks at you twice."
+            },
+            {
+              "id": "BOS.MD01.BEAT.IDENTITY_3.v1",
+              "text": "Tonight you carry the Covenant, Boston's pledge to stop buying British goods until the port reopens. Worthless unless signed and posted."
+            },
+            {
+              "id": "BOS.MD01.BEAT.IDENTITY_4.v1",
+              "text": "Read these four records before you carry it. Everything a patrol can ask you is in them."
             }
           ],
           "visuals": []
@@ -50,7 +60,7 @@
       {
         "id": "BOS.MD01.MODULE.CARD.CLOSURE.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_CLOSURE.v1",
-        "throughSeconds": 51,
+        "throughSeconds": 65,
         "kicker": "The closure",
         "body": [
           "Eight months ago a crowd put three cargoes of tea in that water.",
@@ -154,7 +164,7 @@
       {
         "id": "BOS.MD01.MODULE.CARD.ACTS.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_ACTS.v1",
-        "throughSeconds": 76,
+        "throughSeconds": 90,
         "kicker": "What the law says",
         "body": [
           "Four acts, not one. The harbour shut. The colony's charter rewritten. Soldiers quartered. Trials moved out of reach.",
@@ -243,7 +253,7 @@
       {
         "id": "BOS.MD01.MODULE.CARD.CONSENT.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
-        "throughSeconds": 92,
+        "throughSeconds": 106,
         "kicker": "Consent",
         "body": [
           "Boston elects its own assembly. It elects no member of Parliament.",
@@ -333,7 +343,7 @@
       {
         "id": "BOS.MD01.MODULE.CARD.ANSWER.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_ANSWER.v1",
-        "throughSeconds": 141,
+        "throughSeconds": 155,
         "kicker": "The answer",
         "body": [
           "They do not declare war. They cannot tax London.",
@@ -464,7 +474,7 @@
     ],
     "presenter": {
       "glbKey": "system-presenter-rigged",
-      "displayName": "The System",
+      "displayName": "IRIS",
       "talkClip": "talk",
       "idleClip": "idle"
     }

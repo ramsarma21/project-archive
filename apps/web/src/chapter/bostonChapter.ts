@@ -47,7 +47,15 @@ export interface ChapterMissionEntry {
  * has actually designed.
  */
 export const BOSTON_SLATE: readonly ChapterMissionEntry[] = [
-  { missionId: M1_MISSION_ID, ordinal: 1, title: "Nailed to the Post", date: "14 August 1765", shape: "Handbill Run", opponent: "The constable at the post", built: true },
+  // M1 is rescoped to the 1774 Coercive Acts / Solemn League and Covenant slate
+  // (docs/design/M1-Remedial-Slice.md), so its hub label matches the lesson the
+  // player actually reads, not the retired 1765 Stamp Act premise. The chapter
+  // spans 1765–1775 and the owner has ruled M1 sitting at June 1774 acceptable
+  // ("Boston is Boston"), so this date is intentionally out of order with the
+  // forthcoming placeholders below. NOTE: the deployed mission internals
+  // (m1Mission.ts, still the 1765 Effigy Run) are the m1-1774 lane's pending
+  // atomic migration; this entry leads the lesson correctly ahead of that.
+  { missionId: M1_MISSION_ID, ordinal: 1, title: "The Covenant", date: "June 1774", shape: "Handbill Run", opponent: "The constable at the Elm", built: true },
   { missionId: "PA.SEA01.CH02.BOSTON.MD02", ordinal: 2, title: "Landed Weight", date: "1765", shape: "Smuggle the Crate", opponent: "The customs collector", built: false },
   { missionId: "PA.SEA01.CH02.BOSTON.MD03", ordinal: 3, title: "The Comptroller's Books", date: "26 August 1765", shape: "Steal the Stamp Shipment", opponent: "The agitator at the fire", built: false },
   { missionId: "PA.SEA01.CH02.BOSTON.MD04", ordinal: 4, title: "Set It Before Morning", date: "October–November 1765", shape: "Clandestine Press", opponent: "The raiding officer", built: false },
