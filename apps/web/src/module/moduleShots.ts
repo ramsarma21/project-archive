@@ -61,16 +61,27 @@ function chunkByWords(text: string): string[] {
   return out;
 }
 
-/** Splits a clause that is itself too long, first on commas, then on words. */
+/**
+ * Splits a clause that is itself too long, first on commas, then on words.
+ *
+ * Each comma stays attached to the piece it followed, so a subtitle line that ends
+ * at a comma boundary still carries its comma. The earlier version split ON the
+ * comma (consuming it) and rejoined the survivors with a comma-space, which dropped
+ * the comma from every piece that ended a packed line and so changed the authored
+ * words. That is the one thing segmentBeatText promises never to do, and it held
+ * before only because authored clauses stayed under the ceiling; moduleShots.test.ts
+ * now pins it in the code.
+ */
 function splitLongClause(clause: string): string[] {
-  const pieces = clause
-    .split(/,\s*/)
+  const pieces = (clause.match(/[^,]+,?/g) ?? [clause])
     .map((piece) => piece.trim())
     .filter(Boolean);
   const lines: string[] = [];
   let current = "";
   for (const piece of pieces) {
-    const candidate = current ? `${current}, ${piece}` : piece;
+    // `piece` already carries its own trailing comma, so join with a space rather
+    // than reinserting one — reinserting is what used to duplicate or drop commas.
+    const candidate = current ? `${current} ${piece}` : piece;
     if (current && wordCount(candidate) > SUBTITLE_TARGET_WORDS) {
       lines.push(current);
       current = piece;

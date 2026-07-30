@@ -13,7 +13,7 @@
     "duel:verify:live": "node --import tsx src/duels/verifyLive.ts",
     "duel:verify:award:live": "node --import tsx src/duels/verifyAwardLive.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test test/auth.test.ts test/concept-retrieval.test.ts test/dev-reset.test.ts test/dev-session.test.ts test/duel-attempt-authority.test.ts test/duel-commit-receipts.test.ts test/duel-evidence.test.ts test/duel-grading-failure.test.ts test/duel-verdict.test.ts test/encounter-authority.test.ts test/encounter-drift.test.ts test/grading-signal.test.ts test/local-session.test.ts test/migration-shape.test.ts test/module-deck-parity.test.ts test/progression.test.ts test/pvp-card-gate.test.ts test/pvp-evidence.test.ts test/pvp-grading.test.ts test/pvp-routes.test.ts test/reporting-chapter-id.test.ts",
+    "test": "node --import tsx --test test/auth.test.ts test/capstone-content-parity.test.ts test/capstone-e2e.test.ts test/concept-retrieval.test.ts test/dev-reset.test.ts test/dev-session.test.ts test/duel-attempt-authority.test.ts test/duel-commit-receipts.test.ts test/duel-evidence.test.ts test/duel-grading-failure.test.ts test/duel-verdict.test.ts test/encounter-authority.test.ts test/encounter-drift.test.ts test/grading-signal.test.ts test/local-session.test.ts test/migration-shape.test.ts test/module-deck-parity.test.ts test/progression.test.ts test/pvp-card-gate.test.ts test/pvp-evidence.test.ts test/pvp-grading.test.ts test/pvp-routes.test.ts test/reporting-chapter-id.test.ts",
     "test:postgres": "node --import tsx --test test/progression-e2e.test.ts"
   },
   "dependencies": {

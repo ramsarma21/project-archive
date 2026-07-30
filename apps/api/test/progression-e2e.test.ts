@@ -9,6 +9,7 @@ import {
   missionBaseXp,
 } from "@pa/abilities";
 import type { MissionAttempt, ProgressionSnapshot } from "@pa/contracts";
+import { ASSESSMENT_ITEMS_PER_CONCEPT, LEARNING_MODULE_SECONDS } from "@pa/contracts";
 import { m1DuelId } from "@pa/mission-m1";
 import { buildApp } from "../src/app.js";
 import { csrfTokenForSession } from "../src/auth.js";
@@ -20,6 +21,8 @@ import {
   bostonProgressionContent,
 } from "../src/progression/content.js";
 import { postgresConceptRetrievalStore } from "../src/progression/retrievalStore.js";
+import { postgresProgressionStore } from "../src/progression/postgresStore.js";
+import { ProgressionService } from "../src/progression/service.js";
 
 // ===========================================================================
 // Clearing Mission 1 pays XP, and the payout survives a reload.
@@ -530,4 +533,91 @@ test("the milestones the server holds are the authored schedule", async () => {
     BOSTON_ABILITY_MILESTONES.map((row) => [row.abilityId, row.level]),
   );
   assert.ok(milestones.every((row) => row.chapterId === BOSTON_RUNTIME_CHAPTER_ID));
+});
+
+// ===========================================================================
+// The chapter capstone, against the REAL content pack and REAL Postgres.
+//
+// The unit-store e2e (capstone-e2e.test.ts) proves the wiring against the
+// in-memory double; this proves concept_mastery is written to the actual table.
+// The service is built directly (not through buildApp) only so the external
+// open-response grader can be stubbed to CORRECT — the one thing this test is not
+// trying to prove. The selected-response half is graded by the server's real key.
+// ===========================================================================
+test("the chapter capstone masters its concepts and writes concept_mastery to Postgres", async () => {
+  const runner = await newRunner("Capstone Runner");
+  const service = new ProgressionService(
+    postgresProgressionStore(),
+    CONTENT,
+    () => new Date(),
+    () => crypto.randomUUID(),
+    { verdict: async () => ({ correct: true, needsReview: false }) },
+  );
+  const assessmentId = CONTENT.assessmentId(BOSTON_RUNTIME_CHAPTER_ID)!;
+  const optionIds = ["A", "B", "C", "D", "F", "G", "H", "J"];
+
+  // Learn M1 first, so its nine Codex cards exist to be minted PvP-legal.
+  const learned = await service.completeLearningModule(runner.profileId, {
+    chapterId: BOSTON_RUNTIME_CHAPTER_ID,
+    moduleId: M1_MODULE,
+    gatesKind: "MISSION_ATTEMPT",
+    gatesId: M1,
+    acknowledgedCueIds: [...M1_DECK],
+    acknowledgedCheckIds: [...M1_CHECKS],
+    observedSeconds: LEARNING_MODULE_SECONDS,
+  });
+  assert.equal(learned.ok, true, JSON.stringify(learned));
+
+  const opened = await service.openChapterAssessment(runner.profileId, {
+    chapterId: BOSTON_RUNTIME_CHAPTER_ID,
+    assessmentId,
+  });
+  assert.equal(opened.ok, true, JSON.stringify(opened));
+  if (!opened.ok) return;
+  const served = opened.value.form.flatMap((entry) => entry.itemIds);
+  assert.equal(
+    served.length,
+    CONTENT.chapterConceptIds(BOSTON_RUNTIME_CHAPTER_ID).length * ASSESSMENT_ITEMS_PER_CONCEPT,
+  );
+
+  for (const itemId of served) {
+    if (CONTENT.itemFormat(itemId) === "OPEN_RESPONSE") {
+      await service.answerAssessmentItem(runner.profileId, {
+        attemptId: opened.value.attemptId,
+        itemId,
+        itemFormat: "OPEN_RESPONSE",
+        responseRef: `resp-${itemId}`,
+      });
+    } else {
+      const key = optionIds.find((optionId) => CONTENT.isCorrectOption(itemId, optionId));
+      assert.ok(key, `${itemId} has no correct option`);
+      await service.answerAssessmentItem(runner.profileId, {
+        attemptId: opened.value.attemptId,
+        itemId,
+        itemFormat: "SELECTED_RESPONSE",
+        selectedOptionId: key,
+      });
+    }
+  }
+
+  const submitted = await service.submitChapterAssessment(runner.profileId, opened.value.attemptId);
+  assert.equal(submitted.ok, true, JSON.stringify(submitted));
+  if (!submitted.ok) return;
+  assert.equal(submitted.value.passed, true);
+  assert.equal(submitted.value.scoreNumerator, 6);
+  assert.equal(submitted.value.newlyPvpLegalCardIds.length, 9);
+
+  // The proof: three mastered rows read straight from the concept_mastery table.
+  const rows = await query(
+    `select concept_id, mastered_at, items_correct
+       from concept_mastery
+      where profile_id = $1 and chapter_id = $2
+      order by concept_id`,
+    [runner.profileId, BOSTON_RUNTIME_CHAPTER_ID],
+  );
+  assert.equal(rows.rowCount, 3, "a concept_mastery row per concept, in Postgres");
+  for (const row of rows.rows) {
+    assert.ok(row.mastered_at, `${row.concept_id} has no mastered_at`);
+    assert.equal(Number(row.items_correct), ASSESSMENT_ITEMS_PER_CONCEPT, `${row.concept_id} items_correct`);
+  }
 });
