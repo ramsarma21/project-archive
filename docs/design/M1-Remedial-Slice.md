@@ -38,7 +38,14 @@ read the closure as ordinary governance rather than as a punishment aimed at a w
 guilty and innocent together. So the mechanic must test one thing: **can the player predict the
 blast radius?**
 
-### The core loop
+### The core loop — SUPERSEDED by the Covenant signature run (owner, 30 Jul)
+
+> **This relief-distribution loop was the first fresh-slate idea; it is NOT the mission we build.**
+> The canonical core loop is the **Solemn League and Covenant signature run** — see "The loop → 2.
+> Mission" below and the parkour / persuasion / getting-caught sections, which all build on it:
+> collect signatures across an occupied town by rooftop, then post the pledge at the Liberty Elm.
+> The relief idea survives only as optional flavour (a contact may be a relief recipient), never as
+> the mechanic. Kept for history.
 
 **Move relief supplies into a town whose harbour is shut, with less than everyone needs.**
 Historically real — other colonies sent rice, grain and sheep to Boston during the closure.
