@@ -114,25 +114,14 @@ const TWO_PART_CORES: Readonly<Record<string, readonly [string, string]>> = {
     "Boston does not elect the body that laid this tax — in any wording, including 'not Parliament', 'not the ones in England', 'nobody over there'",
   ],
 
-  // The items whose evidence hand demands two cards now demand two ideas in prose
+  // The REP items whose evidence hand demands two cards demand two ideas in prose
   // too: a written answer that supplies only one half fails, exactly as a one-card
-  // selection does. Each pair mirrors the same synthesis the cards require (a cause
-  // and its consequence, a mechanism and who it burdened, a grievance and the
-  // town's standing). The halves are stated as meanings, not wordings, so many
-  // phrasings and either order still pass; the classifier reports each and the code
-  // requires all.
-  "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1": [
-    "The war left Britain owing money, short of money, or with a war cost it still has to pay: a financial problem",
-    "Parliament's fix is to raise part of that money from the colonies, and the stamp is how it collects it here",
-  ],
-  "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1": [
-    "The payer is the colonies, America, the colonists, or 'us': someone on this side of the Atlantic rather than inside Britain",
-    "What that money clears is Britain's war debt, the money the war with France left owing",
-  ],
-  "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1": [
-    "The money is raised from the colonies: our taxes, or the stamp we pay here",
-    "and that money goes toward Britain's war debt, paying down what Britain owes",
-  ],
+  // selection does. Each pair mirrors the synthesis the cards require — a grievance
+  // and the town's standing to make it. The halves are stated as meanings, not
+  // wordings, so many phrasings and either order still pass; the classifier reports
+  // each and the code requires all. (The 1774-slate INTOLERABLE_ACTS and
+  // MERCANTILISM items are single-core by design; the retired POSTWAR items were
+  // the other two-part cores, and STAMP.NAME_TWO the one count-core.)
   "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1": [
     "The objection is not the price but who laid the tax, a body Boston did not choose, so it was laid without the town's consent",
     "The town's standing to say so is that Boston elected none of them: it has no member in the Parliament that laid it",
@@ -149,13 +138,15 @@ const TWO_PART_CORES: Readonly<Record<string, readonly [string, string]>> = {
 };
 
 /**
- * NAME_TWO's core is "two distinct things, each of which is printed matter or a
- * legal or official paper". The content's port block flags it as a count rather
- * than two propositions and suggests one idea, and that is right: split into two
- * the classifier would be asked which of two unordered nouns is "the first", which
- * is a question with no answer. It stays one idea whose text carries the count.
+ * A count-core item asks for N distinct instances rather than two ordered
+ * propositions: splitting it would ask the classifier which of two unordered
+ * nouns is "the first", a question with no answer. STAMP.NAME_TWO was the one such
+ * item and is retired with the 1765 slate. The 1774 items that ask for two
+ * (ACTS.FOUR_NOT_ONE, RESIST.PETITION_AND_CONGRESS) carry the count inside a single
+ * required-core string ("two of the four, told apart"), so they grade as one idea
+ * and need no entry here. Empty, and correct that it is empty.
  */
-const COUNT_CORE_ITEMS = new Set(["BOS.MD01.DUEL.STAMP.NAME_TWO.v1"]);
+const COUNT_CORE_ITEMS = new Set<string>([]);
 
 // ---- the mapping -------------------------------------------------------------
 

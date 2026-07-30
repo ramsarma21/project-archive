@@ -82,9 +82,9 @@ export interface DuelItemSource {
 }
 
 const CONCEPT_LABELS: Readonly<Record<string, string>> = {
-  "BOS.CONCEPT.POSTWAR_REVENUE.v1": "postwar revenue",
-  "BOS.CONCEPT.STAMP_SCOPE.v1": "stamp scope",
+  "BOS.CONCEPT.INTOLERABLE_ACTS.v1": "the Coercive Acts",
   "BOS.CONCEPT.REPRESENTATION.v1": "representation",
+  "BOS.CONCEPT.MERCANTILISM.v1": "non-importation",
 };
 
 interface AuthoredItem {
@@ -104,74 +104,40 @@ interface AuthoredItem {
  */
 const M1_AUTHORED: readonly AuthoredItem[] = [
   {
-    itemId: "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
-    conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+    itemId: "BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1",
+    conceptId: "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
     prompt:
-      "This town has stood a hundred and thirty years and Parliament never wanted a penny of it. Why is it reaching into Boston for money now?",
+      "The Port Act has shut the harbour. Some men put the tea in the water; most of this town never went near it. When the port closes, who does it fall on?",
   },
   {
-    itemId: "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
-    conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+    itemId: "BOS.MD01.DUEL.ACTS.NOT_A_FINE.v1",
+    conceptId: "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
     prompt:
-      "The war with France ended two years ago and Britain won it. What problem did that victory leave Britain holding, and how is Parliament trying to solve it on my board?",
+      "If Parliament only wanted the tea paid for, it could have fined the men who dumped it, or tried them. It did neither. What did it do instead, and what does the difference tell you?",
   },
   {
-    itemId: "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
-    conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+    itemId: "BOS.MD01.DUEL.ACTS.WHY_THE_TOWN.v1",
+    conceptId: "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
     prompt:
-      "Say plainly who Parliament decided should help pay this down, and what that money is meant to clear.",
+      "A loyalist tells you the closure is just: the town let the tea be dumped, so the town should pay. Answer him. Is punishing the whole town for what a crowd did the same as justice?",
   },
   {
-    itemId: "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1",
-    conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-    prompt: "Which came first, the debt or the tax? And which one is the answer to the other?",
-  },
-  {
-    itemId: "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
-    conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+    itemId: "BOS.MD01.DUEL.ACTS.STILL_LAWFUL.v1",
+    conceptId: "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
     prompt:
-      "A printer told me this Act came out of nowhere, that Parliament woke one morning and invented it to spite you. Start at the end of the war and show me it did not.",
+      "The port is shut, the town meeting is banned, and soldiers are in the parlours. You are about to carry a printed sheet through these streets. Are you breaking any of the four Acts by doing it? Say why.",
   },
   {
-    itemId: "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1",
-    conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+    itemId: "BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1",
+    conceptId: "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
     prompt:
-      "Here is what I cannot follow. The debt is owed in London. The stamp is paid in Boston. Give me the line that joins those two.",
+      "People call it 'the Intolerable Act', as if it were one law. It is four. Pick any two of the four, and name what each of those two actually does, kept straight from each other.",
   },
   {
-    itemId: "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1",
-    conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
+    itemId: "BOS.MD01.DUEL.ACTS.WHICH_ACT.v1",
+    conceptId: "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
     prompt:
-      "Two things on this table: a deed drawn up in court, and a bolt of cloth off a ship. Come November one of them needs the Crown's paid stamp. Which is it, and what makes you sure?",
-  },
-  {
-    itemId: "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1",
-    conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
-    prompt:
-      "Parliament passed this Act back in the spring, so the law is already made. Then why is this town still free to stand at my board and argue about it tonight, instead of already paying the stamp? What has not happened yet?",
-  },
-  {
-    itemId: "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1",
-    conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
-    prompt:
-      "Of every trade in Boston, the coopers, the ropemakers, the fishmongers, why does this Act fall hardest on the shop you run for?",
-  },
-  {
-    itemId: "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1",
-    conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
-    prompt:
-      "My apprentice has it that this Act taxes everything Boston buys, bread, cloth, nails, the lot. Correct him.",
-  },
-  {
-    itemId: "BOS.MD01.DUEL.STAMP.NAME_TWO.v1",
-    conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
-    prompt: "Name me two things in this town that will need the stamp come November.",
-  },
-  {
-    itemId: "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1",
-    conceptId: "BOS.CONCEPT.STAMP_SCOPE.v1",
-    prompt:
-      "A woman writes to her sister in Salem, in her own hand, and seals it. Does the Act catch that letter? Tell me why; a bare yes or no earns you nothing.",
+      "The selectmen want to call a town meeting to answer the port's closing. A neighbour says they cannot; it is against the law now. Which of the four Acts is he thinking of, and is he right?",
   },
   {
     itemId: "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1",
@@ -195,7 +161,7 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
     itemId: "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1",
     conceptId: "BOS.CONCEPT.REPRESENTATION.v1",
     prompt:
-      "Finish the claim your sheet makes. A tax on this town may rightly be laid only by whom?",
+      "Say London kept its word and appointed the fairest, most honest men in all England to set Boston's taxes, men who would never take a penny more than the town could bear. Would that answer the claim on your sheet? Tell me who alone may rightly lay a tax here, and why upright men chosen in London still fall short.",
   },
   {
     itemId: "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1",
@@ -208,6 +174,42 @@ const M1_AUTHORED: readonly AuthoredItem[] = [
     conceptId: "BOS.CONCEPT.REPRESENTATION.v1",
     prompt:
       "Parliament passed this Act by a lawful vote, in the proper form, in the proper place. I have the statute in my hand. On what ground do you still call it unjust?",
+  },
+  {
+    itemId: "BOS.MD01.DUEL.RESIST.HOW_THEY_ANSWER.v1",
+    conceptId: "BOS.CONCEPT.MERCANTILISM.v1",
+    prompt:
+      "The town cannot fight the Navy and cannot make laws for London. So what is left? What do the colonists actually DO to answer the Acts?",
+  },
+  {
+    itemId: "BOS.MD01.DUEL.RESIST.NOT_WAR.v1",
+    conceptId: "BOS.CONCEPT.MERCANTILISM.v1",
+    prompt:
+      "A hothead in the crowd says the Continental Congress is meeting to declare war on Britain. Is that what a congress does here? Say what it actually does instead.",
+  },
+  {
+    itemId: "BOS.MD01.DUEL.RESIST.NOT_COUNTERTAX.v1",
+    conceptId: "BOS.CONCEPT.MERCANTILISM.v1",
+    prompt:
+      "Britain taxes the goods it sends here. A man says the fair answer is simple: the colonies should tax the goods Britain sends, penny for penny, and see how London likes it. Can they? What do they do instead?",
+  },
+  {
+    itemId: "BOS.MD01.DUEL.RESIST.WHY_IT_BITES.v1",
+    conceptId: "BOS.CONCEPT.MERCANTILISM.v1",
+    prompt:
+      "A boycott sounds like a small thing, just some shopkeepers refusing goods. Why would Parliament, three thousand miles away, ever feel a handful of Boston merchants deciding not to buy?",
+  },
+  {
+    itemId: "BOS.MD01.DUEL.RESIST.THE_COVENANT.v1",
+    conceptId: "BOS.CONCEPT.MERCANTILISM.v1",
+    prompt:
+      "The sheet in your hand is the Solemn League and Covenant. A signer asks you what, plainly, he is putting his name to. What does signing it commit him to do?",
+  },
+  {
+    itemId: "BOS.MD01.DUEL.RESIST.PETITION_AND_CONGRESS.v1",
+    conceptId: "BOS.CONCEPT.MERCANTILISM.v1",
+    prompt:
+      "Name me the lawful ways this town answers the Acts, the ones that are not a musket. Give me two.",
   },
 ];
 

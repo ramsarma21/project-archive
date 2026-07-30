@@ -56,9 +56,9 @@ export type LoadedCodex =
  * renders under its id rather than vanishing.
  */
 const CONCEPT_LABELS: Readonly<Record<string, string>> = {
-  "BOS.CONCEPT.POSTWAR_REVENUE.v1": "Postwar revenue",
-  "BOS.CONCEPT.STAMP_SCOPE.v1": "The Stamp Act's reach",
+  "BOS.CONCEPT.INTOLERABLE_ACTS.v1": "The Coercive Acts",
   "BOS.CONCEPT.REPRESENTATION.v1": "Representation and consent",
+  "BOS.CONCEPT.MERCANTILISM.v1": "Non-importation and resistance",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
