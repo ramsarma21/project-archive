@@ -201,11 +201,21 @@ our own UI overlay, never rendered into the frame); short cut shots; and the his
 `PROJECT_RECONSTRUCTION` provenance gates. Real curriculum figures may appear only where they genuinely fit, with an optional
 context/dossier card, never forced (e.g. Samuel Adams with the Committee of Correspondence circular).
 
+**Clip length + lip-sync spec (owner, 30 Jul).** Clips run **10-20s**, and lip-sync need only be
+*decent* — mouths moving is the floor, good sync is a bonus — because our subtitle band carries the
+meaning regardless. Consequences: (1) 10-20s exceeds most models' single-take ceiling (Kling 3.0
+Omni ~15s, Veo 3.1 ~8s), so build a clip as a **short edited sequence of cut shots** (wide →
+over-shoulder → close), not one unbroken take — better staging and far less drift/warp. Compose
+either via Kling Omni's up-to-6-cuts-per-generation or by stitching short shots with ffmpeg locally.
+(2) Because sync is non-load-bearing, there is a fallback if a model's native audio is weak: generate
+talking motion, add a separate TTS voice track, and rely on subtitles — imperfect sync then reads as
+fine. This makes **Kling 3.0 Omni the strongest single fit** (15s, multi-shot, native voiced audio).
+
 **BLOCKER — no video-gen tool in this environment.** There is no text-to-video API or key here (only
 image gen + the Gemini/Meshy asset pipeline), so producing an MP4 needs the owner to provide access
-to a service (Veo 3.1 or Kling 3.0 Omni recommended — both do native voiced lip-sync from a prompt)
-or to generate the clip and hand over the file. The `ModuleVideo` playback slot already accepts a
-real MP4; drop-in is one line in the file's scene.
+to a service (Kling 3.0 Omni recommended for the 10-20s voiced spec; Veo 3.1 the alternative) or to
+generate the clip and hand over the file. The `ModuleVideo` playback slot already accepts a real MP4
+of any length; drop-in is one line in the file's scene.
 
 **Three media, split by what each is good at:**
 
