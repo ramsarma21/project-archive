@@ -210,6 +210,20 @@ in-file/brief `__presenterJaw` reads ~0.10–0.40 speaking and 0 paused. Her arm
 idle's authored relaxed stance (hand near the hip), not a bind pose — not adjustable without
 touching the clip, which is off-limits.
 
+**In-file/opening/brief framing relaxed to a comfortable portrait — FIXED (30 Jul, moduleShots.ts).**
+`PRESENTER_FRAMINGS` was a tight telephoto aimed at y≈1.51 from z≈2.3/fov12, which put the crown at
+the top edge (~10% headroom) and dived the bottom to mid-chest (open jacket centred). Relaxed to
+z≈2.45–2.8, fov 11.5–12, target y=1.56 → headroom above the crown, framed to the collarbone/upper
+chest, eyes upper-middle. **The owner's "narrow window zooms in tighter" hypothesis is DISPROVEN by
+measurement:** R3F keeps the PerspectiveCamera's VERTICAL fov fixed and only updates `.aspect`, so the
+crown and collarbone project to the SAME NDC.y at aspect 1.78 and 1.19 (probed both). A narrower
+window shows the same height and less width, never a tighter vertical crop — so the framing is
+aspect-INVARIANT and needs no aspect-aware fov (documented in the moduleShots.ts comment so a future
+lane doesn't add one). The brief uses the same `PRESENTER_FRAMINGS` set. Verified by eye on the real
+GPU at dpr 2 at BOTH ~16:9 and the owner's ~1024×860: crown in frame with headroom, no chest dive,
+mouth closed. Note (not acted on): `dc501d4` records that cutscenes should read as clean realistic
+footage, not hologram-filtered — a separate future change; the framing holds either way.
+
 ### A structural flaw in the guard's own selftest, found while managing grants
 
 `lane-guard.sh --selftest` tests the grant-override mechanism using whichever grant is live, with the
