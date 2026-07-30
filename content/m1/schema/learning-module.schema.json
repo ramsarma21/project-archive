@@ -86,7 +86,8 @@
       "additionalProperties": false,
       "properties": {
         "beats": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/beat" } },
-        "visuals": { "type": "array", "items": { "$ref": "#/$defs/visual" } }
+        "visuals": { "type": "array", "items": { "$ref": "#/$defs/visual" } },
+        "video": { "$ref": "#/$defs/video" }
       }
     },
     "beat": {
@@ -120,6 +121,25 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "src": { "type": "string", "pattern": "^/", "minLength": 1 },
+        "alt": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "caption": { "type": "string", "minLength": 1 },
+        "attribution": { "type": "string", "minLength": 1 },
+        "sourceUrl": { "type": "string", "minLength": 1 },
+        "date": { "type": "string", "minLength": 1 },
+        "rights": { "type": "string", "minLength": 1 },
+        "classification": { "enum": ["PRIMARY_SOURCE", "PERIOD_ART", "LATER_DEPICTION", "PROJECT_RECONSTRUCTION"] }
+      }
+    },
+    "video": {
+      "type": "object",
+      "description": "A generated cutscene clip that plays inside a case file alongside its document (the video half of the media split). SOURCE-TOLERANT: `src`/`poster` are OPTIONAL — a clip is authored with its full provenance BEFORE the MP4 exists, and the player renders no <video> (the document and its question still show) rather than a broken frame. When present, `src`/`poster` are local imported asset paths (leading `/`), never a runtime hotlink. A generated clip is a PROJECT_RECONSTRUCTION and may not caption itself 'actual'. Mirrors ModuleVideo in apps/web/src/module/moduleFormat.ts.",
+      "required": ["id", "alt", "title", "caption", "attribution", "sourceUrl", "date", "rights", "classification"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "src": { "type": "string", "pattern": "^/", "minLength": 1 },
+        "poster": { "type": "string", "pattern": "^/", "minLength": 1 },
         "alt": { "type": "string", "minLength": 1 },
         "title": { "type": "string", "minLength": 1 },
         "caption": { "type": "string", "minLength": 1 },
