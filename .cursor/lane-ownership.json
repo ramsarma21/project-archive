@@ -36,6 +36,22 @@
       ],
       "reason": "The duel-HUD presentation rework retires the mid-fight interstitial card, moves hits-to-win onto the persistent HUD, deletes the raw damage numerals, and shows the unfired-balls rule once ever. The interstitial IS DuelOverlay.tsx and its styling IS duel.css, so the work cannot be done anywhere else. Both files are contested because boss-fight also had to touch the verdict label; that sequencing is now settled — boss-fight landed FIRST (540c0e3) specifically to protect the 'Not graded' verdict label, verified present on main afterwards — leaving duel-hud the single lane on these two files. Granted by the owner's explicit instruction on 2026-07-29 and recorded here the same day; the work is already committed on workflow/duel-hud at dab549b. A prior agent correctly REFUSED to grant this itself: a self-issued grant is the unrecorded authorisation the map exists to prevent. duel-hud MUST keep rendering verdictBeatTone(verdict).label in VerdictBeat — see the invariant row in docs/process/M1-STATUS.md. Retire when the HUD rework merges.",
       "granted": "2026-07-29"
+    },
+    {
+      "lane": "m1-sources",
+      "paths": [
+        "content/m1/historical-sources.json"
+      ],
+      "reason": "workflow/m1-sources adds four rights-verified 1774 historical images (owned via apps/web/public/historical/m1/**) plus this provenance manifest. content/** is boss-fight's, but boss-fight does not touch this file, so the grant records the additive edit as legitimate rather than an unrecorded cross-lane write. Recorded 2026-07-29 while verifying and merging the lane. Retire when it merges.",
+      "granted": "2026-07-29"
+    },
+    {
+      "lane": "m1-lesson",
+      "paths": [
+        "content/m1/schema/learning-module.schema.json"
+      ],
+      "reason": "workflow/m1-lesson (the Archive rework) adds a source-tolerant `video` variant to the module TS format and must mirror it in this JSON schema. The schema is boss-fight's content/** and is also granted to the legacy module-lesson lane; m1-lesson is the active continuation of that lesson work and both worktrees are preserved under the M1 freeze, so both grants stand until each lane's work merges. The schema is not gate-enforced (verify.mjs reads the TS interfaces), so this is correctness, not a blocker. Recorded 2026-07-29. Retire when the lane merges.",
+      "granted": "2026-07-29"
     }
   ],
   "_retiredGrants": "Retired 2026-07-29, both because their work merged: `mission-flow`'s four elm-beat UI files (MissionHud/MissionBeatPanel/missionInput/mission.css, merged 2c27d6a — those files are contested again, denied to every lane) and `camera-occluder`'s engine-world/MissionStage carve-out (merged d457081; the lane has no branch or worktree left and its entry is gone from `lanes`). Kept as one line rather than as dead grant objects: a grant that outlives its work silently re-owns a file.",
@@ -89,6 +105,12 @@
     ],
     "module-lesson": [
       "apps/web/src/module/**"
+    ],
+    "m1-lesson": [
+      "apps/web/src/module/**"
+    ],
+    "m1-sources": [
+      "apps/web/public/historical/m1/**"
     ],
     "mission-encounters": [
       "packages/duel/**",
