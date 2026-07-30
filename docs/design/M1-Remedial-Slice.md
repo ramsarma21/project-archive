@@ -107,6 +107,46 @@ written.
 **Runtime ratio:** mostly movement and evasion. Each conversation is a handful of lines —
 punctuation, not substance.
 
+### Cutscene media pipeline (owner, 29 Jul)
+
+Mixamo is out as the animation source. The owner's call, after considering real-time 3D: **generate
+the cutscenes as video and play them as MP4s.** No rigs, no retargeting, no animation authoring, no
+Blender round-trip. The hologram-projection framing is dropped as a rendering style; the Archive
+showing you records during transport is the same fiction either way.
+
+**Three media, split by what each is good at:**
+
+| Media | Carries | Why |
+|---|---|---|
+| **Generated MP4** | Action, people, places | The expensive half, now cheap |
+| **Real image stills** (existing `ModuleVisual`) | Documents, maps, anything with text | Every model renders text as gibberish, and the lesson needs a period document readable for a line or two. `ModuleVisual` already carries `src`, caption, attribution, date, rights and a classification the validator will not leave blank |
+| **Live 3D** (`SystemPresenter`) | The handler herself | She is a persistent character who also appears in-mission; she must not flicker between media |
+
+**Tool:** **Kling 3.0 Omni** — up to six cuts per generation so one lesson beat is one job,
+multi-character element referencing so each character stays themselves across shots, and native
+synchronised audio, which deletes the TTS and lip-sync problem rather than solving it. Roughly
+$0.17/sec, so a 60s lesson pass is ~$10. Seedance 2.0 is the alternative and is reported stronger
+with multiple references. Note the leading *engine-native* tool, Kuaishou's Cutscene Agent, is
+Unreal 5.6 only and does not apply to this stack.
+
+**Style match — render the references from our own rigs.** A 5–10s reference clip beats a single
+still for consistency. So render `thomas-rigged`, `pike-rigged` etc. turning and speaking in our own
+engine and feed *those* as the character references; the generated video then inherits our character
+designs and palette instead of inventing strangers. The bar is "not completely out of place", not 1:1.
+
+**Two gates this must not skip:**
+1. **Historical QA.** These models hallucinate period detail — wrong uniforms, wrong architecture,
+   anachronistic objects. The project's law is that the world, events, documents and every
+   historical claim stay accurate, and the asset pipeline already has a visual/historical QA step.
+   Generated video goes through it.
+2. **Provenance.** Generated video is a `PROJECT_RECONSTRUCTION` and must be classified as one. A
+   student must never be able to file a generated clip as primary evidence.
+
+**The only new plumbing:** a video variant alongside the existing image `ModuleVisual`. The
+director already branches on whether a beat carries a visual, and `OVER_SHOULDER` → `VISUAL_FOCUS`
+already handles "the visual dominates" — a video is a simpler occupant of that slot than an acted
+3D scene would have been.
+
 ### Getting caught is a second teaching surface, not a fail state (owner, 29 Jul)
 
 *"if you get caught on the ground, you have to talk the guards out of it understanding what they
