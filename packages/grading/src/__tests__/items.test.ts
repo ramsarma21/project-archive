@@ -72,21 +72,21 @@ describe("the authored bank loads", () => {
     assert.deepEqual(
       [...new Set(bank.items.map((item) => item.conceptId))].sort(),
       [
-        "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+        "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+        "BOS.CONCEPT.MERCANTILISM.v1",
         "BOS.CONCEPT.REPRESENTATION.v1",
-        "BOS.CONCEPT.STAMP_SCOPE.v1",
       ],
     );
   });
 
   it("keeps the item ids the two banks agree on", () => {
     // The port is a replacement rather than a merge, and it only is one if the ids
-    // match. These are §4.9's ids and the content's ids both.
+    // match. These are the 1774-slate content's ids.
     for (const itemId of [
-      "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
-      "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
-      "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1",
-      "BOS.MD01.DUEL.STAMP.NAME_TWO.v1",
+      "BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1",
+      "BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1",
+      "BOS.MD01.DUEL.RESIST.HOW_THEY_ANSWER.v1",
+      "BOS.MD01.DUEL.RESIST.THE_COVENANT.v1",
       "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
       "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1",
     ]) {
@@ -112,28 +112,25 @@ describe("the line every item draws", () => {
     }
   });
 
-  it("gives twelve items a single core and six a genuine two-part core", () => {
-    // The owner made the prose grader require both halves on the items whose evidence
-    // hand demands two cards, so a written half-answer fails just as a one-card
-    // selection does. Twelve items keep a single required proposition (NAME_TWO's
-    // count is one idea); six carry two ideas with needs "all", which is still binary
-    // rather than partial credit.
+  it("gives fifteen items a single core and three a genuine two-part core", () => {
+    // The owner made the prose grader require both halves on the REPRESENTATION items
+    // whose evidence hand demands two cards, so a written half-answer fails just as a
+    // one-card selection does. Fifteen items keep a single required proposition (the
+    // 1774 slate's ACTS and RESIST items, and the single-core REP items); three carry
+    // two ideas with needs "all", which is still binary rather than partial credit.
     const single = bank.items.filter((item) => item.ideas.length === 1);
-    assert.equal(single.length, 12, "expected 12 single-core items");
+    assert.equal(single.length, 15, "expected 15 single-core items");
     const twoPart = bank.items.filter((item) => item.ideas.length === 2);
-    assert.equal(twoPart.length, 6, "expected 6 two-part items in the PvE bank");
+    assert.equal(twoPart.length, 3, "expected 3 two-part items in the PvE bank");
     for (const item of twoPart) {
       assert.equal(item.needs, 2, `${item.itemId} must require both halves`);
     }
   });
 
   it("splits exactly the items whose core is genuinely two propositions", () => {
-    // The five postwar/representation items promoted to a two-card minimum, plus
-    // BOSTON_DOES_ELECT which was always two-part, plus the PvP-only HOW_FAR_IT_GOES.
+    // The three PvE REPRESENTATION items that promoted to a two-card minimum, plus the
+    // PvP-only HOW_FAR_IT_GOES. The 1774 ACTS and RESIST items are single-core.
     assert.deepEqual([...twoPartCoreItemIds()].sort(), [
-      "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1",
-      "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
-      "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
       "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
       "BOS.MD01.DUEL.REP.HOW_FAR_IT_GOES.v1",
       "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1",
@@ -144,30 +141,25 @@ describe("the line every item draws", () => {
     assert.equal(item?.needs, 2, "either half alone leaves the objection standing");
   });
 
-  it("keeps NAME_TWO as one idea, because a count is not two propositions", () => {
-    assert.ok(isCountCoreItem("BOS.MD01.DUEL.STAMP.NAME_TWO.v1"));
-    const item = bank.get("BOS.MD01.DUEL.STAMP.NAME_TWO.v1");
-    assert.equal(item?.ideas.length, 1);
-    assert.match(item?.ideas[0]?.text ?? "", /two distinct/i);
+  it("has no count-core item, because the 1774 two-of-X items carry the count in one idea", () => {
+    // STAMP.NAME_TWO was the one count-core item and retired with the 1765 slate. The
+    // items that ask for two (FOUR_NOT_ONE, PETITION_AND_CONGRESS) state "two of X" as
+    // a single required proposition, so they grade as one idea and are not count-cores.
+    assert.equal(isCountCoreItem("BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1"), false);
+    assert.equal(isCountCoreItem("BOS.MD01.DUEL.RESIST.PETITION_AND_CONGRESS.v1"), false);
+    for (const itemId of ["BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1", "BOS.MD01.DUEL.RESIST.PETITION_AND_CONGRESS.v1"]) {
+      assert.equal(bank.get(itemId)?.ideas.length, 1, `${itemId} is single-core`);
+    }
   });
 
-  it("turns the date item into reasoning about the resistance window, not date recall", () => {
-    // Rewritten from "From what date must the stamp be paid?" — a bare recall
-    // question the owner's later direction retired as trivia — into one that asks
-    // why the town is still free to argue tonight when the Act is already law. The
-    // student can only answer by reasoning from the taught fact (the duty begins
-    // 1 November) that the tax has not yet taken effect. The date is still tested,
-    // as the ground of a causal claim rather than as a string to recall.
-    const item = bank.get("BOS.MD01.DUEL.STAMP.FROM_WHEN.v1");
+  it("makes the scope items reasoning rather than recall", () => {
+    // The Coercive-Acts scope items ask the student to decide and justify — which act
+    // did what, what is still lawful — not to recite a fact. STILL_LAWFUL asks the
+    // student to reason to a yes or no and say why, so a bare fact is not the item.
+    const item = bank.get("BOS.MD01.DUEL.ACTS.STILL_LAWFUL.v1");
     assert.ok(item !== undefined);
-    assert.equal(item.ideas.length, 1, "still a single-core item");
-    assert.match(
-      item.ideas[0]?.text ?? "",
-      /not taken effect|not yet|still time|not owed until/i,
-    );
-    assert.match(item.ask, /what has not happened yet|why is this town still/i);
-    // The bare-recall answer is no longer the whole item.
-    assert.doesNotMatch(item.ask, /from what date must the stamp be paid/i);
+    assert.equal(item.ideas.length, 1, "a single decisive proposition");
+    assert.match(item.ask, /say why|are you breaking/i);
   });
 });
 
@@ -222,14 +214,16 @@ describe("held-out examples and provenance", () => {
     );
   });
 
-  it("aliases the war's names on the item where the student must name it", () => {
-    // §4.9's module-coverage constraint 2. Without this a student writing "Seven
-    // Years' War" is marked wrong for using the name their textbook uses.
-    const item = bank.get("BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1");
+  it("carries a per-item ignore rule where the name is not the point", () => {
+    // FOUR_NOT_ONE grades whether the student names two acts by what they DID, so
+    // whether they use the formal act titles or plain descriptions must not decide it.
+    // Without this a student writing "the one that shut the port" is marked wrong for
+    // not writing "the Boston Port Act".
+    const item = bank.get("BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1");
     const flat = (item?.alsoIgnore ?? []).join(" ");
-    assert.match(flat, /Seven Years/);
-    assert.match(flat, /French and Indian/);
-    assert.ok(buildSystemPrompt(item!).includes("Seven Years"));
+    assert.match(flat, /formal act titles/);
+    assert.match(flat, /plain descriptions/);
+    assert.ok(buildSystemPrompt(item!).includes("formal act titles"));
   });
 });
 
@@ -255,7 +249,7 @@ describe("the calibrated grading policy", () => {
   });
 
   it("reaches the prompt, so the calibration is what the model is told", () => {
-    const prompt = buildSystemPrompt(bank.get("BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1")!, {
+    const prompt = buildSystemPrompt(bank.get("BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1")!, {
       governingQuestion: "Q?",
       alwaysIgnore: m1GradingPolicy().alwaysIgnore,
       neverSufficient: m1GradingPolicy().neverSufficient,

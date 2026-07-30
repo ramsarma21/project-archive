@@ -35,8 +35,8 @@ import { MemoryVerdictCache } from "../cache.js";
 import type { ClassifierProvider, ProviderResult } from "../provider.js";
 
 const bank = m1ItemBank();
-// A single-core item, which is twelve of the eighteen in the production bank.
-const ITEM = "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1";
+// A single-core item, which is fifteen of the eighteen in the production bank.
+const ITEM = "BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1";
 const CARRIED = { ideas: { i1: true }, answers: true, confidence: "HIGH" };
 const MISSED = { ideas: { i1: false }, answers: true, confidence: "HIGH" };
 
@@ -79,7 +79,7 @@ describe("every envelope this service mints is accepted by @pa/duel", () => {
   it("accepts a classified CORRECT", async () => {
     const envelope = await gradeWith(
       stub(CARRIED),
-      "they were broke from the war and came to us",
+      "the whole town pays, not just the tea men",
     );
     const parsed = parseVerdictEnvelope(envelope);
     assert.ok(parsed.ok, `rejected: ${JSON.stringify(parsed)}`);
@@ -124,7 +124,7 @@ describe("every envelope this service mints is accepted by @pa/duel", () => {
     });
     const request = {
       itemId: ITEM,
-      answer: "war debt",
+      answer: "the whole town",
       profileId: "p",
       attemptId: "a",
       roundIndex: 0,

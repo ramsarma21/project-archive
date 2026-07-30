@@ -14,7 +14,7 @@ import { authoredCases, buildEvalSet, isContaminatedExample } from "../eval/harn
 const bank = m1ItemBank();
 
 /** A synthetic multi-idea item, used where a controlled needs count is wanted; the
- *  production bank now carries six two-part items alongside its single-core ones. */
+ *  production bank now carries three two-part items alongside its single-core ones. */
 const synthetic = compilePool({
   poolId: "P",
   conceptId: "C",
@@ -80,22 +80,23 @@ describe("no eval case was shown to the model", () => {
   });
 
   it("does render the prompt-visible negative guidance, which is described not quoted", () => {
-    const prompt = buildSystemPrompt(bank.get("BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1")!);
-    assert.match(prompt, /circular/i);
-    assert.match(prompt, /power motive with no money in it/i);
+    const prompt = buildSystemPrompt(bank.get("BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1")!);
+    assert.match(prompt, /the closure is wider|only the guilty/i);
+    assert.match(prompt, /denies the closure took effect/i);
   });
 
   it("does not render an authoring note or the author's reasoning", () => {
-    // `note` holds the rubric's `line` — why the author drew it where they did.
-    // That is for the next author, not for the model, which is told the line itself.
-    const item = bank.get("BOS.MD01.DUEL.STAMP.NAME_TWO.v1")!;
-    assert.ok(!buildSystemPrompt(item).includes("Mission-Slate §4.9 recorded"));
+    // The rubric's `line` — why the author drew the boundary where they did — is for
+    // the next author, not the model, which is told the line itself. A phrase that
+    // appears only in FOUR_NOT_ONE's line must not surface in its prompt.
+    const item = bank.get("BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1")!;
+    assert.ok(!buildSystemPrompt(item).includes("One effect alone is half"));
   });
 });
 
 describe("the prompt states the line the code will apply", () => {
   it("asks for one core, without a count, on a single-core item", () => {
-    const item = bank.get("BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1")!;
+    const item = bank.get("BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1")!;
     assert.equal(item.ideas.length, 1);
     const prompt = buildSystemPrompt(item);
     assert.ok(prompt.includes("REQUIRED CORE."));
@@ -119,11 +120,11 @@ describe("the prompt states the line the code will apply", () => {
     assert.ok(prompt.includes("Either half alone is not enough."));
   });
 
-  it("carries the per-item ignore rules, so a war's other names are not a false negative", () => {
-    const prompt = buildSystemPrompt(bank.get("BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1")!);
+  it("carries the per-item ignore rules, so the act titles are not a false negative", () => {
+    const prompt = buildSystemPrompt(bank.get("BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1")!);
     assert.ok(prompt.includes("FOR THIS ITEM IN PARTICULAR, IGNORE:"));
-    assert.ok(prompt.includes("Seven Years' War"));
-    assert.ok(prompt.includes("French and Indian War"));
+    assert.ok(prompt.includes("formal act titles"));
+    assert.ok(prompt.includes("plain descriptions"));
   });
 
   it("tells the classifier that form is not evidence, using the calibrated rules", () => {
@@ -142,7 +143,7 @@ describe("the prompt states the line the code will apply", () => {
 
 describe("the answer is data, not instructions", () => {
   it("declares the answer untrusted before the answer exists in the context", () => {
-    const item = bank.get("BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1")!;
+    const item = bank.get("BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1")!;
     const request = buildClassifierRequest(item, "anything");
     assert.ok(request.system.includes("untrusted data"));
     assert.ok(request.system.indexOf("untrusted data") < request.system.length);
@@ -170,7 +171,7 @@ describe("the output schema pins the answer to this rubric", () => {
 
   it("asks for one boolean on a single-core item", () => {
     const schema = buildOutputSchema(
-      bank.get("BOS.MD01.DUEL.STAMP.FROM_WHEN.v1")!,
+      bank.get("BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1")!,
     ) as { properties: { ideas: { required: string[] } } };
     assert.deepEqual(schema.properties.ideas.required, ["i1"]);
   });
@@ -233,7 +234,7 @@ describe("parsing the model's answer is strict", () => {
   });
 
   it("rejects a two-idea answer to a single-core item", () => {
-    const single = bank.get("BOS.MD01.DUEL.STAMP.FROM_WHEN.v1")!;
+    const single = bank.get("BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1")!;
     assert.equal(parseRawClassification(good, single), null);
     assert.notEqual(
       parseRawClassification(
