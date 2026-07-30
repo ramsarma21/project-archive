@@ -407,3 +407,167 @@ and avoids over-loading the lesson with mission casting. Do not force it.
 
 Model capabilities and prices move week to week — re-verify the two or three that survive the
 bake-off before the owner commits spend.
+
+---
+
+# Platform pricing comparison (30 Jul)
+
+Deliverable A priced everything on fal.ai. This section verifies those fal rates against every
+platform that carries each shortlisted model, to answer one question: **is fal the right place to
+run this, or is there a materially cheaper / better-access path for our exact job** — 10–20 s
+clips, **1080p**, **silent** (we dub, so audio-on is wasted spend), iterated ~10× per beat across
+~4 beats + the intro.
+
+**All rates captured 29–30 Jul 2026 from each platform's own pricing/model page where possible;
+prices in this category move weekly, so re-verify before committing spend.** Confidence is labelled
+per number (H/M/L) with the source; anything unread-from-source is flagged. "Silent 1080p $/s" is
+the audio-off (or audio-bundled-but-free) per-second rate at 1080p — the number that governs our
+spend.
+
+## Master table — silent 1080p per-second, by model × platform
+
+| Model | Platform | Silent 1080p $/s | Access / minimum | Conf. | Source |
+|---|---|---|---|---|---|
+| **Kling 3.0 Pro** | **fal.ai** | **$0.112** (+refs **$0.224**; Std tier $0.084) | PAYG, no minimum, audio-toggle | **H** | fal.ai/models/fal-ai/kling-video/v3/pro |
+| Kling 3.0 | Kuaishou official (kling.ai/dev) | ~$0.10–0.112 | Prepaid packages, **$9.80 min**, credits expire 30–180 d | M | kling.ai/dev summaries (login-gated) |
+| Kling 3.0 | WaveSpeed | $0.112 (Pro) / $0.14 (Turbo Pro) | PAYG | M-H | wavespeed.ai/kling-3-api |
+| Kling 3.0 | Replicate | ~$0.168 (**~1.5–2× fal**) | PAYG job API | M | reapi.ai; replicate.com/kwaivgi/kling-v3-video (listed) |
+| Kling 3.0 | reAPI / EvoLink | $0.099 / $0.106 | PAYG resellers | M-L | reapi.ai; eesel/EvoLink |
+| Kling 3.0 | Runway / Google / Ofox | **not hosted** | — | H | — |
+| **Seedance 2.0** | **Ofox** | **$0.34** | One key, PAYG per-sec | M-H | ofox.ai (Seedance 2.0 page) |
+| Seedance 2.0 | Segmind | $0.34 | PAYG, no minimum | M | segmind.com/models/seedance-2.0 |
+| Seedance 2.0 | **ByteDance ModelArk / Volcano (direct)** | **$0.374** (no-video); **~$0.229 with video-ref** | Token-based; **free trial tokens** (see below) | H | byteplus.com/en/product/modelark |
+| Seedance 2.0 | Runway direct | $0.40 (fast 720p $0.29; mini $0.16, $0.64 min) | Credits, $10 min | H | docs.dev.runwayml.com/guides/pricing |
+| Seedance 2.0 | WaveSpeed | $0.50 (Fast t2v) / $0.325 (with-ref) | PAYG | M | wavespeed.ai (Seedance 2.0 Fast) |
+| Seedance 2.0 | **fal.ai** | **$0.682** (720p $0.303 std / $0.242 fast) | PAYG; **~2× the cheapest 1080p route** | H | fal.ai/models/bytedance/seedance-2.0 |
+| Seedance 2.0 | Replicate | listed, ~official per-sec (2.0 not pinned); older lite ~$0.018 (prior gen) | PAYG | L | replicate.com/bytedance |
+| **Veo 3.1** | **fal.ai** | Std **$0.20** / Fast **$0.10** / Lite **$0.05** | PAYG, audio-toggle | H | fal.ai/models/fal-ai/veo3.1 |
+| Veo 3.1 | Google **Vertex AI** (video-only rows) | Std $0.20 / Fast $0.10 / Lite $0.05 | GCP project; **$300 GCP trial** | M-H | Vertex AI generative pricing (captured 22 Jul) |
+| Veo 3.1 | Runway direct | Std $0.20 / Fast $0.10 (no Lite) | Credits, $10 min | H | docs.dev.runwayml.com/guides/pricing |
+| Veo 3.1 | Replicate | Fast $0.10 | PAYG | M-H | replicate.com/google/veo-3.1-fast |
+| Veo 3.1 | Google **Gemini API** | **audio BUNDLED — no silent rate**: Std $0.40 / Fast $0.12 / Lite $0.08 | API key; no free tier | H | ai.google.dev/gemini-api/docs/pricing |
+| **Runway Gen-4.5** | **Runway direct** | **$0.12** (~720p native; 1080p via upscale) | Credits $0.01, **$10 min**, no waitlist | H | docs.dev.runwayml.com/guides/pricing |
+| Runway Gen-4 Turbo | Runway direct | $0.05 | as above | H | docs.dev.runwayml.com/guides/pricing |
+| Runway Gen-4.5 / Turbo | Apiframe | ~$0.20 / ~$0.086 (cheaper on monthly plans) | PAYG or subscription | M | apiframe.ai/blog/best-runway-api-providers-2026 |
+| Runway Gen-4 Turbo | Segmind / WaveSpeed | $0.10 / $0.01 (i2v only — see gotcha) | PAYG | M / L | segmind.com; wavespeed.ai |
+| Runway Gen-4.x | fal / Google / Ofox | **not hosted** | — | H | — |
+
+Also carrying all three bake-off models under one credential: **Higgsfield** (Sora 2, Veo 3.1,
+Kling 3.0, Seedance 2.0, Hailuo, one credit pool, ~$0.10/s, M, techsy.io) — creator-grade,
+per-model pricing less transparent than fal.
+
+## Per-beat and ~10×-iteration cost (silent 1080p, cheapest viable route)
+
+One accepted 15 s beat, and the same beat iterated ~10× (drafts + final). Kling and Seedance make
+15 s in one call; Veo (8 s cap) and Runway (10 s cap) need two generations per beat.
+
+| Model | Cheapest viable silent-1080p route | 1× 15 s beat | ~10× iteration |
+|---|---|---|---|
+| **Kling 3.0 Pro** (primary) | fal, no refs | **$1.68** | **~$17** |
+| Kling 3.0 Pro **+ element/character refs** (our anti-slop lever) | fal, $0.224/s | **$3.36** | **~$34** |
+| **Seedance 2.0** 1080p | Ofox/Segmind $0.34/s | **$5.10** | **~$51** |
+| Seedance 2.0 1080p | **on fal $0.682/s** | $10.23 | **~$102** |
+| Seedance 2.0 1080p + video-ref | ByteDance direct ~$0.229/s | $3.44 | ~$34 |
+| **Veo 3.1** (reserve) Fast silent | fal/Vertex/Runway $0.10/s | $1.50 | ~$15 |
+| Veo 3.1 Standard silent | fal/Vertex/Runway $0.20/s | $3.00 | ~$30 |
+| **Runway Gen-4.5** | Runway direct $0.12/s (~720p) | $1.80 | ~$18 |
+| Runway Gen-4 Turbo | Runway direct $0.05/s (~720p) | $0.75 | ~$7.50 |
+
+**Whole lesson (4 beats + intro ≈ 5 beats, iterated ~10×), cheapest viable:** on the **Kling
+primary path** ~$85 (no refs) to ~$170 (all with element refs), blended ~$120. **If Seedance wins
+the bake-off and runs at 1080p, the platform choice swings the bill: ~$255 on Ofox/Segmind vs
+~$510 on fal.** Every path is still low-hundreds-of-dollars — capability fit decides, not cost, as
+Deliverable A said. But the Seedance-on-fal case is the one place platform choice doubles spend.
+
+## Bottom line
+
+**Get the fal.ai key — it is still the right call as the one credential for the bake-off and for
+the likely primary (Kling) and reserve (Veo).** fal carries all three bake-off models, matches
+Kuaishou's official Kling rate to the cent, lets you toggle audio off on Kling and Veo (the
+silent discount we need), and is the cleanest PAYG with no minimum. The one caveat below is a
+production-time move, not a reason to skip fal.
+
+**(a) Cheapest place to run each model silently at ~1080p.**
+- **Kling 3.0:** fal ($0.112/s) ≈ Kuaishou official ($0.10–0.112/s); a couple of resellers shave
+  ~10% (reAPI $0.099, EvoLink $0.106) — immaterial. **Avoid Replicate (~1.5–2×).** fal is at/near
+  the floor and the cleanest.
+- **Seedance 2.0:** **Ofox or Segmind ($0.34/s)**, or ByteDance ModelArk direct ($0.374/s) — each
+  **~half of fal's $0.682/s at 1080p.** fal is the *worst* place for Seedance 1080p.
+- **Veo 3.1 (silent):** fal / Vertex AI video-only rows / Runway all tie ($0.20 Std, $0.10 Fast,
+  $0.05 Lite; Lite only on fal & Vertex). **Do NOT use the Gemini API for silent Veo** — it bundles
+  audio at $0.40/s with no toggle.
+- **Runway Gen-4.5:** Runway direct ($0.12/s); Gen-4 Turbo $0.05/s. Not on fal.
+
+**(b) One platform for the Kling + Seedance + Veo bake-off?** Yes: **fal, Replicate, and Higgsfield
+each carry all three.** Runway direct covers Seedance + Veo but **not Kling**; Google is Veo-only;
+ByteDance is Seedance-only; Ofox has neither Kling nor Veo. **fal is the best one-key option** —
+official-rate Kling, audio-toggle on Kling/Veo, cleanest DX. Replicate is ~1.5–2× on Kling;
+Higgsfield's per-model pricing is opaque. So: **run the bake-off on fal**, and *only if Seedance
+wins and needs 1080p volume* move Seedance's production runs to Ofox/Segmind/ByteDance to halve
+that model's cost. Kling and Veo are already at/near their floor on fal.
+
+**(c) Free tier / credits worth doing first drafts on.**
+- **ByteDance/Volcengine: new users get ~5M free tokens (~16 full 15 s 720p Seedance clips)** — a
+  genuine free first-draft budget, *specifically for Seedance* (BytePlus ModelArk international also
+  grants trial credits). Best free route to evaluate Seedance quality before paying.
+- **Google Cloud: $300 GCP trial covers Vertex AI Veo** (~3,000 s of Veo Fast silent). Good for Veo
+  drafts if Veo re-enters contention.
+- **fal / Replicate:** small trial credits + cheap PAYG, no minimum — fine for Kling drafts at
+  pennies each.
+- Verdict: at ~50 total clips and low-hundreds total spend, free credits are a nice-to-have, not a
+  deciding factor; the one-fal-key convenience for the bake-off outweighs chasing them. The
+  Volcengine free tokens are worth using *if* Seedance is a serious Seedance-quality trial.
+
+**(d) Gotchas that change the ranking.**
+1. **Seedance audio can't be turned off** on any platform (bundled, same price on/off) — so for our
+   silent workflow every Seedance second partly pays for audio we discard, and Seedance is the
+   priciest model per silent 1080p second regardless of platform. Model property, not a platform
+   lever. (Deliverable A already notes this.)
+2. **Veo on the Gemini API bundles audio (no silent toggle) → $0.40/s instead of $0.20/s.** Use
+   Vertex AI's video-only rows, or fal/Runway audio-off, to get silent Veo. Picking the wrong
+   Google endpoint doubles Veo's cost.
+3. **fal marks up Seedance ~2× at 1080p** ($0.682/s vs ~$0.34–0.374/s elsewhere). If Seedance is
+   the pick at 1080p, fal is the wrong production platform for it.
+4. **Kling element/character reference ~doubles the rate** (fal $0.112→$0.224/s; official 8→16
+   cr/s at 1080p) — Deliverable A's "element-reference doubling" is **verified**. Our anti-slop plan
+   feeds our GLB reference frames, so budget the 2× on Kling for real runs.
+5. **Resolution isn't free everywhere:** Seedance 2.0 Fast caps at 720p (1080p only on the Standard
+   tier), and Runway Gen-4.5 is ~720p native (1080p via upscale). Only Kling and Veo give true
+   silent 1080p in one shot.
+6. **WaveSpeed Gen-4 Turbo at $0.01/s** is image-to-video only and 5× below Runway direct — treat
+   as a loss-leader/typo, don't budget on it (L confidence).
+
+## Corrections to Deliverable A's fal figures (verified against fal's live pages, 30 Jul)
+
+- **Kling $0.112/s silent, ~$0.224/s with element refs — CONFIRMED exact** (fal Kling v3 Pro page).
+  Standard tier is $0.084/s silent; audio-on $0.168/s; audio+voice $0.196/s.
+- **Seedance "720p cap on fal" is now STALE — fal offers Seedance 1080p**, but at **$0.682/s**
+  (token-priced, $14/M). The doc's "$0.302 std / $0.242 fast" are the **720p** rates (fal lists
+  $0.3034 / $0.2419) and remain roughly right *for 720p only*. **The 1080p rate is the one to
+  budget, and it is ~2× the cheapest alternative.** Seedance audio is bundled (no discount), so the
+  doc's "audio always included" holds.
+- **Seedance R2V-with-video ~$0.18/s (×0.6)** — the with-video-input discount is **real** (ByteDance
+  direct charges $4.7/M vs $7.7/M at 1080p, ×0.61); on fal the multiplier lands the 1080p with-video
+  rate near ~$0.42/s, not $0.18/s. Confirm the exact fal multiplier at call time.
+- **Veo $0.20/s silent, Fast $0.10/s — CONFIRMED**; add a **Lite tier at $0.05/s silent 1080p**
+  ($0.03/s at 720p) if quality allows, and the Gemini-API-bundles-audio gotcha above.
+- **Runway "not on fal" — still TRUE** (Gen-4.x is Runway-direct/Apiframe only). New since the doc:
+  Runway's *own* API now also hosts Seedance 2.0 and Veo 3.1 (but still not Kling).
+
+## Confidence & sources
+
+- **High** (read from the platform's own page): all fal rates (fal.ai model pages); Runway direct
+  credit table (docs.dev.runwayml.com/guides/pricing); Veo Gemini-API rates (ai.google.dev); ByteDance
+  ModelArk Seedance token rates (byteplus.com/en/product/modelark); WaveSpeed model pages.
+- **Medium**: Vertex AI video-only (silent) Veo rows (secondary capture 22 Jul, consistent with fal's
+  audio-off rates); Ofox/Segmind Seedance $0.34/s (vendor pages via comparison blogs); Kuaishou
+  official Kling per-second (login-gated page; several third-party summaries converge ~$0.10–0.112/s);
+  Higgsfield one-pool ~$0.10/s (single source).
+- **Low / flagged**: Replicate's *exact* Kling and Seedance 2.0 per-second (listed but "not
+  normalized" — the ~1.5–2× Kling figure is from reAPI, not read from Replicate directly); reseller
+  rates (reAPI/EvoLink/AIReiter/PiAPI); WaveSpeed Gen-4 Turbo $0.01/s (implausibly low).
+- **Could not verify:** whether the Kuaishou API and web UI truly share one credit pool (sources
+  conflict); exact live Replicate 2.0 numbers; whether Volcano Engine (China) needs Chinese
+  credentials vs BytePlus ModelArk (international) for Seedance direct.
+- **Prices move weekly.** Re-verify the two or three models/platforms that survive the bake-off
+  before the owner commits spend.
