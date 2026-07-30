@@ -36,9 +36,9 @@ type Filter = "ALL" | CardCategoryId;
 
 const FILTERS: readonly { readonly id: Filter; readonly label: string }[] = [
   { id: "ALL", label: "All cards" },
-  { id: "POSTWAR_REVENUE", label: "Postwar Revenue" },
-  { id: "STAMP_SCOPE", label: "The Stamp's Reach" },
+  { id: "INTOLERABLE_ACTS", label: "The Coercive Acts" },
   { id: "REPRESENTATION", label: "Representation" },
+  { id: "MERCANTILISM", label: "Non-importation" },
 ];
 
 function toCardData(card: CodexCardView): ArchiveCardData {

@@ -133,6 +133,7 @@ const MACRO_SEEDS: ConceptSeed[] = [
     parentSe: "8.4(A)",
     clause: "POSTWAR_POLICY",
     mission: null,
+    recurrence: "ONCE",
     review: "OWNER_PROVIDED",
     refs: [`${MISSION_SLATE} 4.7, 4.9 pool A`, CHAPTER_IDS, CHAPTER_TEKS],
     notes: [
@@ -157,6 +158,7 @@ const MACRO_SEEDS: ConceptSeed[] = [
     parentSe: "8.4(A)",
     clause: "STAMP_ACT",
     mission: null,
+    recurrence: "ONCE",
     review: "OWNER_PROVIDED",
     refs: [`${MISSION_SLATE} 4.7, 4.9 pool B`, CHAPTER_IDS, CHAPTER_TEKS],
     notes: [

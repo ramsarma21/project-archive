@@ -8,12 +8,12 @@ import type { CodexStandingLike } from "./codexView.js";
 // the shot shows every card state: mastered, learned, and locked-with-trial.
 
 const STANDING: CodexStandingLike = {
-  pvpLegalCardIds: ["BOS.MD01.CARD.WAR_DEBT.v1"],
+  pvpLegalCardIds: ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
   learnedCardIds: [
-    "BOS.MD01.CARD.WAR_DEBT.v1",
-    "BOS.MD01.CARD.COLONIAL_REVENUE.v1",
-    "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1",
-    "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1",
+    "BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1",
+    "BOS.MD01.CARD.FOUR_ACTS.v1",
+    "BOS.MD01.CARD.CONSENT_GROUND.v1",
+    "BOS.MD01.CARD.NON_IMPORTATION.v1",
   ],
 };
 
