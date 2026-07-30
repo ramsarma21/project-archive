@@ -211,6 +211,16 @@ either via Kling Omni's up-to-6-cuts-per-generation or by stitching short shots 
 talking motion, add a separate TTS voice track, and rely on subtitles — imperfect sync then reads as
 fine. This makes **Kling 3.0 Omni the strongest single fit** (15s, multi-shot, native voiced audio).
 
+**Audio is added in post, not generated (owner, 30 Jul).** Generate **silent, mouth-moving** video;
+add TTS voice + ambient + subtitles separately afterward. Cheaper, lets the model spend its budget on
+the picture (better visuals), and — key consequence — **native lip-sync is no longer required**, so
+the tool field widens from "best native voiced audio" to "best silent visual quality + game-3D style
+control + 10-20s length" (Kling, Veo, Runway, Seedance, Sora all back in contention). To get mouth
+movement without caring about sync, prompt the character as speaking/mid-conversation (or generate
+with the model's native audio and simply replace the track in post). Sync stays non-load-bearing;
+subtitles carry meaning. Lesson clips specifically must: give broad context (what happened, who it
+affected), target the most-missed misconceptions, and look/sound true to the period — no AI-slop tells.
+
 **BLOCKER — no video-gen tool in this environment.** There is no text-to-video API or key here (only
 image gen + the Gemini/Meshy asset pipeline), so producing an MP4 needs the owner to provide access
 to a service (Kling 3.0 Omni recommended for the 10-20s voiced spec; Veo 3.1 the alternative) or to
