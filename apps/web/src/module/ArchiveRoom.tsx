@@ -109,11 +109,13 @@ interface RoomSlot {
 const SELECT_SECONDS = 0.7;
 const HANDOFF_SECONDS = 1.8;
 /** Where the camera closes to when the room hands over to the presenter — a
- * tight three-quarter framing on her, so the handoff lands like a launch. */
+ * tight head-and-shoulders framing on her (she is an upper-body projection, so
+ * nothing below the collarbone is there to show), so the handoff lands like a
+ * launch. Targets her face at PRESENTER_POS. */
 const HANDOFF_CAMERA = {
-  position: [-2.35, 1.52, 2.7] as const,
-  target: [-2.62, 1.4, 0.85] as const,
-  fov: 36,
+  position: [-1.0, 1.58, 5.2] as const,
+  target: [-1.2, 1.56, 3.8] as const,
+  fov: 26,
 };
 
 function ease(t: number): number {
@@ -740,7 +742,9 @@ function PresenterRigMesh(props: { presenter: ModulePresenter; reducedMotion: bo
   return <primitive object={rig.root} />;
 }
 
-/** The projector pool at the presenter's feet + a soft body halo behind her. */
+/** The projector: a bright floor pad, a beam column the bust materialises out
+ * of, and a soft halo behind her head — so the upper-body-only projection reads
+ * as deliberately projected rather than cut off. */
 function PresenterEmitter(props: { reducedMotion: boolean }) {
   const clock = useRef(0);
   const fx = useMemo(() => {
@@ -759,38 +763,63 @@ function PresenterEmitter(props: { reducedMotion: boolean }) {
       map: glow,
       color: 0x7fdcff,
       transparent: true,
-      opacity: 0.26,
+      opacity: 0.3,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       toneMapped: false,
     });
-    return { glow, padMat, haloMat };
+    // A projection beam rising from the pad to the bust: brightest at the base,
+    // fading up so she reads as materialising out of it.
+    const beamGeo = new THREE.CylinderGeometry(0.42, 0.64, 1.6, 40, 1, true);
+    const beamMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+      uniforms: { uOpacity: { value: 0.16 }, uColor: { value: new THREE.Color(0x63c8ff) } },
+      vertexShader:
+        "varying vec2 vUv;\nvoid main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
+      fragmentShader:
+        "varying vec2 vUv;\nuniform float uOpacity;\nuniform vec3 uColor;\n" +
+        "void main(){\n" +
+        "  float up = smoothstep(1.0, 0.05, vUv.y);\n" +
+        "  float edge = pow(sin(vUv.x * 3.14159), 1.5);\n" +
+        "  gl_FragColor = vec4(uColor, uOpacity * up * (0.4 + 0.6 * edge));\n" +
+        "}",
+    });
+    return { glow, padMat, haloMat, beamGeo, beamMat };
   }, []);
   useEffect(
     () => () => {
       fx.glow.dispose();
       fx.padMat.dispose();
       fx.haloMat.dispose();
+      fx.beamGeo.dispose();
+      fx.beamMat.dispose();
     },
     [fx],
   );
   useFrame((_state, dt) => {
     if (props.reducedMotion) return;
     clock.current += dt;
-    fx.padMat.opacity = 0.42 + 0.12 * Math.sin(clock.current * 2.0);
+    const flick = 0.9 + 0.1 * Math.sin(clock.current * 1.6);
+    fx.padMat.opacity = (0.42 + 0.12 * Math.sin(clock.current * 2.0)) * flick;
+    fx.beamMat.uniforms.uOpacity!.value = 0.15 * flick;
   });
   return (
     <group position={[...PRESENTER_POS]}>
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, 0.02, 0]}
-        scale={[2.7, 2.7, 1]}
+        scale={[2.4, 2.4, 1]}
         material={fx.padMat}
         raycast={() => null}
       >
         <planeGeometry args={[1, 1]} />
       </mesh>
-      <sprite position={[0, 1.02, -0.25]} scale={[2.5, 3.1, 1]} material={fx.haloMat} renderOrder={-2} />
+      <mesh position={[0, 0.92, 0]} geometry={fx.beamGeo} material={fx.beamMat} raycast={() => null} />
+      <sprite position={[0, 1.6, -0.2]} scale={[1.9, 2.2, 1]} material={fx.haloMat} renderOrder={-2} />
     </group>
   );
 }
@@ -800,11 +829,11 @@ function RoomPresenter(props: { presenter: ModulePresenter; reducedMotion: boole
   const url = `/world/characters/${props.presenter.glbKey}.glb`;
   return (
     <group>
-      {/* A warm key + fill placed AT her, short-range so the face reads in true
-          tone against the cyan room without warming the rack. */}
-      <pointLight position={[PRESENTER_POS[0] + 1.1, 1.75, 2.4]} intensity={7} distance={5} decay={2} color={0xffe6d2} />
-      <pointLight position={[PRESENTER_POS[0] - 1.0, 1.5, 1.4]} intensity={3.2} distance={4} decay={2} color={0xfdece0} />
-      <pointLight position={[PRESENTER_POS[0], 0.15, PRESENTER_POS[2] - 0.3]} intensity={2.4} distance={2} decay={3} color={0x4fc6ff} />
+      {/* A warm key + fill in FRONT of her (toward the camera), short-range so the
+          face reads in true tone against the cyan room without warming the rack. */}
+      <pointLight position={[PRESENTER_POS[0] + 0.9, 1.75, PRESENTER_POS[2] + 1.7]} intensity={7} distance={5} decay={2} color={0xffe6d2} />
+      <pointLight position={[PRESENTER_POS[0] - 0.9, 1.55, PRESENTER_POS[2] + 1.2]} intensity={3.2} distance={4.5} decay={2} color={0xfdece0} />
+      <pointLight position={[PRESENTER_POS[0], 0.5, PRESENTER_POS[2] - 0.4]} intensity={2.4} distance={2.6} decay={3} color={0x4fc6ff} />
       <PresenterEmitter reducedMotion={props.reducedMotion} />
       <GlbBoundary fallback={<group />} onBeforeRetry={() => useGLTF.clear(url)}>
         <Suspense fallback={null}>
