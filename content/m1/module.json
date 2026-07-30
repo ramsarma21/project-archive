@@ -24,7 +24,7 @@
       {
         "id": "BOS.MD01.MODULE.CARD.IDENTITY.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_IDENTITY.v1",
-        "throughSeconds": 22,
+        "throughSeconds": 24,
         "kicker": "Identity",
         "body": [
           "Boston, June 1774. Eight months the harbour has been shut. You run papers through this town for the Committee of Correspondence, and nobody looks at you twice.",
@@ -50,7 +50,7 @@
       {
         "id": "BOS.MD01.MODULE.CARD.CLOSURE.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_CLOSURE.v1",
-        "throughSeconds": 60,
+        "throughSeconds": 51,
         "kicker": "The closure",
         "body": [
           "Eight months ago a crowd put three cargoes of tea in that water.",
@@ -109,7 +109,7 @@
           "id": "BOS.MD01.CHECK.CLOSURE.v1",
           "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
           "prompt": "The harbour is closed. Who does the closure fall on?",
-          "reinforcement": "The Port Act closes the port itself, so it falls on every trade in Boston — the fishmonger who never touched the tea starves beside the men who did. That is what makes it the punishment of a whole town.",
+          "reinforcement": "The Port Act closes the port itself, so it falls on every trade in Boston, and the fishmonger who never touched the tea starves beside the men who did. That is what makes it the punishment of a whole town.",
           "drawCount": 4,
           "correctOption": {
             "id": "OPT.EVERY_TRADE",
@@ -154,7 +154,7 @@
       {
         "id": "BOS.MD01.MODULE.CARD.ACTS.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_ACTS.v1",
-        "throughSeconds": 96,
+        "throughSeconds": 76,
         "kicker": "What the law says",
         "body": [
           "Four acts, not one. The harbour shut. The colony's charter rewritten. Soldiers quartered. Trials moved out of reach.",
@@ -198,11 +198,11 @@
           "id": "BOS.MD01.CHECK.ACTS.v1",
           "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
           "prompt": "Which of these is still lawful in Boston tonight?",
-          "reinforcement": "The four Acts shut the port, ended the town meeting, quartered soldiers, and moved trials out of reach — but none of them forbids carrying printed paper through the streets. That is what makes your cover hold.",
+          "reinforcement": "The four Acts shut the port, ended the town meeting, quartered soldiers, and moved trials out of reach, but none of them forbids carrying printed paper through the streets. That is what makes your cover hold.",
           "drawCount": 4,
           "correctOption": {
             "id": "OPT.CARRY_PAPER",
-            "text": "Carrying printed paper through the streets.",
+            "text": "Carrying a printed handbill through the occupied streets.",
             "correct": true,
             "feedback": "Nothing in the four Acts forbids it. That is what makes your cover hold."
           },
@@ -243,7 +243,7 @@
       {
         "id": "BOS.MD01.MODULE.CARD.CONSENT.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
-        "throughSeconds": 122,
+        "throughSeconds": 92,
         "kicker": "Consent",
         "body": [
           "Boston elects its own assembly. It elects no member of Parliament.",
@@ -265,7 +265,7 @@
             },
             {
               "id": "BOS.MD01.BEAT.CONSENT_2.v1",
-              "text": "The objection is not the cost. It is who laid it. The town would say the same if the tax were a farthing, and it says the same about the men who wrote these Acts: Boston chose none of them.",
+              "text": "The objection is not the cost. It is who laid it. The town would say the same if the tax were a farthing. It says the same about the men who wrote these Acts. Boston chose none of them.",
               "visualId": "m1-stamp-act"
             }
           ],
@@ -288,7 +288,7 @@
           "id": "BOS.MD01.CHECK.REPRESENTATION.v1",
           "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
           "prompt": "What is the objection to the tax?",
-          "reinforcement": "Boston elects its own assembly but no member of Parliament, so the objection is who laid the tax — a body the town never chose — not what it costs.",
+          "reinforcement": "Boston elects its own assembly but no member of Parliament, so the objection is who laid the tax, a body the town never chose, not what it costs.",
           "drawCount": 4,
           "correctOption": {
             "id": "OPT.WHO_LAID_IT",
@@ -333,7 +333,7 @@
       {
         "id": "BOS.MD01.MODULE.CARD.ANSWER.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_ANSWER.v1",
-        "throughSeconds": 154,
+        "throughSeconds": 141,
         "kicker": "The answer",
         "body": [
           "They do not declare war. They cannot tax London.",
@@ -346,6 +346,16 @@
           "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1"
         ],
         "advanceLabel": "Take the pledge",
+        "excerpt": {
+          "sourceId": "BOS.MD01.SOURCE.SOLEMN_COVENANT.v1",
+          "title": "The Solemn League and Covenant, June 1774",
+          "attribution": "Boston Committee of Correspondence, printed by Edes and Gill",
+          "lines": [
+            "We do solemnly, in the presence of God, covenant and engage with each other,",
+            "that we will suspend all commercial intercourse with the said island of Great Britain,",
+            "until the said act for blocking up the said harbour be repealed."
+          ]
+        },
         "scene": {
           "beats": [
             {
@@ -409,7 +419,7 @@
               "id": "OPT.DUMP_MORE",
               "text": "They destroy another cargo, as they did the tea.",
               "correct": false,
-              "feedback": "No. The answer this month is a signed pledge, not another night on the water — organised refusal, not more destruction."
+              "feedback": "No. The answer this month is a signed pledge, not another night on the water, organised refusal, not more destruction."
             },
             {
               "id": "OPT.PAY_QUIETLY",

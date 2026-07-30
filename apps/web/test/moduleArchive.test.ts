@@ -125,10 +125,10 @@ test("image visuals are unaffected: they still require a source", () => {
 
 test("a deck splits into an opening, one file per question, and a handoff brief", () => {
   const layout = deriveArchiveLayout(M1);
-  // M1: identity(frame) · [postwar, stamp, representation](checks) · synthesis, insert(frames).
+  // M1: identity(frame) · [closure, acts, consent, answer](checks) · brief(frame).
   assert.equal(layout.opening.length, 1);
-  assert.equal(layout.files.length, 3);
-  assert.equal(layout.brief.length, 2);
+  assert.equal(layout.files.length, 4);
+  assert.equal(layout.brief.length, 1);
   // Every file poses a question and carries its 1-based ordinal.
   layout.files.forEach((file, index) => {
     assert.ok(file.card.check, `file ${index} poses a question`);
@@ -143,17 +143,17 @@ test("a deck splits into an opening, one file per question, and a handoff brief"
 
 test("files unlock in order: the first is ready, the rest locked until it is done", () => {
   const layout = deriveArchiveLayout(M1);
-  const [f0, f1, f2] = layout.files;
+  const [f0, f1, , f3] = layout.files;
 
   // Nothing played: only the first file is ready.
-  assert.deepEqual(archiveFileStatuses(layout, [], []), ["READY", "LOCKED", "LOCKED"]);
+  assert.deepEqual(archiveFileStatuses(layout, [], []), ["READY", "LOCKED", "LOCKED", "LOCKED"]);
   assert.equal(nextReadyFileIndex(layout, [], []), 0);
 
   // Playing file 0's clip alone does not finish it — its question is unanswered,
   // so it is not DONE and file 1 stays locked.
   assert.deepEqual(
     archiveFileStatuses(layout, [f0!.card.cueId], []),
-    ["READY", "LOCKED", "LOCKED"],
+    ["READY", "LOCKED", "LOCKED", "LOCKED"],
   );
 
   // File 0 played AND answered → DONE, and file 1 unlocks.
@@ -161,14 +161,14 @@ test("files unlock in order: the first is ready, the rest locked until it is don
   const afterF0Checks = [f0!.card.check!.id];
   assert.deepEqual(
     archiveFileStatuses(layout, afterF0Cues, afterF0Checks),
-    ["DONE", "READY", "LOCKED"],
+    ["DONE", "READY", "LOCKED", "LOCKED"],
   );
   assert.equal(nextReadyFileIndex(layout, afterF0Cues, afterF0Checks), 1);
 
-  // Skipping ahead is impossible: answering file 2 out of order cannot unlock it.
+  // Skipping ahead is impossible: answering the last file out of order cannot unlock it.
   assert.deepEqual(
-    archiveFileStatuses(layout, [f2!.card.cueId], [f2!.card.check!.id]),
-    ["READY", "LOCKED", "DONE"],
+    archiveFileStatuses(layout, [f3!.card.cueId], [f3!.card.check!.id]),
+    ["READY", "LOCKED", "LOCKED", "DONE"],
   );
   assert.equal(f1!.ordinal, 2);
 });
@@ -185,7 +185,7 @@ test("allFilesResolved is true only when every file is played and answered", () 
 test("unansweredQuestionIds lists exactly the checks still owed", () => {
   const checks = moduleRequiredCheckIds(M1);
   assert.deepEqual(unansweredQuestionIds(M1, []), checks);
-  assert.deepEqual(unansweredQuestionIds(M1, checks.slice(0, 2)), [checks[2]]);
+  assert.deepEqual(unansweredQuestionIds(M1, checks.slice(0, 2)), checks.slice(2));
   assert.deepEqual(unansweredQuestionIds(M1, checks), []);
 });
 

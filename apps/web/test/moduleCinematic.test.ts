@@ -43,7 +43,7 @@ function reload(mutate: (env: { module: LearningModuleDefinition }) => void) {
 // The authored M1 lesson
 // ---------------------------------------------------------------------------
 
-test("the authored M1 lesson loads with a presenter, scenes and three checks", () => {
+test("the authored M1 lesson loads with a presenter, scenes and four checks", () => {
   assert.equal(M1_CONTENT.ok, true);
   assert.ok(M1.presenter, "the deck names a presenter");
   assert.equal(M1.presenter?.glbKey, "system-presenter-rigged");
@@ -53,11 +53,14 @@ test("the authored M1 lesson loads with a presenter, scenes and three checks", (
   const scened = M1.cards.filter((card) => card.scene && card.scene.beats.length > 0);
   assert.equal(scened.length, 6, "every card is a scene");
 
+  // Four checks across three concepts: INTOLERABLE_ACTS is checked twice (the
+  // closure as collective punishment, then the scope of the four acts).
   const checks = moduleRequiredCheckIds(M1);
   assert.deepEqual(checks, [
-    "BOS.MD01.CHECK.POSTWAR_REVENUE.v1",
-    "BOS.MD01.CHECK.STAMP_SCOPE.v1",
+    "BOS.MD01.CHECK.CLOSURE.v1",
+    "BOS.MD01.CHECK.ACTS.v1",
     "BOS.MD01.CHECK.REPRESENTATION.v1",
+    "BOS.MD01.CHECK.ANSWER.v1",
   ]);
 });
 
@@ -169,11 +172,11 @@ test("a beat naming a visual the scene does not carry is a defect", () => {
 // ---------------------------------------------------------------------------
 
 test("the slide shown tracks the active beat's visual", () => {
-  const postwar = M1.cards.find((c) => c.id.includes("POSTWAR"))!;
-  const scene = postwar.scene!;
-  // Beat 0 names m1-wolfe; the last beat names none and falls back to the first.
-  assert.equal(sceneBeatVisual(scene, 0)?.id, "m1-wolfe");
-  assert.equal(sceneBeatVisual(scene, scene.beats.length - 1)?.id, scene.visuals[0]!.id);
+  const closure = M1.cards.find((c) => c.id.includes("CLOSURE"))!;
+  const scene = closure.scene!;
+  // Beat 0 shows the port-bill circular; a later beat moves to the caged-town print.
+  assert.equal(sceneBeatVisual(scene, 0)?.id, "m1-coc-port-bill");
+  assert.equal(sceneBeatVisual(scene, scene.beats.length - 1)?.id, "m1-bostonians-distress");
   assert.equal(sceneBeatSubtitle(scene, 0), scene.beats[0]!.text);
   // Content is available with no animation whatsoever — reduced motion never
   // hides a subtitle or a slide, it only removes flicker/drift (CSS/shader).
@@ -201,8 +204,8 @@ test("completion requires every required check, not only the deck", () => {
     null,
   );
 
-  // One check short: still refused, and it is named.
-  assert.deepEqual(unmasteredCheckIds(M1, checks.slice(0, 2)), [checks[2]]);
+  // Checks short: still refused, and they are named.
+  assert.deepEqual(unmasteredCheckIds(M1, checks.slice(0, 2)), checks.slice(2));
   assert.equal(moduleRunChecksMastered(M1, checks.slice(0, 2)), false);
   assert.equal(
     completeModuleRun({

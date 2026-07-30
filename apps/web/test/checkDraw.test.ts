@@ -51,14 +51,20 @@ function permutations<T>(items: readonly T[]): T[][] {
   return out;
 }
 
-test("M1 authors three pooled checks, one per concept", () => {
-  assert.equal(POOLED.length, 3);
+test("M1 authors four pooled checks across the three concepts", () => {
+  // INTOLERABLE_ACTS carries two of the lesson's assessable propositions — the
+  // closure as collective punishment, and the scope of the four acts — so it is
+  // checked twice; representation and non-importation once each. Four checks, three
+  // concepts.
+  assert.equal(POOLED.length, 4);
   const concepts = POOLED.map((check) => check.conceptId).sort();
   assert.deepEqual(concepts, [
-    "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+    "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+    "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+    "BOS.CONCEPT.MERCANTILISM.v1",
     "BOS.CONCEPT.REPRESENTATION.v1",
-    "BOS.CONCEPT.STAMP_SCOPE.v1",
   ]);
+  assert.equal(new Set(concepts).size, 3, "three distinct concepts");
 });
 
 test("each pooled check has zero authoring defects", () => {

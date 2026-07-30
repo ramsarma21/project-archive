@@ -80,11 +80,11 @@ test("the deck opens on an establishing wide of the room", () => {
 });
 
 test("a historical visual materializes over the shoulder, then pushes in", () => {
-  const postwarIndex = M1.cards.findIndex((c) => c.id.includes("POSTWAR"));
-  const segments = planCardShots(M1.cards[postwarIndex]!, postwarIndex);
+  const closureIndex = M1.cards.findIndex((c) => c.id.includes("CLOSURE"));
+  const segments = planCardShots(M1.cards[closureIndex]!, closureIndex);
 
   const firstVisual = segments.find((s) => s.visual);
-  assert.ok(firstVisual, "the postwar card carries a visual");
+  assert.ok(firstVisual, "the closure card carries a visual");
   assert.equal(firstVisual!.shot, "OVER_SHOULDER");
   assert.equal(firstVisual!.visualMotion, "assemble");
 
