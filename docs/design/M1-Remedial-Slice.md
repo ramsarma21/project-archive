@@ -122,13 +122,22 @@ how the Coercive Acts have hit her**, and **hands over the mission herself**: ta
 it signed, post it. IRIS stays present throughout the mission as the AR assistant/handler, but the
 mission is given in-world by Abigail.
 
+**The handoff sequence (owner, 30 Jul):** after the four lesson files, **IRIS (live) gives one line**
+— *today's mission is to report to print-shop owner Abigail Mercer* — then it **cuts to the Abigail
+cutscene**, which **fades into real-time gameplay inside the shop**. Abigail should also **appear
+briefly in one of the four lesson cutscenes**, so she is already a face the player knows when IRIS
+names her.
+
 - **Two-voices rule holds.** Abigail is a 1774 NPC: she briefs the player as her print-shop runner and
   Committee contact and knows nothing of IRIS, the Archive, or time travel. IRIS may frame in meta
   terms separately; Abigail never references her (§"Adopt the established vocabulary").
-- **Real-time in-world scene, NOT an AI-video cutscene.** It plays in the shop interior using
-  `abigail-rigged` (as `bossCutscene.ts` uses the officer rig), because it must hand off **seamlessly
-  into playable gameplay in the same space** — a pre-rendered clip can't. So it's built in the
-  mission's real-time cutscene layer, not the lesson's pending-video pipeline.
+- **The Abigail brief IS an AI-generated cutscene (owner corrected, 30 Jul)** — it has to look really
+  good. It is set inside her shop, and at its end it **fades to real-time gameplay in the matching
+  in-engine shop** (where Abigail is `abigail-rigged`). The seamless feel is a **match-cut / fade**,
+  not literal continuity — so a pre-rendered clip is fine and preferred here, same pipeline as the
+  lesson cutscenes. **Consistency requirement:** anchor the AI clip on frames rendered from
+  `abigail-rigged` + the printshop interior, and end it on a composition that matches the real-time
+  opening view, so the AI Abigail and the shop dissolve cleanly into their real-time counterparts.
 - **The start solves "off the ground" diegetically.** The player begins inside the shop (ground,
   safe), climbs the **stairs to the balcony**, and the floor-is-lava mission proper begins **from the
   balcony — already off the ground.** The stairs are the one sanctioned ground→roof transition, read
