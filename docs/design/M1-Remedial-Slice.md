@@ -175,6 +175,27 @@ the cutscenes as video and play them as MP4s.** No rigs, no retargeting, no anim
 Blender round-trip. The hologram-projection framing is dropped as a rendering style; the Archive
 showing you records during transport is the same fiction either way.
 
+**The generated footage is CLEAN, REALISTIC period video — NOT hologram-filtered (owner, 30 Jul).**
+An earlier proposal was to composite every clip under IRIS's hologram treatment (tint/scanlines/grain)
+as a house style and slop-concealer. **Rejected:** it makes clips hard to read, hard to prompt for,
+and less immersive. Show "history as it was" — realistic, period-accurate footage — and lean on a
+strong prompt + the historical-QA gate for quality instead. Fiction: the Archive shows you a
+reconstruction that looks like *being there*, and IRIS narrates over it. **The hologram look is
+reserved for IRIS herself and the Archive UI (the room, chrome, case files) — never applied to the
+reconstructed footage.** Do not re-introduce a scanline/tint filter over cutscene video.
+
+Anti-slop then rests on: text-to-video with a strong, specific, period-accurate prompt; an explicit
+no-baked-text clause (documents are real stills IRIS raises; subtitles are our own UI overlay, never
+rendered into the frame); short cut shots; and the historical-QA + `PROJECT_RECONSTRUCTION`
+provenance gates. Real curriculum figures may appear only where they genuinely fit, with an optional
+context/dossier card, never forced (e.g. Samuel Adams with the Committee of Correspondence circular).
+
+**BLOCKER — no video-gen tool in this environment.** There is no text-to-video API or key here (only
+image gen + the Gemini/Meshy asset pipeline), so producing an MP4 needs the owner to provide access
+to a service (Veo 3.1 or Kling 3.0 Omni recommended — both do native voiced lip-sync from a prompt)
+or to generate the clip and hand over the file. The `ModuleVideo` playback slot already accepts a
+real MP4; drop-in is one line in the file's scene.
+
 **Three media, split by what each is good at:**
 
 | Media | Carries | Why |
