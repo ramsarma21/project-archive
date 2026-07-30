@@ -184,10 +184,21 @@ reconstruction that looks like *being there*, and IRIS narrates over it. **The h
 reserved for IRIS herself and the Archive UI (the room, chrome, case files) — never applied to the
 reconstructed footage.** Do not re-introduce a scanline/tint filter over cutscene video.
 
-Anti-slop then rests on: text-to-video with a strong, specific, period-accurate prompt; an explicit
-no-baked-text clause (documents are real stills IRIS raises; subtitles are our own UI overlay, never
-rendered into the frame); short cut shots; and the historical-QA + `PROJECT_RECONSTRUCTION`
-provenance gates. Real curriculum figures may appear only where they genuinely fit, with an optional
+**Render style: the game's own 3D-asset look, NOT photoreal (owner, 30 Jul).** "History as it was"
+governs *content and staging* (accurate period detail, real events); the *render style* is stylized
+3D matching our Meshy/GLB characters and world — a real-time game-cinematic look, not live-action
+footage. This improves cohesion with the game AND cuts slop, because stylized 3D absorbs AI
+artifacts that photoreal human faces turn into uncanny-valley tells. Two levers: (1) prompt anchors
+— "stylized 3D rendered cinematic, real-time game-engine look, clean 3D character models, PBR, soft
+GI, not photoreal," excluding "photograph/live-action/documentary/hyperreal skin"; (2) the reliable
+one — image-to-video anchored on frames rendered from our OWN GLB characters/world (or the model's
+character-reference/elements feature), so it matches our exact art style and locks character
+identity across shots. A reference frame beats any text description of "3D".
+
+Anti-slop then rests on: text-to-video with a strong, specific, period-accurate prompt in the game's
+render style; an explicit no-baked-text clause (documents are real stills IRIS raises; subtitles are
+our own UI overlay, never rendered into the frame); short cut shots; and the historical-QA +
+`PROJECT_RECONSTRUCTION` provenance gates. Real curriculum figures may appear only where they genuinely fit, with an optional
 context/dossier card, never forced (e.g. Samuel Adams with the Committee of Correspondence circular).
 
 **BLOCKER — no video-gen tool in this environment.** There is no text-to-video API or key here (only
