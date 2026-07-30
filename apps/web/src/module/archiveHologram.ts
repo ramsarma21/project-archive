@@ -85,7 +85,12 @@ export const ROOM_CAMERA = {
  * real presence, yawed toward the rack so she presents it; the camera is offset
  * left to keep her fully in frame beside it. */
 export const PRESENTER_POS: readonly [number, number, number] = [-1.2, 0, 3.8];
-export const PRESENTER_YAW = -0.34;
+/** Her facing, applied to the wrapping group (the rig's own root yaw is pinned to
+ * 0 each frame in PresenterRigMesh, so this is the only facing control). The rig
+ * faces +Z at yaw 0; a small POSITIVE yaw turns her toward +X — out toward the
+ * camera and angled toward the rack she is presenting, so she reads three-quarter
+ * front, never showing her back. */
+export const PRESENTER_YAW = 0.45;
 
 // ---------------------------------------------------------------------------
 // State → light. The owner's brief: state must read at a distance through light,
@@ -652,8 +657,9 @@ const PRESENTER_HOLO_FRAG = /* glsl */ `
   gl_FragColor.rgb *= mix(vec3(1.0), vec3(1.12, 1.0, 0.82), holoFront);
   float holoWarmB = min(gl_FragColor.b, max(gl_FragColor.r, gl_FragColor.g) * 0.92);
   gl_FragColor.b = mix(gl_FragColor.b, holoWarmB, holoFront * 0.92);
-  // A cyan projection tint, light on the face front, full on the body edges.
-  gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * vec3(0.62, 0.96, 1.16) + vec3(0.0, 0.05, 0.09), holoEdge * 0.85 + 0.22);
+  // A cyan projection tint confined to the body EDGES; the front keeps its true
+  // albedo so the garment reads as cloth (a front cyan floor muddied it before).
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * vec3(0.62, 0.96, 1.16) + vec3(0.0, 0.05, 0.09), holoEdge * 0.9);
   // Additive silhouette energy — the rim blooms, so she reads as lit-from-within.
   gl_FragColor.rgb += vec3(0.10, 0.40, 0.52) * holoFres;
   gl_FragColor.rgb += vec3(0.34, 0.78, 0.96) * holoRim;
@@ -664,18 +670,17 @@ const PRESENTER_HOLO_FRAG = /* glsl */ `
   // Highlight rolloff so a warmed cheek/forehead cannot clip to white.
   float holoL = dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
   gl_FragColor.rgb *= 1.0 - holoFront * smoothstep(0.62, 1.0, holoL) * 0.5;
-  // HOLOGRAM DISSOLVE: the replacement rig is fully covered (high-collar field
-  // figure), so there is nothing to crop — the room projects her as a real
-  // presence, solid from the head down through the chest and torso and dissolving
-  // low into the emitter beam near the thighs. This reads as a person being
-  // projected, not a bust cut at the collar. (The earlier chest cut existed only
-  // to hide the previous open-jacket asset, now retired.)
-  float holoBust = smoothstep(0.85, 1.15, vHoloWorldY);
-  float holoA = uOpacity * (0.72 + 0.26 * holoFres + 0.18 * holoRim);
-  holoA *= holoBust;
-  holoA *= mix(0.92, 1.0, holoDit);
-  holoA *= 1.0 - (1.0 - uReduced) * 0.14 * holoDrop;
-  gl_FragColor.a = clamp(holoA, 0.0, 0.94);
+  // A near-OPAQUE body: the garment must occlude the skin behind it and read as
+  // cloth, not see-through skin. The prior translucent (~0.6 alpha, depthWrite
+  // off) pass let her warm-lit back bleed through as bare flesh — depthWrite is
+  // now on and the body alpha high for the same reason. Only the feet dissolve,
+  // low into the emitter beam, so she still reads as a projected figure.
+  float holoFeet = smoothstep(0.02, 0.5, vHoloWorldY);
+  float holoA = uOpacity * (0.92 + 0.06 * holoFres);
+  holoA *= holoFeet;
+  holoA *= mix(0.97, 1.0, holoDit);
+  holoA *= 1.0 - (1.0 - uReduced) * 0.05 * holoDrop;
+  gl_FragColor.a = clamp(holoA, 0.0, 0.98);
 `;
 
 /**
@@ -690,7 +695,12 @@ export function holographizePresenterMaterial(
   const material = source.clone();
   material.transparent = true;
   material.opacity = 1;
-  material.depthWrite = false;
+  // depthWrite ON: a near-opaque hologram whose nearer surfaces occlude the far
+  // ones (and the additive pad/halo behind her), so her garment reads as cloth
+  // rather than letting the warm-lit far side bleed through as bare skin. This is
+  // the same choice the in-file path (presenterHologram) makes, and for the same
+  // reason.
+  material.depthWrite = true;
   material.side = THREE.DoubleSide;
   material.blending = THREE.NormalBlending;
   material.toneMapped = true;
@@ -699,7 +709,7 @@ export function holographizePresenterMaterial(
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uHoloTime = { value: 0 };
     shader.uniforms.uReduced = { value: options.reducedMotion ? 1 : 0 };
-    shader.uniforms.uOpacity = { value: 0.82 };
+    shader.uniforms.uOpacity = { value: 0.99 };
     (material.userData as { holoShader?: THREE.WebGLProgramParametersWithUniforms }).holoShader = shader;
     shader.vertexShader = shader.vertexShader
       .replace(

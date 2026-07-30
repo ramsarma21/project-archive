@@ -730,6 +730,11 @@ function PresenterRigMesh(props: { presenter: ModulePresenter; reducedMotion: bo
 
   useFrame((_state, dt) => {
     mixerRef.current?.update(Math.min(dt, 0.05));
+    // Neutralise any root-yaw the idle clip bakes in, exactly as SystemPresenter
+    // does — otherwise the clip turns her away from the camera (she showed us her
+    // back). With the root pinned, the wrapping group's PRESENTER_YAW is the sole
+    // facing control, so she reliably faces out toward the learner and the rack.
+    rig.root.rotation.y = 0;
     holoClock.current += Math.min(dt, 0.05);
     for (const material of rig.materials) {
       const host = material.userData as {
