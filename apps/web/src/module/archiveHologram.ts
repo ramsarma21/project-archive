@@ -79,10 +79,11 @@ export const ROOM_CAMERA = {
   fov: 45,
 };
 
-/** Where the presenter projects in the room (feet at y=0, but only her upper
- * body renders — see the modesty crop). Forward in the LEFT FOREGROUND, close
- * enough to read as a real presence at bust scale, yawed toward the rack so she
- * presents it; the camera is offset left to keep her fully in frame beside it. */
+/** Where the presenter projects in the room (feet at y=0; she renders from the
+ * head down through the torso and dissolves low into the emitter beam — see the
+ * hologram dissolve). Forward in the LEFT FOREGROUND, close enough to read as a
+ * real presence, yawed toward the rack so she presents it; the camera is offset
+ * left to keep her fully in frame beside it. */
 export const PRESENTER_POS: readonly [number, number, number] = [-1.2, 0, 3.8];
 export const PRESENTER_YAW = -0.34;
 
@@ -663,12 +664,13 @@ const PRESENTER_HOLO_FRAG = /* glsl */ `
   // Highlight rolloff so a warmed cheek/forehead cannot clip to white.
   float holoL = dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
   gl_FragColor.rgb *= 1.0 - holoFront * smoothstep(0.62, 1.0, holoL) * 0.5;
-  // MODESTY CROP: the shipped rig wears an open jacket, so the room projects only
-  // her upper body — she materialises from about the collarbone up out of the
-  // emitter beam, and everything below is gone. The fade completes above the
-  // chin so the face stays solid and readable. Do NOT lower these thresholds
-  // without re-checking exposure; a replacement asset is being commissioned.
-  float holoBust = smoothstep(1.42, 1.52, vHoloWorldY);
+  // HOLOGRAM DISSOLVE: the replacement rig is fully covered (high-collar field
+  // figure), so there is nothing to crop — the room projects her as a real
+  // presence, solid from the head down through the chest and torso and dissolving
+  // low into the emitter beam near the thighs. This reads as a person being
+  // projected, not a bust cut at the collar. (The earlier chest cut existed only
+  // to hide the previous open-jacket asset, now retired.)
+  float holoBust = smoothstep(0.85, 1.15, vHoloWorldY);
   float holoA = uOpacity * (0.72 + 0.26 * holoFres + 0.18 * holoRim);
   holoA *= holoBust;
   holoA *= mix(0.92, 1.0, holoDit);
