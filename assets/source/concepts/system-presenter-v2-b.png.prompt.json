@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Keep this exact woman: same face, same long blonde hair, same body proportions, same calm standing pose. Change ONLY her clothing and background. Dress her in a composed near-future ARCHIVE INSTITUTIONAL uniform: a charcoal and slate-blue high-collared technical tunic buttoned to a mock-neck collar at the throat, fully covering chest, shoulders and neckline with absolutely no bare skin below the jaw, long fitted sleeves, matching slim trousers, thin muted teal piping along the seams, a small circular institutional emblem on the left chest. Calm, dignified, competent expression. Not fashion, not military rank, not glamorous. Plain seamless light grey studio backdrop, even soft flat shadowless lighting, full body head to feet, photorealistic, single centered subject.",
+  "size": "1024x1024",
+  "edit": "/tmp/presenter-asset/qa-current/current-full-front.png",
+  "generatedAt": "2026-07-30T14:15:59.537Z",
+  "files": [
+    "system-presenter-v2-b.png"
+  ]
+}
