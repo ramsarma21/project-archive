@@ -175,6 +175,26 @@ is contingent on a rotating selector that does not exist (the same benign warnin
 3. **`assessments.test.ts`'s header comment** still carries the stale "answers null" claim
    (boss-fight's lane, ungranted).
 
+### The original presenter asset is deliberately restored — DO NOT re-swap (30 Jul)
+
+`main` `1670c7c` reverts `apps/web/public/world/characters/system-presenter-rigged.glb` to the
+original figure. The owner prefers her likeness; the v2 covered replacement's Meshy-regenerated
+face lost her and carried a hair-to-jaw seam.
+
+**This is an accepted feel/demo choice with a known, accepted shipping blocker.** The original
+asset is an open jacket over a bare torso and reads as bare-chested in the lesson's
+head-and-shoulders framing. It **must not ship to Grade 8 classrooms as-is** — a future agent must
+not "fix" the seam by swapping the covered v2 asset back in without the owner saying so.
+
+The real fix, when wanted, is not either existing asset: re-run the v2 pipeline with tight
+face-fidelity to the original so she is recognisably *her*, dressed. The covered v2 asset lives in
+history at `3266f80`; its full pipeline (Gemini concepts, Meshy manifest, Blender scripts) remains
+as source under `assets/pipeline/` and `assets/source/concepts/system-presenter-v2-*`. So it is a
+re-run, not a rebuild.
+
+Also note: the archive-room framings were *relaxed* for the covered asset, so with the original
+restored the room/brief close-ups may show the original outfit again. Accepted under this choice.
+
 ### A structural flaw in the guard's own selftest, found while managing grants
 
 `lane-guard.sh --selftest` tests the grant-override mechanism using whichever grant is live, with the
