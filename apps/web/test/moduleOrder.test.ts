@@ -153,7 +153,9 @@ test("concepts answered correctly keep their authored order behind the missed on
 test("a reordered deck says so, and an unchanged one does not", () => {
   const moved = retryOrderedModule(M1, asked([REPRESENTATION, "WRONG"]))!;
   assert.notEqual(moved.subtitle, M1.subtitle);
-  assert.match(moved.subtitle, /three minutes/i);
+  // The retry subtitle signals the reorder. Its copy no longer claims "three
+  // minutes" (the owner retired that framing); it now names the retry itself.
+  assert.match(moved.subtitle, /what you missed/i);
 });
 
 // ---------------------------------------------------------------------------

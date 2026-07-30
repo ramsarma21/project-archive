@@ -165,7 +165,7 @@ function withRecutWindows(
  * wants its own wording here, the right home is a `retrySubtitle` on the
  * envelope rather than more strings in this function.
  */
-const RETRY_SUBTITLE = "Three minutes again. It opens on what you missed.";
+const RETRY_SUBTITLE = "It opens again on what you missed.";
 
 /**
  * The deck a retry should read, given what the last attempt got wrong.

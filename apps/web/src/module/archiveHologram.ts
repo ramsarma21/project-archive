@@ -72,17 +72,19 @@ export function rackPlacements(
 /** The camera framing for the rack at rest, in room space (floor at y=0). The
  * rack sits right-of-centre (see RACK_CENTER_X) so the presenter stands clear of
  * it on the left; the camera looks a little right so the rack fills that space. */
-export const RACK_CENTER_X = 1.2;
+export const RACK_CENTER_X = 1.25;
 export const ROOM_CAMERA = {
-  position: [0.5, 1.62, 5.9] as const,
-  target: [0.62, 1.42, -0.1] as const,
-  fov: 44,
+  position: [-0.5, 1.6, 5.8] as const,
+  target: [0.35, 1.46, -0.1] as const,
+  fov: 45,
 };
 
-/** Where the presenter stands in the room (feet at y=0), left of the rack, and
- * the slight yaw that turns her toward it so she reads as presenting it. */
-export const PRESENTER_POS: readonly [number, number, number] = [-2.62, 0, 0.85];
-export const PRESENTER_YAW = 0.24;
+/** Where the presenter projects in the room (feet at y=0, but only her upper
+ * body renders — see the modesty crop). Forward in the LEFT FOREGROUND, close
+ * enough to read as a real presence at bust scale, yawed toward the rack so she
+ * presents it; the camera is offset left to keep her fully in frame beside it. */
+export const PRESENTER_POS: readonly [number, number, number] = [-1.2, 0, 3.8];
+export const PRESENTER_YAW = -0.34;
 
 // ---------------------------------------------------------------------------
 // State → light. The owner's brief: state must read at a distance through light,
@@ -424,18 +426,52 @@ export function makeSlabFaceTexture(spec: SlabFaceSpec): THREE.CanvasTexture {
   const bodyTop = ty + 14;
   const thumbH = 250;
   if (spec.state === "LOCKED") {
-    ctx.fillStyle = "rgba(95, 134, 160, 0.5)";
-    for (let i = 0; i < 7; i += 1) {
-      const bw = contentW * (0.5 + 0.46 * (((i * 37) % 100) / 100));
-      roundRect(ctx, pad, bodyTop + i * 40, bw, 16, 4);
+    // Labelled-but-redacted FIELDS: a field name, then a blacked-out value — so
+    // it reads as a withheld classified record with structure, not a blank card.
+    const rowY = bodyTop + 6;
+    for (let i = 0; i < 4; i += 1) {
+      const y = rowY + i * 40;
+      const labelW = 78 + ((i * 41) % 66);
+      ctx.fillStyle = "rgba(127, 196, 232, 0.5)";
+      roundRect(ctx, pad, y, labelW, 13, 3);
+      ctx.fill();
+      ctx.fillStyle = "rgba(7, 18, 30, 0.96)";
+      roundRect(ctx, pad + labelW + 14, y - 3, contentW - labelW - 14, 19, 3);
       ctx.fill();
     }
-    // Redaction blocks over the "text", so it reads as withheld, not blank.
-    ctx.fillStyle = "rgba(16, 34, 50, 0.92)";
-    roundRect(ctx, pad + 64, bodyTop + 44, 156, 20, 3);
+    // A containment crest with weight: a filled hex ring + a padlock.
+    const cx = pad + contentW / 2;
+    const cy = rowY + 4 * 40 + 80;
+    ctx.strokeStyle = accent;
+    ctx.fillStyle = "rgba(63, 111, 140, 0.18)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i += 1) {
+      const a = (Math.PI / 3) * i - Math.PI / 6;
+      const px = cx + Math.cos(a) * 52;
+      const py = cy + Math.sin(a) * 52;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
     ctx.fill();
-    roundRect(ctx, pad + 210, bodyTop + 164, 200, 20, 3);
+    ctx.stroke();
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(cx, cy - 8, 13, Math.PI, 0);
+    ctx.stroke();
+    ctx.fillStyle = accent;
+    roundRect(ctx, cx - 18, cy - 8, 36, 26, 4);
     ctx.fill();
+    ctx.fillStyle = "rgba(6, 20, 32, 0.9)";
+    ctx.beginPath();
+    ctx.arc(cx, cy + 3, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(cx - 2, cy + 3, 4, 9);
+    ctx.fillStyle = "rgba(127, 196, 232, 0.75)";
+    ctx.font = "800 16px ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("CLEARANCE REQUIRED", cx, cy + 76);
+    ctx.textAlign = "left";
   } else if (spec.thumbnail) {
     // A framed inset for the document scan (drawn on image load, below).
     ctx.fillStyle = "rgba(4, 16, 28, 0.62)";
@@ -627,10 +663,14 @@ const PRESENTER_HOLO_FRAG = /* glsl */ `
   // Highlight rolloff so a warmed cheek/forehead cannot clip to white.
   float holoL = dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
   gl_FragColor.rgb *= 1.0 - holoFront * smoothstep(0.62, 1.0, holoL) * 0.5;
-  // Translucency + feet dissolving into the emitter pool, plus a faint dither.
-  float holoFeet = smoothstep(0.03, 0.62, vHoloWorldY);
+  // MODESTY CROP: the shipped rig wears an open jacket, so the room projects only
+  // her upper body — she materialises from about the collarbone up out of the
+  // emitter beam, and everything below is gone. The fade completes above the
+  // chin so the face stays solid and readable. Do NOT lower these thresholds
+  // without re-checking exposure; a replacement asset is being commissioned.
+  float holoBust = smoothstep(1.42, 1.52, vHoloWorldY);
   float holoA = uOpacity * (0.72 + 0.26 * holoFres + 0.18 * holoRim);
-  holoA *= holoFeet;
+  holoA *= holoBust;
   holoA *= mix(0.92, 1.0, holoDit);
   holoA *= 1.0 - (1.0 - uReduced) * 0.14 * holoDrop;
   gl_FragColor.a = clamp(holoA, 0.0, 0.94);

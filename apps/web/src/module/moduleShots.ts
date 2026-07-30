@@ -162,19 +162,26 @@ export interface PresenterFraming {
 }
 
 /**
- * The framing for each shot. Establishing pulls back to the whole figure;
- * reaction pushes in on the face. How the presenter ORIENTS within a framing —
- * facing the camera, glancing to a visual — is owned by presenterGaze, not by
- * turning the whole rig here; the over-shoulder composition is done by the DOM
- * layout (module.css, data-shot) and the camera offset, so the figure keeps
- * facing the learner instead of staring past them.
+ * The framing for each shot. Every framing is a HEAD-AND-SHOULDERS portrait —
+ * the bottom of frame sits at the collarbone, so a presenter's chest and below
+ * are out of frame entirely. This is a hard modesty requirement for a grade-8
+ * product (the shipped rig wears an open jacket), and it is also simply the
+ * right cinematography for a talking-head beat; a replacement asset is being
+ * commissioned separately. The camera sits at ~face height (y≈1.63) close in,
+ * with a narrow fov so she reads large; only z and fov vary between shots. How
+ * the presenter ORIENTS within a framing is owned by presenterGaze; the
+ * over-shoulder/visual composition is done by the DOM layout (module.css,
+ * data-shot) plus the small camera x offset, so she keeps facing the learner.
+ *
+ * DO NOT lower `target.y` or widen `fov` past what keeps the frame bottom at the
+ * collarbone — that re-exposes the chest. Verify any change against the lesson.
  */
 export const PRESENTER_FRAMINGS: Record<ModuleShotKind, PresenterFraming> = {
-  ESTABLISH: { position: [0, 1.58, 4.05], target: [0, 1.08, 0], fov: 40 },
-  PRESENTER_MEDIUM: { position: [0, 1.42, 2.35], target: [0, 1.32, 0], fov: 33 },
-  OVER_SHOULDER: { position: [0.18, 1.44, 2.2], target: [0, 1.32, 0], fov: 34 },
-  VISUAL_FOCUS: { position: [0.1, 1.42, 2.5], target: [0, 1.33, 0], fov: 32 },
-  REACTION: { position: [0, 1.55, 1.82], target: [0, 1.52, 0], fov: 30 },
+  ESTABLISH: { position: [0, 1.63, 1.5], target: [0, 1.63, 0], fov: 15 },
+  PRESENTER_MEDIUM: { position: [0, 1.63, 1.3], target: [0, 1.63, 0], fov: 17 },
+  OVER_SHOULDER: { position: [0.16, 1.63, 1.35], target: [0, 1.63, 0], fov: 16 },
+  VISUAL_FOCUS: { position: [0.1, 1.63, 1.45], target: [0, 1.63, 0], fov: 15 },
+  REACTION: { position: [0, 1.64, 1.15], target: [0, 1.63, 0], fov: 19 },
 };
 
 /** One presented segment: a short subtitle line and the shot that carries it. */
