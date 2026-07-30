@@ -99,6 +99,50 @@ export interface ModuleVisual {
 }
 
 /**
+ * A generated cutscene clip that plays inside a case file, alongside its
+ * document. This is the video half of the media split (§ "Cutscene media
+ * pipeline"): the MP4 carries action, people and places, while the still
+ * `ModuleVisual` carries anything with text a model would render as gibberish.
+ *
+ * Two obligations are deliberately NOT relaxed for being video:
+ *
+ *   Provenance. A generated clip is a `PROJECT_RECONSTRUCTION` and must carry
+ *   the same record an image does — attribution, source, date, rights and a
+ *   classification — so a student can never file a generated scene as primary
+ *   evidence. `classification` is the same union image visuals use; the loader
+ *   still refuses a reconstruction that captions itself 'actual'.
+ *
+ *   Fail-open on ABSENCE, never a broken frame. The clips are not produced yet,
+ *   so `src` is optional: an authored-but-unproduced video is a fully-provenance
+ *   record whose source is still pending. The player renders no `<video>` when
+ *   `src` is absent — the file's document and its question still show — rather
+ *   than a broken element. `src` is a local imported asset path when present,
+ *   never a runtime hotlink, exactly like a visual's.
+ */
+export interface ModuleVideo {
+  id: string;
+  /**
+   * Local MP4/webm asset path, e.g. /cutscenes/m1/closure.mp4. ABSENT until the
+   * clip is generated — a pending video is authored with its provenance and no
+   * source, and renders nothing rather than a broken frame. Never external.
+   */
+  src?: string;
+  /** A still shown before playback or in place of an absent clip. Optional. */
+  poster?: string;
+  /** Describes the clip for a caption/label, whether or not the source exists. */
+  alt: string;
+  title: string;
+  caption: string;
+  /** The producer of the reconstruction (this project, for a generated clip). */
+  attribution: string;
+  /** Where the record lives. Provenance, not a runtime fetch target. */
+  sourceUrl: string;
+  date: string;
+  rights: string;
+  classification: ModuleVisualClassification;
+}
+
+/**
  * A future external-audio cue. Present so the authored beat can name the audio
  * that will eventually replace browser speech; the default provider ignores it.
  * No URL or key is authored now — only the shape that will carry one.
@@ -125,6 +169,13 @@ export interface ModuleNarrationBeat {
 export interface ModuleScene {
   beats: readonly ModuleNarrationBeat[];
   visuals: readonly ModuleVisual[];
+  /**
+   * The case file's generated cutscene clip, if authored. Optional and
+   * source-tolerant: a file may name its clip's provenance before the MP4
+   * exists, and the player shows the document and question with no `<video>`
+   * rather than a broken frame. A generated clip is a PROJECT_RECONSTRUCTION.
+   */
+  video?: ModuleVideo;
 }
 
 /** One option of a mastery check. Every option carries its own feedback. */
@@ -531,6 +582,58 @@ export function sceneDefects(cardId: string, scene: ModuleScene): string[] {
       );
     }
   });
+  if (scene.video) defects.push(...videoDefects(cardId, scene.video));
+  return defects;
+}
+
+/**
+ * Everything wrong with a case file's generated video clip, as sentences.
+ *
+ * The clip is source-tolerant by design — an authored-but-unproduced video has
+ * no `src` yet — so a missing source is NOT a defect. Everything that makes the
+ * clip citable, on the other hand, is required whether or not the MP4 exists:
+ * the provenance record and an honest classification. `src`/`poster`, when
+ * present, must be a LOCAL asset path (never an external hotlink), exactly like
+ * a visual's `src`. A generated clip is a PROJECT_RECONSTRUCTION and, like any
+ * reconstruction, may not caption itself 'actual'.
+ */
+export function videoDefects(cardId: string, video: ModuleVideo): string[] {
+  const defects: string[] = [];
+  if (video.id.trim() === "") defects.push(`${cardId}: a scene video has no id`);
+  // Provenance is not relaxed for being video, and does NOT include `src`: the
+  // clip is authored with its record before the source exists.
+  const missing = (
+    ["alt", "title", "caption", "attribution", "sourceUrl", "date", "rights"] as const
+  ).filter((key) => video[key].trim() === "");
+  if (missing.length > 0) {
+    defects.push(`${cardId}: video ${video.id} is missing ${missing.join(", ")}`);
+  }
+  // A pending clip has no source and that is fine; a present one must be a local
+  // path. An empty-string source is neither pending nor valid, so it is refused.
+  for (const key of ["src", "poster"] as const) {
+    const value = video[key];
+    if (value === undefined) continue;
+    if (value.trim() === "") {
+      defects.push(`${cardId}: video ${video.id} has an empty ${key}; omit it to mark it pending`);
+    } else if (!value.startsWith("/")) {
+      defects.push(`${cardId}: video ${video.id} ${key} ${value} is not a local asset path`);
+    }
+  }
+  if (!MODULE_VISUAL_CLASSIFICATIONS.includes(video.classification)) {
+    defects.push(`${cardId}: video ${video.id} has unknown classification ${video.classification}`);
+  }
+  // A reconstruction is not evidence. Refuse a generated clip that captions
+  // itself 'actual', the same rule the still visuals are held to.
+  if (
+    video.classification === "PROJECT_RECONSTRUCTION" &&
+    (claimsToBeActual(video.title) ||
+      claimsToBeActual(video.caption) ||
+      claimsToBeActual(video.alt))
+  ) {
+    defects.push(
+      `${cardId}: reconstruction video ${video.id} calls itself 'actual', which it is not`,
+    );
+  }
   return defects;
 }
 
