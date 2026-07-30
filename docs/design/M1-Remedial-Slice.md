@@ -242,6 +242,25 @@ one — image-to-video anchored on frames rendered from our OWN GLB characters/w
 character-reference/elements feature), so it matches our exact art style and locks character
 identity across shots. A reference frame beats any text description of "3D".
 
+**VALIDATED — init-frame = a rendered screenshot of our OWN 3D asset produces the target look
+(owner test, 30 Jul).** The owner screenshotted a rigged goodwife/townswoman asset, used it as the
+init frame in **Kling 3.0 Pro** (image-to-video), and prompted a plain motion (*"...picking up a book
+and putting it on a desk"*). The output holds the clean, stylized 3D-game-asset look — NOT photoreal —
+with the character's identity, cap, apron and gown consistent across the clip and believable motion;
+hands are the only soft spot (fingers swim slightly on the place-down, the expected weak point), and
+the desk/book were model-invented props on a plain background. This confirms lever (2): a rendered
+frame of our own GLB locks the house style and beats any "make it 3D" text prompt. Exemplar preserved
+in `assets/reference/cutscene-tests/` — clip `kling3-book-desk-test.mp4`, Kling session
+`kling3-session.png`, and extracted frames. **Measured specs:** H.264 MP4, **1088×1900 (~9:16
+portrait)**, **3.04 s**, **24 fps**, ~9.0 Mbps video (an AAC stereo 128 kbps track is present — audio
+was left On, though production generates silent and dubs in post). **It was a technique/look probe,
+not a production clip:** it validates the render technique and look, NOT the format — production clips
+stay **16:9, 10–20 s** per the clip-length spec below. **Cost reality:** Kling 3.0 Pro is
+credit-metered — this 3 s probe spent **77 of a 2500-credit budget** — which is the concrete reason
+cutscenes are produced **iteratively** (prove one minimal shot, expand, fix before the full clip;
+`docs/design/Harbour-Cutscene.md` §"Iterative production (credit discipline)") and the reason the
+Kling-vs-Seedance bake-off matters before committing volume.
+
 Anti-slop then rests on: text-to-video with a strong, specific, period-accurate prompt in the game's
 render style; an explicit no-baked-text clause (documents are real stills IRIS raises; subtitles are
 our own UI overlay, never rendered into the frame); short cut shots; and the historical-QA +

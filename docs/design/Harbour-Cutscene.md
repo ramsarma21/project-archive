@@ -739,6 +739,39 @@ modern object; bright saturated colour; cartoon or anime styling; photoreal skin
    the result into the `ModuleVideo` slot (one line in File 1's scene). TTS voice + ambient +
    subtitles are added in post; the clip is generated **silent**.
 
+## Iterative production (credit discipline) — prove one minimal shot before the sequence
+
+**Standard, owner directive (30 Jul):** *"do a small test first; if it looks good, add more; if
+it's a problem, address it before we have to redo the whole clip."* Build a cutscene **up**; never
+one-shot the full beat. A wrong look caught at one short shot is cheap; the same fault caught in a
+finished 17 s beat wastes the whole spend. This was set after a **Kling 3.0 Pro** probe validated
+the technique (`M1-Remedial-Slice.md` §"Cutscene media pipeline"; exemplar in
+`assets/reference/cutscene-tests/`): one rigged asset, one simple motion, 3 s, image-to-video off a
+screenshot of our own GLB already returned a clean, identity-stable game-asset look — proof that the
+*minimal* test is informative, so start there.
+
+**The per-shot structure above is already the iterate-able unit.** Each ~5 s shot is one
+generation; the beat is those shots stitched. So:
+
+1. **Prove Shot 1 first** — one reference frame (`shot1.png`), the simple push-in, ~5 s, no
+   dialogue. This settles the house-style match and the model choice, so it *is* the bake-off
+   below. Do not generate Shots 2–3 until Shot 1's look is accepted.
+2. **Then expand one axis at a time**, re-checking after each so any regression is attributable:
+   **duration** (5 s → 10 s) → **added characters** (Shot 2's idled line — multi-character identity
+   is the harder job) → **camera moves** (track, rack focus) → **environment** (the probe used a
+   plain void; a real beat anchors on the *composed* harbour frame, a strictly harder consistency
+   task — confirm identity + palette hold on it before committing).
+3. **Gate every step** against this doc's two gates (Historical QA by eye; `PROJECT_RECONSTRUCTION`
+   provenance) plus the by-eye house-style check, *before* spending on the next axis. A shot that
+   fails is re-generated at that step, not carried into the stitch.
+4. **Only then produce the full beat** — the three accepted shots stitched to ~15–17 s. The
+   expensive commitment is last, after each cheaper step has passed.
+
+**Why the discipline pays off is metered cost:** Kling 3.0 Pro is credit-metered (the 3 s probe
+spent **77 of a 2500-credit budget**), and even on Runway Max's flat-fee relaxed drafting the cost
+is review time. Either way the cheapest place to catch a problem is the smallest step — which is
+also why the Kling-vs-Seedance bake-off runs on Shot 1 before any volume is committed.
+
 ## Bake-off first (Shot 1: Kling vs Seedance, inside Runway's bundled models)
 
 Before committing the look, generate **Shot 1 three ways from the same `shot1.png` + prompt**:
