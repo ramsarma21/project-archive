@@ -1,0 +1,201 @@
+{
+  "_comment": "Manifest of researched, downloaded, and provenanced historical document images for the rewritten M1 'Archive' case-file lesson (Boston, June 1774, under the Coercive Acts). Produced on branch workflow/m1-sources. Each entry under `visuals[]` carries a paste-ready `moduleVisual` object (exactly the ten fields of the ModuleVisual interface in apps/web/src/module/moduleFormat.ts) plus sibling metadata the lesson author and owner need (concept mapping, resolutions, rights basis, verification, content flags). The `moduleVisual` objects are the deliverable; everything else around them is context and must not be pasted into module.json.",
+  "_ownershipNote": "This file lives under content/**, which docs/process/LANES.md and .cursor/lane-ownership.json assign to the `boss-fight` lane; the module.json grant to `module-lesson` does NOT cover it, and `m1-sources` is not in the ownership map. It was authored here because the task brief names this exact path as the deliverable. scripts/check-lane-integrity.mjs will therefore flag it as a cross-lane write, exactly as it flags the m1-prune lane's edits. The orchestrator should sequence the merge (add an `m1-sources` lane entry or a grant, or land it via boss-fight). No .cursor/** file was edited to self-grant.",
+  "generatedOn": "2026-07-29",
+  "sourceImageDirectory": "apps/web/public/historical/m1/",
+  "conceptFiles": [
+    {
+      "file": 1,
+      "concept": "The closure as collective punishment \u2014 the Port Act shut the whole harbour to punish the town, guilty and innocent together.",
+      "staarBasis": "41\u201343% read the coercive acts as ordinary governance (2021 #38, 2022 #4).",
+      "recommendedPrimaryVisual": "m1-coc-port-bill",
+      "recommendedSupportVisual": "m1-bostonians-distress",
+      "strength": "STRONG",
+      "why": "The Committee of Correspondence broadside is a legible period document that states the collective-punishment thesis almost verbatim ('to the utter Ruin of many worthy Citizens, in Revenge to the Patriotism of some, whom probably this Clause was inserted to punish'). 'The Bostonians in Distress' shows the same idea in period art \u2014 the whole caged town kept alive on relief, which is also the mission's core loop."
+    },
+    {
+      "file": 2,
+      "concept": "What the Acts actually prohibited \u2014 four acts (harbour closed, charter rewritten, soldiers quartered, trials moved out), and crucially what was NOT forbidden.",
+      "staarBasis": "Underpins the patrol-evasion premise: a runner carrying paper broke no law.",
+      "recommendedPrimaryVisual": null,
+      "recommendedSupportVisual": "m1-bitter-draught",
+      "strength": "WEAK \u2014 no dedicated readable primary document acquired",
+      "why": "No clean, high-resolution PERIOD scan of the Boston Port Act text or the other three Coercive Acts (Massachusetts Government Act, Administration of Justice Act, Quartering Act) was found in open-access institutions with verifiable rights. The only clean full text of the Port Act is a 19th-century Peter Force 'American Archives' reprint (NIU, public domain) \u2014 a later compilation, NOT a period document, so it is not included. Fallback: use 'The Able Doctor / bitter draught' period cartoon (it names the 'Boston Port Bill' and depicts the Acts as coercion) and let the presenter carry the four-act specifics and the 'what was not forbidden' point. The existing stamp-act-1765.jpg also demonstrates what a printed Act text looks like, if a readable act-text exemplar is wanted. See gaps[]."
+    },
+    {
+      "file": 3,
+      "concept": "Consent \u2014 Boston elected its own assembly but no member of Parliament; the objection was to WHO laid the tax, not the amount.",
+      "staarBasis": "41% miss this (2019 #24); the objection is authority, not cost.",
+      "recommendedPrimaryVisual": null,
+      "recommendedSupportVisual": "boston-1768-landing-of-troops-revere (existing)",
+      "strength": "WEAK \u2014 no dedicated readable primary document acquired",
+      "why": "No clean, readable, high-resolution period document that states the consent/representation argument was found with verifiable rights inside the June-1774 window. Options that exist are low-resolution or rights-reserved (LoC Continental Congress 'Declaration and Resolves' scans are \u2264595\u00d7700 or torn; MHS holdings are request-only). Recommendation: retain an existing asset \u2014 the Revere 'Landing of Troops' (force behind a law the town never consented to) or the 1765 Stamp Act text (the consent argument crystallised around it) \u2014 and let the presenter carry the concept, OR commission a permission-based scan of a petition/resolves. See gaps[]."
+    },
+    {
+      "file": 4,
+      "concept": "Forms of resistance \u2014 petition, congress, non-importation. Not declaring war, not counter-taxing British imports.",
+      "staarBasis": "28% chose 'declared war', 37% chose 'colonies taxed imports' (boycott confused with counter-taxation).",
+      "recommendedPrimaryVisual": "m1-solemn-covenant",
+      "strength": "STRONG (document) with a RIGHTS caveat and a resolution caveat",
+      "why": "The Solemn League and Covenant IS the player's mission object and IS non-importation ('suspend all commercial intercourse with the said island of Great Britain'). It is legible and authentic (Edes and Gill, Boston, June 1774). Two caveats the owner should weigh: (a) the holding institution records its rights status as 'not evaluated' \u2014 the asset qualifies on the 'public domain by age' basis (1774 imprint) but not on an explicit institutional open licence; (b) the only open scan is 572\u00d71460, legible but not high-resolution. See gaps[]."
+    }
+  ],
+  "existingAssetAssessment": [
+    {
+      "id": "m1-stamp-act",
+      "file": "stamp-act-1765.jpg",
+      "currentClassification": "PRIMARY_SOURCE",
+      "resolution": "416x800",
+      "recommendation": "KEEP, RETARGET",
+      "reason": "A printed page of the 1765 Stamp Act is the ideal EARLIER moment for the sequence/chronology meta-lesson (38% answered a 1765 document with 1774 Tea Party punishment). A document that distinguishes 1765 from 1774 has extra value, and this is it. Could also anchor concept 3 (consent), since the consent argument crystallised around the Stamp Act. Resolution is modest but the type is legible."
+    },
+    {
+      "id": "m1-boston-1768",
+      "file": "boston-1768-landing-of-troops-revere.jpg",
+      "currentClassification": "PRIMARY_SOURCE",
+      "resolution": "640x368",
+      "recommendation": "KEEP, RETARGET to occupation (and possibly concept 3)",
+      "reason": "Strongly reusable for the occupied-town atmosphere \u2014 British warships and troops landing at Boston. Caveat: 640\u00d7368 is the Library of Congress's own maximum for this record (LCCN 2004670036, digital id cph.3a45752); a higher-resolution hand-coloured engraving exists at other institutions (e.g., AAS, Boston MFA) if the owner wants an upgrade, but rights there are not open. Classification note: existing content marks it PRIMARY_SOURCE (a contemporary documentary engraving of an actual event); defensible, though a strict reading could call it PERIOD_ART. Left as-is."
+    },
+    {
+      "id": "m1-wolfe",
+      "file": "wolfe-death-of-general-wolfe-1770.jpg",
+      "currentClassification": "LATER_DEPICTION",
+      "resolution": "1600x1066",
+      "recommendation": "RETIRE from the four 1774 files (keep the file on disk)",
+      "reason": "It illustrated the postwar-revenue / war-debt concept, which the rescope demotes to context ('taught as context, not assessed'). Not one of the four 1774 concepts. Per the M1-only freeze, do not delete the file; simply drop it from the new lesson's four files."
+    },
+    {
+      "id": "m1-repeal",
+      "file": "repeal-funeral-miss-ame-stamp-1766.jpg",
+      "currentClassification": "PERIOD_ART",
+      "resolution": "1600x1195",
+      "recommendation": "RETIRE from the four 1774 files (keep the file; optional chronology use)",
+      "reason": "A 1766 Stamp Act repeal satire \u2014 a distinct earlier moment, not one of the four 1774 concepts. Could optionally support the chronology/sequence point as a 1765\u201366 marker alongside the Stamp Act, but it is not required by any of the four files."
+    }
+  ],
+  "gaps": [
+    {
+      "id": "covenant-rights-and-resolution",
+      "severity": "medium \u2014 owner decision",
+      "detail": "The Solemn League and Covenant (the mission object) is included on the 'public domain by age' basis (1774 imprint; a faithful 2-D reproduction of a pre-1929 work carries no new copyright under Bridgeman v. Corel). But the holding institution \u2014 State Library of Massachusetts, surfaced via Digital Commonwealth \u2014 records the item's rights status as 'not evaluated' and asserts no explicit open licence; the DSpace record carries no dc.rights field at all. It is the one asset here NOT backed by an affirmative institutional PD/open statement. The only open scan is also low-resolution (572x1460): legible on inspection, but not the high-resolution ideal. Other holding institutions (American Antiquarian Society, Concord Free Public Library, Westford's J.V. Fletcher Library, MHS) have copies but only via Gale ECCO (paywalled), request-only, or per-photo permission \u2014 none openly licensed. The owner should confirm the PD-by-age basis is acceptable for a teacher-facing product, and may want a higher-resolution scan under permission."
+    },
+    {
+      "id": "concept-2-no-readable-act-text",
+      "severity": "medium",
+      "detail": "No clean, high-resolution PERIOD scan of the Boston Port Act text or the other three Coercive Acts was found in open-access institutions with verifiable rights. British statutes were printed by the King's Printer; open US-institution scans of those period printings did not surface. The public-domain full text exists only as a 19th-century Peter Force 'American Archives' reprint (NIU) \u2014 a later compilation, deliberately not used as a 'period document'. Concept 2's file has period art (bitter draught) but no dedicated readable primary document."
+    },
+    {
+      "id": "concept-3-no-consent-document",
+      "severity": "medium",
+      "detail": "No dedicated readable primary document stating the consent/representation argument was acquired with clean rights in the mission window. Continental Congress 'Declaration and Resolves' scans at LoC are low-resolution or torn; MHS holdings are request-only. Recommendation: retain an existing asset (Revere occupation, or the 1765 Stamp Act) and carry the concept via the presenter, or commission a permission-based scan."
+    },
+    {
+      "id": "organized-resistance-alternatives-weak",
+      "severity": "low \u2014 not blocking",
+      "detail": "The canonical organised-resistance documents beyond the Covenant are weak on either resolution or rights: the Continental Association (Oct 1774) is public domain at LoC but only ~595x700 / a 900x910 GIF; the Suffolk Resolves (Sept 1774) survive only as newspaper printings and the MHS image is request-only ('request this image'). The Covenant is the better concept-4 anchor anyway because it is the mission object, so this is recorded, not blocking."
+    }
+  ],
+  "visuals": [
+    {
+      "servesConcept": "1 \u2014 the closure as collective punishment (primary, readable document)",
+      "moduleVisual": {
+        "id": "m1-coc-port-bill",
+        "src": "/historical/m1/boston-committee-port-bill-1774.jpg",
+        "alt": "Printed 1774 broadside headed 'BOSTON, May 12, 1774. Gentlemen,' set in period type, closing 'By Order of the Committee' over the signature of William Cooper, Town Clerk.",
+        "title": "The Boston Committee of Correspondence on the Port Act, 12 May 1774",
+        "caption": "A primary source: the Boston Committee of Correspondence's printed circular of 12 May 1774. It reports the act 'for blocking up the Harbour of Boston, with a Fleet of Ships of War,' and states the punishment reaches the whole town \u2014 the wharves 'ravished from the rightful Owners... to the utter Ruin of many worthy Citizens, in Revenge to the Patriotism of some, whom probably this Clause was inserted to punish.' Guilty and innocent, shut in together.",
+        "attribution": "Boston Committee of Correspondence (signed William Cooper, Town Clerk). Library of Congress, Printed Ephemera Collection, digital id cph.3a50556 (LCCN 2006682758).",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Revolutionary_war_broadside-_The_Boston_committee_of_Correspondence_responds_to_the_Boston_Port_Bill._May_12,_1774_LCCN2006682758.jpg",
+        "date": "12 May 1774",
+        "rights": "Public domain (published 1774).",
+        "classification": "PRIMARY_SOURCE"
+      },
+      "sourceRecordUrls": [
+        "https://www.loc.gov/item/2006682758/",
+        "https://commons.wikimedia.org/wiki/File:Revolutionary_war_broadside-_The_Boston_committee_of_Correspondence_responds_to_the_Boston_Port_Bill._May_12,_1774_LCCN2006682758.jpg"
+      ],
+      "downloadedFrom": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Revolutionary_war_broadside-_The_Boston_committee_of_Correspondence_responds_to_the_Boston_Port_Bill._May_12%2C_1774_LCCN2006682758.jpg",
+      "nativeResolution": "947x1536",
+      "deliveredResolution": "947x1536",
+      "rightsBasis": "U.S. public domain by age (published 1774). Library of Congress records no known rights; Wikimedia Commons tags the file 'Public domain'.",
+      "verification": "Downloaded and opened; verified 947x1536 JPEG. Text read directly from the image (opening line, the 'utter Ruin... in Revenge to the Patriotism of some' clause, and the William Cooper signature). Wikimedia file page resolves (HTTP 200). LoC item page resolves in-browser and via ?fo=json (its HTML returns 403 to non-browser clients).",
+      "notes": "Doubles as a Boston Committee of Correspondence circular \u2014 the N.B. names the concurring committees of Dorchester, Roxbury, Newton, Lexington, Brookline, Cambridge, Charlestown and Lynn, which is organised resistance in itself."
+    },
+    {
+      "servesConcept": "4 \u2014 forms of resistance / non-importation (primary, readable document; the mission object)",
+      "moduleVisual": {
+        "id": "m1-solemn-covenant",
+        "src": "/historical/m1/solemn-league-covenant-1774.jpg",
+        "alt": "Printed 1774 broadside beginning 'WE the Subscribers, inhabitants of the town of [blank]', forty-nine lines of period type setting out a non-importation pledge and oath.",
+        "title": "The Solemn League and Covenant, Boston, June 1774",
+        "caption": "A primary source: the non-importation pledge the Boston Committee of Correspondence circulated in June 1774 \u2014 the very document the courier carries. Signers 'in the presence of God, solemnly... covenant and engage with each other' to 'suspend all commercial intercourse with the said island of Great Britain, until the said act for blocking up the said harbour be repealed.' Printed by Edes and Gill, Boston.",
+        "attribution": "Boston Committee of Correspondence; printed by Edes and Gill, Boston, 1774. State Library of Massachusetts, Broadsides collection (via Digital Commonwealth).",
+        "sourceUrl": "https://www.digitalcommonwealth.org/search/commonwealth-oai:ht24ww78p",
+        "date": "June 1774",
+        "rights": "Public domain by age (imprint of 1774). The holding institution (State Library of Massachusetts, via Digital Commonwealth) records the item's rights status as 'not evaluated' and asserts no copyright.",
+        "classification": "PRIMARY_SOURCE"
+      },
+      "sourceRecordUrls": [
+        "https://www.digitalcommonwealth.org/search/commonwealth-oai:ht24ww78p",
+        "http://archives.lib.state.ma.us/handle/2452/43129"
+      ],
+      "downloadedFrom": "https://archives.lib.state.ma.us/server/api/core/bitstreams/e67f474f-8f12-4bd1-8db0-c8c9d5d2c44d/content",
+      "nativeResolution": "572x1460",
+      "deliveredResolution": "572x1460",
+      "rightsBasis": "U.S. public domain by age (1774 imprint; a faithful 2-D reproduction of a pre-1929 work carries no new copyright). NOT an explicit institutional open licence \u2014 see gaps[].covenant-rights-and-resolution. This is the one asset here relying on PD-by-age rather than an affirmative institutional PD/open statement.",
+      "verification": "Resolved the item via the DSpace REST API (handle 2452/43129, item uuid 7b58f762-d9e6-495f-9f78-269b64be7f06); downloaded ORIGINAL page-1 bitstream; verified 572x1460 JPEG. Text read directly from the image (opening 'WE the Subscribers... embarrassed... by several acts of the British parliament... among which is the act for blocking up the harbour of Boston', the non-importation clause, and 'Witness our hands, June, 1774.'). DSpace metadata: publisher 'Edes and Gill', date 1774, 49 printed lines, 20x8 in, NO dc.rights field. Digital Commonwealth item page and State Library handle both resolve (HTTP 200).",
+      "notes": "Page 1 of a bifolium (the main covenant text incl. the oath). A page-2 image also exists on the same record. This is the longer '49-line' form. Legibility confirmed by direct reading despite the modest resolution; a higher-resolution scan would need a permission request to a holding institution."
+    },
+    {
+      "servesConcept": "1 (support) \u2014 the closed port and occupation, and the relief the mission delivers",
+      "moduleVisual": {
+        "id": "m1-bostonians-distress",
+        "src": "/historical/m1/bostonians-in-distress-1774.jpg",
+        "alt": "1774 mezzotint of Bostonians caged beneath the Liberty Tree, the cage labelled 'BOSTON', handed fish from a boat while British cannon and a fleet of warships surround them.",
+        "title": "The Bostonians in Distress, 1774",
+        "caption": "Period art: a 1774 London mezzotint of the closed port's toll \u2014 Boston caged under the Liberty Tree, ringed by cannon and warships, kept alive on relief passed up from a boat. Contemporary comment, not a documentary record; the relief it pictures is the errand this mission runs.",
+        "attribution": "Published London: R. Sayer & J. Bennett, 1774. Library of Congress, British Cartoon Prints Collection, digital id ppmsca.31272 (LCCN 2011647025).",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Bostonians_in_distress_LCCN2011647025.jpg",
+        "date": "1774",
+        "rights": "Public domain (published 1774).",
+        "classification": "PERIOD_ART"
+      },
+      "sourceRecordUrls": [
+        "https://www.loc.gov/item/2011647025/",
+        "https://commons.wikimedia.org/wiki/File:The_Bostonians_in_distress_LCCN2011647025.jpg"
+      ],
+      "downloadedFrom": "https://upload.wikimedia.org/wikipedia/commons/f/f9/The_Bostonians_in_distress_LCCN2011647025.jpg",
+      "nativeResolution": "5161x7095",
+      "deliveredResolution": "1891x2600",
+      "rightsBasis": "U.S. public domain by age (published 1774). Library of Congress states the British Cartoon Prints collection is public domain / no known rights; Wikimedia Commons tags the file 'Public domain'.",
+      "verification": "Downloaded native 5161x7095 JPEG; opened and read the title/imprint cartouche ('The Bostonians in Distress... London Printed for R. Sayer & J. Bennett... 19 Nov 1774'); downscaled to 1891x2600 for web (period art, no fine text to read closely). Wikimedia file page resolves (HTTP 200).",
+      "notes": "Library of Congress catalogs its copy (ppmsca.31272) as a re-drawn / reversed variant of the original Sayer & Bennett cartoon (word 'Boston' added to the cage; three ships rather than four). Recorded as PERIOD_ART accordingly; do not describe it as the first issue."
+    },
+    {
+      "servesConcept": "2 (support) \u2014 the Coercive Acts as coercion; the 'Boston Port Bill' named in the image",
+      "moduleVisual": {
+        "id": "m1-bitter-draught",
+        "src": "/historical/m1/able-doctor-bitter-draught-1774.jpg",
+        "alt": "1774 engraving of British ministers forcing a teapot's contents down the throat of a bare figure representing America, the 'Boston Port Bill' protruding from a minister's pocket and ships firing on Boston in the distance.",
+        "title": "The Able Doctor, or America Swallowing the Bitter Draught, 1774",
+        "caption": "Period art: a 1774 London cartoon of the Coercive Acts as force-feeding \u2014 Lord North pours the 'bitter draught' down America's throat, the 'Boston Port Bill' in his pocket, Boston cannonaded behind and a spurned 'Boston Petition' underfoot. Commentary on the Acts, not a documentary record of them.",
+        "attribution": "Published in the London Magazine, May 1774. Library of Congress, British Cartoon Prints Collection, digital id ppmsca.19467 (LCCN 97514782).",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_able_doctor,_or,_America_swallowing_the_bitter_draught_LCCN97514782.jpg",
+        "date": "1774",
+        "rights": "Public domain (published 1774).",
+        "classification": "PERIOD_ART"
+      },
+      "sourceRecordUrls": [
+        "https://www.loc.gov/item/97514782/",
+        "https://commons.wikimedia.org/wiki/File:The_able_doctor,_or,_America_swallowing_the_bitter_draught_LCCN97514782.jpg"
+      ],
+      "downloadedFrom": "https://upload.wikimedia.org/wikipedia/commons/7/7e/The_able_doctor%2C_or%2C_America_swallowing_the_bitter_draught_LCCN97514782.jpg",
+      "nativeResolution": "3373x2114",
+      "deliveredResolution": "3373x2114",
+      "rightsBasis": "U.S. public domain by age (published 1774). Library of Congress states the British Cartoon Prints collection is public domain / no known rights; Wikimedia Commons tags the file 'Public domain'.",
+      "verification": "Downloaded 3373x2114 JPEG; opened and confirmed the depicted elements (the 'Boston Port Bill' in the pocket, 'Boston cannonaded' in the background, the 'Boston Petition', and the title cartouche). Wikimedia file page resolves (HTTP 200).",
+      "contentFlags": "Contains an allegorical bare-breasted figure of 'America'. This is a standard textbook/APUSH image (it appears in Library of Congress classroom materials), but flag it for a grade-8 teacher-facing product; 'The Bostonians in Distress' is a no-nudity alternative for the coercion/occupation theme. The LoC copy here is the London Magazine version; a near-identical copy engraved by Paul Revere ran in the Royal American Magazine (Boston, June 1774) \u2014 this file is NOT attributed to Revere."
+    }
+  ]
+}
