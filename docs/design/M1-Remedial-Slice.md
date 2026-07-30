@@ -107,6 +107,67 @@ written.
 **Runtime ratio:** mostly movement and evasion. Each conversation is a handful of lines —
 punctuation, not substance.
 
+### M1's content set is ATOMIC — rescoping is a migration, not a lesson edit (measured 29 Jul)
+
+The single most important implementation fact found so far, and the reason the 1774 files were not
+authored when the Archive interface was built.
+
+`content/m1/verify.mjs` hard-couples `module.json`'s concept and cue ids to `concepts.json`,
+`duel-items.json`, `codex-cards.json` and the capstone, and `apps/api/src/progression/content.ts`
+mirrors the same ids with its own tests. So **changing the lesson's concepts alone turns
+`verify:content` and `verify:units` red.**
+
+That coupling is *good* architecture — it is what stops the lesson teaching one thing while the duel
+tests another, which is the exact defect the unit-coverage gate exists to prevent. But it means:
+
+> **Moving M1 to the 1774 slate is ONE atomic migration across the module deck, the duel bank, the
+> codex cards, the capstone and the API content pack.** It spans the `module-lesson`, `boss-fight`
+> and `api-hunt` lanes. Doing only the lesson half is not a smaller version of it; it is a red tree.
+
+Do not brief "author the four files" as an isolated task again. Either commission the coordinated
+pass or prototype the content outside the gates.
+
+### The lesson baseline is blocked by an anti-cheat invariant, not a gap (measured 29 Jul)
+
+Module checks are **client-graded** (the server only re-derives which checks are *required*). The
+`concept_retrieval` ledger that records per-concept correctness is **server-minted and restricted to
+`DUEL`/`ENCOUNTER` sources**, keyed to `duel_id`/`round_index`/`item_id`, on the stated principle that
+"nothing a client sends can assert what it learned." `CompleteLearningModuleRequest`'s `clientSafe`
+guard **rejects a `correct` key by design**.
+
+So a lesson pre-measure needs one of:
+1. **A separate, explicitly client-attested baseline** — never mixed with the trusted ledger.
+   **← owner's default, taken 29 Jul.**
+2. Moving module-check grading server-side, with the answer key in `apps/api`.
+
+Either is a real design call. What must not happen is quietly widening the ledger to accept
+client-asserted correctness, which would compromise the one trustworthy assessment record.
+
+### Historical documents acquired (29 Jul, branch `workflow/m1-sources` @ `ebec302`)
+
+Manifest at `content/m1/historical-sources.json`; images in `apps/web/public/historical/m1/`. All
+rights verified, none fabricated.
+
+- **File 1 (collective punishment) — STRONG.** The Boston Committee of Correspondence's port-closure
+  circular states the thesis nearly verbatim: the wharves *"ravished from the rightful Owners… in
+  Revenge to the Patriotism of some, whom probably this Clause was inserted to punish."* LoC, PD.
+- **File 4 (non-importation) — STRONG.** The **Solemn League and Covenant**, June 1774 — which *is*
+  the object the player carries. Printed by **Edes and Gill**, which is the press the existing boss
+  cutscene already names (*"Edes and Gill's ink on your hands"*), written for the old 1765 premise.
+  The fiction and the history align without anyone engineering it. Caveat: PD-by-age rather than an
+  affirmative institutional statement, and only 572×1460.
+- **Files 2 and 3 — GAPS.** No readable, cleanly-licensed period document for the Acts' scope or for
+  consent. The good candidates are paywalled (Gale/ECCO) or request-only (MHS holds the Suffolk
+  Resolves and a second circular). Options: send permission requests, or run those two files on the
+  presenter with a supporting period image instead of a readable primary source. **File 2 is the one
+  that teaches what saves the player from patrols, so it should not stay thin.**
+- **Retire** the Wolfe painting and the 1766 repeal satire from the four files; **keep and retarget**
+  the Stamp Act text (as the distinct *earlier* moment for the chronology point) and Revere's
+  *Landing of Troops* (occupation atmosphere).
+- **Content flag:** the *Able Doctor / bitter draught* cartoon names the Port Bill but includes the
+  standard bare-breasted allegorical America. **Owner's default: use *Bostonians in Distress*
+  instead** — same themes, no nudity — for a grade-8 product.
+
 ### Cutscene media pipeline (owner, 29 Jul)
 
 Mixamo is out as the animation source. The owner's call, after considering real-time 3D: **generate
