@@ -7,7 +7,7 @@
     "stableMissionId": "PA.SEA01.CH02.BOSTON.MD01.v1",
     "chapterId": "boston-1765",
     "opponent": "the constable at the post",
-    "slateSections": ["4.8", "4.9"],
+    "slate": "1774 Coercive Acts (rescoped 2026-07-30)",
     "sourceModuleId": "BOS.MD01.MODULE.BRIEF.v1"
   },
   "depth": {
@@ -15,7 +15,7 @@
     "itemsTotal": 18,
     "roundsPerAttempt": 6,
     "attempts": 3,
-    "why": "Six rounds an attempt, two per concept, three attempts, no repeats. Eighteen items are consumed exactly and a player never sees one twice."
+    "why": "Six rounds an attempt, two per concept, three attempts, no repeats. Eighteen items are consumed exactly and a player never sees one twice. The three concepts are INTOLERABLE_ACTS (six items across its two facets — three on the closure as collective punishment, three on the scope of the four acts), REPRESENTATION (consent), and MERCANTILISM (non-importation / forms of resistance)."
   },
 
   "gradingPolicy": {
@@ -48,25 +48,25 @@
       "Spelling, grammar, punctuation, capitalisation and typos. 'britian was in loas of debt' is the debt.",
       "Length. A six-word answer and a sixty-word answer are judged by the same one question. There is no minimum length and no completeness bonus.",
       "Register. 'they were broke', 'they wanted our cash', 'that's not fair bro' — informal wording is wording.",
-      "Fragments, missing subjects, missing verbs, bullet lists, and arrow chains such as 'war -> debt -> tax on us'.",
-      "Vocabulary level. A student who has the idea and lacks the word ('the money owed', 'the group that makes the laws over there') has the idea.",
-      "Dates the item did not ask for. A student who writes 1673 or 1863 for 1763 is not penalised unless the item's required core is the date itself. TEA's own scorers credited a response that wrote 'Proclamation of 1863'.",
+      "Fragments, missing subjects, missing verbs, bullet lists, and arrow chains such as 'tea -> port shut -> boycott'.",
+      "Vocabulary level. A student who has the idea and lacks the word ('the group that makes the laws over there', 'the paper we all sign not to buy') has the idea.",
+      "Dates the item did not ask for. A student who writes 1774 for 1773 or slips a year is not penalised unless the item's required core is the date itself. TEA's own scorers credited a response that wrote 'Proclamation of 1863'.",
       "Confusing Parliament with the King, the Crown, England, Britain or 'the government over there' — UNLESS the item's required core is specifically about which body acted, and even then see that item's note. TEA's own scorers credited a full-mark response that blamed 'The British Monarchy'.",
       "Anything the student adds about their own feelings, the mission, or the constable."
     ],
 
     "neverSufficient": [
       "Restating the question in different words and adding nothing.",
-      "Naming the Act, the war, the town or a person without saying anything about it, when the item asks how or why. TEA scored zero a response that correctly named two causes and explained neither.",
+      "Naming the Act, the town, a congress or a person without saying anything about it, when the item asks how or why. TEA scored zero a response that correctly named two causes and explained neither.",
       "Generic feeling: 'people were mad', 'the colonists were angry', 'it wasn't fair', 'the British were mean'. TEA scored zero a long, fluent, well-spelled response whose whole content was 'British was just using the people and wasn't being fair to them'.",
       "Generic power: 'Britain wanted control', 'they were in charge', 'they wanted to show who was boss' — unless the item's required core is about authority, in which case that item says so.",
-      "Era keywords with no proposition between them: 'taxes Parliament colonies rights representation'.",
+      "Era keywords with no proposition between them: 'coercive acts harbour congress boycott'.",
       "A bare yes or no on an item whose question states that a reason is required.",
       "'I don't know', a blank answer, gibberish, or a refusal. These are wrong, and the duel's own ABSTAINED verdict source covers a submission with no content at all."
     ],
 
     "outOfScope": [
-      "Do not grade historical claims the item did not ask about, in either direction. A student who correctly volunteers the Sons of Liberty is not rewarded and a student who wrongly dates the Boston Tea Party to 1765 is not punished.",
+      "Do not grade historical claims the item did not ask about, in either direction. A student who correctly volunteers the Suffolk Resolves is not rewarded and a student who wrongly dates Lexington to 1774 is not punished.",
       "Do not require the module's wording. The module is where the student learned it, not a phrase list they must reproduce.",
       "Do not reward or penalise politeness, period voice, or roleplay."
     ],
@@ -85,27 +85,20 @@
   },
 
   "roundSchedule": [
-    { "round": 1, "duelClock": "0:00–0:20", "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1" },
-    { "round": 2, "duelClock": "0:20–0:40", "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1" },
-    { "round": 3, "duelClock": "0:40–1:00", "poolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1" },
-    { "round": 4, "duelClock": "1:00–1:20", "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1" },
-    { "round": 5, "duelClock": "1:20–1:40", "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1" },
-    { "round": 6, "duelClock": "1:40–2:00", "poolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1" }
+    { "round": 1, "duelClock": "0:00–0:20", "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1" },
+    { "round": 2, "duelClock": "0:20–0:40", "poolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1" },
+    { "round": 3, "duelClock": "0:40–1:00", "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1" },
+    { "round": 4, "duelClock": "1:00–1:20", "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1" },
+    { "round": 5, "duelClock": "1:20–1:40", "poolId": "BOS.MD01.POOL.DUEL_REPRESENTATION.v1" },
+    { "round": 6, "duelClock": "1:40–2:00", "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1" }
   ],
 
   "pools": [
     {
-      "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "legacyConceptId": "BOS.MD01.CONCEPT.POSTWAR_REVENUE.v1",
-      "sourceCueId": "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
-      "authoredDepth": 6
-    },
-    {
-      "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
-      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "legacyConceptId": "BOS.MD01.CONCEPT.STAMP_SCOPE.v1",
-      "sourceCueId": "BOS.MD01.CUE.BRIEF_STAMP.v1",
+      "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+      "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.INTOLERABLE_ACTS.v1",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_CLOSURE.v1",
       "authoredDepth": 6
     },
     {
@@ -114,374 +107,169 @@
       "legacyConceptId": "BOS.MD01.CONCEPT.REPRESENTATION.v1",
       "sourceCueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
       "authoredDepth": 6
+    },
+    {
+      "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
+      "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+      "legacyConceptId": "BOS.MD01.CONCEPT.MERCANTILISM.v1",
+      "sourceCueId": "BOS.MD01.CUE.BRIEF_ANSWER.v1",
+      "authoredDepth": 6
     }
   ],
 
   "items": [
     {
-      "itemId": "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
+      "itemId": "BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1",
       "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-      "question": "This town has stood a hundred and thirty years and Parliament never wanted a penny of it. Why is it reaching into Boston for money now?",
-      "referenceAnswer": "Because Britain came out of the war with France in 1763 owing more money than it ever had, and Parliament decided the colonies should pay part of that debt. What changed is Britain's debt, not Boston.",
+      "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+      "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "codexCardIds": ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_CLOSURE.v1"],
+      "question": "The Port Act has shut the harbour. Some men put the tea in the water; most of this town never went near it. When the port closes, who does it fall on?",
+      "referenceAnswer": "On the whole town. The Act shuts the port itself, so every trade that lived by the water — the fishmonger, the ropemaker, the carter — goes idle beside the men who dumped the tea. It does not sort the guilty from the innocent.",
       "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHY_NOW.v1",
-        "requiredCore": "The war left Britain owing money or short of money, and that is why money is now being taken from the colonies.",
-        "line": "The answer must contain a money problem caused by the war. A motive with no money in it is wrong, however plausible it sounds, and the effect being explained cannot be offered as its own cause.",
+        "rubricId": "BOS.MD01.RUBRIC.ACTS.WHO_IT_FALLS_ON.v1",
+        "requiredCore": "The closure falls on the whole town — every trade, the innocent alongside the guilty — because it shuts the port itself rather than fining the men who destroyed the tea.",
+        "line": "The answer must reach the whole town, not just the tea-dumpers or the tea merchants. Naming that the innocent are hit with the guilty is the concept; a purely partial answer (only the guilty, only merchants) fails. It need not use the word 'collective'.",
         "acceptExamples": [
-          { "text": "they're broke from the war and want us to pay for it", "why": "Debt in a thirteen-year-old's words plus the colonies as payer." },
-          { "text": "war debt", "why": "Two words, the whole proposition. Length is not evidence." },
-          { "text": "the french and indian war cost them alot of money so now they want ours", "why": "Names the war under a different name, carries the cost and the payer." },
-          { "text": "to pay for the war", "why": "The question already supplies that Boston is the one being reached into, so this answer's money-from-the-war core is complete. Refusing it would be the archetypal false negative." },
-          { "text": "they spent everything fighting france and never got it back", "why": "Debt described rather than named." }
+          { "text": "everyone. the whole town, not just the ones who did it", "why": "The whole town named." },
+          { "text": "the fishmonger who never touched the tea goes hungry same as the rest", "why": "The innocent hit, in an image." },
+          { "text": "all of boston. if you worked the water youre finished, guilty or not", "why": "Every trade, guilty and innocent." }
         ],
         "rejectExamples": [
-          { "text": "because of the Stamp Act", "why": "Circular. The stamp is the thing being explained; it cannot be its own cause." },
-          { "text": "because they wanted to control us and show they were in charge", "why": "The most common plausible wrong answer in this pool. It is a power motive with no money in it, and the concept is a revenue motive." },
-          { "text": "because the king was greedy and wanted more money", "why": "Has money but no war and no debt. This is TEA's vague-motive failure: a feeling about Britain rather than a cause." },
-          { "text": "because we were smuggling and they wanted to stop it", "why": "Trade enforcement. Real history, not this concept, and not taught in the module." },
-          { "text": "because we didn't have anyone in parliament", "why": "Correct about representation, which is a different round's question." }
+          { "text": "the men who dumped the tea", "why": "Only the guilty; that would be a fine or a trial, not a closed harbour." },
+          { "text": "the tea merchants", "why": "Only one trade; the port is shut to all cargo, not tea." },
+          { "text": "nobody really, its just for show", "why": "Denies the closure took effect." }
         ],
-        "ignoreForThisItem": ["Which name the student gives the war: the war with France, the French and Indian War, the Seven Years' War, or 'that war with the French' are one war."]
+        "ignoreForThisItem": ["Whether the student blames Parliament, the King or 'the British'; the required core is who the closure lands on, not who ordered it."]
       }
     },
-
     {
-      "itemId": "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
+      "itemId": "BOS.MD01.DUEL.ACTS.NOT_A_FINE.v1",
       "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-      "question": "The war with France ended two years ago and Britain won it. What problem did that victory leave Britain holding, and how is Parliament trying to solve it on my board?",
-      "referenceAnswer": "A debt. The war cost far more than Britain had, so it came out of a victory owing an enormous amount of money, and the stamp is one way it means to get some of that back.",
+      "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+      "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "codexCardIds": ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_CLOSURE.v1"],
+      "question": "If Parliament only wanted the tea paid for, it could have fined the men who dumped it, or tried them. It did neither. What did it do instead, and what does the difference tell you?",
+      "referenceAnswer": "It closed the whole harbour. A fine or a trial would fall on the guilty men; closing the port falls on the entire town. The difference is that this is a punishment of Boston itself, not of the people who destroyed the tea.",
       "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHAT_IT_LEFT.v1",
-        "requiredCore": "The war left Britain owing money, and Parliament's fix is to raise part of it from the colonies through the stamp.",
-        "line": "The question asks two things, so a correct answer carries both: the money problem the war left, and how Parliament means to solve it, by raising revenue from the colonies. Naming only the debt answers the problem but not the fix; naming only the tax answers the fix but not the problem. Any financial wording earns the first half, and any wording of making the colonies pay or the stamp raising it here earns the second.",
+        "rubricId": "BOS.MD01.RUBRIC.ACTS.NOT_A_FINE.v1",
+        "requiredCore": "Parliament closed the whole harbour rather than fining or trying the guilty, which shows the Act punishes the whole town rather than the men who destroyed the tea.",
+        "line": "The answer must contrast the closure with a fine or trial and land on the town being punished. Saying only 'it closed the harbour' without the punishment point is half; naming the town-wide reach without the fine contrast is thin but acceptable. What fails is treating the closure as an ordinary or fair measure.",
         "acceptExamples": [
-          { "text": "they came out owing a fortune, so theyre making us cover part of it with the stamp", "why": "Both halves: the war debt and the colonies made to pay it." },
-          { "text": "debt from the war, and their fix is taxing the colonies to help clear it", "why": "The problem and the fix, in one line." },
-          { "text": "they spent more than they had beating france, so now the stamp squeezes some of it out of us", "why": "Money problem plus the colonial fix." },
-          { "text": "money trouble from the war, and the plan is to make the colonies pay a share", "why": "Both halves without the word debt." }
+          { "text": "it shut the whole harbour instead of fining them, so its the town being punished not the tea guys", "why": "Contrast and the point." },
+          { "text": "a fine hits the guilty. closing the port hits everyone. thats the difference", "why": "The contrast sharply." },
+          { "text": "it punished the whole town instead of just the men who did it", "why": "The point, town-wide." }
         ],
         "rejectExamples": [
-          { "text": "the war left them broke", "why": "Only the money problem. It does not say how Parliament solves it, by raising the money from the colonies." },
-          { "text": "theyre taxing the colonies with the stamp", "why": "Only the fix. It never names the war debt the tax is meant to answer." },
-          { "text": "they got Canada and all the land west", "why": "Neither half, and not financial. Territory gained is not the problem Parliament is solving." },
-          { "text": "the colonists got angry at them", "why": "An effect further down the chain, not the war's cost or Parliament's fix." },
-          { "text": "france wanted revenge", "why": "Plausible, and neither half of what the question asked." }
+          { "text": "it fined the men who dumped the tea", "why": "Wrong; that is exactly what it did not do." },
+          { "text": "it made a fair law to keep order in the colonies", "why": "Reads the Act as ordinary governance, the measured misconception." },
+          { "text": "it closed the harbour", "why": "Names the act but not the difference the question asks for: that it falls on the town, not the guilty." }
         ]
       }
     },
-
     {
-      "itemId": "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
+      "itemId": "BOS.MD01.DUEL.ACTS.WHY_THE_TOWN.v1",
       "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-      "question": "A dockhand grumbles that this bill will fall on London's merchants and the King's own household, not on us. Is he right about who Parliament means to pay it, and what is that money meant to clear?",
-      "referenceAnswer": "No — Parliament decided the colonies, us over here, should supply part of it, not London's merchants or the King's household. What the money clears is Britain's war debt from the fight with France.",
+      "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+      "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "codexCardIds": ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_CLOSURE.v1"],
+      "question": "A loyalist tells you the closure is just: the town let the tea be dumped, so the town should pay. Answer him. Is punishing the whole town for what a crowd did the same as justice?",
+      "referenceAnswer": "No. Most of this town had no hand in the tea, and the closure starves them the same as the guilty. Punishing a whole town for what some men did is collective punishment, not justice — the innocent are being made to pay for the guilty.",
       "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHO_PAYS.v1",
-        "requiredCore": "The payer is the colonies (America, us, the colonists), and the money clears Britain's war debt.",
-        "line": "The question hands the student a wrong payer to reject and asks for both halves in the doing. The payer must land on this side of the Atlantic, the colonies or America or us, not inside Britain and not 'everyone'. The thing cleared must be the war debt, the money the war with France left owing. Naming only the payer, or only the debt, is half an answer.",
+        "rubricId": "BOS.MD01.RUBRIC.ACTS.WHY_THE_TOWN.v1",
+        "requiredCore": "Punishing the whole town for what a crowd did makes the innocent pay for the guilty, which is collective punishment rather than justice.",
+        "line": "The answer must reject the loyalist by naming that the innocent are punished with the guilty. Any wording of 'most people didn't do it and they suffer too' carries it. Conceding the town deserves it fails. It need not use the word 'collective'.",
         "acceptExamples": [
-          { "text": "us over here, and its going to pay down what the war cost them", "why": "Payer plus the war debt it clears." },
-          { "text": "the colonies, to cover the debt from fighting france", "why": "Both halves, plainly." },
-          { "text": "america pays, and what were clearing is their war bill", "why": "Payer and debt, own words." },
-          { "text": "the people in the colonies have to settle the money britain owes from the war", "why": "Both halves without either proper noun." }
+          { "text": "no. most of us never touched the tea and were starving anyway. thats not justice", "why": "The innocent-with-guilty point." },
+          { "text": "you dont punish a whole town for what a few did", "why": "The principle, plainly." },
+          { "text": "the men who did it should answer, not the fishmonger who didnt", "why": "Guilty vs innocent named." }
         ],
         "rejectExamples": [
-          { "text": "the colonies", "why": "Only the payer. It does not say what the money clears, the war debt it is meant to settle." },
-          { "text": "the war debt", "why": "Only the thing owed. It never names who Parliament made pay it." },
-          { "text": "british taxpayers back home", "why": "A payer inside Britain, and no debt. The wrong side of the taught claim." },
-          { "text": "everyone in the empire had to pay", "why": "An unspecific payer that does not single out the colonies, and no mention of the war debt." },
-          { "text": "france had to pay because they lost", "why": "Wrong payer, and neither half." }
+          { "text": "hes right, the town should have stopped them", "why": "Concedes the collective guilt the item rejects." },
+          { "text": "its fine because the tea was expensive", "why": "Cost, and concedes the punishment." },
+          { "text": "the whole town hated the tea tax anyway", "why": "Beside the point; does not address who is punished." }
         ]
       }
     },
-
     {
-      "itemId": "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1",
+      "itemId": "BOS.MD01.DUEL.ACTS.STILL_LAWFUL.v1",
       "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1", "BOS.MD01.CARD.WAR_DEBT.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1", "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1"],
-      "question": "A loyalist at my board swears Parliament ran this war debt up on purpose, as a pretext, and that the tax was the plan all along with the debt invented after to excuse it. Set him straight: which truly came first, and which is the answer to the other?",
-      "referenceAnswer": "He has it backwards. The debt came first — Britain owed it from the war with France — and the tax is Parliament's answer to that debt, not the other way about.",
+      "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+      "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "codexCardIds": ["BOS.MD01.CARD.FOUR_ACTS.v1", "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_ACTS.v1"],
+      "question": "The port is shut, the town meeting is banned, and soldiers are in the parlours. You are about to carry a printed sheet through these streets. Are you breaking any of the four Acts by doing it? Say why.",
+      "referenceAnswer": "No. The four Acts shut the harbour, ended the assembly, quartered soldiers, and moved trials — but not one of them forbids carrying printed paper. Walking a street with a sheet in hand is still lawful, which is exactly what makes the cover hold.",
       "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHICH_CAME_FIRST.v1",
-        "requiredCore": "The debt came before the tax — equivalently, the tax was made because of the debt.",
-        "line": "Getting the order right is getting the item right, and this framing hands the student the reversal to refute rather than a blank to fill. An answer that fixes the order is CORRECT and no second sentence is required. What fails is siding with the loyalist's reversal, a tie, or an answer that never resolves the pair the question named.",
+        "rubricId": "BOS.MD01.RUBRIC.ACTS.STILL_LAWFUL.v1",
+        "requiredCore": "Carrying printed paper through the streets breaks none of the four Acts — they forbade the port, the meeting, and the trials, not the carrying of a sheet — so it is still lawful.",
+        "line": "The answer must say the carrying is lawful AND ground it in the Acts not reaching paper. A bare 'no' without the reason fails, because the question asks why. Saying it is illegal fails outright.",
         "acceptExamples": [
-          { "text": "debt then tax", "why": "Three words, the ordering, done." },
-          { "text": "the debt", "why": "Answers the question as asked." },
-          { "text": "they were already in debt so they made the tax", "why": "Order plus cause." },
-          { "text": "the tax came after, its how they pay the debt off", "why": "Order stated from the other end." },
-          { "text": "war first then debt then the tax", "why": "Adds a link and still resolves debt before tax." }
+          { "text": "no, none of the acts say anything about carrying paper. thats still legal", "why": "The lawful conclusion and the reason." },
+          { "text": "im fine. they shut the port and the meetings, not a man walking with a sheet", "why": "The boundary named." },
+          { "text": "carrying paper isnt in the acts, so no law stops me", "why": "Same, tersely." }
         ],
         "rejectExamples": [
-          { "text": "the tax came first", "why": "Reversed." },
-          { "text": "the tax put them in debt", "why": "Reversed causally, which is the misconception this item exists to catch." },
-          { "text": "both at the same time", "why": "A tie is not the taught ordering." },
-          { "text": "the war came first", "why": "True and evasive: the question named two things and this answer resolves neither. Add 'then the debt, then the tax' and it is correct." },
-          { "text": "the debt came first because of the tax", "why": "States the order and then contradicts it. Self-contradiction is not coverage." }
+          { "text": "yes, everythings illegal under the acts now", "why": "The over-generalisation the item exists to catch." },
+          { "text": "yes, the quartering act covers it", "why": "Names an Act that does not reach paper." },
+          { "text": "no", "why": "A bare answer after the question asked why it is lawful." }
         ]
       }
     },
-
     {
-      "itemId": "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
+      "itemId": "BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1",
       "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "codexCardIds": [
-        "BOS.MD01.CARD.WAR_DEBT.v1",
-        "BOS.MD01.CARD.COLONIAL_REVENUE.v1",
-        "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"
-      ],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1", "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1"],
-      "question": "A printer told me this Act came out of nowhere, that Parliament woke one morning and invented it to spite you. Start at the end of the war and show me it did not.",
-      "referenceAnswer": "The war with France ended in 1763 and left Britain owing more than it ever had. Parliament needed revenue against that debt and decided the colonies should supply part of it. The stamp is how it collects. Every step follows the one before it; none of it is sudden.",
+      "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+      "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "codexCardIds": ["BOS.MD01.CARD.FOUR_ACTS.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_ACTS.v1"],
+      "question": "People call it 'the Intolerable Act', as if it were one law. It is four. Pick any two of the four, and name what each of those two actually does, kept straight from each other.",
+      "referenceAnswer": "It is four acts. The Port Act shut the harbour. The Massachusetts Government Act rewrote the charter and ended the town meetings. The Quartering Act put soldiers in the town. The Administration of Justice Act moved trials out of a Boston jury's reach. Any two of those, told apart, is the answer.",
       "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.POSTWAR.CAME_FROM_NOWHERE.v1",
-        "requiredCore": "A chain in which the war leaves Britain needing money and that need produces the tax on the colonies.",
-        "line": "Two links are required and the third is not: the money problem, and the tax on the colonies that answers it. Naming 1763 is optional, because the date is decoration on a causal claim. A chain that starts anywhere other than Britain's money problem does not answer the printer.",
+        "rubricId": "BOS.MD01.RUBRIC.ACTS.FOUR_NOT_ONE.v1",
+        "requiredCore": "Two of the four Coercive Acts, correctly distinguished by what they do: the Port Act shut the harbour, the Government Act ended the town meeting or rewrote the charter, the Quartering Act quartered soldiers, the Administration of Justice Act moved trials out of reach.",
+        "line": "The answer must name two distinct acts by what they DO, not just say 'there are four'. Two correct effects, told apart, earns it — the student need not use the formal titles, only what each did. One effect alone is half; naming four titles with no effects fails.",
         "acceptExamples": [
-          { "text": "the war ended, they were in debt, so they taxed us", "why": "Both required links, nine words." },
-          { "text": "war -> debt -> tax on the colonies", "why": "An arrow chain is a chain." },
-          { "text": "they owed money from fighting france so parliament made colonists pay with the stamp", "why": "Both links, one sentence." },
-          { "text": "it didnt come from nowhere, they needed money after the war and we were the ones they picked to get it from", "why": "Answers the printer directly and carries both links." }
+          { "text": "one shut the harbour, another ended the town meetings", "why": "Two effects, distinct." },
+          { "text": "the port one closed the wharf, and soldiers got quartered on the town by another", "why": "Two, in the student's words." },
+          { "text": "they moved trials out of boston so no local jury, and they closed the port", "why": "Two distinct effects." }
         ],
         "rejectExamples": [
-          { "text": "we protested so they punished us with the tax", "why": "Starts at colonial action. The chain runs the other way." },
-          { "text": "the king wanted more power over the colonies so he made the act", "why": "A power chain with no money in it." },
-          { "text": "the war ended in 1763", "why": "The date and nothing else. No money link, no tax link — this is naming without explaining." },
-          { "text": "they always taxed us, this is just one more", "why": "Denies the causal story instead of supplying it." },
-          { "text": "because the act is unfair and against our rights", "why": "A judgement, not a cause." }
+          { "text": "there were four acts", "why": "Names the count, no effects — naming without explaining." },
+          { "text": "they were all just to punish boston", "why": "True and not the question; names no act's effect." },
+          { "text": "the stamp act and the tea act", "why": "Wrong acts entirely, wrong decade." }
+        ],
+        "ignoreForThisItem": ["Whether the student uses the formal act titles or plain descriptions; what each act DID is the core, not its name."]
+      }
+    },
+    {
+      "itemId": "BOS.MD01.DUEL.ACTS.WHICH_ACT.v1",
+      "itemVersion": "v1",
+      "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+      "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "codexCardIds": ["BOS.MD01.CARD.FOUR_ACTS.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_ACTS.v1"],
+      "question": "The selectmen want to call a town meeting to answer the port's closing. A neighbour says they cannot; it is against the law now. Which of the four Acts is he thinking of, and is he right?",
+      "referenceAnswer": "He is right. The Massachusetts Government Act rewrote the colony's charter and ended the town meetings, so calling one is no longer lawful. That is the act that reached the meeting; the Port Act reached the harbour, not the assembly.",
+      "rubric": {
+        "rubricId": "BOS.MD01.RUBRIC.ACTS.WHICH_ACT.v1",
+        "requiredCore": "The Massachusetts Government Act ended the town meetings, so the neighbour is right that calling one is now unlawful.",
+        "line": "The answer must identify the Government Act — by name or by 'the one that ended the meetings / rewrote the charter' — and confirm the neighbour is right. Naming the wrong act (Port, Quartering, Justice) fails. Saying he is wrong fails.",
+        "acceptExamples": [
+          { "text": "hes right, the government act ended town meetings", "why": "The act and the confirmation." },
+          { "text": "yes, the one that rewrote the charter took away the meetings", "why": "The act by its effect." },
+          { "text": "the massachusetts government act. no more meetings, so hes correct", "why": "Named and confirmed." }
+        ],
+        "rejectExamples": [
+          { "text": "the port act, and no hes wrong", "why": "Wrong act and wrong conclusion." },
+          { "text": "the quartering act stopped the meetings", "why": "Wrong act; quartering is soldiers, not assembly." },
+          { "text": "hes wrong, meetings are always allowed", "why": "Denies the Government Act." }
         ]
       }
     },
-
-    {
-      "itemId": "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1",
-      "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1", "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1", "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1"],
-      "question": "Here is what I cannot follow. The debt is owed in London. The stamp is paid in Boston. Give me the line that joins those two.",
-      "referenceAnswer": "Britain needs revenue to pay down the debt, Parliament decided part of that revenue should come from the colonies, so a debt in London becomes a tax collected here. Our money goes against their bill.",
-      "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.POSTWAR.DEBT_TO_TAX.v1",
-        "requiredCore": "The money is raised from the colonies (our taxes, the stamp) and goes toward Britain's war debt.",
-        "line": "The join runs money from the colonies to Britain's debt: our payment here, reducing what Britain owes there. An answer that names only the colonial payment, or only the debt, has not joined them. Any wording of colonial money reducing the British debt counts, however rough; a different motive, trade or punishment or authority, does not join the two things named.",
-        "acceptExamples": [
-          { "text": "we pay the stamp here and that money goes against what they owe from the war", "why": "Both ends: colonial payment and the war debt." },
-          { "text": "they raise it off us and put it toward the war bill they ran up", "why": "The join, own words." },
-          { "text": "our tax money crosses back to pay down their debt", "why": "Colonial money reducing the British debt." },
-          { "text": "the coins from our stamps end up paying britains war debt", "why": "Both ends without the question's phrasing." }
-        ],
-        "rejectExamples": [
-          { "text": "we pay the stamp tax here", "why": "Only the colonial end. It does not join the payment to Britain's debt." },
-          { "text": "britain owes a lot from the war", "why": "Only the debt end. It never says colonial money is what goes toward it." },
-          { "text": "because we are their colony so they can do what they want", "why": "Authority without money. The question asked what joins a debt to a payment." },
-          { "text": "to stop smuggling and control trade", "why": "A different motive, not the revenue-to-debt join." },
-          { "text": "the debt is in london and the stamp is paid in boston", "why": "Restates the question and joins nothing." }
-        ]
-      }
-    },
-
-    {
-      "itemId": "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1",
-      "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
-      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "Two things on this table: a deed drawn up in court, and a bolt of cloth off a ship. Come November one of them needs the Crown's paid stamp. Which is it, and what makes you sure?",
-      "referenceAnswer": "The deed. The Act taxes printed paper and legal paper, and a deed is a legal paper. Cloth is an ordinary good, and ordinary goods are not what the Act is aimed at.",
-      "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.STAMP.DEED_OR_CLOTH.v1",
-        "requiredCore": "The deed, because it is paper or a legal or official document — or equivalently because cloth is an ordinary good rather than paper.",
-        "line": "Either half of the boundary earns it: pointing at paper, or pointing away from goods. The pick alone does not, because there are two objects on the table and the question says so — that is a coin flip, not knowledge. Any reason that touches the taught category counts, including 'it's from the court'.",
-        "acceptExamples": [
-          { "text": "the deed, its a paper", "why": "The pick and the category." },
-          { "text": "the deed because thats a legal document", "why": "The legal half." },
-          { "text": "the deed, cloth isnt paper", "why": "The goods half, stated as an exclusion." },
-          { "text": "the deed, the tax is on paper stuff not things you buy in a shop", "why": "Both halves in a student's own words." },
-          { "text": "deed. court papers get stamped", "why": "A fragment naming the taught category." }
-        ],
-        "rejectExamples": [
-          { "text": "the cloth", "why": "Wrong object." },
-          { "text": "both of them", "why": "Erases the boundary the item is about." },
-          { "text": "the deed", "why": "A bare pick on a two-way question the constable explicitly asked for a reason on. This is the deliberate line here, and the question is worded so the student is told what is wanted." },
-          { "text": "the deed because its more important", "why": "Importance is not the Act's category." },
-          { "text": "the deed because it costs more money", "why": "Value is not the Act's category." },
-          { "text": "the cloth, because it came off a ship and ships pay duties", "why": "Reasoned, and reasoned about the wrong statute." }
-        ]
-      }
-    },
-
-    {
-      "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1",
-      "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
-      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.STAMP_DATE.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "Parliament passed this Act back in the spring, so the law is already made. Then why is this town still free to stand at my board and argue about it tonight, instead of already paying the stamp? What has not happened yet?",
-      "referenceAnswer": "Because the stamp is not owed yet. The Act became law in the spring, but the duty does not begin until the first of November, so tonight there is still time to fight it before it takes hold.",
-      "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.STAMP.FROM_WHEN.v1",
-        "requiredCore": "The tax has not taken effect yet — a law already passed has not yet begun to bite — so the stamp is not owed until later this year (the first of November) and there is still time to resist it before it begins.",
-        "line": "The rewrite of this item. It was a bare date-recall question, which the owner's new direction retired as trivia; it now asks the student to reason from a fact they were taught (the duty begins 1 November) to why the mission is happening at all tonight. The answer has to say the duty has not started yet, which is why the argument is still live. Any wording that the stamp is not owed until November, that the tax has not taken effect, or that there is still time before it begins earns it, and the exact date need not be named because 'it hasnt started yet' already locates the duty in the future. What does not earn it is a bare date with no claim attached, since the question asks what has not happened rather than when the duty starts, and a grievance about the tax that never touches the timing. The date fact is still tested, but as the ground of a causal claim rather than as a string to recall.",
-        "acceptExamples": [
-          { "text": "the tax hasnt even started yet, it doesnt kick in till november so we still got time", "why": "The window, with the date and the stakes." },
-          { "text": "the stamp isnt owed until the first of november, so right now theres still a chance to stop it", "why": "Not-yet-in-force plus the date." },
-          { "text": "it doesnt begin yet. the law passed but you dont have to pay until later this year", "why": "The not-yet idea without naming the month, which is enough." },
-          { "text": "nobody has to buy a stamp until november, so tonight its still worth fighting", "why": "The window and the stakes, own words." }
-        ],
-        "rejectExamples": [
-          { "text": "november 1", "why": "The bare date. It names when the duty starts and asserts nothing about what has not yet happened, which is what the question asks. This is the old recall answer, and naming a date is no longer the whole of this item." },
-          { "text": "because the tax is unfair and we never agreed to it", "why": "A representation grievance with no timing in it. It never says the duty has yet to begin." },
-          { "text": "it already started, were breaking the law by not paying it", "why": "Reverses the timing. The duty has not begun; that is the point." },
-          { "text": "the act passed back in march", "why": "A past date. It names when the law was made, not what has yet to happen, and the point is that the duty is still ahead." },
-          { "text": "because parliament is thousands of miles away in london", "why": "Distance, and nothing about the window before the tax bites." }
-        ],
-        "ignoreForThisItem": ["The exact date. 'November', 'the first of November', 'later this year' or simply 'not yet' all locate the duty in the future, and a wrong year is not penalised. What matters is that the tax has not yet begun."]
-      }
-    },
-
-    {
-      "itemId": "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1",
-      "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
-      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.PRINTER_IMPACT.v1", "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "Of every trade in Boston, the coopers, the ropemakers, the fishmongers, why does this Act fall hardest on the shop you run for?",
-      "referenceAnswer": "Because the Act taxes printed paper and printed paper is everything a printer makes. Every sheet that comes off the press is the taxed article, so the duty reaches every job in the shop.",
-      "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.STAMP.WHY_A_PRINTER.v1",
-        "requiredCore": "What the printer produces is the thing the Act taxes.",
-        "line": "The link between the taxed category and the shop's product is the whole item. Because the question already establishes that the Act is the subject, naming the product is enough to carry the link — 'they print paper' does the work. What fails is any reason that has nothing to do with what the shop makes.",
-        "acceptExamples": [
-          { "text": "everything they make is the thing thats taxed", "why": "The link, exactly." },
-          { "text": "paper is their whole business", "why": "Same." },
-          { "text": "because they print papers and newspapers", "why": "Names the product. The question supplies the rest, and demanding the student close a loop the constable already opened would be a false negative." },
-          { "text": "a cooper makes barrels and barrels arent taxed, we make paper and paper is", "why": "The contrast made explicit, which is more than required." }
-        ],
-        "rejectExamples": [
-          { "text": "because printers are troublemakers who write against the king", "why": "Very plausible for an eighth grader and wrong: the concept is scope, not politics." },
-          { "text": "because the shop is close to the pump", "why": "Geography." },
-          { "text": "because printers are poor and cant afford it", "why": "Affordability is not the taught reason and cost is not the concept." },
-          { "text": "because you work there", "why": "Restates the question's framing." },
-          { "text": "because the constable is watching the shop", "why": "Mission fiction, not history." }
-        ]
-      }
-    },
-
-    {
-      "itemId": "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1",
-      "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
-      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "My apprentice has it that this Act taxes everything Boston buys, bread, cloth, nails, the lot. Correct him.",
-      "referenceAnswer": "He is wrong. The stamp falls on printed paper and legal paper — newspapers, handbills, deeds, court papers, licences. Bread and cloth and nails are ordinary goods, and ordinary goods are not what the Act taxes.",
-      "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.STAMP.CORRECT_THE_APPRENTICE.v1",
-        "requiredCore": "An asserted correction that ordinary goods are not taxed and/or that the Act taxes printed or legal paper — as a claim, not a bare run of the boundary's own terms (paper, legal, printed, goods, not taxed) with no correction made, which asserts nothing.",
-        "line": "The correction must name what is actually taxed, not merely deny the apprentice. An incomplete enumeration still holds the boundary and earns it — a student who says 'only newspapers and stuff like that' has separated paper from goods, which is the concept. A bare contradiction has not.",
-        "acceptExamples": [
-          { "text": "no its just paper things", "why": "Denies and names the category." },
-          { "text": "only printed stuff and legal documents, not regular goods", "why": "Both sides of the boundary." },
-          { "text": "hes wrong, its paper not food and cloth", "why": "Same." },
-          { "text": "no, only newspapers and papers like that", "why": "Incomplete enumeration, correct boundary. Accepted on purpose: the paper-versus-goods line is held, and only the list is short." }
-        ],
-        "rejectExamples": [
-          { "text": "hes right, everything got taxed", "why": "Agrees with the error." },
-          { "text": "hes wrong", "why": "Bare contradiction with no category. Nothing here shows the student knows what is taxed." },
-          { "text": "no, only things imported from britain", "why": "A different and wrong boundary, and the one a student who has already met the Sugar Act is most likely to reach for." },
-          { "text": "no, only tea", "why": "Wrong Act, wrong decade." },
-          { "text": "no, only rich people have to pay it", "why": "Substitutes who pays for what is taxed." },
-          { "text": "no, it taxes all the printed things and also everything you buy", "why": "Names the category and then reinstates the apprentice's error." },
-          { "text": "paper legal printed goods not taxed target", "why": "A run of the rubric's own boundary words with no correction asserted and nothing said to the apprentice. It names both sides of the line and claims neither: a list of terms is not an assertion, so the core is absent however correct every word in it is." }
-        ]
-      }
-    },
-
-    {
-      "itemId": "BOS.MD01.DUEL.STAMP.NAME_TWO.v1",
-      "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
-      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "Name me two things in this town that will need the stamp come November.",
-      "referenceAnswer": "Any two of: a newspaper, a printed handbill, a deed, a court paper, a licence, a pack of playing cards — printed paper or legal paper.",
-      "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.STAMP.NAME_TWO.v1",
-        "requiredCore": "Two distinct things, both of which fall inside the taxed category of printed matter or a legal or official paper.",
-        "line": "Credit any category-correct instantiation rather than matching a list of nouns. The module names six examples; a student who supplies a seventh the module never mentioned — a pamphlet, a will, a marriage licence, a ship's papers, an almanac — has demonstrated more, not less. What fails is an ordinary good, private handwriting, or one thing said twice.",
-        "acceptExamples": [
-          { "text": "newspapers and deeds", "why": "Two, both inside." },
-          { "text": "a licence and a court paper", "why": "Same." },
-          { "text": "playing cards and the handbill were nailing up", "why": "Two, both inside, and the second is the mission." },
-          { "text": "a pamphlet and a will", "why": "Neither is named in the module. Both are inside the taught categories, which is what this item measures." },
-          { "text": "paper and legal documents", "why": "The two taught categories rather than two instances. A student who answers at category level has the boundary, and refusing that would punish the more general answer." }
-        ],
-        "rejectExamples": [
-          { "text": "cloth and nails", "why": "Ordinary goods, which the module names on the outside of the line." },
-          { "text": "tea and sugar", "why": "Ordinary goods, and a different Act." },
-          { "text": "a letter to my sister and a newspaper", "why": "One inside, one outside: a private handwritten letter is not taxed, so only the newspaper counts. The item asked for two things inside the line and this gives one, so it fails exactly as a half-answer does." },
-          { "text": "newspapers and newspapers", "why": "One thing twice." },
-          { "text": "everything printed", "why": "The category with no instantiation and no count. Two things were asked for." },
-          { "text": "a newspaper", "why": "One thing. The count is the item." }
-        ],
-        "authoringNote": "Mission-Slate §4.9 recorded this item as a defect risk because §4.7's module named the two categories and no exemplars, which made it unanswerable at the noun level. This module fixes it at the source: the stamp card now names six examples inside the line and three outside it. The rubric still credits instantiations the module never named."
-      }
-    },
-
-    {
-      "itemId": "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1",
-      "itemVersion": "v1",
-      "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
-      "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "codexCardIds": ["BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
-      "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-      "question": "A woman writes to her sister in Salem, in her own hand, and seals it. Does the Act catch that letter? Tell me why; a bare yes or no earns you nothing.",
-      "referenceAnswer": "No. It is not printed and it is not a legal paper, so it falls outside what the Act taxes. Private handwriting is not the target; printed sheets and official documents are.",
-      "rubric": {
-        "rubricId": "BOS.MD01.RUBRIC.STAMP.PRIVATE_LETTER.v1",
-        "requiredCore": "No, because the letter is not printed and/or not a legal or official document — it is private.",
-        "line": "The reason must locate the letter outside the taught categories. Handwritten, unprinted, private, personal, not official, not legal — any of these earns it, and 'private' is accepted because it is the module's own framing of that example. What fails is agreeing, a bare no, or a reason about getting away with it rather than about scope.",
-        "acceptExamples": [
-          { "text": "no, nobody printed it", "why": "The printed half." },
-          { "text": "no its handwritten not printed", "why": "Same." },
-          { "text": "no because thats private, not official", "why": "The legal half, in the module's own word." },
-          { "text": "no. the tax is on printed and legal papers and a letter to your sister is neither", "why": "Both halves." }
-        ],
-        "rejectExamples": [
-          { "text": "yes", "why": "Wrong." },
-          { "text": "yes because its paper and paper is taxed", "why": "The over-generalisation this item exists to catch. Reasoned, and reasoned past the boundary." },
-          { "text": "no", "why": "A bare no on a two-way question, after the constable said it earns nothing." },
-          { "text": "no because nobody would ever find out", "why": "Enforcement dodge. It is about getting away with it, not about what the Act covers." },
-          { "text": "no because letters are free", "why": "Invented rule." },
-          { "text": "yes if she sends it by the post", "why": "Plausible, and postage is not the stamp duty." }
-        ]
-      }
-    },
-
     {
       "itemId": "BOS.MD01.DUEL.REP.WHAT_RIGHT.v1",
       "itemVersion": "v1",
@@ -504,7 +292,7 @@
         ],
         "rejectExamples": [
           { "text": "the right to not pay taxes", "why": "A blanket refusal of taxation, which is the misconception this item exists to correct rather than the right the sheet claims. It names no consent, no vote, and no who-lays-the-tax; Boston's own elected assembly could tax the town tomorrow without violating it. Taxation refused without the consent element does not carry the core." },
-          { "text": "the right to be free and independent from britain", "why": "1765. Independence is eleven years away and this is the anachronism the item is written to catch." },
+          { "text": "the right to be free and independent from britain", "why": "Independence is years away and this is the anachronism the item is written to catch." },
           { "text": "the tax is too much money", "why": "Amount, not right." },
           { "text": "the right to a trial by jury", "why": "A real colonial grievance and the wrong one for this sheet." },
           { "text": "the right to free speech and printing", "why": "Same: real, and not what the sheet claims." }
@@ -512,7 +300,6 @@
         "ignoreForThisItem": ["Whether the student blames Parliament, the King, the Crown or 'England'. The required core is that the taxing body was not chosen by Boston, and none of those was."]
       }
     },
-
     {
       "itemId": "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
       "itemVersion": "v1",
@@ -541,7 +328,6 @@
         ]
       }
     },
-
     {
       "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1",
       "itemVersion": "v1",
@@ -570,7 +356,6 @@
         ]
       }
     },
-
     {
       "itemId": "BOS.MD01.DUEL.REP.FINISH_THE_CLAIM.v1",
       "itemVersion": "v1",
@@ -602,7 +387,6 @@
         ]
       }
     },
-
     {
       "itemId": "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1",
       "itemVersion": "v1",
@@ -636,7 +420,6 @@
         ]
       }
     },
-
     {
       "itemId": "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1",
       "itemVersion": "v1",
@@ -660,64 +443,187 @@
           { "text": "its legal but we never agreed to it", "why": "Separates lawful from consent but gives no ground: it does not say Boston elected none of the men who voted it." },
           { "text": "we elected nobody in parliament", "why": "Gives the electoral ground but never grants that the vote was lawful and separates that from consent." },
           { "text": "the vote was rigged, they cheated", "why": "Disputes the fact instead of conceding it and arguing consent." },
-          { "text": "parliament has no power over the colonies at all", "why": "The over-claim Boston's 1765 argument does not make." },
+          { "text": "parliament has no power over the colonies at all", "why": "The over-claim Boston's argument does not make." },
           { "text": "because three pence is too much for a sheet of paper", "why": "Cost, and neither half." }
+        ]
+      }
+    },
+    {
+      "itemId": "BOS.MD01.DUEL.RESIST.HOW_THEY_ANSWER.v1",
+      "itemVersion": "v1",
+      "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
+      "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+      "codexCardIds": ["BOS.MD01.CARD.NON_IMPORTATION.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"],
+      "question": "The town cannot fight the Navy and cannot make laws for London. So what is left? What do the colonists actually DO to answer the Acts?",
+      "referenceAnswer": "They stop buying. Merchants sign an agreement not to import British goods — non-importation — so that Britain's own merchants lose the trade and press Parliament to relent. The pledge you carry is exactly that agreement.",
+      "rubric": {
+        "rubricId": "BOS.MD01.RUBRIC.RESIST.HOW_THEY_ANSWER.v1",
+        "requiredCore": "The colonists answer by agreeing to stop importing British goods — non-importation, a boycott of British trade.",
+        "line": "The answer must land on stopping the trade or not buying British goods. 'Boycott', 'stop importing', 'won't buy from Britain', 'the covenant not to trade' all carry it. Declaring war or taxing British goods back fails. Petitioning alone is thin — accept it only if the withholding of trade is also there.",
+        "acceptExamples": [
+          { "text": "they stop buying british stuff", "why": "Non-importation, plainly." },
+          { "text": "everyone signs not to import goods from britain", "why": "The agreement named." },
+          { "text": "a boycott. they refuse to trade for british goods until the port opens", "why": "The boycott with its aim." }
+        ],
+        "rejectExamples": [
+          { "text": "they go to war with britain", "why": "The 28% error; not the answer in 1774." },
+          { "text": "they put their own tax on british goods", "why": "The 37% error; they have no power to tax London." },
+          { "text": "they just get angry and complain", "why": "Generic affect; names no action." }
+        ]
+      }
+    },
+    {
+      "itemId": "BOS.MD01.DUEL.RESIST.NOT_WAR.v1",
+      "itemVersion": "v1",
+      "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
+      "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+      "codexCardIds": ["BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1", "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"],
+      "question": "A hothead in the crowd says the Continental Congress is meeting to declare war on Britain. Is that what a congress does here? Say what it actually does instead.",
+      "referenceAnswer": "No. In 1774 the Congress does not declare war. It petitions the King and coordinates the colonies — agreeing the boycott together, sending grievances. It is a body that organises resistance, not an army that fights it.",
+      "rubric": {
+        "rubricId": "BOS.MD01.RUBRIC.RESIST.NOT_WAR.v1",
+        "requiredCore": "The Congress does not declare war; it petitions and coordinates the colonies — agreeing the boycott, sending grievances — organising resistance rather than fighting.",
+        "line": "The answer must deny war AND name what the congress does instead (petition, coordinate, agree the boycott). Denying war with nothing in its place is half. Saying it declares war fails.",
+        "acceptExamples": [
+          { "text": "no, it doesnt declare war. it petitions the king and gets the colonies to agree the boycott", "why": "Denial plus the real work." },
+          { "text": "a congress petitions and organizes, it doesnt start a war", "why": "Both halves." },
+          { "text": "they meet to coordinate and send complaints, not to fight", "why": "The real function named." }
+        ],
+        "rejectExamples": [
+          { "text": "yes, thats what the congress is for", "why": "Concedes the war error the item exists to catch." },
+          { "text": "no", "why": "Denies war but names nothing the congress actually does, which the question asked for." },
+          { "text": "they raise an army to fight the redcoats", "why": "War in another form; the congress does not raise an army in 1774." }
+        ]
+      }
+    },
+    {
+      "itemId": "BOS.MD01.DUEL.RESIST.NOT_COUNTERTAX.v1",
+      "itemVersion": "v1",
+      "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
+      "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+      "codexCardIds": ["BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"],
+      "question": "Britain taxes the goods it sends here. A man says the fair answer is simple: the colonies should tax the goods Britain sends, penny for penny, and see how London likes it. Can they? What do they do instead?",
+      "referenceAnswer": "They cannot. The colonies have no power to lay a tax on British goods — they are not a parliament over London's trade. What they can do is refuse to buy those goods at all: stop importing, rather than tax the import.",
+      "rubric": {
+        "rubricId": "BOS.MD01.RUBRIC.RESIST.NOT_COUNTERTAX.v1",
+        "requiredCore": "The colonists cannot tax British goods (they have no power over London's trade); instead they refuse to buy them — non-importation, not counter-taxation.",
+        "line": "The answer must deny the counter-tax (no power to tax Britain) AND name the real answer (stop buying, boycott). Just 'no they can't' without the alternative is half. Endorsing the counter-tax fails.",
+        "acceptExamples": [
+          { "text": "no, they cant tax britain. they just stop buying the goods instead", "why": "Denial and the real answer." },
+          { "text": "we have no power to tax london. what we do is refuse to buy", "why": "Both halves." },
+          { "text": "you cant tax them back, but you can boycott their goods", "why": "The distinction the item is." }
+        ],
+        "rejectExamples": [
+          { "text": "yes, tax them the same way they tax us", "why": "Endorses the counter-tax, the 37% misconception." },
+          { "text": "they tax the tea coming in", "why": "A counter-tax by another name; the colonies laid no such tax." },
+          { "text": "no they cant", "why": "Denies the counter-tax but names no alternative, which the question asked for." }
+        ]
+      }
+    },
+    {
+      "itemId": "BOS.MD01.DUEL.RESIST.WHY_IT_BITES.v1",
+      "itemVersion": "v1",
+      "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
+      "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+      "codexCardIds": ["BOS.MD01.CARD.NON_IMPORTATION.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"],
+      "question": "A boycott sounds like a small thing, just some shopkeepers refusing goods. Why would Parliament, three thousand miles away, ever feel a handful of Boston merchants deciding not to buy?",
+      "referenceAnswer": "Because Britain's own merchants sell those goods, and when the colonies stop buying, those British merchants lose money and press Parliament to relent. The pressure does not come from Boston shouting at London; it comes from London's own traders complaining upward.",
+      "rubric": {
+        "rubricId": "BOS.MD01.RUBRIC.RESIST.WHY_IT_BITES.v1",
+        "requiredCore": "The boycott bites because Britain's own merchants lose the trade and pressure Parliament to relent — the pressure comes from inside Britain, not from Boston directly.",
+        "line": "The answer must connect the boycott to Britain's merchants pressuring Parliament. 'British merchants lose money and complain' carries it. An answer that says only 'it hurts trade' without the pressure link is thin — accept it if the loss falls on Britain's side. Saying it works by force or war fails.",
+        "acceptExamples": [
+          { "text": "british merchants stop making money and they lean on parliament", "why": "The mechanism." },
+          { "text": "the sellers in england lose out, so they complain to parliament for us", "why": "The pressure from inside Britain." },
+          { "text": "it costs britains own traders, and they have parliaments ear", "why": "Same." }
+        ],
+        "rejectExamples": [
+          { "text": "because boston is a big important city", "why": "Names no mechanism." },
+          { "text": "because it scares the king into backing down", "why": "Fear or force, not the merchant pressure." },
+          { "text": "because the colonies stop paying taxes", "why": "Confuses the boycott with refusing taxes." }
+        ]
+      }
+    },
+    {
+      "itemId": "BOS.MD01.DUEL.RESIST.THE_COVENANT.v1",
+      "itemVersion": "v1",
+      "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
+      "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+      "codexCardIds": ["BOS.MD01.CARD.NON_IMPORTATION.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"],
+      "question": "The sheet in your hand is the Solemn League and Covenant. A signer asks you what, plainly, he is putting his name to. What does signing it commit him to do?",
+      "referenceAnswer": "To stop trading with Britain. By signing, he agrees not to buy or use British goods — non-importation — until the Port Act is repealed and the harbour reopens. It is a pledge to withhold trade, together with his neighbours.",
+      "rubric": {
+        "rubricId": "BOS.MD01.RUBRIC.RESIST.THE_COVENANT.v1",
+        "requiredCore": "Signing the Covenant commits him to stop importing or buying British goods — a non-importation pledge — until the port reopens.",
+        "line": "The answer must name that signing means agreeing not to buy or import British goods (a boycott). 'Stop buying British stuff' carries it. Answers that make it a pledge to fight, to pay a tax, or to petition only, fail.",
+        "acceptExamples": [
+          { "text": "he agrees not to buy anything from britain", "why": "Non-importation." },
+          { "text": "hes pledging to stop trading with them till the port opens", "why": "The pledge with its aim." },
+          { "text": "no british goods in his house, thats what hes signing", "why": "Non-consumption, the covenant's reach." }
+        ],
+        "rejectExamples": [
+          { "text": "he agrees to take up arms", "why": "Makes it a war pledge; it is a trade pledge." },
+          { "text": "he agrees to pay the new tax", "why": "The opposite of what the covenant does." },
+          { "text": "he signs to say he was there when the tea went in", "why": "Unrelated; not what the covenant commits." }
+        ]
+      }
+    },
+    {
+      "itemId": "BOS.MD01.DUEL.RESIST.PETITION_AND_CONGRESS.v1",
+      "itemVersion": "v1",
+      "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
+      "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+      "codexCardIds": ["BOS.MD01.CARD.PETITION_AND_CONGRESS.v1"],
+      "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"],
+      "question": "Name me the lawful ways this town answers the Acts, the ones that are not a musket. Give me two.",
+      "referenceAnswer": "They petition — the King and Parliament, in writing — and they send men to a congress that coordinates all the colonies and agrees the boycott together. Petition, congress, and non-importation are the answer; none of them is a war.",
+      "rubric": {
+        "rubricId": "BOS.MD01.RUBRIC.RESIST.PETITION_AND_CONGRESS.v1",
+        "requiredCore": "Two lawful forms of resistance from among petition, a congress that coordinates the colonies, and non-importation (the boycott) — none of them war.",
+        "line": "The answer must name two of: petitioning, a congress or coordination, non-importation or boycott. Any two of those three earns it. Naming war, or a tax on British goods, fails. One form alone is half.",
+        "acceptExamples": [
+          { "text": "they petition the king, and they boycott british goods", "why": "Two lawful forms." },
+          { "text": "a congress to organize the colonies, and everyone signs not to import", "why": "Congress and non-importation." },
+          { "text": "petitions, and the covenant not to buy british stuff", "why": "Two forms named." }
+        ],
+        "rejectExamples": [
+          { "text": "they declare war and they fight", "why": "Both wrong forms; the item asks for the non-musket answers." },
+          { "text": "they tax british goods and they riot", "why": "Counter-tax and violence, neither lawful form." },
+          { "text": "they petition", "why": "One form; the question asked for two." }
         ]
       }
     }
   ],
 
   "portTo": {
-    "target": "packages/grading/src/items/m1.ts · AuthoredItem in packages/grading/src/rubric.ts",
-    "situation": "A grading package was built concurrently with this content pass and it already holds an M1 bank: eighteen items transliterated from Mission-Slate §4.9's draft into its own authoring format, with the binary line expressed as a per-item `needs` count over an `ideas` list. That package owns the format, the classifier prompt, the cache, the verdict projection and the review log, and it is not touched here. This block is how these items land in it.",
-    "whyThisContentRatherThanThat": "That bank is §4.9's draft ported field for field — the questions are the draft's one-line versions, the reference answers are the draft's short 'Accept' clauses, and the accept lists are the draft's 'Also accept' items. This bank re-authors all eighteen: the questions are in the constable's voice and set up their own answers, the reference answers are full, each rubric states its required core and says in prose where the line was drawn and why, and there are 75 held-out labelled answers rather than two or three per item. Same eighteen item ids, same pools, same Codex cards, so the port is a replacement rather than a merge.",
+    "target": "packages/grading/src/items/m1.ts · AuthoredItem in packages/grading/src/rubric.ts, via packages/grading/src/items/port.ts",
+    "situation": "The grading package holds an M1 bank that PORTS this file field-for-field (port.ts reads content/m1/duel-items.json and maps it), with the binary line expressed as a per-item `needs` count over an `ideas` list. That package owns the format, the classifier prompt, the cache, the verdict projection and the review log, and only its two hardcoded structures — TWO_PART_CORES and COUNT_CORE_ITEMS — name item ids, so those two lists move with this bank.",
     "fieldMapping": {
-      "itemId": "pool.idPrefix + '.' + item.id + pool.idSuffix — the ids are already identical",
+      "itemId": "pool.idPrefix + '.' + item.id + pool.idSuffix — derived from the ids, no per-pool entry needed",
       "question": "ask",
       "referenceAnswer": "correct",
-      "rubric.requiredCore": "one or two `ideas` entries with needs: \"all\". Twelve of the eighteen items carry a single required proposition; six carry a genuine two-part core so a written answer that supplies only one half does not pass. Both shapes stay binary: needs \"all\" is all-or-nothing, never partial credit.",
+      "rubric.requiredCore": "one or two `ideas` entries with needs: \"all\". Fifteen of the eighteen items carry a single required proposition; three carry a genuine two-part core so a written answer that supplies only one half does not pass. Both shapes stay binary: needs \"all\" is all-or-nothing, never partial credit.",
       "rubric.line": "note — the reasoning, which that format correctly never sends to the model",
       "rubric.acceptExamples[].text": "accept — held out of the prompt",
       "rubric.rejectExamples[].text": "reject — held out of the prompt",
-      "rubric.rejectExamples[].why": "wrongIfSays — the classes of wrong answer, described rather than quoted, which is what that field wants",
-      "rubric.ignoreForThisItem (war names)": "sameThing",
+      "rubric.rejectExamples[].why": "wrongIfSays — the classes of wrong answer, described rather than quoted",
+      "rubric.ignoreForThisItem": "sameThing",
       "codexCardIds": "cards",
-      "gradingPolicy": "buildSystemPrompt's HOW TO JUDGE section, which already states most of it",
       "eval/duel-answers.labeled.json": "additional held-out cases beyond each item's own accept/reject, none of them duplicating a rubric example"
     },
     "itemsWithTwoPartCores": [
-      "The prose grader requires BOTH halves (needs: all over two ideas) on the items whose evidence hand also demands two cards, so a written answer that supplies only one half fails just as a one-card selection does.",
-      "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1 — the money problem the war left, and Parliament's fix of raising it from the colonies.",
-      "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1 — the colonies as payer, and the war debt the money clears.",
-      "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1 — colonial payment, and that it goes toward Britain's war debt.",
+      "The prose grader requires BOTH halves (needs: all over two ideas) on the three PvE items whose evidence hand also demands two cards, so a written answer that supplies only one half fails just as a one-card selection does.",
       "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1 — the local body it elects, and the absence from Parliament.",
       "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1 — who laid it without consent, and the town's standing that it elected none of them.",
       "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1 — lawful is not consent, and the ground that Boston elected none of the voters.",
       "BOS.MD01.DUEL.REP.HOW_FAR_IT_GOES.v1 (pvpOnly) — the different argument, and where the man overshoots by refusing all taxes.",
-      "BOS.MD01.DUEL.STAMP.NAME_TWO.v1 — two distinct in-category instances, which is a count rather than two propositions and stays one idea."
-    ],
-    "conflicts": [
-      {
-        "itemId": "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1",
-        "thisBank": "The question no longer asks for the date at all.",
-        "thatBank": "`wrongIfSays` listed \"November with no day, since the question asks for a date\".",
-        "argument": "This conflict is settled, and neither side of it won. The old item asked 'From what date must the stamp be paid?', and the two banks disagreed on whether a bare month was correct — a disagreement about grading strictness on a recall question. The owner's later direction ('more complex questions that require actual creative thinking rather than trivia') retired the recall question itself: FROM_WHEN now asks why the town is still free to argue tonight when the Act is already law, which the student can only answer by reasoning from the taught fact that the duty does not begin until 1 November. The date is still tested, as the ground of a causal claim rather than as a string to recall, so the month-versus-day question no longer arises. A bare date is now WRONG for a reason that has nothing to do with precision: it asserts nothing about what has not yet happened."
-      },
-      {
-        "itemId": "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1",
-        "thisBank": "An incomplete enumeration that still holds the paper-versus-goods boundary is CORRECT — \"no, only newspapers and papers like that\".",
-        "thatBank": "`reject` lists a bare \"just newspapers\".",
-        "argument": "Narrower than it looks: a bare \"just newspapers\" neither denies the apprentice nor gestures at a category, and both banks would fail it. The live difference is whether a student who names one true instance of the taxed category has shown the boundary. This bank says yes."
-      },
-      {
-        "itemId": "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1",
-        "thisBank": "A bare \"something else\" is WRONG: the question asks the student to name the objection and to say why the town has the standing to make it.",
-        "thatBank": "A note records that needs: 1 lets a bare \"something else\" pass, and that the fix belongs in the question rather than in a third outcome.",
-        "argument": "Agreement, not conflict. That note names the fix and this is the fix: the question was rewritten to ask for the ground, so refusing an answer that names none is now fair to the student."
-      }
-    ],
-    "oneCorrectionTakenFromThere": "An earlier draft of `decisionProcedure` here ended with 'if you are still undecided, return CORRECT'. packages/grading/src/service.ts argues that granting generously on low classifier confidence is an exploit with a discoverable input, unlike granting on an infrastructure failure that a student cannot cause. That is right, and step 7 was rewritten.",
-    "conceptIdNote": "That bank's pools carry the legacy `BOS.MD01.CONCEPT.*` learner ids. This content carries the canonical `BOS.CONCEPT.*` ids from packages/curriculum, with the legacy id alongside on every pool. The alias table resolves either, so this is a retag rather than a blocker."
+      "The 1774-slate INTOLERABLE_ACTS and MERCANTILISM items are single-core by design: each turns on one decision (which act, who is punished, what the answer is), so a two-part split would ask the classifier to grade half of one proposition. STAMP.NAME_TWO's count-core is retired with the item."
+    ]
   },
 
   "pvpHardening": {
@@ -725,83 +631,108 @@
 
     "theExploitFound": {
       "name": "The universal sentence",
-      "what": "One memorised sentence per concept satisfies the required core of most of that concept's pool, because the pool is six questions about one proposition. Checked against every rubric above rather than assumed.",
-      "postwar": {
-        "sentence": "Britain came out of the war with France owing money, so Parliament made the colonies pay some of it with the stamp tax — the debt came first.",
-        "passes": "6 of 6. WHY_NOW, WHAT_IT_LEFT, WHO_PAYS, WHICH_CAME_FIRST, CAME_FROM_NOWHERE and DEBT_TO_TAX all bottom out on war → debt → tax on the colonies, and that sentence asserts all three links."
+      "what": "One memorised sentence per concept satisfies the required core of the recall-shaped items of that concept's pool, because those items ask for a general statement of the proposition. Checked against every rubric above rather than assumed.",
+      "intolerableActs": {
+        "sentence": "The Coercive Acts closed the whole harbour to punish the town, guilty and innocent together, and left carrying paper lawful.",
+        "passes": "3 of 6. WHY_THE_TOWN, NOT_A_FINE and (partly) WHO_IT_FALLS_ON bottom out on the collective-punishment statement. STILL_LAWFUL, FOUR_NOT_ONE and WHICH_ACT resist, because each demands a decision about a specific act or a specific lawful action that the sentence does not make."
       },
       "representation": {
         "sentence": "Boston elected nobody in Parliament, so a tax Parliament laid on us was laid without our consent — it is not the price, it is who laid it.",
         "passes": "5 of 6. Only BOSTON_DOES_ELECT resists, because it requires the local body to be named as well as the absence from Parliament."
       },
-      "stampScope": {
-        "sentence": "The Act taxes printed and legal paper, not ordinary goods, from 1 November.",
-        "passes": "2 of 6, down from 3 once FROM_WHEN was rewritten. DEED_OR_CLOTH, WHY_A_PRINTER and PRIVATE_LETTER already resisted, because each demands a decision about a specific object the sentence says nothing about. FROM_WHEN now resists too: it no longer asks for the date the sentence recites, but for why the duty has not yet taken effect, which the sentence does not address. Only NAME_TWO and CORRECT_THE_APPRENTICE still fall to it."
+      "mercantilism": {
+        "sentence": "The colonists could not declare war or tax London, so they stopped importing British goods.",
+        "passes": "3 of 6. HOW_THEY_ANSWER, NOT_COUNTERTAX and (partly) THE_COVENANT fall to it. NOT_WAR, WHY_IT_BITES and PETITION_AND_CONGRESS resist, because each demands a mechanism or a second form the sentence does not carry."
       },
-      "netEffect": "Three memorised sentences carry roughly 13 of 18 items (14 before FROM_WHEN was rewritten out of the stamp sentence's reach) — the better part of six rounds at the full fourteen balls, from a player who copied them from a friend and has demonstrated nothing. With the round count open this compounds: the advantage is no longer capped at six rounds' worth, it runs for the length of the match.",
-      "whatItIsNot": "It is not a rubric defect that could be fixed by tightening a line. Every one of those rubrics is correctly generous: a student who can write that postwar sentence unprompted does hold the concept, and refusing them would be the false negative this whole bank is written against. Tightening here would trade a real exploit for a toxic one."
+      "netEffect": "Three memorised sentences carry roughly 11 of 18 items — the better part of six rounds at the full fourteen balls, from a player who copied them from a friend and has demonstrated nothing. With the round count open this compounds: the advantage runs for the length of the match, not six rounds.",
+      "whatItIsNot": "It is not a rubric defect that could be fixed by tightening a line. Every one of those rubrics is correctly generous: a student who can write that sentence unprompted does hold the concept, and refusing them would be the false negative this whole bank is written against. Tightening here would trade a real exploit for a toxic one."
     },
 
-    "whatActuallyFixesIt": "Item shape. The stamp-scope pool resists because five of its six items ask the player to DECIDE something about a specific object — which of these two, is this one caught, name two instances — and a general statement of the concept decides nothing. The four items below apply that shape to the two exposed pools. The deeper answer is pool size, which is recorded under `openRisksForTomorrow`.",
+    "whatActuallyFixesIt": "Item shape. The scope items resist because they ask the player to DECIDE something about a specific object — which act, which of four actions is lawful — and a general statement decides nothing. The seven items below apply that shape across the three concepts. The deeper answer is pool size, which is recorded under the pool's theInvariant.",
 
-    "pveRotationUnchanged": "These four are NOT part of the eighteen. §4.9 authored exactly six per concept so three attempts exhaust the pool with no repeats, and adding to that rotation would break a documented property. They are `pvpOnly`, and verify.mjs asserts the eighteen stay eighteen.",
+    "pveRotationUnchanged": "These seven are NOT part of the eighteen. Six per concept is authored so three attempts exhaust the pool with no repeats, and adding to that rotation would break a documented property. They are `pvpOnly`, and verify.mjs asserts the eighteen stay eighteen. Distribution: three Intolerable Acts, three representation (unchanged from the prior slate — the consent concept and its hardening items survived the rescope), one non-importation.",
 
     "items": [
       {
-        "itemId": "BOS.MD01.DUEL.POSTWAR.WHICH_IS_FALSE.v1",
+        "itemId": "BOS.MD01.DUEL.ACTS.WHICH_IS_LAWFUL.v1",
         "itemVersion": "v1",
         "pvpOnly": true,
-        "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-        "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-        "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"],
-        "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-        "question": "Three things are said of Britain in 1763. It won its war with France. It came out of that war owing more than it ever had. It had been making the colonies pay for the fighting all along. Two are true and one is not. Name the false one and say what the truth is instead.",
-        "referenceAnswer": "The third. The colonies were not paying for the war as it was fought — the debt came out of the war first, and only then did Parliament decide the colonies should help pay it down.",
+        "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+        "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+        "codexCardIds": ["BOS.MD01.CARD.FOUR_ACTS.v1", "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1"],
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_ACTS.v1"],
+        "question": "Four things a man might do in Boston tonight: hold a town meeting, land a barrel at the wharf, try a soldier before a local jury, or carry a printed sheet down the street. Three break one of the Acts. One does not. Which one is lawful, and what stops the other three?",
+        "referenceAnswer": "Carrying the sheet is lawful. The town meeting is barred by the Government Act, landing cargo by the Port Act, and trying the soldier locally by the Administration of Justice Act — but no Act forbids carrying paper.",
         "rubric": {
-          "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHICH_IS_FALSE.v1",
-          "requiredCore": "The third statement is the false one: the colonial taxes came after the war and the debt, not during the fighting.",
-          "line": "The false statement must be identified, and the correction must put the tax after the debt. Naming the third without a correction still earns it, because picking one of three correctly is not a coin flip and the ordering is what the pick expresses. Naming a true statement as false fails however good the reasoning after it.",
+          "rubricId": "BOS.MD01.RUBRIC.ACTS.WHICH_IS_LAWFUL.v1",
+          "requiredCore": "Carrying the printed sheet is the lawful one; the meeting, the landing and the local trial each break one of the four Acts.",
+          "line": "The pick must be the sheet, and the answer should carry the sense that the other three are barred by the Acts. Naming which act bars which is more than required. Picking any of the other three fails.",
           "acceptExamples": [
-            { "text": "the third one. they taxed us after the war, not during it", "why": "Pick and correction." },
-            { "text": "the last one is wrong", "why": "The pick alone on a one-of-three, which is evidence rather than a guess." },
-            { "text": "number 3. the debt came first and then the stamp act, they werent charging us while they fought", "why": "Pick, correction and ordering." }
+            { "text": "the sheet. the meeting, the cargo and the trial are all banned by the acts", "why": "Pick and the contrast." },
+            { "text": "carrying paper is fine. the other three each break an act", "why": "Same, tersely." },
+            { "text": "walking with the sheet. town meetings, landing goods, local trials all gone under the acts", "why": "Pick with the three barred." }
           ],
           "rejectExamples": [
-            { "text": "the second one, they didnt really owe that much", "why": "Names a true statement as false." },
-            { "text": "the first one, britain didnt win", "why": "Names a true statement as false." },
-            { "text": "britain was in debt from the war so they taxed the colonies", "why": "The universal sentence. True, on concept, and it decides nothing the item asked." },
-            { "text": "they are all true", "why": "Refuses the decision the item is." }
+            { "text": "landing the barrel is fine", "why": "Picks a barred act; the Port Act closed the wharf." },
+            { "text": "holding the meeting", "why": "Picks the act the Government Act barred." },
+            { "text": "the coercive acts shut the harbour and punished the whole town", "why": "The universal sentence for this concept: true about the Acts and it decides none of the four choices." }
           ]
         },
-        "hardens": "Requires a choice among three, so a general statement of the concept cannot satisfy it."
+        "hardens": "Forces a choice among four specific acts, which a general statement of what the Coercive Acts did cannot resolve."
       },
       {
-        "itemId": "BOS.MD01.DUEL.POSTWAR.WHICH_YEAR.v1",
+        "itemId": "BOS.MD01.DUEL.ACTS.WHO_HAS_GRIEVANCE.v1",
         "itemVersion": "v1",
         "pvpOnly": true,
-        "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-        "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-        "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1"],
-        "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-        "question": "Two years: 1762 and 1764. In one of them Britain is already carrying the debt that produced this stamp. Which year, and what happened between the two?",
-        "referenceAnswer": "1764. The war with France ended in 1763, and it is the end of the war that leaves Britain with the debt.",
+        "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+        "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+        "codexCardIds": ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_CLOSURE.v1"],
+        "question": "Two men. The first rowed out and dumped the tea. The second sells fish off the wharf and was home in bed that night. The port is shut. Which of the two has the greater grievance against this Act, and why does that answer make it a punishment of the town?",
+        "referenceAnswer": "The fishmonger. He had no hand in the tea and is ruined all the same, while the Act treats him no differently from the man who dumped it. That the innocent man suffers equally is exactly what makes the closure a punishment of the whole town rather than of the guilty.",
         "rubric": {
-          "rubricId": "BOS.MD01.RUBRIC.POSTWAR.WHICH_YEAR.v1",
-          "requiredCore": "1764, because the war ended in 1763 and the debt is what the war left behind.",
-          "line": "The year plus the war's end. A bare year is a coin flip on a two-way question and the item asks what happened between them, so it does not earn it. The exact year 1763 need not be named — 'the war finished' between the two is the same answer.",
+          "rubricId": "BOS.MD01.RUBRIC.ACTS.WHO_HAS_GRIEVANCE.v1",
+          "requiredCore": "The innocent fishmonger has the greater grievance because he is ruined despite no hand in the tea, and punishing him equally with the guilty is what makes the closure a punishment of the town.",
+          "line": "The pick must be the fishmonger, with the reason that the innocent is punished like the guilty. Picking the tea-dumper fails. A bare pick with no reason is thin; the question asks why it makes the Act collective, so name the innocent-with-guilty point.",
           "acceptExamples": [
-            { "text": "1764. the war ended in between", "why": "Year and event." },
-            { "text": "the second one, france was beaten by then and the bill had landed", "why": "Year identified by position, event named." },
-            { "text": "1764 because in 1762 they were still fighting", "why": "The same distinction from the other side." }
+            { "text": "the fishmonger. he did nothing and hes ruined, same as the guy who did it", "why": "Pick and reason." },
+            { "text": "the innocent one, obviously. the act doesnt care who did the tea, it hits them the same", "why": "The collective point." },
+            { "text": "the second man. punishing him proves its aimed at the whole town not the guilty", "why": "Pick and the conclusion." }
           ],
           "rejectExamples": [
-            { "text": "1762", "why": "Wrong year, and the war was still being fought." },
-            { "text": "1764", "why": "A bare pick on a two-way question after the item asked what changed." },
-            { "text": "they were in debt from the war so they taxed the colonies", "why": "The universal sentence. Decides no year." },
-            { "text": "1764, because thats when parliament wrote the stamp act", "why": "Wrong reason and wrong fact; the Act is 1765." }
+            { "text": "the man who dumped the tea, its his fault", "why": "Inverts the grievance." },
+            { "text": "both the same, a tax is a tax", "why": "Erases the distinction the item is." },
+            { "text": "parliament closed the harbour to punish the whole town", "why": "The universal sentence: true, and it names neither man nor decides between them." }
           ]
         },
-        "hardens": "Ties the concept to a specific date pair, which a general statement cannot resolve."
+        "hardens": "Puts collective punishment into a choice between two people, which a general statement of the concept cannot resolve."
+      },
+      {
+        "itemId": "BOS.MD01.DUEL.ACTS.FINE_OR_CLOSURE.v1",
+        "itemVersion": "v1",
+        "pvpOnly": true,
+        "poolId": "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+        "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+        "codexCardIds": ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_CLOSURE.v1"],
+        "question": "Parliament had two roads. One: fine the men who dumped the tea and try them in a court. Two: close the harbour to every ship until the tea is paid for. It took the second. A magistrate says both roads punish the same people. Is he right?",
+        "referenceAnswer": "No. The first road falls on the guilty men alone; the second falls on the whole town, every trade that lives by the water, whether they touched the tea or not. The roads do not punish the same people, and that difference is the whole of it.",
+        "rubric": {
+          "rubricId": "BOS.MD01.RUBRIC.ACTS.FINE_OR_CLOSURE.v1",
+          "requiredCore": "The magistrate is wrong: a fine or trial punishes the guilty men, but closing the harbour punishes the whole town — the two roads do not fall on the same people.",
+          "line": "The answer must reject the magistrate and distinguish the guilty (fine) from the whole town (closure). Agreeing with him fails. Naming only that the harbour closed, without the who-it-falls-on contrast, is thin.",
+          "acceptExamples": [
+            { "text": "no. the fine hits the guilty, the closure hits everyone in town", "why": "The contrast, rejecting him." },
+            { "text": "hes wrong. one punishes the men who did it, the other punishes all of boston", "why": "Both roads distinguished." },
+            { "text": "not the same at all. shutting the port ruins people who never touched the tea", "why": "The reason." }
+          ],
+          "rejectExamples": [
+            { "text": "yes, its all the same punishment", "why": "Concedes the magistrate's error." },
+            { "text": "yes because the town backed the tea party", "why": "Collective guilt, which the item rejects." },
+            { "text": "the coercive acts were meant to isolate boston", "why": "The universal sentence: true, and it does not compare the two roads." }
+          ]
+        },
+        "hardens": "Makes the fine-versus-closure contrast do the work, which a general statement that the Acts punished Boston cannot."
       },
       {
         "itemId": "BOS.MD01.DUEL.REP.HOW_FAR_IT_GOES.v1",
@@ -824,7 +755,7 @@
           ],
           "rejectExamples": [
             { "text": "different, thats all", "why": "Picks the side but never says where he goes past the town, refusing all taxes and not just this one." },
-            { "text": "yes, thats exactly what we are saying", "why": "Concedes the over-claim Mission-Slate §4.9 rejects." },
+            { "text": "yes, thats exactly what we are saying", "why": "Concedes the over-claim the consent argument rejects." },
             { "text": "we never elected parliament so the tax has no consent behind it", "why": "The universal sentence. Correct about the concept and silent on the man and where he overshoots." },
             { "text": "hes right, taxes are theft", "why": "Concedes, in a register from a different century." }
           ]
@@ -857,36 +788,7 @@
             { "text": "the second one", "why": "One assignment on a two-way split, with the other left unsaid." }
           ]
         },
-        "hardens": "Forces an assignment across two cases, which is the shape the stamp-scope pool already had and the representation pool did not."
-      },
-      {
-        "itemId": "BOS.MD01.DUEL.POSTWAR.STILL_HERE.v1",
-        "itemVersion": "v1",
-        "pvpOnly": true,
-        "poolId": "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-        "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-        "codexCardIds": ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1"],
-        "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"],
-        "question": "The war ended two years ago and yet the redcoats are still here. What are they still costing Britain, and what has that to do with the stamp on my paper?",
-        "referenceAnswer": "An army kept in America still has to be paid for, on top of the debt the war already left. That is more money Britain has to raise, and the stamp is how it means to raise part of it here.",
-        "rubric": {
-          "rubricId": "BOS.MD01.RUBRIC.POSTWAR.STILL_HERE.v1",
-          "requiredCore": "The army in America is a standing cost Britain still has to pay, which adds to what it must raise — and raising it here is what the stamp does.",
-          "line": "The answer must name the army as a cost, not merely as a presence. 'They are keeping order' is an observation; 'they still have to be paid' is the item. The link to the stamp does not have to be spelled out, because the question supplies it — naming the standing cost is the work.",
-          "acceptExamples": [
-            { "text": "wages. an army doesnt feed itself and britain is paying for it", "why": "The standing cost, named." },
-            { "text": "they still have to pay for all of them being over here, so they need more money from us", "why": "Cost and payer." },
-            { "text": "keeping soldiers here costs money every year, thats on top of what they already owe", "why": "The cost distinguished from the debt, which is more than required." },
-            { "text": "money. the army is a bill that never stops and were the ones being asked for it", "why": "Same, informally." }
-          ],
-          "rejectExamples": [
-            { "text": "they are here to keep us in line", "why": "A purpose, not a cost. The item asks what they cost." },
-            { "text": "nothing, the war is over so theyll go home soon", "why": "Denies the standing cost." },
-            { "text": "britain was in debt from the war so they taxed the colonies", "why": "The universal sentence. True about the concept and silent about the army, which is the whole of this item." },
-            { "text": "they cost us money because we have to house them", "why": "Quartering, which is a later grievance and puts the cost on the wrong party." }
-          ]
-        },
-        "hardens": "Turns on the one clause the universal sentence does not contain. It is also the clause the module gained so the capstone could serve its only released postwar item, so the seven added words now do work on two surfaces."
+        "hardens": "Forces an assignment across two cases, which is the shape the scope pool already had and the representation pool did not."
       },
       {
         "itemId": "BOS.MD01.DUEL.REP.WHICH_MAN.v1",
@@ -918,33 +820,31 @@
         "hardens": "Puts the concept's most common misconception — cost for consent — into a choice between two people, which a general statement of the claim cannot resolve."
       },
       {
-        "itemId": "BOS.MD01.DUEL.STAMP.WHICH_HUNDRED.v1",
+        "itemId": "BOS.MD01.DUEL.RESIST.WAR_OR_BOYCOTT.v1",
         "itemVersion": "v1",
         "pvpOnly": true,
-        "poolId": "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1",
-        "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-        "codexCardIds": ["BOS.MD01.CARD.STAMP_DATE.v1", "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1"],
-        "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"],
-        "question": "It is the last week of October. Your press runs off a hundred handbills today, and a hundred more the week after next. Which of those two hundred need the stamp, and what decides it?",
-        "referenceAnswer": "The second hundred. Both are printed paper, so the kind of sheet decides nothing between them — what decides it is the date, because the duty begins on 1 November.",
+        "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
+        "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+        "codexCardIds": ["BOS.MD01.CARD.NON_IMPORTATION.v1", "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1"],
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"],
+        "question": "Two men argue in the tavern. The first says the only answer to the Acts is to raise a militia and fight. The second says the answer is to stop buying British goods until the port opens. In 1774, which man has the colonists' actual answer, and what is the other man reaching for too early?",
+        "referenceAnswer": "The second. In 1774 the answer is non-importation — the boycott, the covenant — not war. The first man is reaching for the fighting that does not come until Lexington, a year off; the congress this summer petitions and boycotts, it does not raise an army.",
         "rubric": {
-          "rubricId": "BOS.MD01.RUBRIC.STAMP.WHICH_HUNDRED.v1",
-          "requiredCore": "The second hundred, because the duty begins on 1 November and only the later batch is printed after it.",
-          "line": "The pick plus the date. Naming the day is not required — 'the ones after the first of the month' and 'the later batch, thats when it starts' both carry it. What fails is picking the first hundred, picking both, or picking correctly on a reason about the kind of paper, since both batches are the same kind of paper and that reason decides nothing.",
+          "rubricId": "BOS.MD01.RUBRIC.RESIST.WAR_OR_BOYCOTT.v1",
+          "requiredCore": "The second man has the answer — non-importation, the boycott — while the first is reaching for war, which is not the colonists' answer in 1774.",
+          "line": "The pick must be the second man (boycott), and the first placed as war or too-early. Picking the first fails. A bare pick without placing the war man is thin; the question asks what the other reaches for.",
           "acceptExamples": [
-            { "text": "the second hundred, november has started by then", "why": "Pick and date." },
-            { "text": "the later ones. the tax kicks in on the 1st", "why": "Same, eight words." },
-            { "text": "next weeks lot. todays are printed before it starts so theyre clear", "why": "The pick argued from the other batch." },
-            { "text": "the ones after the first of the month, its the date not the paper", "why": "Names the deciding factor explicitly, which is more than required." }
+            { "text": "the second. its a boycott in 1774, not a war yet", "why": "Pick and the placement." },
+            { "text": "the man who says stop buying. the other one wants a war that hasnt started", "why": "Both halves." },
+            { "text": "boycott is the answer. fighting comes later, not now", "why": "Pick and the too-early point." }
           ],
           "rejectExamples": [
-            { "text": "both of them, theyre handbills and handbills are taxed", "why": "True about the category and blind to the date, which is the only thing separating the two batches." },
-            { "text": "the first hundred", "why": "Inverted." },
-            { "text": "the second hundred because those ones are for the public", "why": "Right pick, and a reason that is neither the date nor the category." },
-            { "text": "printed and legal paper is taxed from november, not ordinary goods", "why": "The universal sentence for this concept. It contains the date and still decides no batch." }
+            { "text": "the first man, you have to fight them", "why": "Picks war, the 28% error." },
+            { "text": "both, war and boycott together", "why": "Erases the distinction; 1774 is not war." },
+            { "text": "they cant declare war or tax london so they stop buying", "why": "The universal sentence for this concept: true, and it picks neither man." }
           ]
         },
-        "hardens": "Makes the date do work instead of being recited, and does it inside a case where the scope rule alone gives the wrong answer. The stamp pool was already the most resistant; this is the item that also gives it depth."
+        "hardens": "Puts the war-versus-boycott error into a choice between two people, which a general statement of the answer cannot resolve."
       }
     ],
 
@@ -955,18 +855,8 @@
       },
       {
         "risk": "The accept lists are in the repository as plain strings.",
-        "detail": "They are held out of the classifier prompt, which is right, but they are exact-match answers to anyone who reads the file. Never render an accept example to a player — not in a review screen, not in a post-duel summary, not in a teacher view a student can see over a shoulder."
-      },
-      {
-        "risk": "An answer field is a place to type things at another person.",
-        "detail": "The design already says a duel answer is never shown to the opponent, which is what makes this safe. Several of these items invite roleplay and a student will write something unrepeatable at the constable; it should stay between them and the classifier."
+        "detail": "They are held out of the classifier prompt, which is right, but they are exact-match answers to anyone who reads the file. Never render an accept example to a player."
       }
-    ],
-
-    "whatIWouldNotChange": [
-      "The generosity that survives FROM_WHEN's rewrite. The item stopped being a date-recall question, but the new version still does not require the exact date: 'the tax hasnt started yet' locates the duty in the future and is the whole idea. Only a bare date with no claim attached is refused now, and only because it answers a different question than the one asked.",
-      "The generosity in the postwar rubrics. It is the source of the universal-sentence exploit and it is still correct: the alternative denies a bullet to a student who understands the concept and says so in one sentence, which is the failure mode this bank exists to avoid.",
-      "The distance rejection on SPEAKS_FOR_ALL. Adversarially it is the one rejection a player might argue with, and it is the one that most needs holding: crediting 'he has never been here' would credit the grievance without the principle."
     ]
   },
 
@@ -980,25 +870,19 @@
       {
         "source": "the eighteen PvE duel items in this file",
         "count": 18,
-        "note": "Unchanged. They remain the PvE rotation, six per concept, exhausted exactly at the third attempt."
+        "note": "Unchanged in shape. Six per concept, exhausted exactly at the third attempt."
       },
       {
         "source": "the seven PvP-only hardening items in `pvpHardening.items`",
         "count": 7,
-        "note": "Decision-shaped, authored specifically against the universal-sentence exploit, and deliberately outside the PvE rotation. Three postwar, three representation, one stamp scope — weighted toward the two concepts the exploit measured as exposed, and the seventh added to stamp scope because it was the shallowest pool once the guard is applied."
+        "note": "Decision-shaped, authored specifically against the universal-sentence exploit, and deliberately outside the PvE rotation. Three Intolerable Acts, three representation, one non-importation — weighted toward the concepts the exploit measured as exposed."
       },
       {
         "source": "content/capstone/boston-1765/items/open-response.json",
         "count": 9,
-        "note": "Three per concept. Already prose, already binary-rubric-graded under a policy that inherits this one, already answerable from the same module — and six of the nine are decision- or application-shaped, which is the shape that resists the memorised sentence. They are the reason the pool clears the round ceiling without authoring nine more items."
+        "note": "Three per concept. Already prose, already binary-rubric-graded under a policy that inherits this one, already answerable from the same module — and most are decision- or application-shaped, which resists the memorised sentence. They are the reason the pool clears the round ceiling without authoring nine more items."
       }
     ],
-
-    "shapeOfTheResult": {
-      "decisionShaped": 19,
-      "recallShaped": 15,
-      "why": "The exploit is that one memorised sentence per concept satisfies items whose required core is a general statement of the concept. Just over half the expanded pool now asks the player to decide or reason about something specific instead, against seven of the original eighteen — up from six once FROM_WHEN's date recall became a question about why the duty has not yet taken effect."
-    },
 
     "capstoneSharingGuard": {
       "predicateId": "PVP.GUARD.CAPSTONE_ALREADY_MASTERED.v1",
@@ -1019,93 +903,24 @@
 
       "whatItProtects": "The capstone's first-attempt score is the number a teacher is told. If PvP served a gate item first, that score would be measuring recall of a duel, and the student's own retry reserve would be smaller than the engine believes.",
 
-      "whyMasteredRatherThanAssessed": "Merely having sat the concept once is not enough. The shrinking retry scopes only UNMASTERED concepts and draws fresh items for them, so a concept a student failed on attempt one still has a reserve to protect. Mastery is the moment the concept stops appearing on any future form, which is exactly the moment there is nothing left to protect. It is also the stricter of the two readings and the cheaper one to state.",
+      "whyMasteredRatherThanAssessed": "Merely having sat the concept once is not enough. The shrinking retry scopes only UNMASTERED concepts and draws fresh items for them, so a concept a student failed on attempt one still has a reserve to protect. Mastery is the moment the concept stops appearing on any future form, which is exactly the moment there is nothing left to protect.",
 
-      "readItInTheGamesOwnTerms": "A mastered concept is precisely a concept whose Codex cards are PvP-legal — §1.8 mints `pvpLegalAt` at 100% per concept and nowhere else. So the rule can be read as: PvP may ask a gate question only about a concept you are already PvP-legal on. Two ways of saying one thing, and the equivalence is worth knowing because it means the guard can never lock a player out of content they have earned.",
-
-      "whyItIsWrittenDownRatherThanLeftToTheUnlockOrder": "Mission-Slate §1.8 unlocks PvP only after the chapter is complete, and the capstone is what completes it, so today the leak cannot happen. That is a coincidence of release order rather than a safety property. It holds until someone reorders two features — and we have already proven we will, because the test build opens PvP first.",
-
-      "tomorrow": "Under this predicate the shared nine are ineligible for every player in the test build, because nobody has mastered anything yet. The PvP pool is 25 tomorrow and 34 in the shipped order, and 25 still clears the round ceiling, which is why three more PvP-only items were authored. Nothing is harmed: no capstone score exists to contaminate, and the hardening items are unaffected. If tomorrow's session wants the full pool, waive it explicitly on test profiles rather than by deleting the check — a test build is exactly where a temporary exception becomes permanent."
-    },
-
-    "drawPolicy": {
-      "principle": "The assessment engine's precedent, applied to a surface that never had one: draw fresh, recycle oldest-served-first when fresh runs out, and disclose the reuse rather than hiding it.",
-      "tiers": [
-        {
-          "tier": 1,
-          "name": "FRESH",
-          "rule": "An item neither side has been served, in any duel or capstone. Always preferred.",
-          "shownToPlayer": "nothing — this is the normal case"
-        },
-        {
-          "tier": 2,
-          "name": "SEEN_BEFORE",
-          "rule": "No mutually fresh item remains. Draw the one served longest ago, measured across both sides' ledgers, which puts the maximum distance between exposures exactly as `recycleOldestServed` does.",
-          "shownToPlayer": "a quiet marker on the question: one of you has met this before."
-        },
-        {
-          "tier": 3,
-          "name": "REPEATED_IN_MATCH",
-          "rule": "An item this same match already asked. Unreachable while the pool is larger than the round ceiling — see `theInvariant` — and specified so that breaking the invariant fails loudly rather than silently repeating.",
-          "shownToPlayer": "stated plainly: this question has come round again."
-        }
-      ],
-      "committed": "The tier belongs on the committed round event beside the verdict, for the same reason `ConceptFreshness` is on a capstone form: a match replayed from its log must reproduce the same draw, and a reviewer reading the log has to be able to tell a knowledge round from a memory round.",
-      "whyDiscloseRatherThanHide": "A repeated question is worth fourteen balls to whichever player remembers the answer. Hidden, the match looks like a contest of knowledge while being a contest of memory, and the loser has no way to know which one they lost. The assessment engine refuses to hide a recycled item on a gate that is private; a duel is public between two students and the argument is stronger, not weaker."
-    },
-
-    "pvpSymmetry": {
-      "rule": "Both sides are asked the SAME item in a round, and its tier is computed on the UNION of both ledgers.",
-      "why": "Two separate draws would systematically favour whichever player has played less: the veteran meets items they have seen, the newcomer meets fresh ones, and the bullet difference reads as knowledge. Computing freshness on the union means the round is fresh for both or acknowledged as stale for both.",
-      "cost": "It exhausts the pool faster than per-player draws would, because an item is spent the moment either side meets it. That is the correct trade — a smaller fair pool beats a larger unfair one."
+      "readItInTheGamesOwnTerms": "A mastered concept is precisely a concept whose Codex cards are PvP-legal — cards mint `pvpLegalAt` at 100% per concept and nowhere else. So the rule can be read as: PvP may ask a gate question only about a concept you are already PvP-legal on."
     },
 
     "theInvariant": {
       "rule": "pool size > DUEL_ROUND_CEILING, in the guarded state as well as the full one",
       "today": "34 > 24 unguarded, and 25 > 24 under PVP.GUARD.CAPSTONE_ALREADY_MASTERED — so it holds for a player who has mastered nothing, which is every player until the first capstone is sat.",
       "consequence": "No single match can ever repeat a question, whatever happens. Tier 3 exists in the specification and is unreachable in practice, which is the right place for it.",
-      "whyBothStatesAreChecked": "The first version of this pool was 31 unguarded and 22 guarded. The headline cleared the ceiling and the number every player would actually draw from did not, which made the invariant false for exactly the players in a build that opens PvP before the capstone. Three more PvP-only items closed it. An invariant that holds only in the state nobody is in is not an invariant.",
-      "fragile": "The guarded margin is one item. It breaks the moment the ceiling rises above twenty-five, and the ceiling is a tuning constant in another package. verify.mjs reads that constant from its source and asserts both states against it, so a change there fails here rather than surfacing as a repeated question in a live match."
-    },
-
-    "whatALongMatchActuallyDoes": {
-      "oneMaximalMatch": "The hard backstop is DUEL_ROUND_CEILING = 24. A match that reaches it consumes 24 items and every one of them is fresh, in both the guarded state (24 of 25) and the unguarded one (24 of 34). This is the case the pool was sized for and the reason the last three items were authored.",
-      "theSecondMatch": "Under the guard it starts with 1 fresh item and drops to tier 2 immediately; unguarded it starts with 10. A player who has just fought a marathon and queues again is in memory territory almost at once either way. The invariant protects a single match, not a session.",
-      "typicalPlay": "The tuning file predicts about six rounds for a mid-tier duel, so the ordinary rate is roughly four matches guarded and six unguarded before the first repeat.",
-      "underTheSymmetryRule": "Faster, and this is the number that matters. If two players have each been served k items independently, the expected count fresh to both is n × (1 − k/n)². At n = 34 that is about thirteen after two matches each, six after three, two after four. **A fair fresh draw is effectively gone by the fifth match between the same two people.**",
-      "theHonestConclusion": "Thirty-four items make one long match safe and an evening survivable. They do not make PvP work. A duel with an unbounded round count consumes questions at a rate no reasonable amount of authoring keeps up with, and the pool is now a first-class tuning constraint rather than a content backlog.",
-      "theResidual": "One reading is still short. If the selector rotates concepts evenly — which is what the PvE schedule did and the natural generalisation of it — a 24-round match asks 8 questions per concept, and the guarded per-concept depths are postwar 9, representation 9, stamp scope 7. Stamp scope would repeat once in a maximal evenly-rotated match. Nothing in packages/duel schedules concepts today, so this is contingent rather than live; one more stamp-scope item closes it, and verify.mjs warns while it stands."
-    },
-
-    "whatWouldActuallyFixIt": [
-      {
-        "option": "More items, and the number is large.",
-        "detail": "Sustaining roughly five matches a session for a pair of players without a repeat needs on the order of sixty to a hundred items on these three concepts. That is a multi-day authoring job at this quality bar, and it is the only fix that does not change the design.",
-        "recommendation": "Worth starting, and not worth waiting for."
-      },
-      {
-        "option": "Draw across chapters once later missions exist.",
-        "detail": "The pool problem is an artefact of PvP being seeded with one mission's concepts. Fourteen missions' worth of items is a pool that does not run out, and this problem disappears on its own as content lands. It is a reason to prefer breadth over depth in later authoring passes.",
-        "recommendation": "The real long-run answer."
-      },
-      {
-        "option": "Cap the questions rather than the rounds.",
-        "detail": "Rounds stay unbounded and health still ends the match; the question phase stops once every eligible item has been asked in that match, and every round after it grants the wrong-answer floor of seven to each side. The match degrades honestly into a gunfight, which is what a spent pool actually means.",
-        "writtenUpIn": "content/m1/BANK-EXHAUSTION-PROPOSAL.md",
-        "status": "PROPOSAL ONLY — deliberately not implemented. The duel agent owns the bank-exhaustion policy under open-ended rounds and is designing one concurrently; the owner reconciles the two. Nothing in packages/duel was touched.",
-        "theNumberThatMattersForReconciliation": "The trigger is unreachable today in both states — 24 < 25 guarded and 24 < 34 unguarded — and it was NOT when the proposal was first written, when the guarded pool was 22. Three PvP-only items closed that. So the proposal is defensive rather than live, and worth implementing for the reason the invariant is worth checking: the guarded margin is one item, on a ceiling owned by another package, over a pool that reaches its total by borrowing the capstone's prose under a predicate."
-      }
-    ]
+      "fragile": "The guarded margin is one item. It breaks the moment the ceiling rises above twenty-five, and the ceiling is a tuning constant in another package. verify.mjs reads that constant from its source and asserts both states against it, so a change there fails here rather than surfacing as a repeated question in a live match.",
+      "perConceptResidual": "If the selector rotates concepts evenly — what the PvE schedule does and the natural generalisation of it — a 24-round match asks 8 per concept, and the guarded per-concept depths are Intolerable Acts 9, representation 9, non-importation 7. Non-importation would repeat once in a maximal evenly-rotated match. Nothing in packages/duel schedules concepts today, so this is contingent; one more non-importation item closes it, and verify.mjs warns while it stands."
+    }
   },
 
   "moduleCoverage": {
     "claim": "All eighteen items are answerable from the six cards of BOS.MD01.MODULE.BRIEF.v1 alone.",
     "howChecked": "Item by item, against the card named in each item's `answerableFrom`. verify.mjs re-checks that every `answerableFrom` cue exists in the module and that every codex card an item cites is sourced by a card the module actually teaches.",
-    "changesTheCheckForced": [
-      "The stamp card now names six examples inside the taxed categories and three outside them. Mission-Slate §4.9 flagged NAME_TWO as an item the module could not support at the noun level; naming exemplars fixes it at the source rather than by loosening a rubric.",
-      "The representation card now states the consent principle positively — 'a tax may be laid only by a body the taxed people chose' — because FINISH_THE_CLAIM asks the student to complete exactly that sentence and inverting a negative under fire is a different and harder task.",
-      "The representation card now carries Parliament's speaks-for-everyone claim and the reply to it. SPEAKS_FOR_ALL and LAWFUL_BUT_UNJUST were authored in §4.9 against a module that never raised either, which made them the only two items in the bank a diligent student could miss honestly."
-    ],
+    "cueMap": "INTOLERABLE_ACTS items answer from BRIEF_CLOSURE (the three collective-punishment items) or BRIEF_ACTS (the three scope items); REPRESENTATION items from BRIEF_REPRESENTATION; MERCANTILISM items from BRIEF_ANSWER.",
     "itemsNotAnswerable": []
   }
 }
