@@ -107,6 +107,36 @@ written.
 **Runtime ratio:** mostly movement and evasion. Each conversation is a handful of lines —
 punctuation, not substance.
 
+### Getting caught is a second teaching surface, not a fail state (owner, 29 Jul)
+
+*"if you get caught on the ground, you have to talk the guards out of it understanding what they
+want to hear historically, similar back and forth with hologram girl — so u cant really fail."*
+
+The ground is floor-is-lava **in theory**, not in punishment. Caught, the player talks their way
+out using the **same responsive-dialogue + handler-scaffolding mechanic** as the contacts, so this
+costs no new system. **Failure becomes content** — which is the product's own remedial thesis
+applied to its failure state.
+
+**What the guard exchanges teach, and why they are not filler:**
+- **The actual scope of the Coercive Acts.** The port was closed and assembly banned, but a
+  print-shop runner carrying paper on a street was not itself a crime. The cover identity is a
+  *legal* argument, so knowing precisely what was prohibited is what protects the player. This is
+  a real incentive to understand the Acts exactly rather than as "the British were harsh."
+- **The occupation from the soldier's side** — underpaid men billeted in a town that resented
+  them, some taking civilian work to survive. Talking past one means engaging with what *he*
+  believes he is doing there, which teaches the contested-question concept from the other
+  direction.
+
+**The cost, with no failure:** heat, and being remembered. Each capture makes the patrols know the
+player's face better, which pays off `BOSS_CHALLENGE_BEATS`' existing *"You again — I'd know that
+face in any dark"* — get caught often and the officer greets someone he has genuinely been chasing
+all night. It can also scale duel difficulty, so sloppiness earns a harder fight rather than a
+game over.
+
+**It also produces assessment signal.** Whether the player talked their way out by understanding
+what was prohibited, or the handler had to carry them, is per-concept data — so even the failure
+state feeds the remediation record.
+
 ### Persuasion responds; it never refuses (owner, 29 Jul)
 
 Contacts **answer from their own situation** rather than rejecting a wrong approach. A refusal
