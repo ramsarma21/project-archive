@@ -53,6 +53,23 @@ test("segmentation changes granularity but never the words", () => {
   }
 });
 
+test("a long comma-laden clause keeps every word, comma included, when split", () => {
+  // A single clause over the 22-word hard ceiling with internal commas is the one
+  // shape that reaches splitLongClause. It used to split on the comma and rejoin the
+  // survivors with ", ", which dropped the comma from every piece that ended a
+  // packed subtitle line — so the rejoined subtitle was not the authored words.
+  // Authored content stayed under the ceiling and hid this, so the invariant held
+  // only by content discipline. This pins it in the code: any clause length, commas
+  // and all, must survive segmentation unchanged.
+  const clause =
+    "The town would say the same if the tax were a farthing, and it says the " +
+    "same about the men who wrote these acts, and about the ministers behind them, " +
+    "and about the Parliament that passed them into law.";
+  assert.ok(words(clause).length > 22, "the fixture must exceed the hard ceiling");
+  const rejoined = segmentBeatText(clause).join(" ");
+  assert.deepEqual(words(rejoined), words(clause));
+});
+
 test("a short line is left as a single subtitle", () => {
   const lines = segmentBeatText("Not one member.");
   assert.deepEqual(lines, ["Not one member."]);
