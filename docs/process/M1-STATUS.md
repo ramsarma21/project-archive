@@ -195,6 +195,21 @@ re-run, not a rebuild.
 Also note: the archive-room framings were *relaxed* for the covered asset, so with the original
 restored the room/brief close-ups may show the original outfit again. Accepted under this choice.
 
+**Room presenter jaw regression from the restore — FIXED (30 Jul, ArchiveRoom.tsx).** The original
+GLB ships `char1` with the `jawOpen` morph **defaulted to weight 1** (mouth fully open) and **no
+clip animates the morph** (`idle`/`talk`/`talk2` are translation/rotation/scale only). The room's
+`PresenterRigMesh` never drove the morph, so the mouth sat gaping at rest — the "frozen/terrifying"
+look. Both hypotheses in the brief were disproven by inspecting the GLB: the clips are named exactly
+`idle`/`talk`/`talk2` and the morph exactly `jawOpen`, so `chooseAvailableClip` returns `idle` and it
+**does play** (she moves between frames; she was never in bind pose). Fix: the room now finds the
+`jawOpen` mesh/index and pins the influence to 0 every frame (the room presenter is silent, so no
+lip-sync belongs there). The in-file/brief path (`SystemPresenter`) was already correct — its
+lip-sync drives the morph to 0 at rest and up on speech, which overrides the default-1. Verified on
+the real GPU (ANGLE Metal) at dpr 2: room mouth closed at rest with the idle still animating;
+in-file/brief `__presenterJaw` reads ~0.10–0.40 speaking and 0 paused. Her arms at rest are the
+idle's authored relaxed stance (hand near the hip), not a bind pose — not adjustable without
+touching the clip, which is off-limits.
+
 ### A structural flaw in the guard's own selftest, found while managing grants
 
 `lane-guard.sh --selftest` tests the grant-override mechanism using whichever grant is live, with the
