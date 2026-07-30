@@ -1,0 +1,93 @@
+{
+  "asset": "apps/web/public/world/characters/system-presenter-rigged.glb",
+  "glbKey": "system-presenter-rigged",
+  "role": "M1 Archive AI presenter (holographic narrator, SystemPresenter.tsx)",
+  "builtBy": "workflow/presenter-asset",
+  "builtOn": "2026-07-30",
+  "why": "The prior system-presenter-rigged.glb was a modern figure in an open jacket with a bare chest, visible in the head-and-shoulders REACTION/PRESENTER_MEDIUM framings the presenter is mostly seen in. That is a Grade-8 Texas classroom shipping blocker. This is a drop-in replacement: a composed, fully-covered institutional field-service figure, same glbKey, same clip names, same rig contract, so no consumer or content edit is required.",
+  "pipeline": [
+    {
+      "step": "concept",
+      "tool": "Gemini gemini-3-pro-image-preview (TrueFoundry gateway) image-to-image edit",
+      "script": "assets/pipeline/gen_concept_image.mjs --edit",
+      "reference": "a neutral-light render of the CURRENT presenter (continuity: she is a persistent character who must not flicker between media)",
+      "prompt": "same woman, same face and long blonde hair, redressed in a high-necked slate-grey institutional field-service jacket zipped to the throat, fully covered chest and neckline, matching trousers, subtle circular archive insignia, calm and professional, neutral flat-lit studio background, full body",
+      "output": "assets/source/concepts/system-presenter-v2-a.png (gitignored; .prompt.json sidecar committed)",
+      "qa": "visual/historical QA PASS: not period/colonial dress; institutional not fashion/costume/glamour; fully covered high neckline; age-appropriate; legible and dignified in close-up; recognisably the same handler"
+    },
+    {
+      "step": "image-to-3d",
+      "tool": "Meshy image-to-3D",
+      "script": "assets/pipeline/gen_character_from_image.mjs",
+      "meshyTaskId": "019fb362-c40f-7eac-b4b4-9d0ccb8a9e20",
+      "params": "pose_mode t-pose, symmetry on, should_texture, enable_pbr false, target_polycount 50000",
+      "output": "assets/build/characters/system-presenter-v2.glb (gitignored)"
+    },
+    {
+      "step": "auto-rig",
+      "tool": "Meshy rigging API (the same deterministic 24-joint Meshy skeleton every existing cast rig uses)",
+      "script": "assets/pipeline/rig_character.mjs",
+      "meshyTaskId": "019fb368-2826-7fcc-a217-13d2aed2f46f",
+      "heightMeters": 1.7,
+      "produces": "Hips/Spine/Spine01/Spine02/neck/Head + limbs, 24 joints; single skinned mesh; Head and neck are the gaze joints SystemPresenter rotates"
+    },
+    {
+      "step": "optimize",
+      "script": "assets/pipeline/optimize_system_presenter.py -- rigged.glb opt.glb 60000 1024",
+      "effect": "drops the Meshy placeholder clip and clamps oversize textures; target 60000 > mesh so NO decimation (an earlier 44k pass tore the feet for an 11% triangle saving, so decimation was dropped)"
+    },
+    {
+      "step": "appearance",
+      "scripts": [
+        "assets/pipeline/correct_presenter_albedo.py (gentle white-balance: albedo b/r 1.17 -> neutral warm)",
+        "assets/pipeline/apply_presenter_appearance_fix.py (weld coincident seam verts 35881 -> 24809, shade smooth, swap warm albedo)"
+      ],
+      "effect": "removes the Meshy split-vertex facet shards on the face"
+    },
+    {
+      "step": "clips",
+      "script": "assets/pipeline/append_clips.py -- clean.glb clips.glb idle,talk,talk2",
+      "source": "assets/source/mixamo/{idle,talk,talk2}.fbx retargeted onto the Meshy rig",
+      "result": "idle 500f, talk 179f, talk2 119f (in-place root motion)"
+    },
+    {
+      "step": "face-rig",
+      "script": "assets/pipeline/add_presenter_face_rig_v2.py (NEW: nose-anchored, self-fits a regenerated mesh)",
+      "result": "jawOpen morph, moved 982 verts, max drop 0.0206 m, nothing above the upper lip; drives moduleLipSync.JAW_OPEN_MORPH"
+    },
+    {
+      "step": "reground",
+      "script": "assets/pipeline/reground_rig.py (NEW: a single vertical translate so the clip-baked rest pose puts the feet on z=0)"
+    },
+    {
+      "step": "emissive-fix",
+      "script": "assets/pipeline/fix_rig_emissive.py (clears the Meshy whole-body-albedo-as-emissive; the check-world-textures publish guard requires this, as it did for the shipped cast)"
+    }
+  ],
+  "final": {
+    "bytes": 3832040,
+    "triangles": 49691,
+    "vertices": 24809,
+    "meshes": 1,
+    "joints": 24,
+    "clips": ["idle", "talk", "talk2"],
+    "morphTargets": ["jawOpen"],
+    "material": { "count": 1, "albedo": "2048x2048 JPEG", "emissive": "none", "metallicFactor": 0, "roughnessFactor": 0.5 },
+    "effectiveHeightM": 1.7,
+    "feetAtGround": true
+  },
+  "gates": {
+    "verify_presenter_face.py": "PASS (jawOpen morph, idle/talk/talk2 clips, 24 joints, 1 material/texture, feet at 0, height in band)",
+    "check-world-textures.mjs": "PASS (no blocking defect)",
+    "check-world-scale.mjs": "PASS (effective height 1.700m, in the 1.2-2.3m human band; not manifest-declared)",
+    "lint": "PASS (boundaries, dangling-imports, world-textures, world-scale)",
+    "assets:verify:placement|collision|affordances": "PASS (unaffected: a character is not route/collision/affordance geometry)",
+    "apps/web suite": "765 tests, 765 pass, 0 fail",
+    "runtime hologram capture": "presenterQa under the real hologram material; window.__presenterJaw driven 0 -> 0.215 (lip-sync live on the new mesh); Head/neck gaze visible across shots"
+  },
+  "notes": [
+    "Drop-in: glbKey, talkClip and idleClip in content/m1/module.json are unchanged, so no module or content edit is needed.",
+    "Cosmetic, not blocking: a faint hair-to-face seam (the Meshy long-hair shell overlapping the jaw) survives the weld; it is largely absorbed by the runtime hologram tint/rim and the prior asset carried the same class of seam.",
+    "Texture is 2048 (hero close-up) vs the cast's mix; file size 3.83 MB is in line (the cast ships 4-5 MB albedos)."
+  ]
+}
