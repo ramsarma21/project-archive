@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Home } from "./pages/Home.js";
 import { Hub } from "./pages/hub/Hub.js";
+import { GameIntro } from "./pages/intro/GameIntro.js";
 import {
   effectiveReducedMotion,
   osPrefersReducedMotion,
@@ -18,6 +19,10 @@ import { googleSignInUi, mirroredProfileSource } from "./sessionIdentity.js";
 // all deployed from it.
 type View =
   | { name: "home" }
+  // The game-open intake cutscene, between entering play and the hub. It plays
+  // every launch (no persistence), carries the entering profile so the hub it
+  // hands off to is the same one, and can be skipped.
+  | { name: "intro"; profile: LocalProfile | null }
   | { name: "hub"; profile: LocalProfile | null }
   // The duelling ground, reached from the hub. It carries the hub's profile so
   // leaving PvP returns to the same hub the player opened it from, with their
@@ -39,9 +44,29 @@ function hubBypassRequested(): boolean {
   }
 }
 
+/**
+ * `?intro=1` opens the intake cutscene directly, then hands to the hub — a
+ * review/capture bypass, API-down-safe exactly like `?hub=1`. `?hub=1` itself
+ * DELIBERATELY SKIPS the intro: its whole purpose is to land on the hub for
+ * review without waiting on the cutscene, so the two bypasses stay distinct — one
+ * reviews the hub, one reviews the intro. The real play path (Home → Play →
+ * beginPlay → enterPlay) always runs the intro before the hub.
+ */
+function introBypassRequested(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get("intro") === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function App() {
   const [view, setView] = useState<View>(() =>
-    hubBypassRequested() ? { name: "hub", profile: null } : { name: "home" },
+    introBypassRequested()
+      ? { name: "intro", profile: null }
+      : hubBypassRequested()
+        ? { name: "hub", profile: null }
+        : { name: "home" },
   );
   const [profiles, setProfiles] = useState<LocalProfile[]>([]);
   const [apiUp, setApiUp] = useState(false);
@@ -55,7 +80,7 @@ export function App() {
     displayName: string;
     source: LocalProfile["source"];
   } | null>(null);
-  const [loading, setLoading] = useState(() => !hubBypassRequested());
+  const [loading, setLoading] = useState(() => !hubBypassRequested() && !introBypassRequested());
   const [startupError, setStartupError] = useState<string | null>(null);
 
   async function refreshData(): Promise<LocalProfile | null> {
@@ -145,13 +170,14 @@ export function App() {
     }
   }
 
-  // Every play entry goes straight to the hub: a profile without stored
-  // preferences receives the standardized defaults (calibrated: false) —
+  // Every play entry runs the intake cutscene, then the hub: a profile without
+  // stored preferences receives the standardized defaults (calibrated: false) —
   // there is no upfront interview. Existing profiles with explicitly chosen
-  // preferences keep them verbatim. Settings live in the pause surface.
+  // preferences keep them verbatim. Settings live in the pause surface. The
+  // intro carries the profile through so the hub it opens is the same one.
   async function enterPlay(profile: LocalProfile): Promise<void> {
     if (profile.onboarding) {
-      setView({ name: "hub", profile });
+      setView({ name: "intro", profile });
       return;
     }
     const onboarding = standardizedPreferences();
@@ -165,7 +191,7 @@ export function App() {
         item.profileId === withDefaults.profileId ? withDefaults : item,
       ),
     );
-    setView({ name: "hub", profile: withDefaults });
+    setView({ name: "intro", profile: withDefaults });
   }
 
   // The one entry into play. A LOCAL profile must have a real server session
@@ -201,7 +227,7 @@ export function App() {
 
   // True while the hub bypass has deferred startup, so leaving the hub knows it
   // still owes Home a profile load.
-  const startupDeferred = useRef(hubBypassRequested());
+  const startupDeferred = useRef(hubBypassRequested() || introBypassRequested());
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -247,6 +273,20 @@ export function App() {
     };
   }, [viewProfile?.profileId, viewProfile?.onboarding, osReduced]);
 
+  // The intake cutscene, ahead of the loading/account gates for the same reason
+  // the hub is: it needs no profile and no session, so nothing should hide it.
+  // It plays every launch and hands off to the hub (Skip does the same).
+  if (view.name === "intro") {
+    return (
+      <AppErrorBoundary onReset={() => setView({ name: "hub", profile: view.profile })}>
+        <GameIntro
+          reducedMotion={effectiveReducedMotion(view.profile?.onboarding, osReduced)}
+          onDone={() => setView({ name: "hub", profile: view.profile })}
+        />
+      </AppErrorBoundary>
+    );
+  }
+
   // Ahead of the loading and account-service gates on purpose: the hub needs
   // neither a profile nor a session to render, so neither should be able to
   // hide it. A profile, when there is one, only supplies display preferences.
@@ -258,8 +298,9 @@ export function App() {
           onEnterDuellingGround={() => setView({ name: "pvp", profile: view.profile })}
           onExit={() => {
             const url = new URL(window.location.href);
-            if (url.searchParams.has("hub")) {
+            if (url.searchParams.has("hub") || url.searchParams.has("intro")) {
               url.searchParams.delete("hub");
+              url.searchParams.delete("intro");
               window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
             }
             if (startupDeferred.current) {
