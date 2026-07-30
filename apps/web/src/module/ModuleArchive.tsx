@@ -5,12 +5,11 @@ import {
   archiveFileStatuses,
   allFilesResolved,
   deriveArchiveLayout,
-  type ArchiveFile,
-  type ArchiveFileStatus,
 } from "./archiveLayout.js";
 import { completeModuleRun, type ModuleRunCompletion } from "./moduleGate.js";
 import { drawCheckOptions } from "./checkDraw.js";
 import { ModuleFilePlayer, type FilePlayedResult } from "./ModuleFilePlayer.js";
+import { ArchiveRoom } from "./ArchiveRoom.js";
 import type { ModuleVoiceoverProvider } from "./moduleVoiceover.js";
 import "./module.css";
 
@@ -223,108 +222,36 @@ export function ModuleArchive(props: {
     );
   }
 
-  // view.kind === "INDEX" || "COMPLETE": the Archive shelf.
+  // view.kind === "INDEX" || "COMPLETE": the holographic Archive room. It draws
+  // the same files the layout derives, with the same locked/ready/reviewed state,
+  // and reports the chosen file (or the handoff) back up — the browse layer, now
+  // a 3D projected room instead of a DOM shelf. The gate and unlock logic are
+  // untouched; this is presentation only.
   const isRetry = attemptOrdinal > 1;
+  const roomFiles = layout.files.map((file, index) => ({
+    ordinal: file.ordinal,
+    title: file.card.kicker,
+    note: file.card.body[0] ?? "",
+    status: statuses[index]!,
+  }));
   return (
-    <div className={`mod mod-archive${props.reducedMotion ? " is-reduced" : ""}`}>
-      <div className="mod-cine-room" aria-hidden="true">
-        <div className="mod-cine-fog" />
-        <div className="mod-cine-grid" />
-        <div className="mod-cine-vignette" />
-      </div>
-
-      <header className="mod-cine-top mod-archive-top">
-        <button type="button" className="mod-cine-leave" onClick={props.onExit}>
-          <span aria-hidden="true">←</span> Leave
-        </button>
-        <div className="mod-cine-title">
-          <span className="mod-cine-kicker">
-            {isRetry
-              ? `Required again · attempt ${attemptOrdinal} of ${MAX_MISSION_ATTEMPTS}`
-              : "Required before deployment"}
-          </span>
-          <span className="mod-cine-name">{definition.title}</span>
-        </div>
-        <span className="mod-cine-clock">
-          {formatModuleClock(elapsed)}
-          <span className="mod-cine-xp"> · Pays no XP</span>
-        </span>
-      </header>
-
-      <div className="mod-archive-shelf" role="list" aria-label="Case files">
-        <p className="mod-archive-lede">{definition.subtitle}</p>
-        {layout.files.map((file, index) => (
-          <ArchiveFileCard
-            key={file.card.id}
-            file={file}
-            status={statuses[index]!}
-            onOpen={() => setView({ kind: "FILE", fileIndex: index })}
-          />
-        ))}
-
-        {layout.brief.length > 0 && (
-          <div
-            className={`mod-archive-file mod-archive-brief${resolved ? "" : " is-locked"}`}
-            role="listitem"
-          >
-            <div className="mod-archive-file-head">
-              <span className="mod-archive-file-ord">›</span>
-              <span className="mod-archive-file-kicker">The handoff</span>
-              <span className={`mod-archive-file-state state-${resolved ? "ready" : "locked"}`}>
-                {resolved ? "Ready" : "Locked"}
-              </span>
-            </div>
-            <p className="mod-archive-file-note">
-              {resolved
-                ? "Every file read, every question answered. The brief into the mission."
-                : "Read every case file first."}
-            </p>
-            {resolved && (
-              <button
-                type="button"
-                className="mod-archive-play"
-                onClick={() => setView({ kind: "BRIEF", at: 0 })}
-              >
-                Play the handoff
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** One row on the Archive shelf: a case file with its play state. */
-function ArchiveFileCard(props: {
-  file: ArchiveFile;
-  status: ArchiveFileStatus;
-  onOpen: () => void;
-}) {
-  const { file, status } = props;
-  const label =
-    status === "DONE" ? "Reviewed" : status === "READY" ? "Ready" : "Locked";
-  return (
-    <div
-      className={`mod-archive-file state-${status.toLowerCase()}`}
-      role="listitem"
-      data-status={status}
-    >
-      <div className="mod-archive-file-head">
-        <span className="mod-archive-file-ord">
-          {String(file.ordinal).padStart(2, "0")}
-        </span>
-        <span className="mod-archive-file-kicker">{file.card.kicker}</span>
-        <span className={`mod-archive-file-state state-${status.toLowerCase()}`}>
-          {label}
-        </span>
-      </div>
-      <p className="mod-archive-file-note">{file.card.body[0]}</p>
-      {status !== "LOCKED" && (
-        <button type="button" className="mod-archive-play" onClick={props.onOpen}>
-          {status === "DONE" ? "Replay file" : "Play file"}
-        </button>
-      )}
-    </div>
+    <ArchiveRoom
+      title={definition.title}
+      subtitle={definition.subtitle}
+      kicker={
+        isRetry
+          ? `Required again · attempt ${attemptOrdinal} of ${MAX_MISSION_ATTEMPTS}`
+          : "Required before deployment"
+      }
+      clockLabel={formatModuleClock(elapsed)}
+      files={roomFiles}
+      hasBrief={layout.brief.length > 0}
+      briefReady={resolved}
+      reducedMotion={props.reducedMotion}
+      presenter={definition.presenter}
+      onOpenFile={(index) => setView({ kind: "FILE", fileIndex: index })}
+      onPlayBrief={() => setView({ kind: "BRIEF", at: 0 })}
+      onExit={props.onExit}
+    />
   );
 }
