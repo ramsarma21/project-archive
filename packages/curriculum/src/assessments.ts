@@ -5,13 +5,12 @@
 // The authored capstone and everything around it — the answer key, the item
 // files, the released-item map, the labelled eval set — are all spelled
 // `BOS.CAPSTONE.v1`, while `BOSTON_CAPSTONE` in @pa/abilities named the same
-// assessment `BOSTON.CAPSTONE`. Both are well-formed, so nothing rejected either.
-// They are now joined on `BOS.CAPSTONE.v1`: @pa/abilities was reconciled to it
-// (packages/abilities/src/chapters.ts) and `assessmentId()` in
-// apps/api/src/progression/content.ts now answers `BOS.CAPSTONE.v1` too. The
-// superseded `BOSTON.CAPSTONE` survives only as the one-way alias below, produced by
-// no live code and carried by no stored row, so a
-// `chapter_assessment_attempts.assessment_id` is found by every half.
+// assessment `BOSTON.CAPSTONE`. Both are well-formed, so nothing rejected
+// either, and the two halves have never been joined: `assessmentId()` in
+// apps/api/src/progression/content.ts still answers null because the capstone is
+// unwired. The day it is wired, whichever of the two spellings reaches
+// `chapter_assessment_attempts.assessment_id` first becomes the one the other
+// half cannot find.
 //
 // `BOS.CAPSTONE.v1` is canonical because it is the spelling in authored content
 // under content/capstone/boston-1765/, and because it is the root of a whole
