@@ -221,11 +221,18 @@ with the model's native audio and simply replace the track in post). Sync stays 
 subtitles carry meaning. Lesson clips specifically must: give broad context (what happened, who it
 affected), target the most-missed misconceptions, and look/sound true to the period — no AI-slop tells.
 
-**BLOCKER — no video-gen tool in this environment.** There is no text-to-video API or key here (only
-image gen + the Gemini/Meshy asset pipeline), so producing an MP4 needs the owner to provide access
-to a service (Kling 3.0 Omni recommended for the 10-20s voiced spec; Veo 3.1 the alternative) or to
-generate the clip and hand over the file. The `ModuleVideo` playback slot already accepts a real MP4
-of any length; drop-in is one line in the file's scene.
+**ACCESS DECISION — Runway Max subscription, human-in-the-loop (owner, 30 Jul).** There is no
+video-gen tool in this repo environment (only image gen + the Gemini/Meshy pipeline). Rather than a
+pay-per-use API key, the owner chose a **Runway Max subscription (~$76-95/mo)**: flat fee, unlimited
+relaxed drafting on Gen-4.5, and it bundles Kling/Seedance/Veo in one web dashboard for the bake-off.
+Rationale: **no credit-metering anxiety, and every clip is human-reviewed** before it's accepted —
+the real guard against slop. **Workflow:** the owner generates clips in the Runway web UI and hands
+over the finished MP4s; the orchestrator drops each into the `ModuleVideo` slot (one line in the
+file's scene — the slot already accepts a real MP4 of any length). So generation is manual/browser,
+not automated API. The fal.ai credits path (and the full platform pricing table) is the recorded
+alternative in `docs/design/Harbour-Cutscene.md` §"Platform pricing comparison" — its one live
+caveat if we ever switch: Seedance runs ~2× on fal, so a Seedance winner would produce cheaper on
+ByteDance/Ofox. Nothing else is blocked: the pending-video slots render cleanly with no MP4 today.
 
 **Three media, split by what each is good at:**
 
