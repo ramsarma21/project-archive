@@ -27,7 +27,7 @@ function authoredCards(): readonly AuthoredCard[] {
   return parsed.cards ?? [];
 }
 
-const M1_CONCEPT_SLUGS = ["POSTWAR_REVENUE", "STAMP_SCOPE", "REPRESENTATION"];
+const M1_CONCEPT_SLUGS = ["INTOLERABLE_ACTS", "REPRESENTATION", "MERCANTILISM"];
 
 test("every card the authored file names carries a concept the registry knows", () => {
   const cards = authoredCards();

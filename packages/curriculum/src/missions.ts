@@ -50,7 +50,10 @@ const ROWS: MissionSlot[] = [
     notes: [
       "The slate table names the three implemented BOS.MD01 macros rather than " +
         "an SE. All three sit under 8.4(A) clauses, so the assignment is " +
-        "recorded as 8.4(A).",
+        "recorded as 8.4(A). Since the 2026-07-30 rescope those three are " +
+        "INTOLERABLE_ACTS, REPRESENTATION and MERCANTILISM (the 1774 Coercive-Acts " +
+        "slate), reassigned from M11's 1774 content; POSTWAR_REVENUE and " +
+        "STAMP_SCOPE were retired from M1.",
     ],
   },
   {
@@ -156,11 +159,16 @@ const ROWS: MissionSlot[] = [
     title: "The Port Is Shut",
     date: "Jun-Sep 1774",
     set: 4,
-    assignedSeCodes: [asSeCode("8.4(A)"), asSeCode("8.1(A)")],
+    assignedSeCodes: [asSeCode("8.1(A)")],
     assignmentStatus: "ASSIGNED",
     notes: [
-      "Second visit to 8.4(A), covering the Intolerable Acts and mercantilism " +
-        "clauses that M1 does not teach.",
+      "8.4(A) DROPPED HERE (2026-07-30, owner-approved rescope). The Intolerable " +
+        "Acts and mercantilism clauses this mission was to carry moved to M1 when " +
+        "the demo's spine became the 1774 Coercive Acts, and a concept has one " +
+        "owner. Under the M1-only freeze M11 is unbuilt, so it is re-scoped to its " +
+        "8.1(A) cause-and-effect concept until a future pass re-homes it; " +
+        "`assignedSeCodes` is reversible data, so restoring 8.4(A) here (once M1's " +
+        "content is re-pointed) recovers the original design.",
     ],
   },
   {

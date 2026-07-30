@@ -359,25 +359,14 @@ const OWNER_ITEM_MAPPINGS: ItemConceptMapping[] = [
 
 const DUEL_POOLS: { conceptSlug: string; itemIds: string[] }[] = [
   {
-    conceptSlug: "POSTWAR_REVENUE",
+    conceptSlug: "INTOLERABLE_ACTS",
     itemIds: [
-      "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
-      "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
-      "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
-      "BOS.MD01.DUEL.POSTWAR.WHICH_CAME_FIRST.v1",
-      "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
-      "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1",
-    ],
-  },
-  {
-    conceptSlug: "STAMP_SCOPE",
-    itemIds: [
-      "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1",
-      "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1",
-      "BOS.MD01.DUEL.STAMP.WHY_A_PRINTER.v1",
-      "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1",
-      "BOS.MD01.DUEL.STAMP.NAME_TWO.v1",
-      "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1",
+      "BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1",
+      "BOS.MD01.DUEL.ACTS.NOT_A_FINE.v1",
+      "BOS.MD01.DUEL.ACTS.WHY_THE_TOWN.v1",
+      "BOS.MD01.DUEL.ACTS.STILL_LAWFUL.v1",
+      "BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1",
+      "BOS.MD01.DUEL.ACTS.WHICH_ACT.v1",
     ],
   },
   {
@@ -391,6 +380,17 @@ const DUEL_POOLS: { conceptSlug: string; itemIds: string[] }[] = [
       "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1",
     ],
   },
+  {
+    conceptSlug: "MERCANTILISM",
+    itemIds: [
+      "BOS.MD01.DUEL.RESIST.HOW_THEY_ANSWER.v1",
+      "BOS.MD01.DUEL.RESIST.NOT_WAR.v1",
+      "BOS.MD01.DUEL.RESIST.NOT_COUNTERTAX.v1",
+      "BOS.MD01.DUEL.RESIST.WHY_IT_BITES.v1",
+      "BOS.MD01.DUEL.RESIST.THE_COVENANT.v1",
+      "BOS.MD01.DUEL.RESIST.PETITION_AND_CONGRESS.v1",
+    ],
+  },
 ];
 
 function duelMappings(): ItemConceptMapping[] {
@@ -399,7 +399,7 @@ function duelMappings(): ItemConceptMapping[] {
       itemId,
       bankId: M1_DUEL_BANK_ID,
       status: "MAPPED" as const,
-      era: "1765",
+      era: "1774",
       sourceTags: [`BOS.MD01.CONCEPT.${pool.conceptSlug}.v1`],
       evidences: [primary(pool.conceptSlug)],
     })),

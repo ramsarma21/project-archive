@@ -132,18 +132,18 @@ const MACRO_SEEDS: ConceptSeed[] = [
       "came first and the tax is Parliament's response to it, not the reverse.",
     parentSe: "8.4(A)",
     clause: "POSTWAR_POLICY",
-    mission: "M1",
-    recurrence: "ONCE",
+    mission: null,
     review: "OWNER_PROVIDED",
-    cards: [
-      "BOS.MD01.CARD.WAR_DEBT.v1",
-      "BOS.MD01.CARD.COLONIAL_REVENUE.v1",
-      "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1",
-    ],
     refs: [`${MISSION_SLATE} 4.7, 4.9 pool A`, CHAPTER_IDS, CHAPTER_TEKS],
     notes: [
-      "Six duel items are authored against this concept in Mission-Slate 4.9 " +
-        "pool A.",
+      "DEMOTED FROM M1 (2026-07-30, the 1774 Coercive-Acts rescope). At 60% " +
+        "correct this is the easiest measured 8.4(A) item and the only one above " +
+        "the statewide mean, so it stops consuming M1's assessment budget and " +
+        "survives only as the taught-context causal root (Britain owes money, " +
+        "therefore it taxes). Its M1 module card, duel pool and Codex cards were " +
+        "retired; the definition stays because the clause is a real 8.4(A) cause " +
+        "a later mission may reclaim. Recoverable by repointing `mission` back to " +
+        "a mission that teaches 8.4(A).",
     ],
   },
   {
@@ -156,16 +156,18 @@ const MACRO_SEEDS: ConceptSeed[] = [
       "impact.",
     parentSe: "8.4(A)",
     clause: "STAMP_ACT",
-    mission: "M1",
-    recurrence: "ONCE",
+    mission: null,
     review: "OWNER_PROVIDED",
-    cards: [
-      "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1",
-      "BOS.MD01.CARD.STAMP_DATE.v1",
-      "BOS.MD01.CARD.PRINTER_IMPACT.v1",
-    ],
     refs: [`${MISSION_SLATE} 4.7, 4.9 pool B`, CHAPTER_IDS, CHAPTER_TEKS],
-    notes: [],
+    notes: [
+      "DROPPED FROM M1 AS AN ASSESSED CONCEPT (2026-07-30, the 1774 rescope). No " +
+        "released multiple-choice item tests the Stamp Act's scope on printed and " +
+        "legal paper; its only support was a rubric bullet, so it is not on the " +
+        "M1 assessment spine. Its M1 module card, duel pool and Codex cards were " +
+        "retired. The Stamp Act survives as the distinct EARLIER moment the new " +
+        "lesson's sequencing teaches against (a 1765 document is not 1774), and " +
+        "the definition stays for a later mission to reclaim.",
+    ],
   },
   {
     slug: "REPRESENTATION",
@@ -226,32 +228,56 @@ const MACRO_SEEDS: ConceptSeed[] = [
       "and a Continental Congress instead.",
     parentSe: "8.4(A)",
     clause: "INTOLERABLE_ACTS",
-    mission: "M11",
+    mission: "M1",
     recurrence: "ONCE",
+    cards: [
+      "BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1",
+      "BOS.MD01.CARD.FOUR_ACTS.v1",
+      "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1",
+    ],
     refs: [`${MISSION_SLATE} 14`, CHAPTER_TEKS, CONCEPT_DELIVERY_MAP],
     notes: [
-      "M11's first valley check distinguishes the four acts from one another, so " +
-        "items must be able to separate them rather than treat 'Intolerable Acts' " +
-        "as one undifferentiated label.",
+      "REASSIGNED M11 -> M1 (2026-07-30, the 1774 Coercive-Acts rescope). This is " +
+        "the demo's spine, and it carries TWO of the lesson's assessable " +
+        "propositions rather than one: the closure as collective punishment (the " +
+        "41-43% who read the Acts as ordinary governance, 2021 #38 / 2022 #4), and " +
+        "the SCOPE of the four acts — what each prohibited and, load-bearing for " +
+        "the mission, what they did NOT (a runner carrying paper breaks no law). " +
+        "The six-macros-per-8.4(A)-clause invariant (registry.test.ts) allows only " +
+        "one Coercive-Acts macro, and this concept was already designed to let its " +
+        "items 'distinguish the four acts from one another', so both facets live " +
+        "here and are separated at the item and Codex-card level.",
     ],
   },
   {
     slug: "MERCANTILISM",
-    label: "Mercantilism",
+    label: "Non-importation and resistance",
     definition:
       "Under mercantilism colonial trade existed to enrich the mother country, " +
       "so Parliament controlled which goods could move through which channels " +
       "and who could carry them. The colonists' answer was to withhold their " +
-      "side of that trade through non-importation.",
+      "side of that trade through non-importation — a petition and a congress " +
+      "and an agreement to stop importing, not a declaration of war and not a " +
+      "tax laid back on British goods.",
     parentSe: "8.4(A)",
     clause: "MERCANTILISM",
-    mission: "M11",
+    mission: "M1",
     recurrence: "ONCE",
+    cards: [
+      "BOS.MD01.CARD.NON_IMPORTATION.v1",
+      "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1",
+      "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1",
+    ],
     refs: [`${MISSION_SLATE} 14`, COVERAGE_MAP, CHAPTER_TEKS],
     notes: [
-      "The coverage map spreads mercantilism and non-importation across Acts 1-4 " +
-        "while the slate assigns the 8.4(A) revisit to M11 only. Act 1 exposure " +
-        "currently runs through the NON_IMPORTATION micro rather than a macro.",
+      "REASSIGNED M11 -> M1 (2026-07-30, the 1774 rescope) as the lesson's fourth " +
+        "assessable proposition: the FORMS of colonial resistance — petition, " +
+        "congress, and non-importation — refuting the two measured errors that the " +
+        "First Continental Congress declared war (28%) and that the colonies taxed " +
+        "British imports back (37%; boycott confused with counter-taxation). The " +
+        "human LABEL was softened from 'Mercantilism' for a grade-8 mastery panel; " +
+        "the slug, parentSe and clause stay MERCANTILISM because that is the honest " +
+        "TEKS mapping and the definition already grounds the answer in non-importation.",
     ],
   },
 
