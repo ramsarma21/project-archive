@@ -1,4 +1,4 @@
-import { ModulePlayer } from "../module/ModulePlayer.js";
+import { ModuleArchive } from "../module/ModuleArchive.js";
 import { MissionRun } from "./MissionRun.js";
 import { MISSION_BLOCK_COPY } from "./session.js";
 import type { MissionSessionApi } from "./useMissionSession.js";
@@ -41,7 +41,7 @@ export function MissionDeck(props: {
 
   if (phase.phase === "MODULE") {
     return (
-      <ModulePlayer
+      <ModuleArchive
         definition={phase.definition}
         attemptOrdinal={phase.attemptOrdinal}
         reducedMotion={props.reducedMotion}

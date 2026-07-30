@@ -30,10 +30,15 @@ import type {
 //      different compositions.
 //
 //   3. TRANSITIONS. When a scene finishes, `directorOnSceneEnd` decides whether
-//      a mastery check interrupts, the next card rolls automatically, or the
-//      module completes. Playback advances itself — nothing here asks the
-//      learner to turn a card — but a required check still pauses the timeline
-//      until it is answered, so the gate is never weakened.
+//      a mastery check interrupts or the file's scene is over. This USED TO read
+//      "playback advances itself — nothing here asks the learner to turn a card",
+//      and that is now wrong: the lesson is an ARCHIVE of case files, and the
+//      player presses play on each file and answers its question before the next
+//      unlocks (`ModuleArchive`). So the between-file advance is the learner's,
+//      not automatic. What has NOT changed is inside a file: `directorOnSceneEnd`
+//      still returns SHOW_CHECK for an unanswered required check, so the gate is
+//      never weakened — the file player treats anything else as "this file is
+//      done" and hands control back to the Archive.
 // ---------------------------------------------------------------------------
 
 /** Target line length for an on-screen subtitle, in words. */

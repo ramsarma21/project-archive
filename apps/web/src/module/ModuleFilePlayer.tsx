@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MAX_MISSION_ATTEMPTS } from "@pa/contracts";
 import {
-  formatModuleClock,
   type LearningModuleDefinition,
+  type ModuleCard,
+  type ModuleCheck,
+  type ModulePresenter,
+  type ModuleVideo,
   type ModuleVisual,
 } from "./moduleFormat.js";
 import {
@@ -11,9 +13,7 @@ import {
   type ModuleTimelineCursor,
 } from "./moduleTimeline.js";
 import {
-  directorOnCheckMastered,
   directorOnSceneEnd,
-  moduleProgressFraction,
   planCardShots,
   segmentDurations,
   type ModuleSegment,
@@ -25,8 +25,6 @@ import {
   type ModuleVoiceoverController,
   type ModuleVoiceoverProvider,
 } from "./moduleVoiceover.js";
-import { completeModuleRun, type ModuleRunCompletion } from "./moduleGate.js";
-import { drawCheckOptions } from "./checkDraw.js";
 import { ModuleCheckPanel } from "./ModuleCheckPanel.js";
 import { SystemPresenter } from "./SystemPresenter.js";
 import "./module.css";
@@ -35,152 +33,107 @@ const SUBTITLE_ID = "mod-cine-subtitle";
 /** How long the transport lingers after the last input before auto-dimming. */
 const CONTROLS_IDLE_MS = 3200;
 
-type ModulePhase = "PLAYING" | "CHECK" | "COMPLETE";
+type FilePhase = "PLAYING" | "CHECK";
+
+/** What a finished file reports: its cue is acknowledged, and the check it
+ * carried (if any) was mastered. The Archive accumulates these into the run. */
+export interface FilePlayedResult {
+  readonly cueId: string;
+  readonly masteredCheckId: string | null;
+}
 
 /**
- * The module player: a cinematic cutscene, not a reading UI.
+ * The player for ONE case file (or one framing screen).
  *
- * The whole lesson plays itself. A deterministic beat cursor walks the current
- * card's shots; when a scene ends the director rolls the next card, or — on a
- * card that carries one — interrupts with a mastery check that pauses the
- * timeline until it is answered correctly. There is no "advance every card
- * yourself": the learner's controls are the cinematic ones (pause, subtitles,
- * mute, replay, skip), and the only thing that ever gates progress is a required
- * check, exactly as before.
- *
- * What is unchanged and load-bearing: the module pays no XP, its three minutes
- * are a presentation target rather than a cutoff, a card's cue is a high-water
- * acknowledgement, and completion requires every cue AND every required check.
- * The cutscene is how the content is presented; the gate underneath it is the
- * same one moduleGate enforces and the server re-derives.
+ * It reuses the whole cinematic shot language — `planCardShots`,
+ * `PRESENTER_FRAMINGS` and the beat cursor — to play a single card's scene, and
+ * then, if the card poses a question, surfaces that mastery check exactly as the
+ * deck always did. It reports the result upward rather than deciding completion:
+ * the Archive owns the accumulated cues and answered questions and the one gate
+ * they feed. This is the "inside a file" half of the design; the Archive is the
+ * "browse the files" half.
  */
-export function ModulePlayer(props: {
+export function ModuleFilePlayer(props: {
+  /** The authored deck, so the shot director's scene-end decision is unchanged. */
   definition: LearningModuleDefinition;
-  /** Which attempt this run opens. Above 1 the module is a retry gate. */
-  attemptOrdinal: number;
+  card: ModuleCard;
+  /** The card's index in the authored deck, so the opening card still establishes. */
+  deckIndex: number;
+  /** The options this sitting shows. A pooled check is drawn by the caller. */
+  drawnCheck?: ModuleCheck;
   reducedMotion: boolean;
-  onComplete: (completion: ModuleRunCompletion) => void;
-  /** Leaving without finishing. The gate stays shut; nothing is recorded. */
-  onExit: () => void;
+  presenter?: ModulePresenter;
   /** Injected for tests; defaults to browser speech synthesis. */
   voiceoverProvider?: ModuleVoiceoverProvider;
+  /** True when replaying a file whose question is already answered, so the check
+   * shows its reinforcement rather than re-asking a settled concept. */
+  alreadyMastered?: boolean;
+  /** A short label shown in the file player's header, e.g. "File 1 · The closure". */
+  fileLabel?: string;
+  /** Sub-label, e.g. "Case file · Question 1 of 4". */
+  fileKicker?: string;
+  onComplete: (result: FilePlayedResult) => void;
+  /** Leaving the Archive entirely. Nothing is recorded. */
+  onExit: () => void;
+  /** Back to the Archive index without finishing this file. */
+  onBackToIndex: () => void;
 }) {
-  const { definition } = props;
-  const { cards } = definition;
+  const { card, deckIndex } = props;
 
-  const [cardIndex, setCardIndex] = useState(0);
   const [segIndex, setSegIndex] = useState(0);
-  const [phase, setPhase] = useState<ModulePhase>("PLAYING");
-  const [masteredChecks, setMasteredChecks] = useState<readonly string[]>([]);
-  const [elapsed, setElapsed] = useState(0);
+  const [phase, setPhase] = useState<FilePhase>("PLAYING");
+  const [checkMastered, setCheckMastered] = useState(props.alreadyMastered ?? false);
 
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(false);
   const [subtitlesOn, setSubtitlesOn] = useState(true);
   const [controlsAwake, setControlsAwake] = useState(true);
 
-  const card = cards[cardIndex]!;
-  const segments = useMemo(() => planCardShots(card, cardIndex), [card, cardIndex]);
+  const segments = useMemo(() => planCardShots(card, deckIndex), [card, deckIndex]);
   const durations = useMemo(() => segmentDurations(segments), [segments]);
-  const segment: ModuleSegment | undefined = segments[Math.min(segIndex, segments.length - 1)];
+  const segment: ModuleSegment | undefined =
+    segments[Math.min(segIndex, segments.length - 1)];
 
-  // The check is "active" once its card's scene has played out and the run has
-  // not mastered it. The mastered set is mirrored to a ref so the rAF-driven
-  // scene-end handler reads the current value without re-subscribing.
-  const check = card.check;
-  const checkMastered = check ? masteredChecks.includes(check.id) : true;
-  // The options this sitting shows. A pooled check draws a different subset and
-  // order per attempt ordinal; a legacy fixed-list check returns unchanged. The
-  // id is preserved either way, so mastery and the gate (keyed by check.id) are
-  // untouched — only which options are on screen changes.
-  const drawnCheck = useMemo(
-    () => (check ? drawCheckOptions(check, props.attemptOrdinal) : undefined),
-    [check, props.attemptOrdinal],
-  );
-  const masteredRef = useRef<readonly string[]>(masteredChecks);
-  useEffect(() => {
-    masteredRef.current = masteredChecks;
-  }, [masteredChecks]);
+  const check = props.drawnCheck ?? card.check;
+  const video = card.scene?.video;
 
   const cursorRef = useRef<ModuleTimelineCursor>(createModuleCursor(durations.length));
   const sceneEndedRef = useRef(false);
-  const completedRef = useRef(false);
-  const startedAtRef = useRef(Date.now());
+  const doneRef = useRef(false);
 
-  // The voiceover controller lives for the whole mounted run and is stopped on
-  // unmount, so no utterance can outlive the player.
   const provider = props.voiceoverProvider ?? useMemo(defaultModuleVoiceoverProvider, []);
   const controllerRef = useRef<ModuleVoiceoverController | null>(null);
   if (controllerRef.current === null) controllerRef.current = provider.create();
 
-  // ---- Wall clock: reported, never a gate. --------------------------------
-  useEffect(() => {
-    startedAtRef.current = Date.now();
-    setElapsed(0);
-    const timer = window.setInterval(
-      () => setElapsed(Math.floor((Date.now() - startedAtRef.current) / 1000)),
-      1000,
-    );
-    return () => window.clearInterval(timer);
-  }, [definition.moduleId]);
-
-  // ---- Completion. Every cue has been presented by the time we reach here. --
-  const finishModule = useCallback(() => {
-    if (completedRef.current) return;
-    const completion = completeModuleRun({
-      definition,
-      attemptOrdinal: props.attemptOrdinal,
-      acknowledgedCueIds: definition.cards.map((entry) => entry.cueId),
-      acknowledgedCheckIds: masteredRef.current,
-      observedSeconds: (Date.now() - startedAtRef.current) / 1000,
-      at: new Date().toISOString(),
-    });
-    if (!completion) {
-      console.warn(
-        `[module] ${definition.moduleId} reached its final scene with cues or ` +
-          "checks still outstanding. Nothing was completed.",
-      );
-      return;
-    }
-    completedRef.current = true;
-    setPhase("COMPLETE");
-    props.onComplete(completion);
-  }, [definition, props]);
-
-  const goToCard = useCallback((next: number) => {
-    setCardIndex(next);
-    setSegIndex(0);
-    setPhase("PLAYING");
-  }, []);
-
-  // A scene has reached its end: acknowledge the card and take the director's
-  // decision. Called from the rAF loop and from Skip; guarded so it fires once.
+  // The card's scene finished. The shot director makes the SAME decision it
+  // always did — a mastery check the run has not answered interrupts here — only
+  // now "the deck rolls on" is the Archive unlocking the next file rather than an
+  // automatic advance, so anything that is not SHOW_CHECK means this file is done
+  // and control returns to the browser.
   const handleSceneEnd = useCallback(() => {
-    const action = directorOnSceneEnd(definition, cardIndex, masteredRef.current);
+    const action = directorOnSceneEnd(
+      props.definition,
+      deckIndex,
+      checkMastered && card.check ? [card.check.id] : [],
+    );
     if (action.kind === "SHOW_CHECK") {
       setPhase("CHECK");
-    } else if (action.kind === "NEXT_CARD") {
-      goToCard(action.cardIndex);
-    } else {
-      finishModule();
-    }
-  }, [definition, cardIndex, finishModule, goToCard]);
-
-  // ---- The card cursor: reset when the card changes. ----------------------
-  useEffect(() => {
-    cursorRef.current = createModuleCursor(durations.length);
-    sceneEndedRef.current = durations.length === 0;
-    setSegIndex(0);
-    if (durations.length === 0) {
-      // A truly empty scene ends immediately (defensive; M1 has none).
-      handleSceneEnd();
+    } else if (!doneRef.current) {
+      doneRef.current = true;
+      props.onComplete({ cueId: card.cueId, masteredCheckId: null });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cardIndex, definition.moduleId]);
+  }, [card, deckIndex, checkMastered, props.definition]);
 
   // ---- The cinematic timeline: a clamped rAF cursor across the card's shots.
   useEffect(() => {
-    if (phase !== "PLAYING" || paused || durations.length === 0) return undefined;
+    if (phase !== "PLAYING" || paused || durations.length === 0) {
+      if (durations.length === 0 && !sceneEndedRef.current) {
+        sceneEndedRef.current = true;
+        handleSceneEnd();
+      }
+      return undefined;
+    }
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
@@ -199,18 +152,18 @@ export function ModulePlayer(props: {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [cardIndex, durations, phase, paused, handleSceneEnd]);
+  }, [durations, phase, paused, handleSceneEnd]);
 
   // ---- Voiceover: speak the active segment; stop on change/unmount. -------
   const lastSpokenRef = useRef<string | null>(null);
   useEffect(() => {
     const controller = controllerRef.current;
     if (!controller || phase !== "PLAYING" || paused || !segment) return;
-    const key = `${cardIndex}:${segIndex}`;
+    const key = `${card.id}:${segIndex}`;
     if (lastSpokenRef.current === key) return;
     lastSpokenRef.current = key;
     controller.play([{ cueId: segment.beatId, text: segment.text }]);
-  }, [cardIndex, segIndex, segment, phase, paused]);
+  }, [card.id, segIndex, segment, phase, paused]);
 
   useEffect(() => {
     controllerRef.current?.setMuted(muted);
@@ -230,12 +183,6 @@ export function ModulePlayer(props: {
     }
   }, [phase]);
 
-  // Card change stops the previous card's speech before the next begins.
-  useEffect(() => {
-    lastSpokenRef.current = null;
-    controllerRef.current?.stop();
-  }, [cardIndex]);
-
   useEffect(() => {
     const controller = controllerRef.current;
     return () => {
@@ -243,27 +190,22 @@ export function ModulePlayer(props: {
     };
   }, []);
 
-  // ---- Mastering a check, and the transition back into the cutscene. ------
-  const masterCheck = useCallback((checkId: string) => {
-    if (!masteredRef.current.includes(checkId)) {
-      masteredRef.current = [...masteredRef.current, checkId];
-    }
-    setMasteredChecks(masteredRef.current);
-  }, []);
+  const finishAfterCheck = useCallback(() => {
+    if (doneRef.current || !card.check) return;
+    doneRef.current = true;
+    props.onComplete({ cueId: card.cueId, masteredCheckId: card.check.id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card]);
 
-  const resumeFromCheck = useCallback(() => {
-    const action = directorOnCheckMastered(definition, cardIndex);
-    if (action.kind === "NEXT_CARD") goToCard(action.cardIndex);
-    else finishModule();
-  }, [definition, cardIndex, finishModule, goToCard]);
+  const masterCheck = useCallback(() => setCheckMastered(true), []);
 
-  // Once the check is settled, hold on the reinforcement briefly, then roll on.
+  // Once the check is mastered, hold on the reinforcement briefly, then finish.
   useEffect(() => {
-    if (phase !== "CHECK" || !check || !checkMastered) return undefined;
+    if (phase !== "CHECK" || !card.check || !checkMastered) return undefined;
     const hold = props.reducedMotion ? 650 : 1650;
-    const timer = window.setTimeout(resumeFromCheck, hold);
+    const timer = window.setTimeout(finishAfterCheck, hold);
     return () => window.clearTimeout(timer);
-  }, [phase, check, checkMastered, props.reducedMotion, resumeFromCheck]);
+  }, [phase, card, checkMastered, props.reducedMotion, finishAfterCheck]);
 
   // ---- Transport actions. -------------------------------------------------
   const replayScene = useCallback(() => {
@@ -312,7 +254,7 @@ export function ModulePlayer(props: {
     };
   }, []);
 
-  // ---- Keyboard: Space pauses, Escape leaves. Arrows do not turn cards. ---
+  // ---- Keyboard: Space pauses, Escape returns to the index. ---------------
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented) return;
@@ -322,7 +264,7 @@ export function ModulePlayer(props: {
       const onControl = target?.closest?.("button, input, textarea, a, select") != null;
       if (event.key === "Escape") {
         event.preventDefault();
-        props.onExit();
+        props.onBackToIndex();
       } else if ((event.key === " " || event.key === "k") && !inCheck && !onControl) {
         event.preventDefault();
         if (phase === "PLAYING") togglePause();
@@ -332,13 +274,15 @@ export function ModulePlayer(props: {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [phase, togglePause, props]);
 
-  const isRetry = props.attemptOrdinal > 1;
-  const shot: ModuleShotKind = phase === "CHECK" ? "REACTION" : segment?.shot ?? "PRESENTER_MEDIUM";
+  const shot: ModuleShotKind =
+    phase === "CHECK" ? "REACTION" : segment?.shot ?? "PRESENTER_MEDIUM";
   const activeVisual = phase === "PLAYING" ? segment?.visual : undefined;
   const speaking = phase === "PLAYING" && !paused && durations.length > 0;
   const controlsHidden = !controlsAwake && phase === "PLAYING" && !paused;
-  const progress = moduleProgressFraction(definition, cardIndex, segIndex);
+  const progress =
+    durations.length > 0 ? Math.min(1, (segIndex + 1) / durations.length) : 1;
   const subtitleText = subtitlesOn && phase === "PLAYING" ? segment?.text ?? "" : "";
+  const showVideo = phase === "PLAYING" && Boolean(video?.src);
 
   return (
     <div
@@ -353,23 +297,27 @@ export function ModulePlayer(props: {
         <div className="mod-cine-vignette" />
       </div>
 
-      {/* The presenter: an imported hologram, filmed. Missing/loading shows
-          nothing and reports a QA error — never a primitive body. */}
-      {definition.presenter && (
+      {props.presenter && (
         <div className="mod-cine-presenter">
           <SystemPresenter
-            presenter={definition.presenter}
+            presenter={props.presenter}
             speaking={speaking}
             shot={shot}
             reducedMotion={props.reducedMotion}
-            speechCueId={`${cardIndex}:${segIndex}`}
+            speechCueId={`${card.id}:${segIndex}`}
             speechText={segment?.text ?? ""}
           />
         </div>
       )}
 
-      {/* The historical visual, materialized into the frame at its beat. */}
-      {activeVisual && (
+      {/* The generated clip, when one has been produced. Absent/pending renders
+          nothing; the document image and the question still show. */}
+      {showVideo && video && (
+        <ModuleVideoStage video={video} reducedMotion={props.reducedMotion} />
+      )}
+
+      {/* The historical document, materialized into the frame at its beat. */}
+      {activeVisual && !showVideo && (
         <ModuleVisualStage
           visual={activeVisual}
           motion={segment?.visualMotion ?? "none"}
@@ -378,49 +326,54 @@ export function ModulePlayer(props: {
         />
       )}
 
-      {/* The thin, unobtrusive progress line and a small elapsed readout. */}
       <div className="mod-cine-progress" aria-hidden="true">
-        <span className="mod-cine-progress-fill" style={{ transform: `scaleX(${progress})` }} />
+        <span
+          className="mod-cine-progress-fill"
+          style={{ transform: `scaleX(${progress})` }}
+        />
       </div>
 
       <header className="mod-cine-top" data-dim={controlsHidden ? "true" : "false"}>
-        <button type="button" className="mod-cine-leave" onClick={props.onExit}>
-          <span aria-hidden="true">←</span> Leave
+        <button type="button" className="mod-cine-leave" onClick={props.onBackToIndex}>
+          <span aria-hidden="true">←</span> Archive
         </button>
         <div className="mod-cine-title">
           <span className="mod-cine-kicker">
-            {isRetry
-              ? `Required again · attempt ${props.attemptOrdinal} of ${MAX_MISSION_ATTEMPTS}`
-              : "Required before deployment"}
+            {props.fileKicker ?? "Case file"}
           </span>
-          <span className="mod-cine-name">{definition.title}</span>
+          <span className="mod-cine-name">{props.fileLabel ?? card.kicker}</span>
         </div>
-        <span className="mod-cine-clock">
-          {formatModuleClock(elapsed)}
-          <span className="mod-cine-xp"> · Pays no XP</span>
-        </span>
+        <button type="button" className="mod-cine-leave mod-cine-leave-end" onClick={props.onExit}>
+          Leave
+        </button>
       </header>
 
-      {definition.presenter && (
-        <span className="mod-cine-presenter-name" data-dim={controlsHidden ? "true" : "false"}>
-          {definition.presenter.displayName}
+      {props.presenter && (
+        <span
+          className="mod-cine-presenter-name"
+          data-dim={controlsHidden ? "true" : "false"}
+        >
+          {props.presenter.displayName}
         </span>
       )}
 
-      {/* The subtitle band: one short line at a time, announced politely. */}
       <div className="mod-cine-caption" data-on={subtitlesOn ? "true" : "false"}>
-        <p className="mod-cine-caption-text" id={SUBTITLE_ID} aria-live="polite" aria-atomic="true">
+        <p
+          className="mod-cine-caption-text"
+          id={SUBTITLE_ID}
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {subtitleText}
         </p>
       </div>
 
-      <ModuleControls
+      <FileControls
         paused={paused}
         muted={muted}
         subtitlesOn={subtitlesOn}
         hidden={controlsHidden}
         canControl={phase === "PLAYING"}
-        voiceoverAvailable={controllerRef.current?.available ?? false}
         onTogglePause={togglePause}
         onToggleMute={() => setMuted((value) => !value)}
         onToggleSubtitles={() => setSubtitlesOn((value) => !value)}
@@ -428,15 +381,13 @@ export function ModulePlayer(props: {
         onSkip={skipScene}
       />
 
-      {/* The mastery check: a focused holographic overlay that pauses the
-          cutscene, never a permanent dashboard. */}
-      {phase === "CHECK" && check && drawnCheck && (
+      {phase === "CHECK" && check && (
         <ModuleCheckOverlay
-          check={drawnCheck}
+          check={check}
           mastered={checkMastered}
           reducedMotion={props.reducedMotion}
-          onMastered={() => masterCheck(check.id)}
-          onContinue={resumeFromCheck}
+          onMastered={masterCheck}
+          onContinue={finishAfterCheck}
         />
       )}
     </div>
@@ -450,14 +401,8 @@ const CLASSIFICATION_LABEL: Record<ModuleVisual["classification"], string> = {
   PROJECT_RECONSTRUCTION: "Reconstruction",
 };
 
-/**
- * A historical image/document materialized into the cinematic frame. The image
- * is the imported provenanced asset; the frame, scanline sweep, holo-assembly
- * entrance and Ken Burns drift are all procedural UI, which the workspace rules
- * permit around an imported visible asset. The caption is brief — title, date,
- * source, classification — never the full narration prose.
- */
-function ModuleVisualStage(props: {
+/** A historical image/document materialized into the cinematic frame. */
+export function ModuleVisualStage(props: {
   visual: ModuleVisual;
   motion: ModuleVisualMotion;
   focused: boolean;
@@ -483,7 +428,9 @@ function ModuleVisualStage(props: {
         <span className="mod-cine-visual-corner br" aria-hidden="true" />
       </div>
       <figcaption className="mod-cine-visual-cap">
-        <span className={`mod-cine-tag mod-cine-tag-${visual.classification.toLowerCase()}`}>
+        <span
+          className={`mod-cine-tag mod-cine-tag-${visual.classification.toLowerCase()}`}
+        >
           {CLASSIFICATION_LABEL[visual.classification]}
         </span>
         <span className="mod-cine-visual-title">{visual.title}</span>
@@ -495,14 +442,57 @@ function ModuleVisualStage(props: {
   );
 }
 
+/**
+ * The generated cutscene clip, when one exists. This is only reached when the
+ * video carries a real `src` (see the caller); a pending clip has no source and
+ * this component is never mounted, so the file falls back to its document image
+ * and question with no broken frame. The provenance caption is shown for the
+ * same reason a still's is: a generated scene is a reconstruction, never
+ * documentary evidence, and it says so.
+ */
+export function ModuleVideoStage(props: {
+  video: ModuleVideo;
+  reducedMotion: boolean;
+}) {
+  const { video } = props;
+  if (!video.src) return null;
+  return (
+    <figure className="mod-cine-visual mod-cine-video is-focused" key={video.id}>
+      <div className="mod-cine-visual-frame">
+        <video
+          className="mod-cine-visual-img"
+          src={video.src}
+          poster={video.poster}
+          autoPlay={!props.reducedMotion}
+          muted
+          playsInline
+          controls={props.reducedMotion}
+        />
+        <span className="mod-cine-visual-corner tl" aria-hidden="true" />
+        <span className="mod-cine-visual-corner br" aria-hidden="true" />
+      </div>
+      <figcaption className="mod-cine-visual-cap">
+        <span
+          className={`mod-cine-tag mod-cine-tag-${video.classification.toLowerCase()}`}
+        >
+          {CLASSIFICATION_LABEL[video.classification]}
+        </span>
+        <span className="mod-cine-visual-title">{video.title}</span>
+        <span className="mod-cine-visual-src">
+          {video.attribution} · {video.date}
+        </span>
+      </figcaption>
+    </figure>
+  );
+}
+
 /** The cinematic transport: pause, replay, skip, mute, subtitles. Auto-dims. */
-function ModuleControls(props: {
+function FileControls(props: {
   paused: boolean;
   muted: boolean;
   subtitlesOn: boolean;
   hidden: boolean;
   canControl: boolean;
-  voiceoverAvailable: boolean;
   onTogglePause: () => void;
   onToggleMute: () => void;
   onToggleSubtitles: () => void;
@@ -525,11 +515,7 @@ function ModuleControls(props: {
       >
         {props.paused ? "Play" : "Pause"}
       </button>
-      <button
-        type="button"
-        className="mod-cine-btn"
-        onClick={props.onReplay}
-      >
+      <button type="button" className="mod-cine-btn" onClick={props.onReplay}>
         Replay scene
       </button>
       <button
@@ -545,7 +531,6 @@ function ModuleControls(props: {
         className="mod-cine-btn"
         onClick={props.onToggleMute}
         aria-pressed={props.muted}
-        title={props.voiceoverAvailable ? undefined : "No voice on this device"}
       >
         {props.muted ? "Unmute" : "Mute"}
       </button>
@@ -562,14 +547,12 @@ function ModuleControls(props: {
 }
 
 /**
- * The mastery check as a focused overlay. It scrims the cutscene, holds the
- * timeline, and reuses ModuleCheckPanel — which shows an option's own
- * misconception feedback on a wrong answer, requires the correct answer, and
- * reinforces on success. On mastery it offers Continue (and the player also
- * auto-resumes shortly after), transitioning back into the cutscene.
+ * The mastery check as a focused overlay. Reuses ModuleCheckPanel — an option's
+ * own misconception feedback on a wrong answer, the correct answer required, and
+ * reinforcement on success — exactly as the deck always gated it.
  */
 function ModuleCheckOverlay(props: {
-  check: NonNullable<LearningModuleDefinition["cards"][number]["check"]>;
+  check: ModuleCheck;
   mastered: boolean;
   reducedMotion: boolean;
   onMastered: () => void;
