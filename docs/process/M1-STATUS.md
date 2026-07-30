@@ -84,6 +84,44 @@ tree is clean and `main` is 34 commits ahead of `origin/main`.
 
 ---
 
+## The Archive lesson and the 1774 documents landed (30 Jul) — `main` = `73a4b58`
+
+Design of record for all of this: **`docs/design/M1-Remedial-Slice.md`**.
+
+| Merge | From | What |
+|---|---|---|
+| `f6e5caf` | `workflow/m1-sources` | Four rights-verified 1774 images + `content/m1/historical-sources.json`. Additive. |
+| `73a4b58` | `workflow/m1-lesson` | The **Archive** lesson: player-paced case files with sequential unlock, a source-tolerant `ModuleVideo` variant, schema mirror. `ModulePlayer.tsx` removed in favour of `ModuleArchive.tsx` + `ModuleFilePlayer.tsx`. |
+| `3fc89d6` | (orchestration) | Lane map reconciled: `m1-lesson` co-owns `apps/web/src/module/**`, `m1-sources` owns `historical/m1/**`. Detector clean. |
+
+**Gated green on the merged tree** (measured, not asserted): build, typecheck, lint,
+`verify:content`, `verify:units`, all `assets:verify:*`, lane-integrity, **2881 tests 0 failing**,
+and **`check-playthrough` ALL PASS**.
+
+**A worry that turned out to be unfounded, recorded so nobody re-raises it:**
+`scripts/check-playthrough.mjs` opens only `src/mission/floor.html` and `src/duel/duel.html`. **It
+never loads `src/module/*` and never uses `?boss=1`.** So the lesson going from auto-advance to
+player-paced cannot affect that gate, and the harness needed no change.
+
+**The auto-advance reversal is deliberate.** `moduleShots.ts` used to state "playback advances
+itself — nothing here asks the learner to turn a card." The owner asked for a case-file Archive you
+press play on, so that comment is now reversed in place. The completion gate did **not** weaken:
+"every file played and every question answered" reduces to the same cues-plus-checks the server
+independently re-derives, so `apps/api`'s module-deck parity is untouched.
+
+**Open, non-blocking:**
+- **GUARD DRIFT in 17 worktrees** — all hold the pre-reconciliation `.cursor/lane-ownership.json`.
+  Non-failing by design; the detector prints the exact `cp` per lane. **Do not run it for the
+  `playtest` worktree** — that tree stays frozen at its tag.
+- The `m1-lesson` schema grant and `m1-sources` manifest grant now describe merged work and are
+  retirement candidates; retiring them properly means re-pointing the guard's `--selftest` cases.
+- **Files 2 and 3 of the lesson have no readable primary document.** Nothing cleanly licensed exists
+  for the Acts' scope or for consent — the good candidates are paywalled (Gale/ECCO) or request-only
+  (MHS). File 2 teaches what saves the player from patrols, so it should not stay thin. Permission
+  requests would likely solve both.
+
+---
+
 ## Trunk consolidation (29 Jul) — the ledger table above is now ACTIONED
 
 `main` was rebuilt into one clean M1-demo trunk so the owner has a single point to scope down from.
