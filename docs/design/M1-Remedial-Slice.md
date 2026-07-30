@@ -234,6 +234,17 @@ alternative in `docs/design/Harbour-Cutscene.md` §"Platform pricing comparison"
 caveat if we ever switch: Seedance runs ~2× on fal, so a Seedance winner would produce cheaper on
 ByteDance/Ofox. Nothing else is blocked: the pending-video slots render cleanly with no MP4 today.
 
+**Production build order (owner, 30 Jul). Do NOT design or produce all cutscenes up front — do the
+harbour first as a pilot, then proceed in this order:**
+1. **Harbour cutscene (File 1) — the pilot. Design DONE** (`docs/design/Harbour-Cutscene.md`).
+   Produce it first to prove the pipeline and the game-3D look, and to settle the Kling-vs-Seedance
+   bake-off. This is the next concrete step; gated only on the owner's Runway Max subscription.
+2. **Then** design + produce the rest: the game-open intro's video beats, the lesson intro, and the
+   remaining lesson cutscenes (Files 2-4). Design each when its turn comes.
+3. **Then** build the **1774 mission** itself — the Covenant courier / patrol-evasion run — which
+   replaces the still-1765 `m1Mission.ts` traversal (the current end-to-end inconsistency).
+4. **Then** the **in-mission cutscenes** (the stops).
+
 **Three media, split by what each is good at:**
 
 | Media | Carries | Why |
