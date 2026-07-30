@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Keep this exact woman: same face, same long blonde hair, same body proportions and the same calm standing pose. Change ONLY her clothing and the background. Dress her in a dignified near-future INSTITUTIONAL FIELD-SERVICE UNIFORM: a slate grey-blue technical jacket with a high funnel collar zipped all the way up to the throat, fully covering her chest and neckline so NO skin shows below the jaw, long sleeves, matching trousers, a small subtle circular archive insignia on the left chest. She looks competent and professional, not fashion, not military, not glamorous, age-appropriate for a school product. Plain seamless light grey studio background. Even soft flat shadowless studio lighting. Full body, head to feet in frame, photorealistic, single subject, centered.",
+  "size": "1024x1024",
+  "edit": "/tmp/presenter-asset/qa-current/current-full-front.png",
+  "generatedAt": "2026-07-30T14:15:26.210Z",
+  "files": [
+    "system-presenter-v2-a.png"
+  ]
+}
