@@ -90,14 +90,14 @@ test("the public projection never leaks which cards are relevant", () => {
 });
 
 test("a selection of enough relevant cards satisfies the policy", () => {
-  const policy = m1EvidencePolicy("BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1");
+  const policy = m1EvidencePolicy("BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1");
   const grade = gradeEvidenceSelection(policy, policy.relevantCardIds.slice(0, policy.minSupport));
   assert.equal(grade.satisfied, true);
   assert.equal(grade.reason, "OK");
 });
 
 test("too few relevant cards is TOO_FEW, whatever decoys are added", () => {
-  const policy = m1EvidencePolicy("BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1"); // two relevant, min 2
+  const policy = m1EvidencePolicy("BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1"); // two relevant, min 2
   assert.equal(policy.minSupport, 2);
   const decoy = policy.offeredCardIds.find((id) => !policy.relevantCardIds.includes(id))!;
   const grade = gradeEvidenceSelection(policy, [policy.relevantCardIds[0]!, decoy]);
@@ -117,7 +117,7 @@ test("multiple valid combinations exist when relevant exceeds the minimum", () =
 });
 
 test("a single-card item needs exactly one relevant card", () => {
-  const policy = m1EvidencePolicy("BOS.MD01.DUEL.STAMP.FROM_WHEN.v1");
+  const policy = m1EvidencePolicy("BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1");
   assert.equal(policy.relevantCardIds.length, 1);
   assert.equal(policy.minSupport, 1);
   assert.equal(gradeEvidenceSelection(policy, policy.relevantCardIds).satisfied, true);
@@ -125,7 +125,7 @@ test("a single-card item needs exactly one relevant card", () => {
 });
 
 test("validation rejects an unoffered, duplicate, or unauthorized card", () => {
-  const policy = m1EvidencePolicy("BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1");
+  const policy = m1EvidencePolicy("BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1");
   const offered = policy.offeredCardIds;
   const notOffered = M1_CODEX_CARD_IDS.find((id) => !offered.includes(id));
 
@@ -149,32 +149,32 @@ test("validation rejects an unoffered, duplicate, or unauthorized card", () => {
 test("an incompatible card fails the selection even with enough support", () => {
   // Synthetic policy: two relevant, one incompatible decoy that is forced into the
   // hand. Exercises the mechanism the M1 deck has no false card to use.
-  const relevant = ["BOS.MD01.CARD.WAR_DEBT.v1", "BOS.MD01.CARD.COLONIAL_REVENUE.v1"];
+  const relevant = ["BOS.MD01.CARD.NON_IMPORTATION.v1", "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1"];
   const policy = {
     itemId: "TEST.ITEM",
     relevantCardIds: relevant,
-    offeredCardIds: [...relevant, "BOS.MD01.CARD.STAMP_DATE.v1"],
+    offeredCardIds: [...relevant, "BOS.MD01.CARD.CONSENT_GROUND.v1"],
     acceptedGroups: [],
     minSupport: 2,
-    incompatibleCardIds: ["BOS.MD01.CARD.STAMP_DATE.v1"],
+    incompatibleCardIds: ["BOS.MD01.CARD.CONSENT_GROUND.v1"],
     maxSelectable: 3,
   } as const;
-  const grade = gradeEvidenceSelection(policy, [...relevant, "BOS.MD01.CARD.STAMP_DATE.v1"]);
+  const grade = gradeEvidenceSelection(policy, [...relevant, "BOS.MD01.CARD.CONSENT_GROUND.v1"]);
   assert.equal(grade.satisfied, false);
   assert.equal(grade.reason, "INCOMPATIBLE");
 });
 
 test("the hand size targets the configured size when the deck allows", () => {
-  const policy = m1EvidencePolicy("BOS.MD01.DUEL.STAMP.FROM_WHEN.v1"); // 1 relevant
+  const policy = m1EvidencePolicy("BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1"); // 1 relevant
   assert.equal(policy.offeredCardIds.length, M1_EVIDENCE_HAND_SIZE);
 });
 
 test("evidencePolicyFrom intersects relevant against the deck", () => {
   const policy = evidencePolicyFrom({
     itemId: "TEST",
-    relevantCardIds: ["BOS.MD01.CARD.WAR_DEBT.v1", "NOT.A.REAL.CARD.v1"],
+    relevantCardIds: ["BOS.MD01.CARD.NON_IMPORTATION.v1", "NOT.A.REAL.CARD.v1"],
   });
-  assert.deepEqual(policy.relevantCardIds, ["BOS.MD01.CARD.WAR_DEBT.v1"]);
+  assert.deepEqual(policy.relevantCardIds, ["BOS.MD01.CARD.NON_IMPORTATION.v1"]);
 });
 
 // ---------------------------------------------------------------------------
@@ -184,40 +184,49 @@ test("evidencePolicyFrom intersects relevant against the deck", () => {
 test("most items require synthesising two or more evidence cards", () => {
   assert.equal(ALL_ITEMS.length, 25);
   const min2 = ALL_ITEMS.filter((item) => m1EvidencePolicy(item.itemId).minSupport >= 2);
-  // 18 of the 25 items, a clear majority, are authored to need two or more cards.
-  assert.equal(min2.length, 18, `${min2.length}/25 require 2+`);
-  assert.ok(min2.length / ALL_ITEMS.length > 0.6, "most items should need 2+");
+  // 15 of the 25 items — a majority — are authored to need two or more cards. The 1774
+  // Coercive-Acts slate is more single-proposition than the 1765 Stamp slate it
+  // replaced: the collective-punishment trio and the scope items each turn on one
+  // claim, so this is the honest ceiling rather than the 18/25 the old chained
+  // debt->revenue->stamp items reached. Flagged to the owner as a measured consequence
+  // of the reslate: the evidence hand is still a synthesis for the majority of the deck.
+  assert.equal(min2.length, 15, `${min2.length}/25 require 2+`);
+  assert.ok(min2.length / ALL_ITEMS.length >= 0.6, "most items should need 2+");
 });
 
 test("the single-card items are exactly the ones history decides with one claim", () => {
-  // Stamp-scope boundary items turn on one line; the bare date and the year-pair pick
-  // are single decisive facts; the cost-versus-consent man is one discrimination. Each
-  // is deliberately left at one, and this pins that set so a future edit is a choice.
+  // The closure trio turns on one card (the punishment falls on the town); the scope
+  // items turn on one act; the covenant and the boycott's bite each rest on the one
+  // non-importation card; and three single-claim hardening items. Each is deliberately
+  // left at one, and this pins that set so a future edit is a choice.
   const min1 = ALL_ITEMS.filter(
     (item) => m1EvidencePolicy(item.itemId).minSupport === 1,
   )
     .map((item) => item.itemId)
     .sort();
   assert.deepEqual(min1, [
-    "BOS.MD01.DUEL.POSTWAR.WHICH_YEAR.v1",
+    "BOS.MD01.DUEL.ACTS.FINE_OR_CLOSURE.v1",
+    "BOS.MD01.DUEL.ACTS.FOUR_NOT_ONE.v1",
+    "BOS.MD01.DUEL.ACTS.NOT_A_FINE.v1",
+    "BOS.MD01.DUEL.ACTS.WHICH_ACT.v1",
+    "BOS.MD01.DUEL.ACTS.WHO_HAS_GRIEVANCE.v1",
+    "BOS.MD01.DUEL.ACTS.WHO_IT_FALLS_ON.v1",
+    "BOS.MD01.DUEL.ACTS.WHY_THE_TOWN.v1",
     "BOS.MD01.DUEL.REP.WHICH_MAN.v1",
-    "BOS.MD01.DUEL.STAMP.CORRECT_THE_APPRENTICE.v1",
-    "BOS.MD01.DUEL.STAMP.DEED_OR_CLOTH.v1",
-    "BOS.MD01.DUEL.STAMP.FROM_WHEN.v1",
-    "BOS.MD01.DUEL.STAMP.NAME_TWO.v1",
-    "BOS.MD01.DUEL.STAMP.PRIVATE_LETTER.v1",
+    "BOS.MD01.DUEL.RESIST.THE_COVENANT.v1",
+    "BOS.MD01.DUEL.RESIST.WHY_IT_BITES.v1",
   ]);
 });
 
 test("the promoted items now need two distinct pieces of evidence", () => {
   for (const itemId of [
-    "BOS.MD01.DUEL.POSTWAR.WHAT_IT_LEFT.v1",
-    "BOS.MD01.DUEL.POSTWAR.WHO_PAYS.v1",
-    "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1",
+    "BOS.MD01.DUEL.ACTS.STILL_LAWFUL.v1",
     "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
     "BOS.MD01.DUEL.REP.NOT_THE_MONEY.v1",
     "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1",
     "BOS.MD01.DUEL.REP.HOW_FAR_IT_GOES.v1",
+    "BOS.MD01.DUEL.RESIST.NOT_WAR.v1",
+    "BOS.MD01.DUEL.RESIST.HOW_THEY_ANSWER.v1",
   ]) {
     const policy = m1EvidencePolicy(itemId);
     assert.ok(policy.relevantCardIds.length >= 2, `${itemId} has fewer than two relevant`);
@@ -231,8 +240,6 @@ test("the promoted items now need two distinct pieces of evidence", () => {
 
 test("three-relevant items admit more than one defensible pair", () => {
   for (const itemId of [
-    "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1",
-    "BOS.MD01.DUEL.POSTWAR.DEBT_TO_TAX.v1",
     "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1",
     "BOS.MD01.DUEL.REP.LAWFUL_BUT_UNJUST.v1",
   ]) {
@@ -284,10 +291,10 @@ test("every raised minimum stays satisfiable from a PvP legal-card intersection"
 test("an under-provisioned deck clamps the minimum rather than dealing an unsatisfiable hand", () => {
   // The defensive case: if an intersection ever dropped a relevant card, the minimum
   // clamps to what is dealable rather than demanding a card the hand does not hold.
-  const relevant = m1EvidenceRelevantCardIds("BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1");
+  const relevant = m1EvidenceRelevantCardIds("BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1");
   assert.equal(relevant.length, 2);
   const policy = evidencePolicyFrom({
-    itemId: "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
+    itemId: "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
     relevantCardIds: relevant,
     allCardIds: [relevant[0]!], // only one card survives the intersection
   });

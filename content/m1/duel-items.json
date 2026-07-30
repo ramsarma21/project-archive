@@ -906,7 +906,8 @@
       "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
       "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
       "codexCardIds": [
-        "BOS.MD01.CARD.NON_IMPORTATION.v1"
+        "BOS.MD01.CARD.NON_IMPORTATION.v1",
+        "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1"
       ],
       "answerableFrom": [
         "BOS.MD01.CUE.BRIEF_ANSWER.v1"
@@ -1033,7 +1034,8 @@
       "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
       "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
       "codexCardIds": [
-        "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1"
+        "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1",
+        "BOS.MD01.CARD.NON_IMPORTATION.v1"
       ],
       "answerableFrom": [
         "BOS.MD01.CUE.BRIEF_ANSWER.v1"
@@ -1222,7 +1224,8 @@
       "poolId": "BOS.MD01.POOL.DUEL_MERCANTILISM.v1",
       "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
       "codexCardIds": [
-        "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1"
+        "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1",
+        "BOS.MD01.CARD.NON_IMPORTATION.v1"
       ],
       "answerableFrom": [
         "BOS.MD01.CUE.BRIEF_ANSWER.v1"
