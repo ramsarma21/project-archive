@@ -106,6 +106,12 @@ spent avoiding it. The alarm goes up, they run east under maximum heat, and the 
 them at the yard, which is where `yardArena()` already is. The route already runs Elm (F) → Yard
 (G) in that order, so the geography supports it unchanged.
 
+**No-ground scope (owner, 30 Jul).** The floor-is-lava / no-ground requirement applies to the
+**covert run, start → elm** — that is where the audit's gaps must be closed (the elevated net is
+three islands today, with 11 forced-ground nodes on the SAFE line; see `docs/design/M1-Mission-Build.md`).
+The **elm → yard climax is intentionally on the ground**: it *is* the deliberate exposure and chase,
+so G3 is not a gap and no aerial yard entry (`LEAP_YARD_HAY`) is authored.
+
 **A free gift:** `BOSS_CHALLENGE_BEATS` already opens with *"Hold there. You again — I'd know that
 face in any dark,"* written assuming the player had slipped this officer twice. A patrol-evasion
 mission delivers exactly that premise, so the existing lines land better than when they were
