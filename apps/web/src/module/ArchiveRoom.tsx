@@ -1,4 +1,5 @@
 import {
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -8,8 +9,9 @@ import {
   type MutableRefObject,
 } from "react";
 import * as THREE from "three";
+import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Grid } from "@react-three/drei";
+import { Grid, useGLTF } from "@react-three/drei";
 import {
   Bloom,
   ChromaticAberration,
@@ -18,18 +20,22 @@ import {
   Vignette,
 } from "@react-three/postprocessing";
 import { BlendFunction, KernelSize } from "postprocessing";
-import { fieldRandom } from "@pa/engine-world";
+import { GlbBoundary, chooseAvailableClip, fieldRandom } from "@pa/engine-world";
 import type { ArchiveFileStatus } from "./archiveLayout.js";
 import type { ModulePresenter } from "./moduleFormat.js";
-import { SystemPresenter } from "./SystemPresenter.js";
+import { measureRig } from "./presenterHologram.js";
 import {
+  PRESENTER_POS,
+  PRESENTER_YAW,
   RACK_CENTER_X,
   ROOM_CAMERA,
   SLAB,
   cornerBracketPositions,
+  holographizePresenter,
   makeSlabFaceTexture,
   makeSlabMaterial,
   rackPlacements,
+  radialGlowTexture,
   slabPalette,
   slabStateFor,
   type SlabVisualState,
@@ -66,6 +72,8 @@ export interface ArchiveRoomFile {
   readonly title: string;
   readonly note: string;
   readonly status: ArchiveFileStatus;
+  /** The file's document image, drawn as an inset scan on the slab face. */
+  readonly thumbnail?: string;
 }
 
 export interface ArchiveRoomProps {
@@ -74,19 +82,20 @@ export interface ArchiveRoomProps {
   readonly kicker: string;
   readonly clockLabel: string;
   readonly files: readonly ArchiveRoomFile[];
-  readonly hasBrief: boolean;
-  readonly briefReady: boolean;
+  /** When true the room enters on the handoff: the rack powers down, the camera
+   * closes on the presenter, then onPlayBrief fires (the auto handoff cutscene). */
+  readonly autoHandoff: boolean;
   readonly reducedMotion: boolean;
   readonly presenter?: ModulePresenter;
   readonly onOpenFile: (index: number) => void;
+  /** Start the handoff cutscene. Called by the room once its flourish completes. */
   readonly onPlayBrief: () => void;
   readonly onExit: () => void;
 }
 
-/** A slot the room draws and the player can focus: a file, or the handoff brief. */
+/** One focusable case file the room draws. The handoff is no longer a slot — it
+ * is an automatic cutscene once the last file is reviewed. */
 interface RoomSlot {
-  readonly kind: "FILE" | "BRIEF";
-  /** File index into `files`, or -1 for the brief. */
   readonly fileIndex: number;
   readonly ordinalLabel: string;
   readonly title: string;
@@ -94,9 +103,18 @@ interface RoomSlot {
   readonly conceptTag: string;
   readonly state: SlabVisualState;
   readonly openable: boolean;
+  readonly thumbnail?: string;
 }
 
 const SELECT_SECONDS = 0.7;
+const HANDOFF_SECONDS = 1.8;
+/** Where the camera closes to when the room hands over to the presenter — a
+ * tight three-quarter framing on her, so the handoff lands like a launch. */
+const HANDOFF_CAMERA = {
+  position: [-2.35, 1.52, 2.7] as const,
+  target: [-2.62, 1.4, 0.85] as const,
+  fov: 36,
+};
 
 function ease(t: number): number {
   // A soft ease-in-out so the lift settles rather than snapping.
@@ -115,13 +133,23 @@ interface SelectState {
   done: boolean;
 }
 
+/** The room-hands-over-to-her transition: the rack powers down as it runs. */
+interface HandoffState {
+  active: boolean;
+  t: number;
+  done: boolean;
+}
+
 function Slab(props: {
   slot: RoomSlot;
   slotIndex: number;
   placement: { position: readonly [number, number, number]; rotationY: number; driftPhase: number };
   reducedMotion: boolean;
+  /** True while the whole rack should skip its rise-in (e.g. entering on handoff). */
+  noIntro: boolean;
   focusRef: MutableRefObject<number | null>;
   selectRef: MutableRefObject<SelectState>;
+  handoffRef: MutableRefObject<HandoffState>;
   onHover: (slotIndex: number) => void;
   onActivate: (slotIndex: number) => void;
 }) {
@@ -139,8 +167,9 @@ function Slab(props: {
         conceptTag: slot.conceptTag,
         state: slot.state,
         reducedMotion,
+        thumbnail: slot.thumbnail,
       }),
-    [slot.ordinalLabel, slot.title, slot.note, slot.conceptTag, slot.state, reducedMotion],
+    [slot.ordinalLabel, slot.title, slot.note, slot.conceptTag, slot.state, slot.thumbnail, reducedMotion],
   );
 
   const bracketGeometry = useMemo(() => {
@@ -184,7 +213,7 @@ function Slab(props: {
   }, [material, faceTexture, bracketGeometry, edgeGeometry, slabGeometry]);
 
   const hoverRef = useRef(0);
-  const mountRef = useRef(reducedMotion ? 1 : -props.slotIndex * 0.12);
+  const mountRef = useRef(reducedMotion || props.noIntro ? 1 : -props.slotIndex * 0.12);
   const edgeMatRef = useRef<THREE.LineBasicMaterial>(null);
   const bracketMatRef = useRef<THREE.LineBasicMaterial>(null);
   const faceMatRef = useRef<THREE.MeshBasicMaterial>(null);
@@ -196,55 +225,63 @@ function Slab(props: {
     const t = (material.uniforms.uTime!.value += delta);
 
     // Mount stagger: rise + fade in, delayed by slot order (negative start).
-    if (mountRef.current < 1) mountRef.current = Math.min(1, mountRef.current + delta * 1.4);
+    if (mountRef.current < 1) mountRef.current = Math.min(1, mountRef.current + delta * 2.6);
     const mount = ease(reducedMotion ? 1 : Math.max(0, mountRef.current));
+
+    // Handoff: the rack powers down and recedes as the room hands over to the
+    // presenter. `powered` runs 1 → 0 across the transition.
+    const hd = props.handoffRef.current;
+    const handoffE = hd.active ? ease(hd.t) : 0;
+    const powered = 1 - handoffE;
 
     const sel = props.selectRef.current;
     const selecting = sel.index !== null;
     const isSelected = sel.index === props.slotIndex;
     const selT = isSelected ? ease(sel.t) : 0;
 
-    // Hover damping.
-    const hovered = props.focusRef.current === props.slotIndex && !selecting;
+    // Hover damping (off during a selection or the handoff).
+    const hovered =
+      props.focusRef.current === props.slotIndex && !selecting && !hd.active;
     const target = hovered ? 1 : 0;
     hoverRef.current += (target - hoverRef.current) * Math.min(1, delta * 12);
     material.uniforms.uHover!.value = reducedMotion ? target : hoverRef.current;
     material.uniforms.uSelect!.value = selT;
 
-    // A selection dims and desaturates the rest of the rack — focus racks to the
-    // chosen file.
+    // A selection dims the rest of the rack; the handoff powers all of it down.
     const otherDim = selecting && !isSelected ? 1 - 0.82 * ease(sel.t) : 1;
     material.uniforms.uOpacity!.value =
-      palette.opacity * otherDim * mount * (1 + 0.18 * material.uniforms.uHover!.value);
+      palette.opacity * otherDim * mount * powered * (1 + 0.18 * material.uniforms.uHover!.value);
 
-    // Rest pose from the placement, plus idle drift (stilled under reduced motion
-    // and while a selection is animating).
+    // Rest pose + idle drift (stilled under reduced motion, selection, handoff).
     const [rx, ry, rz] = placement.position;
     const drift =
-      reducedMotion || selecting ? 0 : Math.sin(t * 0.7 + placement.driftPhase) * palette.drift;
-    const restY = ry + drift + (1 - mount) * -0.25;
+      reducedMotion || selecting || hd.active
+        ? 0
+        : Math.sin(t * 0.7 + placement.driftPhase) * palette.drift;
+    const restY = ry + drift + (1 - mount) * -0.25 - handoffE * 0.4;
 
-    // Presented pose: centred in front of the camera, upright, close, enlarged.
+    // Presented pose: centred in front of the camera; the handoff recedes it.
     const px = THREE.MathUtils.lerp(rx, ROOM_CAMERA.target[0], selT);
     const py = THREE.MathUtils.lerp(restY, 1.55, selT);
-    const pz = THREE.MathUtils.lerp(rz, 2.9, selT);
+    const pz = THREE.MathUtils.lerp(rz, 2.9, selT) - handoffE * 1.8;
     group.position.set(px, py, pz);
     group.rotation.y = THREE.MathUtils.lerp(placement.rotationY, 0, selT);
     const scale = THREE.MathUtils.lerp(0.92 + 0.08 * mount, 1.7, selT);
     group.scale.setScalar(scale);
 
-    // Reticle + edge intensity track focus/ready; face follows body opacity.
-    const reticleOn = (palette.reticle || hovered) && !selecting;
+    // Reticle + edge intensity track focus/ready; everything fades on handoff.
+    const reticleOn = (palette.reticle || hovered) && !selecting && !hd.active;
     if (bracketMatRef.current) {
       bracketMatRef.current.opacity =
-        (reticleOn ? 0.5 + 0.5 * material.uniforms.uHover!.value : 0) * mount;
+        (reticleOn ? 0.5 + 0.5 * material.uniforms.uHover!.value : 0) * mount * powered;
     }
     if (edgeMatRef.current) {
       edgeMatRef.current.opacity =
-        (0.35 + 0.4 * material.uniforms.uHover!.value + 0.4 * selT) * otherDim * mount;
+        (0.35 + 0.4 * material.uniforms.uHover!.value + 0.4 * selT) * otherDim * mount * powered;
     }
     if (faceMatRef.current) {
-      faceMatRef.current.opacity = Math.min(1, (0.9 + 0.1 * selT) * otherDim * mount);
+      faceMatRef.current.opacity =
+        Math.min(1, (0.9 + 0.1 * selT) * otherDim * mount) * powered;
     }
   });
 
@@ -330,19 +367,16 @@ function Slab(props: {
 function Rack(props: {
   slots: readonly RoomSlot[];
   reducedMotion: boolean;
+  noIntro: boolean;
   focusRef: MutableRefObject<number | null>;
   selectRef: MutableRefObject<SelectState>;
+  handoffRef: MutableRefObject<HandoffState>;
   onHover: (slotIndex: number) => void;
   onActivate: (slotIndex: number) => void;
   onSelectComplete: (slotIndex: number) => void;
 }) {
   const placements = useMemo(
-    () =>
-      rackPlacements(
-        props.slots.filter((s) => s.kind === "FILE").length,
-        props.slots.some((s) => s.kind === "BRIEF"),
-        RACK_CENTER_X,
-      ),
+    () => rackPlacements(props.slots.length, false, RACK_CENTER_X),
     [props.slots],
   );
 
@@ -363,13 +397,15 @@ function Rack(props: {
     <group>
       {props.slots.map((slot, index) => (
         <Slab
-          key={`${slot.kind}-${slot.fileIndex}`}
+          key={slot.fileIndex}
           slot={slot}
           slotIndex={index}
           placement={placements[index] ?? { position: [0, 1.4, 0], rotationY: 0, driftPhase: 0 }}
           reducedMotion={props.reducedMotion}
+          noIntro={props.noIntro}
           focusRef={props.focusRef}
           selectRef={props.selectRef}
+          handoffRef={props.handoffRef}
           onHover={props.onHover}
           onActivate={props.onActivate}
         />
@@ -384,23 +420,60 @@ function Rack(props: {
 // reduced motion.
 // ---------------------------------------------------------------------------
 
-function CameraRig(props: { reducedMotion: boolean }) {
+function CameraRig(props: {
+  reducedMotion: boolean;
+  autoHandoff: boolean;
+  handoffRef: MutableRefObject<HandoffState>;
+  onHandoffComplete: () => void;
+}) {
   const camera = useThree((state) => state.camera) as THREE.PerspectiveCamera;
   const look = useRef(new THREE.Vector3(...ROOM_CAMERA.target));
   const progress = useRef(props.reducedMotion ? 1 : 0);
+  const doneRef = useRef(false);
+  const onDone = useRef(props.onHandoffComplete);
+  onDone.current = props.onHandoffComplete;
 
   useEffect(() => {
-    if (props.reducedMotion) {
+    if (props.reducedMotion || props.autoHandoff) {
       camera.position.set(...ROOM_CAMERA.position);
       camera.lookAt(look.current);
+      progress.current = 1;
     } else {
       camera.position.set(ROOM_CAMERA.position[0], ROOM_CAMERA.position[1] - 0.35, ROOM_CAMERA.position[2] + 1.15);
     }
-  }, [camera, props.reducedMotion]);
+  }, [camera, props.reducedMotion, props.autoHandoff]);
 
   useFrame((_state, rawDelta) => {
+    const delta = Math.min(rawDelta, 0.05);
+    const hd = props.handoffRef.current;
+
+    if (hd.active && !hd.done) {
+      // The room hands over: dolly forward and close the framing onto her.
+      hd.t = Math.min(1, hd.t + delta / (props.reducedMotion ? 0.5 : HANDOFF_SECONDS));
+      const k = ease(hd.t);
+      camera.position.x = THREE.MathUtils.lerp(ROOM_CAMERA.position[0], HANDOFF_CAMERA.position[0], k);
+      camera.position.y = THREE.MathUtils.lerp(ROOM_CAMERA.position[1], HANDOFF_CAMERA.position[1], k);
+      camera.position.z = THREE.MathUtils.lerp(ROOM_CAMERA.position[2], HANDOFF_CAMERA.position[2], k);
+      look.current.x = THREE.MathUtils.lerp(ROOM_CAMERA.target[0], HANDOFF_CAMERA.target[0], k);
+      look.current.y = THREE.MathUtils.lerp(ROOM_CAMERA.target[1], HANDOFF_CAMERA.target[1], k);
+      look.current.z = THREE.MathUtils.lerp(ROOM_CAMERA.target[2], HANDOFF_CAMERA.target[2], k);
+      const fov = THREE.MathUtils.lerp(ROOM_CAMERA.fov, HANDOFF_CAMERA.fov, k);
+      if (Math.abs(fov - camera.fov) > 0.001) {
+        camera.fov = fov;
+        camera.updateProjectionMatrix();
+      }
+      camera.lookAt(look.current);
+      if (hd.t >= 1 && !doneRef.current) {
+        doneRef.current = true;
+        hd.done = true;
+        onDone.current();
+      }
+      return;
+    }
+
+    // Normal dolly-in intro.
     if (progress.current < 1) {
-      progress.current = Math.min(1, progress.current + Math.min(rawDelta, 0.05) / 1.2);
+      progress.current = Math.min(1, progress.current + delta / 1.2);
       const k = ease(progress.current);
       camera.position.x = ROOM_CAMERA.position[0];
       camera.position.y = THREE.MathUtils.lerp(ROOM_CAMERA.position[1] - 0.35, ROOM_CAMERA.position[1], k);
@@ -522,17 +595,26 @@ function RoomEffects(props: { reducedMotion: boolean }) {
 function RoomScene(props: {
   slots: readonly RoomSlot[];
   reducedMotion: boolean;
+  autoHandoff: boolean;
+  presenter?: ModulePresenter;
   focusRef: MutableRefObject<number | null>;
   selectRef: MutableRefObject<SelectState>;
+  handoffRef: MutableRefObject<HandoffState>;
   onHover: (slotIndex: number) => void;
   onActivate: (slotIndex: number) => void;
   onSelectComplete: (slotIndex: number) => void;
+  onHandoffComplete: () => void;
 }) {
   return (
     <>
       <color attach="background" args={[0x02060c]} />
       <fog attach="fog" args={[0x03070e, 6.5, 20]} />
-      <CameraRig reducedMotion={props.reducedMotion} />
+      <CameraRig
+        reducedMotion={props.reducedMotion}
+        autoHandoff={props.autoHandoff}
+        handoffRef={props.handoffRef}
+        onHandoffComplete={props.onHandoffComplete}
+      />
 
       <ambientLight intensity={0.28} color={0x9fd0ff} />
       <pointLight position={[0, 3.4, 4]} intensity={22} distance={16} decay={2} color={0x8fd6ff} />
@@ -559,12 +641,18 @@ function RoomScene(props: {
       <Rack
         slots={props.slots}
         reducedMotion={props.reducedMotion}
+        noIntro={props.autoHandoff}
         focusRef={props.focusRef}
         selectRef={props.selectRef}
+        handoffRef={props.handoffRef}
         onHover={props.onHover}
         onActivate={props.onActivate}
         onSelectComplete={props.onSelectComplete}
       />
+
+      {props.presenter && (
+        <RoomPresenter presenter={props.presenter} reducedMotion={props.reducedMotion} />
+      )}
 
       <RoomEffects reducedMotion={props.reducedMotion} />
     </>
@@ -572,25 +660,160 @@ function RoomScene(props: {
 }
 
 // ---------------------------------------------------------------------------
-// The composited presenter — her imported rigged GLB, standing in the room to
-// the left of the rack. She keeps her own tuned hologram treatment (its face-
-// readability shader is pinned by tests); the room's grid and light read behind
-// her so she stands IN the space rather than in a floating panel. Inside a file
-// the shot director takes her camera back over, unchanged.
+// The presenter, projected INTO the room.
+//
+// The first pass composited her imported rig as an opaque, near-photoreal figure
+// over the translucent room, so she read as a stock character dropped in. Now
+// she is a clone of the same imported GLB, rendered in the room's own scene with
+// the archive-room hologram treatment (archiveHologram.holographizePresenter):
+// translucent, cyan-tinted, scanlined, a fresnel rim that blooms, a soft
+// projector dropout, and feet dissolving into an emitter pool — the same visual
+// language as the slabs. Her face is the one thing kept warm and readable, lit
+// by a dedicated warm key so the cyan room light cannot desaturate it. The
+// composited SystemPresenter is untouched and still drives the in-FILE framing.
 // ---------------------------------------------------------------------------
 
-function RoomPresenter(props: { presenter: ModulePresenter; reducedMotion: boolean }) {
+/** A clone of the imported presenter rig, holographized and idling in the room. */
+function PresenterRigMesh(props: { presenter: ModulePresenter; reducedMotion: boolean }) {
+  const url = `/world/characters/${props.presenter.glbKey}.glb`;
+  const gltf = useGLTF(url);
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const holoClock = useRef(0);
+
+  const rig = useMemo(() => {
+    const root = skeletonClone(gltf.scene);
+    const size = new THREE.Vector3();
+    measureRig(root).getSize(size);
+    const scale = size.y > 0.01 ? 1.72 / size.y : 1;
+    root.scale.setScalar(scale);
+    root.position.y -= measureRig(root).min.y;
+    const owned = holographizePresenter(root, { reducedMotion: props.reducedMotion });
+    const materials: THREE.Material[] = [];
+    root.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const material of list) materials.push(material);
+    });
+    return { root, owned, materials };
+  }, [gltf.scene, props.reducedMotion]);
+
+  useEffect(() => {
+    const mixer = new THREE.AnimationMixer(rig.root);
+    mixerRef.current = mixer;
+    return () => {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(rig.root);
+      mixerRef.current = null;
+      for (const material of rig.owned) material.dispose();
+    };
+  }, [rig]);
+
+  useEffect(() => {
+    const mixer = mixerRef.current;
+    if (!mixer || gltf.animations.length === 0) return;
+    const name = chooseAvailableClip(
+      props.presenter.glbKey,
+      props.presenter.idleClip,
+      gltf.animations.map((clip) => clip.name),
+    );
+    const clip = name ? gltf.animations.find((c) => c.name === name) : undefined;
+    if (!clip) return;
+    const action = mixer.clipAction(clip);
+    action.reset();
+    action.enabled = true;
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    action.play();
+  }, [gltf.animations, props.presenter]);
+
+  useFrame((_state, dt) => {
+    mixerRef.current?.update(Math.min(dt, 0.05));
+    holoClock.current += Math.min(dt, 0.05);
+    for (const material of rig.materials) {
+      const host = material.userData as {
+        holoShader?: THREE.WebGLProgramParametersWithUniforms;
+      };
+      if (host.holoShader) host.holoShader.uniforms.uHoloTime!.value = holoClock.current;
+    }
+  });
+
+  return <primitive object={rig.root} />;
+}
+
+/** The projector pool at the presenter's feet + a soft body halo behind her. */
+function PresenterEmitter(props: { reducedMotion: boolean }) {
+  const clock = useRef(0);
+  const fx = useMemo(() => {
+    const glow = radialGlowTexture();
+    const padMat = new THREE.MeshBasicMaterial({
+      map: glow,
+      color: 0x6fd6ff,
+      transparent: true,
+      opacity: 0.5,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+      side: THREE.DoubleSide,
+    });
+    const haloMat = new THREE.SpriteMaterial({
+      map: glow,
+      color: 0x7fdcff,
+      transparent: true,
+      opacity: 0.26,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+    });
+    return { glow, padMat, haloMat };
+  }, []);
+  useEffect(
+    () => () => {
+      fx.glow.dispose();
+      fx.padMat.dispose();
+      fx.haloMat.dispose();
+    },
+    [fx],
+  );
+  useFrame((_state, dt) => {
+    if (props.reducedMotion) return;
+    clock.current += dt;
+    fx.padMat.opacity = 0.42 + 0.12 * Math.sin(clock.current * 2.0);
+  });
   return (
-    <div className="mod-arch-presenter" aria-hidden="true">
-      <SystemPresenter
-        presenter={props.presenter}
-        speaking={false}
-        shot="ESTABLISH"
-        reducedMotion={props.reducedMotion}
-        speechCueId="archive-room"
-        speechText=""
-      />
-    </div>
+    <group position={[...PRESENTER_POS]}>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.02, 0]}
+        scale={[2.7, 2.7, 1]}
+        material={fx.padMat}
+        raycast={() => null}
+      >
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+      <sprite position={[0, 1.02, -0.25]} scale={[2.5, 3.1, 1]} material={fx.haloMat} renderOrder={-2} />
+    </group>
+  );
+}
+
+/** The presenter in the room: rig + emitter + a dedicated warm key on her face. */
+function RoomPresenter(props: { presenter: ModulePresenter; reducedMotion: boolean }) {
+  const url = `/world/characters/${props.presenter.glbKey}.glb`;
+  return (
+    <group>
+      {/* A warm key + fill placed AT her, short-range so the face reads in true
+          tone against the cyan room without warming the rack. */}
+      <pointLight position={[PRESENTER_POS[0] + 1.1, 1.75, 2.4]} intensity={7} distance={5} decay={2} color={0xffe6d2} />
+      <pointLight position={[PRESENTER_POS[0] - 1.0, 1.5, 1.4]} intensity={3.2} distance={4} decay={2} color={0xfdece0} />
+      <pointLight position={[PRESENTER_POS[0], 0.15, PRESENTER_POS[2] - 0.3]} intensity={2.4} distance={2} decay={3} color={0x4fc6ff} />
+      <PresenterEmitter reducedMotion={props.reducedMotion} />
+      <GlbBoundary fallback={<group />} onBeforeRetry={() => useGLTF.clear(url)}>
+        <Suspense fallback={null}>
+          <group position={[...PRESENTER_POS]} rotation={[0, PRESENTER_YAW, 0]}>
+            <PresenterRigMesh presenter={props.presenter} reducedMotion={props.reducedMotion} />
+          </group>
+        </Suspense>
+      </GlbBoundary>
+    </group>
   );
 }
 
@@ -599,38 +822,26 @@ function RoomPresenter(props: { presenter: ModulePresenter; reducedMotion: boole
 // ---------------------------------------------------------------------------
 
 export function ArchiveRoom(props: ArchiveRoomProps) {
-  const slots = useMemo<RoomSlot[]>(() => {
-    const out: RoomSlot[] = props.files.map((file, index) => ({
-      kind: "FILE" as const,
-      fileIndex: index,
-      ordinalLabel: String(file.ordinal).padStart(2, "0"),
-      title: file.title,
-      note: file.note,
-      conceptTag: "Case file",
-      state: slabStateFor(file.status),
-      openable: file.status !== "LOCKED",
-    }));
-    if (props.hasBrief) {
-      out.push({
-        kind: "BRIEF",
-        fileIndex: -1,
-        ordinalLabel: "→",
-        title: "The handoff",
-        note: props.briefReady
-          ? "Every file read, every question answered. The brief into the mission."
-          : "Read every case file first.",
-        conceptTag: "Brief",
-        state: props.briefReady ? "READY" : "LOCKED",
-        openable: props.briefReady,
-      });
-    }
-    return out;
-  }, [props.files, props.hasBrief, props.briefReady]);
+  const slots = useMemo<RoomSlot[]>(
+    () =>
+      props.files.map((file, index) => ({
+        fileIndex: index,
+        ordinalLabel: String(file.ordinal).padStart(2, "0"),
+        title: file.title,
+        note: file.note,
+        conceptTag: "Case file",
+        state: slabStateFor(file.status),
+        openable: file.status !== "LOCKED",
+        thumbnail: file.thumbnail,
+      })),
+    [props.files],
+  );
 
   const reviewedCount = props.files.filter((f) => f.status === "DONE").length;
 
   const focusRef = useRef<number | null>(null);
   const selectRef = useRef<SelectState>({ index: null, t: 0, done: false });
+  const handoffRef = useRef<HandoffState>({ active: false, t: 0, done: false });
   const openRef = useRef(props.onOpenFile);
   const briefRef = useRef(props.onPlayBrief);
   openRef.current = props.onOpenFile;
@@ -644,6 +855,7 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
   }, [slots]);
   const [focus, setFocus] = useState<number>(defaultFocus);
   const [selecting, setSelecting] = useState(false);
+  const [handingOff, setHandingOff] = useState(false);
   const [muted, setMuted] = useState(false);
 
   useEffect(() => {
@@ -656,9 +868,22 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
     setArchiveAudioMuted(muted);
   }, [muted]);
 
+  // The room enters on the handoff once the last file is reviewed: arm the
+  // flourish (rack powers down, camera closes on her), then play the brief.
+  useEffect(() => {
+    if (!props.autoHandoff) return;
+    handoffRef.current = { active: true, t: 0, done: false };
+    setHandingOff(true);
+    playArchiveHandoff();
+  }, [props.autoHandoff]);
+
+  const onHandoffComplete = useCallback(() => {
+    briefRef.current();
+  }, []);
+
   const activate = useCallback(
     (slotIndex: number) => {
-      if (selectRef.current.index !== null) return;
+      if (selectRef.current.index !== null || handoffRef.current.active) return;
       const slot = slots[slotIndex];
       if (!slot) return;
       setFocus(slotIndex);
@@ -667,15 +892,9 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
         playArchiveSealed();
         return;
       }
-      if (slot.kind === "BRIEF") playArchiveHandoff();
-      else playArchiveOpen();
-
-      const run = () => {
-        if (slot.kind === "BRIEF") briefRef.current();
-        else openRef.current(slot.fileIndex);
-      };
+      playArchiveOpen();
       if (props.reducedMotion) {
-        run();
+        openRef.current(slot.fileIndex);
         return;
       }
       selectRef.current = { index: slotIndex, t: 0, done: false };
@@ -684,15 +903,17 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
     [slots, props.reducedMotion],
   );
 
-  const onSelectComplete = useCallback((slotIndex: number) => {
-    const slot = slots[slotIndex];
-    if (!slot) return;
-    if (slot.kind === "BRIEF") briefRef.current();
-    else openRef.current(slot.fileIndex);
-  }, [slots]);
+  const onSelectComplete = useCallback(
+    (slotIndex: number) => {
+      const slot = slots[slotIndex];
+      if (!slot) return;
+      openRef.current(slot.fileIndex);
+    },
+    [slots],
+  );
 
   const hover = useCallback((slotIndex: number) => {
-    if (selectRef.current.index !== null) return;
+    if (selectRef.current.index !== null || handoffRef.current.active) return;
     if (focusRef.current !== slotIndex) playArchiveHover();
     focusRef.current = slotIndex;
     setFocus(slotIndex);
@@ -727,7 +948,7 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
 
   return (
     <div
-      className={`mod mod-arch${props.reducedMotion ? " is-reduced" : ""}${selecting ? " is-selecting" : ""}`}
+      className={`mod mod-arch${props.reducedMotion ? " is-reduced" : ""}${selecting ? " is-selecting" : ""}${handingOff ? " is-handoff" : ""}`}
     >
       <Canvas
         className="mod-arch-canvas"
@@ -742,17 +963,17 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
         <RoomScene
           slots={slots}
           reducedMotion={props.reducedMotion}
+          autoHandoff={props.autoHandoff}
+          presenter={props.presenter}
           focusRef={focusRef}
           selectRef={selectRef}
+          handoffRef={handoffRef}
           onHover={hover}
           onActivate={activate}
           onSelectComplete={onSelectComplete}
+          onHandoffComplete={onHandoffComplete}
         />
       </Canvas>
-
-      {props.presenter && (
-        <RoomPresenter presenter={props.presenter} reducedMotion={props.reducedMotion} />
-      )}
 
       {/* ---- JARVIS chrome: hairline strokes, brackets, readouts, dock ------ */}
       <div
@@ -818,7 +1039,7 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
             </div>
             <h2 className="mod-arch-dock-title">{focusedSlot.title}</h2>
             <p className="mod-arch-dock-note">
-              {focusedSlot.state === "LOCKED" && focusedSlot.kind === "FILE"
+              {focusedSlot.state === "LOCKED"
                 ? "Contained until the prior file is reviewed. Read the files in order."
                 : focusedSlot.note}
             </p>
@@ -829,11 +1050,7 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
                 onClick={() => activate(focus)}
                 disabled={selecting}
               >
-                {focusedSlot.kind === "BRIEF"
-                  ? "Transmit the brief"
-                  : focusedSlot.state === "DONE"
-                    ? "Replay file"
-                    : "Open file"}
+                {focusedSlot.state === "DONE" ? "Replay file" : "Open file"}
                 <span className="mod-arch-open-key" aria-hidden="true">↵</span>
               </button>
             ) : (
@@ -841,9 +1058,7 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
                 <span aria-hidden="true">⬡</span> Sealed
               </span>
             )}
-            <span className="mod-arch-dock-hint">
-              ← → to move · Enter to open{props.hasBrief ? " · finish every file to transmit" : ""}
-            </span>
+            <span className="mod-arch-dock-hint">← → to move · Enter to open</span>
           </aside>
         )}
 
@@ -864,12 +1079,12 @@ export function ArchiveRoom(props: ArchiveRoomProps) {
           {slots.map((slot, index) =>
             slot.openable ? (
               <button
-                key={`${slot.kind}-${slot.fileIndex}`}
+                key={slot.fileIndex}
                 type="button"
                 onFocus={() => setFocus(index)}
                 onClick={() => activate(index)}
               >
-                {slot.kind === "BRIEF" ? "Transmit the brief" : `Open ${slot.title}`}
+                Open {slot.title}
               </button>
             ) : null,
           )}

@@ -35,10 +35,22 @@ import "./module.css";
 
 type ArchiveView =
   | { readonly kind: "OPENING"; readonly at: number }
-  | { readonly kind: "INDEX" }
+  | { readonly kind: "INDEX"; readonly handoff?: boolean }
   | { readonly kind: "FILE"; readonly fileIndex: number }
   | { readonly kind: "BRIEF"; readonly at: number }
   | { readonly kind: "COMPLETE" };
+
+/**
+ * The authored subtitle still opens with a "three minutes" budget the owner
+ * retired ("let it take as long as it needs"). The canonical string lives in
+ * content/m1/module.json, which another lane owns and this pass must not touch,
+ * so the stale framing sentence is dropped HERE for display and the good second
+ * sentence kept. The source strings still need re-authoring — reported.
+ */
+export function framedLede(subtitle: string): string {
+  const trimmed = subtitle.replace(/^\s*[^.!?]*\bminutes?\b[^.!?]*[.!?]\s*/i, "").trim();
+  return trimmed.length > 0 ? trimmed : subtitle;
+}
 
 export function ModuleArchive(props: {
   definition: LearningModuleDefinition;
@@ -74,7 +86,6 @@ export function ModuleArchive(props: {
   }, [definition.moduleId]);
 
   const statuses = archiveFileStatuses(layout, acknowledgedCueIds, masteredCheckIds);
-  const resolved = allFilesResolved(layout, acknowledgedCueIds, masteredCheckIds);
 
   const ackCue = useCallback((cueId: string) => {
     setAcknowledgedCueIds((current) =>
@@ -147,7 +158,14 @@ export function ModuleArchive(props: {
       setAcknowledgedCueIds(nextCues);
       setMasteredCheckIds(nextChecks);
       const done = allFilesResolved(layout, nextCues, nextChecks);
-      if (done && layout.brief.length === 0) {
+      if (done && layout.brief.length > 0) {
+        // The fourth file is reviewed: the room hands over to the handler. Go
+        // back to the room in HANDOFF mode, which powers the rack down, brings
+        // her forward, then auto-plays the brief cutscene (ArchiveRoom's
+        // autoHandoff → onPlayBrief). The brief cards STILL PLAY, so their cues
+        // are acknowledged and the completion receipt stays whole.
+        setView({ kind: "INDEX", handoff: true });
+      } else if (done) {
         finishRun(nextCues, nextChecks);
       } else {
         setView({ kind: "INDEX" });
@@ -233,11 +251,12 @@ export function ModuleArchive(props: {
     title: file.card.kicker,
     note: file.card.body[0] ?? "",
     status: statuses[index]!,
+    thumbnail: file.card.scene?.visuals[0]?.src,
   }));
   return (
     <ArchiveRoom
       title={definition.title}
-      subtitle={definition.subtitle}
+      subtitle={framedLede(definition.subtitle)}
       kicker={
         isRetry
           ? `Required again · attempt ${attemptOrdinal} of ${MAX_MISSION_ATTEMPTS}`
@@ -245,8 +264,7 @@ export function ModuleArchive(props: {
       }
       clockLabel={formatModuleClock(elapsed)}
       files={roomFiles}
-      hasBrief={layout.brief.length > 0}
-      briefReady={resolved}
+      autoHandoff={view.kind === "INDEX" && view.handoff === true}
       reducedMotion={props.reducedMotion}
       presenter={definition.presenter}
       onOpenFile={(index) => setView({ kind: "FILE", fileIndex: index })}

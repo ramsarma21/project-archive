@@ -143,7 +143,7 @@
 .mod-cine-visual {
   position: absolute;
   z-index: 3;
-  top: 50%;
+  top: 40%;
   right: 4%;
   width: min(40vw, 460px);
   margin: 0;
@@ -170,7 +170,7 @@
 .mod-cine-visual-img {
   display: block;
   width: 100%;
-  max-height: 64vh;
+  max-height: 54vh;
   object-fit: contain;
   border-radius: 3px;
   filter: saturate(1.03) contrast(1.02);
@@ -191,7 +191,18 @@
 .mod-cine-visual-corner.tl { left: -1px; top: -1px; border-left: 2px solid var(--mod-cyan); border-top: 2px solid var(--mod-cyan); }
 .mod-cine-visual-corner.br { right: -1px; bottom: -1px; border-right: 2px solid var(--mod-cyan); border-bottom: 2px solid var(--mod-cyan); }
 
-.mod-cine-visual-cap { display: grid; gap: 4px; justify-items: start; }
+/* The provenance caption sits on its own dark plate, so it stays legible and
+   never merges into the subtitle band even when the document is tall. */
+.mod-cine-visual-cap {
+  display: grid;
+  gap: 5px;
+  justify-items: start;
+  padding: 10px 13px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(3, 12, 22, 0.4), rgba(2, 9, 16, 0.85));
+  backdrop-filter: blur(3px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
 .mod-cine-tag {
   padding: 3px 9px;
   font-size: 9px;
@@ -606,19 +617,9 @@
 .mod-arch-canvas { position: absolute; inset: 0; z-index: 0; }
 .mod-arch-canvas canvas { display: block; }
 
-/* The imported presenter, composited standing to the left of the rack. She
-   keeps her own tuned hologram treatment; the room's grid/light read behind
-   her so she is IN the space, not in a panel. */
-.mod-arch-presenter {
-  position: absolute;
-  left: -8%;
-  bottom: 0;
-  width: 41%;
-  height: 99%;
-  z-index: 1;
-  pointer-events: none;
-}
-.mod-arch-presenter .mod-presenter-canvas { position: absolute; inset: 0; }
+/* The presenter is now projected INTO the room's own canvas (ArchiveRoom's
+   RoomPresenter), sharing the slabs' hologram language, so there is no separate
+   composited presenter layer here any more. */
 
 /* Chrome overlay: transparent, click-through; only its controls take pointer. */
 .mod-arch-chrome { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
@@ -860,8 +861,30 @@
 /* Selection-as-a-move: the chrome dims as the chosen slab lifts out and expands. */
 .mod-arch.is-selecting .mod-arch-rail,
 .mod-arch.is-selecting .mod-arch-lede,
+.mod-arch.is-selecting .mod-arch-dock { opacity: 0; transition: opacity 0.5s ease; }
+
+/* Handoff: the room hands over to the presenter — the whole chrome powers down
+   as the rack recedes and the camera closes on her, so it reads as a launch. */
+.mod-arch.is-handoff .mod-arch-rail,
+.mod-arch.is-handoff .mod-arch-lede,
+.mod-arch.is-handoff .mod-arch-dock,
+.mod-arch.is-handoff .mod-arch-top,
+.mod-arch.is-handoff .mod-arch-mute {
+  opacity: 0;
+  transition: opacity 0.7s ease;
+  pointer-events: none;
+}
+/* The dock's entrance animation has fill:both, which would otherwise pin its
+   opacity at 1 and defeat the fades above — cancel it while dimming. */
 .mod-arch.is-selecting .mod-arch-dock,
-.mod-arch.is-selecting .mod-arch-presenter { opacity: 0; transition: opacity 0.5s ease; }
+.mod-arch.is-handoff .mod-arch-dock { animation: none; }
+.mod-arch.is-handoff.is-reduced .mod-arch-rail,
+.mod-arch.is-handoff.is-reduced .mod-arch-lede,
+.mod-arch.is-handoff.is-reduced .mod-arch-dock,
+.mod-arch.is-handoff.is-reduced .mod-arch-top,
+.mod-arch.is-handoff.is-reduced .mod-arch-mute {
+  transition: opacity 0.2s ease;
+}
 
 /* Reduced motion: still the scan sweep and the dock entrance; content stays. */
 .mod-arch.is-reduced .mod-arch-scan,
@@ -884,11 +907,9 @@
 /* Responsive: rail folds away first; the dock narrows; the presenter shrinks. */
 @media (max-width: 1180px) {
   .mod-arch-dock { width: min(320px, 46vw); }
-  .mod-arch-presenter { width: 40%; }
 }
 @media (max-width: 860px) {
   .mod-arch-rail { display: none; }
-  .mod-arch-presenter { opacity: 0.5; }
   .mod-arch-lede { display: none; }
 }
 
@@ -954,7 +975,7 @@
   .mod-cine-caption { bottom: 84px; padding: 9px 18px; }
   .mod-cine-caption-text { font-size: 18px; }
   .mod-cine-controls { bottom: 16px; }
-  .mod-cine-visual-img { max-height: 58vh; }
+  .mod-cine-visual-img { max-height: 50vh; }
   .mod-cine-presenter-name { bottom: 78px; }
 }
 @media (max-width: 720px) {
