@@ -1,5 +1,12 @@
 # M1 Mission Build — readiness audit + staged plan for the Covenant signature run
 
+> **⚠ WORLD/TRAVERSAL SECTIONS SUPERSEDED (30 Jul).** The owner re-sequenced to build the world
+> FIRST, then close traversability. The **world-build and traversability build order** is now
+> owned by **`docs/design/M1-Covenant-World-Build.md`** (single source of truth). This document's
+> *measured audit numbers* (§1 no-ground gaps, §2 clip fidelity, §3 asset inventory, §4 stealth
+> wiring) remain valid history and are cited by the new doc; its *staged build plan* (§5) for
+> world/traversal is replaced. Mission fiction of record stays `docs/design/M1-Remedial-Slice.md`.
+
 Design of record for the mission fiction: `docs/design/M1-Remedial-Slice.md` (canonical loop =
 the Solemn League and Covenant signature run, owner 30 Jul). This document is the **build-side**
 companion: what exists, what is measured to be broken, what is genuinely new, and the order to
