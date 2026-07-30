@@ -162,32 +162,31 @@ export interface PresenterFraming {
 }
 
 /**
- * The framing for each shot. Every framing is a HEAD-AND-SHOULDERS bust: head,
- * neck, both (jacket-covered) shoulders and the top of the chest, with the frame
- * bottom sitting ABOVE where the jacket opens, so nothing below the collarbone's
- * covered band is exposed. This is a modesty requirement for a grade-8 product
- * (the shipped rig wears an open jacket; a fully-covered replacement is being
- * produced separately) AND the right cinematography for a talking head.
+ * The framing for each shot: a natural HEAD-AND-SHOULDERS portrait — head, neck,
+ * both shoulders and the upper chest. The presenter rig is a fully-covered,
+ * high-collar field figure, so there is nothing to crop out; the frame is chosen
+ * for good cinematography, not modesty. (An earlier rig wore an open jacket and
+ * forced a tight above-the-collarbone crop; that asset is retired and the crop
+ * relaxed to a proper portrait.)
  *
  * The composition rules, learned from getting them wrong: shoot TELEPHOTO (well
- * back, narrow fov) — a close camera distorts and mis-frames the rig; and aim a
- * little BELOW the eyes (target.y≈1.57, under the ~1.6 eye line) so her head
- * fills the upper frame, her eyes land near the upper third, and her chin clears
- * the subtitle band rather than the band crossing her mouth. Only z/fov/x vary.
- * Orientation is owned by presenterGaze; over-shoulder/visual composition is the
- * DOM layout (module.css, data-shot) plus the small camera x offset.
+ * back, narrow fov) — a close camera distorts and mis-frames the rig; and aim
+ * BELOW the eyes (target.y≈1.51, under the ~1.6 eye line) so her head fills the
+ * upper frame, her eyes land near the upper third, her shoulders read, and her
+ * chin clears the subtitle band rather than the band crossing her mouth. Only
+ * z/fov/x vary. Orientation is owned by presenterGaze; over-shoulder/visual
+ * composition is the DOM layout (module.css, data-shot) plus the camera x offset.
  *
- * Two tests every framing must pass: nothing below the covered band is visible,
- * AND she reads as a whole, well-composed person (shoulders present). Verify any
- * change against the lesson — do not raise target.y back toward the eye line
- * (drops her low, band-over-mouth) or drop the frame bottom past the jacket.
+ * The test every framing must pass: she reads as a whole, well-composed person —
+ * shoulders present, eyes near the upper third, nothing clipped, band clear of
+ * her face. Verify any change against the lesson before shipping.
  */
 export const PRESENTER_FRAMINGS: Record<ModuleShotKind, PresenterFraming> = {
-  ESTABLISH: { position: [0, 1.59, 2.5], target: [0, 1.585, 0], fov: 10 },
-  PRESENTER_MEDIUM: { position: [0, 1.58, 2.3], target: [0, 1.575, 0], fov: 9.5 },
-  OVER_SHOULDER: { position: [0.16, 1.58, 2.3], target: [0, 1.575, 0], fov: 9.5 },
-  VISUAL_FOCUS: { position: [0.1, 1.58, 2.45], target: [0, 1.575, 0], fov: 9 },
-  REACTION: { position: [0, 1.6, 2.1], target: [0, 1.575, 0], fov: 10.5 },
+  ESTABLISH: { position: [0, 1.52, 2.5], target: [0, 1.51, 0], fov: 12 },
+  PRESENTER_MEDIUM: { position: [0, 1.52, 2.3], target: [0, 1.51, 0], fov: 12 },
+  OVER_SHOULDER: { position: [0.16, 1.52, 2.3], target: [0, 1.51, 0], fov: 12 },
+  VISUAL_FOCUS: { position: [0.1, 1.52, 2.45], target: [0, 1.51, 0], fov: 11.5 },
+  REACTION: { position: [0, 1.54, 2.1], target: [0, 1.52, 0], fov: 13 },
 };
 
 /** One presented segment: a short subtitle line and the shot that carries it. */
