@@ -39,19 +39,6 @@ type ArchiveView =
   | { readonly kind: "FILE"; readonly fileIndex: number }
   | { readonly kind: "BRIEF"; readonly at: number }
   | { readonly kind: "COMPLETE" };
-
-/**
- * The authored subtitle still opens with a "three minutes" budget the owner
- * retired ("let it take as long as it needs"). The canonical string lives in
- * content/m1/module.json, which another lane owns and this pass must not touch,
- * so the stale framing sentence is dropped HERE for display and the good second
- * sentence kept. The source strings still need re-authoring — reported.
- */
-export function framedLede(subtitle: string): string {
-  const trimmed = subtitle.replace(/^\s*[^.!?]*\bminutes?\b[^.!?]*[.!?]\s*/i, "").trim();
-  return trimmed.length > 0 ? trimmed : subtitle;
-}
-
 export function ModuleArchive(props: {
   definition: LearningModuleDefinition;
   /** Which attempt this run opens. Above 1 the module is a retry gate. */
@@ -256,7 +243,7 @@ export function ModuleArchive(props: {
   return (
     <ArchiveRoom
       title={definition.title}
-      subtitle={framedLede(definition.subtitle)}
+      subtitle={definition.subtitle}
       kicker={
         isRetry
           ? `Required again · attempt ${attemptOrdinal} of ${MAX_MISSION_ATTEMPTS}`
