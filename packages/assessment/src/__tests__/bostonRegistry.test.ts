@@ -299,15 +299,15 @@ test("the registry source answers the three questions the engine asks", () => {
   const concepts = source.assessableConcepts(CHAPTER_BOSTON);
   assert.ok(concepts.length > 0);
 
-  const postwar = source.concept(bostonConceptId("POSTWAR_REVENUE"));
-  assert.equal(postwar?.label, "Postwar revenue policy");
-  assert.equal(postwar?.tier, "MACRO");
+  const acts = source.concept(bostonConceptId("INTOLERABLE_ACTS"));
+  assert.equal(acts?.label, "Intolerable Acts");
+  assert.equal(acts?.tier, "MACRO");
   assert.deepEqual(
-    [...(postwar?.codexCardIds ?? [])],
+    [...(acts?.codexCardIds ?? [])],
     [
-      "BOS.MD01.CARD.WAR_DEBT.v1",
-      "BOS.MD01.CARD.COLONIAL_REVENUE.v1",
-      "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1",
+      "BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1",
+      "BOS.MD01.CARD.FOUR_ACTS.v1",
+      "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1",
     ],
     "100% on this concept makes all three of its cards PvP-legal",
   );

@@ -39,7 +39,7 @@ const silent = {
   fatal: () => undefined,
 } as unknown as FastifyBaseLogger;
 
-const ITEM = "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1";
+const ITEM = "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1";
 
 test("with no classifier, a graded round grants CORRECT but is MARKED as a fallback, never CLASSIFIER", async () => {
   const grading = createDuelGrading(silent);

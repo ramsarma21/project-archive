@@ -59,7 +59,7 @@ const silent = {
 } as unknown as FastifyBaseLogger;
 
 // A two-relevant, min-2 item: enough room to be right, wrong, and right two ways.
-const ITEM = "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1";
+const ITEM = "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1";
 const POLICY = m1EvidencePolicy(ITEM);
 const RELEVANT = [...POLICY.relevantCardIds];
 const DECOY = POLICY.offeredCardIds.find((id) => !RELEVANT.includes(id))!;
