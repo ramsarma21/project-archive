@@ -20,6 +20,21 @@
   "_grants": "A temporary, exclusive, auditable claim on a contested or otherwise-owned path, so a file that must change has a legal path to changing without being permanently re-owned. While a grant stands, the named lane may write the listed paths (this overrides contested AND another lane's ownership); every OTHER lane is denied them, exactly as if that lane owned them. Honoured by lane-guard.sh and reported by scripts/check-lane-integrity.mjs. Each entry states the lane, the exact paths, a reason, and the date granted, so the grant is visible and can be retired when the work lands. Keep the list short: a grant that outlives its work should be deleted, and if a lane keeps needing a path, give it the path outright instead.",
   "grants": [
     {
+      "lane": "m1-evasion-loop",
+      "paths": [
+        "packages/mission-m1/src/level/route.ts",
+        "packages/mission-m1/src/level/route2.ts",
+        "packages/mission-m1/src/level/geometry.ts",
+        "packages/mission-m1/src/level/dockSquare.ts",
+        "packages/mission-m1/src/level/climbs.ts",
+        "packages/engine-world/src/parkourIk.ts",
+        "packages/engine-world/src/parkour/tuning.ts",
+        "packages/engine-world/src/parkour/clips.ts"
+      ],
+      "reason": "Stage 2 traversability closure — the owner's step-1: the covert run must be continuously no-ground. m1-evasion-loop closes the audit's G1/G2 gaps by adding elevated crossovers / bridge-plank decks in level-data's level files (route/route2/geometry/dockSquare/climbs) and writes a new unowned no-ground gate test. Also granted the mission-world engine-world parkour files (parkourIk.ts, parkour/tuning.ts, parkour/clips.ts) for the HANG_DROP foot-through-wall IK fix (SEVERE — 26.5cm, fires on every drop-to-contact). Both owning lanes are dormant: level-data is merged, mission-world's only live work is the PAUSED jump-hang branch — which also edits parkour/tuning.ts, so expect a rebase reconcile there when that deferred work resumes (acceptable; it rebases onto main). The STEP_UP + landing re-bakes are NOT in this grant — they need Blender/Mixamo, which the environment lacks. Granted 2026-07-30 after the worker re-scoped and reported. Retire when the traversability closure merges.",
+      "granted": "2026-07-30"
+    },
+    {
       "lane": "m1-1774",
       "paths": [
         "apps/api/src/progression/content.ts",
