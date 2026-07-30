@@ -122,6 +122,73 @@ independently re-derives, so `apps/api`'s module-deck parity is untouched.
 
 ---
 
+## M1 is now the 1774 Coercive-Acts slate, and the capstone is LIVE (30 Jul) — `main` = `38e8a58`
+
+Owner-approved atomic migration. Design of record: **`docs/design/M1-Remedial-Slice.md`**.
+`d19028c` = the migration; `38e8a58` = capstone enabled + the subtitle comma fix.
+**GATE GREEN on the merged tree, measured:** test, typecheck, build, lint, `verify:content`,
+`verify:units`, all `assets:verify:*`, `lane-integrity`, and **`check-playthrough` ALL PASS**.
+
+**Concepts: three assessed, none minted.** All reassignments of existing 8.4(A) macros.
+
+| Concept | Was | Now carries |
+|---|---|---|
+| `INTOLERABLE_ACTS` | M11 | **Two propositions** — the closure as collective punishment, *and* the scope of the four acts |
+| `REPRESENTATION` | M1 | Consent — the objection is who laid the tax, not its amount |
+| `MERCANTILISM` | M11 | Non-importation. Label softened to "Non-importation and resistance"; slug/`parentSe`/clause unchanged |
+
+`POSTWAR_REVENUE` and `STAMP_SCOPE` demoted to taught context (`mission: null`, definitions kept).
+M11 dropped `8.4(A)` — reversible data, recorded in `missions.ts`.
+
+**Why four lesson files but three mastery records.** `registry.test.ts` pins exactly six macros under
+8.4(A), one per TEKS-named cause. There is no seventh clause to hang a separate "scope of the Acts"
+concept on, so files 1 and 2 share `INTOLERABLE_ACTS`. A fourth macro was impossible without
+weakening that test, which was correctly refused. **Do not "fix" this by adding a macro.**
+
+**The capstone is enabled and proven by behaviour, not by green tests.** All **seven**
+`ProgressionContent` methods are wired from the authored bank — flipping only `chapterConceptIds`
+and `assessmentId` (the original estimate) would have opened an attempt serving **zero items**.
+Assessment id canonicalised on **`BOS.CAPSTONE.v1`**; `content.ts` was the one half still answering
+`null`. An end-to-end test opens a real attempt against `bostonProgressionContent()`, serves 2 items
+per concept in both formats, answers them, and — against a real throwaway Postgres — writes **three
+`concept_mastery` rows with `mastered_at` set** and mints **nine PvP-legal cards**. A parity test
+pins `content.ts` to `content/capstone` and the released TEA keys, so a transcription drift fails a
+gate instead of silently under-assessing.
+
+**Released-item upgrade:** `STAAR.2021MAY.G8SS.38` and `STAAR.2022MAY.G8SS.04` — the actual measured
+41–43% coercion items that justified choosing this concept — are wired to `INTOLERABLE_ACTS`.
+2019 #24 stays on `REPRESENTATION`. `MERCANTILISM` is all-authored (`NO_RELEASED_TEA_ITEM`).
+
+**PvP pool re-measured: 34 total / 25 guarded**, both above the 24-round ceiling. The two-tab demo is
+intact. `MERCANTILISM` carries 7 guarded items — one short of an evenly-rotated 24-round match, which
+is contingent on a rotating selector that does not exist (the same benign warning `STAMP` carried).
+
+### Open, tracked, not fixed
+
+1. **`verify:units`: POSTWAR/STAMP are still encounter-assessed in unit 1 though no lesson teaches
+   them.** M1's two mission encounters test concepts the lesson retired — tested-but-not-taught.
+   Fixing it is mission-content design (the design doc's own plan is to retarget both encounters);
+   not patched here.
+2. **The open-response grader is stubbed to CORRECT in both e2e tests.** Only the
+   **selected-response** half is proven end to end. The prose half runs the real TrueFoundry path,
+   which the owner's `.env` configures, but nobody has watched it grade a capstone answer.
+3. **`assessments.test.ts`'s header comment** still carries the stale "answers null" claim
+   (boss-fight's lane, ungranted).
+
+### A structural flaw in the guard's own selftest, found while managing grants
+
+`lane-guard.sh --selftest` tests the grant-override mechanism using whichever grant is live, with the
+instruction that those cases "must be re-pointed at a LIVE grant whenever one is retired, never
+deleted." But the **ownership-override** case needs a live grant on an *owned* path, and the
+**contested-override** case needs one on a *contested* path. So **the last grant of each kind cannot
+be retired without restructuring the test** — the mechanism makes its own grants un-retirable, which
+is the opposite of "a grant that outlives its work should be deleted."
+
+Consequently two grants are being kept past their work, deliberately and recorded rather than
+silently: **`m1-1774`** (ownership-override case) and **`duel-hud`** (contested-override case). The
+real fix is to stand those two cases on synthetic fixture paths instead of live grants, so grants can
+retire freely. That is guard surgery and belongs to a pass that owns `.cursor/hooks/**`.
+
 ## Trunk consolidation (29 Jul) — the ledger table above is now ACTIONED
 
 `main` was rebuilt into one clean M1-demo trunk so the owner has a single point to scope down from.
