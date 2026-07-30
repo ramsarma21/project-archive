@@ -5,12 +5,12 @@
 // content/capstone/boston-1765/ — the blueprint, the answer key, both item files,
 // the released-item map and the labelled eval set — says `BOS.CAPSTONE.v1`.
 //
-// Nothing failed, and nothing was going to fail today: `assessmentId()` in
-// apps/api/src/progression/content.ts still answers null, so the two halves have
-// never been joined. That is the worst state for this class of defect rather than
-// the best one, because it has no symptom and no deadline either. Whichever
-// spelling reaches `chapter_assessment_attempts.assessment_id` first becomes the
-// one the other half cannot find, and by then it is a stored row.
+// The two halves are now joined on `BOS.CAPSTONE.v1`: @pa/abilities was reconciled to
+// it and `assessmentId()` in apps/api/src/progression/content.ts answers it too, so a
+// stored `chapter_assessment_attempts.assessment_id` is found by every half. This
+// suite stays because the divergence it catches is silent until a row exists, and
+// pinning all three literals is the only way a future edit that reintroduces it fails
+// here rather than in production.
 //
 // The literals below are duplicated from content/ and @pa/abilities deliberately.
 // The content directory is not importable from a package — the API container ships

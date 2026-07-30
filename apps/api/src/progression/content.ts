@@ -345,19 +345,110 @@ const MISSION_REWARDS: ReadonlyMap<string, MissionReward> = new Map(
   ]),
 );
 
+// --- The Boston chapter capstone (BOS.CAPSTONE.v1) --------------------------
+//
+// Now wired. The concept set and the item bank are both authored (the 1774
+// reslate under content/capstone/boston-1765/), which was the one condition the
+// server refused to serve an empty capstone until. Enabling it is safe under the
+// M1-only freeze: no chapter two exists in the registry, so passing the capstone
+// advances to no next chapter and revokes no PvP-legal Codex card.
+//
+// The assessment id is BOS.CAPSTONE.v1 — the single spelling the authored content,
+// @pa/curriculum's assessments.ts and @pa/abilities' chapters.ts already agree on.
+// (A superseded "BOSTON.CAPSTONE" resolves to it through resolveAssessmentId and is
+// produced by no live code and no stored row.)
+//
+// These maps are the SERVER's copy of the authored bank, transcribed the way
+// MODULE_DECKS is and pinned the same way: capstone-content-parity.test.ts asserts
+// this file against content/capstone + the released TEA keys, so a drift fails a
+// gate rather than silently under-assessing.
+const BOSTON_CAPSTONE_ASSESSMENT_ID = "BOS.CAPSTONE.v1";
+
+const BOSTON_CAPSTONE_CONCEPT_IDS: readonly string[] = [
+  "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+  "BOS.CONCEPT.REPRESENTATION.v1",
+  "BOS.CONCEPT.MERCANTILISM.v1",
+];
+
+// Six items a concept, in reserve order. Interleaved selected/open response so the
+// in-order selectFreshItems hands every form one recognition item and one reasoning
+// item — the parallel-forms shape the blueprint specifies.
+const CAPSTONE_ITEM_RESERVE: ReadonlyMap<string, readonly string[]> = new Map([
+  [
+    "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+    [
+      "STAAR.2021MAY.G8SS.38",
+      "BOS.CAP.ACTS.ORDERING.v1",
+      "STAAR.2022MAY.G8SS.04",
+      "BOS.CAP.ACTS.CORRECTION.v1",
+      "BOS.CAP.ACTS.BOUNDARY.v1",
+      "BOS.CAP.ACTS.APPLICATION.v1",
+    ],
+  ],
+  [
+    "BOS.CONCEPT.REPRESENTATION.v1",
+    [
+      "STAAR.2019MAY.G8SS.24",
+      "BOS.CAP.REP.CORRECTION.v1",
+      "BOS.CAP.REP.RECALL.v1",
+      "BOS.CAP.REP.ORDERING.v1",
+      "BOS.CAP.REP.BOUNDARY.v1",
+      "BOS.CAP.REP.APPLICATION.v1",
+    ],
+  ],
+  [
+    "BOS.CONCEPT.MERCANTILISM.v1",
+    [
+      "BOS.CAP.RESIST.RECALL.v1",
+      "BOS.CAP.RESIST.CORRECTION.v1",
+      "BOS.CAP.RESIST.BOUNDARY.v1",
+      "BOS.CAP.RESIST.DISCRIMINATION.v1",
+      "BOS.CAP.RESIST.ORDERING.v1",
+      "BOS.CAP.RESIST.APPLICATION.v1",
+    ],
+  ],
+]);
+
+// The nine open-response items; every other reserve item is selected-response.
+const CAPSTONE_OPEN_RESPONSE_ITEMS: ReadonlySet<string> = new Set([
+  "BOS.CAP.ACTS.ORDERING.v1",
+  "BOS.CAP.ACTS.CORRECTION.v1",
+  "BOS.CAP.ACTS.APPLICATION.v1",
+  "BOS.CAP.REP.CORRECTION.v1",
+  "BOS.CAP.REP.ORDERING.v1",
+  "BOS.CAP.REP.APPLICATION.v1",
+  "BOS.CAP.RESIST.CORRECTION.v1",
+  "BOS.CAP.RESIST.DISCRIMINATION.v1",
+  "BOS.CAP.RESIST.APPLICATION.v1",
+]);
+
+// The selected-response key, server-side only and never shipped. Six authored keys
+// are content/capstone/boston-1765/answer-key.json; the three released items carry
+// TEA's own official key from content/staar (2021 #38 = H, 2022 #4 = J, 2019 #24 = H).
+const CAPSTONE_ANSWER_KEY: ReadonlyMap<string, string> = new Map([
+  ["BOS.CAP.ACTS.BOUNDARY.v1", "C"],
+  ["BOS.CAP.REP.RECALL.v1", "B"],
+  ["BOS.CAP.REP.BOUNDARY.v1", "D"],
+  ["BOS.CAP.RESIST.RECALL.v1", "A"],
+  ["BOS.CAP.RESIST.BOUNDARY.v1", "D"],
+  ["BOS.CAP.RESIST.ORDERING.v1", "A"],
+  ["STAAR.2021MAY.G8SS.38", "H"],
+  ["STAAR.2022MAY.G8SS.04", "J"],
+  ["STAAR.2019MAY.G8SS.24", "H"],
+]);
+
+const CAPSTONE_ITEM_CONCEPT: ReadonlyMap<string, string> = new Map(
+  [...CAPSTONE_ITEM_RESERVE].flatMap(([conceptId, itemIds]) =>
+    itemIds.map((itemId) => [itemId, conceptId] as const),
+  ),
+);
+
 /**
  * Boston, as the server's content pack.
  *
- * The mission half is live: the curve prices a clear, the ramp prices each
- * mission, the deck gates each attempt, and a Level gain mints the ability the
- * schedule says it does.
- *
- * The capstone half is deliberately still empty, and that is not an oversight.
- * `chapterConceptIds` is what "100% per concept, across the whole chapter"
- * means; answering it with M1's three concepts would let a student pass the
- * chapter capstone on a seventh of Boston and open chapter two. Refusing with
- * PACKAGE_MISSING until the concept set and the item bank are authored is the
- * only answer that cannot silently under-assess anybody.
+ * The mission half prices a clear, prices each mission, gates each attempt, and
+ * mints the ability the schedule says. The capstone half is now wired from the
+ * maps above rather than refusing with PACKAGE_MISSING.
  */
 export function bostonProgressionContent(): ProgressionContent {
   return {
@@ -370,13 +461,25 @@ export function bostonProgressionContent(): ProgressionContent {
         : null,
     abilityMilestones: (chapterId) =>
       chapterId === BOSTON_RUNTIME_CHAPTER_ID ? BOSTON_MILESTONES : [],
-    chapterConceptIds: () => [],
-    assessmentId: () => null,
-    assessmentModuleId: () => null,
-    itemReserve: () => [],
-    itemConcept: () => null,
-    itemFormat: () => null,
-    isCorrectOption: () => false,
+    chapterConceptIds: (chapterId) =>
+      chapterId === BOSTON_RUNTIME_CHAPTER_ID ? BOSTON_CAPSTONE_CONCEPT_IDS : [],
+    assessmentId: (chapterId) =>
+      chapterId === BOSTON_RUNTIME_CHAPTER_ID ? BOSTON_CAPSTONE_ASSESSMENT_ID : null,
+    assessmentModuleId: (chapterId) =>
+      chapterId === BOSTON_RUNTIME_CHAPTER_ID ? M1_MODULE_ID : null,
+    itemReserve: (assessmentId, conceptId) =>
+      assessmentId === BOSTON_CAPSTONE_ASSESSMENT_ID
+        ? (CAPSTONE_ITEM_RESERVE.get(conceptId) ?? [])
+        : [],
+    itemConcept: (itemId) => CAPSTONE_ITEM_CONCEPT.get(itemId) ?? null,
+    itemFormat: (itemId) =>
+      CAPSTONE_ITEM_CONCEPT.has(itemId)
+        ? CAPSTONE_OPEN_RESPONSE_ITEMS.has(itemId)
+          ? "OPEN_RESPONSE"
+          : "SELECTED_RESPONSE"
+        : null,
+    isCorrectOption: (itemId, optionId) =>
+      CAPSTONE_ANSWER_KEY.get(itemId) === optionId,
     moduleDeckCueIds: (moduleId) => MODULE_DECKS.get(moduleId) ?? null,
     moduleRequiredCheckIds: (moduleId) => MODULE_CHECKS.get(moduleId) ?? [],
     codexCardsForModule: (moduleId) =>
