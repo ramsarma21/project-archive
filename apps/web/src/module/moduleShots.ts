@@ -170,23 +170,36 @@ export interface PresenterFraming {
  * relaxed to a proper portrait.)
  *
  * The composition rules, learned from getting them wrong: shoot TELEPHOTO (well
- * back, narrow fov) — a close camera distorts and mis-frames the rig; and aim
- * BELOW the eyes (target.y≈1.51, under the ~1.6 eye line) so her head fills the
- * upper frame, her eyes land near the upper third, her shoulders read, and her
- * chin clears the subtitle band rather than the band crossing her mouth. Only
- * z/fov/x vary. Orientation is owned by presenterGaze; over-shoulder/visual
- * composition is the DOM layout (module.css, data-shot) plus the camera x offset.
+ * back, narrow fov) — a close camera distorts and mis-frames the rig; and aim at
+ * the upper chest (target.y≈1.585, just under the ~1.6 eye line) so the frame is
+ * a COMFORTABLE portrait: real headroom above the crown (~1.72), framed down to
+ * roughly the collarbone/upper chest, eyes near centre-upper, nothing clipped and
+ * the subtitle band clear of her chin. An earlier set aimed at 1.51 with fov 12
+ * from z≈2.3, which put the crown at the very top edge (~10% headroom) and dived
+ * the bottom to mid-chest — a face pressed against the lens. Pulling back and
+ * raising the target fixes both. Only z/fov/x vary. Orientation is owned by
+ * presenterGaze; over-shoulder/visual composition is the DOM layout (module.css,
+ * data-shot) plus the camera x offset.
+ *
+ * ASPECT: the framing is aspect-INVARIANT and needs no aspect-aware fov. R3F keeps
+ * the PerspectiveCamera's VERTICAL fov fixed and only updates .aspect on resize,
+ * so the vertical world-extent (hence the crown/collarbone crop) is identical at
+ * 16:9 and at a squarish/portrait window — measured: crown and collarbone project
+ * to the same NDC.y at aspect 1.78 and 1.19. A narrower window shows the SAME
+ * height and less WIDTH, never a tighter vertical crop. So one relaxed framing
+ * holds everywhere; do not "fix" a perceived narrow-window zoom by scaling fov.
  *
  * The test every framing must pass: she reads as a whole, well-composed person —
- * shoulders present, eyes near the upper third, nothing clipped, band clear of
- * her face. Verify any change against the lesson before shipping.
+ * headroom above the crown, framed no lower than about the collarbone, shoulders
+ * present, nothing clipped, band clear of her face. Verify at BOTH ~16:9 and a
+ * squarish window against the lesson before shipping.
  */
 export const PRESENTER_FRAMINGS: Record<ModuleShotKind, PresenterFraming> = {
-  ESTABLISH: { position: [0, 1.52, 2.5], target: [0, 1.51, 0], fov: 12 },
-  PRESENTER_MEDIUM: { position: [0, 1.52, 2.3], target: [0, 1.51, 0], fov: 12 },
-  OVER_SHOULDER: { position: [0.16, 1.52, 2.3], target: [0, 1.51, 0], fov: 12 },
-  VISUAL_FOCUS: { position: [0.1, 1.52, 2.45], target: [0, 1.51, 0], fov: 11.5 },
-  REACTION: { position: [0, 1.54, 2.1], target: [0, 1.52, 0], fov: 13 },
+  ESTABLISH: { position: [0, 1.575, 2.8], target: [0, 1.56, 0], fov: 12 },
+  PRESENTER_MEDIUM: { position: [0, 1.575, 2.6], target: [0, 1.56, 0], fov: 11.5 },
+  OVER_SHOULDER: { position: [0.16, 1.575, 2.6], target: [0, 1.56, 0], fov: 11.5 },
+  VISUAL_FOCUS: { position: [0.1, 1.575, 2.7], target: [0, 1.56, 0], fov: 11.5 },
+  REACTION: { position: [0, 1.575, 2.45], target: [0, 1.56, 0], fov: 12 },
 };
 
 /** One presented segment: a short subtitle line and the shot that carries it. */
