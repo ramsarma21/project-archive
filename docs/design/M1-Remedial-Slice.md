@@ -67,6 +67,55 @@ judgment to make and nothing is tested.
 Per the annoyance budget and two-voices rule: each NPC argues their own position in their own
 1765 words, and the handler adds **at most one clipped line** naming the vocabulary afterwards.
 
+### The gameplay: the occupation IS the parkour (owner, 29 Jul)
+
+An earlier draft of this design was four conversations connected by walking. The correction:
+**put patrols on the street and make the ground "floor is lava."**
+
+The route already has three parallel tiers through the Shambles — `street-line`, `mid-line` (the
+stall canopies at `BAND.STALL_ROOF`), and `high-line` (the market shed roofs) — with authored
+`crossover` points, then the roofline, the meeting-house ridge, the Liberty Elm's climb routes,
+and the yard. `stealthStore.ts`, `stealth/alert.ts`, `StealthHud.tsx` and `consequenceReceipts.ts`
+exist unwired and are what patrols need.
+
+**This is not decoration bolted onto the lesson. The coercion concept IS the traversal.** What an
+occupation feels like is being unable to use your own streets. The player learns it through their
+legs before anyone says a word.
+
+**The ground is dangerous and necessary, not instantly fatal.** Contacts are people and people
+are at ground level, so the loop is: travel the high line, pick a moment, drop, do your business,
+climb back. Descending is the risk. Vary the approaches so it is not four identical drop-and-return
+loops — one contact at an upper window reached from the roof, one on the ropewalk structure, one
+in a courtyard you must drop into.
+
+**Escalating stakes.** The pledge accumulates names. Caught with one signature is a bad night;
+caught with five exposes everyone who trusted you — the same collective punishment the mission
+teaches, now aimed at the player. Being caught must not hard-fail (finishing is never blocked);
+it costs the names.
+
+**The climax inverts the whole mission.** A pledge nobody sees binds nobody, so the player must
+climb the Liberty Elm and post it **in the open** — the one deliberate exposure after a mission
+spent avoiding it. The alarm goes up, they run east under maximum heat, and the officer corners
+them at the yard, which is where `yardArena()` already is. The route already runs Elm (F) → Yard
+(G) in that order, so the geography supports it unchanged.
+
+**A free gift:** `BOSS_CHALLENGE_BEATS` already opens with *"Hold there. You again — I'd know that
+face in any dark,"* written assuming the player had slipped this officer twice. A patrol-evasion
+mission delivers exactly that premise, so the existing lines land better than when they were
+written.
+
+**Runtime ratio:** mostly movement and evasion. Each conversation is a handful of lines —
+punctuation, not substance.
+
+### Persuasion responds; it never refuses (owner, 29 Jul)
+
+Contacts **answer from their own situation** rather than rejecting a wrong approach. A refusal
+teaches nothing; a merchant saying *"my ledger's fine, boy — it's the harbour that's shut"* is
+itself the lesson. Two or three exchanges, and the player adjusts.
+
+If the player is clearly not landing it, **the handler drops one steering line** — remediation in
+the moment rather than after the fact, and within the annoyance budget.
+
 ### Provisional calls (owner skipped the question; reverse freely)
 
 - **Mechanic:** scarce relief distribution, not the licence/exemption puzzle. The exemption route
