@@ -114,6 +114,31 @@ written.
 **Runtime ratio:** mostly movement and evasion. Each conversation is a handful of lines —
 punctuation, not substance.
 
+### The mission opens in Abigail's shop; Abigail gives the brief (owner, 30 Jul)
+
+The final pre-mission beat is an **Abigail cutscene**, not an IRIS one. Abigail Mercer — the print-shop
+owner whose runner is the player's cover, and who printed the Covenant — shows the player **exactly
+how the Coercive Acts have hit her**, and **hands over the mission herself**: take the Covenant, get
+it signed, post it. IRIS stays present throughout the mission as the AR assistant/handler, but the
+mission is given in-world by Abigail.
+
+- **Two-voices rule holds.** Abigail is a 1774 NPC: she briefs the player as her print-shop runner and
+  Committee contact and knows nothing of IRIS, the Archive, or time travel. IRIS may frame in meta
+  terms separately; Abigail never references her (§"Adopt the established vocabulary").
+- **Real-time in-world scene, NOT an AI-video cutscene.** It plays in the shop interior using
+  `abigail-rigged` (as `bossCutscene.ts` uses the officer rig), because it must hand off **seamlessly
+  into playable gameplay in the same space** — a pre-rendered clip can't. So it's built in the
+  mission's real-time cutscene layer, not the lesson's pending-video pipeline.
+- **The start solves "off the ground" diegetically.** The player begins inside the shop (ground,
+  safe), climbs the **stairs to the balcony**, and the floor-is-lava mission proper begins **from the
+  balcony — already off the ground.** The stairs are the one sanctioned ground→roof transition, read
+  as leaving the safe interior.
+- **Asset need:** a print-shop **interior with stairs → balcony** (start from `bldg-printshop.glb` —
+  confirm it has an interior + stairs + balcony, or build them), plus Abigail placed in the shop.
+- **Stairs animation:** likely NOT needed — the existing walk/run locomotion plays while ascending
+  stair geometry, which is standard. Only bake a dedicated stair-ascend clip if locomotion reads badly
+  on the steps; confirm in the build before sourcing one.
+
 ### M1's content set is ATOMIC — rescoping is a migration, not a lesson edit (measured 29 Jul)
 
 The single most important implementation fact found so far, and the reason the 1774 files were not
