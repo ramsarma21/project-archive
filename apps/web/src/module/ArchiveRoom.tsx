@@ -591,7 +591,15 @@ function RoomEffects(props: { reducedMotion: boolean }) {
       <Noise key="noise" premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.045} />,
     );
   }
-  return <EffectComposer multisampling={4}>{effects}</EffectComposer>;
+  // multisampling MUST stay 0. With MSAA on, the EffectComposer's multisample
+  // render target is not sized for devicePixelRatio > 1 on ANGLE/Metal (real
+  // Macs at Retina dpr 2): the composed scene renders into only part of the
+  // drawing buffer, leaving a wide black band down one side and clipping the
+  // presenter and the first file. It never showed in software-rendered captures
+  // (SwiftShader tolerates it) or at dpr 1 — only on a real GPU at dpr 2, which
+  // is the common case. dpr 2 already supersamples enough that dropping MSAA
+  // costs no visible edge quality; Bloom and the other effects are unaffected.
+  return <EffectComposer multisampling={0}>{effects}</EffectComposer>;
 }
 
 function RoomScene(props: {
