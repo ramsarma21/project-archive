@@ -36,7 +36,7 @@ const silent = {
 
 const grading = createPvpGrading(silent);
 
-const ITEM_ID = "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1";
+const ITEM_ID = "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1";
 
 const BINDING = {
   profileId: "profile-a",

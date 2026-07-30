@@ -151,26 +151,25 @@ test("loading the same envelope twice is deep-equal, with stable option order", 
   assert.deepEqual(first.ok && first.definition, second.ok && second.definition);
   // A single-select preserves the "no selection field" shape rather than
   // materialising a default the author never wrote.
-  const postwar = first.ok
-    ? first.definition.cards.find((c) => c.check?.id.includes("POSTWAR"))!.check!
+  const closure = first.ok
+    ? first.definition.cards.find((c) => c.check?.id.includes("CLOSURE"))!.check!
     : undefined;
-  assert.equal(postwar?.selection, undefined);
+  assert.equal(closure?.selection, undefined);
 });
 
 // ---------------------------------------------------------------------------
 // The authored M1 checks
 // ---------------------------------------------------------------------------
 
-test("the Stamp Act check is a pooled single-select with a deep distractor pool", () => {
-  // It was authored as a multiple-select; it is now a pooled single-select so the
-  // "exactly one defensible answer per drawable subset" property holds. See
-  // checkDraw.test.ts for the enumerated proof.
-  const stamp = CHECKS.find((c) => c.id.includes("STAMP_SCOPE"))!;
-  assert.ok(isPooledCheck(stamp), "stamp scope is authored as a distractor pool");
-  assert.equal(checkSelection(stamp), "single");
-  assert.equal(stamp.correctOption?.correct, true, "exactly one defensible answer");
+test("the Coercive-Acts scope check is a pooled single-select with a deep distractor pool", () => {
+  // Every M1 check is a pooled single-select, so the "exactly one defensible answer
+  // per drawable subset" property holds. See checkDraw.test.ts for the enumerated proof.
+  const acts = CHECKS.find((c) => c.id.includes("ACTS"))!;
+  assert.ok(isPooledCheck(acts), "the acts-scope check is authored as a distractor pool");
+  assert.equal(checkSelection(acts), "single");
+  assert.equal(acts.correctOption?.correct, true, "exactly one defensible answer");
   assert.ok(
-    (stamp.distractorPool?.length ?? 0) >= checkDrawCount(stamp),
+    (acts.distractorPool?.length ?? 0) >= checkDrawCount(acts),
     "the pool is at least as deep as one drawn option set",
   );
 });

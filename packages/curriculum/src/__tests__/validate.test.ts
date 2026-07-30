@@ -178,9 +178,16 @@ test("a concept can be reached from every item that evidences it", () => {
 });
 
 test("item depth is reportable per concept", () => {
-  const depth = conceptItemDepth(bostonConceptId("STAMP_SCOPE"));
-  assert.equal(depth.primaryItems, 7, "six duel items plus the owner Stamp item");
-  assert.equal(depth.eraEligiblePrimaryItems, 7);
+  // After the 2026-07-30 rescope M1's spine concept is INTOLERABLE_ACTS, which
+  // carries its six authored duel items plus the two era-eligible owner items.
+  const depth = conceptItemDepth(bostonConceptId("INTOLERABLE_ACTS"));
+  assert.equal(depth.primaryItems, 8, "six duel items plus the two owner Intolerable-Acts items");
+  assert.equal(depth.eraEligiblePrimaryItems, 8);
+
+  // STAMP_SCOPE was retired from M1's duel bank in the rescope; only its one
+  // owner assessment item stays primary to it.
+  const demoted = conceptItemDepth(bostonConceptId("STAMP_SCOPE"));
+  assert.equal(demoted.primaryItems, 1, "just the owner Stamp item after the rescope");
 
   const bare = conceptItemDepth(bostonConceptId("ALARM_NETWORK_GEOGRAPHY"));
   assert.equal(bare.primaryItems, 0, "M13 has no authored items yet");

@@ -5,68 +5,37 @@
     "chapterId": "boston-1765",
     "assessmentId": "BOS.CAPSTONE.v1",
     "conceptsAuthored": [
-      "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "BOS.CONCEPT.STAMP_SCOPE.v1",
-      "BOS.CONCEPT.REPRESENTATION.v1"
+      "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "BOS.CONCEPT.REPRESENTATION.v1",
+      "BOS.CONCEPT.MERCANTILISM.v1"
     ],
+    "rescope": "REWRITTEN 2026-07-30 for the 1774 Coercive-Acts slate. INTOLERABLE_ACTS and MERCANTILISM replaced the retired POSTWAR_REVENUE and STAMP_SCOPE; REPRESENTATION's six items are unchanged. This is the post-measure the lesson's four in-module checks are the baseline for: it re-asks the same three assessed concepts (both facets of INTOLERABLE_ACTS covered — the closure as collective punishment and the scope of the four acts) at matched difficulty with DIFFERENT items, which is the parallel-forms property the growth claim rests on.",
     "conceptsInBlueprintButNotAuthored": 29,
-    "why": "The owner has deferred missions 2 through 14. M1 is played tomorrow and its design may change, so authoring the other twenty-nine concepts now would be a hundred items written against a design that has not been tested. Those concepts stay UNASSESSABLE: the gate is lenient for them by design, `UnlockDecision.contentGaps` names them, and no card of theirs mints — which costs nothing today, because the registry declares Codex cards for exactly these three concepts and for no others.",
-    "consequenceOfNarrowing": "The chapter gate will pass a student who has mastered these three, and the report will say out loud that twenty-nine concepts were not asked. That is the honest state of the chapter tonight, and it is the state the engine was built to survive."
+    "why": "Under the M1-only freeze the other twenty-nine chapter concepts stay UNASSESSABLE: the gate is lenient for them by design, and no card of theirs mints. The registry declares Codex cards for exactly these three concepts and for no others.",
+    "consequenceOfNarrowing": "The chapter gate will pass a student who has mastered these three, and the report will say out loud that twenty-nine concepts were not asked. That is the honest state of the chapter, and the state the engine was built to survive. Under M1-only, these three concepts ARE the chapter."
   },
 
   "specConformance": {
     "readFrom": "packages/assessment/src/{blueprint,select,items}.ts",
-    "asOf": "the version in the working tree at authoring time; select.ts already reads `item.probe` and `blueprint.openResponsePerForm`",
     "met": [
-      {
-        "requirement": "ASSESSMENT_ITEMS_PER_CONCEPT = 2",
-        "how": "Two items a form, three forms."
-      },
-      {
-        "requirement": "RESERVE_TARGET_PER_CONCEPT = 6, FRESH_FORM_TARGET = 3",
-        "how": "Exactly six items per concept, so three attempts each draw fresh items and nothing recycles. Eighteen items across the three concepts."
-      },
-      {
-        "requirement": "OPEN_RESPONSE_PER_FORM = 1",
-        "how": "Three open-response items per concept — one per form. See `divergences` for why three rather than two, and for the case this still does not cover."
-      },
-      {
-        "requirement": "`probe` distinct within a form; ITEM_PROBES has six stances and the reserve is six items",
-        "how": "Each concept uses each of RECALL, BOUNDARY, ORDERING, CORRECTION, DISCRIMINATION and APPLICATION exactly once. `probesDistinct` is then true for every possible pair the shuffle can draw, rather than true on average."
-      },
-      {
-        "requirement": "Provenance per item, never a blanket claim",
-        "how": "Two released TEA items are mapped by reference in released-item-map.json; sixteen are authored and say so. No authored item claims a TEA administration."
-      },
-      {
-        "requirement": "No answer key in a descriptor",
-        "how": "Keys live only in answer-key.json, and verify.mjs fails if a key-shaped field appears in an item file. Released keys are not copied at all — they are pointed at in content/staar."
-      },
-      {
-        "requirement": "Era inside the chapter window 1765–1775",
-        "how": "Every authored item carries 1765 or 1763-1765, both of which overlap. verify.mjs re-runs the same year-range parse @pa/curriculum uses."
-      }
+      { "requirement": "ASSESSMENT_ITEMS_PER_CONCEPT = 2", "how": "Two items a form, three forms." },
+      { "requirement": "RESERVE_TARGET_PER_CONCEPT = 6, FRESH_FORM_TARGET = 3", "how": "Exactly six items per concept, so three attempts each draw fresh items and nothing recycles. Eighteen items across the three concepts." },
+      { "requirement": "OPEN_RESPONSE_PER_FORM = 1", "how": "Three open-response items per concept, one per form." },
+      { "requirement": "`probe` distinct within a form; ITEM_PROBES has six stances and the reserve is six items", "how": "Each concept uses each of RECALL, BOUNDARY, ORDERING, CORRECTION, DISCRIMINATION and APPLICATION exactly once, so `probesDistinct` is true for every possible pair the shuffle can draw." },
+      { "requirement": "Provenance per item, never a blanket claim", "how": "Three released TEA items are mapped by reference in released-item-map.json; fifteen are authored and say so. No authored item claims a TEA administration." },
+      { "requirement": "No answer key in a descriptor", "how": "Keys live only in answer-key.json, and verify.mjs fails if a key-shaped field appears in an item file." },
+      { "requirement": "Era inside the chapter window 1765-1775", "how": "Every authored item carries 1774 or 1765; the two Intolerable-Acts released items are 1774 and the representation one 1765, all in window. verify.mjs re-runs the year-range parse @pa/curriculum uses." }
     ],
     "divergences": [
       {
         "topic": "The open-response floor is three per concept, not one, and nothing in the package says so.",
         "spec": "`OPEN_RESPONSE_PER_FORM = 1` reads as one prose item per form.",
-        "judgement": "Composed with `FRESH_FORM_TARGET = 3` and the quota being drawn fresh-first, it is a floor of THREE open-response items per concept: attempt 1 spends one, and attempts 2 and 3 each need one the student has not seen. A concept with two would hit its third attempt with no fresh prose item. That is worth stating in blueprint.ts next to the constant, because an author reading `= 1` will write one."
+        "judgement": "Composed with `FRESH_FORM_TARGET = 3` and the quota being drawn fresh-first, it is a floor of THREE open-response items per concept. Worth stating in blueprint.ts next to the constant."
       },
       {
-        "topic": "Three open-response items still do not guarantee three guess-resistant fresh forms.",
-        "spec": "Phase 1 draws the open-response quota; Phase 2 fills the rest from the whole reserve.",
-        "judgement": "Phase 2 can draw a second open-response item, which spends the reserve the next form's quota needs. With three prose items an unlucky shuffle puts two in form 1, and form 3 then recycles one to keep its quota — `guessResistant` stays true and `freshness` drops to PARTIAL_RECYCLE. No composition an author can choose fixes this; a one-line change in Phase 2 would. Suggestion, not a request: once the quota is met, Phase 2 could rank selected-response ahead of open-response. It costs no determinism, since it is another stable partition of an already-shuffled order, exactly like the probe preference above it."
-      },
-      {
-        "topic": "Both items on a form being open response is possible and would be a hard sitting.",
-        "spec": "Nothing caps prose per form.",
-        "judgement": "With a 3/3 split, roughly a third of shuffles give a form two prose items on the same concept. That is not wrong — it is the strictest version of the same measurement — but it is worth knowing before an eighth grader meets it, and the same Phase 2 preference above would remove it."
-      },
-      {
-        "topic": "One released item's key rests on a clause M1's module deliberately does not teach.",
-        "spec": "Released items are `SME_APPROVED` on arrival, since they are published curriculum rather than our authoring.",
-        "judgement": "True of their content and not of their fit. See `STAAR.2018MAY.G8SS.05` in released-item-map.json: it is the strongest released item for postwar revenue and its keyed option is 'To recover the cost of defending the colonies', which is the exact clause Mission-Slate §4.9 records as taught nowhere. It is included because the item discriminates on cost-recovery rather than on defence — it is the only money option of four — but this is the single riskiest inclusion in the pool and the owner should see it before tomorrow."
+        "topic": "INTOLERABLE_ACTS carries two released items, both selected-response.",
+        "spec": "Nothing caps released items per concept.",
+        "judgement": "Deliberate: the two measured coercion items (2021 #38, 2022 #4) are the evidence the concept was chosen against, so both are served. They take the RECALL and DISCRIMINATION probes, leaving the other four to authored items (one selected-response BOUNDARY, three open-response). It keeps the three-prose-per-concept floor and the six distinct probes."
       }
     ]
   },
@@ -76,43 +45,25 @@
       "items": 6,
       "selectedResponse": 3,
       "openResponse": 3,
-      "probes": {
-        "RECALL": "SELECTED_RESPONSE",
-        "BOUNDARY": "SELECTED_RESPONSE",
-        "ORDERING": "SELECTED_RESPONSE",
-        "CORRECTION": "OPEN_RESPONSE",
-        "DISCRIMINATION": "OPEN_RESPONSE",
-        "APPLICATION": "OPEN_RESPONSE"
-      },
-      "probeToFormatNote": "Not a rule the package imposes — the three recognition-shaped stances took the selected-response slots and the three reasoning-shaped stances took the prose slots, which happens to give every form one of each. The one exception is representation, where the released item is a DISCRIMINATION stance in selected-response form and the authored RECALL item takes its place among the three.",
-      "openResponseRatio": "3 of 6, which is above STAAR's own blueprint of 9 non-multiple-choice items in 40. Deliberate: the capstone is where a card is minted, `OPEN_RESPONSE_PER_FORM` exists because unlimited retries make a guesser eventually right, and prose is the only part of a form that cannot be guessed."
+      "note": "The three recognition-shaped stances (RECALL, BOUNDARY, ORDERING) take the selected-response slots and the three reasoning-shaped stances (CORRECTION, DISCRIMINATION, APPLICATION) take the prose slots. Two exceptions, both from released items: representation's released item is a DISCRIMINATION in selected-response form (so its authored RECALL takes an SR slot and ORDERING moves to prose), and Intolerable Acts' two released items are RECALL and DISCRIMINATION in SR form (so its authored ORDERING moves to prose)."
     },
     "total": {
       "items": 18,
-      "releasedTea": 2,
-      "authored": 16,
+      "releasedTea": 3,
+      "authored": 15,
       "selectedResponse": 9,
       "openResponse": 9
     }
   },
 
   "expectedReadiness": {
-    "BOS.CONCEPT.POSTWAR_REVENUE.v1": {
+    "BOS.CONCEPT.INTOLERABLE_ACTS.v1": {
       "status": "READY",
       "eligibleItems": 6,
-      "releasedTeaItems": 1,
+      "releasedTeaItems": 2,
       "openResponseItems": 3,
       "freshFormsAvailable": 3,
       "findings": []
-    },
-    "BOS.CONCEPT.STAMP_SCOPE.v1": {
-      "status": "READY",
-      "eligibleItems": 6,
-      "releasedTeaItems": 0,
-      "openResponseItems": 3,
-      "freshFormsAvailable": 3,
-      "findings": ["NO_RELEASED_TEA_ITEM"],
-      "why": "TEA has published no item on the Stamp Act's scope over printed and legal paper. content/staar establishes this directly: of six released 8.4(A) items, none asks it, and the only released source that states the proposition at all is a rubric bullet in the 2023 constructed-response scoring guide — 'All colonists had to pay taxes on documents and paper.' The finding is real and cannot be authored away."
     },
     "BOS.CONCEPT.REPRESENTATION.v1": {
       "status": "READY",
@@ -122,28 +73,37 @@
       "freshFormsAvailable": 3,
       "findings": []
     },
+    "BOS.CONCEPT.MERCANTILISM.v1": {
+      "status": "READY",
+      "eligibleItems": 6,
+      "releasedTeaItems": 0,
+      "openResponseItems": 3,
+      "freshFormsAvailable": 3,
+      "findings": ["NO_RELEASED_TEA_ITEM"],
+      "why": "The one released mercantilism item (STAAR.2024.G8SS.37) is image-dependent and usableAsIs:false, so no released multiple-choice item on non-importation is servable. The same finding the retired STAMP_SCOPE carried; the six authored items carry the concept."
+    },
     "note": "verify.mjs recomputes all of this with the same arithmetic blueprintReadiness uses, so the table is checked rather than claimed."
   },
 
   "cardsThisUnlocks": {
     "count": 9,
     "byConcept": {
-      "BOS.CONCEPT.POSTWAR_REVENUE.v1": [
-        "BOS.MD01.CARD.WAR_DEBT.v1",
-        "BOS.MD01.CARD.COLONIAL_REVENUE.v1",
-        "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"
-      ],
-      "BOS.CONCEPT.STAMP_SCOPE.v1": [
-        "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1",
-        "BOS.MD01.CARD.STAMP_DATE.v1",
-        "BOS.MD01.CARD.PRINTER_IMPACT.v1"
+      "BOS.CONCEPT.INTOLERABLE_ACTS.v1": [
+        "BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1",
+        "BOS.MD01.CARD.FOUR_ACTS.v1",
+        "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1"
       ],
       "BOS.CONCEPT.REPRESENTATION.v1": [
         "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1",
         "BOS.MD01.CARD.CONSENT_GROUND.v1",
         "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1"
+      ],
+      "BOS.CONCEPT.MERCANTILISM.v1": [
+        "BOS.MD01.CARD.NON_IMPORTATION.v1",
+        "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1",
+        "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1"
       ]
     },
-    "note": "Every Codex card the Boston registry declares hangs off these three concepts, so this eighteen-item pool is the whole of what stands between a student and a PvP-legal Codex today. The ninth card is the one this content pass minted; the registry still lists two for representation and needs the third appended."
+    "note": "Every Codex card the Boston registry declares hangs off these three concepts, so this eighteen-item pool is the whole of what stands between a student and a PvP-legal Codex."
   }
 }

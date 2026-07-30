@@ -15,7 +15,7 @@
 // wherever a player meets it, which is the point of a collectible.
 
 /** The three M1 concepts, as display categories with their own colour language. */
-export type CardCategoryId = "POSTWAR_REVENUE" | "STAMP_SCOPE" | "REPRESENTATION";
+export type CardCategoryId = "INTOLERABLE_ACTS" | "REPRESENTATION" | "MERCANTILISM";
 
 export interface CardCategory {
   readonly id: CardCategoryId;
@@ -45,19 +45,12 @@ export interface CardIdentity {
 }
 
 const CATEGORIES: Readonly<Record<string, CardCategory>> = {
-  "BOS.CONCEPT.POSTWAR_REVENUE.v1": {
-    id: "POSTWAR_REVENUE",
-    label: "Postwar Revenue",
-    accent: "#d7a24a",
-    accentDeep: "#7a5410",
-    glyph: "£",
-  },
-  "BOS.CONCEPT.STAMP_SCOPE.v1": {
-    id: "STAMP_SCOPE",
-    label: "The Stamp's Reach",
-    accent: "#d1544a",
-    accentDeep: "#7c221c",
-    glyph: "✶",
+  "BOS.CONCEPT.INTOLERABLE_ACTS.v1": {
+    id: "INTOLERABLE_ACTS",
+    label: "The Coercive Acts",
+    accent: "#c05a3e",
+    accentDeep: "#6e2c1c",
+    glyph: "⚓",
   },
   "BOS.CONCEPT.REPRESENTATION.v1": {
     id: "REPRESENTATION",
@@ -66,10 +59,17 @@ const CATEGORIES: Readonly<Record<string, CardCategory>> = {
     accentDeep: "#2c3382",
     glyph: "⚖",
   },
+  "BOS.CONCEPT.MERCANTILISM.v1": {
+    id: "MERCANTILISM",
+    label: "Non-importation",
+    accent: "#3e8a6e",
+    accentDeep: "#1c5240",
+    glyph: "✒",
+  },
 };
 
 const UNKNOWN_CATEGORY: CardCategory = {
-  id: "POSTWAR_REVENUE",
+  id: "INTOLERABLE_ACTS",
   label: "Archive",
   accent: "#78cdff",
   accentDeep: "#1f5f8a",
@@ -78,74 +78,74 @@ const UNKNOWN_CATEGORY: CardCategory = {
 
 /** The provenanced artwork for a concept. Four period images, mapped by theme. */
 const ART_BY_CARD: Readonly<Record<string, CardArt>> = {
-  // Postwar: the end of the war with France, which is the debt's origin.
-  "BOS.MD01.CARD.WAR_DEBT.v1": {
-    src: "/historical/m1/wolfe-death-of-general-wolfe-1770.jpg",
-    credit: "Benjamin West, The Death of General Wolfe, 1770",
-    focus: "50% 35%",
-  },
-  "BOS.MD01.CARD.COLONIAL_REVENUE.v1": {
-    src: "/historical/m1/wolfe-death-of-general-wolfe-1770.jpg",
-    credit: "Benjamin West, The Death of General Wolfe, 1770",
-    focus: "30% 40%",
-  },
-  "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1": {
-    src: "/historical/m1/wolfe-death-of-general-wolfe-1770.jpg",
-    credit: "Benjamin West, The Death of General Wolfe, 1770",
-    focus: "70% 45%",
-  },
-  // Stamp scope: the stamp itself.
-  "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1": {
-    src: "/historical/m1/stamp-act-1765.jpg",
-    credit: "Proof sheet of one-penny stamps, 1765",
+  // The Coercive Acts: the closed port, the occupation, and the printed circular.
+  "BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1": {
+    src: "/historical/m1/bostonians-in-distress-1774.jpg",
+    credit: "The Bostonians in Distress, 1774",
     focus: "50% 40%",
   },
-  "BOS.MD01.CARD.STAMP_DATE.v1": {
-    src: "/historical/m1/stamp-act-1765.jpg",
-    credit: "Proof sheet of one-penny stamps, 1765",
-    focus: "20% 30%",
-  },
-  "BOS.MD01.CARD.PRINTER_IMPACT.v1": {
-    src: "/historical/m1/stamp-act-1765.jpg",
-    credit: "Proof sheet of one-penny stamps, 1765",
-    focus: "80% 60%",
-  },
-  // Representation: protest and consent.
-  "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1": {
+  "BOS.MD01.CARD.FOUR_ACTS.v1": {
     src: "/historical/m1/boston-1768-landing-of-troops-revere.jpg",
-    credit: "Paul Revere, A View of Part of Boston, 1768",
+    credit: "Paul Revere, Landing of Troops at Boston, 1768",
     focus: "50% 45%",
+  },
+  "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1": {
+    src: "/historical/m1/boston-committee-port-bill-1774.jpg",
+    credit: "Committee of Correspondence circular, 12 May 1774",
+    focus: "50% 25%",
+  },
+  // Representation: the tax document and the occupation behind a law without consent.
+  "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1": {
+    src: "/historical/m1/stamp-act-1765.jpg",
+    credit: "The Stamp Act, 1765",
+    focus: "50% 40%",
   },
   "BOS.MD01.CARD.CONSENT_GROUND.v1": {
-    src: "/historical/m1/repeal-funeral-miss-ame-stamp-1766.jpg",
-    credit: "The Repeal, or the Funeral of Miss Ame-Stamp, 1766",
-    focus: "50% 45%",
+    src: "/historical/m1/stamp-act-1765.jpg",
+    credit: "The Stamp Act, 1765",
+    focus: "20% 30%",
   },
   "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1": {
-    src: "/historical/m1/repeal-funeral-miss-ame-stamp-1766.jpg",
-    credit: "The Repeal, or the Funeral of Miss Ame-Stamp, 1766",
-    focus: "30% 55%",
+    src: "/historical/m1/boston-1768-landing-of-troops-revere.jpg",
+    credit: "Paul Revere, Landing of Troops at Boston, 1768",
+    focus: "70% 45%",
+  },
+  // Non-importation: the Solemn League and Covenant, the pledge itself.
+  "BOS.MD01.CARD.NON_IMPORTATION.v1": {
+    src: "/historical/m1/solemn-league-covenant-1774.jpg",
+    credit: "The Solemn League and Covenant, June 1774",
+    focus: "50% 20%",
+  },
+  "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1": {
+    src: "/historical/m1/solemn-league-covenant-1774.jpg",
+    credit: "The Solemn League and Covenant, June 1774",
+    focus: "50% 55%",
+  },
+  "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1": {
+    src: "/historical/m1/solemn-league-covenant-1774.jpg",
+    credit: "The Solemn League and Covenant, June 1774",
+    focus: "50% 85%",
   },
 };
 
 /** Per-card period and perspective badges. Presentation only. */
 const CARD_META: Readonly<Record<string, { date: string; perspective: string }>> = {
-  "BOS.MD01.CARD.WAR_DEBT.v1": { date: "1763", perspective: "The problem" },
-  "BOS.MD01.CARD.COLONIAL_REVENUE.v1": { date: "1764", perspective: "The payer" },
-  "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1": { date: "1763 to 1765", perspective: "The order" },
-  "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1": { date: "1765", perspective: "What is taxed" },
-  "BOS.MD01.CARD.STAMP_DATE.v1": { date: "1 Nov 1765", perspective: "When it begins" },
-  "BOS.MD01.CARD.PRINTER_IMPACT.v1": { date: "1765", perspective: "Who it burdens" },
-  "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1": { date: "1765", perspective: "The fact" },
-  "BOS.MD01.CARD.CONSENT_GROUND.v1": { date: "1765", perspective: "The principle" },
-  "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1": { date: "1765", perspective: "The reply" },
+  "BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1": { date: "June 1774", perspective: "The punishment" },
+  "BOS.MD01.CARD.FOUR_ACTS.v1": { date: "1774", perspective: "The four acts" },
+  "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1": { date: "1774", perspective: "What stays lawful" },
+  "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1": { date: "1774", perspective: "The fact" },
+  "BOS.MD01.CARD.CONSENT_GROUND.v1": { date: "1774", perspective: "The principle" },
+  "BOS.MD01.CARD.LAWFUL_NOT_CONSENTED.v1": { date: "1774", perspective: "The reply" },
+  "BOS.MD01.CARD.NON_IMPORTATION.v1": { date: "June 1774", perspective: "The answer" },
+  "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1": { date: "1774", perspective: "The lawful forms" },
+  "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1": { date: "1774", perspective: "The boundary" },
 };
 
 const SOURCE_LABELS: Readonly<Record<string, string>> = {
-  "BOS.MD01.CUE.BRIEF_POSTWAR.v1": "Postwar brief",
-  "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1": "Synthesis brief",
-  "BOS.MD01.CUE.BRIEF_STAMP.v1": "Stamp brief",
-  "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1": "Representation brief",
+  "BOS.MD01.CUE.BRIEF_CLOSURE.v1": "The closure brief",
+  "BOS.MD01.CUE.BRIEF_ACTS.v1": "What the law says",
+  "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1": "Consent brief",
+  "BOS.MD01.CUE.BRIEF_ANSWER.v1": "The answer brief",
 };
 
 export function cardCategory(conceptId: string): CardCategory {
@@ -161,8 +161,8 @@ export function cardIdentityFor(card: {
   const meta = CARD_META[card.cardId];
   return {
     category: cardCategory(card.conceptId),
-    date: meta?.date ?? "1765",
-    perspective: meta?.perspective ?? "Boston, 1765",
+    date: meta?.date ?? "1774",
+    perspective: meta?.perspective ?? "Boston, 1774",
     sourceLabel:
       (card.sourceCueId ? SOURCE_LABELS[card.sourceCueId] : undefined) ?? "Mission brief",
     art: ART_BY_CARD[card.cardId] ?? null,

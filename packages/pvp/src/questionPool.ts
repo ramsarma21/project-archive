@@ -2,10 +2,10 @@
 // authored for.
 //
 // The bank at content/m1/duel-items.json is not a bag of questions. It carries an
-// authored ROUND SCHEDULE — postwar revenue, stamp scope, representation, then the
-// same three again — so that no concept is asked twice in a row, and it carries six
-// items per concept precisely so three attempts can be served without repeats. This
-// module honours both rather than shuffling eighteen items and hoping.
+// authored ROUND SCHEDULE — intolerable acts, representation, non-importation, then
+// the same three again — so that no concept is asked twice in a row, and it carries
+// six items per concept precisely so three attempts can be served without repeats.
+// This module honours both rather than shuffling eighteen items and hoping.
 //
 // Selection is seeded from the match, so both clients and the server derive the same
 // six questions from the same match seed, and a replay asks the same questions. Which
@@ -35,11 +35,11 @@ export interface PvpQuestionBank {
   readonly conceptByRound: readonly string[];
 }
 
-/** M1's three concepts, and the whole of the day-one pool. */
+/** M1's three concepts (the 1774 Coercive-Acts slate), and the whole of the day-one pool. */
 export const M1_CONCEPT_IDS: readonly string[] = [
-  "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-  "BOS.CONCEPT.STAMP_SCOPE.v1",
+  "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
   "BOS.CONCEPT.REPRESENTATION.v1",
+  "BOS.CONCEPT.MERCANTILISM.v1",
 ];
 
 interface RawBank {

@@ -27,34 +27,34 @@ const cards: readonly CardRef[] = readContentFile<{
   proposition: c.proposition,
 }));
 
-const STAMP = "BOS.CONCEPT.STAMP_SCOPE.v1";
-const STAMP_POOL = "BOS.MD01.POOL.DUEL_STAMP_SCOPE.v1";
-const SCOPE_CARD = "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1";
-const DATE_CARD = "BOS.MD01.CARD.STAMP_DATE.v1";
+const ACTS = "BOS.CONCEPT.INTOLERABLE_ACTS.v1";
+const ACTS_POOL = "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1";
+const LAWFUL_CARD = "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1";
+const FOUR_CARD = "BOS.MD01.CARD.FOUR_ACTS.v1";
 
 function candidate(overrides: Partial<CandidateItem>): CandidateItem {
   return {
-    id: "STAMP.TEST",
-    conceptId: STAMP,
-    poolId: STAMP_POOL,
-    boundCardIds: [SCOPE_CARD],
+    id: "ACTS.TEST",
+    conceptId: ACTS,
+    poolId: ACTS_POOL,
+    boundCardIds: [LAWFUL_CARD],
     question:
-      "A ship brings in a bale of wool and a bundle of printed almanacs. Which one does the stamp touch, and what puts them on opposite sides of it?",
+      "You are about to carry a printed handbill through the occupied town. Do any of the four Acts forbid it, and what puts printing on the safe side of them?",
     referenceAnswer:
-      "The almanacs, because printed paper is inside the Act and a bale of wool is ordinary goods that falls outside it.",
+      "No. None of the four Acts reaches printing or carrying paper; they shut the port, moved trials, quartered troops and ended the town meeting, and a handbill is none of those.",
     requiredCore: [
-      "The printed almanacs are taxed and the ordinary wool is not, because the Act covers printed or legal paper and not ordinary goods",
+      "Carrying a printed handbill breaks none of the four Acts, because the Acts reach trade, trials, troops and the town meeting, not printing",
     ],
     needs: "all",
     accept: [
-      "the almanacs, wool is just goods and the tax is on printed paper",
-      "the printed ones, wool isnt paper so the stamp skips it",
-      "almanacs cuz theyre printed, the wool is ordinary goods so its out",
+      "no, none of them ban printing, they shut the port and the meetings not the press",
+      "printing paper is still lawful, the acts dont touch it",
+      "no act stops a handbill, they closed trade and trials not the press",
     ],
     reject: [
-      "the wool because its worth more",
-      "both, everything off a ship is taxed",
-      "the almanacs because theyre going to a shop",
+      "yes the port act bans printing",
+      "the government act makes handbills illegal",
+      "no because the king forbids it",
     ],
     ...overrides,
   };
@@ -81,15 +81,15 @@ test("a well-formed candidate raises no ERROR in the static gauntlet", () => {
 
 test("a bare-recall item (date stem, bare-year answer, no decision) is rejected", () => {
   const trivial = candidate({
-    id: "STAMP.WHAT_YEAR",
-    question: "In what year did the war with France end?",
-    referenceAnswer: "1763.",
-    requiredCore: ["the year the war ended, 1763"],
-    boundCardIds: ["BOS.MD01.CARD.WAR_DEBT.v1"],
-    conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-    poolId: "BOS.MD01.POOL.DUEL_POSTWAR.v1",
-    accept: ["1763", "the war ended in 1763", "1763, the french and indian war"],
-    reject: ["1765", "1760", "1770"],
+    id: "ACTS.WHAT_YEAR",
+    question: "In what year did Parliament pass the Coercive Acts?",
+    referenceAnswer: "1774.",
+    requiredCore: ["the year the Acts passed, 1774"],
+    boundCardIds: ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
+    conceptId: "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+    poolId: "BOS.MD01.POOL.DUEL_INTOLERABLE_ACTS.v1",
+    accept: ["1774", "the acts passed in 1774", "1774, after the tea party"],
+    reject: ["1765", "1773", "1776"],
   });
   const findings = runStaticGauntlet({ candidate: trivial, cards });
   assert.ok(codes(findings, "ERROR").includes("RECALL_NOT_REASONING"), JSON.stringify(findings));
@@ -151,7 +151,7 @@ function fakeModel(defensible: ReadonlySet<string>): PipelineModel {
 
 test("an item a second card also answers is rejected as OVERLAP", async () => {
   // The model says both the bound scope card AND the date card defensibly answer.
-  const model = fakeModel(new Set([SCOPE_CARD, DATE_CARD]));
+  const model = fakeModel(new Set([LAWFUL_CARD, FOUR_CARD]));
   const report = await runGauntlet({ candidate: candidate({}), cards, model });
   assert.equal(report.modelChecksRan, true);
   assert.ok(codes(report.findings, "ERROR").includes("OVERLAP"), JSON.stringify(report.findings));
@@ -159,7 +159,7 @@ test("an item a second card also answers is rejected as OVERLAP", async () => {
 });
 
 test("a cleanly-separated item passes the discriminator", async () => {
-  const model = fakeModel(new Set([SCOPE_CARD]));
+  const model = fakeModel(new Set([LAWFUL_CARD]));
   const report = await runGauntlet({ candidate: candidate({}), cards, model });
   assert.equal(report.modelChecksRan, true);
   assert.equal(report.passed, true, JSON.stringify(report.findings));
@@ -167,7 +167,7 @@ test("a cleanly-separated item passes the discriminator", async () => {
 
 test("a binding no card defensibly answers is rejected", async () => {
   // The model says the bound card does NOT answer the question.
-  const model = fakeModel(new Set([DATE_CARD]));
+  const model = fakeModel(new Set([FOUR_CARD]));
   const report = await runGauntlet({ candidate: candidate({}), cards, model });
   const errorCodes = codes(report.findings, "ERROR");
   assert.ok(errorCodes.includes("BINDING_NOT_DEFENSIBLE"), JSON.stringify(report.findings));
@@ -186,7 +186,7 @@ test("binding to an unknown or wrong-concept card is rejected", () => {
   const unknown = candidate({ boundCardIds: ["BOS.MD01.CARD.DOES_NOT_EXIST.v1"] });
   assert.ok(codes(runStaticGauntlet({ candidate: unknown, cards }), "ERROR").includes("UNKNOWN_CARD"));
 
-  const wrongConcept = candidate({ boundCardIds: ["BOS.MD01.CARD.WAR_DEBT.v1"] });
+  const wrongConcept = candidate({ boundCardIds: ["BOS.MD01.CARD.CONSENT_GROUND.v1"] });
   assert.ok(
     codes(runStaticGauntlet({ candidate: wrongConcept, cards }), "ERROR").includes(
       "CARD_CONCEPT_MISMATCH",
@@ -203,10 +203,10 @@ test("too few held-out labels is rejected (the anti-erosion floor, per item)", (
 
 test("deterministic fast-accept grants an exact/near phrasing and escalates otherwise", () => {
   const accepts = candidate({}).accept;
-  assert.equal(deterministicProseAccept("the almanacs, wool is just goods and the tax is on printed paper", accepts), true);
+  assert.equal(deterministicProseAccept("no, none of them ban printing, they shut the port and the meetings not the press", accepts), true);
   // A correct-but-differently-phrased answer does NOT get a fast reject — it returns
   // false, which means "escalate to the model", so the fast tier cannot cause a false negative.
-  assert.equal(deterministicProseAccept("an almanac and a court writ", accepts), false);
+  assert.equal(deterministicProseAccept("nothing they printed is caught by the four acts", accepts), false);
 });
 
 test("combineHalves grades the two halves independently for the feedback signal", () => {

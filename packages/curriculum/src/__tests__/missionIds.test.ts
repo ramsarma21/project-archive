@@ -111,12 +111,14 @@ test("the runtime id reaches a mission's concepts, which is what used to be empt
   // the database stores, asked of the registry that keyed missions `M1`.
   const byRuntimeId = conceptsForMission(CONTENT_M1_MISSION_ID);
   assert.equal(byRuntimeId.length, 3);
+  // Registry order after the 2026-07-30 rescope: REPRESENTATION keeps its place,
+  // and the two 1774 concepts reassigned from M11 follow it.
   assert.deepEqual(
     byRuntimeId.map((concept) => concept.conceptId),
     [
-      "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-      "BOS.CONCEPT.STAMP_SCOPE.v1",
       "BOS.CONCEPT.REPRESENTATION.v1",
+      "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "BOS.CONCEPT.MERCANTILISM.v1",
     ],
   );
   // And the slate label reaches the same three, rather than being a second

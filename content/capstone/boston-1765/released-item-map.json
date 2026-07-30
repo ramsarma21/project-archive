@@ -4,33 +4,48 @@
 
   "whatThisIs": "Which released TEA items the M1 capstone serves, and which it deliberately does not. A mapping and nothing else: no TEA stem, option, or answer key is copied into this repository by this file. `content/staar` holds the capture and this file holds the concept each one is scored against, which is the one thing a capture cannot know.",
 
+  "rescopeNote": "REWIRED 2026-07-30 for the 1774 Coercive-Acts slate. The two Intolerable-Acts items that content/staar had captured but this map held back as 'waiting for M11' — STAAR.2021MAY.G8SS.38 and STAAR.2022MAY.G8SS.04 — are now SERVED for BOS.CONCEPT.INTOLERABLE_ACTS.v1, which the rescope moved into M1. Those are the actual measured items behind the 41-43% coercion miss rate the concept was chosen for, so the capstone is now backed by the same evidence the design was derived from. The representation item (2019 #24) still serves. The postwar-revenue item (2018 #05) is DROPPED, because that concept was demoted off M1.",
+
   "howToConsume": {
     "adapter": "packages/assessment/src/items.ts · fromReleasedItemCapture(capture, conceptId)",
     "steps": [
       "Read the capture out of the file named in `capturedIn`.",
       "Resolve the concept id here through resolveConceptRef — it is already canonical, so this is a no-op that keeps one door.",
       "Call fromReleasedItemCapture, then set `probe` from this file. The adapter cannot know the probe because the probe is a statement about how the item asks, not about what TEA published.",
-      "The answer key stays where it is. Point the grading authority's key table at the capture's `correctAnswerFromOfficialKey`; do not copy the letter into this directory, because a key with two homes is a key that will disagree with itself."
+      "The answer key stays where it is. Point the grading authority's key table at the capture's `correctAnswerFromOfficialKey`; do not copy the letter into this directory."
     ],
-    "licensing": "content/staar §4 records an unresolved question about whether TEA's terms permit a non-district party to reproduce released item text. Mapping by reference rather than by copy means this directory adds nothing to that exposure, and the two items below are the only released text the M1 capstone depends on."
+    "licensing": "content/staar §4 records an unresolved question about whether TEA's terms permit a non-district party to reproduce released item text. Mapping by reference rather than by copy means this directory adds nothing to that exposure, and the three items below are the only released text the M1 capstone depends on."
   },
 
   "served": [
     {
-      "itemId": "STAAR.2018MAY.G8SS.05",
-      "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+      "itemId": "STAAR.2021MAY.G8SS.38",
+      "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
       "probe": "RECALL",
       "format": "SELECTED_RESPONSE",
-      "capturedIn": "content/staar/items/staar-2018-may-grade8-social-studies.json",
+      "capturedIn": "content/staar/items/staar-2021-may-grade8-social-studies.json",
       "teksAsPublished": "8.4(A)",
-      "era": "1764-1767",
-      "whyThisConcept": "Its stimulus is the Sugar, Stamp and Townshend Acts in sequence and its stem asks the primary reason Parliament passed them. That is the postwar revenue proposition asked as recognition, which is exactly the RECALL stance.",
+      "era": "1774",
+      "whyThisConcept": "Its stimulus is a set of 1774 headlines naming the Coercive Acts (Boston Harbour closed), and its stem asks how the colonists immediately responded. That is the Intolerable-Acts proposition asked as recognition of the Acts and the response they produced — the concept M1 now owns.",
+      "whyThisProbe": "The stem names the 1774 laws and asks the student to recognise the colonists' response from four options. Recognition of the response is the RECALL stance.",
       "risk": {
-        "severity": "REVIEW_BEFORE_SHIPPING",
-        "what": "TEA's keyed option is 'To recover the cost of defending the colonies'. Mission-Slate §4.9's third verification note records that M1's module teaches the war debt and deliberately says nothing about the cost of defending new territory, and that no item may grade on content taught nowhere. The curriculum registry carries the same warning against the retired owner item BANK.BOSTON.USER.Q05.v1, whose rationale rests on the same clause.",
-        "whyItIsStillIncluded": "The item discriminates on cost-recovery rather than on defence. Its other three options are to promote cottage industries, to encourage foreign trade, and to fund new colonies — all of them Britain spending rather than Britain recouping. A student holding the module's proposition, that Parliament wanted money back from the colonies after the war, has exactly one option to reach for. The defence clause is in the wording of the answer and not in the work of choosing it.",
-        "theOwnerDecides": "Three ways out, in the order I would take them. Leave it as it is and accept a small residual risk on a recognition item. Or add six words to the module's postwar card about an army left in America, which fixes it at the source and reopens the clause §4.9 closed. Or drop it, which costs postwar revenue its only released item and raises NO_RELEASED_TEA_ITEM on two of the three concepts.",
-        "ifItIsDropped": "The pool falls to five for postwar revenue and the concept becomes THIN — a third attempt would recycle. An authored replacement in the RECALL stance would take about twenty minutes."
+        "severity": "NONE_FOUND",
+        "what": "In window at 1774, usableAsIs, not image-dependent, and squarely on the concept M1 now teaches. This is one of the two measured items (41-43% correct) the concept was selected against, so its fit is exact."
+      }
+    },
+    {
+      "itemId": "STAAR.2022MAY.G8SS.04",
+      "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+      "probe": "DISCRIMINATION",
+      "format": "SELECTED_RESPONSE",
+      "capturedIn": "content/staar/items/staar-2022-may-grade8-social-studies.json",
+      "teksAsPublished": "8.4(A)",
+      "era": "1774",
+      "whyThisConcept": "Asks how the colonies reacted to enforcement of the Intolerable Acts. Same concept as 2021 #38, dated inside the mission's own year, and the second of the two measured coercion items.",
+      "whyThisProbe": "Its distractors are other plausible colonial reactions, so the work is ruling out the wrong readings rather than recalling a single fact — the DISCRIMINATION stance, distinct from 2021 #38's recognition.",
+      "risk": {
+        "severity": "NONE_FOUND",
+        "what": "In window at 1774, usableAsIs, not image-dependent. Two released items on one concept is by design here: it lets INTOLERABLE_ACTS carry two of its six probes on released text, exactly the provenance the coercion concept was chosen to have."
       }
     },
     {
@@ -41,49 +56,42 @@
       "capturedIn": "content/staar/items/staar-2019-may-grade8-social-studies.json",
       "teksAsPublished": "8.4(A)",
       "era": "1765",
-      "whyThisConcept": "The stimulus is a 1765 resolution on taxation by persons chosen by the people themselves, and the stem asks why it was adopted. Dead centre of representation and consent, dated inside the mission's own year.",
-      "whyThisProbe": "Its three distractors are other real colonial grievances — the punishment after the Tea Party, the Massacre, the governors' powers. The work the student does is ruling out plausible-but-wrong readings, which is the DISCRIMINATION stance rather than recall.",
+      "whyThisConcept": "The stimulus is a 1765 resolution on taxation by persons chosen by the people themselves, and the stem asks why it was adopted. Dead centre of representation and consent, and the consent argument the 1774 lesson carries forward from 1765.",
+      "whyThisProbe": "Its three distractors are other real colonial grievances, so the work the student does is ruling out plausible-but-wrong readings, which is the DISCRIMINATION stance.",
       "risk": {
         "severity": "NONE_FOUND",
-        "what": "Answerable from the module's representation card without reservation. This is the cleanest fit between a released item and an M1 concept in the whole capture."
+        "what": "Answerable from the module's consent card without reservation. The cleanest fit between a released item and an M1 concept in the whole capture."
       }
     }
   ],
 
   "notServed": [
     {
+      "itemId": "STAAR.2018MAY.G8SS.05",
+      "reason": "CONCEPT_DEMOTED_FROM_M1",
+      "detail": "This is the only released item on postwar revenue, and its keyed option is 'To recover the cost of defending the colonies'. The 2026-07-30 rescope demoted POSTWAR_REVENUE off M1 to taught context, so the concept is no longer on the capstone spine and its released item is dropped with it. It waits for whatever mission reclaims the postwar clause."
+    },
+    {
       "itemId": "STAAR.2023.G8SS.07",
       "wouldHaveBeen": "the only released constructed response on 8.4(A), with an official TEA rubric and twelve TEA-scored student exemplars",
       "reason": "UNSOUND_FOR_PER_CONCEPT_MASTERY",
-      "detail": "The prompt is 'Select TWO of the following issues. How was each issue a cause of the American Revolution?' over four issues — the Proclamation of 1763, the Stamp Act, lack of representation, and British economic policies after the war. The STUDENT chooses which concepts to write about. There is no honest value for `conceptId`, because a student who writes about the Proclamation and the Stamp Act has produced no evidence at all about postwar revenue, and mastery here is all-or-nothing per concept. Tagging it to one concept would deny a card to a student who answered it well.",
-      "thisIsWorthSayingPlainly": "The single best released item on Boston's core standard cannot be served by a per-concept mastery engine as TEA published it. That is not a defect in either — it is what happens when a two-point item designed to sample a standard meets a gate designed to certify a concept.",
-      "howItIsUsedInstead": "As the model for the authored open-response items. Every authored prose item in this pool carries `modelledOnItemId: \"STAAR.2023.G8SS.07\"`, its rubric idiom is TEA's, and its binary line is calibrated against those twelve scored exemplars. The item is doing more work as a template than it could have done as an item.",
-      "ifItIsEverWanted": "Naming the two issues in the prompt would make it single-concept and servable — and would make it an authored item modelled on a released one rather than a released item, which is a provenance downgrade that must not be made quietly."
+      "detail": "The prompt is 'Select TWO of the following issues. How was each issue a cause of the American Revolution?' over four issues. The STUDENT chooses which concepts to write about, so there is no honest value for `conceptId` on a per-concept mastery gate.",
+      "howItIsUsedInstead": "As the model for the authored open-response items. Every authored prose item in this pool is modelled on it, its rubric idiom is TEA's, and its binary line is calibrated against those twelve scored exemplars."
     },
     {
       "itemId": "STAAR.2024.G8SS.37",
       "reason": "NOT_USABLE_AS_IS",
-      "detail": "Multiselect on mercantilism whose stimulus is a cartoon TEA did not publish as text. `usableAsIs: false` in the capture, and `itemEligibility` would refuse it anyway. Its concept is out of scope tonight in any case."
-    },
-    {
-      "itemId": "STAAR.2021MAY.G8SS.38",
-      "reason": "CONCEPT_OUT_OF_SCOPE",
-      "detail": "In window at 1774 and cleanly usable, but it is an Intolerable Acts item — BOS.CONCEPT.INTOLERABLE_ACTS.v1, which belongs to M11. It is the strongest released item waiting for whoever authors M11's concepts, and it names Boston Harbour's closure in its own headlines."
-    },
-    {
-      "itemId": "STAAR.2022MAY.G8SS.04",
-      "reason": "CONCEPT_OUT_OF_SCOPE",
-      "detail": "Also Intolerable Acts, also usable, also waiting for M11."
+      "detail": "Multiselect on mercantilism whose stimulus is a cartoon TEA did not publish as text. `usableAsIs: false` in the capture. It would have been the natural released item for MERCANTILISM, but it cannot be served, which is why that concept carries NO_RELEASED_TEA_ITEM."
     }
   ],
 
   "whatDoesNotExist": {
-    "BOS.CONCEPT.STAMP_SCOPE.v1": {
+    "BOS.CONCEPT.MERCANTILISM.v1": {
       "releasedItemsAvailable": 0,
-      "searched": "All six released 8.4(A) items, the 2023 sampler, and the three redesign-era answer-key appendices, via content/staar's index of all 296 published Grade 8 Social Studies items.",
-      "finding": "No released item asks what the Stamp Act taxed. content/staar states it outright: no released multiple-choice item asks about the Act's scope on printed and legal paper, which is mission one's actual concept. The nearest published statement of the proposition is a scoring-guide rubric bullet, 'All colonists had to pay taxes on documents and paper.'",
-      "consequence": "`NO_RELEASED_TEA_ITEM` on one of the three concepts, permanently, unless TEA publishes one. It is reported rather than papered over, and the six authored items cite the rubric bullet as the published source of the proposition they test."
+      "searched": "content/staar's index of all published Grade 8 Social Studies items.",
+      "finding": "The one released mercantilism item, STAAR.2024.G8SS.37, is image-dependent and usableAsIs:false, so no released multiple-choice item on non-importation is servable.",
+      "consequence": "`NO_RELEASED_TEA_ITEM` on one of the three concepts, exactly as the retired STAMP_SCOPE carried it. Reported rather than papered over; the six authored items carry the concept."
     },
-    "generalNote": "Of 53 items captured with full provenance, only two are servable here. The rest fail on one of three things: the concept is out of scope tonight, the era falls outside 1765–1775, or the item depends on an image TEA never published as text. A capture of fifty-three is not a bank of fifty-three, and the gap between those two numbers is the authored sixteen."
+    "generalNote": "Of the items captured with full provenance, three are servable here: two Intolerable-Acts items and one representation item. The rest fail on concept scope, era, or an image TEA never published as text."
   }
 }

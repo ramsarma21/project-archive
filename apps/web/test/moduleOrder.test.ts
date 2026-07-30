@@ -21,6 +21,13 @@ import {
 // about WHICH card a student who just lost reads first, and about the three
 // things the reorder is not allowed to disturb on the way: the cue set the gate
 // checks, the module id the completion names, and the three minutes.
+//
+// The 1774 deck is six cards: identity(frame), the four case files (closure and
+// acts on INTOLERABLE_ACTS, consent on REPRESENTATION, answer on MERCANTILISM),
+// and the handoff brief(frame). The two frames teach no concept and are pinned;
+// the four case files permute by what the last attempt missed. There is no
+// synthesis card teaching all three concepts, so nothing is pinned for that
+// reason — the one source excerpt rides an ordinary case file (the answer).
 
 if (!M1_CONTENT.ok) {
   throw new Error(
@@ -29,9 +36,9 @@ if (!M1_CONTENT.ok) {
 }
 const M1 = M1_CONTENT.definition;
 
-const POSTWAR = "BOS.CONCEPT.POSTWAR_REVENUE.v1";
-const STAMP = "BOS.CONCEPT.STAMP_SCOPE.v1";
+const INTOLERABLE = "BOS.CONCEPT.INTOLERABLE_ACTS.v1";
 const REPRESENTATION = "BOS.CONCEPT.REPRESENTATION.v1";
+const MERCANTILISM = "BOS.CONCEPT.MERCANTILISM.v1";
 
 /** The duel's report, narrowed to what ordering reads. */
 function asked(
@@ -43,12 +50,12 @@ function asked(
 /** Six rounds, two per concept, all correct. A duel won on knowledge. */
 function everythingRight(): ModuleConceptVerdict[] {
   return asked(
-    [POSTWAR, "CORRECT"],
-    [POSTWAR, "CORRECT"],
-    [STAMP, "CORRECT"],
-    [STAMP, "CORRECT"],
+    [INTOLERABLE, "CORRECT"],
+    [INTOLERABLE, "CORRECT"],
     [REPRESENTATION, "CORRECT"],
     [REPRESENTATION, "CORRECT"],
+    [MERCANTILISM, "CORRECT"],
+    [MERCANTILISM, "CORRECT"],
   );
 }
 
@@ -79,15 +86,16 @@ test("an attempt lost on mechanics with every answer right is not reshuffled", (
 });
 
 test("a deck already leading with the missed concept is left alone", () => {
-  // Postwar revenue is the first thing the deck teaches. Reordering to put it
-  // first is a no-op, and a no-op must not present itself as a changed deck.
-  const next = retryOrderedModule(M1, asked([POSTWAR, "WRONG"]));
+  // The Coercive Acts are the first thing the deck teaches (two case files). A
+  // miss there already leads, so the reorder is a no-op — and a no-op must not
+  // present itself as a changed deck.
+  const next = retryOrderedModule(M1, asked([INTOLERABLE, "WRONG"]));
   assert.equal(next, M1);
 });
 
 test("an undefined module stays undefined", () => {
   // Thirteen missions have no authored deck. Ordering must not invent one.
-  assert.equal(retryOrderedModule(undefined, asked([POSTWAR, "WRONG"])), undefined);
+  assert.equal(retryOrderedModule(undefined, asked([INTOLERABLE, "WRONG"])), undefined);
 });
 
 // ---------------------------------------------------------------------------
@@ -99,45 +107,46 @@ test("a retry after missing representation opens on representation", () => {
   assert.notEqual(next, M1);
   assert.deepEqual(kickers(next), [
     "Identity",
-    "Representation",
-    "Postwar revenue",
-    "Stamp scope",
-    "How the three connect",
-    "Mission frame",
+    "Consent",
+    "The closure",
+    "What the law says",
+    "The answer",
+    "The brief",
   ]);
 });
 
 test("the concept missed most often leads", () => {
-  // Two misses on postwar against one on representation. Both are unsettled;
-  // the deck opens on the bigger hole and the clean concept keeps its place.
+  // Two misses on non-importation against one on representation. Both are
+  // unsettled; the deck opens on the bigger hole and the clean concept keeps its
+  // place. The Coercive-Acts files, answered clean, stay in their authored order.
   const next = retryOrderedModule(
     M1,
     asked(
-      [POSTWAR, "WRONG"],
-      [POSTWAR, "WRONG"],
+      [MERCANTILISM, "WRONG"],
+      [MERCANTILISM, "WRONG"],
       [REPRESENTATION, "WRONG"],
-      [STAMP, "CORRECT"],
+      [INTOLERABLE, "CORRECT"],
     ),
   )!;
   assert.deepEqual(kickers(next), [
     "Identity",
-    "Postwar revenue",
-    "Representation",
-    "Stamp scope",
-    "How the three connect",
-    "Mission frame",
+    "The answer",
+    "Consent",
+    "The closure",
+    "What the law says",
+    "The brief",
   ]);
 });
 
 test("concepts answered correctly keep their authored order behind the missed one", () => {
-  const next = retryOrderedModule(M1, asked([STAMP, "WRONG"]))!;
+  const next = retryOrderedModule(M1, asked([MERCANTILISM, "WRONG"]))!;
   assert.deepEqual(kickers(next), [
     "Identity",
-    "Stamp scope",
-    "Postwar revenue",
-    "Representation",
-    "How the three connect",
-    "Mission frame",
+    "The answer",
+    "The closure",
+    "What the law says",
+    "Consent",
+    "The brief",
   ]);
 });
 
@@ -152,35 +161,29 @@ test("a reordered deck says so, and an unchanged one does not", () => {
 // ---------------------------------------------------------------------------
 
 test("the frame cards hold the two ends however the middle is ranked", () => {
-  // Identity gives the player a job and insertion ends on the constable saying
-  // he will ask. Neither is a thing a student can be wrong about, and both are
-  // held in place by teaching no concepts rather than by being named here.
+  // Identity gives the player a job and the brief ends on the constable saying he
+  // will ask. Neither is a thing a student can be wrong about, and both are held
+  // in place by teaching no concepts rather than by being named here.
   for (const rounds of [
     asked([REPRESENTATION, "WRONG"]),
-    asked([STAMP, "WRONG"], [POSTWAR, "WRONG"]),
-    asked([POSTWAR, "WRONG"], [STAMP, "WRONG"], [REPRESENTATION, "WRONG"]),
+    asked([MERCANTILISM, "WRONG"], [REPRESENTATION, "WRONG"]),
+    asked([INTOLERABLE, "WRONG"], [MERCANTILISM, "WRONG"], [REPRESENTATION, "WRONG"]),
   ]) {
     const next = retryOrderedModule(M1, rounds)!;
     assert.equal(next.cards[0]?.kicker, "Identity");
-    assert.equal(next.cards.at(-1)?.kicker, "Mission frame");
+    assert.equal(next.cards.at(-1)?.kicker, "The brief");
   }
 });
 
-test("the synthesis card never leads, however many of its concepts were missed", () => {
-  // It teaches all three, so ranking by coverage would float it to the front
-  // every time — and "three facts, one chain" before the three facts is not a
-  // lesson. A card covering the whole deck is pinned for that reason.
-  const next = retryOrderedModule(
-    M1,
-    asked(
-      [POSTWAR, "WRONG"],
-      [STAMP, "WRONG"],
-      [REPRESENTATION, "WRONG"],
-    ),
-  )!;
-  const synthesis = next.cards.findIndex((card) => card.excerpt !== undefined);
-  assert.equal(synthesis, 4);
-  assert.equal(next.cards[synthesis]?.kicker, "How the three connect");
+test("the excerpt card is an ordinary case file, not a pinned synthesis", () => {
+  // The 1774 deck has no synthesis card teaching all three concepts, so nothing is
+  // pinned for covering the whole deck. The one source excerpt sits on the answer
+  // card, which teaches one concept and reorders like any other: missing
+  // non-importation floats it to the front rather than holding it back.
+  const next = retryOrderedModule(M1, asked([MERCANTILISM, "WRONG"]))!;
+  const excerptAt = next.cards.findIndex((card) => card.excerpt !== undefined);
+  assert.equal(excerptAt, 1, "the answer card leads when its concept was missed");
+  assert.equal(next.cards[excerptAt]?.kicker, "The answer");
 });
 
 // ---------------------------------------------------------------------------
@@ -203,8 +206,8 @@ test("a reordered deck is still a valid three-minute module", () => {
 
 test("a card keeps its own seconds when it moves", () => {
   // The window was measured from the card's word count at 140 wpm, so it is a
-  // property of the card and not of the slot. Representation needs its fifty
-  // seconds wherever it is read.
+  // property of the card and not of the slot. Consent needs its own seconds
+  // wherever it is read.
   const authored = moduleCardWindows(M1);
   const spanById = new Map(
     authored.map((w) => [w.card.id, w.throughSeconds - w.fromSeconds]),
@@ -256,18 +259,18 @@ test("a verdict this file has never heard of counts as missed", () => {
   const next = retryOrderedModule(M1, [
     { conceptId: REPRESENTATION, verdict: "PARTIAL" },
   ])!;
-  assert.equal(next.cards[1]?.kicker, "Representation");
+  assert.equal(next.cards[1]?.kicker, "Consent");
 });
 
 test("ordering reads no round count and no bullet economy", () => {
   // Fourteen rounds rather than six changes the number of entries and nothing
   // else, which is what keeps the duel's rework off this path.
   const long = Array.from({ length: 14 }, (_, at) => ({
-    conceptId: at % 2 === 0 ? STAMP : POSTWAR,
+    conceptId: at % 2 === 0 ? MERCANTILISM : REPRESENTATION,
     verdict: at < 3 ? "WRONG" : "CORRECT",
   }));
   const next = retryOrderedModule(M1, long)!;
-  assert.equal(next.cards[1]?.kicker, "Stamp scope");
+  assert.equal(next.cards[1]?.kicker, "The answer");
 });
 
 // ---------------------------------------------------------------------------
@@ -281,13 +284,13 @@ test("evidence is keyed by mission, not by whichever attempt resolved last", () 
   // mismatch.
   let ledger = EMPTY_MODULE_KNOWLEDGE;
   ledger = recordMissionKnowledge(ledger, "m1", asked([REPRESENTATION, "WRONG"]));
-  ledger = recordMissionKnowledge(ledger, "m2", asked([POSTWAR, "WRONG"]));
+  ledger = recordMissionKnowledge(ledger, "m2", asked([INTOLERABLE, "WRONG"]));
 
   assert.deepEqual(knowledgeForMission(ledger, "m1"), asked([REPRESENTATION, "WRONG"]));
   assert.deepEqual(knowledgeForMission(ledger, "m3"), []);
   assert.equal(
     retryOrderedModule(M1, knowledgeForMission(ledger, "m1"))!.cards[1]?.kicker,
-    "Representation",
+    "Consent",
   );
 });
 
@@ -299,8 +302,8 @@ test("a second attempt on one mission replaces its evidence rather than adding t
     "m1",
     asked([REPRESENTATION, "WRONG"], [REPRESENTATION, "WRONG"]),
   );
-  ledger = recordMissionKnowledge(ledger, "m1", asked([STAMP, "WRONG"]));
+  ledger = recordMissionKnowledge(ledger, "m1", asked([MERCANTILISM, "WRONG"]));
 
   const next = retryOrderedModule(M1, knowledgeForMission(ledger, "m1"))!;
-  assert.equal(next.cards[1]?.kicker, "Stamp scope");
+  assert.equal(next.cards[1]?.kicker, "The answer");
 });

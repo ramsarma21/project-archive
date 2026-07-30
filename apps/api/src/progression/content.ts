@@ -198,9 +198,9 @@ const MISSION_CONTENT: ReadonlyMap<string, MissionContentRow> = new Map([
     {
       moduleId: M1_MODULE_ID,
       conceptIds: [
-        "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-        "BOS.CONCEPT.STAMP_SCOPE.v1",
+        "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
         "BOS.CONCEPT.REPRESENTATION.v1",
+        "BOS.CONCEPT.MERCANTILISM.v1",
       ],
     },
   ],
@@ -220,10 +220,10 @@ const MODULE_DECKS: ReadonlyMap<string, readonly string[]> = new Map([
     M1_MODULE_ID,
     [
       "BOS.MD01.CUE.BRIEF_IDENTITY.v1",
-      "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
-      "BOS.MD01.CUE.BRIEF_STAMP.v1",
+      "BOS.MD01.CUE.BRIEF_CLOSURE.v1",
+      "BOS.MD01.CUE.BRIEF_ACTS.v1",
       "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
-      "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1",
+      "BOS.MD01.CUE.BRIEF_ANSWER.v1",
       "BOS.MD01.CUE.BRIEF_INSERT.v1",
     ],
   ],
@@ -243,9 +243,10 @@ const MODULE_CHECKS: ReadonlyMap<string, readonly string[]> = new Map([
   [
     M1_MODULE_ID,
     [
-      "BOS.MD01.CHECK.POSTWAR_REVENUE.v1",
-      "BOS.MD01.CHECK.STAMP_SCOPE.v1",
+      "BOS.MD01.CHECK.CLOSURE.v1",
+      "BOS.MD01.CHECK.ACTS.v1",
       "BOS.MD01.CHECK.REPRESENTATION.v1",
+      "BOS.MD01.CHECK.ANSWER.v1",
     ],
   ],
 ]);
@@ -265,19 +266,14 @@ const CODEX_CARDS: ReadonlyMap<string, readonly { card: string; concept: string 
     [
       M1_MODULE_ID,
       [
-        { card: "BOS.MD01.CARD.WAR_DEBT.v1", concept: "BOS.CONCEPT.POSTWAR_REVENUE.v1" },
         {
-          card: "BOS.MD01.CARD.COLONIAL_REVENUE.v1",
-          concept: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+          card: "BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1",
+          concept: "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
         },
+        { card: "BOS.MD01.CARD.FOUR_ACTS.v1", concept: "BOS.CONCEPT.INTOLERABLE_ACTS.v1" },
         {
-          card: "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1",
-          concept: "BOS.CONCEPT.STAMP_SCOPE.v1",
-        },
-        { card: "BOS.MD01.CARD.STAMP_DATE.v1", concept: "BOS.CONCEPT.STAMP_SCOPE.v1" },
-        {
-          card: "BOS.MD01.CARD.PRINTER_IMPACT.v1",
-          concept: "BOS.CONCEPT.STAMP_SCOPE.v1",
+          card: "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1",
+          concept: "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
         },
         {
           card: "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1",
@@ -292,8 +288,16 @@ const CODEX_CARDS: ReadonlyMap<string, readonly { card: string; concept: string 
           concept: "BOS.CONCEPT.REPRESENTATION.v1",
         },
         {
-          card: "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1",
-          concept: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+          card: "BOS.MD01.CARD.NON_IMPORTATION.v1",
+          concept: "BOS.CONCEPT.MERCANTILISM.v1",
+        },
+        {
+          card: "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1",
+          concept: "BOS.CONCEPT.MERCANTILISM.v1",
+        },
+        {
+          card: "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1",
+          concept: "BOS.CONCEPT.MERCANTILISM.v1",
         },
       ],
     ],

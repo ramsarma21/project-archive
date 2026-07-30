@@ -72,14 +72,14 @@ test("the historical claims and item identities survive the rewrite", () => {
   // duel checks against must still be spoken somewhere in the deck.
   const all = renderedCues().join(" ").toLowerCase();
   for (const claim of [
-    "1763", // the war's end / the debt's origin
-    "army", // an army still to pay for in America
-    "november", // the stamp takes effect 1 November
-    "playing cards", // inside the tax
-    "nails", // outside the tax (ordinary goods)
+    "1774", // the year of the Coercive Acts
+    "harbour", // the Port Act shuts the harbour (the closure)
+    "tea", // the crowd's action the closure answered
+    "four acts", // the scope: four acts, not one
     "farthing", // the objection is consent, not price
     "parliament", // who laid the tax
-    "consent", // the representation claim
+    "boycott", // the answer is non-importation
+    "congress", // a congress, not a declaration of war
   ]) {
     assert.ok(all.includes(claim), `the rewrite dropped the claim/item "${claim}"`);
   }

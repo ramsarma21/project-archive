@@ -40,7 +40,7 @@ const silent = {
 
 const CHAPTER = "boston-1765";
 const MISSION = "PA.SEA01.CH02.BOSTON.MD01";
-const CONCEPT = "BOS.CONCEPT.POSTWAR_REVENUE.v1";
+const CONCEPT = "BOS.CONCEPT.REPRESENTATION.v1";
 
 // ---------------------------------------------------------------------------
 // The store contract, in memory.
@@ -55,7 +55,7 @@ function event(overrides: Partial<Parameters<
     missionId: MISSION,
     attemptId: "attempt-1",
     conceptId: CONCEPT,
-    itemId: "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1",
+    itemId: "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1",
     source: "DUEL" as const,
     duelId: "M1.EFFIGY_RUN#duel@1",
     roundIndex: 1,
@@ -132,7 +132,7 @@ test("clearMission drops one mission's rows and leaves the rest", async () => {
 // ---------------------------------------------------------------------------
 
 const DUEL_ID = "M1.EFFIGY_RUN#duel@1";
-const ITEM_ID = "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1";
+const ITEM_ID = "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1";
 const ALICE = "alice";
 
 async function duelHarness() {

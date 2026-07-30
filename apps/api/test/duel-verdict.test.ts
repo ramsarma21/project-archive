@@ -60,7 +60,7 @@ const silent = {
 
 const grading = createDuelGrading(silent);
 
-const ITEM_ID = "BOS.MD01.DUEL.POSTWAR.WHY_NOW.v1";
+const ITEM_ID = "BOS.MD01.DUEL.REP.BOSTON_DOES_ELECT.v1";
 const DUEL_ID = "M1.EFFIGY_RUN#duel@1";
 
 const BINDING = {
@@ -83,7 +83,7 @@ const body = (answer: string) => ({
   side: "A",
   itemId: ITEM_ID,
   itemVersion: "v1",
-  conceptId: "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+  conceptId: "BOS.CONCEPT.REPRESENTATION.v1",
   answer,
 });
 

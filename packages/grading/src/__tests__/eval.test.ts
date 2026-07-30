@@ -45,7 +45,7 @@ describe("the evaluation set", () => {
   it("includes the content pass's labelled answers in full", () => {
     const counts = authoredLabelledCounts();
     assert.equal(authoredLabelledCases().length, counts.total);
-    assert.equal(counts.total, 81);
+    assert.equal(counts.total, 75);
     const byId = new Map(set.map((c) => [`${c.itemId}\u0000${c.answer}`, c]));
     for (const testCase of authoredLabelledCases()) {
       assert.ok(

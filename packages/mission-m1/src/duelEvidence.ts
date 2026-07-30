@@ -110,13 +110,12 @@ interface EvidenceOverride {
 // ---------------------------------------------------------------------------
 
 const M1_EVIDENCE_OVERRIDES: Readonly<Record<string, EvidenceOverride>> = {
-  // Three relevant cards, but the third (the synthesis chain) is a bonus rather
-  // than a requirement — the causal story stands on the debt and the payer. Two is
-  // the floor, which keeps more than one valid pair. (Redundant with the derived
-  // default of two, and kept as an explicit pin on the "two of three" line.)
-  "BOS.MD01.DUEL.POSTWAR.CAME_FROM_NOWHERE.v1": { minSupport: 2 },
-  // The representation capstone: three relevant, but the consent ground plus either
-  // the no-member card or the lawful-not-consented reply is enough. Two of three.
+  // The representation capstone: three relevant cards, but the consent ground plus
+  // either the no-member card or the lawful-not-consented reply is enough. Two of
+  // three. (Redundant with the derived default of two for a three-card item, and
+  // kept as an explicit pin on the "two of three" line.) The 1774-slate items with
+  // two relevant cards (ACTS.STILL_LAWFUL, RESIST.NOT_WAR, and the two-card
+  // hardening items) take minSupport 2 from defaultMinSupport with no override.
   "BOS.MD01.DUEL.REP.SPEAKS_FOR_ALL.v1": { minSupport: 2 },
 };
 
@@ -132,11 +131,12 @@ const M1_EVIDENCE_OVERRIDES: Readonly<Record<string, EvidenceOverride>> = {
  * drift from the authored bank.
  */
 const M1_HARDENING_RELEVANT: Readonly<Record<string, readonly string[]>> = {
-  "BOS.MD01.DUEL.POSTWAR.WHICH_IS_FALSE.v1": [
-    "BOS.MD01.CARD.WAR_DEBT.v1",
-    "BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1",
+  "BOS.MD01.DUEL.ACTS.WHICH_IS_LAWFUL.v1": [
+    "BOS.MD01.CARD.FOUR_ACTS.v1",
+    "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1",
   ],
-  "BOS.MD01.DUEL.POSTWAR.WHICH_YEAR.v1": ["BOS.MD01.CARD.WAR_DEBT.v1"],
+  "BOS.MD01.DUEL.ACTS.WHO_HAS_GRIEVANCE.v1": ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
+  "BOS.MD01.DUEL.ACTS.FINE_OR_CLOSURE.v1": ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
   "BOS.MD01.DUEL.REP.HOW_FAR_IT_GOES.v1": [
     "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1",
     "BOS.MD01.CARD.CONSENT_GROUND.v1",
@@ -145,14 +145,10 @@ const M1_HARDENING_RELEVANT: Readonly<Record<string, readonly string[]>> = {
     "BOS.MD01.CARD.NO_MEMBER_IN_PARLIAMENT.v1",
     "BOS.MD01.CARD.CONSENT_GROUND.v1",
   ],
-  "BOS.MD01.DUEL.POSTWAR.STILL_HERE.v1": [
-    "BOS.MD01.CARD.WAR_DEBT.v1",
-    "BOS.MD01.CARD.COLONIAL_REVENUE.v1",
-  ],
   "BOS.MD01.DUEL.REP.WHICH_MAN.v1": ["BOS.MD01.CARD.CONSENT_GROUND.v1"],
-  "BOS.MD01.DUEL.STAMP.WHICH_HUNDRED.v1": [
-    "BOS.MD01.CARD.STAMP_DATE.v1",
-    "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1",
+  "BOS.MD01.DUEL.RESIST.WAR_OR_BOYCOTT.v1": [
+    "BOS.MD01.CARD.NON_IMPORTATION.v1",
+    "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1",
   ],
 };
 

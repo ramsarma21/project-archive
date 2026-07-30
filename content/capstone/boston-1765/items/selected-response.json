@@ -8,188 +8,46 @@
     "note": "Each `descriptor` is exactly an AssessmentItemDescriptor and carries no other key. Authoring evidence lives beside it under `authoring`, which no runtime reads. There is no answer key in this file and verify.mjs fails if a key-shaped field appears — see answer-key.json."
   },
   "idiom": {
-    "options": "Four options, A–D, one unambiguously correct. STAAR alternates A–D and F–J by item position; position is a property of a form rather than of an item, so authored items use A–D and the two released items keep TEA's own letters.",
-    "distractors": "Every distractor is a real misconception rather than filler. Each one is named in `authoring.distractors` with the misunderstanding it catches, so a wrong answer tells a teacher something.",
+    "options": "Four options, A-D, one unambiguously correct. Authored items use A-D; the three released items keep TEA's own letters and are mapped by reference in released-item-map.json.",
+    "distractors": "Every distractor is a real misconception rather than filler, named in `authoring.distractors` with the misunderstanding it catches.",
     "reading": "Stems are written at the same bar as the module: a thirteen-year-old reads them without a dictionary, and no option is longer than the stem."
   },
 
   "entries": [
     {
       "descriptor": {
-        "itemId": "BOS.CAP.POSTWAR.ORDERING.v1",
+        "itemId": "BOS.CAP.ACTS.BOUNDARY.v1",
         "itemVersion": "v1",
-        "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-        "format": "SELECTED_RESPONSE",
-        "probe": "ORDERING",
-        "provenance": {
-          "kind": "AUTHORED_STAAR_STYLE",
-          "authoredIn": "content/capstone/boston-1765/items/selected-response.json",
-          "note": "Cause-and-effect diagram with a missing middle step, which is a standard STAAR Grade 8 Social Studies stimulus form."
-        },
-        "reviewStatus": "DRAFT",
-        "era": "1763-1765",
-        "stem": "Britain's war with France ends (1763)  →  ?  →  Parliament passes the Stamp Act (1765)\n\nWhich event best completes this diagram?",
-        "options": [
-          { "optionId": "A", "text": "Colonial assemblies ask Parliament to raise money on their behalf." },
-          { "optionId": "B", "text": "Britain is left owing a large debt and looks to the colonies for money to help pay it." },
-          { "optionId": "C", "text": "Britain ends all trade between itself and the colonies." },
-          { "optionId": "D", "text": "The colonies begin printing their own money to pay for the war." }
-        ],
-        "usableAsIs": true,
-        "optionPoolComplete": true
-      },
-      "authoring": {
-        "askedBy": "the middle of the causal chain, supplied by the student",
-        "distinctFrom": "The released RECALL item asks the motive as a label. This asks the student to supply the step that connects two dates, which a student can fail while still recognising the motive.",
-        "distractors": {
-          "A": "The colonies asked for it — the circular misreading Mission-Slate §4.9 rejects in the duel bank's WHY_NOW.",
-          "C": "Trade was cut off — confuses revenue policy with the later non-importation and port closure.",
-          "D": "The colonies paid for the war themselves — a plausible reading of 'the colonies paid' that gets the direction backwards."
-        },
-        "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"]
-      }
-    },
-
-    {
-      "descriptor": {
-        "itemId": "BOS.CAP.POSTWAR.BOUNDARY.v1",
-        "itemVersion": "v1",
-        "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
+        "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
         "format": "SELECTED_RESPONSE",
         "probe": "BOUNDARY",
         "provenance": {
           "kind": "AUTHORED_STAAR_STYLE",
-          "authoredIn": "content/capstone/boston-1765/items/selected-response.json"
-        },
-        "reviewStatus": "DRAFT",
-        "era": "1765",
-        "stem": "After the war with France, Britain owed more money than it had ever owed before. Parliament decided that part of the money to pay that debt should come from —",
-        "options": [
-          { "optionId": "A", "text": "landowners in Britain, who had gained the most from the war" },
-          { "optionId": "B", "text": "France, as the defeated power" },
-          { "optionId": "C", "text": "the American colonies" },
-          { "optionId": "D", "text": "loans from other European governments" }
-        ],
-        "usableAsIs": true,
-        "optionPoolComplete": true
-      },
-      "authoring": {
-        "askedBy": "the edge of who the policy points at",
-        "distinctFrom": "ORDERING asks what happened between two dates; this asks who the resulting policy reached for. A student can hold the chain and still think Britain taxed itself.",
-        "distractors": {
-          "A": "Britain taxed itself — the answer a student gives who has the debt but not the colonial half.",
-          "B": "The loser pays — reasonable-sounding, and the wrong century's idea of a war settlement.",
-          "D": "Borrow more — plausible and the thing the debt already was."
-        },
-        "answerableFrom": ["BOS.MD01.CUE.BRIEF_POSTWAR.v1"]
-      }
-    },
-
-    {
-      "descriptor": {
-        "itemId": "BOS.CAP.STAMP.RECALL.v1",
-        "itemVersion": "v1",
-        "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-        "format": "SELECTED_RESPONSE",
-        "probe": "RECALL",
-        "provenance": {
-          "kind": "AUTHORED_STAAR_STYLE",
           "authoredIn": "content/capstone/boston-1765/items/selected-response.json",
-          "note": "The proposition is stated in TEA's own 2023 constructed-response scoring guide as the rubric bullet 'All colonists had to pay taxes on documents and paper.' No released selectable item tests it."
+          "note": "The boundary of the Coercive Acts: three real acts inside, one earlier tax outside. Distinguishing the 1774 Acts from the 1765 Stamp Act is the chronology point the lesson's sequencing teaches."
         },
         "reviewStatus": "DRAFT",
-        "era": "1765",
-        "stem": "The Stamp Act of 1765 required colonists to buy a paid stamp for —",
+        "era": "1774",
+        "stem": "Which of these was NOT part of the Coercive Acts that Parliament passed in 1774?",
         "options": [
-          { "optionId": "A", "text": "all goods unloaded at colonial ports" },
-          { "optionId": "B", "text": "food and cloth sold in colonial markets" },
-          { "optionId": "C", "text": "tools and ironwork made by colonial blacksmiths" },
-          { "optionId": "D", "text": "printed and legal papers, such as newspapers and court documents" }
+          { "optionId": "A", "text": "Closing the port of Boston to trade" },
+          { "optionId": "B", "text": "Ending the Massachusetts town meetings" },
+          { "optionId": "C", "text": "A tax on newspapers and other printed paper" },
+          { "optionId": "D", "text": "Quartering soldiers on the town" }
         ],
         "usableAsIs": true,
         "optionPoolComplete": true
       },
       "authoring": {
-        "askedBy": "the taxed category, named",
-        "distinctFrom": "BOUNDARY asks the student to exclude; this asks them to include. A student running a 'the British taxed everything' heuristic can pass neither, but a student who has only half the boundary passes one.",
+        "askedBy": "the edge of what the four acts include, from outside it",
+        "distinctFrom": "The released items ask how the colonists responded to the Acts. This asks what the Acts were, and hides the boundary: three options are real Coercive Acts and one is the 1765 Stamp Act, so a student who has fused 'the British taxed and punished us' into one blur picks the tax.",
         "distractors": {
-          "A": "Imports — the Sugar Act's shape, and the boundary an eighth grader who has met one customs duty reaches for first.",
-          "B": "Everyday purchases — the apprentice's error, in option form.",
-          "C": "Manufactured goods — the misreading that the Act attacked colonial industry."
+          "A": "Inside — the Port Act, the most memorable of the four.",
+          "B": "Inside — the Government Act.",
+          "D": "Inside — the Quartering Act."
         },
-        "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"]
-      }
-    },
-
-    {
-      "descriptor": {
-        "itemId": "BOS.CAP.STAMP.BOUNDARY.v1",
-        "itemVersion": "v1",
-        "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-        "format": "SELECTED_RESPONSE",
-        "probe": "BOUNDARY",
-        "provenance": {
-          "kind": "AUTHORED_STAAR_STYLE",
-          "authoredIn": "content/capstone/boston-1765/items/selected-response.json"
-        },
-        "reviewStatus": "DRAFT",
-        "era": "1765",
-        "stem": "From 1 November 1765, which of these would NOT have needed a paid stamp?",
-        "options": [
-          { "optionId": "A", "text": "A newspaper printed in Boston" },
-          { "optionId": "B", "text": "A deed recorded in a colonial court" },
-          { "optionId": "C", "text": "A barrel of nails sold at a shop" },
-          { "optionId": "D", "text": "A licence issued to a tavern keeper" }
-        ],
-        "usableAsIs": true,
-        "optionPoolComplete": true
-      },
-      "authoring": {
-        "askedBy": "the edge from outside it",
-        "distinctFrom": "RECALL names the category and this one hides it. Three of the four options are inside the Act, so a student who has memorised 'paper is taxed' without the boundary now has three answers that look right and must find the one that is not paper at all. This is the pairing the shrinking retry needs: passing RECALL and failing BOUNDARY is a real and diagnosable state.",
-        "distractors": {
-          "A": "Inside — the printed half, and the most memorable example.",
-          "B": "Inside — the legal half.",
-          "D": "Inside — a licence is the example a student is least likely to have met, so choosing it is the tell for a shallow list rather than a category."
-        },
-        "negativeStemNote": "STAAR does use NOT-stems and capitalises the word, which is why it is capitalised here. It is the only negative stem in the pool; two would be a reading trap rather than a measurement.",
-        "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1"]
-      }
-    },
-
-    {
-      "descriptor": {
-        "itemId": "BOS.CAP.STAMP.ORDERING.v1",
-        "itemVersion": "v1",
-        "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-        "format": "SELECTED_RESPONSE",
-        "probe": "ORDERING",
-        "provenance": {
-          "kind": "AUTHORED_STAAR_STYLE",
-          "authoredIn": "content/capstone/boston-1765/items/selected-response.json"
-        },
-        "reviewStatus": "DRAFT",
-        "era": "1765",
-        "stem": "Parliament passed the Stamp Act in March 1765. In August 1765, Boston's printers were still printing on unstamped paper. Which statement best explains this?",
-        "options": [
-          { "optionId": "A", "text": "The Act's stamp duties did not take effect until 1 November 1765." },
-          { "optionId": "B", "text": "Parliament repealed the Act a few months after passing it." },
-          { "optionId": "C", "text": "The Act applied only to colonies south of New England." },
-          { "optionId": "D", "text": "Printers had been given a permanent exemption from the Act." }
-        ],
-        "usableAsIs": true,
-        "optionPoolComplete": true
-      },
-      "authoring": {
-        "askedBy": "the gap between passage and effect",
-        "distinctFrom": "Neither scope item touches time. This one hands the student the March date and asks what accounts for the delay, so the November date does work rather than being recited.",
-        "distractors": {
-          "B": "Repeal — true in 1766 and not in 1765, which makes it the strongest distractor for a student who knows a little more than the module taught.",
-          "C": "Regional scope — invented, and catches a student guessing at any explanation.",
-          "D": "Printers exempt — the opposite of the concept, and the tell for a student who has absorbed that printers were the loudest opponents without knowing why."
-        },
-        "answerableFrom": ["BOS.MD01.CUE.BRIEF_STAMP.v1", "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1"],
-        "answerabilityNote": "The stem supplies March, so the student needs only 1 November, which the module's stamp card states outright."
+        "negativeStemNote": "STAAR capitalises NOT in a negative stem; it is the only negative stem in the pool.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_ACTS.v1"]
       }
     },
 
@@ -255,11 +113,119 @@
         "askedBy": "the line between an authority the colonists accepted and one they did not",
         "distinctFrom": "RECALL asks what Boston elected; this asks what follows from it. The concept is a claim about legitimate authority, and this is the only item in the pool that asks the student to point at the legitimate one rather than at the illegitimate one.",
         "distractors": {
-          "A": "The Crown's own answer, stated fairly. A student who has absorbed 'Parliament ruled the empire' without the consent argument picks it.",
-          "B": "The governor — appointed rather than elected, which is the same error the concept exists to catch, moved one office over.",
-          "C": "The over-claim. Mission-Slate §4.9 rejects it in the duel bank and it belongs here as a distractor, because it is what a student reaches for who thinks the objection was to paying rather than to who asked."
+          "A": "The Crown's own answer, stated fairly.",
+          "B": "The governor — appointed rather than elected, the same error moved one office over.",
+          "C": "The over-claim: that the objection was to paying rather than to who asked."
         },
         "answerableFrom": ["BOS.MD01.CUE.BRIEF_REPRESENTATION.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.RESIST.RECALL.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+        "format": "SELECTED_RESPONSE",
+        "probe": "RECALL",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/selected-response.json",
+          "note": "No released multiple-choice item on non-importation is servable (STAAR.2024.G8SS.37 is image-dependent), so the concept is carried by authored items."
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1774",
+        "stem": "The colonists could not fight Britain's navy or tax its trade. What did they do to press Parliament by economic means?",
+        "options": [
+          { "optionId": "A", "text": "They agreed to stop importing British goods." },
+          { "optionId": "B", "text": "They raised an army to invade Canada." },
+          { "optionId": "C", "text": "They placed a tax on every British good landed at their ports." },
+          { "optionId": "D", "text": "They sent the tea back to England." }
+        ],
+        "usableAsIs": true,
+        "optionPoolComplete": true
+      },
+      "authoring": {
+        "askedBy": "the economic answer, named",
+        "distinctFrom": "BOUNDARY asks what the answer was NOT; this asks what it WAS. A student running a 'they fought back' heuristic passes neither.",
+        "distractors": {
+          "B": "War — the 28% error, and not an economic means.",
+          "C": "Counter-taxation — the 37% error, a power the colonies did not have.",
+          "D": "The wrong year's act — sending back tea is 1773, and it is not a boycott."
+        },
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.RESIST.BOUNDARY.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+        "format": "SELECTED_RESPONSE",
+        "probe": "BOUNDARY",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/selected-response.json"
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1774",
+        "stem": "Which of these was NOT one of the ways the colonists resisted the Coercive Acts in 1774?",
+        "options": [
+          { "optionId": "A", "text": "A boycott of British goods" },
+          { "optionId": "B", "text": "A written petition to the King" },
+          { "optionId": "C", "text": "A congress to coordinate the colonies" },
+          { "optionId": "D", "text": "A declaration of war on Britain" }
+        ],
+        "usableAsIs": true,
+        "optionPoolComplete": true
+      },
+      "authoring": {
+        "askedBy": "the edge of the lawful forms, from outside them",
+        "distinctFrom": "RECALL names the boycott; this hides it among the real forms and asks which is the one the colonists did NOT take. The wrong answer is the war a student expects the story to reach.",
+        "distractors": {
+          "A": "Inside — non-importation.",
+          "B": "Inside — the petition.",
+          "C": "Inside — the Continental Congress."
+        },
+        "negativeStemNote": "A second negative stem in the pool, on a different concept from the first; the two never share a form.",
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"]
+      }
+    },
+
+    {
+      "descriptor": {
+        "itemId": "BOS.CAP.RESIST.ORDERING.v1",
+        "itemVersion": "v1",
+        "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+        "format": "SELECTED_RESPONSE",
+        "probe": "ORDERING",
+        "provenance": {
+          "kind": "AUTHORED_STAAR_STYLE",
+          "authoredIn": "content/capstone/boston-1765/items/selected-response.json",
+          "note": "Cause-and-effect diagram with a missing middle step, a standard STAAR Grade 8 Social Studies stimulus form."
+        },
+        "reviewStatus": "DRAFT",
+        "era": "1774",
+        "stem": "Parliament closes Boston's harbour (1774)  ->  ?  ->  the colonies together agree to stop importing British goods\n\nWhich event best completes this diagram?",
+        "options": [
+          { "optionId": "A", "text": "Delegates from the colonies meet in a Continental Congress." },
+          { "optionId": "B", "text": "Colonists board the ships and destroy the tea." },
+          { "optionId": "C", "text": "Britain repeals all of its taxes on the colonies." },
+          { "optionId": "D", "text": "The colonies declare their independence from Britain." }
+        ],
+        "usableAsIs": true,
+        "optionPoolComplete": true
+      },
+      "authoring": {
+        "askedBy": "the step that turns a closed port into a coordinated boycott",
+        "distinctFrom": "RECALL and BOUNDARY ask what the answer was and was not; this asks what connects the punishment to the boycott — the congress that coordinated it.",
+        "distractors": {
+          "B": "The tea, which is 1773 and before the closure, so the chain runs backwards.",
+          "C": "A repeal that did not happen and would end the chain rather than continue it.",
+          "D": "Independence, two years early and not what a 1774 congress agreed."
+        },
+        "answerableFrom": ["BOS.MD01.CUE.BRIEF_ANSWER.v1"]
       }
     }
   ]

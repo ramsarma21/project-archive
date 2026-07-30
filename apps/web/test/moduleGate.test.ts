@@ -309,15 +309,17 @@ test("the identity and insertion cards frame the deck and teach no concepts", ()
   const insertion = M1_MODULE.cards.at(-1);
   assert.deepEqual(identity?.conceptIds, []);
   assert.deepEqual(insertion?.conceptIds, []);
-  // The forty-seconds-each budget belongs to the three concept cards.
+  // Four case-file cards each teach one concept; the two frames teach none.
   const taught = M1_MODULE.cards.filter((card) => card.conceptIds.length === 1);
-  assert.equal(taught.length, 3);
+  assert.equal(taught.length, 4);
 });
 
-test("exactly one card carries a source excerpt, and it is the synthesis card", () => {
+test("exactly one card carries a source excerpt, and it is the answer card", () => {
+  // The answer card grounds non-importation in the Solemn League and Covenant, the
+  // primary source the courier actually carries. It is the deck's one verbatim quote.
   const withExcerpts = M1_MODULE.cards.filter((card) => card.excerpt);
   assert.equal(withExcerpts.length, 1);
-  assert.equal(withExcerpts[0]?.cueId, "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1");
+  assert.equal(withExcerpts[0]?.cueId, "BOS.MD01.CUE.BRIEF_ANSWER.v1");
   // Verbatim quotation, so an excerpt has to know where it came from. Runtime
   // never generates or paraphrases a source, and an unattributed one could not
   // be checked against the Act.
