@@ -663,12 +663,13 @@ const PRESENTER_HOLO_FRAG = /* glsl */ `
   // Highlight rolloff so a warmed cheek/forehead cannot clip to white.
   float holoL = dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
   gl_FragColor.rgb *= 1.0 - holoFront * smoothstep(0.62, 1.0, holoL) * 0.5;
-  // MODESTY CROP: the shipped rig wears an open jacket, so the room projects only
-  // her upper body — she materialises from about the collarbone up out of the
-  // emitter beam, and everything below is gone. The fade completes above the
-  // chin so the face stays solid and readable. Do NOT lower these thresholds
-  // without re-checking exposure; a replacement asset is being commissioned.
-  float holoBust = smoothstep(1.42, 1.52, vHoloWorldY);
+  // MODESTY BUST: the shipped rig wears an open jacket, so the room projects a
+  // proper hologram BUST — head, neck, both (jacket-covered) shoulders and the
+  // top of the chest — fading out into the emitter beam ABOVE where the jacket
+  // opens, not a severed head cut at the jaw. Solid down through the shoulders
+  // (~1.46), fading out by ~1.36, which sits above the open V. Do NOT lower the
+  // floor past the jacket line; a fully-covered replacement asset is coming.
+  float holoBust = smoothstep(1.36, 1.46, vHoloWorldY);
   float holoA = uOpacity * (0.72 + 0.26 * holoFres + 0.18 * holoRim);
   holoA *= holoBust;
   holoA *= mix(0.92, 1.0, holoDit);
