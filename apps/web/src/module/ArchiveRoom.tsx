@@ -40,6 +40,7 @@ import {
   slabStateFor,
   type SlabVisualState,
 } from "./archiveHologram.js";
+import { JAW_OPEN_MORPH } from "./moduleLipSync.js";
 import {
   playArchiveHandoff,
   playArchiveHover,
@@ -699,13 +700,26 @@ function PresenterRigMesh(props: { presenter: ModulePresenter; reducedMotion: bo
     root.position.y -= measureRig(root).min.y;
     const owned = holographizePresenter(root, { reducedMotion: props.reducedMotion });
     const materials: THREE.Material[] = [];
+    // The room presenter is a silent ambient hologram — she never narrates here
+    // (that happens in the in-file/brief SystemPresenter), so her mouth must stay
+    // shut. This GLB ships the `jawOpen` morph defaulted to 1 (fully open) and NO
+    // clip animates the morph, so without driving it closed the idle plays over a
+    // permanently gaping mouth — the "frozen/terrifying" rest the owner saw.
+    // Collect every mesh carrying the morph, pin it shut now (so the first frame
+    // is closed) and again every frame in useFrame.
+    const jaws: Array<{ mesh: THREE.Mesh; index: number }> = [];
     root.traverse((object) => {
       const mesh = object as THREE.Mesh;
       if (!mesh.isMesh) return;
       const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       for (const material of list) materials.push(material);
+      const index = mesh.morphTargetDictionary?.[JAW_OPEN_MORPH];
+      if (index != null && mesh.morphTargetInfluences) {
+        mesh.morphTargetInfluences[index] = 0;
+        jaws.push({ mesh, index });
+      }
     });
-    return { root, owned, materials };
+    return { root, owned, materials, jaws };
   }, [gltf.scene, props.reducedMotion]);
 
   useEffect(() => {
@@ -738,6 +752,12 @@ function PresenterRigMesh(props: { presenter: ModulePresenter; reducedMotion: bo
 
   useFrame((_state, dt) => {
     mixerRef.current?.update(Math.min(dt, 0.05));
+    // Hold the silent presenter's mouth shut. The mixer never touches the morph
+    // (no clip animates jawOpen) and the GLB defaults it to 1, so we pin it to 0
+    // every frame — the room has no narration, so there is no lip-sync to run.
+    for (const jaw of rig.jaws) {
+      if (jaw.mesh.morphTargetInfluences) jaw.mesh.morphTargetInfluences[jaw.index] = 0;
+    }
     // Neutralise any root-yaw the idle clip bakes in, exactly as SystemPresenter
     // does — otherwise the clip turns her away from the camera (she showed us her
     // back). With the root pinned, the wrapping group's PRESENTER_YAW is the sole
