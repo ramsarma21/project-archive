@@ -36,6 +36,20 @@
       "granted": "2026-07-30"
     },
     {
+      "lane": "archive-room",
+      "paths": [
+        "apps/web/src/module/ArchiveRoom.tsx",
+        "apps/web/src/module/archiveHologram.ts",
+        "apps/web/src/module/archiveAudio.ts",
+        "apps/web/src/module/ModuleArchive.tsx",
+        "apps/web/src/module/module.css",
+        "apps/web/package.json",
+        "pnpm-lock.yaml"
+      ],
+      "reason": "The holographic Archive room replaces the lesson index's flat DOM card list with a real 3D room (procedural shaders and postprocessing, which the asset rule explicitly permits for UI/Archive highlights). Deliberately the FIVE exact files it touches, not the apps/web/src/module/** glob: granting the glob is exclusive and therefore denies it to module-lesson and m1-lesson, which broke lane-guard's own ownership selftest case on ModulePlayer.tsx — the 'a grant overrides ownership in both directions' trap the map documents. A narrow grant records the writer without evicting the co-owners. apps/web/package.json and the CONTESTED pnpm-lock.yaml are included because the room needs @react-three/postprocessing, added via pnpm add in a worktree (the sanctioned path); the lockfile is contested precisely because a silent parallel edit there is unrecoverable, so this makes the change attributable. Granted by the orchestrator on 2026-07-30. Retire when the room merges — and note pnpm-lock.yaml returns to contested, denied to every lane, the moment it does.",
+      "granted": "2026-07-30"
+    },
+    {
       "lane": "duel-hud",
       "paths": [
         "apps/web/src/duel/DuelOverlay.tsx",
