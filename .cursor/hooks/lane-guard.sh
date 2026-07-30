@@ -68,10 +68,12 @@ if [[ "${1:-}" == "--selftest" ]]; then
   t "$W/module-lesson/apps/web/src/module/ModulePlayer.tsx" module-lesson allow
   t "$W/duel-hud/apps/web/src/module/ModulePlayer.tsx" duel-hud deny
   # A grant OVERRIDES ownership, in both directions: content/** is boss-fight's,
-  # but while module.json is granted to module-lesson that lane may write it and
+  # but while module.json is granted to m1-1774 that lane may write it and
   # boss-fight may not. These two cases are the grant mechanism itself, so they
   # must be re-pointed at a LIVE grant whenever one is retired, never deleted.
-  t "$W/module-lesson/content/m1/module.json" module-lesson allow
+  # Re-pointed 2026-07-30: the module-lesson grant retired when its lesson rework
+  # merged (73a4b58) and the same file passed to m1-1774 for the 1774 migration.
+  t "$W/m1-1774/content/m1/module.json" m1-1774 allow
   t "$W/boss-fight/content/m1/module.json" boss-fight deny
   # A grant also overrides CONTESTED, which is the other half of the mechanism:
   # DuelOverlay.tsx and duel.css are denied to every lane by default, and while
