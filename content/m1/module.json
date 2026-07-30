@@ -6,7 +6,7 @@
     "missionId": "M1",
     "stableMissionId": "PA.SEA01.CH02.BOSTON.MD01.v1",
     "chapterId": "boston-1765",
-    "slateSections": ["4.7", "4.9"]
+    "slate": "1774 Coercive Acts (rescoped 2026-07-30)"
   },
   "consumedBy": {
     "payload": "module",
@@ -18,246 +18,236 @@
     "moduleId": "BOS.MD01.MODULE.BRIEF.v1",
     "chapterId": "boston-1765",
     "missionId": "PA.SEA01.CH02.BOSTON.MD01",
-    "title": "Nailed to the Post",
-    "subtitle": "Three minutes. Everything the constable can ask you is in here.",
+    "title": "Four Signatures, Then the Elm",
+    "subtitle": "Three minutes. Everything a patrol can ask you is in here.",
     "cards": [
       {
         "id": "BOS.MD01.MODULE.CARD.IDENTITY.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_IDENTITY.v1",
-        "throughSeconds": 12,
+        "throughSeconds": 22,
         "kicker": "Identity",
         "body": [
-          "Boston, 14 August 1765. You run printed sheets through this town for Mercer's Press and nobody looks twice.",
-          "Today one sheet matters. Read it before you carry it."
+          "Boston, June 1774. Eight months the harbour has been shut. You run papers through this town for the Committee of Correspondence, and nobody looks at you twice.",
+          "Tonight you carry one sheet that matters. Read it before you carry it. Everything a patrol can ask you is in the next three minutes."
         ],
         "conceptIds": [],
         "codexCardIds": [],
-        "advanceLabel": "Open the brief",
+        "advanceLabel": "Open the file",
         "scene": {
           "beats": [
             {
               "id": "BOS.MD01.BEAT.IDENTITY_1.v1",
-              "text": "Boston, the fourteenth of August, 1765. You run printed sheets through this town for Mercer's Press, and nobody looks at you twice."
+              "text": "Boston, June 1774. Eight months the harbour has been shut. You run papers through this town for the Committee of Correspondence, and nobody looks at you twice."
             },
             {
               "id": "BOS.MD01.BEAT.IDENTITY_2.v1",
-              "text": "Today one sheet matters. Read it before you carry it. Everything the constable can ask you is in the next three minutes."
+              "text": "Tonight you carry one sheet that matters. Read it before you carry it. Everything a patrol can ask you is in the next three minutes."
             }
           ],
           "visuals": []
         }
       },
       {
-        "id": "BOS.MD01.MODULE.CARD.POSTWAR.v1",
-        "cueId": "BOS.MD01.CUE.BRIEF_POSTWAR.v1",
-        "throughSeconds": 46,
-        "kicker": "Postwar revenue",
+        "id": "BOS.MD01.MODULE.CARD.CLOSURE.v1",
+        "cueId": "BOS.MD01.CUE.BRIEF_CLOSURE.v1",
+        "throughSeconds": 60,
+        "kicker": "The closure",
         "body": [
-          "Britain's war with France ended in 1763. Britain won it, and came out owing more than it had ever owed before — with an army still to pay for in America.",
-          "Parliament looked across the Atlantic and decided the colonies should pay a share of that debt. That decision is why a tax is suddenly reaching into Boston.",
-          "Keep the order straight: the debt came first, and the tax is Parliament's answer to it, not the other way round."
+          "Eight months ago a crowd put three cargoes of tea in that water.",
+          "Parliament's answer was to close the harbour. Not to fine the men who did it. To close the harbour.",
+          "Every hull in Boston is idle. Including everyone who never touched the tea."
         ],
-        "conceptIds": ["BOS.CONCEPT.POSTWAR_REVENUE.v1"],
-        "codexCardIds": [
-          "BOS.MD01.CARD.WAR_DEBT.v1",
-          "BOS.MD01.CARD.COLONIAL_REVENUE.v1"
-        ],
-        "advanceLabel": "Trace the cause",
+        "conceptIds": ["BOS.CONCEPT.INTOLERABLE_ACTS.v1"],
+        "codexCardIds": ["BOS.MD01.CARD.PORT_CLOSED_TO_PUNISH.v1"],
+        "advanceLabel": "Weigh the blast radius",
         "scene": {
           "beats": [
             {
-              "id": "BOS.MD01.BEAT.POSTWAR_1.v1",
-              "text": "Britain's war with France ended in 1763. Britain won it. But the war left it owing more than ever before. And there was still an army to pay for here in America.",
-              "visualId": "m1-wolfe"
+              "id": "BOS.MD01.BEAT.CLOSURE_1.v1",
+              "text": "Eight months ago a crowd put three cargoes of tea in that water.",
+              "visualId": "m1-coc-port-bill"
             },
             {
-              "id": "BOS.MD01.BEAT.POSTWAR_2.v1",
-              "text": "Parliament looked across the Atlantic and decided the colonies should pay a share of that debt. That decision is why a tax is suddenly reaching into Boston.",
-              "visualId": "m1-wolfe"
+              "id": "BOS.MD01.BEAT.CLOSURE_2.v1",
+              "text": "Parliament's answer was to close the harbour. Not to fine the men who did it. To close the harbour.",
+              "visualId": "m1-coc-port-bill"
             },
             {
-              "id": "BOS.MD01.BEAT.POSTWAR_3.v1",
-              "text": "Keep the order straight. The debt came first. The tax is Parliament's answer to it, not the other way round."
+              "id": "BOS.MD01.BEAT.CLOSURE_3.v1",
+              "text": "Every hull in Boston is idle. Including everyone who never touched the tea.",
+              "visualId": "m1-bostonians-distress"
             }
           ],
           "visuals": [
             {
-              "id": "m1-wolfe",
-              "src": "/historical/m1/wolfe-death-of-general-wolfe-1770.jpg",
-              "alt": "Oil painting of the dying General Wolfe surrounded by officers on the battlefield at Quebec.",
-              "title": "The Death of General Wolfe",
-              "caption": "A later depiction: Benjamin West painted this in 1770 of an event of 1759. It is history painting, not documentary evidence — the war it recalls is the war that left Britain in debt.",
-              "attribution": "Benjamin West (1738–1820)",
-              "sourceUrl": "https://commons.wikimedia.org/wiki/File:Benjamin_West_005.jpg",
-              "date": "1770 (event of 13 September 1759)",
-              "rights": "Public domain",
-              "classification": "LATER_DEPICTION"
+              "id": "m1-coc-port-bill",
+              "src": "/historical/m1/boston-committee-port-bill-1774.jpg",
+              "alt": "Printed 1774 broadside headed 'BOSTON, May 12, 1774. Gentlemen,' set in period type, closing 'By Order of the Committee' over the signature of William Cooper, Town Clerk.",
+              "title": "The Boston Committee of Correspondence on the Port Act, 12 May 1774",
+              "caption": "A primary source: the Boston Committee of Correspondence's printed circular of 12 May 1774. It reports the act 'for blocking up the Harbour of Boston, with a Fleet of Ships of War,' and states the punishment reaches the whole town — the wharves 'ravished from the rightful Owners... to the utter Ruin of many worthy Citizens, in Revenge to the Patriotism of some, whom probably this Clause was inserted to punish.' Guilty and innocent, shut in together.",
+              "attribution": "Boston Committee of Correspondence (signed William Cooper, Town Clerk). Library of Congress, Printed Ephemera Collection, digital id cph.3a50556 (LCCN 2006682758).",
+              "sourceUrl": "https://commons.wikimedia.org/wiki/File:Revolutionary_war_broadside-_The_Boston_committee_of_Correspondence_responds_to_the_Boston_Port_Bill._May_12,_1774_LCCN2006682758.jpg",
+              "date": "12 May 1774",
+              "rights": "Public domain (published 1774).",
+              "classification": "PRIMARY_SOURCE"
+            },
+            {
+              "id": "m1-bostonians-distress",
+              "src": "/historical/m1/bostonians-in-distress-1774.jpg",
+              "alt": "1774 mezzotint of Bostonians caged beneath the Liberty Tree, the cage labelled 'BOSTON', handed fish from a boat while British cannon and a fleet of warships surround them.",
+              "title": "The Bostonians in Distress, 1774",
+              "caption": "Period art: a 1774 London mezzotint of the closed port's toll — Boston caged under the Liberty Tree, ringed by cannon and warships, kept alive on relief passed up from a boat. Contemporary comment, not a documentary record.",
+              "attribution": "Published London: R. Sayer & J. Bennett, 1774. Library of Congress, British Cartoon Prints Collection, digital id ppmsca.31272 (LCCN 2011647025).",
+              "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Bostonians_in_distress_LCCN2011647025.jpg",
+              "date": "1774",
+              "rights": "Public domain (published 1774).",
+              "classification": "PERIOD_ART"
             }
           ]
         },
         "check": {
-          "id": "BOS.MD01.CHECK.POSTWAR_REVENUE.v1",
-          "conceptId": "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-          "prompt": "After 1763, why did Parliament decide to raise revenue from the colonies?",
-          "reinforcement": "The war left the debt; an army still had to be paid for in America; Parliament decided the colonies should share that cost.",
+          "id": "BOS.MD01.CHECK.CLOSURE.v1",
+          "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+          "prompt": "The harbour is closed. Who does the closure fall on?",
+          "reinforcement": "The Port Act closes the port itself, so it falls on every trade in Boston — the fishmonger who never touched the tea starves beside the men who did. That is what makes it the punishment of a whole town.",
           "drawCount": 4,
           "correctOption": {
-            "id": "OPT.WAR_DEBT_AND_ARMY",
-            "text": "The war left Britain deep in debt, with an army still to keep in America, and Parliament decided the colonies should share that cost.",
+            "id": "OPT.EVERY_TRADE",
+            "text": "Every trade in Boston, whoever was involved.",
             "correct": true,
-            "feedback": "Right. Debt and defence came first, and the tax is Parliament's answer to the bill."
+            "feedback": "The Act closes the port itself. The fishmonger who never touched the tea starves beside the men who did."
           },
           "distractorPool": [
             {
-              "id": "OPT.TAX_MADE_THE_DEBT",
-              "text": "The new stamp tax was itself what had put Britain into debt.",
+              "id": "OPT.ONLY_TEA_MEN",
+              "text": "Only the men who destroyed the tea.",
               "correct": false,
-              "feedback": "That reverses the order. The debt came first, from the war; the tax is how Parliament pays it down, not its cause."
+              "feedback": "That would be a fine, or a trial. Parliament closed the whole harbour instead, which is what makes this the punishment of a town."
             },
             {
-              "id": "OPT.OVERDUE_TAXES",
-              "text": "The colonies had fallen years behind on taxes they already owed the Crown, and the Act was merely the machinery to collect everything that was overdue.",
+              "id": "OPT.ONLY_TEA_MERCHANTS",
+              "text": "Only the merchants who dealt in tea.",
               "correct": false,
-              "feedback": "No. There were no such earlier taxes to fall behind on. The money was for the war debt and the cost of the army."
+              "feedback": "Tea is not the boundary. The port is shut to all cargo."
             },
             {
-              "id": "OPT.PUNISH_SMUGGLERS",
-              "text": "Parliament meant to punish Boston's merchants for smuggling goods past the customs house during the war.",
+              "id": "OPT.THREAT",
+              "text": "Nobody yet; it is only a threat.",
               "correct": false,
-              "feedback": "No. The Act raised money; it was not a penalty. The brief traced it to war debt and an army to pay for, not to smuggling."
+              "feedback": "It took effect. The wharves are still."
             },
             {
-              "id": "OPT.LONDON_PAYS",
-              "text": "London's own merchants and the King's household were the ones meant to pay it down.",
+              "id": "OPT.SMUGGLERS",
+              "text": "Only the smugglers the customs house was already chasing.",
               "correct": false,
-              "feedback": "The wrong payer. Parliament decided the colonies should supply part of it, not people back in Britain."
+              "feedback": "No. The Act shuts the port to honest and dishonest cargo alike; it does not sort the town into guilty and innocent."
             },
             {
-              "id": "OPT.SETTLE_NEW_LAND",
-              "text": "Britain had just won new land in the war and wanted the colonists to go and settle it.",
+              "id": "OPT.RINGLEADERS",
+              "text": "Only the Committee men who called the meeting.",
               "correct": false,
-              "feedback": "Land is not a bill. The Act raised revenue against the war debt; it did not fund settlement."
-            },
-            {
-              "id": "OPT.EVERYONE_TAXED",
-              "text": "Every part of the empire was being taxed the same way, and the colonies were simply included.",
-              "correct": false,
-              "feedback": "Not so. The measure reached into the colonies in particular, to raise a revenue there against the war debt."
+              "feedback": "No. It reaches the whole waterfront, not the organisers, which is exactly what makes it collective punishment."
             }
           ]
         }
       },
       {
-        "id": "BOS.MD01.MODULE.CARD.STAMP.v1",
-        "cueId": "BOS.MD01.CUE.BRIEF_STAMP.v1",
-        "throughSeconds": 84,
-        "kicker": "Stamp scope",
+        "id": "BOS.MD01.MODULE.CARD.ACTS.v1",
+        "cueId": "BOS.MD01.CUE.BRIEF_ACTS.v1",
+        "throughSeconds": 96,
+        "kicker": "What the law says",
         "body": [
-          "The tax has a shape, and the shape is the thing to learn. From 1 November, printed paper and legal paper must carry a stamp that somebody has paid for.",
-          "Inside it: newspapers, handbills, deeds, court papers, licences, even playing cards. Outside it: a bolt of cloth, a barrel of nails, a letter you wrote out by hand yourself. Ordinary goods are not the target.",
-          "Which is why the shop you run for is where this lands hardest. A printer's entire trade is the one thing being taxed."
+          "Four acts, not one. The harbour shut. The colony's charter rewritten. Soldiers quartered. Trials moved out of reach.",
+          "Note what is not in them. Walking a street with paper in your hand is still lawful. That will matter tonight."
         ],
-        "conceptIds": ["BOS.CONCEPT.STAMP_SCOPE.v1"],
+        "conceptIds": ["BOS.CONCEPT.INTOLERABLE_ACTS.v1"],
         "codexCardIds": [
-          "BOS.MD01.CARD.STAMP_PAPER_SCOPE.v1",
-          "BOS.MD01.CARD.STAMP_DATE.v1",
-          "BOS.MD01.CARD.PRINTER_IMPACT.v1"
+          "BOS.MD01.CARD.FOUR_ACTS.v1",
+          "BOS.MD01.CARD.PAPER_IS_LAWFUL.v1"
         ],
-        "advanceLabel": "Compare the papers",
+        "advanceLabel": "Learn the boundary",
         "scene": {
           "beats": [
             {
-              "id": "BOS.MD01.BEAT.STAMP_1.v1",
-              "text": "The tax has a shape, and that shape is the thing to learn. From the first of November, printed paper and legal paper must carry a stamp that someone has paid for.",
-              "visualId": "m1-stamp-act"
+              "id": "BOS.MD01.BEAT.ACTS_1.v1",
+              "text": "Four acts, not one. The harbour shut. The colony's charter rewritten. Soldiers quartered. Trials moved out of reach.",
+              "visualId": "m1-boston-1768"
             },
             {
-              "id": "BOS.MD01.BEAT.STAMP_2.v1",
-              "text": "It falls on newspapers, handbills, deeds, court papers, licences, even playing cards. It leaves out the ordinary things. A bolt of cloth, a barrel of nails, a letter in your own hand.",
-              "visualId": "m1-stamp-act"
-            },
-            {
-              "id": "BOS.MD01.BEAT.STAMP_3.v1",
-              "text": "Which is why the shop you run for is where this lands hardest. A printer's whole trade is the one thing being taxed."
+              "id": "BOS.MD01.BEAT.ACTS_2.v1",
+              "text": "Note what is not in them. Walking a street with paper in your hand is still lawful. That will matter tonight.",
+              "visualId": "m1-boston-1768"
             }
           ],
           "visuals": [
             {
-              "id": "m1-stamp-act",
-              "src": "/historical/m1/stamp-act-1765.jpg",
-              "alt": "Printed page of the 1765 Stamp Act with the Act's title and opening clauses set in period type.",
-              "title": "The Stamp Act, 1765",
-              "caption": "A primary source: a printed page of the Act itself, passed 22 March 1765. This is the law the sheet in your hand is fighting.",
-              "attribution": "Parliament of Great Britain",
-              "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parliament_Stamp_Act1765.jpg",
-              "date": "1765",
+              "id": "m1-boston-1768",
+              "src": "/historical/m1/boston-1768-landing-of-troops-revere.jpg",
+              "alt": "Engraved harbour view of Boston with British warships and lines of troops landing at the Long Wharf.",
+              "title": "A View of Part of the Town of Boston, and the Landing of Troops, 1768",
+              "caption": "A primary source: Paul Revere's engraving of British troops landing at Boston in 1768. Six years on, the Coercive Acts quarter soldiers like these in the town and move trials out of a Boston jury's reach. It shows the occupation rather than the acts themselves; the specifics are named here, not read from it.",
+              "attribution": "Paul Revere (1735–1818), engraver",
+              "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_prospective_view_of_the_town_of_Boston,_the_capital_of_New-England_-_and_the_landing_of_--_troops_in_the_year_1768,_in_consequence_of_letters_from_Gov._Bernard,_the_commissioners,_etc._to_LCCN2004670036.jpg",
+              "date": "engraved c. 1768–1770 (event of 1 October 1768)",
               "rights": "Public domain",
               "classification": "PRIMARY_SOURCE"
             }
           ]
         },
         "check": {
-          "id": "BOS.MD01.CHECK.STAMP_SCOPE.v1",
-          "conceptId": "BOS.CONCEPT.STAMP_SCOPE.v1",
-          "prompt": "Come the first of November, which single item on a Boston shop's counter must carry the Crown's paid stamp?",
-          "reinforcement": "The stamp falls on printed and legal paper, from the first of November. Ordinary goods and a letter written in your own hand stay outside it.",
+          "id": "BOS.MD01.CHECK.ACTS.v1",
+          "conceptId": "BOS.CONCEPT.INTOLERABLE_ACTS.v1",
+          "prompt": "Which of these is still lawful in Boston tonight?",
+          "reinforcement": "The four Acts shut the port, ended the town meeting, quartered soldiers, and moved trials out of reach — but none of them forbids carrying printed paper through the streets. That is what makes your cover hold.",
           "drawCount": 4,
           "correctOption": {
-            "id": "OPT.PRINTED_NEWSPAPER",
-            "text": "The printed newspaper stacked on the counter.",
+            "id": "OPT.CARRY_PAPER",
+            "text": "Carrying printed paper through the streets.",
             "correct": true,
-            "feedback": "Yes. The line is drawn around printed and legal paper, and a newspaper sits squarely inside it."
+            "feedback": "Nothing in the four Acts forbids it. That is what makes your cover hold."
           },
           "distractorPool": [
             {
-              "id": "OPT.BOLT_OF_CLOTH",
-              "text": "A bolt of imported cloth, since it is sold from the very same counter.",
+              "id": "OPT.TOWN_MEETING",
+              "text": "Holding a town meeting.",
               "correct": false,
-              "feedback": "No. Being sold in a shop does not put a thing inside the Act; being printed or legal paper does."
+              "feedback": "The Government Act ended them."
             },
             {
-              "id": "OPT.BARREL_OF_NAILS",
-              "text": "A barrel of nails from the chandler, because the Act reaches everything a shop trades.",
+              "id": "OPT.LAND_CARGO",
+              "text": "Landing cargo at the wharf.",
               "correct": false,
-              "feedback": "No. Ordinary goods stay outside the Act. It is not a tax on trade; it is a tax on paper."
+              "feedback": "The Port Act closed it."
             },
             {
-              "id": "OPT.HANDWRITTEN_LETTER",
-              "text": "A private letter written and sealed in a woman's own hand.",
+              "id": "OPT.SOLDIER_JURY",
+              "text": "Trying a soldier before a Boston jury.",
               "correct": false,
-              "feedback": "No. Being paper is not the test. A letter in your own hand stays outside the Act; a printed sheet sits inside it."
+              "feedback": "The Administration of Justice Act moved those trials out of reach."
             },
             {
-              "id": "OPT.BRITISH_GOODS_ONLY",
-              "text": "Any goods shipped in from Britain, though nothing that was made here in Boston.",
+              "id": "OPT.ELECT_COUNCIL",
+              "text": "Choosing the colony's council by the town's own vote.",
               "correct": false,
-              "feedback": "No. The Act turns on printed and legal paper, not on where a good was made or shipped from."
+              "feedback": "The Government Act rewrote the charter and put that choice in the Crown's hands."
             },
             {
-              "id": "OPT.COIN_IN_TILL",
-              "text": "The hard silver in the till, since the stamp duty has to be settled in coin.",
+              "id": "OPT.REFUSE_QUARTER",
+              "text": "Refusing to quarter a soldier the army sends to your parlour.",
               "correct": false,
-              "feedback": "No. That the duty is paid in coin does not make the coin the thing taxed; the tax is on the paper."
-            },
-            {
-              "id": "OPT.ALREADY_IN_FORCE",
-              "text": "Nothing in particular yet, since the Act passed back in the spring and so already falls on the whole shop alike.",
-              "correct": false,
-              "feedback": "No. The duty does not begin until the first of November, and even then it reaches paper, not the whole shop."
+              "feedback": "The Quartering Act is exactly what removed that refusal."
             }
           ]
         }
       },
       {
-        "id": "BOS.MD01.MODULE.CARD.REPRESENTATION.v1",
+        "id": "BOS.MD01.MODULE.CARD.CONSENT.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_REPRESENTATION.v1",
-        "throughSeconds": 134,
-        "kicker": "Representation",
+        "throughSeconds": 122,
+        "kicker": "Consent",
         "body": [
-          "Boston does elect people — its own town meeting, its own representatives in the Massachusetts assembly. Those men could tax this town tomorrow.",
-          "Boston elects nobody in Parliament. Not one member. And Parliament is what laid this tax.",
-          "The claim underneath your sheet is this: a tax may be laid only by a body the taxed people chose. So the complaint is not the price — the town would say the same if the stamp cost a farthing. The complaint is who laid it.",
-          "London answers that Parliament speaks for every subject, voted for or not. Boston's reply is short: we chose none of you. A lawful vote by men we never picked is still not consent."
+          "Boston elects its own assembly. It elects no member of Parliament.",
+          "The objection is not the cost. It is who laid it."
         ],
         "conceptIds": ["BOS.CONCEPT.REPRESENTATION.v1"],
         "codexCardIds": [
@@ -269,34 +259,26 @@
         "scene": {
           "beats": [
             {
-              "id": "BOS.MD01.BEAT.REPRESENTATION_1.v1",
-              "text": "Boston does elect people. It has its own town meeting, and its own members in the Massachusetts assembly. Those men could tax this town tomorrow.",
-              "visualId": "m1-boston-1768"
+              "id": "BOS.MD01.BEAT.CONSENT_1.v1",
+              "text": "Boston elects its own assembly. It elects no member of Parliament.",
+              "visualId": "m1-stamp-act"
             },
             {
-              "id": "BOS.MD01.BEAT.REPRESENTATION_2.v1",
-              "text": "But Boston elects nobody in Parliament. Not one member. And Parliament is the body that laid this tax.",
-              "visualId": "m1-boston-1768"
-            },
-            {
-              "id": "BOS.MD01.BEAT.REPRESENTATION_3.v1",
-              "text": "The claim under your sheet is simple. A tax may be laid only by a body the taxed people chose. So the quarrel is not really the price. The town would say the same if the stamp cost a farthing. What it objects to is who laid it."
-            },
-            {
-              "id": "BOS.MD01.BEAT.REPRESENTATION_4.v1",
-              "text": "London answers that Parliament speaks for every subject, chosen or not. Boston's reply is short. We chose none of you. A lawful vote by men we never picked is still not consent."
+              "id": "BOS.MD01.BEAT.CONSENT_2.v1",
+              "text": "The objection is not the cost. It is who laid it. The town would say the same if the tax were a farthing, and it says the same about the men who wrote these Acts: Boston chose none of them.",
+              "visualId": "m1-stamp-act"
             }
           ],
           "visuals": [
             {
-              "id": "m1-boston-1768",
-              "src": "/historical/m1/boston-1768-landing-of-troops-revere.jpg",
-              "alt": "Engraved harbour view of Boston with British warships and lines of troops landing at the Long Wharf.",
-              "title": "A View of Part of the Town of Boston, and the Landing of Troops, 1768",
-              "caption": "A primary source: Paul Revere's engraving of British troops landing at Boston on 1 October 1768. It shows the town whose consent is in dispute — and what force behind a law without it looks like. Note the engraving postdates the 1765 module date.",
-              "attribution": "Paul Revere (1735–1818), engraver",
-              "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_prospective_view_of_the_town_of_Boston,_the_capital_of_New-England_-_and_the_landing_of_--_troops_in_the_year_1768,_in_consequence_of_letters_from_Gov._Bernard,_the_commissioners,_etc._to_LCCN2004670036.jpg",
-              "date": "engraved c. 1768–1770 (event of 1 October 1768)",
+              "id": "m1-stamp-act",
+              "src": "/historical/m1/stamp-act-1765.jpg",
+              "alt": "Printed page of the 1765 Stamp Act with the Act's title and opening clauses set in period type.",
+              "title": "The Stamp Act, 1765",
+              "caption": "A primary source, and from an earlier decade: the printed 1765 Stamp Act, where Boston first argued that a tax it never consented to could not bind it. That consent argument is the one carried forward to 1774 — and the date matters, because a 1765 document is not the Tea Party's punishment.",
+              "attribution": "Parliament of Great Britain",
+              "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parliament_Stamp_Act1765.jpg",
+              "date": "1765",
               "rights": "Public domain",
               "classification": "PRIMARY_SOURCE"
             }
@@ -305,116 +287,148 @@
         "check": {
           "id": "BOS.MD01.CHECK.REPRESENTATION.v1",
           "conceptId": "BOS.CONCEPT.REPRESENTATION.v1",
-          "prompt": "What is Boston's actual objection to the Stamp Act?",
-          "reinforcement": "Boston elects local bodies but no members of Parliament; it objects that a Parliament it never chose has no consent to tax it. The quarrel is over consent, not price.",
+          "prompt": "What is the objection to the tax?",
+          "reinforcement": "Boston elects its own assembly but no member of Parliament, so the objection is who laid the tax — a body the town never chose — not what it costs.",
           "drawCount": 4,
           "correctOption": {
-            "id": "OPT.NO_VOICE_IN_PARLIAMENT",
-            "text": "Boston elects its own town bodies but no members of Parliament, so it denies that a body it never chose may tax it.",
+            "id": "OPT.WHO_LAID_IT",
+            "text": "It was laid by a body Boston elects no one to.",
             "correct": true,
-            "feedback": "Right. The issue is who laid the tax, and whether the taxed people chose them, not what it costs."
+            "feedback": "The objection is who laid it, not what it costs."
           },
           "distractorPool": [
             {
-              "id": "OPT.PRICE_TOO_HIGH",
-              "text": "The stamp costs too much, and Boston would take it at a lower price.",
+              "id": "OPT.TOO_MUCH",
+              "text": "It costs too much.",
               "correct": false,
-              "feedback": "No. Boston would object even at a farthing. The complaint is who laid the tax, not what it costs."
+              "feedback": "They paid rates to their own assembly willingly. The amount was never the argument."
             },
             {
-              "id": "OPT.KING_NOT_PARLIAMENT",
-              "text": "Boston would accept the very same tax if the King laid it instead of Parliament.",
+              "id": "OPT.DISHONEST",
+              "text": "It was collected dishonestly.",
               "correct": false,
-              "feedback": "No. Consent turns on whether Boston chose the body, and it chose the King's officers no more than Parliament."
+              "feedback": "The complaint is not corruption. It is authority."
             },
             {
-              "id": "OPT.NO_GOVERNMENT_AT_ALL",
-              "text": "Boston has no elected government of any kind and is demanding that one be created.",
+              "id": "OPT.PUNISH_TEA",
+              "text": "It punished them for the tea.",
               "correct": false,
-              "feedback": "No. Boston already elects a town meeting and assembly. What it lacks is a voice in Parliament, the body that laid this tax."
-            },
-            {
-              "id": "OPT.DISHONEST_OFFICIALS",
-              "text": "The officials Parliament sends to collect the stamp are corrupt and grasping, and honest men in the same posts would satisfy the town.",
-              "correct": false,
-              "feedback": "No. Fairness is not the point. A tax needs the consent of people Boston elected, however upright the taxers are."
+              "feedback": "Wrong decade. That is 1774; this argument is from 1765."
             },
             {
               "id": "OPT.TOO_FAR",
-              "text": "Parliament sits too far across the ocean to govern the affairs of Boston well.",
+              "text": "Parliament sits too far across the ocean to tax Boston well.",
               "correct": false,
-              "feedback": "No. Distance is not the argument. Boston would reject a member it never elected even if he lived on Milk Street."
+              "feedback": "Distance is not the argument. Boston would reject a member it never chose even if he lived on Milk Street."
             },
             {
-              "id": "OPT.PASSED_UNLAWFULLY",
-              "text": "The Act was pushed through Parliament in the wrong legal form and without the proper readings, so the town holds it simply void and of no binding effect.",
+              "id": "OPT.KING_INSTEAD",
+              "text": "It should have been the King who laid it, not Parliament.",
               "correct": false,
-              "feedback": "No. The Act was passed by a lawful vote; Boston's ground is that a lawful vote by men it never chose is still not consent."
+              "feedback": "No. Boston chose the King's officers no more than Parliament. Consent turns on whether the town elected the body, and it elected neither."
             }
           ]
         }
       },
       {
-        "id": "BOS.MD01.MODULE.CARD.SYNTHESIS.v1",
-        "cueId": "BOS.MD01.CUE.BRIEF_SYNTHESIS.v1",
-        "throughSeconds": 165,
-        "kicker": "How the three connect",
+        "id": "BOS.MD01.MODULE.CARD.ANSWER.v1",
+        "cueId": "BOS.MD01.CUE.BRIEF_ANSWER.v1",
+        "throughSeconds": 154,
+        "kicker": "The answer",
         "body": [
-          "Three facts, one chain: a war left a debt, the debt produced a policy of raising money in America, and the policy produced the stamp.",
-          "Parliament wrote that much into the Act."
+          "They do not declare war. They cannot tax London.",
+          "What they can do is stop buying. Merchants sign not to import, and Britain's own merchants feel it and complain upward."
         ],
-        "excerpt": {
-          "sourceId": "M01_STAMP_ACT_EXCERPT",
-          "title": "The Stamp Act",
-          "attribution": "22 March 1765 · 5 George III c. 12, §I",
-          "lines": [
-            "…it is just and necessary, that provision be made for raising a further revenue… in America, towards defraying the said expences…"
-          ]
-        },
-        "conceptIds": [
-          "BOS.CONCEPT.POSTWAR_REVENUE.v1",
-          "BOS.CONCEPT.STAMP_SCOPE.v1",
-          "BOS.CONCEPT.REPRESENTATION.v1"
+        "conceptIds": ["BOS.CONCEPT.MERCANTILISM.v1"],
+        "codexCardIds": [
+          "BOS.MD01.CARD.NON_IMPORTATION.v1",
+          "BOS.MD01.CARD.PETITION_AND_CONGRESS.v1",
+          "BOS.MD01.CARD.NOT_WAR_NOT_COUNTERTAX.v1"
         ],
-        "codexCardIds": ["BOS.MD01.CARD.DEBT_TO_STAMP_CHAIN.v1"],
-        "advanceLabel": "Take the sheet",
+        "advanceLabel": "Take the pledge",
         "scene": {
           "beats": [
             {
-              "id": "BOS.MD01.BEAT.SYNTHESIS_1.v1",
-              "text": "Three facts, one chain. A war left a debt. The debt produced a policy of raising money in America. And that policy produced the stamp.",
-              "visualId": "m1-repeal"
+              "id": "BOS.MD01.BEAT.ANSWER_1.v1",
+              "text": "They do not declare war. They cannot tax London.",
+              "visualId": "m1-solemn-covenant"
             },
             {
-              "id": "BOS.MD01.BEAT.SYNTHESIS_2.v1",
-              "text": "Parliament wrote that much into the Act itself. It called it just and necessary that provision be made for raising a further revenue in America.",
-              "visualId": "m1-repeal"
+              "id": "BOS.MD01.BEAT.ANSWER_2.v1",
+              "text": "What they can do is stop buying. Merchants sign not to import, and Britain's own merchants feel it and complain upward. A congress petitions and agrees the boycott; it does not raise an army.",
+              "visualId": "m1-solemn-covenant"
             }
           ],
           "visuals": [
             {
-              "id": "m1-repeal",
-              "src": "/historical/m1/repeal-funeral-miss-ame-stamp-1766.jpg",
-              "alt": "Satirical engraving of a mock funeral procession carrying a small coffin labelled for the repealed Stamp Act along a wharf lined with bales of goods.",
-              "title": "The Repeal, or the Funeral of Miss Ame-Stamp",
-              "caption": "Period art: a 1766 London satirical print marking the Act's repeal — the argument in your hand, one year on. Contemporary comment, not documentary record.",
-              "attribution": "British Cartoon Prints Collection (attrib. Benjamin Wilson)",
-              "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_repeal,_or_the_funeral_of_Miss_Ame%3DStamp_LCCN2006678564.jpg",
-              "date": "1766",
-              "rights": "Public domain",
-              "classification": "PERIOD_ART"
+              "id": "m1-solemn-covenant",
+              "src": "/historical/m1/solemn-league-covenant-1774.jpg",
+              "alt": "Printed 1774 broadside beginning 'WE the Subscribers, inhabitants of the town of [blank]', forty-nine lines of period type setting out a non-importation pledge and oath.",
+              "title": "The Solemn League and Covenant, Boston, June 1774",
+              "caption": "A primary source: the non-importation pledge the Boston Committee of Correspondence circulated in June 1774 — the very document the courier carries. Signers 'in the presence of God, solemnly... covenant and engage with each other' to 'suspend all commercial intercourse with the said island of Great Britain, until the said act for blocking up the said harbour be repealed.' Printed by Edes and Gill, Boston.",
+              "attribution": "Boston Committee of Correspondence; printed by Edes and Gill, Boston, 1774. State Library of Massachusetts, Broadsides collection (via Digital Commonwealth).",
+              "sourceUrl": "https://www.digitalcommonwealth.org/search/commonwealth-oai:ht24ww78p",
+              "date": "June 1774",
+              "rights": "Public domain by age (imprint of 1774). The holding institution (State Library of Massachusetts, via Digital Commonwealth) records the item's rights status as 'not evaluated' and asserts no copyright.",
+              "classification": "PRIMARY_SOURCE"
+            }
+          ]
+        },
+        "check": {
+          "id": "BOS.MD01.CHECK.ANSWER.v1",
+          "conceptId": "BOS.CONCEPT.MERCANTILISM.v1",
+          "prompt": "How do the colonists answer?",
+          "reinforcement": "They cannot declare war and cannot tax London, so they stop buying: merchants sign not to import, and Britain's own merchants feel it and complain upward. A congress petitions and agrees the boycott.",
+          "drawCount": 4,
+          "correctOption": {
+            "id": "OPT.STOP_IMPORTING",
+            "text": "They agree to stop importing British goods.",
+            "correct": true,
+            "feedback": "Merchants sign not to import, and Britain's own merchants complain upward."
+          },
+          "distractorPool": [
+            {
+              "id": "OPT.DECLARE_WAR",
+              "text": "They declare war.",
+              "correct": false,
+              "feedback": "Not in 1774. A congress petitions and coordinates; it does not declare war."
+            },
+            {
+              "id": "OPT.TAX_BACK",
+              "text": "They lay their own tax on British imports.",
+              "correct": false,
+              "feedback": "They have no power to tax London's goods. What they can do is refuse to buy them."
+            },
+            {
+              "id": "OPT.PETITION_WAIT",
+              "text": "They petition the King and wait.",
+              "correct": false,
+              "feedback": "They do petition. But the pressure came from withholding trade."
+            },
+            {
+              "id": "OPT.DUMP_MORE",
+              "text": "They destroy another cargo, as they did the tea.",
+              "correct": false,
+              "feedback": "No. The answer this month is a signed pledge, not another night on the water — organised refusal, not more destruction."
+            },
+            {
+              "id": "OPT.PAY_QUIETLY",
+              "text": "They pay the duties quietly and hope the Acts are lifted.",
+              "correct": false,
+              "feedback": "No. The Covenant is the opposite of quiet compliance: a public agreement to stop the trade until the port reopens."
             }
           ]
         }
       },
       {
-        "id": "BOS.MD01.MODULE.CARD.INSERT.v1",
+        "id": "BOS.MD01.MODULE.CARD.BRIEF.v1",
         "cueId": "BOS.MD01.CUE.BRIEF_INSERT.v1",
         "throughSeconds": 180,
-        "kicker": "Mission frame",
+        "kicker": "The brief",
         "body": [
-          "Nail your sheet beside the Crown's notice at the public pump, before the constable papers over the board.",
-          "He will be standing there when you finish, and he will ask you what you think you know."
+          "Mercer has printed one. It is worth nothing without names on it, and nothing again unless it is posted where the town can read it.",
+          "Four signatures, then the Liberty Elm. Patrols hold the streets. Stay off them.",
+          "Insertion in three."
         ],
         "conceptIds": [],
         "codexCardIds": [],
@@ -422,29 +436,19 @@
         "scene": {
           "beats": [
             {
-              "id": "BOS.MD01.BEAT.INSERT_1.v1",
-              "text": "Nail your sheet beside the Crown's notice at the public pump, before the constable papers over the board.",
-              "visualId": "m1-notice-reconstruction"
+              "id": "BOS.MD01.BEAT.BRIEF_1.v1",
+              "text": "Mercer has printed one. It is worth nothing without names on it, and nothing again unless it is posted where the town can read it."
             },
             {
-              "id": "BOS.MD01.BEAT.INSERT_2.v1",
-              "text": "He will be standing there when you finish. And he will ask you what you think you know."
+              "id": "BOS.MD01.BEAT.BRIEF_2.v1",
+              "text": "Four signatures, then the Liberty Elm. Patrols hold the streets. Stay off them."
+            },
+            {
+              "id": "BOS.MD01.BEAT.BRIEF_3.v1",
+              "text": "Insertion in three."
             }
           ],
-          "visuals": [
-            {
-              "id": "m1-notice-reconstruction",
-              "src": "/world/posters/notice-stamp-act.png",
-              "alt": "Stylised in-game notice board texture showing a Crown stamp notice.",
-              "title": "Crown stamp notice (mission reconstruction)",
-              "caption": "Project reconstruction: the notice as it appears in the mission world. A modern game texture built for the level, not a period document.",
-              "attribution": "Project Archive art",
-              "sourceUrl": "internal:world/posters/notice-stamp-act.png",
-              "date": "reconstruction",
-              "rights": "Project asset (in-game reconstruction)",
-              "classification": "PROJECT_RECONSTRUCTION"
-            }
-          ]
+          "visuals": []
         }
       }
     ],
@@ -461,48 +465,18 @@
       "planning": 140,
       "slowerReader": 120,
       "strongReader": 160,
-      "basis": "Hasbrouck & Tindal (2017) oral reading fluency norms put the grade-8 spring 50th percentile at 151 words correct per minute. Silent reading of unfamiliar informational prose on a screen runs at or a little below that for this age, so 140 wpm is the planning rate and 120/160 bracket it. The card windows are sized against 140."
+      "basis": "Hasbrouck & Tindal (2017) oral reading fluency norms put the grade-8 spring 50th percentile at 151 words correct per minute. Silent reading of unfamiliar informational prose on a screen runs at or a little below that for this age, so 140 wpm is the planning rate and 120/160 bracket it. The windows are sized against 140 and, because the handler's lines are clipped rather than dense, carry generous slack for the acted beats and the checks."
     },
     "excerptRateWpm": {
       "planning": 70,
-      "basis": "Period statutory English at half the modern-prose rate. A 24-word clause of 1765 legal syntax is not a 24-word sentence of ours, and pretending otherwise is how a three-minute module becomes four."
+      "basis": "Period statutory English at half the modern-prose rate. Retained for the format even though this deck carries no excerpt: the documents are shown as visuals (the Committee circular and the Covenant) rather than quoted as reading, per the design's clipped-line rule."
     },
     "note": "Per-card and whole-deck arithmetic is recomputed from these strings by verify.mjs; the table in README.md is that script's output, not a hand tally."
   },
-  "windowRecut": {
-    "slateWindows": [15, 35, 40, 40, 30, 20],
-    "authoredWindows": [13, 33, 38, 50, 31, 15],
-    "why": "Mission-Slate §4.7 sized its six windows before the cards had prose in them. Written out, the representation card needs about fifty seconds and not forty: it carries three propositions, the positive consent principle, and the answer to Parliament's speaks-for-everyone claim, and six of the eighteen duel items draw on it. The seconds come from the two frame cards and the stamp card, which came in under. The deck still totals exactly 180 and no window is shorter than its card's measured reading time.",
-    "slateFollowUp": "§4.7's table still prints the old windows. Whoever next edits that section should copy the authored column across; this file is the content and that table is now a summary of it."
-  },
-  "reinstated": [
-    {
-      "content": "The cost of keeping an army in America — 'with an army still to pay for in America', on the postwar card.",
-      "wasExcluded": "Mission-Slate §4.9's third verification note recorded that the retired multiple-choice item K1 graded this clause while the module taught it nowhere, and closed it on the rule that nothing may be graded that is taught nowhere.",
-      "whyItIsBackIn": "The capstone serves STAAR.2018MAY.G8SS.05, the only released TEA item on postwar revenue, and TEA's keyed option is 'To recover the cost of defending the colonies'. The item almost certainly discriminates on cost-recovery rather than on defence — its other three options are Britain spending rather than Britain recouping — but 'almost certainly' is not what should stand between a student and the concept's only item with real provenance. Seven words remove the doubt and honour §4.9's rule in the direction it always allowed: teach it, then grade it.",
-      "costInSeconds": "Zero. The seven words are paid for by tightening the sentence directly below them — 'Keep the order straight, because the order is the whole argument. The debt came first. The tax is Parliament's answer to the debt, not the other way round' became 'Keep the order straight: the debt came first, and the tax is Parliament's answer to it, not the other way round'. Same proposition, same anti-reversal guard, seven fewer words. The card is 79 words before and after, and the deck is unchanged at 180.9 seconds.",
-      "whatItDoesNotDo": "It does not widen any duel rubric. WHAT_IT_LEFT already accepted any financial answer, so 'they had an army to pay for over here' was correct before the module said it and is correct now; it is added to that item's accept list so the connection is visible. Territory named without a cost — 'they got Canada' — is still wrong, because the item asks what Parliament is solving and land is not a bill."
-    }
-  ],
-  "deliberateExclusions": [
-    {
-      "content": "Stamp duties payable in scarce hard coin.",
-      "why": "Real, and TEA's own 2023 rubric accepts it, but nothing in the eighteen items asks for it. The module is 1:1 with the duel: content no item asks for is three minutes spent on something the mission does not test."
-    },
-    {
-      "content": "Andrew Oliver, his effigy, the Liberty Tree, and the Loyal Nine — the actual events of 14 August 1765.",
-      "why": "The most tempting cut of all, because the module is dated the day it happened and the story is better than anything here. They are MICRO enrichment in the curriculum registry, no duel item asks for them, and each one costs eight to ten seconds of a hard budget. They belong in the reactive world or the Codex, not in the mission's preparation."
-    },
-    {
-      "content": "The Proclamation of 1763.",
-      "why": "A named clause of 8.4(A) and a live gap in the registry, but M1 does not own it and no M1 item asks for it."
-    }
-  ],
-  "engagementDecisions": [
-    "Second person throughout, and the reader is a runner rather than a student. The identity card gives them a job in the first eight words.",
-    "Every abstraction is spent immediately on something physical: the deed and the bolt of cloth, the barrel of nails, the letter in a woman's own hand, three pence against a farthing.",
-    "The two frame cards are the stakes. The last line of the deck is the constable saying he will ask, which is literally true — the six questions are the next thing that happens.",
-    "The cognitive load is deliberate and is concentrated in three sentences: the order of debt and tax, the boundary between paper and goods, and the difference between a lawful vote and consent. Those three are the hard part of the chapter and the module says so rather than smoothing them.",
-    "The primary source is the payoff of the synthesis card rather than decoration. A student reads Parliament calling it 'just and necessary' to raise a revenue in America after having just been told the debt came first, and the two halves meet."
-  ]
+  "rescope": {
+    "was": "The 1765 Stamp-Act brief: identity, postwar revenue, stamp scope, representation, synthesis, insertion.",
+    "now": "The 1774 Coercive-Acts case files: identity, the closure (file 1), what the law says (file 2), consent (file 3), the answer (file 4), the brief. Files 1 and 2 both teach INTOLERABLE_ACTS (collective punishment, then the scope and its legal boundary); file 3 teaches REPRESENTATION; file 4 teaches MERCANTILISM (non-importation).",
+    "narrationSource": "The four case files' narration and the four check questions are the owner's verbatim script (docs/design brief, 2026-07-30). The brief card is a handoff, lightly adjusted from the same script (the em-dash in 'stay off them' was split into two sentences).",
+    "documents": "File 1 -> the Boston Committee of Correspondence port-bill circular (primary; states the collective-punishment thesis nearly verbatim). File 4 -> the Solemn League and Covenant (primary; IS the non-importation object the courier carries). Files 2 and 3 carry SUPPORTING images only — Revere's Landing of Troops (occupation) and the 1765 Stamp Act (the earlier consent moment) — because no clean, rights-verified period PRIMARY document for the Acts' scope or for consent exists in content/m1/historical-sources.json; the presenter carries the specifics. The Able Doctor / bitter-draught cartoon is deliberately NOT used (bare-breasted allegory; grade-8 product). The Wolfe painting and the 1766 repeal satire are retired from the files. No provenance was fabricated."
+  }
 }
