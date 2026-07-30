@@ -497,6 +497,101 @@
 .mod-check-submit:disabled { opacity: 0.4; }
 .mod-check-submit:hover:not(:disabled) { border-color: #d3fff8; box-shadow: 0 0 20px rgba(126, 227, 216, 0.5); }
 
+/* ===========================================================================
+   The Archive shelf — the case-file index the player browses.
+
+   The lesson is no longer an auto-advancing deck; it opens as an Archive of case
+   files. Each file shows its play state (locked / ready / reviewed), the player
+   presses play on the ready one, and the next unlocks in order.
+   =========================================================================== */
+.mod-archive { overflow-y: auto; }
+.mod-archive-top {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  background: linear-gradient(180deg, rgba(4, 16, 28, 0.92), rgba(4, 16, 28, 0));
+}
+.mod-archive-shelf {
+  position: relative;
+  z-index: 5;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 24px 56px;
+  display: grid;
+  gap: 14px;
+}
+.mod-archive-lede {
+  margin: 0 0 8px;
+  color: var(--mod-ink-dim);
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: center;
+}
+.mod-archive-file {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid var(--mod-cyan-faint);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(8, 26, 44, 0.72), rgba(4, 14, 24, 0.82));
+  box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.06), 0 14px 40px rgba(0, 0, 0, 0.45);
+}
+.mod-archive-file.state-ready {
+  border-color: var(--mod-cyan-dim);
+  box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.12), 0 0 28px rgba(64, 156, 255, 0.18),
+    0 14px 40px rgba(0, 0, 0, 0.5);
+}
+.mod-archive-file.state-done { opacity: 0.9; border-color: rgba(126, 227, 216, 0.5); }
+.mod-archive-file.state-locked,
+.mod-archive-file.is-locked { opacity: 0.5; }
+.mod-archive-file-head { display: flex; align-items: center; gap: 12px; }
+.mod-archive-file-ord {
+  color: #6fc4f0;
+  font: 850 13px/1 ui-monospace, monospace;
+  letter-spacing: 1px;
+}
+.mod-archive-file-kicker {
+  flex: 1;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.mod-archive-file-state {
+  font-size: 9.5px;
+  font-weight: 850;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 2px;
+}
+.mod-archive-file-state.state-ready { color: #04121e; background: #9fe4ff; }
+.mod-archive-file-state.state-done { color: #04121e; background: #7ee3d8; }
+.mod-archive-file-state.state-locked {
+  color: var(--mod-ink-dim);
+  border: 1px solid var(--mod-cyan-faint);
+}
+.mod-archive-file-note { margin: 0; color: #cfe6f5; font-size: 13.5px; line-height: 1.5; }
+.mod-archive-play {
+  justify-self: start;
+  margin-top: 4px;
+  padding: 10px 22px;
+  color: #eaf8ff;
+  font-size: 11.5px;
+  font-weight: 850;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  border: 1px solid rgba(150, 224, 255, 0.8);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(44, 118, 178, 0.75), rgba(18, 58, 100, 0.85));
+}
+.mod-archive-play:hover { border-color: var(--mod-cyan); background: rgba(28, 76, 122, 0.85); }
+.mod-archive-brief { border-style: dashed; }
+
+/* The generated clip occupies the same dominant-media slot a focused still does. */
+.mod-cine-video video.mod-cine-visual-img { background: #000; }
+.mod-cine-leave-end { justify-self: end; }
+
 /* ---- Focus visibility -------------------------------------------------- */
 .mod :focus-visible {
   outline: 2px solid #bfeaff;

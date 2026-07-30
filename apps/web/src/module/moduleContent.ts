@@ -11,6 +11,7 @@ import {
   type ModulePresenter,
   type ModuleScene,
   type ModuleSourceExcerpt,
+  type ModuleVideo,
   type ModuleVisual,
   type ModuleVisualClassification,
 } from "./moduleFormat.js";
@@ -185,7 +186,79 @@ function readScene(
     beats.push(beat);
   }
 
-  return { beats, visuals };
+  // The generated clip is optional and SOURCE-TOLERANT: its provenance is
+  // authored before the MP4 exists, so `src`/`poster` may be absent and the
+  // player renders no <video> (the document and question still show). Provenance
+  // and an honest classification are required either way, so a student can never
+  // file a generated scene as evidence.
+  const rawVideo = value["video"];
+  let video: ModuleVideo | undefined;
+  if (rawVideo !== undefined) {
+    const parsed = readVideo(rawVideo, cardId, defects);
+    if (!parsed) return null;
+    video = parsed;
+  }
+
+  return video ? { beats, visuals, video } : { beats, visuals };
+}
+
+/** A scene's generated video clip, or null (with a defect) when malformed. */
+function readVideo(
+  raw: unknown,
+  cardId: string,
+  defects: string[],
+): ModuleVideo | null {
+  if (!isRecord(raw)) {
+    defects.push(`${cardId}: scene video is not an object`);
+    return null;
+  }
+  const id = stringAt(raw, "id");
+  const alt = stringAt(raw, "alt");
+  const title = stringAt(raw, "title");
+  const caption = stringAt(raw, "caption");
+  const attribution = stringAt(raw, "attribution");
+  const sourceUrl = stringAt(raw, "sourceUrl");
+  const date = stringAt(raw, "date");
+  const rights = stringAt(raw, "rights");
+  const classification = raw["classification"];
+  if (!id || !alt || !title || !caption || !attribution || !sourceUrl || !date || !rights) {
+    defects.push(
+      `${cardId}: video ${id ?? "?"} needs id, alt, title, caption, attribution, ` +
+        "sourceUrl, date and rights (src is optional until the clip is produced)",
+    );
+    return null;
+  }
+  if (
+    typeof classification !== "string" ||
+    !MODULE_VISUAL_CLASSIFICATIONS.includes(classification as ModuleVisualClassification)
+  ) {
+    defects.push(`${cardId}: video ${id} has an unknown classification`);
+    return null;
+  }
+  // Present-but-blank is neither pending (omit the key) nor valid, so refuse it.
+  const src = raw["src"];
+  const poster = raw["poster"];
+  if (src !== undefined && (typeof src !== "string" || src.trim() === "")) {
+    defects.push(`${cardId}: video ${id} src must be a non-empty string or be omitted`);
+    return null;
+  }
+  if (poster !== undefined && (typeof poster !== "string" || poster.trim() === "")) {
+    defects.push(`${cardId}: video ${id} poster must be a non-empty string or be omitted`);
+    return null;
+  }
+  return {
+    id,
+    alt,
+    title,
+    caption,
+    attribution,
+    sourceUrl,
+    date,
+    rights,
+    classification: classification as ModuleVisualClassification,
+    ...(typeof src === "string" ? { src } : {}),
+    ...(typeof poster === "string" ? { poster } : {}),
+  };
 }
 
 /** One check option, or null (with a defect pushed) when malformed. */

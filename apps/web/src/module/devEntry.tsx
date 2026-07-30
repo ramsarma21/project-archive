@@ -1,16 +1,16 @@
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { M1_MODULE } from "./m1Module.js";
-import { ModulePlayer } from "./ModulePlayer.js";
+import { ModuleArchive } from "./ModuleArchive.js";
 import type { ModuleRunCompletion } from "./moduleGate.js";
 import "../styles.css";
 
-// Dev-only harness for the cinematic learning module. Not shipped and not
-// routed: the hub deploys the real module through the mission session machine,
-// behind the attempt gate and the account service. This mounts the SAME
-// ModulePlayer with M1's own authored definition so the cinematic surface — the
-// presenter, the slideshow, the subtitles, the voiceover controls and the three
-// mastery checks — can be played and captured without the gate in front of it.
+// Dev-only harness for the Archive learning module. Not shipped and not routed:
+// the hub deploys the real module through the mission session machine, behind
+// the attempt gate and the account service. This mounts the SAME ModuleArchive
+// with M1's own authored definition so the whole surface — the case-file index,
+// the per-file cutscenes, the presenter, the subtitles, the voiceover controls
+// and the mastery checks — can be played and captured without the gate in front.
 //
 //   ?reduced=1   reduced motion (flicker/drift removed; content stays visible).
 
@@ -50,7 +50,7 @@ function Harness() {
   }
 
   return (
-    <ModulePlayer
+    <ModuleArchive
       key={runId}
       definition={M1_MODULE}
       attemptOrdinal={1}
