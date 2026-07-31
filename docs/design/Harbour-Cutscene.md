@@ -32,31 +32,30 @@ at a whole town, innocent and guilty together.
 
 # Small first test (iterate before the full clip)
 
-**Do this before generating the full clip.** The owner validated image-to-video on Kling (a
-screenshot of one of our 3D assets → clean 3D-game motion); production runs on **Runway Max
-(Gen-4.5)**, and the method is **iterative**: prove the model on the smallest useful shot, judge it,
-*then* expand — so credits are not spent on a full sequence that drifts. Two small tests are worth
-running, both seeded off frames rendered from our **actual** GLBs: **(1)** the **character-anchored
-opener** — the protagonist arriving at the shut harbour (`start-v2-b.png`), does the model hold our
-art style in motion; and **(2)** a **character identity-lock** via Runway References — does *our*
-character survive into a generation, the thing a plain start-frame test never covers.
+**Do this before generating the full clip.** Production runs on **Runway Max (Gen-4.5)** for
+image-to-video, and the method is **iterative**: prove the pipeline on the smallest *high-value*
+shot, judge it, *then* expand — so credits are not spent on a full sequence that drifts.
 
-**These frames are re-done, correctly.** The earlier `shot1/2/3.png` were composed wrong (owner's
-call — they did not match the real scene) and are **not** used here. The frames below were
-re-rendered by `assets/pipeline/shot_harbour_refs.mjs` (`SHOT=test`) to match the owner's real
-in-game harbour photo `assets/reference/harbour-cutscene/real-harbour-ingame.png`: near eye-level
-third-person, a plank deck filling the foreground, two tall ships moored close on the LEFT (hulls +
-furled rigging), working gear (idle timber crane + a leaning ladder) on the RIGHT, a rope rail at
-the water's edge, and a **low hazy sun over open water**. (Note the mood is the photo's low warm
-haze, *not* the flat overcast the older prompts below describe — the prompt here matches the frame
-actually uploaded.)
+**Cutscene reference images are generated HIGH-QUALITY 2D with Gemini** ("Nano Banana Pro",
+`gemini-3-pro-image-preview`) through the TrueFoundry gateway, via
+`assets/pipeline/gen_concept_image.mjs` — deliberately **higher fidelity than the in-game 3D**
+(cutscenes should look better than the game), and **reusing the original concept art** in
+`assets/source/concepts/` wherever it exists (those PNGs birthed our GLB assets, so they are
+faithful and on-style). This **supersedes the earlier skeletal GLB renders** as the seed/reference
+art. Generated frames + their `.prompt.json` sidecars live in `assets/source/concepts/m1-harbour/`;
+the chosen picks are copied into `assets/reference/harbour-cutscene/test/`.
 
-**The opener is character-anchored** (owner's call — the distant establishing wide read as too
-empty). Test 1 now opens **on the protagonist** at the closed port. Three candidates were rendered
-(`SHOT=starts`): **`start-v2-b.png`** — the **pick** (player on the right third, rule-of-thirds, the
-dead fleet + low sun composed behind him, rope-rail/plank leading lines) — plus `start-v2-a.png`
-(over-the-shoulder, the hero brig looming) and `start-v2-c.png` (a low hero angle). The old wide
-`establishing.png` is kept as a **fallback** and as a later wide shot in the sequence.
+**The PRIMARY test is a two-character wharf beat (~5 s)** — two of our characters doing a simple,
+readable action in the Gemini wharf backdrop. It validates the hard things *at once*:
+**dual-character identity-lock + meaningful motion + our backdrop + the game-cinematic look** — far
+more than a solo start frame. Two simpler fallback tests (a solo opener; a single-character
+identity-lock) sit below it.
+
+**Style anchor:** historically accurate 1774 working-class Boston; muted pewter / umber / ochre
+palette; weathered painted wood, tar, iron and canvas; composed and cinematic with an atmospheric
+low hazy sun; polished stylized — **not** photoreal — and coherent with the game; no Victorian /
+modern / fantasy / military elements, and **no baked-in text**. (Match the language in the concept
+sidecars, e.g. `assets/source/concepts/ship-brig-hero.png.prompt.json`.)
 
 ## Picture naming — how to tag each reference in Runway
 
@@ -65,24 +64,78 @@ tag those and lean on the init frame for ships. Save each picture in the Referen
 **tag** → name → Enter); the name is what you type as `@name` in prompts, and it persists across
 sessions.
 
-| Picture (in `test/`) | Tag it in Runway as | Type | Note |
+| Picture (in `test/`) | Tag in Runway as | Type | Note |
 |---|---|---|---|
-| `start-v2-b.png` | — (do **not** tag) | scene seed | **the Test 1 Image-to-Video init frame** (chosen opener), not an `@`-reference |
-| `start-v2-a.png` / `start-v2-c.png` | — (do **not** tag) | alternate openers | OTS / low-hero alternates; swap in as the init frame to taste |
-| `establishing.png` | — (do **not** tag) | fallback wide | the distant wide — kept as a fallback and as a later wide shot |
-| `ref-player.png` | `@player` | character | strong |
-| `ref-dockhand.png` | `@dockhand` | character | strong |
-| `ref-wharf.png` | `@wharf` | location | strong |
-| `ref-brig.png` | `@brig` | ship | weaker — Runway favours characters/locations; the init frame carries ships better |
+| `two-char-keyframe.png` | — (do **not** tag) | scene seed | **the PRIMARY test's Image-to-Video init frame** (Gemini keyframe), not an `@`-reference |
+| `wharf-backdrop.png` | `@wharf` / init frame | location / seed | the **Gemini** dead-harbour backdrop — the setting; also the wharf **build** reference |
+| `ref-dockhand.png` | `@dockhand` | character | **original concept** (`npc-dockhand.png`) — faithful, higher quality than the GLB render |
+| `ref-agitator.png` | `@agitator` | character | **original concept** (`npc-agitator.png`) — tradesman, leather apron + red cap |
+| `ref-taxclerk.png` | `@taxclerk` | character | **original concept** (`npc-taxclerk.png`) — Crown official (worker-vs-authority beat) |
+| `ref-brig.png` | `@brig` | ship | **original concept** (`ship-brig-hero.png`); Runway favours characters/locations, so lean on the init frame for ships |
+| `ref-player.png` | `@player` | character | GLB render (no player concept exists yet) — describe the avatar if identity drifts |
+| `establishing.png`, `start-v2-*.png`, `ref-wharf.png` | — | GLB fallbacks | the earlier 3D renders — kept only for the fallback tests below |
+| `wharf-backdrop-alt-*.png`, `two-char-keyframe-alt-*.png` | — | alternate candidates | other Gemini backdrop / keyframe takes for the owner to pick |
 
 Keep the scheme **one word, lowercase**, matching our cast/place names. Going forward: characters
 `@abigail @thomas @pike @clarke @rider @constable`; locations `@printshop @shambles @townhouse
 @meetinghouse @elm @yard`. Name the files to match the tag (`player.png`, `dockhand.png`, …) so the
 library stays legible.
 
-## Test 1 — the opening shot (Runway Gen-4.5, Image → Video)
+## Test — two-character wharf beat (~5 s) — PRIMARY
 
-Upload `assets/reference/harbour-cutscene/test/start-v2-b.png` as the image — the chosen
+The high-ROI test: it validates **dual-character identity-lock + meaningful motion + our backdrop +
+the game-cinematic look, in one clip**. The beat conveys the closure — one dockworker idle by his
+gear while a fellow tradesman gestures out at the shuttered ships.
+
+**Step A — the Gemini keyframe (already generated; regenerate or vary with the command below).**
+`two-char-keyframe.png` composites **`@dockhand` + `@agitator`** into the Gemini wharf backdrop: the
+dockworker crouched setting down an empty net, the tradesman standing and gesturing at the idle
+moored ships. It was made by a multi-reference Gemini edit — the two original character concepts +
+the backdrop held **identity and setting together**:
+
+```
+node assets/pipeline/gen_concept_image.mjs \
+  --edit assets/source/concepts/m1-harbour/backdrop-b.png \
+  --edit assets/source/concepts/npc-dockhand.png \
+  --edit assets/source/concepts/npc-agitator.png \
+  --out assets/source/concepts/m1-harbour/keyframe-c.png \
+  --prompt "Two 1774 Boston working men on a shut wharf: the dockworker crouches setting down an empty fishing net; the tradesman (leather apron, red knit cap) stands and gestures at the idle moored ships. Keep both men's faces, hair and clothing from the references; keep the wharf, ships, low hazy sun and muted palette from the backdrop. Nothing working. Polished stylized game-cinematic, not photoreal, no text."
+```
+
+Alternate keyframes (committed in `test/`): `two-char-keyframe-alt-a.png` (same pair, square 1024²)
+and `two-char-keyframe-alt-b.png` (**`@dockhand` + `@taxclerk`** — the ruined worker vs the Crown
+official). Alternate backdrops: `wharf-backdrop-alt-b.png` (clean wide illustration) and
+`wharf-backdrop-alt-c.png` (an `--edit` of the owner's real photo — most layout-faithful, and
+doubles as the wharf **build** reference). Sources + `.prompt.json` sidecars live in
+`assets/source/concepts/m1-harbour/` (the PNGs there are gitignored per repo policy on generated
+concept subfolders — regenerate via the command above; the `test/` copies are the committed ones).
+The gateway returns whatever aspect it chooses (square for square-base edits, ~16:9/21:9 for
+landscape bases); crop to 16:9 as needed.
+
+**Step B — animate it in Runway (Image → Video).** Upload `two-char-keyframe.png` as the init frame;
+optionally add `@dockhand` and `@agitator` as References to reinforce identity. Motion prompt = the
+beat:
+
+```
+The dockworker sets down the empty net and looks up; the other man turns and gestures out at the
+shuttered, idle ships. Minimal ambient motion — faint water shimmer, thin drifting haze, the barest
+sway of furled rigging. One gentle camera move only, a slow push-in; no shake, no orbit. Hold the
+uploaded frame's stylized game-cinematic look, its two characters, muted palette and low warm haze
+exactly. No new people appearing, no text or captions anywhere. Silent.
+```
+
+Settings: Gen-4.5 · **16:9** · **~5 s** · up to **3 References** · silent (audio dubbed in post).
+**If this holds** — both characters recognisably ours, the motion readable, the backdrop and look
+intact — the pipeline is proven and we expand to the full sequence.
+
+**VO for post-dub (NOT sent to the model), IRIS over the beat:**
+> "The order did not stop to ask who was guilty."
+
+## Fallback test A — solo opening shot (Runway Gen-4.5, Image → Video)
+
+*Simpler single-character fallback, only if the primary needs breaking down.* It uses the earlier
+GLB-rendered opener (a Gemini solo frame can also be cropped from the backdrop/keyframe).
+Upload `assets/reference/harbour-cutscene/test/start-v2-b.png` as the image — the
 **character-anchored opener** (player on the right third, the shut harbour composed behind him).
 Alternates: `start-v2-a.png` (over-the-shoulder, brig looming) and `start-v2-c.png` (low hero
 angle); fallback: the distant wide `establishing.png`. The art style **and the protagonist** are
@@ -102,13 +155,14 @@ Settings: Gen-4.5 · **16:9** · **~5 s** for the test (10 s once it holds) · o
 silent (audio is dubbed in post). Optional: add `@player` (from `ref-player.png`) as a Reference to
 reinforce the protagonist's identity if the push-in reveals his face.
 
-## Test 2 — character identity-lock (Runway References) — the useful one
+## Fallback test B — single-character identity-lock (Runway References)
 
-This tests what the start-frame shot doesn't: whether **our** character survives into a generation.
-Two steps.
+*Simpler than the primary (one character, not two). Kept because it isolates identity-lock cleanly.*
+It tests whether **our** character survives into a generation. Two steps.
 
-**Step A — make the keyframe (Image tool).** Drag `ref-dockhand.png` into References, tag it
-`dockhand`. Prompt (uses `@dockhand`):
+**Step A — make the keyframe (Image tool).** Drag `ref-dockhand.png` (now the **original
+`npc-dockhand` concept**, not the GLB render) into References, tag it `dockhand`. Prompt (uses
+`@dockhand`):
 ```
 @dockhand standing on the weathered plank deck of a shuttered 1774 Boston wharf, coiling a rope,
 idle — no cargo moving. Behind him, tall square-rigged merchant ships lie moored with furled sails;
@@ -130,7 +184,7 @@ text.
 Settings: Gen-4.5 · **16:9** · **~5 s** · up to **3 references** per generation · silent. The clip's
 **last frame** seeds the next shot (the chaining pipeline).
 
-## VO for post-dub (NOT sent to Kling)
+## VO for post-dub (NOT sent to the model)
 
 Added later as TTS + our own subtitle overlay; trim to the shot length. IRIS, calm and precise:
 > "June, 1774. For the tea thrown into this harbour, Parliament closed the whole of it — every
