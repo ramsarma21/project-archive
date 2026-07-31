@@ -33,6 +33,13 @@ SEED = 74011158
 RNG = np.random.default_rng(SEED)
 TEX = 1024
 
+# PHOTOREAL: keep the clean, box-accurate, weld-clean FORM (rings at exact bands)
+# and richen it — a weathered painted-clapboard atlas (grime/streaks) plus real
+# slate and ashlar-stone atlases, a tower CLOCK, corner urn pinnacles and louvre
+# keystones. This builder attaches NO normal map, so it is free of the glTF
+# black-normal export bug (test_normal_export.py) — nothing to strip here.
+PHOTOREAL = os.environ.get("PHOTOREAL", "") not in ("", "0", "false")
+
 WBOX, HBOX, DBOX = 7.4, 30.0, 7.4          # declared sizeM
 
 
@@ -61,19 +68,56 @@ def _ss(a, b, t):
     return t * t * (3 - 2 * t)
 
 
-def course_rgb(boards=8):
-    """One SHARED atlas for the whole steeple (a hero landmark ships one atlas): a
-    near-white painted surface with faint horizontal course lines (reads as
-    clapboard, louvre slats, lead seams and stone courses alike) plus subtle
-    grain. Per-material colour is a glTF baseColorFactor tint, so this is the only
-    image in the GLB."""
+def course_rgb(boards=8, photoreal=False):
+    """The clapboard atlas: a near-white painted surface with horizontal course
+    lines (reads as clapboard, louvre slats, lead seams alike) plus grain. When
+    photoreal, add vertical water-streaks, broad soot blotches and a stronger
+    course shadow so the painted timber reads weathered, not flat."""
     n = TEX
     v = np.linspace(0, 1, n, endpoint=False)[:, None]
     fb = v * boards; bf = fb - np.floor(fb)
-    groove = 0.84 + 0.16 * _ss(0.0, 0.06, bf)          # a soft shadow line each course
+    groove = (0.78 if photoreal else 0.84) + (0.22 if photoreal else 0.16) * _ss(0.0, 0.06, bf)
     base = np.full((n, n, 3), 0.98)
     rgb = base * (0.95 + 0.08 * aniso(n, 120, 120, RNG))[..., None]
     rgb = rgb * np.broadcast_to(groove, (n, n))[..., None]
+    if photoreal:
+        rgb *= (0.82 + 0.18 * aniso(n, 140, 5, RNG))[..., None]   # vertical streaks
+        rgb *= (0.88 + 0.12 * aniso(n, 20, 20, RNG))[..., None]   # broad soiling
+    return np.clip(rgb, 0, 1)
+
+
+def slate_rgb(base):
+    """Overlapping slate/lead courses: staggered rows, per-slate tone, a course-head
+    shadow line (the overlap read), cold blue-grey tint."""
+    n = TEX; NR, NS = 12, 16
+    v = np.linspace(0, 1, n, endpoint=False)[:, None]; u = np.linspace(0, 1, n, endpoint=False)[None, :]
+    fr = v * NR; row = np.floor(fr); rf = fr - row
+    off = np.where(row % 2 == 0, 0.0, 0.5)
+    fs = u * NS + off; sl = np.floor(fs); sf = fs - sl
+    seed = np.sin(np.broadcast_to(row, (n, n)) * 11.1 + np.broadcast_to(sl, (n, n)) * 7.3) * 4373.1
+    var = seed - np.floor(seed)
+    rgb = np.array(base)[None, None, :] * (0.68 + 0.6 * var)[..., None]
+    rgb = np.clip(rgb + (aniso(n, 130, 130, RNG) - 0.5)[..., None] * 0.05, 0, 1)
+    head = np.broadcast_to(_ss(0.0, 0.07, rf), (n, n))
+    seam = _ss(0.0, 0.02, sf) * _ss(0.0, 0.02, 1 - sf)
+    rgb *= (0.55 + 0.45 * head)[..., None]
+    rgb *= (0.7 + 0.3 * seam)[..., None]
+    return np.clip(rgb, 0, 1)
+
+
+def stone_rgb(base):
+    """Ashlar stone: staggered blocks, mortar lines, per-block tone + efflorescence."""
+    n = TEX; NR, NC = 9, 5
+    v = np.linspace(0, 1, n, endpoint=False)[:, None]; u = np.linspace(0, 1, n, endpoint=False)[None, :]
+    fr = v * NR; row = np.floor(fr); rf = fr - row
+    off = np.where(row % 2 == 0, 0.0, 0.5)
+    fc = u * NC + off; col = np.floor(fc); cf = fc - col
+    seed = np.sin(np.broadcast_to(row, (n, n)) * 9.7 + np.broadcast_to(col, (n, n)) * 4.1) * 3571.3
+    var = seed - np.floor(seed)
+    rgb = np.array(base)[None, None, :] * (0.82 + 0.28 * var)[..., None]
+    rgb = np.clip(rgb + (aniso(n, 90, 90, RNG) - 0.5)[..., None] * 0.05, 0, 1)
+    mortar = np.broadcast_to(_ss(0.0, 0.03, rf) * _ss(0.0, 0.03, 1 - rf), (n, n)) * (_ss(0.0, 0.03, cf) * _ss(0.0, 0.03, 1 - cf))
+    rgb *= (0.6 + 0.4 * mortar)[..., None]
     return np.clip(rgb, 0, 1)
 
 
@@ -112,13 +156,14 @@ def make_normal(h, strength=1.8):
     return img
 
 
-def make_material(name, tint, rough=0.9, spec=0.2):
-    """A material that samples the ONE shared atlas and multiplies it by a constant
-    tint. glTF exports this as baseColorTexture + baseColorFactor, so every
-    material shares a single image (the hero-landmark one-atlas rule)."""
+def make_material(name, tint, rough=0.9, spec=0.2, image=None):
+    """A material that samples an atlas and multiplies it by a constant tint. glTF
+    exports this as baseColorTexture + baseColorFactor. Clapboard/trim/louvre share
+    the clapboard atlas; photoreal adds a slate atlas (lead) and an ashlar atlas
+    (stone) plus the clock, so the GLB stays to a handful of small images."""
     mat = bpy.data.materials.new(name); mat.use_nodes = True; nt = mat.node_tree; nt.nodes.clear()
     out = nt.nodes.new("ShaderNodeOutputMaterial"); bsdf = nt.nodes.new("ShaderNodeBsdfPrincipled")
-    tex = nt.nodes.new("ShaderNodeTexImage"); tex.image = SHARED_IMG; tex.extension = "REPEAT"
+    tex = nt.nodes.new("ShaderNodeTexImage"); tex.image = image if image is not None else SHARED_IMG; tex.extension = "REPEAT"
     mix = nt.nodes.new("ShaderNodeMix"); mix.data_type = "RGBA"; mix.blend_type = "MULTIPLY"
     mix.inputs["Factor"].default_value = 1.0
     mix.inputs["B"].default_value = (tint[0], tint[1], tint[2], 1.0)
@@ -132,15 +177,31 @@ def make_material(name, tint, rough=0.9, spec=0.2):
     return mat
 
 
-log("textures")
+log("textures", "PHOTOREAL" if PHOTOREAL else "flat")
 bpy.ops.wm.read_factory_settings(use_empty=True)
-SHARED_IMG = pack_jpeg("steeple-atlas", course_rgb())
-MAT_CLAP = make_material("clap", (0.95, 0.94, 0.90), rough=0.9)
-MAT_TRIM = make_material("trim", (0.98, 0.97, 0.93), rough=0.85, spec=0.22)
-MAT_LEAD = make_material("lead", (0.56, 0.58, 0.60), rough=0.8, spec=0.25)
-MAT_LOUVRE = make_material("louvre", (0.20, 0.17, 0.13), rough=0.9, spec=0.12)
-MAT_STONE = make_material("stone", (0.66, 0.63, 0.56), rough=0.95, spec=0.12)
-IC, IT, IL, ILV, IS = 0, 1, 2, 3, 4
+SHARED_IMG = pack_jpeg("steeple-atlas", course_rgb(photoreal=PHOTOREAL))
+CLOCK_PNG = os.environ.get("CLOCK_PNG", "")
+if PHOTOREAL:
+    SLATE_IMG = pack_jpeg("steeple-slate", slate_rgb((0.30, 0.32, 0.35)))
+    STONE_IMG = pack_jpeg("steeple-stone", stone_rgb((0.64, 0.60, 0.54)))
+    MAT_CLAP = make_material("clap", (0.93, 0.91, 0.86), rough=0.92)
+    MAT_TRIM = make_material("trim", (0.97, 0.96, 0.92), rough=0.85, spec=0.22)
+    MAT_LEAD = make_material("lead", (0.92, 0.94, 0.98), rough=0.5, spec=0.4, image=SLATE_IMG)
+    MAT_LOUVRE = make_material("louvre", (0.20, 0.17, 0.13), rough=0.9, spec=0.12)
+    MAT_STONE = make_material("stone", (0.98, 0.96, 0.92), rough=0.95, spec=0.12, image=STONE_IMG)
+    if CLOCK_PNG and os.path.exists(CLOCK_PNG):
+        _ck = bpy.data.images.load(CLOCK_PNG); _ck.name = "clock"; _ck.pack()
+        MAT_CLOCK = make_material("clock", (1.0, 1.0, 1.0), rough=0.6, spec=0.3, image=_ck)
+    else:
+        MAT_CLOCK = MAT_STONE
+else:
+    MAT_CLAP = make_material("clap", (0.95, 0.94, 0.90), rough=0.9)
+    MAT_TRIM = make_material("trim", (0.98, 0.97, 0.93), rough=0.85, spec=0.22)
+    MAT_LEAD = make_material("lead", (0.56, 0.58, 0.60), rough=0.8, spec=0.25)
+    MAT_LOUVRE = make_material("louvre", (0.20, 0.17, 0.13), rough=0.9, spec=0.12)
+    MAT_STONE = make_material("stone", (0.66, 0.63, 0.56), rough=0.95, spec=0.12)
+    MAT_CLOCK = MAT_STONE
+IC, IT, IL, ILV, IS, ICK = 0, 1, 2, 3, 4, 5
 
 bm = bmesh.new()
 uv = bm.loops.layers.uv.new("UVMap")
@@ -280,12 +341,40 @@ solid_box(cx - 0.05, cx + 0.05, cy - 0.05, cy + 0.05, apex_z, 30.0, IL, faces="a
 solid_box(cx - 0.45, cx + 0.45, cy - 0.03, cy + 0.03, 29.7, 29.78, IL, faces="all", tile=1.0)
 solid_box(cx - 0.03, cx + 0.03, cy - 0.45, cy + 0.45, 29.62, 29.70, IL, faces="all", tile=1.0)
 
+if PHOTOREAL:
+    # ======================= PHOTOREAL DETAIL ==================================
+    # (a) tower CLOCK on the south (+y) face — the iconic meeting-house landmark
+    # read, on a proud stone panel below the belfry. Full-UV quad (sign convention).
+    solid_box(-0.98, 0.98, CORE, CORE + 0.12, 10.8, 12.9, IS, faces=("+x", "-x", "+y", "+z", "-z"), tile=1.4)
+    quad((-0.82, CORE + 0.13, 11.02), (0.82, CORE + 0.13, 11.02),
+         (0.82, CORE + 0.13, 12.66), (-0.82, CORE + 0.13, 12.66), ICK, [(1, 0), (0, 0), (0, 1), (1, 1)])
+
+    # (b) corner URN PINNACLES at the louvre-sill ring corners (stone base + lead
+    # needle + ball) — Georgian steeple detail; kept inside the 3.7 box half-width
+    # and outside the 2.7 gallery so the leap take-off stays clear.
+    def pinnacle(cx, cy):
+        solid_box(cx - 0.26, cx + 0.26, cy - 0.26, cy + 0.26, 14.0, 14.9, IS, faces=("+x", "-x", "+y", "-y", "+z"), tile=1.0)
+        b = [(cx - 0.22, cy - 0.22), (cx + 0.22, cy - 0.22), (cx + 0.22, cy + 0.22), (cx - 0.22, cy + 0.22)]
+        tip = (cx, cy, 16.3)
+        for i in range(4):
+            tri((b[i][0], b[i][1], 14.9), (b[(i + 1) % 4][0], b[(i + 1) % 4][1], 14.9), tip, IL, [(0, 0), (1, 0), (0.5, 1)])
+        solid_box(cx - 0.08, cx + 0.08, cy - 0.08, cy + 0.08, 16.2, 16.5, IL, faces="all", tile=1.0)
+
+    for (cx, cy) in ((-3.4, -3.4), (3.4, -3.4), (-3.4, 3.4), (3.4, 3.4)):
+        pinnacle(cx, cy)
+
+    # (c) stone KEYSTONES over the four louvred belfry openings
+    for (a, b, c, d, fc) in [(-0.24, 0.24, CORE, CORE + 0.16, "+y"), (-0.24, 0.24, -CORE - 0.16, -CORE, "-y")]:
+        solid_box(a, b, c, d, 14.9, 15.4, IS, faces=("+y", "-y", "+x", "-x", "+z"), tile=1.0)
+    solid_box(CORE, CORE + 0.16, -0.24, 0.24, 14.9, 15.4, IS, faces=("+y", "-y", "+x", "+z"), tile=1.0)
+    solid_box(-CORE - 0.16, -CORE, -0.24, 0.24, 14.9, 15.4, IS, faces=("+y", "-y", "-x", "+z"), tile=1.0)
+
 # ----------------------------------------------------------------- finalise
 bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=1e-5)
 bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
 mesh = bpy.data.meshes.new(KEY); bm.to_mesh(mesh); bm.free()
 obj = bpy.data.objects.new(KEY, mesh)
-for m in (MAT_CLAP, MAT_TRIM, MAT_LEAD, MAT_LOUVRE, MAT_STONE):
+for m in (MAT_CLAP, MAT_TRIM, MAT_LEAD, MAT_LOUVRE, MAT_STONE, MAT_CLOCK):
     obj.data.materials.append(m)
 for poly in obj.data.polygons:
     poly.use_smooth = False
