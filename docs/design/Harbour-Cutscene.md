@@ -36,10 +36,10 @@ at a whole town, innocent and guilty together.
 screenshot of one of our 3D assets → clean 3D-game motion); production runs on **Runway Max
 (Gen-4.5)**, and the method is **iterative**: prove the model on the smallest useful shot, judge it,
 *then* expand — so credits are not spent on a full sequence that drifts. Two small tests are worth
-running, both seeded off frames rendered from our **actual** GLBs: **(1)** the establishing wide of
-the shut harbour — does the model hold our art style in motion; and **(2)** a **character
-identity-lock** via Runway References — does *our* character survive into a generation, the thing a
-plain start-frame test never covers.
+running, both seeded off frames rendered from our **actual** GLBs: **(1)** the **character-anchored
+opener** — the protagonist arriving at the shut harbour (`start-v2-b.png`), does the model hold our
+art style in motion; and **(2)** a **character identity-lock** via Runway References — does *our*
+character survive into a generation, the thing a plain start-frame test never covers.
 
 **These frames are re-done, correctly.** The earlier `shot1/2/3.png` were composed wrong (owner's
 call — they did not match the real scene) and are **not** used here. The frames below were
@@ -51,6 +51,13 @@ the water's edge, and a **low hazy sun over open water**. (Note the mood is the 
 haze, *not* the flat overcast the older prompts below describe — the prompt here matches the frame
 actually uploaded.)
 
+**The opener is character-anchored** (owner's call — the distant establishing wide read as too
+empty). Test 1 now opens **on the protagonist** at the closed port. Three candidates were rendered
+(`SHOT=starts`): **`start-v2-b.png`** — the **pick** (player on the right third, rule-of-thirds, the
+dead fleet + low sun composed behind him, rope-rail/plank leading lines) — plus `start-v2-a.png`
+(over-the-shoulder, the hero brig looming) and `start-v2-c.png` (a low hero angle). The old wide
+`establishing.png` is kept as a **fallback** and as a later wide shot in the sequence.
+
 ## Picture naming — how to tag each reference in Runway
 
 Runway References are strongest at **characters and locations** (object/style support is weaker), so
@@ -60,7 +67,9 @@ sessions.
 
 | Picture (in `test/`) | Tag it in Runway as | Type | Note |
 |---|---|---|---|
-| `establishing.png` | — (do **not** tag) | scene seed | this is the **Image-to-Video init frame**, not an `@`-reference |
+| `start-v2-b.png` | — (do **not** tag) | scene seed | **the Test 1 Image-to-Video init frame** (chosen opener), not an `@`-reference |
+| `start-v2-a.png` / `start-v2-c.png` | — (do **not** tag) | alternate openers | OTS / low-hero alternates; swap in as the init frame to taste |
+| `establishing.png` | — (do **not** tag) | fallback wide | the distant wide — kept as a fallback and as a later wide shot |
 | `ref-player.png` | `@player` | character | strong |
 | `ref-dockhand.png` | `@dockhand` | character | strong |
 | `ref-wharf.png` | `@wharf` | location | strong |
@@ -71,21 +80,27 @@ Keep the scheme **one word, lowercase**, matching our cast/place names. Going fo
 @meetinghouse @elm @yard`. Name the files to match the tag (`player.png`, `dockhand.png`, …) so the
 library stays legible.
 
-## Test 1 — the establishing scene (Runway Gen-4.5, Image → Video, no references)
+## Test 1 — the opening shot (Runway Gen-4.5, Image → Video)
 
-Upload `assets/reference/harbour-cutscene/test/establishing.png` as the image. The art style is
+Upload `assets/reference/harbour-cutscene/test/start-v2-b.png` as the image — the chosen
+**character-anchored opener** (player on the right third, the shut harbour composed behind him).
+Alternates: `start-v2-a.png` (over-the-shoulder, brig looming) and `start-v2-c.png` (low hero
+angle); fallback: the distant wide `establishing.png`. The art style **and the protagonist** are
 already in the frame, so the prompt is only the motion:
 
 ```
-Slow, gentle push-in over a still, shuttered 1774 Boston harbour at dawn. Everything is quiet and
-idle — no crew, no cargo, nothing loading. Only faint motion: a slow shimmer on grey-green water,
-thin drifting haze, one distant gull, the barest sway of furled rigging. Hold the uploaded frame's
-stylized 3D game-render look, muted palette and low warm haze exactly. One continuous camera move
-only — no shake, no orbit, no crash-zoom. No new objects, no people appearing, no text or captions
-anywhere.
+Slow, gentle push-in past a lone young man who stands on the weathered plank deck of a still,
+shuttered 1774 Boston harbour at dawn, looking out over the water. Everything is quiet and idle — no
+crew, no cargo, nothing loading; the ships lie moored with furled sails. Only faint motion: a slow
+shimmer on grey-green water, thin drifting haze, one distant gull, the barest sway of furled
+rigging, and the man's coat and hair stirring slightly in the wind. Hold the uploaded frame's
+stylized 3D game-render look, its character, muted palette and low warm haze exactly. One continuous
+camera move only — no shake, no orbit, no crash-zoom. No new objects, no other people appearing, no
+text or captions anywhere.
 ```
-Settings: Gen-4.5 · **16:9** · **~5 s** for the test (10 s once it holds) · one gentle move · silent
-(audio is dubbed in post).
+Settings: Gen-4.5 · **16:9** · **~5 s** for the test (10 s once it holds) · one gentle push-in ·
+silent (audio is dubbed in post). Optional: add `@player` (from `ref-player.png`) as a Reference to
+reinforce the protagonist's identity if the push-in reveals his face.
 
 ## Test 2 — character identity-lock (Runway References) — the useful one
 
