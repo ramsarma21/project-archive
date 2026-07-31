@@ -322,6 +322,14 @@ else:
     MAT_TIMBER = make_material("timber", pack_jpeg("timber", plank_rgb((0.46, 0.35, 0.24))), rough=0.93, spec=0.12)
     MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", plank_rgb((0.34, 0.24, 0.16), vertical=True)), rough=0.94, spec=0.12)
 IB, IW, IT, IL, ITM, ITV = 0, 1, 2, 3, 4, 5
+# sign board material (painted board with baked serif signage); falls back to trim
+SIGN_PNG = os.environ.get("SIGN_PNG", "")
+if PHOTOREAL and SIGN_PNG and os.path.exists(SIGN_PNG):
+    _si = bpy.data.images.load(SIGN_PNG); _si.name = "sign"; _si.pack()
+    MAT_SIGN = make_material("sign", _si, rough=0.72, spec=0.22)
+else:
+    MAT_SIGN = MAT_TRIM
+ISG = 6
 
 bm = bmesh.new()
 uv = bm.loops.layers.uv.new("UVMap")
@@ -435,7 +443,8 @@ front_open = []
 cw, ch = CFG["cargo_w"], CFG["cargo_h"]
 front_open.append((W / 2 - cw / 2, W / 2 + cw / 2, 0.0, ch, "door"))          # ground cargo bay
 lw = CFG["loft_w"]
-front_open.append((W / 2 - lw / 2, W / 2 + lw / 2, CFG["gallery_y"], CFG["loft_head"], "door"))  # loft loading door
+loft_door_head = min(CFG["loft_head"], CFG["roof_deck"] - 1.5)  # leave room for the sign board above
+front_open.append((W / 2 - lw / 2, W / 2 + lw / 2, CFG["gallery_y"], loft_door_head, "door"))  # loft loading door
 paneled_face(Vector((-hx, FW, 0.0)), X, Z, -Y, W, CFG["roof_deck"], front_open)
 
 # ---- BACK (-Y) and SIDES (+/-X): brick with sash grids ------------------------
@@ -541,6 +550,77 @@ else:
         solid_box(sx0, sx0 + 1.9, FW, hz - 0.1, 0.0, 0.5, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
         solid_box(sx0 + 0.5, sx0 + 1.9, FW, hz - 0.7, 0.5, 1.0, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
 
+if PHOTOREAL:
+    # ======================= PHOTOREAL GEOMETRIC DETAIL =========================
+    # Rich single-skin detail on the HERO LOADING FRONT. Its wall is set back to FW,
+    # so every element projects PROUD toward the front edge yet stays inside the
+    # declared box; the brick side/back walls sit on the box faces and keep their
+    # recessed reveals. Each element is a separate solid offset off the wall plane
+    # (no coincident same-facing faces), and the against-wall (-y) face is omitted,
+    # so the weld gate stays clean and no doubled skin is reintroduced.
+    def wedge(x0, x1, y_back, z_lo, y_lip, z_hi, mat):
+        """Right-triangle timber bracket under a deck lip (back on the wall, top
+        under the lip, hypotenuse across)."""
+        vv = [bm.verts.new(Vector(p)) for p in (
+            (x0, y_back, z_lo), (x0, y_back, z_hi), (x0, y_lip, z_hi),
+            (x1, y_back, z_lo), (x1, y_back, z_hi), (x1, y_lip, z_hi))]
+        for idx in ((0, 1, 2), (3, 5, 4), (0, 2, 5, 3), (1, 4, 5, 2), (0, 3, 4, 1)):
+            try:
+                fdet = bm.faces.new([vv[i] for i in idx])
+            except ValueError:
+                continue
+            fdet.material_index = mat
+            for lp in fdet.loops:
+                p = lp.vert.co; lp[uv].uv = (p.x + p.y, p.z + 0.5 * p.y)  # skew so no face is UV-degenerate
+
+    # (1) corbel brackets under the pentice and the loading gallery, at each post
+    for pxp in (-gw / 2 + 0.5, gw / 2 - 0.5, -(cw / 2 + 0.7), (cw / 2 + 0.7)):
+        gbot = gy - CFG["gallery_thick"]
+        wedge(pxp - 0.10, pxp + 0.10, FW + 0.03, gbot - 0.85, hz - 0.15, gbot - 0.05, ITM)
+        pbot = py - CFG["pentice_thick"]
+        wedge(pxp - 0.09, pxp + 0.09, FW + 0.03, pbot - 0.60, hz - 0.15, pbot - 0.05, ITM)
+
+    # (2) stone pilasters framing the cargo bay (apron -> under the pentice), proud
+    for sgnp in (-1, 1):
+        pxs = sgnp * (cw / 2 + 0.30)
+        solid_box(pxs - 0.20, pxs + 0.20, FW, FW + 0.16, 0.05, py - CFG["pentice_thick"] - 0.06,
+                  IT, faces=("+y", "-x", "+x", "+z"), tile=1.1)
+
+    # (3) segmental stone ARCHED HEAD over the cargo bay (voussoirs + crown keystone),
+    # tucked into the door-head zone below the pentice
+    for t in np.linspace(-1.0, 1.0, 9):
+        vx = t * (cw / 2 + 0.06)
+        vz = ch - 0.20 - 0.42 * (t * t)                    # crown high at t=0, springs low
+        crown = abs(t) < 0.13
+        hw = 0.26 if crown else 0.17
+        hh = 0.20 if crown else 0.15
+        solid_box(vx - hw, vx + hw, FW, FW + (0.16 if crown else 0.11), vz - hh, vz + hh,
+                  IT, faces=("+y", "-x", "+x", "+z", "-z"), tile=1.0)
+
+    # (4) a projecting weather HOOD + brackets over the loft loading door
+    solid_box(-lw / 2 - 0.35, lw / 2 + 0.35, FW, FW + 0.55, loft_door_head, loft_door_head + 0.20,
+              ITM, faces=("+y", "-x", "+x", "+z", "-z"), tile=1.0)
+    for hxb in (-lw / 2 - 0.18, lw / 2 + 0.18):
+        wedge(hxb - 0.06, hxb + 0.06, FW + 0.03, loft_door_head - 0.5, FW + 0.5, loft_door_head - 0.02, ITM)
+
+    # (5) painted SIGN board above the loft door (trim-edged body + textured face)
+    sb0 = loft_door_head + 0.30
+    sb1 = min(CFG["roof_deck"] - 0.15, sb0 + 1.15)
+    sbw = min(W * 0.62, (sb1 - sb0) * 2.7)
+    solid_box(-sbw / 2 - 0.08, sbw / 2 + 0.08, FW, FW + 0.10, sb0 - 0.08, sb1 + 0.08,
+              IT, faces=("+y", "-x", "+x", "+z", "-z"), tile=1.0)
+    quad((-sbw / 2, FW + 0.11, sb0), (sbw / 2, FW + 0.11, sb0),
+         (sbw / 2, FW + 0.11, sb1), (-sbw / 2, FW + 0.11, sb1), ISG,
+         [(1, 0), (0, 0), (0, 1), (1, 1)])  # flip U: face is +Y, read left-to-right from the front
+
+    # (6) projecting stone CORNICE band along the front eave
+    solid_box(-hx, hx, FW, FW + 0.14, CFG["roof_deck"] - 0.30, CFG["roof_deck"] - 0.02,
+              IT, faces=("+y", "+z", "-z", "-x", "+x"), tile=1.2)
+
+    # (7) roof: a chimney CAP for a stronger silhouette (flat roof only)
+    if CFG["roof"] == "flat":
+        solid_box(-1.08, -0.12, -1.48, -0.52, dt - 0.28, dt - 0.10, IT, faces="all", tile=1.0)
+
 # ---- ground apron: pins the bbox to the DECLARED box, centred, base 0 ----------
 solid_box(-hx, hx, -hz, hz, 0.0, 0.03, IT, faces="all", tile=1.5)
 
@@ -549,7 +629,7 @@ bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=1e-5)
 bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
 mesh = bpy.data.meshes.new(KEY); bm.to_mesh(mesh); bm.free()
 obj = bpy.data.objects.new(KEY, mesh)
-for m in (MAT_BRICK, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V):
+for m in (MAT_BRICK, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V, MAT_SIGN):
     obj.data.materials.append(m)
 for poly in obj.data.polygons:
     poly.use_smooth = False
