@@ -30,6 +30,89 @@ at a whole town, innocent and guilty together.
 
 ---
 
+# Small first test (iterate before the full clip)
+
+**Do this one shot before generating anything else.** The owner validated Kling 3.0
+image-to-video (a screenshot of one of our own 3D assets as the init frame → clean
+3D-game-asset motion), and the method is **iterative**: prove Kling on the smallest useful shot,
+judge it, *then* expand — so credits are not spent on a full sequence that drifts. The smallest
+useful test is **one shot only: the establishing wide of the shut harbour** (dead port, nothing
+moving). It seeds off a frame rendered from our **actual** GLBs, so it is the truest test of
+whether Kling holds the game's art style and palette.
+
+**These frames are re-done, correctly.** The earlier `shot1/2/3.png` were composed wrong (owner's
+call — they did not match the real scene) and are **not** used here. The frames below were
+re-rendered by `assets/pipeline/shot_harbour_refs.mjs` (`SHOT=test`) to match the owner's real
+in-game harbour photo `assets/reference/harbour-cutscene/real-harbour-ingame.png`: near eye-level
+third-person, a plank deck filling the foreground, two tall ships moored close on the LEFT (hulls +
+furled rigging), working gear (idle timber crane + a leaning ladder) on the RIGHT, a rope rail at
+the water's edge, and a **low hazy sun over open water**. (Note the mood is the photo's low warm
+haze, *not* the flat overcast the older prompts below describe — the prompt here matches the frame
+actually uploaded.)
+
+## Upload to Kling 3.0 (mode: Image → Video)
+
+- **Init / first frame — required:** `assets/reference/harbour-cutscene/test/establishing.png`
+  — the composed **1920×1080 (16:9)** establishing wide, rendered from our GLBs. The push/drift
+  begins from this exact frame.
+- **Element reference — optional, recommended:**
+  `assets/reference/harbour-cutscene/test/ref-brig.png` — the hero brig on a clean field, to lock
+  the ship's shape/style across the motion. Kling 3.0 takes a start-frame **plus** an element
+  reference; enabling refs ~**doubles** the per-second rate (see pricing), so it is fine to skip it
+  on the first cheap draft and add it once the look is close.
+
+## Kling 3.0 prompt (paste whole)
+
+```
+Stylized 3D rendered cinematic, real-time game-engine look: clean 3D character and vessel models,
+PBR materials, soft global illumination, gentle volumetric haze. NOT photoreal, NOT live-action,
+NOT a documentary, no hyperreal skin. Match the art style, materials, muted colour palette, staging
+and lighting of the uploaded reference image exactly — it is a frame rendered from our actual game.
+Establishing wide of a shut colonial-Boston harbour, June 1774, under a low hazy sun over open
+water. A long weathered plank wharf fills the foreground; two tall square-rigged merchant ships lie
+moored close on the left, sails furled and gasketed, masts and rigging still; more ships sit
+anchored in the hazy distance; an idle timber crane and a leaning ladder stand to the right;
+barrels, coiled rope and drying racks are left unmoved on the deck; a rope rail runs along the
+water's edge. The port is dead — nothing works, no cargo moving, no crew, no loading. Only the
+water, one drifting gull and a faint sway of rigging move. The camera makes ONE slow, gentle
+push-in (or a slow lateral drift) toward the still wharf and the anchored ships. Soft warm haze,
+muted maritime palette, grey-green water, period-accurate 1774 detail.
+No baked-in text of any kind anywhere in the frame: no signage, lettering, labels, captions,
+subtitles, numbers, logos or watermarks.
+Must NOT appear: any on-screen text or subtitles; any modern object; photoreal or hyperreal human
+skin; bright saturated colour; cartoon or anime styling; fantasy elements; anyone working, walking
+or moving cargo.
+```
+
+## Kling settings
+
+- **Mode / aspect / res:** Image → Video · **16:9** · 1080p.
+- **Duration:** **~5 s** for the test (the cheapest useful validation; try 10 s only once the look
+  holds, for a slower push).
+- **Camera move:** exactly **one gentle move** — a slow **push-in** or a slow lateral **drift**. No
+  orbit, no whip, no crash-zoom; the stillness is the shot.
+- **Seed:** run a couple of drafts; when one holds our look, **lock that seed** and reuse it when you
+  expand, so the palette and staging carry into the next shots.
+- **Audio: OFF.** Generate **silent** — audio (TTS voice + ambient + our subtitle overlay) is added
+  in post, per the owner's decision. **No mouth movement is needed** for an establishing wide (no
+  speaking figure on screen), so lip-sync is irrelevant here.
+
+## VO for post-dub (NOT sent to Kling)
+
+Added later as TTS + our own subtitle overlay; trim to the shot length. IRIS, calm and precise:
+> "June, 1774. For the tea thrown into this harbour, Parliament closed the whole of it — every
+> wharf, every ship — until Boston paid for what a few men had done."
+
+## If this looks right, expand to →
+
+Keep the locked seed and add the next iteration — **Shot 2**, a slow track along a line of idled
+dockhands on the planks (seed a mid frame; add `test/ref-dockhand.png` / `test/ref-player.png` as
+element references to hold identity), then the **Shot 3** close on one ruined dockworker — i.e. the
+full three-cut sequence and prompts already specified in **Deliverable B** and the **send-package**
+below. Validate the look on this one wide first; only then spend on the rest.
+
+---
+
 # Deliverable A — video-model recommendation
 
 Researched against current (2026) sources; see **Sources & confidence** at the end. Native audio is
