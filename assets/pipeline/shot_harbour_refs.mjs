@@ -82,6 +82,57 @@ const shipInstances = (list) =>
     keel: WATER_Y - draft,
   }));
 
+// The warm-haze env + calm water shared by the establishing wide and the
+// character-anchored opener variants (start-v2-*), so all of them read as the
+// same dead port, low warm sun over grey-green water.
+const HARBOUR_ENV = {
+  skyGradient: ["#b7c1c8", "#f1e8d6"], // cool crown -> warm hazy horizon
+  fog: ["#e9e0d1", 34, 250],
+  hemi: ["#ebe4d6", "#4a483f", 1.2],
+  sun: { pos: [-34, 24, 30], intensity: 0.92, color: "#ffeccb" },
+  sunGlow: { pos: [12, 2.2, -175], size: 140, intensity: 0.9 },
+  exposure: 1.1,
+  shadowSpan: 95,
+};
+const HARBOUR_WATER = { y: WATER_Y, color: "#9c9b8f", size: 1400, rough: 0.55 };
+
+// The dead-harbour dressing (the `establishing` set MINUS the figure), so each
+// character-anchored variant can place its own player against the same layout:
+// two tall ships close on the LEFT (x≈-13/-28), gear on the RIGHT, rope-rail edge
+// at z≈-6, more ships hazy to the horizon, low sun far -Z.
+const harbourSet = () => [
+  { key: "colonial-wharf-apron", pos: [2, 0, 27], rotY: 0, targetLen: 82, axis: "x", base: 0 },
+  { key: "wharf-pier-module", pos: [-6, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+  { key: "wharf-pier-module", pos: [0, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+  { key: "wharf-pier-module", pos: [6, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+  { key: "wharf-pier-module", pos: [12, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+  { key: "wharf-pier-module", pos: [18, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+  { key: "wharf-rope-rail-straight", pos: [-6, 0, -6.2], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+  { key: "wharf-rope-rail-straight", pos: [2, 0, -6.2], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+  { key: "wharf-rope-rail-straight", pos: [10, 0, -6.2], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+  { key: "wharf-rope-rail-straight", pos: [18, 0, -6.2], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+  { key: "bollard", pos: [-10, 0, -5.8], rotY: 0, targetLen: 1.0, axis: "y", base: 0 },
+  { key: "bollard", pos: [24, 0, -5.8], rotY: 0, targetLen: 1.0, axis: "y", base: 0 },
+  { key: "ship-brig-hero", pos: [-13, WATER_Y, -11], rotY: 0.28, targetLen: 27, axis: "maxH", keel: WATER_Y - 1.7 },
+  { key: "ship-snow-background", pos: [-28, WATER_Y, -15], rotY: 0.5, targetLen: 23, axis: "maxH", keel: WATER_Y - 1.6 },
+  { key: "ship-snow-background", pos: [17, WATER_Y, -54], rotY: 1.95, targetLen: 22, axis: "maxH", keel: WATER_Y - 2.4 },
+  { key: "ship-sloop", pos: [31, WATER_Y, -46], rotY: 2.2, targetLen: 14, axis: "maxH", keel: WATER_Y - 1.4 },
+  { key: "ship-brig-hero", pos: [6, WATER_Y, -70], rotY: 1.6, targetLen: 26, axis: "maxH", keel: WATER_Y - 2.4 },
+  { key: "timber-crane", pos: [13, 0, -4], rotY: -0.5, targetLen: 6.2, axis: "y", base: 0 },
+  { key: "work-ladder-9", pos: [17, 0, -3], rotY: 0.15, rotZ: -0.34, targetLen: 4.4, axis: "y", base: 0 },
+  { key: "crate-stack", pos: [20, 0, 4.5], rotY: -0.3, targetLen: 2.4, axis: "maxH", base: 0 },
+  { key: "crate-mound", pos: [25, 0, 6], rotY: 0.35, targetLen: 2.8, axis: "maxH", base: 0 },
+  { key: "bldg-warehouse-wharf-a", pos: [30, 0, 7], rotY: Math.PI, targetLen: 15, axis: "maxH", base: 0 },
+  { key: "barrel-group", pos: [-6.5, 0, 4], rotY: 0.4, targetLen: 1.3, axis: "y", base: 0 },
+  { key: "barrel-group", pos: [-9, 0, 5.4], rotY: -0.2, targetLen: 1.2, axis: "y", base: 0 },
+  { key: "rope-coil-large", pos: [-1.5, 0, 6], rotY: 0, targetLen: 2.0, axis: "x", base: 0 },
+  { key: "cargo-net-bundle", pos: [25, 0, 3], rotY: 0.2, targetLen: 1.5, axis: "y", base: 0 },
+  { key: "fish-flakes-rack", pos: [-12, 0, 0.5], rotY: 0, targetLen: 5, axis: "x", base: 0 },
+  { key: "fish-flakes-rack", pos: [9, 0, 1], rotY: 0.1, targetLen: 5, axis: "x", base: 0 },
+  { key: "rowboat", pos: [-8, WATER_Y, -8.5], rotY: 0.6, targetLen: 4.5, axis: "maxH", keel: WATER_Y - 0.35 },
+  { key: "buoy", pos: [4, WATER_Y, -13], rotY: 0, targetLen: 1.0, axis: "maxH", keel: WATER_Y - 0.3 },
+];
+
 const SCENES = {
   // SHOT 1 — WIDE: the port shut. High, wide, looking down the wharf into a
   // forest of masts and moored hulls, warehouses to the side, dead cargo on the
@@ -358,6 +409,59 @@ const SCENES = {
       { key: "playerboy-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.72, clip: "idle", t: 1.0 },
     ],
   },
+
+  // =========================================================================
+  // CHARACTER-ANCHORED OPENERS (start-v2-*). The owner rejected the distant wide
+  // as too empty: open ON THE PROTAGONIST arriving at the shut port, closer, a
+  // frame to push in from. Same dead-harbour set (harbourSet), player placed off
+  // -center (rule of thirds) in the fore/mid ground looking out; the two tall
+  // ships, gear, rope-rail and low sun compose behind/around him.
+  // =========================================================================
+
+  // (a) OVER-THE-SHOULDER — the player near-left, back to camera, the two hero
+  // ships looming just beyond him; rope rail + planks lead out to the sea/sun.
+  "start-v2-a": {
+    subdir: "test",
+    viewport: [1920, 1080],
+    dsr: 2,
+    camera: { pos: [-5.8, 2.4, 3.4], look: [-13.5, 1.1, -16], fov: 50 },
+    env: { ...HARBOUR_ENV },
+    water: HARBOUR_WATER,
+    instances: [
+      ...harbourSet(),
+      { key: "playerboy-rigged", pos: [-8.2, 0, -0.4], rotY: 3.35, fitHeight: 1.92, clip: "idle", t: 1.4 },
+    ],
+  },
+
+  // (b) 3/4 MEDIUM — the player right-third in the foreground, gazing out over the
+  // whole dead harbour; ships center-left, low sun center, gear near him right.
+  "start-v2-b": {
+    subdir: "test",
+    viewport: [1920, 1080],
+    dsr: 2,
+    camera: { pos: [7.4, 2.4, 5.0], look: [-6, 1.15, -18], fov: 55 },
+    env: { ...HARBOUR_ENV, fill: { pos: [10, 6, 12], intensity: 0.35, color: "#f3ead6" } },
+    water: HARBOUR_WATER,
+    instances: [
+      ...harbourSet(),
+      { key: "playerboy-rigged", pos: [5.2, 0, -0.8], rotY: 3.6, fitHeight: 1.82, clip: "idle", t: 1.4 },
+    ],
+  },
+
+  // (c) LOW HERO ANGLE — camera near the planks looking up at the player standing
+  // off-center against the hazy sky, the shut harbour and ships behind him.
+  "start-v2-c": {
+    subdir: "test",
+    viewport: [1920, 1080],
+    dsr: 2,
+    camera: { pos: [-1.8, 0.9, 6.8], look: [-6, 1.65, -12], fov: 54 },
+    env: { ...HARBOUR_ENV },
+    water: HARBOUR_WATER,
+    instances: [
+      ...harbourSet(),
+      { key: "playerboy-rigged", pos: [-6, 0, -0.6], rotY: 3.15, fitHeight: 1.92, clip: "idle", t: 1.4 },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -619,10 +723,12 @@ const browser = await chromium.launch({
 // The corrected, photo-matched deliverables render into the test/ subdir; the
 // legacy shot1/2/3 (kept for the older send-package) stay at the OUT root.
 const TEST_SHOTS = ["establishing", "ref-brig", "ref-wharf", "ref-dockhand", "ref-player"];
+const START_SHOTS = ["start-v2-a", "start-v2-b", "start-v2-c"]; // character-anchored openers
 const sel = process.env.SHOT ?? "all";
 const shots =
   sel === "all" ? Object.keys(SCENES) :
   sel === "test" ? TEST_SHOTS :
+  sel === "starts" ? START_SHOTS :
   sel.split(",").map((s) => s.trim()).filter(Boolean);
 
 let currentSceneJson = "{}";
