@@ -25,6 +25,31 @@ import { climbVolume } from "../authoring.js";
 import type { ClimbSpec } from "../types.js";
 
 export const CLIMBS: ClimbSpec[] = [
+  // ---- B_SHAMBLES: the merchant's house — the covert drop-in ---------------
+  // Off the Shambles crate up the goods-ladder in the merchant's open window
+  // onto the projecting balcony ledge, and out of the parlour up the window
+  // reveal onto the leads. Both are straight-up climbs the reader would not
+  // otherwise offer (a ledge over a crate, a floor under an eave), so they are
+  // written down here against the links they serve.
+  climbVolume({
+    section: "B_SHAMBLES",
+    serves: "B_CRATES_B->M_LEDGE",
+    onto: "MERCHANT_BALCONY",
+    at: [39.2, 1.9, -2.0],
+    halfX: 0.6,
+    halfZ: 0.4,
+    note: "Standing on the Shambles crate under the merchant's open window; the balcony overhangs the crate, and going up is the climb-in. A foothold, not the whole ledge (the balcony is only 0.8 m deep).",
+  }),
+  climbVolume({
+    section: "B_SHAMBLES",
+    serves: "M_LEDGE->M_EAVE",
+    onto: "MERCHANT__ROOF",
+    at: [39.2, 4.0, -2.8],
+    halfX: 1.0,
+    halfZ: 0.4,
+    note: "On the window balcony; the leads are one climb up the south face, riding the wall exterior clear of the roof edge.",
+  }),
+
   // ---- C_ASCENT: the Town House, twice round and up the tower --------------
   climbVolume({
     section: "C_ASCENT",

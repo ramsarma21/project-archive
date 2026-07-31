@@ -23,7 +23,7 @@ test("the real level authors its climb ladders, and every one resolves an ascent
   const { world } = compileLevel(M1_EFFIGY_RUN);
   // The content landed: one ladder per route climb-up a ladder honestly serves
   // (the tree and the stone buttress are grips, not ladders — see level/ladders).
-  assert.equal(world.ladders?.length, 9, "nine ladders forwarded into world.ladders");
+  assert.equal(world.ladders?.length, 11, "eleven ladders forwarded into world.ladders (nine + the merchant window and reveal)");
   // Every forwarded ladder is one the tested predicate accepts: a real served
   // surface and a top-out with standing clearance ("no ladder, no climb" armed,
   // not refused). This is what the mission-world lane will read to turn the rule

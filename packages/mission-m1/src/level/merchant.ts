@@ -174,12 +174,30 @@ decks.push(
     id: "MERCHANT_PARLOUR__DECK",
     section: "B_SHAMBLES",
     asset: null,
-    // Reaches the south wall line (z −3.4) at the aperture so the crate climb-in
-    // lands on real floor right at the open window.
+    // Reaches the south wall line (z −3.4) at the aperture so it abuts the balcony.
     rect: rect(33.8, 41.2, -16.4, -3.4),
     y: PARLOUR,
     carriedBy: ["MERCHANT_PARLOUR"],
     tags: ["floor", "safe-interior"],
+  }),
+  // The projecting balcony (Option 1 — the covert drop-in ledge). The parlour
+  // floor reaches OUT through the open window, south of the wall over the Shambles
+  // crate-mound, so the G-A climb-in is a short VERTICAL mantle onto a solid ledge
+  // directly above the foot, then a flat step into the SAFE interior. Drawn by the
+  // merchant mesh (a bldg-merchant deck → the generator's deck-slab case, a SOLID
+  // slab); carriedBy MERCHANT so it clusters into the one merchant draw, which
+  // re-centres the draw symmetrically on the collision (declared depth grows to
+  // 14.6 to include it — the safe corner-stud re-centre). Abuts the parlour deck at
+  // z −3.4 (edge, no weld).
+  deck({
+    id: "MERCHANT_BALCONY",
+    section: "B_SHAMBLES",
+    asset: "bldg-merchant",
+    rect: rect(AP_X0, AP_X1, -3.4, -2.6),
+    y: PARLOUR,
+    carriedBy: ["MERCHANT"],
+    tags: ["balcony", "ledge", "safe-interior", "start"],
+    note: "The merchant's window balcony over the Shambles crate: the covert climb-in ledge into the quartered parlour.",
   }),
 );
 

@@ -63,6 +63,22 @@ export const NODES: RouteNode[] = [
   node("B_CRATES_A", "B_SHAMBLES", [29.4, BAND.STACK, -2.3], "SHAMBLES_CRATES_A", ["crossover"]),
   node("B_CANOPY_FOOT", "B_SHAMBLES", [19.7, 0.0, -0.4], "GROUND", ["crossover"]),
 
+  // -- the merchant's house: the covert drop-in (G-A) and its exit (G-B) ------
+  // The high line reaches the merchant here. Off the Shambles crate the player
+  // climbs the goods-ladder in the open window onto the projecting BALCONY — a
+  // vertical climb-in directly over the crate onto a solid ledge, no ground touch
+  // — steps into the quartered parlour (the SAFE interior, billeted), then climbs
+  // out the window onto the leads to cross to the Town House. Option 1, the
+  // projecting-balcony drop-in.
+  node("M_LEDGE", "B_SHAMBLES", [39.2, 4.0, -2.8], "MERCHANT_BALCONY", ["merchant", "safe-interior", "ledge", "crossover"],
+    "The merchant's window balcony, a solid ledge 4.0 m up directly over the Shambles crate — the covert climb-in off the high line."),
+  node("M_PARLOUR", "B_SHAMBLES", [39.0, 4.0, -5.0], "MERCHANT_PARLOUR__DECK", ["merchant", "safe-interior"],
+    "The quartered parlour, a SAFE interior off the window balcony. The billeting reads occupation; the way on is back to the window and up onto the leads."),
+  node("M_EAVE", "B_SHAMBLES", [39.2, 7.1, -3.5], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
+    "The merchant's leads, climbed up the south face off the window balcony — clear of the drawn roof edge at z −3.2."),
+  node("M_EAVE_E", "B_SHAMBLES", [42.2, 7.1, -6.0], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
+    "The east lip of the leads, over the Town House scaffold — the take-off for the G-B crossing."),
+
   node("B_PENTICE_FOOT", "B_SHAMBLES", [16.6, 0.0, 1.6], "GROUND", ["high-line"]),
   node("B_PENTICE", "B_SHAMBLES", [16.6, 3.1, 2.4], "SHAMBLES_PENTICE", ["high-line"]),
   node("B_SHED_E", "B_SHAMBLES", [16.6, 5.6, 4.2], "MARKET_SHED__ROOF", ["high-line"]),
@@ -307,6 +323,30 @@ export const LINKS: RouteLink[] = [
   link("B_CANOPY_4", "B_CRATES_B", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 4.0 }),
   link("B_CRATES_B", "B_STREET_E", "DROP", "SAFE", "CHAIN_DROP", { speedMps: 3.0 }),
   link("B_STREET_MID", "B_CRATES_FOOT", "RUN", "SAFE", "RUN"),
+
+  // -- the merchant's house: the covert drop-in (G-A) and its exit (G-B) ------
+  // The elevated line's alternative to the old ground drop (B_CRATES_B->B_STREET_E,
+  // kept as the fallback): stay off the street, climb into the merchant, and cross
+  // his leads to the Town House scaffold.
+  link("B_CRATES_B", "M_LEDGE", "CLIMB", "SAFE", "CLIMB", {
+    note: "G-A: up the goods-ladder in the merchant's open window onto the balcony ledge — a vertical climb-in off the high line into the SAFE interior, no ground touch.",
+  }),
+  link("M_LEDGE", "M_PARLOUR", "RUN", "SAFE", "RUN", {
+    speedMps: 2.0,
+    note: "Off the balcony through the open window into the quartered parlour, past the billeting — the SAFE room.",
+  }),
+  link("M_PARLOUR", "M_LEDGE", "RUN", "SAFE", "RUN", {
+    speedMps: 2.0,
+    note: "Back out of the parlour to the window balcony, the hub of the drop-in.",
+  }),
+  link("M_LEDGE", "M_EAVE", "CLIMB", "SAFE", "CLIMB", {
+    note: "Up the south face off the balcony onto the leads — the climb rides the wall exterior, south of the drawn roof edge, so it tops onto the roof rather than through it.",
+  }),
+  link("M_EAVE", "M_EAVE_E", "RUN", "SAFE", "RUN"),
+  link("M_EAVE_E", "C_SCAFF_2", "DROP", "SAFE", "CHAIN_DROP", {
+    speedMps: 2.6,
+    note: "G-B: off the leads' east lip onto the Town House mason's scaffold — the covert line rejoins the proven spiral.",
+  }),
   // The SAFE way up is the guided climb onto stall 2's south-edge awning, not the
   // crates. The crate top is 0.65m BELOW the canopy and the reader, standing on
   // it, sees the street below its far lip and offers only a RUN_OFF — the
