@@ -123,6 +123,33 @@ masses.push(
     tags: ["structure", "balcony", "interior-shell"],
     note: "The quartered parlour floor: the drop-in landing, a SAFE interior 4.0 m up. The billeting dressing reads occupation from inside.",
   }),
+  // Billeting dressing on the parlour floor: soldiers are quartered here (the
+  // concept-2 obstacle). Non-blocking clutter set against the walls, clear of the
+  // centre so the 0.75 m path and the drop-in landing stay open. Reads "occupied"
+  // from the moment the player drops in.
+  prop({
+    id: "MERCHANT_BILLET_A",
+    section: "B_SHAMBLES",
+    asset: "billeting-pile",
+    rect: rect(34.0, 35.9, -16.4, -14.85),
+    baseY: PARLOUR,
+    topY: PARLOUR + 0.86,
+    landable: false,
+    tags: ["billeting", "dressing"],
+    note: "Stacked muskets, bedrolls and packs against the parlour's back wall.",
+  }),
+  prop({
+    id: "MERCHANT_BILLET_B",
+    section: "B_SHAMBLES",
+    asset: "billeting-pile",
+    rect: rect(39.4, 40.95, -11.9, -10.0),
+    baseY: PARLOUR,
+    topY: PARLOUR + 0.86,
+    landable: false,
+    yaw: Math.PI / 2,
+    tags: ["billeting", "dressing"],
+    note: "A second billet against the east wall, turned across the room.",
+  }),
 );
 
 decks.push(
