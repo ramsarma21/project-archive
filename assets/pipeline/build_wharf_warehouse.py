@@ -30,6 +30,21 @@ SEED = 74010207
 RNG = np.random.default_rng(SEED)
 TEX = 1024
 
+# PHOTOREAL: keep the clean, box-accurate, weld-clean FORM (the Meshy image-to-3D
+# mesh fails the weld gate — 1147 pairs, floors at ~153 under decimation vs the 64
+# gate — and drops the loading gallery, so its geometry can't ship). Instead wear
+# the CONCEPT's real materials: palette sampled from
+# assets/wharf-warehouse-photoreal-concept.png (dark warm brick, weathered
+# silver-grey timber, dark wet slate, grey stone), with grime/streak/efflorescence
+# layers so the facade reads photoreal, not flat. Same discipline as the steeple.
+PHOTOREAL = os.environ.get("PHOTOREAL", "") not in ("", "0", "false")
+NO_NORMAL = os.environ.get("NO_NORMAL", "") not in ("", "0", "false")
+CONCEPT_BRICK = (0.52, 0.315, 0.25)
+CONCEPT_MORTAR = (0.58, 0.55, 0.49)
+CONCEPT_TIMBER = (0.44, 0.40, 0.35)
+CONCEPT_SLATE = (0.24, 0.26, 0.30)
+CONCEPT_STONE = (0.54, 0.51, 0.46)
+
 # ------------------------------------------------------------------ per-key spec
 # All lengths in metres, at true (contain-fit 1.0) scale. Front face is +Y and
 # carries the loading front (cargo door, projecting pentice + loft gallery, hoist
@@ -188,16 +203,25 @@ def pack_jpeg(name, rgb, q=90):
     return baked
 
 
-def make_normal(h, strength=2.4):
+def make_normal(h, strength=2.4, name="n"):
     n = h.shape[0]
     gx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * 0.5; gy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * 0.5
     nx, ny, nz = -gx * strength, -gy * strength, np.ones_like(h)
     inv = 1 / np.sqrt(nx * nx + ny * ny + nz * nz)
-    rgba = np.stack([nx * inv * 0.5 + 0.5, ny * inv * 0.5 + 0.5, nz * inv * 0.5 + 0.5, np.ones_like(h)], 2)
-    img = bpy.data.images.new(f"{KEY}-n", width=n, height=n, alpha=True)
-    img.pixels.foreach_set(np.flipud(rgba).astype(np.float32).reshape(-1))
-    img.colorspace_settings.name = "Non-Color"
-    return img
+    rgb = np.stack([nx * inv * 0.5 + 0.5, ny * inv * 0.5 + 0.5, nz * inv * 0.5 + 0.5], 2)
+    # A bare generated image is not packed, so the glTF exporter writes it BLACK ->
+    # Cycles flips the normal inward -> the face reads unlit/black. Write the RAW
+    # pixels to a PNG with img.save() (NOT save_render, which would bake the view
+    # transform into the normal), reload + pack so the exporter has real data.
+    src = _img(f"{KEY}-{name}", rgb)
+    src.colorspace_settings.name = "Non-Color"
+    path = os.path.join(os.path.dirname(OUT_GLB) or ".", f"_wh_{KEY}_{name}.png")
+    src.filepath_raw = path; src.file_format = "PNG"; src.save()
+    baked = bpy.data.images.load(path); baked.name = f"{KEY}-{name}b"
+    baked.colorspace_settings.name = "Non-Color"; baked.pack()
+    try: os.remove(path)
+    except OSError: pass
+    return baked
 
 
 def make_material(name, image, normal=None, rough=0.94, spec=0.16):
@@ -217,15 +241,86 @@ def make_material(name, image, normal=None, rough=0.94, spec=0.16):
     return mat
 
 
-log("textures")
+# ---- photoreal weathering layers (applied only when PHOTOREAL) ----------------
+def add_grime(rgb):
+    """Vertical water-streaking, broad soot blotches and pale efflorescence — the
+    aged-brick read the flat procedural fill lacks."""
+    n = rgb.shape[0]
+    out = rgb.copy()
+    streak = aniso(n, 150, 5, RNG)                       # long vertical runs
+    out *= (0.74 + 0.26 * streak)[..., None]
+    grime = aniso(n, 22, 22, RNG)                        # broad soot blotches
+    out *= (0.85 + 0.15 * grime)[..., None]
+    top = np.linspace(1.0, 0.82, n)[:, None, None]       # sootier toward the eaves
+    out *= top
+    fle = aniso(n, 320, 320, RNG)                        # lime efflorescence flecks
+    out = np.where((fle > 0.88)[..., None], np.clip(out * 1.4 + 0.05, 0, 1), out)
+    return np.clip(out, 0, 1)
+
+
+def add_cracks(rgb, n_cracks=7):
+    n = rgb.shape[0]
+    out = rgb.copy()
+    for _ in range(n_cracks):
+        cx = int(RNG.integers(0, n)); w = int(RNG.integers(1, 3))
+        out[:, max(0, cx - w):cx + w] *= 0.5
+    return np.clip(out, 0, 1)
+
+
+def slate_rgb(base):
+    """Overlapping slate courses: staggered rows, per-slate tone, a shadow line at
+    each course head (the overlap read), a cold blue-grey tint."""
+    n = TEX; NR, NS = 11, 15
+    v = np.linspace(0, 1, n, endpoint=False)[:, None]; u = np.linspace(0, 1, n, endpoint=False)[None, :]
+    fr = v * NR; row = np.floor(fr); rf = fr - row
+    off = np.where(row % 2 == 0, 0.0, 0.5)
+    fs = u * NS + off; sl = np.floor(fs); sf = fs - sl
+    seed = np.sin(np.broadcast_to(row, (n, n)) * 11.1 + np.broadcast_to(sl, (n, n)) * 7.3) * 4373.1
+    var = seed - np.floor(seed)
+    base = np.array(base)
+    rgb = base[None, None, :] * (0.68 + 0.6 * var)[..., None]
+    rgb = np.clip(rgb + (aniso(n, 130, 130, RNG) - 0.5)[..., None] * 0.05, 0, 1)
+    head = np.broadcast_to(_ss(0.0, 0.07, rf), (n, n))   # course head shadow (overlap)
+    seam = _ss(0.0, 0.02, sf) * _ss(0.0, 0.02, 1 - sf)
+    rgb *= (0.55 + 0.45 * head)[..., None]
+    rgb *= (0.7 + 0.3 * seam)[..., None]
+    return np.clip(rgb, 0, 1), (0.4 + 0.6 * head).copy()
+
+
+log("textures", "PHOTOREAL" if PHOTOREAL else "flat")
 bpy.ops.wm.read_factory_settings(use_empty=True)
-B_RGB, B_H = brick_fields(CFG["brick"])
-MAT_BRICK = make_material("brick", pack_jpeg("brick", B_RGB), normal=make_normal(B_H))
-MAT_GLASS = make_material("glass", pack_jpeg("window", window_rgb()), rough=0.5, spec=0.25)
-MAT_TRIM = make_material("trim", pack_jpeg("trim", flat_rgb(TEX // 4, (0.80, 0.78, 0.72))), rough=0.9, spec=0.18)
-MAT_LEAD = make_material("lead", pack_jpeg("lead", flat_rgb(TEX // 4, (0.52, 0.53, 0.53))), rough=0.86, spec=0.2)
-MAT_TIMBER = make_material("timber", pack_jpeg("timber", plank_rgb((0.46, 0.35, 0.24))), rough=0.93, spec=0.12)
-MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", plank_rgb((0.34, 0.24, 0.16), vertical=True)), rough=0.94, spec=0.12)
+# NORMAL-MAP EXPORT BUG: a generated normal image exports BLACK through the glTF
+# writer here (verified: with the normal attached the brick renders unlit/black in
+# Cycles AND would do the same in the game engine; without it the brick reads
+# correctly). Until the export path is fixed, photoreal ships WITHOUT tangent-space
+# normals — the base-colour maps already carry the mortar/grain/streak detail. The
+# non-photoreal path keeps its (harmless-in-EEVEE) normal for back-compat.
+# FLAGGED for the coordinator: the shipped procedural GLBs (560a21c) also attach
+# this normal, so their brick may render dark in-engine — worth a check at sync.
+def nrm(h, strength, name):
+    if NO_NORMAL or PHOTOREAL:
+        return None
+    return make_normal(h, strength, name)
+
+
+if PHOTOREAL:
+    B_RGB, B_H = brick_fields(CONCEPT_BRICK)
+    B_RGB = add_grime(B_RGB)
+    S_RGB, S_H = slate_rgb(CONCEPT_SLATE)
+    MAT_BRICK = make_material("brick", pack_jpeg("brick", B_RGB), normal=nrm(B_H, 3.0, "brickn"), rough=0.95, spec=0.14)
+    MAT_GLASS = make_material("glass", pack_jpeg("window", window_rgb()), rough=0.32, spec=0.45)
+    MAT_TRIM = make_material("trim", pack_jpeg("trim", flat_rgb(TEX // 2, CONCEPT_STONE, 0.12)), rough=0.86, spec=0.2)
+    MAT_LEAD = make_material("lead", pack_jpeg("lead", S_RGB), normal=nrm(S_H, 2.0, "slaten"), rough=0.5, spec=0.4)
+    MAT_TIMBER = make_material("timber", pack_jpeg("timber", add_cracks(plank_rgb(CONCEPT_TIMBER))), rough=0.9, spec=0.1)
+    MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", add_cracks(plank_rgb(tuple(c * 0.86 for c in CONCEPT_TIMBER), vertical=True))), rough=0.92, spec=0.1)
+else:
+    B_RGB, B_H = brick_fields(CFG["brick"])
+    MAT_BRICK = make_material("brick", pack_jpeg("brick", B_RGB), normal=nrm(B_H, 2.4, "brickn"))
+    MAT_GLASS = make_material("glass", pack_jpeg("window", window_rgb()), rough=0.5, spec=0.25)
+    MAT_TRIM = make_material("trim", pack_jpeg("trim", flat_rgb(TEX // 4, (0.80, 0.78, 0.72))), rough=0.9, spec=0.18)
+    MAT_LEAD = make_material("lead", pack_jpeg("lead", flat_rgb(TEX // 4, (0.52, 0.53, 0.53))), rough=0.86, spec=0.2)
+    MAT_TIMBER = make_material("timber", pack_jpeg("timber", plank_rgb((0.46, 0.35, 0.24))), rough=0.93, spec=0.12)
+    MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", plank_rgb((0.34, 0.24, 0.16), vertical=True)), rough=0.94, spec=0.12)
 IB, IW, IT, IL, ITM, ITV = 0, 1, 2, 3, 4, 5
 
 bm = bmesh.new()
