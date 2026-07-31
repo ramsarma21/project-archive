@@ -12,17 +12,24 @@ makes the path and collision follows it (never force traversability into an asse
 considered it); re-authoring/moving locations is allowed — keep what worked, cut useless
 circles and long detours; do not start building until the owner says go.
 
-**What "covert traversal" means (owner refinement, 30 Jul).** This is NOT an explicit geometric
+**What "covert traversal" means (owner refinements, 30 Jul).** This is NOT an explicit geometric
 "no-ground" rule — being a few feet off the ground does not "count," and there is **no tracked
-line-of-sight system** (that reads as buggy). The intent is the *feel*: you move **above the
-street — on roofs, ledges, planks and paths** where, in theory, you are out of sight of people on
-the ground. Rooftop/elevated reads as covert **by convention**; the street reads as exposed by
-convention. So the real requirement is **connectivity, not a node count**: the elevated network
-must be continuous enough that a player *can* stay up across the run (this is what closing the
-three islands / the G1–G2 gaps achieves). Ground contact is by **authored intent** — dropping to a
-contact, or a deliberate crossing (the dead harbour; the elm→yard climax) — never an accidental
-hole in the roofline. The Phase-2 gate is reframed accordingly (Section E): assert the covert line
-is a **connected elevated path with ground touches only at authored beats**, not "zero ground nodes."
+line-of-sight system** (that reads as buggy). The intent is the *feel*, and the model is now
+two-zone: **SAFE = rooftops + interiors; EXPOSED = the open street/ground.** You move above the
+street — on roofs, ledges, planks and paths — *or inside a building*, and either way you read as
+unseen; the open street reads as exposed. Both are **by convention**, not a tracked cone.
+**Interiors are safe, unseen zones** (like the printshop start): once inside you may move on the
+ground freely, and a window/balcony drop-in is a drop **into safety**, not exposure. The world is
+**broadly traversable** — the player may take whatever elevated route they like — but one **wayfound
+GOLDEN PATH** is marked so nobody gets lost, and it may **wind where the world blocks a direct line**
+(collapsed roofs, a barricaded street, water, a sheer wall, a gap too wide to jump), never as an
+arbitrary circle. So the requirement is **broad connectivity plus a legible line**: the elevated
+network is continuous enough to offer more than one roof route across the run, with the golden path
+recommended. Ground contact is by **authored intent** — a drop-to-contact, or a deliberate exposed
+crossing (the dead harbour; the elm→yard climax) — never an accidental hole in the roofline. The
+Phase-2 gate is reframed accordingly (Section E): assert a **broadly connected elevated network with
+a marked golden path and ground touches only at authored beats**, interiors counting as safe, not
+"zero ground nodes."
 
 **Legacy docs describe a DIFFERENT game — do not carry them over (owner, 30 Jul).** The old
 open-world Boston game is not this game. Much surviving documentation describes it, and its
@@ -117,6 +124,14 @@ Because the surface is authored *from* the route, every place the player stands 
 deck at an envelope-legal height whose collision equals its mesh — which is exactly what the current
 world lacks and why the bugs recur (A.9).
 
+**Open world, one marked line (owner, 30 Jul).** The world is **broadly traversable** — the player
+may improvise their own elevated route — but a single **golden path** (A.1) is wayfound so nobody
+gets lost, and it may **wind where the world blocks a direct line** (A.1b), the winding used
+productively (reserved pause spaces, A.10) and never an arbitrary circle. **SAFE = rooftops +
+interiors; EXPOSED = the open street.** Interiors are safe, unseen zones like the printshop start; a
+window/balcony drop-in is a drop into safety. And **there is no door mechanic** — every place is
+entered through an open aperture (A.9), so access never depends on operating a hinged door.
+
 **Axis convention (stage geography, not literal Boston cartography — the current geometry already
 compresses "a mile of road into eighty-eight metres").** `+x` = **east** = the travel direction; the
 run opens at the **west** (printshop + dead wharf on the water's edge) and ends at the **east**
@@ -127,45 +142,46 @@ edge to `x≈−20`; `LEVEL_BOUNDS` grows to roughly `x −30..106, z −30..28`
 
 ### A.1 The elevated covert route — designed first (the primary object)
 
-The route is one continuous **height profile**, west→east. It reads covert **by convention** (roofs,
-ledges, planks and boughs are "unseen"; the street is "exposed") — there is **no line-of-sight
-system**. It touches the ground at exactly **three authored beats** and nowhere else: the **wharf
-crossing** (1), each **drop-to-contact**, and the **elm→yard chase** (7→8). Every rise is
+This is the **golden path** — the one continuous, wayfound **height profile**, west→east; alternate
+roof routes exist (A.1b), this is the marked one. Its zones are **SAFE** (rooftops + interiors) or
+**EXPOSED** (open street) **by convention** — there is **no line-of-sight system**. It is EXPOSED at
+exactly **three authored beats** and nowhere else: the **wharf crossing** (1), each **drop-to-contact**,
+and the **elm→yard chase** (7→8); every interior drop-in stays **SAFE**. Every rise is
 ≤ `climbMaxHeightM` (3.2 m); every SAFE gap ≤ `levelDesignMaxGapM(drop)×0.8`; every drop resolves to
 RUN_OFF (≤2.2), HANG_DROP (≤3.2) or ROLL (≤5.5) — so every leg is `verifyLink`-legal with margin.
 
-| Leg | From → to | Band `y` (m) | Verb (rise/drop) | Ground? |
+| Leg | From → to | Band `y` (m) | Verb (rise/drop) | Zone |
 |---|---|---|---|---|
-| 0a | interior floor → stair-head / balcony | 0 → 2.9 | STAIRS (`rampStrips`, free step) | ground (safe interior) |
-| 0b | balcony → pentice/awning | 2.9 → 4.4 | CLIMB_UP (1.5) | elevated |
-| 0c | pentice → sign-hood | 4.4 → 6.2 | CLIMB_UP (1.8) | elevated |
-| 0d | sign-hood → printshop leads | 6.2 → 7.1 | STEP_UP (0.9) | elevated |
-| 1a | leads → wharf-warehouse gallery | 7.1 → 5.35 | RUN_OFF (1.75) | elevated (descent) |
-| 1b | gallery → crane cargo stage | 5.35 → 2.6 | HANG_DROP (2.75) | elevated |
-| 1c | crane cargo → crate top | 2.6 → 1.1 | RUN_OFF (1.5) | elevated |
-| 1d | crate → wharf plank deck | 1.1 → 0 | RUN_OFF (1.1) | **GROUND — the dead port** |
-| 1e | cross the plank deck | 0 | RUN / BLEND past idle ships | **GROUND** |
-| 1f | deck → crate-mound | 0 → 2.35 | CLIMB_UP (2.35) | elevated (ascent) |
-| 1g | crate-mound → wharf-warehouse gallery E | 2.35 → 5.35 | CLIMB_UP (3.0) | elevated |
-| 1h | gallery E → Shambles shed roof | 5.35 → 5.6 | STEP_UP (0.25) | elevated |
-| 2a | shed roof / canopy mid-line | 5.6 / 2.55 | RUN + 1.4 m canopy hops | elevated |
-| 2b | canopy → street (drop-to-contact) | 2.55 → 0 | HANG_DROP (2.55) | **GROUND — drop-to-contact** |
-| 2c | street → crates → canopy (climb back) | 0 → 1.9 → 2.55 | CLIMB_UP | elevated |
-| 3a | high line → merchant eave (**G-A** plank) | 2.55/5.6 → 7.1 | plank RUN + CLIMB_UP | elevated |
-| 3b | eave → window sill → parlour balcony (drop-in) | 7.1 → 4.6 → 3.4 | HANG_DROP (2.5) + STEP | elevated (interior) |
-| 3c | balcony → eave (exit) | 3.4 → 7.1 | CLIMB_UP ×2 | elevated |
-| 4a | merchant eave → Town House scaffold (**G-B** plank) | 7.1 → 5.6 | plank RUN_OFF (1.5) | elevated |
-| 4b | scaffold spiral → leads (→ tower) | 2.9 → 5.6 → 7.9 → 10.2 → 12.4 (→17.6) | CLIMB_UP chain (2.2–2.9 each) | elevated |
-| 5a | leads → gantry plank → south row | 12.4 | RUN | elevated |
-| 5b | chimney vaults | +1.05 | VAULT ×2 | elevated |
-| 5c | south row → meeting roof | 12.4 → 8.2 | CHAIN_DROP (≈1.6 gap / 4.2 fall, roll) | elevated |
-| 6a | meeting eave → ridge monitor (endorsement stop) | 8.2 → 11.2 | CLIMB_UP (3.0) | elevated (roof-level) |
-| 6b | ridge → louvre sill → steeple gallery | 11.2 → 14.0 → 15.8 | CLIMB_UP ×2 | elevated |
-| 7a | steeple gallery → elm crown | 15.8 → 8.3 | LEAP_OF_FAITH (5.7 gap / 7.5 fall) | elevated |
-| 7b | post the Covenant (crown) | 8.3 | precision beat | elevated |
-| 7c | crown → low bough → awning → ground | 8.3 → 6.4 → 3.2 → 0 | CLIMB-down / HANG_DROP chain | **GROUND — the chase** |
-| 7d | crowd blend → yard gate | 0 | BLEND / RUN | GROUND |
-| 8 | ropewalk yard | 0 | the duel | GROUND |
+| 0a | interior floor → stair-head / balcony | 0 → 2.9 | STAIRS (`rampStrips`, free step) | **SAFE (interior→roof)** |
+| 0b | balcony → pentice/awning | 2.9 → 4.4 | CLIMB_UP (1.5) | SAFE (roof) |
+| 0c | pentice → sign-hood | 4.4 → 6.2 | CLIMB_UP (1.8) | SAFE (roof) |
+| 0d | sign-hood → printshop leads | 6.2 → 7.1 | STEP_UP (0.9) | SAFE (roof) |
+| 1a | leads → wharf-warehouse gallery | 7.1 → 5.35 | RUN_OFF (1.75) | SAFE (roof) |
+| 1b | gallery → crane cargo stage | 5.35 → 2.6 | HANG_DROP (2.75) | SAFE (roof) |
+| 1c | crane cargo → crate top | 2.6 → 1.1 | RUN_OFF (1.5) | SAFE (roof) |
+| 1d | crate → wharf plank deck | 1.1 → 0 | RUN_OFF (1.1) | **EXPOSED — the dead port** |
+| 1e | cross the plank deck | 0 | RUN / BLEND past idle ships | **EXPOSED** |
+| 1f | deck → crate-mound | 0 → 2.35 | CLIMB_UP (2.35) | SAFE (roof) |
+| 1g | crate-mound → wharf-warehouse gallery E | 2.35 → 5.35 | CLIMB_UP (3.0) | SAFE (roof) |
+| 1h | gallery E → Shambles shed roof | 5.35 → 5.6 | STEP_UP (0.25) | SAFE (roof) |
+| 2a | shed roof / canopy mid-line | 5.6 / 2.55 | RUN + 1.4 m canopy hops | SAFE (roof) |
+| 2b | canopy → street (drop-to-contact) | 2.55 → 0 | HANG_DROP (2.55) | **EXPOSED — drop-to-contact** |
+| 2c | street → crates → canopy (climb back) | 0 → 1.9 → 2.55 | CLIMB_UP | SAFE (roof) |
+| 3a | high line → merchant eave (**G-A** plank) | 2.55/5.6 → 7.1 | plank RUN + CLIMB_UP | SAFE (roof) |
+| 3b | eave → window sill → parlour balcony (drop-in) | 7.1 → 4.6 → 3.4 | HANG_DROP (2.5) + STEP | **SAFE (interior)** |
+| 3c | balcony → eave (exit) | 3.4 → 7.1 | CLIMB_UP ×2 | SAFE (roof) |
+| 4a | merchant eave → Town House scaffold (**G-B** plank) | 7.1 → 5.6 | plank RUN_OFF (1.5) | SAFE (roof) |
+| 4b | scaffold spiral → leads (→ tower) | 2.9 → 5.6 → 7.9 → 10.2 → 12.4 (→17.6) | CLIMB_UP chain (2.2–2.9 each) | SAFE (roof) |
+| 5a | leads → gantry plank → south row | 12.4 | RUN | SAFE (roof) |
+| 5b | chimney vaults | +1.05 | VAULT ×2 | SAFE (roof) |
+| 5c | south row → meeting roof | 12.4 → 8.2 | CHAIN_DROP (≈1.6 gap / 4.2 fall, roll) | SAFE (roof) |
+| 6a | meeting eave → ridge monitor (endorsement stop) | 8.2 → 11.2 | CLIMB_UP (3.0) | SAFE (roof) |
+| 6b | ridge → louvre sill → steeple gallery | 11.2 → 14.0 → 15.8 | CLIMB_UP ×2 | SAFE (roof) |
+| 7a | steeple gallery → elm crown | 15.8 → 8.3 | LEAP_OF_FAITH (5.7 gap / 7.5 fall) | SAFE (roof) |
+| 7b | post the Covenant (crown) | 8.3 | precision beat | SAFE (roof) |
+| 7c | crown → low bough → awning → ground | 8.3 → 6.4 → 3.2 → 0 | CLIMB-down / HANG_DROP chain | **EXPOSED — the chase** |
+| 7d | crowd blend → yard gate | 0 | BLEND / RUN | **EXPOSED** |
+| 8 | ropewalk yard | 0 | the duel | **EXPOSED** |
 
 **Node-by-node, in prose.** The player spawns inside the printshop (0a, safe) and climbs the one
 sanctioned ground→roof transition — the **stairs to the balcony** — then a three-hop climb chain up
@@ -178,8 +194,9 @@ explains it — then **climb back up** the far (east) side on crane-staging, lad
 crates (1f–1h) onto the **Shambles high line** (5.6). They run the market high/mid line (2a) and take
 the loop's first full **drop-to-contact**: down to a ruined trader at street level (2b, collective
 punishment), then back up the crates (2c). A **G-A plank** carries them across the street at roof
-height to the **merchant's eave** (3a); they **drop in** through an upper window to the quartered
-parlour (3b, Thomas — the mark you need; quartering is the obstacle) and climb back out (3c). A
+height to the **merchant's eave** (3a); they **drop in** through an **open upper window** into the
+quartered parlour — a drop into a **SAFE interior**, not exposure (3b, Thomas — the mark you need;
+quartering is the obstacle) — and climb back out (3c). A
 **G-B plank** hands them to the **Town House scaffold** (4a), the sustained **CLIMB centrepiece**
 spiralling to the leads at 12.4 and optionally the tower (4b). The **Orange-Street roofline** runs
 east off the leads, vaulting chimneys and dropping to the **Hollis meeting-house** roof (5a–5c); the
@@ -203,6 +220,47 @@ not start on the ground":
 - **G-B** — merchant's eave → Town House scaffold: a `roof-walk-board-long` plank, ≈4 m span, 7.1→5.6
   (RUN_OFF), on-ramp on the merchant eave (non-ground). Closes the merchant→Town-House gap and lands
   on the proven scaffold spiral.
+
+### A.1b Golden path, alternates, and the obstacles that justify the winding
+
+**Golden-path statement (replaces "one compact monotonic spine").** The route in A.1 is a **legible,
+wayfound golden path that may wind where the world blocks a direct line** — the winding used
+productively (reserved pause spaces, A.10), never an arbitrary circle. The world around it is
+**broadly traversable**: the player may improvise across the elevated network, and more than one roof
+route reaches the post. The golden path is simply the marked, recommended line.
+
+**Alternate elevated routes (broad connectivity, not a corridor)** — kept open so the run is not a
+single tube; all BONUS freedom, only the golden path is wayfound, and every alternate still obeys the
+envelope and touches ground only at the authored beats:
+- **Shambles high vs mid line:** the shed roof (5.6) and the stall-canopy tier (2.55) are both
+  runnable and rejoin at the merchant approach — the golden path takes the canopies; the shed roof is
+  the alternate.
+- **Town House left / right / over:** the island can be climbed by the scaffold spiral (golden) or
+  skirted along either lane roof and rejoined at the leads — the proven "one real fork" is kept.
+- **Roofline north / south rows:** the south row (12.4) and the low north row (7.1) both reach the
+  meeting approach; the golden path runs the south row.
+
+**The obstacles that earn the winding (author these so the detour is diegetic, not arbitrary).** Each
+is a real built blocker that closes a *straighter* line and makes the golden path's wind the sensible
+one — none blocks the golden path itself or fakes an affordance:
+- **O1 · The shut harbour water** (W, `x < −20 & z > 20`). No ground line crosses the dead port; the
+  wharf deck + descent/ascent chain is the only way over it — this is why beat 1 exists.
+- **O2 · A barricaded, troop-occupied street** across the merchant's block (≈ x 31..46, z −4..3).
+  Soldiers billeted at the merchant's have barricaded the lane, so the direct street shortcut from the
+  Shambles to the Town House is closed — the golden path goes over the roofs (G-A → merchant → G-B).
+  Dressing: `service-wall-straight` / cart barricades + a posted patrol; non-standable.
+- **O3 · A roof gap too wide to jump** between the Shambles shed (ends x 23) and the merchant block
+  (wider than the ~1.4 m SAFE flat-jump budget): a straight leap is refused, so the **G-A plank** is
+  the crossing — the plank is *earned*, not decorative.
+- **O4 · A collapsed roof** on an ambient north-row building mid-route (≈ x 58..63): a fallen roof
+  section breaks the straight eastward roofline, so the golden path steps around it — and reserved
+  pause space **S5** (A.10) sits on the safe landing beside it, overlooking the barricade below.
+- **O5 · A sheer meeting-house / warehouse wall with no ledge** at Hollis (the north face): the only
+  holds are the authored `buttress-stepped-stone` and the steeple rings, so the climb line is forced
+  rather than a free scramble up a blank face.
+
+Obstacles are **dressing with a job** (A.8): they close the straighter alternative so the wind reads
+as earned, and they host the reserved pause spaces (A.10) where the detour is longest.
 
 ### A.2 Top-down map — positions
 
@@ -245,69 +303,83 @@ flowchart LR
   RL5 -->|"vault chimneys, drop 12.4→8.2"| HO6
   HO6 ==>|"LEAP OF FAITH 5.7 m / 7.5 m"| EL7
   EL7 -->|"post → chase crown→ground"| YD8
-  OFF["off the guided line (optional dark spaces):<br/>Dock Square throng · ropewalk interior — retired from the spine"]
+  OFF["optional side spaces (confirmed retired from the route):<br/>Dock Square throng · ropewalk interior"]
+  NOTE["broadly traversable world — this is the marked GOLDEN PATH;<br/>alternate roof routes exist (A.1b). W1/C2/chase = EXPOSED; all else SAFE (roof/interior)."]
   classDef gnd fill:#f6d9b0,stroke:#e08a1e,color:#111;
   classDef off fill:#eeeeee,stroke:#999999,color:#555555,stroke-dasharray:4 3;
   class W1,C2,YD8 gnd;
-  class OFF off;
+  class OFF,NOTE off;
 ```
 
 ### A.4 Rendered top-down plot
 
 A throwaway script rendered the coordinates above into
-`assets/reference/m1-fresh-world-map.svg` (scalable) and `…-map.png` (preview): the covert line is
-teal, the three authored ground touches are the orange dashed segments (wharf, drop-to-contact,
-chase), the leap of faith is the red dashed arrow, and the open harbour is the blue SW band. North is
-up; `+x` is east.
+`assets/reference/m1-fresh-world-map.svg` (scalable) and `…-map.png` (preview): the **golden path** is
+the solid teal line, the **alternate roof routes** are the faint dashed-teal branches (broad
+connectivity), the three **authored ground touches** are the orange dashed segments (wharf,
+drop-to-contact, chase), the **leap of faith** is the red dashed arrow, the **obstacles O1–O5** that
+justify the winding are the red hatches/labels, the **reserved pause spaces S1–S7** are the hollow
+teal squares, and the open harbour is the blue SW band. North is up; `+x` is east. Interiors
+(printshop, merchant parlour) are SAFE.
 
 ### A.5 Per-location massing + designed-in traversal surfaces
 
 Footprints and heights are the *massing* the buildings must be placed/shaped to (Section B carries
 the asset dimensions and the clip caveats; Section C the build list). Each entry states the surfaces
-the route stands on and **how the route enters and leaves** — so traversal is inherent, not
-retrofitted.
+the route stands on, **how the route enters and leaves**, and its **open-access aperture** — every
+place is reachable **without operating a door** (A.9): open shopfronts, missing/broken walls, open
+archways, window/balcony drop-ins, open stair-wells, open gate-gaps.
 
 - **0 · Printshop** *(REUSE + EDIT)* — 13×14 mass, leads at 7.1. Designed-in: a hollowed ground room
   (≥0.75 m standable, solid ceiling), a stair well (`rampStrips`, ≤0.3 m strips) to a **balcony deck
   at 2.9** (≥1.4 m deep, `churchyard-fence` balustrade split at the stair head), then an **ascending
   climb chain on the south face** — awning/pentice 4.4 → sign-hood 6.2 → leads 7.1 (rises 1.5 / 1.8 /
-  0.9). **Enter:** spawn interior. **Leave:** up the chain to the leads, then the wharf descent off
-  the S/SW lip. Roof oversails by JETTY 0.7.
+  0.9). **Aperture:** the player spawns inside; the interior is an **open shopfront** (unglazed
+  press-room front) with an **open stair-well** — no door operated. **Leave:** up the chain to the
+  leads, then the wharf descent off the S/SW lip. SAFE interior → SAFE roof; roof oversails by JETTY 0.7.
 - **1 · Dead wharf** *(FRESH)* — a **flat plank deck at `y0`** (x −20..4, z 2..20), ships moored on
   the open-water (S/SW) edge. Designed-in descent (NW corner): warehouse-wharf gallery 5.35 → crane
   staging 2.6 → crate 1.1 → deck 0. Designed-in ascent (SE corner, the photo's crane+ladder side):
-  crate-mound 2.35 → warehouse-wharf gallery 5.35 → onto the Shambles shed roof 5.6. Every top real
-  and standable; see A.6.
+  crate-mound 2.35 → warehouse-wharf gallery 5.35 → onto the Shambles shed roof 5.6. **Aperture:** an
+  **open dock** — no doors; the crossing is the one EXPOSED beat. Every top real and standable; see A.6.
 - **2 · Shambles** *(REUSE)* — south shed roof 5.6 with stall canopies at **2.55** spaced 4.2 m
   (1.4 m SAFE hops), `crate-stack` crossovers at 1.9; the gaol closes the north row at 9.6
-  (deliberately un-leapable). **Enter:** off the wharf ascent onto the shed roof W end. **Drop-to-
+  (deliberately un-leapable). **Aperture:** an **open market** — the drop-to-contact lands on the open
+  street (EXPOSED), no door. **Enter:** off the wharf ascent onto the shed roof W end. **Drop-to-
   contact:** canopy 2.55 → street 0 (HANG_DROP), climb back the crates. **Leave:** G-A plank to the
   merchant.
 - **3 · Merchant's house** *(FRESH interior, reuse shell)* — `int-shell-domestic-wide-b`
   (≈18×3.8×14), eave 7.1, a **parlour balcony at 3.4** on the south face reached by a controlled
   drop-in (eave 7.1 → window sill 4.6 → balcony 3.4, each hop ≤3.2). Interior floor ≥0.75 m
-  standable, **solid ceiling** (no clip-through), billeting dressing sized to keep the 0.75 m path
-  and the sills clear; hearth-mantel/window sills at STEP_UP (0.34–0.45) or VAULT (1.05–1.10) so
-  interior movement reads as parkour. Supersedes the old sugar house so the Shambles high line flows
-  *into* this roof instead of dying against a 12.4 m wall. **Enter:** drop-in from G-A. **Leave:**
-  climb to the eave, G-B plank to the scaffold.
+  standable, **solid ceiling** (no clip-through), a **SAFE interior**; billeting dressing sized to
+  keep the 0.75 m path and the sills clear; hearth-mantel/window sills at STEP_UP (0.34–0.45) or VAULT
+  (1.05–1.10) so interior movement reads as parkour. Supersedes the old sugar house so the Shambles
+  high line flows *into* this roof instead of dying against a 12.4 m wall. **Aperture:** the **open
+  upper window / balcony** — the guarded ground door is bypassed, and there is no door mechanic anyway.
+  **Enter:** drop-in from G-A (into safety). **Leave:** climb to the eave, G-B plank to the scaffold.
 - **4 · Town House** *(REUSE, in place)* — the proven climb: ledges 5.6 / 7.9 / 10.2 / 12.4 at
   2.2–2.3 m spacing (each ≤ climbMax 3.2), scaffold stagings 2.9 / 5.6, leaning `work-ladder-8..11`,
-  tower gallery 17.6. Standable ledges already cut to ≥1.6 m across. **Enter:** G-B onto the scaffold
+  tower gallery 17.6. Standable ledges already cut to ≥1.6 m across. **Aperture:** **external climb**
+  only — open scaffold staging; no interior entered, so no door. **Enter:** G-B onto the scaffold
   foot. **Leave:** leads → gantry.
 - **5 · Orange-St roofline** *(REUSE, in place)* — south row leads 12.4 with `roof-chimney-stack`
   vaults (+1.05); north row low roof 7.1; the run descends S onto the meeting roof at 8.2 (≈1.6 m
-  gap / 4.2 m fall, roll). **Enter/Leave:** gantry plank in, CHAIN_DROP to the meeting roof out.
+  gap / 4.2 m fall, roll). **Aperture:** roof-to-roof only (no interior). **Enter/Leave:** gantry
+  plank in, CHAIN_DROP to the meeting roof out.
 - **6 · Hollis meeting house** *(REUSE, in place)* — eaves/leads 8.2, `roof-ridge-monitor` to 11.2
   (the roof-level endorsement stop), steeple rings louvre 14.0 → gallery 15.8 at ≤3.2 climb spacing;
-  `buttress-stepped-stone` top 2.6 as the ground-face hold. **Enter:** off the roofline. **Leave:**
-  leap of faith off the gallery.
+  `buttress-stepped-stone` top 2.6 as the ground-face hold. **Aperture:** the stop is **roof-level**,
+  reached over the roofline; if the hall interior is ever used it is via the **open ridge-monitor
+  louvre / open belfry hatch** — the meeting-house doors are never operated. **Enter:** off the
+  roofline. **Leave:** leap of faith off the gallery.
 - **7 · Liberty Elm** *(REUSE — PRESERVE)* — boughs 6.4 / 8.3 / 11.2, each ≥3 m across; trunk solid
   to 12 m (walk-around); `market-awning` at 3.2 splits the 6.4 m descent into two hang-drops. The
   8.3 m crown carries the **post** (precision beat) and receives the leap (drop ≥6, target radius
-  1.6). **Enter:** leap into the crown. **Leave:** the chase down the boughs to the ground.
+  1.6). **Aperture:** outdoors — no door. **Enter:** leap into the crown. **Leave:** the chase down
+  the boughs to the ground.
 - **8 · Ropewalk yard** *(REUSE, in place)* — the duel arena: stage 1.8, full/chest cover 1.1–2.6,
-  3.6 m walls, gate at the W. **Enter:** the ground chase through the yard gate.
+  3.6 m walls; the **W gate is an open 3.0 m gap** in the wall, not a hinged door. **Aperture:** the
+  open gate-gap. **Enter:** the ground chase through the gate-gap (EXPOSED).
 
 ### A.6 The dead-wharf zone — laid out from the owner's real in-game photo
 
@@ -334,8 +406,9 @@ water edge, and idle figures — a shut port with nothing moving. Laid out to ma
   crosses into it.
 
 *Traversal role:* the run's one deliberate ground exposure — you come DOWN to stand on the closed
-port, cross it in the open, and climb back up. All wharf-kit GLBs are present on `main` (verified);
-this is placement, not new-gen.
+port, cross it in the open, and climb back up. **Open-access:** the wharf is an open dock — no doors
+anywhere — and it is the one **EXPOSED** zone deliberately placed on the golden path. All wharf-kit
+GLBs are present on `main` (verified); this is placement, not new-gen.
 
 ### A.7 Reuse vs fresh — per location
 
@@ -370,8 +443,14 @@ reach.
   `well-pump`, `protest-torch`/cressets, `churchyard-fence` — placed as cover and sight-breaks at the
   ground beats (drop-to-contacts, the chase) and as texture elsewhere, never proud into a climb the
   route needs.
-- **Retired to optional:** Dock Square's throng and the ropewalk interior may remain as off-line dark
-  spaces for flavour, but nothing on the guided line enters them and no gate depends on them.
+- **Retired to optional (confirmed, owner 30 Jul):** Dock Square's throng and the ropewalk interior
+  are removed from the guided route and kept only as **optional side spaces** — nothing on the golden
+  path enters them and no gate depends on them.
+- **Obstacles are dressing with a job (A.1b):** the shut harbour water, the barricaded troop-street,
+  the too-wide roof gap, the collapsed roof and the sheer meeting-house wall are authored blockers that
+  close the *straighter* line so the golden path's wind reads as earned — never a fake affordance,
+  never blocking the golden path itself, and each sized to host a reserved pause space (A.10) where the
+  detour is longest.
 - The skyline is authored *after* the route so nothing dressed contradicts it; anything that reads as
   a runnable roof is either linked or set a band out of reach.
 
@@ -389,10 +468,18 @@ shaped to it — each anti-bug law maps to a property of this layout:
   Every rise in the profile lands on a band surface (2.55 / 5.6 / 7.9 / …) with a top ≥ the reader's
   0.75 m and a rise ≤3.2 — there is **no climb onto a surface you cannot stand on**, which is exactly
   the retrofit that broke the current run.
-- **Interiors are real enterable shells.** The printshop (EDIT-hollowed) and the merchant's house
-  (placed `int-shell`) have **solid ceilings and ≥0.75 m standable floors** — you cannot clip through
-  the ceiling (the current printshop/merchant concern), because the ceiling is authored solid or the
-  space is authored open.
+- **Interiors are real enterable shells — and SAFE, unseen zones.** The printshop (EDIT-hollowed) and
+  the merchant's house (placed `int-shell`) have **solid ceilings and ≥0.75 m standable floors** — you
+  cannot clip through the ceiling (the current printshop/merchant concern), because the ceiling is
+  authored solid or the space is authored open. Once inside you read as **SAFE** and may move on the
+  ground freely, so a window/balcony drop-in is a drop *into safety*, never exposure.
+- **No doors — open-access only.** There is **no door-operating mechanic** (hinged doors caused many
+  glitches), so every important place is reachable **without opening a door**: open shopfronts, open
+  archways, missing/broken walls, window or balcony drop-ins, open courtyards, open stair-wells, open
+  gate-gaps. Each location's aperture is named in A.5 — the printshop's open shopfront, the merchant's
+  open upper window, Hollis's open ridge/belfry louvre, the yard's open gate-gap. A place whose only
+  entry is a hinged door is a bug in this world, not a feature (`check-playthrough` would soft-lock on
+  it — see Section E).
 - **Every link passes `verifyLink` with margin.** Heights and gaps in A.1 are chosen inside the
   envelope with headroom (SAFE gaps ×0.8; drops sized to their verb ceiling), so the shipped physics
   accepts each link — the layout is authored *to* the movement envelope, not measured against it
@@ -401,6 +488,35 @@ shaped to it — each anti-bug law maps to a property of this layout:
 The single-sentence version: the current world clips and mis-climbs because traversability was
 retrofitted onto geometry built separately; here the geometry is built *from* a route that is legal
 by the envelope, so there is nothing to retrofit and nothing to clip through.
+
+### A.10 Reserved interactable-object spaces (open placements, UNPOPULATED)
+
+**These are reserved *spaces*, not items (owner, 30 Jul).** The interactable learning objects are
+**not specified or populated yet** — no object, content, count target, interaction or plumbing is
+authored here. This section only **marks convenient, open, accessible spots** along the golden path
+(especially at the blocked-area detours, so a detour can reward a pause) where an interactable + a
+text/image panel could be **dropped in later**, whenever the owner decides. Each space is a real
+**SAFE** standable pad (≥ the reader's 0.75 m), reached through an open aperture (A.9), sitting on the
+golden path but **off its running lane** so it never blocks movement.
+
+| Space | Location (x · z · y) | Rough footprint | Why it is a natural pause |
+|---|---|---|---|
+| S1 | printshop leads, SE corner · ≈3 · −5 · 7.1 | ≈2 × 2 m | first safe vantage — the whole route and the shut harbour lie below |
+| S2 | wharf ascent gallery, SE · ≈2 · 16 · 5.35 | ≈2 × 2.5 m | a safe ledge looking back over the dead port and its idle ships as you re-climb |
+| S3 | Shambles canopy corner (mid-line) · ≈30 · 1 · 2.55 | ≈2 × 2 m | a breath on the market high line, above the crowd, beside the drop-to-contact |
+| S4 | merchant parlour alcove (interior) · ≈40 · −10 · 3.4 | ≈1.5 × 2 m | a SAFE interior nook where the billeting fills the room — occupation seen from inside |
+| S5 | roofline detour landing (by O4/O2) · ≈62 · 4 · 12.4 | ≈2.5 × 2 m | the landing that rewards the forced detour, overlooking the barricaded street below |
+| S6 | Town House leads / tower vista · ≈52 · 2 · 12.4 | ≈2.5 × 2.5 m | the high mid-run vantage with the elm already in sight |
+| S7 | Hollis ridge niche (pre-steeple) · ≈80 · 9 · 11.2 | ≈2 × 2 m | a roof-level niche at the endorsement stop before the steeple climb |
+
+All seven sit in **SAFE** zones (roof or interior), are entered through an open aperture, and obey the
+movement envelope (real standable tops, on the golden path but off its running lane). They are
+**optional by construction** — a pad the player may stand on, never a gate.
+
+**Forward note (do not build yet):** when the owner populates these, an interactable + a **text + real
+period-still** panel drops onto a pad, reusing an existing surface — candidate: the lesson's
+`ModuleVisual` still+caption (`apps/web/src/module/moduleFormat.ts`, the ten-field image record the
+`content/m1/historical-sources.json` stills already fill), or the codex card — **not** new UI.
 
 ---
 
@@ -607,24 +723,31 @@ Fixes ranked by the current defect severity, each labelled **pure-IK / pure-tuni
 Run only *after* Sections A–C land, so the graph is measured over the built world, not the current
 one. Targets and gates:
 
-1. **Connected covert rooftop line (connectivity, not a zero-ground count).** Per the owner's
-   refinement, the requirement is that the **elevated network is continuous enough to stay up**
-   across the run — not that the path touches zero ground. Because the fresh layout (Section A) is
-   authored route-first, the line is roof-to-roof by construction over the built crossovers (the
-   **wharf** descent/ascent, the **G-A/G-B** planks + on-ramp climbs) between authored beats; the
-   Phase-2 job is to confirm no *accidental* forced-ground drop off an elevated island survives (the
-   old graph had several, e.g. `A_HAY→A_STREET`, `B_CRATES_B→B_STREET_E`) so the line cannot fall to
-   the street by default. **Authored ground touches are intentional and allowed:** the **wharf
-   crossing (beat 1)**, each **drop-to-contact**, and the **elm→yard chase (beats 7→8)**. There is
-   **no tracked line-of-sight system** — rooftop reads as covert by convention, the street as exposed.
+1. **Broadly connected elevated network + a marked golden path (connectivity, not a zero-ground
+   count).** The requirement is that the **elevated network is continuous enough to stay up** across
+   the run and offers **more than one** viable roof route start→post — the world is broadly
+   traversable — with a single **golden path** wayfound as the recommended line (A.1 / A.1b). Because
+   the fresh layout is authored route-first, the golden path is roof-to-roof by construction over the
+   built crossovers (the **wharf** descent/ascent, the **G-A/G-B** planks + on-ramp climbs), and the
+   alternates (A.1b) share its safe surfaces; the Phase-2 job is to confirm no *accidental* forced-
+   ground drop off an elevated island survives (the old graph had several, e.g. `A_HAY→A_STREET`,
+   `B_CRATES_B→B_STREET_E`) so no route falls to the street by default. **Interiors count as SAFE, not
+   ground:** a window/balcony drop-in into an interior (the merchant) is not a ground touch. The only
+   **EXPOSED** beats are the authored ground touches: the **wharf crossing (1)**, each
+   **drop-to-contact**, and the **elm→yard chase (7→8)**. There is **no tracked line-of-sight system**
+   — SAFE (roof + interior) vs EXPOSED (street) is by convention.
 2. **Covert-connectivity gate** (`packages/mission-m1/src/__tests__/covertLine.test.ts`, unowned —
-   no grant): asserts (a) the elevated network is **connected** from the printshop start to `F_POST`
-   — a roof-to-roof path exists that touches ground only at nodes tagged `authoredGroundBeat` (the
-   wharf crossing, the drop-to-contacts, the climax); (b) `F_POST` is reachable over that network;
-   (c) **no *untagged* forced-ground node** sits on the cheapest guided path (an accidental hole in
-   the    roofline fails the gate). This replaces the brittle "zero ground nodes" idea with "the roofs
-   connect and every ground touch is on purpose," and closes the audit's finding that no such gate
-   exists so the roof islands (printshop→Shambles→merchant→Town House) cannot silently reopen.
+   no grant): asserts (a) the SAFE network (roofs **+ interiors**) is **broadly connected** from the
+   printshop start to `F_POST` — **at least two** roof-to-roof routes exist that touch ground only at
+   nodes tagged `authoredGroundBeat` (the wharf crossing, the drop-to-contacts, the climax); (b) a
+   node-tagged **golden path** exists start→`F_POST` and is the wayfound line; (c) `F_POST` is
+   reachable over that network; (d) **no *untagged* forced-ground node** sits on the golden path or on
+   any offered alternate (an accidental hole in the roofline fails the gate); (e) every stop is
+   **open-access** — its authored entry aperture is an open surface, since the engine has no
+   door-operate verb, so no node's only entry may be a door. This replaces the brittle "zero ground
+   nodes" idea with "the roofs (and interiors) connect, more than one way, and every ground touch is on
+   purpose," and closes the audit's finding that no such gate exists so the roof islands
+   (printshop→Shambles→merchant→Town House) cannot silently reopen.
 3. **Existing gates, all green:** `traversability.test.ts` (`verifyLink` OK on every link — the hard
    one, since new planks/climbs must pass the shipped physics), `route.test.ts` /
    `routeFlow.test.ts` / `wayfind.test.ts` (they pin the guided-line section order and the
