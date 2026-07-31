@@ -22,17 +22,30 @@
     {
       "lane": "m1-evasion-loop",
       "paths": [
-        "packages/mission-m1/src/level/route.ts",
-        "packages/mission-m1/src/level/route2.ts",
-        "packages/mission-m1/src/level/geometry.ts",
-        "packages/mission-m1/src/level/dockSquare.ts",
-        "packages/mission-m1/src/level/climbs.ts",
+        "packages/mission-m1/**",
+        "apps/web/src/chapter/M1Scenery.tsx",
+        "apps/web/src/chapter/m1Mission.ts",
         "packages/engine-world/src/parkourIk.ts",
         "packages/engine-world/src/parkour/tuning.ts",
-        "packages/engine-world/src/parkour/clips.ts"
+        "packages/engine-world/src/parkour/clips.ts",
+        "apps/web/public/world/props/bldg-printshop.glb",
+        "apps/web/public/world/props/bldg-townhouse-1713.glb",
+        "apps/web/public/world/props/bldg-brick.glb",
+        "apps/web/public/world/props/bldg-row-brick-a.glb",
+        "apps/web/public/world/props/bldg-row-brick-b.glb",
+        "apps/web/public/world/props/bldg-row-clapboard-a.glb",
+        "apps/web/public/world/props/bldg-row-clapboard-b.glb",
+        "apps/web/public/world/props/bldg-row-clapboard-c.glb",
+        "assets/pipeline/*printshop*",
+        "assets/pipeline/*townhouse*",
+        "assets/pipeline/*brick*",
+        "assets/pipeline/*facade*",
+        "assets/pipeline/*ladder*",
+        "scripts/check-clip-fidelity.mjs",
+        "scripts/check-world-affordances.mjs"
       ],
-      "reason": "Stage 2 traversability closure — the owner's step-1: the covert run must be continuously no-ground. m1-evasion-loop closes the audit's G1/G2 gaps by adding elevated crossovers / bridge-plank decks in level-data's level files (route/route2/geometry/dockSquare/climbs) and writes a new unowned no-ground gate test. Also granted the mission-world engine-world parkour files (parkourIk.ts, parkour/tuning.ts, parkour/clips.ts) for the HANG_DROP foot-through-wall IK fix (SEVERE — 26.5cm, fires on every drop-to-contact). Both owning lanes are dormant: level-data is merged, mission-world's only live work is the PAUSED jump-hang branch — which also edits parkour/tuning.ts, so expect a rebase reconcile there when that deferred work resumes (acceptable; it rebases onto main). The STEP_UP + landing re-bakes are NOT in this grant — they need Blender/Mixamo, which the environment lacks. Granted 2026-07-30 after the worker re-scoped and reported. Retire when the traversability closure merges.",
-      "granted": "2026-07-30"
+      "reason": "FULL M1 WORLD BUILD (owner GO, 31 Jul): build/re-author the Covenant-mission world per docs/design/M1-Covenant-World-Build.md, with continuous physics/traversability verification and a final full-playthrough QA. m1-evasion-loop owns the M1 world surface for this build: packages/mission-m1/** (level layout, route, assets, compile/runtime/types, encounters, ladders), M1Scenery.tsx + m1Mission.ts (scene placement + mission wiring), the engine-world parkour files (HANG_DROP IK + mantle tuning + clips), the world-audit building GLBs + their pipeline globs (printshop Blender hollow-out + any building edits), the *ladder* pipeline, and the clip-fidelity/affordance QA scripts. REUSE-FIRST: most props + the wharf kit + ships + liberty-elm + interior shells are reused in place (placed via the level files, GLBs not edited) or are UNOWNED, so no grant is needed; assets/pipeline gen/bake/optimize/sync + assets/source + apps/web/public/world/{structures,characters/playerboy-rigged.glb} are UNOWNED and fall through to allow. NOT granted (worker flags if needed): engine-world/{contact,collision}.ts core (kept with mission-world so the guard's grant selftest stays green) and liberty-elm-hero.glb (mission-flow; the elm is repositioned via the level files, not edited). All other lanes are parked under the M1-only freeze, so this consolidation evicts no live worker. Granted 2026-07-31; supersedes the 2026-07-30 traversability-closure grant. Retire when the world build merges to main; then re-point lane-guard.sh's grant selftest cases.",
+      "granted": "2026-07-31"
     },
     {
       "lane": "m1-1774",
