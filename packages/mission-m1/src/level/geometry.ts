@@ -19,7 +19,7 @@
 // and it is also exactly how the city was built.
 
 import { BAND, JETTY_M } from "../envelope.js";
-import { deck, prop, rect, soffit, structure } from "../authoring.js";
+import { deck, inflate, prop, rect, soffit, structure } from "../authoring.js";
 import type { DeckSpec, MassSpec, RampSpec } from "../types.js";
 
 const masses: MassSpec[] = [];
@@ -43,15 +43,98 @@ export const YARD = rect(88, 100, -6.5, 6.5);
 // A — Queen Street: the printing office (0:00-0:24). Verb: CHAIN_DROP.
 // ---------------------------------------------------------------------------
 
-building({
-  id: "PRINTSHOP",
-  section: "A_LEADS",
-  asset: "bldg-printshop",
-  rect: rect(0, 13, -17.2, -3.2),
-  roofY: BAND.LOW_ROOF,
-  tags: ["north-row", "start"],
-  note: "Edes & Gill, in Queen Street near the prison. The run opens on its leads.",
-});
+// Edes & Gill — an ENTERABLE Georgian shell (was one solid mass). Four perimeter
+// wall masses drawn as the brick facade, with a 4 m SOUTH SHOPFRONT GAP (open
+// aperture, no door — the sanctioned ground entry facing the wharf), an interior
+// CEILING slab so the body cannot clip up to the leads, and the leads roof kept.
+// The mesh is regenerated to match by build_civic_facade.py (C.2). The player
+// spawns inside on the ground → stairs → balcony → CLIMB chain onto the leads.
+// PRINTSHOP is the north wall so PRINTSHOP__ROOF and the drying/sign/pentice
+// decks keep their `carriedBy` and A_START stays on the leads.
+const PS_FOOT = rect(0, 13, -17.2, -3.2);
+const PS_WT = 0.5; // wall thickness
+const PS_CEIL = 3.0; // interior ceiling
+masses.push(
+  prop({
+    id: "PRINTSHOP",
+    section: "A_LEADS",
+    asset: "bldg-printshop",
+    rect: rect(0, 13, -17.2, -17.2 + PS_WT),
+    baseY: 0,
+    topY: BAND.LOW_ROOF,
+    landable: false,
+    tags: ["structure", "north-row", "start", "interior-shell"],
+    note: "Edes & Gill, in Queen Street near the prison. North wall + shell body; the run opens on its leads and the interior is enterable through the south shopfront.",
+  }),
+  prop({
+    id: "PRINTSHOP_WALL_W",
+    section: "A_LEADS",
+    asset: "bldg-printshop",
+    rect: rect(0, PS_WT, -17.2, -3.2),
+    baseY: 0,
+    topY: BAND.LOW_ROOF,
+    landable: false,
+    tags: ["structure", "north-row", "interior-shell"],
+  }),
+  prop({
+    id: "PRINTSHOP_WALL_E",
+    section: "A_LEADS",
+    asset: "bldg-printshop",
+    rect: rect(13 - PS_WT, 13, -17.2, -3.2),
+    baseY: 0,
+    topY: BAND.LOW_ROOF,
+    landable: false,
+    tags: ["structure", "north-row", "interior-shell"],
+  }),
+  // South (street/wharf) wall, split around the shopfront gap x 4.5..8.5.
+  prop({
+    id: "PRINTSHOP_WALL_S_W",
+    section: "A_LEADS",
+    asset: "bldg-printshop",
+    rect: rect(0, 4.5, -3.2 - PS_WT, -3.2),
+    baseY: 0,
+    topY: BAND.LOW_ROOF,
+    landable: false,
+    tags: ["structure", "north-row", "interior-shell", "shopfront"],
+  }),
+  prop({
+    id: "PRINTSHOP_WALL_S_E",
+    section: "A_LEADS",
+    asset: "bldg-printshop",
+    rect: rect(8.5, 13, -3.2 - PS_WT, -3.2),
+    baseY: 0,
+    topY: BAND.LOW_ROOF,
+    landable: false,
+    tags: ["structure", "north-row", "interior-shell", "shopfront"],
+  }),
+  // Interior ceiling: caps the ground-floor room at 3.0 m so the body cannot clip
+  // up through the interior to the leads. Solid; the room is 0..3.0, enclosed and
+  // unreachable above.
+  prop({
+    id: "PRINTSHOP_CEILING",
+    section: "A_LEADS",
+    // Overlaps 0.2 m into each wall so it CLUSTERS into the one printshop object
+    // (a slab abutting the walls draws as a second bldg-printshop — scenery.test
+    // "drawn once"); the overlapped edges are buried inside the walls.
+    asset: "bldg-printshop",
+    rect: rect(0.3, 12.7, -16.9, -3.4),
+    baseY: PS_CEIL,
+    topY: PS_CEIL + 0.15,
+    landable: false,
+    tags: ["structure", "ceiling", "interior-shell"],
+  }),
+);
+decks.push(
+  deck({
+    id: "PRINTSHOP__ROOF",
+    section: "A_LEADS",
+    asset: null,
+    rect: inflate(PS_FOOT, JETTY_M),
+    y: BAND.LOW_ROOF,
+    carriedBy: ["PRINTSHOP"],
+    tags: ["roof", "north-row", "start"],
+  }),
+);
 
 decks.push(
   deck({

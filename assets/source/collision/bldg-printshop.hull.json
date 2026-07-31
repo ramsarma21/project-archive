@@ -32,7 +32,12 @@
     "kind": "MASS",
     "fit": "PROP",
     "parts": [
-      "PRINTSHOP"
+      "PRINTSHOP",
+      "PRINTSHOP_WALL_W",
+      "PRINTSHOP_WALL_E",
+      "PRINTSHOP_WALL_S_W",
+      "PRINTSHOP_WALL_S_E",
+      "PRINTSHOP_CEILING"
     ]
   },
   "otherDraws": [],
@@ -55,16 +60,105 @@
       "asset": "bldg-printshop",
       "mine": true,
       "tags": [
+        "prop",
         "structure",
         "north-row",
-        "start"
+        "start",
+        "interior-shell"
       ],
       "minX": -6.5,
+      "maxX": 6.5,
+      "minZ": -7,
+      "maxZ": -6.5,
+      "baseY": 0,
+      "topY": 7.1
+    },
+    {
+      "id": "PRINTSHOP_WALL_W",
+      "asset": "bldg-printshop",
+      "mine": true,
+      "tags": [
+        "prop",
+        "structure",
+        "north-row",
+        "interior-shell"
+      ],
+      "minX": -6.5,
+      "maxX": -6,
+      "minZ": -7,
+      "maxZ": 6.999999999999999,
+      "baseY": 0,
+      "topY": 7.1
+    },
+    {
+      "id": "PRINTSHOP_WALL_E",
+      "asset": "bldg-printshop",
+      "mine": true,
+      "tags": [
+        "prop",
+        "structure",
+        "north-row",
+        "interior-shell"
+      ],
+      "minX": 6,
       "maxX": 6.5,
       "minZ": -7,
       "maxZ": 6.999999999999999,
       "baseY": 0,
       "topY": 7.1
+    },
+    {
+      "id": "PRINTSHOP_WALL_S_W",
+      "asset": "bldg-printshop",
+      "mine": true,
+      "tags": [
+        "prop",
+        "structure",
+        "north-row",
+        "interior-shell",
+        "shopfront"
+      ],
+      "minX": -6.5,
+      "maxX": -2,
+      "minZ": 6.499999999999999,
+      "maxZ": 6.999999999999999,
+      "baseY": 0,
+      "topY": 7.1
+    },
+    {
+      "id": "PRINTSHOP_WALL_S_E",
+      "asset": "bldg-printshop",
+      "mine": true,
+      "tags": [
+        "prop",
+        "structure",
+        "north-row",
+        "interior-shell",
+        "shopfront"
+      ],
+      "minX": 2,
+      "maxX": 6.5,
+      "minZ": 6.499999999999999,
+      "maxZ": 6.999999999999999,
+      "baseY": 0,
+      "topY": 7.1
+    },
+    {
+      "id": "PRINTSHOP_CEILING",
+      "asset": "bldg-printshop",
+      "mine": true,
+      "tags": [
+        "prop",
+        "structure",
+        "ceiling",
+        "interior-shell"
+      ],
+      "minX": -6.2,
+      "maxX": 6.199999999999999,
+      "minZ": -6.699999999999999,
+      "maxZ": 6.799999999999999,
+      "baseY": 3,
+      "topY": 3.15
     }
   ],
   "decks": [

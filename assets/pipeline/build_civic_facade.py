@@ -262,21 +262,67 @@ body = max((b for b in blockers if b["baseY"] <= 0.01 and "tower" not in b.get("
 towers = [b for b in blockers if "tower" in b.get("tags", [])]
 hoods = [b for b in blockers if "soffit" in b.get("tags", []) and b is not body and b not in towers]
 
-# --- body: four windowed brick walls, a leaded flat roof, a floor cap ---------
-bx0, bx1, by0, by1 = b_rect(body)
-bz0, bz1 = body["baseY"], body["topY"]
+# --- body ---------------------------------------------------------------------
 X, Y, Z = Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1))
-windowed_wall(Vector((bx0, by0, bz0)), X, Z, Y, bx1 - bx0, bz1 - bz0)      # -y face
-windowed_wall(Vector((bx0, by1, bz0)), X, Z, -Y, bx1 - bx0, bz1 - bz0)     # +y face
-windowed_wall(Vector((bx1, by0, bz0)), Y, Z, -X, by1 - by0, bz1 - bz0)     # +x face
-windowed_wall(Vector((bx0, by0, bz0)), Y, Z, X, by1 - by0, bz1 - bz0)      # -x face
-solid_box(bx0, bx1, by0, by1, bz1 - 0.15, bz1, IL, faces=("+z",), tile=1.2)   # leaded roof (leads)
-# Ground apron spanning the DECLARED envelope, symmetric about the axis: it is the
-# building's stone base AND the bbox pin. FittedGlb recentres the draw on the bbox
-# centre, so pinning the box to the declared size centred on the axis keeps
-# contain-fit 1.0 and every authored plane on its x/z. One slab, so no doubled
-# face — the four-corner-stud alternative doubled a face and tripped the weld gate.
-solid_box(-DECL[0] / 2, DECL[0] / 2, -DECL[2] / 2, DECL[2] / 2, 0.0, 0.03, IL, faces="all", tile=1.5)
+# An ENTERABLE building is authored as thin perimeter WALL blockers (tag
+# interior-shell) with authored GAPS (a door / the printshop's south shopfront),
+# rather than one solid body. Draw each wall blocker as its own windowed brick
+# wall on its OUTER face, so drawn == collision and the gap is a real hole you
+# walk through. A solid-body building (the Town House) has no such blockers and
+# takes the original four-walls-around-the-body path unchanged.
+shell_walls = [
+    b for b in blockers
+    if "interior-shell" in b.get("tags", []) and b["baseY"] <= 0.01
+]
+if shell_walls:
+    fbx0 = min(b["minX"] for b in shell_walls); fbx1 = max(b["maxX"] for b in shell_walls)
+    fbz0 = min(b["minZ"] for b in shell_walls); fbz1 = max(b["maxZ"] for b in shell_walls)
+    fh = max(b["topY"] for b in shell_walls)
+    for b in shell_walls:
+        wx0, wx1, wy0, wy1 = b_rect(b)
+        h = b["topY"] - b["baseY"]
+        wide_x = (b["maxX"] - b["minX"]) >= (b["maxZ"] - b["minZ"])
+        if wide_x:                                  # a N/S wall, runs along X
+            w = wx1 - wx0
+            if abs(b["maxZ"] - fbz1) < 0.3:         # south edge -> outer -y face
+                windowed_wall(Vector((wx0, wy0, b["baseY"])), X, Z, Y, w, h)
+            else:                                    # north edge -> outer +y face
+                windowed_wall(Vector((wx0, wy1, b["baseY"])), X, Z, -Y, w, h)
+        else:                                        # an E/W wall, runs along Z
+            w = wy1 - wy0
+            if abs(b["maxX"] - fbx1) < 0.3:          # east edge -> outer +x face
+                windowed_wall(Vector((wx1, wy0, b["baseY"])), Y, Z, -X, w, h)
+            else:                                    # west edge -> outer -x face
+                windowed_wall(Vector((wx0, wy0, b["baseY"])), Y, Z, X, w, h)
+    # interior ceiling slab(s): the mine 'ceiling' blocker(s), so the room is
+    # capped (drawn top + underside) and the body cannot clip up to the leads.
+    for b in blockers:
+        if "ceiling" in b.get("tags", []):
+            cx0, cx1, cy0, cy1 = b_rect(b)
+            # Top + underside only: the edges are buried in the walls, so drawing
+            # the side faces would sit a hair off the wall recess and trip the weld
+            # gate. The underside at baseY is the ceiling the room sees.
+            solid_box(cx0, cx1, cy0, cy1, b["baseY"], b["topY"], IT,
+                      faces=("+z", "-z"), tile=1.0)
+    # leaded roof over the footprint (the leads) + ground apron (interior floor +
+    # the bbox pin, same as the solid path below).
+    solid_box(fbx0, fbx1, -fbz1, -fbz0, fh - 0.15, fh, IL, faces=("+z",), tile=1.2)
+    solid_box(-DECL[0] / 2, DECL[0] / 2, -DECL[2] / 2, DECL[2] / 2, 0.0, 0.03, IL, faces="all", tile=1.5)
+else:
+    # --- solid body: four windowed brick walls, a leaded flat roof, a floor cap -
+    bx0, bx1, by0, by1 = b_rect(body)
+    bz0, bz1 = body["baseY"], body["topY"]
+    windowed_wall(Vector((bx0, by0, bz0)), X, Z, Y, bx1 - bx0, bz1 - bz0)      # -y face
+    windowed_wall(Vector((bx0, by1, bz0)), X, Z, -Y, bx1 - bx0, bz1 - bz0)     # +y face
+    windowed_wall(Vector((bx1, by0, bz0)), Y, Z, -X, by1 - by0, bz1 - bz0)     # +x face
+    windowed_wall(Vector((bx0, by0, bz0)), Y, Z, X, by1 - by0, bz1 - bz0)      # -x face
+    solid_box(bx0, bx1, by0, by1, bz1 - 0.15, bz1, IL, faces=("+z",), tile=1.2)   # leaded roof (leads)
+    # Ground apron spanning the DECLARED envelope, symmetric about the axis: it is
+    # the building's stone base AND the bbox pin. FittedGlb recentres the draw on
+    # the bbox centre, so pinning the box to the declared size centred on the axis
+    # keeps contain-fit 1.0 and every authored plane on its x/z. One slab, so no
+    # doubled face — the four-corner-stud alternative tripped the weld gate.
+    solid_box(-DECL[0] / 2, DECL[0] / 2, -DECL[2] / 2, DECL[2] / 2, 0.0, 0.03, IL, faces="all", tile=1.5)
 
 # --- tower blockers: solid masonry drum (the merged float-fix), kept solid -----
 for t in towers:
