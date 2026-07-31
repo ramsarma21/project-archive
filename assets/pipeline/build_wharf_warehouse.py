@@ -482,8 +482,12 @@ solid_box(-gw / 2, gw / 2, hz - 0.06, hz, gy - 0.5, gy - CFG["gallery_thick"], I
 # ---- loading-gallery support posts: one column ground -> gallery (the read) -----
 # side faces only (top buried in the gallery slab, base on the apron), set back
 # from the front lip and passing THROUGH the pentice, so no face coincides with a
-# deck slab (the weld gate stays clean).
-for pxp in (-gw / 2 + 0.5, gw / 2 - 0.5, -(cw / 2 + 0.7), (cw / 2 + 0.7)):
+# deck slab (the weld gate stays clean). Post count scales with the gallery width
+# so wide warehouses (wharf-a, 12.4 m) don't read as a sparse trestle.
+_np = max(2, int(round(gw / 3.2)))
+post_xs = sorted({round(x, 2) for x in list(np.linspace(-gw / 2 + 0.5, gw / 2 - 0.5, _np))
+                  + [-(cw / 2 + 0.7), (cw / 2 + 0.7)]})
+for pxp in post_xs:
     solid_box(pxp - 0.09, pxp + 0.09, hz - 0.26, hz - 0.08, 0.0, gy - 0.02, ITM,
               faces=("+x", "-x", "+y", "-y"), tile=1.0)
 # gallery guard rail on the FRONT lip only (a warehouse loft rail; low, clear of
@@ -574,7 +578,7 @@ if PHOTOREAL:
                 p = lp.vert.co; lp[uv].uv = (p.x + p.y, p.z + 0.5 * p.y)  # skew so no face is UV-degenerate
 
     # (1) corbel brackets under the pentice and the loading gallery, at each post
-    for pxp in (-gw / 2 + 0.5, gw / 2 - 0.5, -(cw / 2 + 0.7), (cw / 2 + 0.7)):
+    for pxp in post_xs:
         gbot = gy - CFG["gallery_thick"]
         wedge(pxp - 0.10, pxp + 0.10, FW + 0.03, gbot - 0.85, hz - 0.15, gbot - 0.05, ITM)
         pbot = py - CFG["pentice_thick"]
