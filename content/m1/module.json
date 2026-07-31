@@ -113,7 +113,20 @@
               "rights": "Public domain (published 1774).",
               "classification": "PERIOD_ART"
             }
-          ]
+          ],
+          "video": {
+            "id": "m1-closure-harbour",
+            "src": "/cutscenes/m1/closure.mp4",
+            "poster": "/cutscenes/m1/closure-poster.jpg",
+            "alt": "Reconstructed scene of Boston's waterfront under the Port Act: a fogged wharf of idle moored merchantmen, stacked barrels and a still crane, Royal Navy warships standing off in the haze, then dockhands with no cargo to work and a close shot of one of them.",
+            "title": "Boston's wharves under the Port Act, June 1774 — reconstruction",
+            "caption": "A project reconstruction, not a period record: a generated cutscene of the closed waterfront, built to show what the Act's collective punishment looked like on the ground — every hull idle, the men who never touched the tea idle with them. Picture generated from a shot list in the game's own render style, voiced with synthesised speech over an ambient bed, assembled in post; no period source is reproduced in the footage. The primary evidence for this file is the Committee of Correspondence circular beside it, and this clip is an illustration of it, never evidence for it. Production record in docs/design/Harbour-Cutscene.md.",
+            "attribution": "Project Archive — generated reconstruction",
+            "sourceUrl": "docs/design/Harbour-Cutscene.md",
+            "date": "Depicts June 1774; produced 2026",
+            "rights": "Project-generated asset. No period source is reproduced in the footage.",
+            "classification": "PROJECT_RECONSTRUCTION"
+          }
         },
         "check": {
           "id": "BOS.MD01.CHECK.CLOSURE.v1",
