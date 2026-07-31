@@ -1,0 +1,12 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Upscale and lightly enhance THIS real-time 3D game-engine render of a shut 1774 Boston harbour at dawn. Match the render EXACTLY: keep the same camera, composition, layout, colours, and the stylized real-time 3D CG game look and materials. ONLY: sharpen and clean the detail; complete the tall ships into fuller two-masted square-rigged merchant vessels with sails properly furled and gasketed on the yards (fix the sparse skeletal rigging into believable but still game-style rigging); add gentle hazy morning atmosphere, soft low-sun glow over the water, and light distance haze. It MUST still look like a real-time 3D game render — a prettier version of the SAME game — keep the low-poly-friendly 3D CG look and PBR game materials. Do NOT make it painterly, illustrated, hand-drawn, sketched, a concept painting, or photoreal. No text, no signage, no watermark, no new objects, no people.",
+  "size": "1024x1024",
+  "edit": [
+    "assets/reference/harbour-cutscene/test/backdrop.png"
+  ],
+  "generatedAt": "2026-07-31T06:34:20.632Z",
+  "files": [
+    "backdrop-polish.png"
+  ]
+}

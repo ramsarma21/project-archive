@@ -410,6 +410,46 @@ const SCENES = {
     ],
   },
 
+  // REF — the tradesman/agitator, same studio framing/lighting as ref-player.
+  "ref-agitator": {
+    subdir: "test",
+    viewport: [1200, 1600],
+    dsr: 2,
+    camera: { pos: [0, 1.02, 4.6], look: [0, 0.98, 0], fov: 30 },
+    env: {
+      sky: "#ccd0d2",
+      hemi: ["#f1f3f4", "#40434a", 1.25],
+      sun: { pos: [-6, 9, 9], intensity: 0.95, color: "#fff3e0" },
+      fill: { pos: [7, 4, 7], intensity: 0.5, color: "#e8eeff" },
+      ground: { y: 0, color: "#c0c3c5", size: 60, rough: 0.98 },
+      exposure: 1.05,
+      shadowSpan: 6,
+    },
+    instances: [
+      { key: "agitator-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.8, clip: "idle", t: 1.0 },
+    ],
+  },
+
+  // REF — the Crown tax-clerk, same studio framing/lighting as ref-player.
+  "ref-taxclerk": {
+    subdir: "test",
+    viewport: [1200, 1600],
+    dsr: 2,
+    camera: { pos: [0, 1.02, 4.6], look: [0, 0.98, 0], fov: 30 },
+    env: {
+      sky: "#ccd0d2",
+      hemi: ["#f1f3f4", "#40434a", 1.25],
+      sun: { pos: [-6, 9, 9], intensity: 0.95, color: "#fff3e0" },
+      fill: { pos: [7, 4, 7], intensity: 0.5, color: "#e8eeff" },
+      ground: { y: 0, color: "#c0c3c5", size: 60, rough: 0.98 },
+      exposure: 1.05,
+      shadowSpan: 6,
+    },
+    instances: [
+      { key: "taxclerk-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.82, clip: "idle", t: 1.0 },
+    ],
+  },
+
   // =========================================================================
   // CHARACTER-ANCHORED OPENERS (start-v2-*). The owner rejected the distant wide
   // as too empty: open ON THE PROTAGONIST arriving at the shut port, closer, a
@@ -460,6 +500,42 @@ const SCENES = {
     instances: [
       ...harbourSet(),
       { key: "playerboy-rigged", pos: [-6, 0, -0.6], rotY: 3.15, fitHeight: 1.92, clip: "idle", t: 1.4 },
+    ],
+  },
+
+  // =========================================================================
+  // GAME-3D CUTSCENE BASES (owner locked the style to the GLB-render look, i.e.
+  // ref-player.png). These render our ACTUAL GLBs; Gemini is used only to POLISH
+  // fidelity on top of these, style-locked to the 3D-game render (never painterly).
+  // =========================================================================
+
+  // BACKDROP — the dead-harbour wharf, no figures (the setting for the keyframe).
+  backdrop: {
+    subdir: "test",
+    viewport: [1920, 1080],
+    dsr: 2,
+    camera: { pos: [3.0, 2.8, 16.5], look: [-1.0, 1.25, -26], fov: 58 },
+    env: { ...HARBOUR_ENV },
+    water: HARBOUR_WATER,
+    instances: [...harbourSet()],
+  },
+
+  // TWO-CHAR — the primary keyframe: dockworker + tradesman on the wharf, in-engine.
+  // Poses come from each rig's own clips (tuned by eye); the dead harbour is behind.
+  "two-char": {
+    subdir: "test",
+    viewport: [1920, 1080],
+    dsr: 2,
+    camera: { pos: [2.2, 1.75, 6.8], look: [-2.8, 0.95, -11], fov: 50 },
+    env: { ...HARBOUR_ENV },
+    water: HARBOUR_WATER,
+    instances: [
+      ...harbourSet(),
+      // dockworker weary by his gear (left), 3/4 to camera; an empty net beside him.
+      { key: "dockhand-rigged", pos: [-2.6, 0, 1.9], rotY: 1.7, fitHeight: 1.8, clip: "work2", t: 0.4 },
+      { key: "cargo-net-bundle", pos: [-3.6, 0, 2.8], rotY: 0.3, targetLen: 1.2, axis: "y", base: 0 },
+      // the tradesman in profile, gesturing out at the shut ships to the left.
+      { key: "agitator-rigged", pos: [0.6, 0, 0.5], rotY: 4.3, fitHeight: 1.82, clip: "argu1", t: 0.6 },
     ],
   },
 };
@@ -675,7 +751,7 @@ const KEY_DIR = {
   "townswoman-rigged": "characters", "goodwife-rigged": "characters",
   "agitator-rigged": "characters", "towncrier-rigged": "characters",
   "playerboy-rigged": "characters", "thomas-rigged": "characters",
-  "abigail-rigged": "characters",
+  "abigail-rigged": "characters", "taxclerk-rigged": "characters",
 };
 function resolveKey(key) {
   const dir = KEY_DIR[key] ?? "props";
