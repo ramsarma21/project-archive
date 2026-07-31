@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { M1_CONTENT } from "../src/module/m1Module.js";
 import { loadAuthoredModule } from "../src/module/moduleContent.js";
@@ -229,4 +230,60 @@ test("archiveIsComplete is exactly the gate completeModuleRun enforces", () => {
   assert.ok(completion);
   assert.equal(completion?.awardedXp, 0);
   assert.deepEqual([...completion!.acknowledgedCheckIds].sort(), [...allChecks].sort());
+});
+
+// ---------------------------------------------------------------------------
+// The opening framing is not played, and its cues are still reported.
+// ---------------------------------------------------------------------------
+
+test("the opening framing's cue is load-bearing for the completion receipt", () => {
+  // The Archive no longer PLAYS its opening framing: the lesson is entered
+  // through the intake cutscene, which does that job, and a second IRIS
+  // monologue over a still put two briefings back to back. The card stays in
+  // the deck, because the server checks a completion cue-for-cue against a
+  // hand-transcribed copy of it (MODULE_DECKS in apps/api/src/progression/
+  // content.ts, pinned by apps/api/test/module-deck-parity.test.ts).
+  //
+  // This asserts the consequence: a run that reports only the files and the
+  // handoff — everything the player now actually sees — does NOT complete. So
+  // skipping the screen without acknowledging its cue would take the mission
+  // out of reach, which is why ModuleArchive seeds those cues at mount.
+  const layout = deriveArchiveLayout(M1);
+  assert.ok(layout.opening.length > 0, "M1 still authors an opening framing card");
+
+  const openingCues = layout.opening.map((framing) => framing.card.cueId);
+  const seenCues = M1.cards
+    .map((card) => card.cueId)
+    .filter((cueId) => !openingCues.includes(cueId));
+  const allChecks = moduleRequiredCheckIds(M1);
+
+  assert.equal(
+    archiveIsComplete(M1, seenCues, allChecks),
+    false,
+    "without the opening cue the deck is not covered and the run cannot complete",
+  );
+  assert.equal(archiveIsComplete(M1, [...openingCues, ...seenCues], allChecks), true);
+});
+
+test("the Archive opens on its index, and seeds the framing it skipped", () => {
+  // Pinned against the source because ModuleArchive cannot be rendered here (it
+  // pulls in CSS and the 3D room). Both halves matter and they fail together:
+  // re-adding the opening screen brings back the double briefing, and dropping
+  // the seeding silently breaks the server's module gate.
+  const src = readFileSync(new URL("../src/module/ModuleArchive.tsx", import.meta.url), "utf8");
+  assert.match(
+    src,
+    /useState<ArchiveView>\(\{ kind: "INDEX" \}\)/,
+    "the Archive must open on its index, not on an opening framing screen",
+  );
+  assert.match(
+    src,
+    /useState<readonly string\[\]>\(\s*\(\) => layout\.opening\.map\(\(framing\) => framing\.card\.cueId\),?\s*\)/,
+    "the skipped opening framing's cues must still be acknowledged",
+  );
+  assert.doesNotMatch(
+    src,
+    /kind: "OPENING"/,
+    "there is no opening view left to fall back into",
+  );
 });

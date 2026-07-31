@@ -34,7 +34,6 @@ import "./module.css";
 // ---------------------------------------------------------------------------
 
 type ArchiveView =
-  | { readonly kind: "OPENING"; readonly at: number }
   | { readonly kind: "INDEX"; readonly handoff?: boolean }
   | { readonly kind: "FILE"; readonly fileIndex: number }
   | { readonly kind: "BRIEF"; readonly at: number }
@@ -53,11 +52,27 @@ export function ModuleArchive(props: {
   const { definition, attemptOrdinal } = props;
   const layout = useMemo(() => deriveArchiveLayout(definition), [definition]);
 
-  const [acknowledgedCueIds, setAcknowledgedCueIds] = useState<readonly string[]>([]);
-  const [masteredCheckIds, setMasteredCheckIds] = useState<readonly string[]>([]);
-  const [view, setView] = useState<ArchiveView>(() =>
-    layout.opening.length > 0 ? { kind: "OPENING", at: 0 } : { kind: "INDEX" },
+  // The Archive OPENS ON ITS INDEX. The lesson is entered through the intake
+  // cutscene (MissionDeck plays it on Deploy), and that IS the opening framing:
+  // playing a second IRIS monologue over a still afterwards put two briefings
+  // back to back and 68s between Deploy and the case files. So the deck's
+  // opening framing is not presented, and its cues are acknowledged here
+  // because the briefing they stand for was delivered — by the cutscene.
+  //
+  // The cues are acknowledged rather than the card being deleted from the deck,
+  // because the completion receipt is checked cue-for-cue by the server against
+  // a HAND-TRANSCRIBED copy of this deck (MODULE_DECKS in
+  // apps/api/src/progression/content.ts — the API ships no content directory to
+  // import). Dropping the card from module.json without editing that copy would
+  // make the server refuse every completion and put the mission out of reach.
+  // apps/api/test/module-deck-parity.test.ts pins the two together, so that
+  // mistake fails loudly rather than silently; the copy is simply owned by
+  // another lane, so the deck keeps its card and the Archive skips its screen.
+  const [acknowledgedCueIds, setAcknowledgedCueIds] = useState<readonly string[]>(
+    () => layout.opening.map((framing) => framing.card.cueId),
   );
+  const [masteredCheckIds, setMasteredCheckIds] = useState<readonly string[]>([]);
+  const [view, setView] = useState<ArchiveView>({ kind: "INDEX" });
   const [elapsed, setElapsed] = useState(0);
 
   const startedAtRef = useRef(Date.now());
@@ -105,22 +120,15 @@ export function ModuleArchive(props: {
     [definition, attemptOrdinal, props],
   );
 
-  // A framing screen (opening or brief) finished: acknowledge its cue and move
-  // to the next framing screen, the index, or the run's completion.
+  // A handoff brief screen finished: acknowledge its cue and move to the next
+  // one, or complete the run. (The opening framing has no such path — it is not
+  // presented at all; see the acknowledgement above.)
   const onFramingDone = useCallback(
-    (kind: "OPENING" | "BRIEF", at: number, cueId: string) => {
+    (at: number, cueId: string) => {
       const nextCues = acknowledgedCueIds.includes(cueId)
         ? acknowledgedCueIds
         : [...acknowledgedCueIds, cueId];
       ackCue(cueId);
-      if (kind === "OPENING") {
-        setView(
-          at + 1 < layout.opening.length
-            ? { kind: "OPENING", at: at + 1 }
-            : { kind: "INDEX" },
-        );
-        return;
-      }
       if (at + 1 < layout.brief.length) {
         setView({ kind: "BRIEF", at: at + 1 });
       } else {
@@ -161,26 +169,6 @@ export function ModuleArchive(props: {
     [acknowledgedCueIds, masteredCheckIds, layout, finishRun],
   );
 
-  if (view.kind === "OPENING") {
-    const framing = layout.opening[view.at]!;
-    return (
-      <ModuleFilePlayer
-        key={`opening-${framing.card.id}`}
-        definition={definition}
-        card={framing.card}
-        deckIndex={framing.deckIndex}
-        reducedMotion={props.reducedMotion}
-        presenter={definition.presenter}
-        voiceoverProvider={props.voiceoverProvider}
-        fileKicker="Archive · Opening"
-        fileLabel={framing.card.kicker}
-        onComplete={() => onFramingDone("OPENING", view.at, framing.card.cueId)}
-        onExit={props.onExit}
-        onBackToIndex={() => onFramingDone("OPENING", view.at, framing.card.cueId)}
-      />
-    );
-  }
-
   if (view.kind === "BRIEF") {
     const framing = layout.brief[view.at]!;
     return (
@@ -194,9 +182,9 @@ export function ModuleArchive(props: {
         voiceoverProvider={props.voiceoverProvider}
         fileKicker="Archive · The handoff"
         fileLabel={framing.card.kicker}
-        onComplete={() => onFramingDone("BRIEF", view.at, framing.card.cueId)}
+        onComplete={() => onFramingDone(view.at, framing.card.cueId)}
         onExit={props.onExit}
-        onBackToIndex={() => onFramingDone("BRIEF", view.at, framing.card.cueId)}
+        onBackToIndex={() => onFramingDone(view.at, framing.card.cueId)}
       />
     );
   }
