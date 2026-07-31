@@ -13,6 +13,7 @@ import {
 } from "@pa/mission-m1";
 import type { DawnRead } from "../mission/dawn.js";
 import { M1Lanterns } from "./M1Lanterns.js";
+import { M1HarbourWater } from "./M1HarbourWater.js";
 
 // ---------------------------------------------------------------------------
 // M1's visible world.
@@ -161,10 +162,10 @@ export const M1Scenery = memo(function M1Scenery(props: {
   readonly reducedMotion: boolean;
   readonly dawn: DawnRead;
 }) {
-  void props.reducedMotion;
   return (
     <>
       <SceneryGround />
+      <M1HarbourWater reducedMotion={props.reducedMotion} dawn={props.dawn} />
       <SceneryProps />
       {/* The lamps are the level's art too, and they are the only thing in the
           mission that makes the authored light field visible. See M1Lanterns. */}
