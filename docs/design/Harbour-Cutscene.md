@@ -36,26 +36,31 @@ at a whole town, innocent and guilty together.
 image-to-video, and the method is **iterative**: prove the pipeline on the smallest *high-value*
 shot, judge it, *then* expand — so credits are not spent on a full sequence that drifts.
 
-**Cutscene reference images are generated HIGH-QUALITY 2D with Gemini** ("Nano Banana Pro",
-`gemini-3-pro-image-preview`) through the TrueFoundry gateway, via
-`assets/pipeline/gen_concept_image.mjs` — deliberately **higher fidelity than the in-game 3D**
-(cutscenes should look better than the game), and **reusing the original concept art** in
-`assets/source/concepts/` wherever it exists (those PNGs birthed our GLB assets, so they are
-faithful and on-style). This **supersedes the earlier skeletal GLB renders** as the seed/reference
-art. Generated frames + their `.prompt.json` sidecars live in `assets/source/concepts/m1-harbour/`;
-the chosen picks are copied into `assets/reference/harbour-cutscene/test/`.
+**The cutscene look is the GAME'S OWN 3D RENDER** — the real-time GLB-render look of
+`ref-player.png`, which the owner picked. Every reference (characters, ship, backdrop, keyframe) is
+**rendered from our ACTUAL GLB assets** via `assets/pipeline/shot_harbour_refs.mjs` (exactly how
+`ref-player.png` was made); GLB renders *are* the target style. **Gemini is used ONLY to POLISH
+fidelity on top of a GLB render** — `gen_concept_image.mjs --edit <glb-render.png> --prompt "…"` —
+sharpening detail, completing the skeletal ships, and adding cinematic haze / low-sun, with a hard
+style-lock in the prompt that keeps the real-time 3D game look (*"match this 3D game-engine render
+exactly; keep the 3D CG look and materials; do NOT make it painterly, illustrated, hand-drawn or
+photoreal"*). The goal is **a prettier version of the same game**, not a new style.
 
-**The PRIMARY test is a two-character wharf beat (~5 s)** — two of our characters doing a simple,
-readable action in the Gemini wharf backdrop. It validates the hard things *at once*:
-**dual-character identity-lock + meaningful motion + our backdrop + the game-cinematic look** — far
-more than a solo start frame. Two simpler fallback tests (a solo opener; a single-character
+**RETIRED — do not reuse for cutscene refs:** the photoreal concept portraits
+(`assets/source/concepts/npc-*.png`) and the earlier painterly text-prompt / `--edit` Gemini scenes.
+Both were off-style and rejected by the owner. Build scenes only by **GLB render → style-locked
+polish**; never from a text prompt alone, and never anchored on the photoreal portraits.
+
+**The PRIMARY test is a two-character wharf beat (~5 s)** — two of our GLB characters doing a simple,
+readable action in the game-3D wharf backdrop. It validates the hard things *at once*:
+**dual-character identity-lock + meaningful motion + our backdrop + the game-3D look** — far more
+than a solo start frame. Two simpler fallback tests (a solo opener; a single-character
 identity-lock) sit below it.
 
-**Style anchor:** historically accurate 1774 working-class Boston; muted pewter / umber / ochre
-palette; weathered painted wood, tar, iron and canvas; composed and cinematic with an atmospheric
-low hazy sun; polished stylized — **not** photoreal — and coherent with the game; no Victorian /
-modern / fantasy / military elements, and **no baked-in text**. (Match the language in the concept
-sidecars, e.g. `assets/source/concepts/ship-brig-hero.png.prompt.json`.)
+**Style anchor = `ref-player.png`** (the game's 3D render): historically accurate 1774 working-class
+Boston; muted pewter / umber / ochre palette; weathered wood, tar, iron and canvas; the real-time 3D
+CG look and PBR materials of the game, just cleaner and with cinematic low-sun haze. No painterly /
+illustrated / photoreal styling; no Victorian / modern / fantasy / military; no baked-in text.
 
 ## Picture naming — how to tag each reference in Runway
 
@@ -66,15 +71,15 @@ sessions.
 
 | Picture (in `test/`) | Tag in Runway as | Type | Note |
 |---|---|---|---|
-| `two-char-keyframe.png` | — (do **not** tag) | scene seed | **the PRIMARY test's Image-to-Video init frame** (Gemini keyframe), not an `@`-reference |
-| `wharf-backdrop.png` | `@wharf` / init frame | location / seed | the **Gemini** dead-harbour backdrop — the setting; also the wharf **build** reference |
-| `ref-dockhand.png` | `@dockhand` | character | **original concept** (`npc-dockhand.png`) — faithful, higher quality than the GLB render |
-| `ref-agitator.png` | `@agitator` | character | **original concept** (`npc-agitator.png`) — tradesman, leather apron + red cap |
-| `ref-taxclerk.png` | `@taxclerk` | character | **original concept** (`npc-taxclerk.png`) — Crown official (worker-vs-authority beat) |
-| `ref-brig.png` | `@brig` | ship | **original concept** (`ship-brig-hero.png`); Runway favours characters/locations, so lean on the init frame for ships |
-| `ref-player.png` | `@player` | character | GLB render (no player concept exists yet) — describe the avatar if identity drifts |
-| `establishing.png`, `start-v2-*.png`, `ref-wharf.png` | — | GLB fallbacks | the earlier 3D renders — kept only for the fallback tests below |
-| `wharf-backdrop-alt-*.png`, `two-char-keyframe-alt-*.png` | — | alternate candidates | other Gemini backdrop / keyframe takes for the owner to pick |
+| `two-char-keyframe.png` | — (do **not** tag) | scene seed | **the PRIMARY test's init frame** — the two-character GLB render, Gemini-polished (style-locked) |
+| `wharf-backdrop.png` | `@wharf` / init frame | location / seed | the dead-harbour GLB render, Gemini-polished — the setting; also the wharf **build** reference |
+| `two-char.png`, `backdrop.png` | — | raw 3D bases | the un-polished in-engine GLB renders (pure game look) — the polish sources / alternates |
+| `ref-dockhand.png` | `@dockhand` | character | **GLB render** of `dockhand-rigged`, same studio look as `ref-player` |
+| `ref-agitator.png` | `@agitator` | character | **GLB render** of `agitator-rigged` (tradesman, leather apron + red cap) |
+| `ref-taxclerk.png` | `@taxclerk` | character | **GLB render** of `taxclerk-rigged` (Crown official) |
+| `ref-brig.png` | `@brig` | ship | **GLB render** of `ship-brig-hero.glb`; lean on the init frame for ships |
+| `ref-player.png` | `@player` | character | the **exemplar** GLB render (the locked style) — unchanged |
+| `establishing.png`, `start-v2-*.png`, `ref-wharf.png` | — | GLB fallbacks | earlier 3D renders, for the fallback tests below |
 
 Keep the scheme **one word, lowercase**, matching our cast/place names. Going forward: characters
 `@abigail @thomas @pike @clarke @rider @constable`; locations `@printshop @shambles @townhouse
@@ -87,30 +92,28 @@ The high-ROI test: it validates **dual-character identity-lock + meaningful moti
 the game-cinematic look, in one clip**. The beat conveys the closure — one dockworker idle by his
 gear while a fellow tradesman gestures out at the shuttered ships.
 
-**Step A — the Gemini keyframe (already generated; regenerate or vary with the command below).**
-`two-char-keyframe.png` composites **`@dockhand` + `@agitator`** into the Gemini wharf backdrop: the
-dockworker crouched setting down an empty net, the tradesman standing and gesturing at the idle
-moored ships. It was made by a multi-reference Gemini edit — the two original character concepts +
-the backdrop held **identity and setting together**:
+**Step A — the keyframe: GLB render → style-locked Gemini polish (already generated).**
+`two-char-keyframe.png` is an **in-engine render** of **`dockhand-rigged` + `agitator-rigged`** posed
+on the wharf (the dockworker weary by an empty net; the tradesman gesturing at the shut ships), then
+**Gemini-polished** for fidelity while locked to the 3D-game look. The raw base is `two-char.png`.
+Regenerate or vary it in two steps:
 
 ```
+# 1) in-engine render of the two GLB characters in the dead-harbour set (edit the
+#    poses/camera in the two-char scene of shot_harbour_refs.mjs to taste):
+SHOT=two-char node assets/pipeline/shot_harbour_refs.mjs        # also: SHOT=backdrop
+# 2) polish it, STYLE-LOCKED to the 3D game render:
 node assets/pipeline/gen_concept_image.mjs \
-  --edit assets/source/concepts/m1-harbour/backdrop-b.png \
-  --edit assets/source/concepts/npc-dockhand.png \
-  --edit assets/source/concepts/npc-agitator.png \
-  --out assets/source/concepts/m1-harbour/keyframe-c.png \
-  --prompt "Two 1774 Boston working men on a shut wharf: the dockworker crouches setting down an empty fishing net; the tradesman (leather apron, red knit cap) stands and gestures at the idle moored ships. Keep both men's faces, hair and clothing from the references; keep the wharf, ships, low hazy sun and muted palette from the backdrop. Nothing working. Polished stylized game-cinematic, not photoreal, no text."
+  --edit assets/reference/harbour-cutscene/test/two-char.png \
+  --out assets/source/concepts/m1-harbour/two-char-polish.png \
+  --prompt "Upscale/enhance THIS real-time 3D game render: keep the same two characters, poses, camera, layout, colours and 3D CG game materials; only sharpen detail, complete the skeletal ships into fuller square-rigged vessels with furled sails, and add hazy low-sun atmosphere. It MUST still be a 3D game render (a prettier version of the SAME game) — NOT painterly, illustrated, hand-drawn or photoreal. Keep both men exactly. No text."
 ```
 
-Alternate keyframes (committed in `test/`): `two-char-keyframe-alt-a.png` (same pair, square 1024²)
-and `two-char-keyframe-alt-b.png` (**`@dockhand` + `@taxclerk`** — the ruined worker vs the Crown
-official). Alternate backdrops: `wharf-backdrop-alt-b.png` (clean wide illustration) and
-`wharf-backdrop-alt-c.png` (an `--edit` of the owner's real photo — most layout-faithful, and
-doubles as the wharf **build** reference). Sources + `.prompt.json` sidecars live in
-`assets/source/concepts/m1-harbour/` (the PNGs there are gitignored per repo policy on generated
-concept subfolders — regenerate via the command above; the `test/` copies are the committed ones).
-The gateway returns whatever aspect it chooses (square for square-base edits, ~16:9/21:9 for
-landscape bases); crop to 16:9 as needed.
+The **raw** in-engine renders `two-char.png` and `backdrop.png` are kept as pure-3D alternates — use
+them directly if the unpolished game look is preferred. The gateway ignores the size param and
+returns ~16:9 for landscape bases; crop as needed. Polish sidecars live in
+`assets/source/concepts/m1-harbour/` (those PNGs are gitignored; the committed copies are the `test/`
+files).
 
 **Step B — animate it in Runway (Image → Video).** Upload `two-char-keyframe.png` as the init frame;
 optionally add `@dockhand` and `@agitator` as References to reinforce identity. Motion prompt = the
@@ -160,8 +163,8 @@ reinforce the protagonist's identity if the push-in reveals his face.
 *Simpler than the primary (one character, not two). Kept because it isolates identity-lock cleanly.*
 It tests whether **our** character survives into a generation. Two steps.
 
-**Step A — make the keyframe (Image tool).** Drag `ref-dockhand.png` (now the **original
-`npc-dockhand` concept**, not the GLB render) into References, tag it `dockhand`. Prompt (uses
+**Step A — make the keyframe (Image tool).** Drag `ref-dockhand.png` (the **GLB render** of
+`dockhand-rigged`, the locked game-3D look) into References, tag it `dockhand`. Prompt (uses
 `@dockhand`):
 ```
 @dockhand standing on the weathered plank deck of a shuttered 1774 Boston wharf, coiling a rope,
