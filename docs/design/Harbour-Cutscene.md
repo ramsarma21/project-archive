@@ -115,10 +115,13 @@ returns ~16:9 for landscape bases; crop as needed. Polish sidecars live in
 `assets/source/concepts/m1-harbour/` (those PNGs are gitignored; the committed copies are the `test/`
 files).
 
-**Step B — animate it in Runway (Image → Video).** Upload `two-char-keyframe.png` as the init frame;
-optionally add `@dockhand` and `@agitator` as References to reinforce identity. The camera pushes in
-**CLOSE** — a wide two-shot doesn't stress identity, so a close push-in is what actually verifies the
-characters hold consistency (owner, 31 Jul). Motion prompt:
+**Step B — animate it (Kling 3.0 Pro, in the Runway dashboard, Image → Video).** In Runway select the
+**Kling 3.0 Pro** model (NOT Gen-4.5), upload `two-char-keyframe.png` as the **First Video Frame**, and
+paste the motion prompt below. References are **OPTIONAL** — both characters are already baked into the
+keyframe, so it carries their identity; only add `dockhand`/`agitator` (via Kling's element/reference
+input) if you want extra reinforcement. The camera pushes in **CLOSE** — a wide two-shot doesn't stress
+identity, so a close push-in is what actually verifies the characters hold consistency (owner, 31 Jul).
+Motion prompt:
 
 ```
 Slow, deliberate camera push-in from the wide two-shot to a TIGHT framing of the two men — ending
@@ -130,7 +133,8 @@ only, no shake, no orbit. Hold the uploaded frame's stylized 3D game-cinematic l
 and low warm haze. No new people appearing, no text or captions anywhere. Silent.
 ```
 
-Settings: Gen-4.5 · **16:9** · **~5 s** · up to **3 References** · silent (audio dubbed in post).
+Settings: **model = Kling 3.0 Pro** (in the Runway dashboard) · **16:9** · **~5 s** · **audio OFF**
+(dubbed in post) · one continuous camera move (the push-in). References optional (keyframe carries identity).
 **If this holds** — both characters recognisably ours, the motion readable, the backdrop and look
 intact — the pipeline is proven and we expand to the full sequence.
 
