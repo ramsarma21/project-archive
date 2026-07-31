@@ -36,9 +36,12 @@ export const MERCHANT_FOOT = rect(33, 42, -17.2, -3.2);
 const WT = 0.5; // wall thickness
 const EAVE = BAND.LOW_ROOF; // 7.1 — the leads / eave the planks meet
 const PARLOUR = 4.0; // parlour floor: a single 3.1 m HANG_DROP under the eave
-// Open upper window on the south face, centred, from the parlour floor to the eave.
-const AP_X0 = 36.0;
-const AP_X1 = 39.0;
+// Open upper window on the south face, aligned over the Shambles crate-mound
+// on-ramp (SHAMBLES_CRATES_B / node B_CRATES_B at x 39.2) so the G-A climb-in
+// (crate 1.9 → parlour 4.0, a 2.1 m CLIMB_UP) passes through the real hole rather
+// than a solid wall. From the parlour floor to the eave.
+const AP_X0 = 37.5;
+const AP_X1 = 40.5;
 
 masses.push(
   // North wall + main body. The roof and parlour floor are carriedBy this, and the
@@ -161,7 +164,22 @@ decks.push(
     y: EAVE,
     carriedBy: ["MERCHANT"],
     tags: ["roof", "north-row", "eave"],
-    note: "The merchant's leads — the eave. The G-A plank lands here and G-B leaves from it; the drop-in goes over the south lip into the open window.",
+    note: "The merchant's leads — the eave. G-B leaves from it to the Town House scaffold; the covert line climbs up here out of the parlour and the drop-in comes down over the south lip.",
+  }),
+  // The landable route surface on the parlour, a null-asset deck coincident with
+  // the drawn (non-landable) MERCHANT_PARLOUR mass top at 4.0. The mass draws the
+  // floor; this deck is what the route node M_PARLOUR stands on. The sealed ground
+  // void below is unreachable, so a one-way deck here grazes nothing.
+  deck({
+    id: "MERCHANT_PARLOUR__DECK",
+    section: "B_SHAMBLES",
+    asset: null,
+    // Reaches the south wall line (z −3.4) at the aperture so the crate climb-in
+    // lands on real floor right at the open window.
+    rect: rect(33.8, 41.2, -16.4, -3.4),
+    y: PARLOUR,
+    carriedBy: ["MERCHANT_PARLOUR"],
+    tags: ["floor", "safe-interior"],
   }),
 );
 
