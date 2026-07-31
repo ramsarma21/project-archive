@@ -386,7 +386,9 @@ const SCENES = {
       shadowSpan: 6,
     },
     instances: [
-      { key: "dockhand-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.8, clip: "idle", t: 1.0 },
+      // Open A-pose (arms dropped from the rig's T-pose rest) for a clean,
+      // unoccluded identity anchor — tucked/behind arms morph on the AI push-in.
+      { key: "dockhand-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.8, openArms: 52 },
     ],
   },
 
@@ -426,7 +428,8 @@ const SCENES = {
       shadowSpan: 6,
     },
     instances: [
-      { key: "agitator-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.8, clip: "idle", t: 1.0 },
+      // Open A-pose (see ref-dockhand) — clean, unoccluded arms for the anchor.
+      { key: "agitator-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.8, openArms: 52 },
     ],
   },
 
@@ -449,7 +452,6 @@ const SCENES = {
       { key: "taxclerk-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.82, clip: "idle", t: 1.0 },
     ],
   },
-
   // =========================================================================
   // CHARACTER-ANCHORED OPENERS (start-v2-*). The owner rejected the distant wide
   // as too empty: open ON THE PROTAGONIST arriving at the shut port, closer, a
@@ -730,6 +732,32 @@ async function place(inst) {
       mixer.setTime(Math.min(inst.t ?? 0.6, clip.duration));
       root.updateMatrixWorld(true);
     }
+  }
+
+  // Open the arms: lower the upper-arm bones from the rig's T-pose rest into a
+  // relaxed A-pose so a reference shot has clean, unoccluded limbs (hidden/behind
+  // arms morph when the AI animates a close push-in). inst.openArms = degrees to
+  // drop each arm, swung about the character's own forward axis so the arms stay
+  // in the frontal plane (no depth splay). Bones have rotated parents, so the
+  // world axis is converted into each bone's own frame (rotateOnWorldAxis assumes
+  // an unrotated parent and is wrong here).
+  if (inst.openArms) {
+    const rad = (inst.openArms * Math.PI) / 180;
+    root.updateMatrixWorld(true);
+    const fwd = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), inst.rotY ?? 0);
+    const swing = (bone, angle) => {
+      const W = new THREE.Quaternion();
+      bone.getWorldQuaternion(W);
+      const localAxis = fwd.clone().applyQuaternion(W.invert()).normalize();
+      bone.rotateOnAxis(localAxis, angle);
+    };
+    root.traverse((b) => {
+      if (!b.isBone) return;
+      const n = b.name.toLowerCase();
+      if (/(^|:)leftarm$/.test(n)) swing(b, -rad);
+      else if (/(^|:)rightarm$/.test(n)) swing(b, rad);
+    });
+    root.updateMatrixWorld(true);
   }
 
   // Scale.
