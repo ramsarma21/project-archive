@@ -146,6 +146,17 @@ const KNOWN_DEBT = new Map([
   // than left describing a solved problem.
   ["MASS_TOP:ROPE_CAPSTAN", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.986, note: "rope-coil-large crown ~0.99m below its cover top; needs a taller vaultable asset through the pipeline." }],
   ["MASS_TOP:COVER_COILS_C", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.635, note: "rope-coil-large crown ~0.64m below its cover top; needs a taller vaultable asset through the pipeline." }],
+  // --- DEAD WHARF warehouses: PENDING-REGEN (owner-accepted 31-Jul). The two
+  // bldg-warehouse-wharf-a/b meshes draw their roof/loading-gallery well below the
+  // authored 5.35 box (A worse than B because A's footprint is wider, so contain-
+  // fit shrinks its height more). A separate asset worker is regenerating BOTH keys
+  // WITH a real oversailed standable gallery at y=5.35 + a flat roof deck, under the
+  // SAME key/box — at which point these resolve. The STRUCTURE (box/deck/route:
+  // wharf descent lands on A's roof, ascent mantles onto B's gallery) is authored to
+  // the target. Do NOT shrink the boxes; the regen targets them.
+  ["DECK:WHARF_WAREHOUSE_A__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -4.84, note: "PENDING-REGEN: warehouse-wharf-a roof mesh far below its 5.35 box (wide footprint); descent's first landing. Regen delivers roof deck at box." }],
+  ["DECK:WHARF_WAREHOUSE_B__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -1.37, note: "PENDING-REGEN: warehouse-wharf-b roof/gallery mesh ~1.4m below its 5.35 box; ascent's top mantle target. Regen delivers oversailed gallery at box." }],
+  ["CLIMB_TO:CLIMBVOL_WHARF_ASC_2->WHARF_ASC_ROOF", { category: "missing-or-short", rank: 3, band: 0.00, delta: -1.88, note: "PENDING-REGEN: the mantle onto warehouse-wharf-b's 5.35 gallery reads the short mesh (~1.9m below); resolves with the same regen as DECK:WHARF_WAREHOUSE_B__ROOF." }],
   // --- catch radius exceeds its landing surface (3) — route-authoring lane ---
   // LEAP_CROWN and LEAP_UPPER retired on branch workflow/mission-flow: the rebuilt
   // liberty-elm-hero.glb carries broad near-flat limb rafts that fill both leap
@@ -172,6 +183,7 @@ const KNOWN_DEBT = new Map([
   ["MASS_TOP:YARD_STAGE", { category: "flat-plane-limit", rank: 1, band: 0.200, delta: -0.067, note: "warehouse-platform-scale cluster; crown reaches the plane, no continuous surface." }],
   ["CLIMB_TO:CLIMBVOL_C_SCAFF_FOOT->C_SCAFF_1", { category: "flat-plane-limit", rank: 1, band: 0.750, delta: 0.000, note: "bldg-scaffold-run deck itself only ~75% covered (plank gaps / volume past the deck edge); the arrival is not laterally offset, so it is not rescued." }],
   ["CLIMB_TO:CLIMBVOL_C_SCAFF_1->C_SCAFF_2", { category: "flat-plane-limit", rank: 1, band: 0.750, delta: 0.000, note: "bldg-scaffold-run deck itself only ~75% covered (plank gaps / volume past the deck edge); the arrival is not laterally offset, so it is not rescued." }],
+  ["CLIMB_TO:CLIMBVOL_WHARF_ASC_1->WHARF_ASC_2", { category: "flat-plane-limit", rank: 1, band: 0.70, delta: -0.05, note: "wharf cargo mantle: crate-mound top drawn == collision (delta ~-0.03m), but the mantle's arrival footprint is laterally offset from the crate below it, so the offset heuristic reads ~78% not full. Mesh is present." }],
   // DECK:BOUGH_UPPER retired on branch workflow/mission-flow: the rebuilt
   // liberty-elm-hero.glb runs its limb raft in to the bole at the tier plane, so
   // the offset upper tier's deck∩trunk strip (which the sampler clips it to) is

@@ -16,6 +16,7 @@ import { MERCHANT_GEOMETRY } from "./merchant.js";
 import { ROPEWALK_GEOMETRY, ROPEWALK_LIGHT } from "./ropewalk.js";
 import { WHARF_GEOMETRY, WHARF_LIGHT } from "./wharf.js";
 import { LINKS_2, NODES_2 } from "./route2.js";
+import { WHARF_CLIMBS, WHARF_LINKS, WHARF_NODES } from "./wharfRoute.js";
 import { ARENA } from "./duelArena.js";
 
 export const SECTIONS: SectionSpec[] = [
@@ -133,11 +134,11 @@ export const M1_EFFIGY_RUN: MissionLevel = {
     ...ROPEWALK_GEOMETRY.decks,
   ],
   ramps: [...GEOMETRY.ramps],
-  climbs: CLIMBS,
+  climbs: [...CLIMBS, ...WHARF_CLIMBS],
   ladders: LADDERS,
   grips: GRIPS,
-  nodes: [...NODES, ...NODES_2],
-  links: [...LINKS, ...LINKS_2],
+  nodes: [...NODES, ...WHARF_NODES, ...NODES_2],
+  links: [...LINKS, ...WHARF_LINKS, ...LINKS_2],
   patrols: PATROLS,
   diversions: DIVERSIONS,
   blend: BLEND,
