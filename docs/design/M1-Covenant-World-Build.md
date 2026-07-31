@@ -652,20 +652,50 @@ From `packages/mission-m1/src/assets.ts` (all `EXISTING`, published):
 **Meshy is the only NEW-GEN here (item 7).** Everything structural is REUSE/EDIT — this honours
 "reuse before generate" and the Preserve-list (Section I).
 
-### C.2 Printshop resolution (explicit)
+### C.2 Printshop resolution (explicit) — CORRECTED 31 Jul, traced from the pipeline
 The printshop is currently a **solid exterior mass** (`bldg-printshop` 13 × 7.1 × 14, `landable:
 false`) with the start on its **leads** (roof) — there is **no interior, stairs, or balcony**, and
-the collision is solid to the roof so a mesh interior alone would not be enterable.
-**Decision: EDIT (Blender), not NEW-GEN.** Keep the recognisable Edes & Gill exterior; in Blender,
-hollow a ground-floor room, cut a stair well and a balcony opening on the street face, and export.
-Then author the matching collision as authored masses/decks (interior floor mass, `rampStrips`
-stairs, balcony deck) so **drawn geometry = collision** (the repo's law; `assets:verify:collision`
-enforces it). The interior→stairs→balcony→leads flow is then: spawn on the interior floor →
-`rampStrips` up → balcony deck (off-ground) → CLIMB_UP/chain onto `PRINTSHOP__ROOF`.
-*Rationale for EDIT over NEW-GEN:* a fresh Meshy building would lose the established silhouette the
-lesson/hub already show and risk the facade-tear defect (`bldg-brick`-class); a Blender hollow-out
-is surgical and keeps the working exterior. `bldg-printshop.glb` is **world-audit lane** — grant
-required (Section G).
+the ground-floor collision is solid, so nothing is enterable.
+
+> **The plan's earlier "Blender boolean hollow-out" framing is WRONG and is corrected here (traced,
+> not inferred).** `bldg-printshop.glb` is **not a Meshy mesh** — it is **procedurally regenerated**
+> by `assets/pipeline/build_civic_facade.py` from `assets/source/collision/bldg-printshop.hull.json`
+> (which `export_m1_building_hull.mjs` derives from the authored geometry), driven by
+> `assets/pipeline/build_printshop.sh`. The generator draws four windowed brick walls + a leaded roof
+> cap + a ground apron around the one solid **body blocker**; the interior is already empty (it is a
+> hollow box mesh). So there is nothing to boolean-cut: the hollow-out is a **collision re-author +
+> a generator extension + a regenerate**, not mesh surgery.
+>
+> **Second traced fact:** `assets:verify:collision` passes a hollow mesh inside a solid box —
+> `PRINTSHOP` reads **100 % fill today** with an empty interior, because the gate catches a solid
+> whose mesh is a *sliver* (invisible wall), not an open interior. So the gate is **not** the
+> enterability constraint. Enterability is two coupled edits: (1) the **collision** must open the
+> ground floor, and (2) the **drawn mesh** must carry a matching **open aperture** (else you see a
+> wall you walk through — which the gate does not catch but the eye does).
+
+**Corrected build (all files in the owner's GO grant: `*facade*`, `*printshop*`, `level` data):**
+1. **Collision (`geometry.ts`):** replace the single solid `PRINTSHOP` mass with an **enterable
+   shell** — four perimeter wall masses (0 → 7.1) with a **gap in the south (street) wall = the open
+   shopfront** (no door, per the open-access law); a **solid ceiling mass** from the interior ceiling
+   (~3.0 m) up to 7.1 so the body **cannot clip up to the leads**; the interior floor is the ground
+   plane (standable ≥ 0.75 m); a **balcony deck** at ~2.9 m against an interior wall; `rampStrips`
+   **stairs** ground → balcony; keep `PRINTSHOP__ROOF` (leads) unchanged.
+2. **Generator (`build_civic_facade.py`, `*facade*` grant):** extend it to (i) draw the south wall
+   with the **shopfront ground opening** (skip/split the ground bay), (ii) draw the **interior
+   ceiling underside** slab at the ceiling y, (iii) draw the **interior floor** face — so the drawn
+   shell matches the enterable collision. Its bbox-pin guards (declared-size, centred-on-axis) are
+   preserved: the apron still pins the box, so contain-fit stays 1.0 and every plane lands.
+3. **Regenerate:** `build_printshop.sh` (export hull → `build_civic_facade.py` → weld-gate +
+   collision gate).
+4. **Stairs/balcony reuse existing props** (no new-gen): `stone-steps` drawn over the `rampStrips`,
+   `churchyard-fence` balustrade split at the stair head.
+
+**Design call taken (autonomy; owner may veto):** keep the recognisable Edes & Gill Georgian facade
+by **extending the civic-facade generator** rather than replacing the printshop with a hollow
+`int-shell-*` shed (the ropewalk pattern). The int-shell route is the alternative if a plainer shed
+interior is acceptable; it would reach gate-green faster but loses the brick facade the lesson/hub
+show. **The interior→stairs→balcony→leads flow** is then: spawn on the interior floor → `rampStrips`
+up → balcony deck (off-ground) → CLIMB_UP/chain onto `PRINTSHOP__ROOF`.
 
 ---
 
