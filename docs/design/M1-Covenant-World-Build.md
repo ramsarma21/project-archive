@@ -12,6 +12,28 @@ makes the path and collision follows it (never force traversability into an asse
 considered it); re-authoring/moving locations is allowed — keep what worked, cut useless
 circles and long detours; do not start building until the owner says go.
 
+**What "covert traversal" means (owner refinement, 30 Jul).** This is NOT an explicit geometric
+"no-ground" rule — being a few feet off the ground does not "count," and there is **no tracked
+line-of-sight system** (that reads as buggy). The intent is the *feel*: you move **above the
+street — on roofs, ledges, planks and paths** where, in theory, you are out of sight of people on
+the ground. Rooftop/elevated reads as covert **by convention**; the street reads as exposed by
+convention. So the real requirement is **connectivity, not a node count**: the elevated network
+must be continuous enough that a player *can* stay up across the run (this is what closing the
+three islands / the G1–G2 gaps achieves). Ground contact is by **authored intent** — dropping to a
+contact, or a deliberate crossing (the dead harbour; the elm→yard climax) — never an accidental
+hole in the roofline. The Phase-2 gate is reframed accordingly (Section E): assert the covert line
+is a **connected elevated path with ground touches only at authored beats**, not "zero ground nodes."
+
+**Legacy docs describe a DIFFERENT game — do not carry them over (owner, 30 Jul).** The old
+open-world Boston game is not this game. Much surviving documentation describes it, and its
+constructs must **not** be imported: the open-world **roam**, **Thomas "opens the dock route,"** the
+`Day-1.md` **order-free errands / day clock / People·Notes·Routes panels**, and any "wander the
+city" framing. This build is the **focused, linear-spine M1 mission** (lesson → Covenant courier
+run → boss duel → capstone). Where a legacy cast note carries an open-world job (e.g. Thomas
+"opening a route"), keep only the concept role (Thomas = the merchant whose mark you need;
+non-importation + the closure's blast radius) and drop the open-world mechanic. Read old docs for
+**historical facts and asset inventory**, never for **mechanics or structure**.
+
 **Verified state this plan is written against (measured, not asserted):**
 - Branch `workflow/m1-evasion-loop`, worktree off `main` @ `440677c`, clean. Baseline **2889
   tests / 0 failing** — must stay there.
@@ -78,46 +100,71 @@ Square `B2` and the ropewalk `D2`, stay as *optional* dark spaces but the guided
 threads them). The spine reuses the working buildings and their node ids where they already work;
 it re-authors only what makes the path compact and off-ground.
 
-Beat order, west→east (≈88 m of street compressed), with traversal role:
+**World-dressing — the spine is not the whole world (owner, 30 Jul).** Between and around the
+functional stops the world must *feel real and lived-in*: rows of prop buildings, the wharf, and
+the street furniture that make Boston read as a town rather than a corridor of set-pieces. Almost
+all of it already exists (the `bldg-*` row/shop/warehouse set, the wharf kit, market dressing), so
+this is placement/layout, not new-gen. **Constraint:** dressing obeys the same movement envelope as
+the spine — it never blocks the covert line, never creates a *fake* affordance (a ledge you cannot
+actually stand on), and any rooftop that reads as runnable either is runnable or is clearly out of
+reach. A believable skyline is part of the traversal design, not scenery bolted on afterward.
+
+Beat order, west→east (≈88 m of street compressed), with traversal role. **These beats are the
+functional spine; the ambient world ("world-dressing" above) fills the space between them:**
 
 0. **Abigail's printshop — interior → stairs → balcony → leads (the off-ground start).**
    Start INSIDE the shop on the ground (safe), climb the **stairs** to the **balcony** (first
    off-ground surface), step out onto the printshop **leads** (`PRINTSHOP__ROOF`, y 7.1, existing
-   `A_START` region). The stairs are the one sanctioned ground→roof transition; floor-is-lava
-   begins on the balcony. *Traversal role:* tutorial ascent; establishes "the ground is the
-   danger." **Reuse** the leads/`A_*` roof chain; **build** the interior+stairs+balcony (Section C).
-1. **The Shambles (market) — first drop-to-contact.** Travel the printshop leads → market
-   high/mid line; **drop** to the market-watch contact (the wired `SHAMBLES_STOP`, ground trigger
-   `[16.6, 0, 0.4]`), talk-your-way-past, **climb back** onto the canopy tier. *Traversal role:*
-   the loop's first full rep. **Reuse** `MARKET_SHED`, the stall canopies (`STALL_*__CANOPY`, y
+   `A_START` region). The stairs are the one sanctioned ground→roof transition; the covert run
+   begins on the balcony. *Traversal role:* tutorial ascent; establishes "up here you are unseen."
+   **Reuse** the leads/`A_*` roof chain; **build** the interior+stairs+balcony (Section C).
+1. **The dead harbour — the deliberate wharf crossing (NEW, owner 30 Jul).** Come down off the
+   printshop leads to the **shut wharf** and cross it at dock level — past idle rigged ships, empty
+   crates and fish-flakes with no cargo moving — then climb back up on the far side into the market
+   district. This is a **chosen, exposed crossing at ground/dock level, not a rooftop**: the one
+   place the covert run deliberately comes down into the open, because the point is to *stand on the
+   closed port*. **Concept 2 made physical** — the harbour is dead, and the player feels the closure
+   before any contact explains its effects. Anchored on the owner's real harbour photo
+   (`assets/reference/harbour-cutscene/real-harbour-ingame.png`), **not** the superseded renders.
+   *Traversal role:* the deliberate exposed crossing (varies the loop; the wharf is not a roofline).
+   **Reuse** the wharf kit + ships (`ship-brig-hero`, `ship-snow-background`, `ship-sloop`, apron/
+   pier/warehouse/crane/cargo — all present on `main`). *Route:* adds a **WHARF zone** the graph
+   must accommodate (a new section between `A_LEADS` and `B_SHAMBLES`).
+2. **The Shambles (market) — first drop-to-contact.** Travel the market high/mid line; **drop** to
+   the market-watch contact (the wired `SHAMBLES_STOP`, ground trigger `[16.6, 0, 0.4]`),
+   talk-your-way-past, **climb back** onto the canopy tier. *Traversal role:* the loop's first full
+   rooftop→contact→rooftop rep. **Reuse** `MARKET_SHED`, the stall canopies (`STALL_*__CANOPY`, y
    2.55), the crate crossovers.
-2. **The merchant's house (Thomas) — interior stop with billeted soldiers.** A **new placed
+3. **The merchant's house (Thomas) — interior stop with billeted soldiers.** A **new placed
    interior** (`int-shell-domestic-wide-b`) set into the north row between the Shambles and the
    Town House, entered by **dropping from the high line to an upper-window/parlour balcony** (not
    the guarded ground door). *Traversal role:* a *vertical* drop-in that varies the loop (per the
-   design's "not four identical drop-and-returns"); quartering is the obstacle. This is the one
-   genuinely new stop location.
-3. **The Town House — the climb centrepiece (kept).** Spiral the scaffold → gallery → clock →
+   design's "not four identical drop-and-returns"); quartering is the obstacle. Thomas is the
+   **merchant contact whose mark you need** (non-importation + the closure's blast radius) — **not**
+   the old open-world "opens the dock route" role. This is the one genuinely new stop location.
+4. **The Town House — the climb centrepiece (kept).** Spiral the scaffold → gallery → clock →
    cornice → leads. *Traversal role:* the sustained CLIMB set-piece and the reflex-beat exposure;
    it already works and reads. **Reuse** wholesale (`bldg-townhouse-1713`, `bldg-scaffold-run`,
    ladders).
-4. **Hollis meeting house — endorsement stop (bill-sticker / Clarke).** Cross the Orange-Street
+5. **Hollis meeting house — endorsement stop (bill-sticker / Clarke).** Cross the Orange-Street
    roofline → meeting-house leads; the wired `ROPEWALK_STOP` sits here (`[74.6, 8.2, 9.4]`).
    *Traversal role:* a roof-level stop (no ground drop) — a deliberate variant. **Reuse**
    `bldg-meeting-hollis`, `steeple-meetinghouse-climbable`, the ridge monitor.
-5. **The Liberty Elm — post the Covenant → detection → chase → duel.** Steeple gallery →
+6. **The Liberty Elm — post the Covenant → detection → chase → duel.** Steeple gallery →
    **leap-of-faith** into the crown (`F_CROWN`), **post** at `F_POST` (precision beat), then the
    **deliberate exposure**: alarm, chase EAST on the ground (`F_GROUND` → crowd → `G_GATE`) to the
-   rope-walk yard `G_SPAWN` and the duel. *Traversal role:* covert line ends; G3 is intentionally
-   grounded. **Reuse** `liberty-elm-hero`, the yard/`yardArena`.
+   rope-walk yard `G_SPAWN` and the duel. *Traversal role:* covert line ends; the chase is
+   intentionally grounded. **Reuse** `liberty-elm-hero`, the yard/`yardArena`.
 
-**Compactness statement.** The covert connective line is `printshop balcony/leads → shambles
-high line → merchant upper window → town-house climb → roofline → meeting-house leads → steeple →
-elm`, monotonic west→east with no backtracking; every ground contact is a *chosen drop* to a
-contact, never a forced hole in the roofline. Dock Square and the ropewalk remain reachable but
-**off** the guided line. This matches the current guided-line shape (`route.test.ts` already pins
-the section order `A_LEADS → B_SHAMBLES → C_ASCENT → D_ROOFLINE → E_LEAP → F_TREE → G_YARD` and
-that `B2_THRONG`/`D2_ROPEWALK` are off it) — the re-author keeps that spine and adds stops 0 and 2.
+**Compactness statement.** The covert connective line is `printshop balcony/leads → down to the
+dead wharf and across → up into the shambles high line → merchant upper window → town-house climb →
+roofline → meeting-house leads → steeple → elm`, monotonic west→east with no backtracking. Ground
+contact happens only at **authored beats** — the wharf crossing (beat 1), each drop-to-contact, and
+the elm→yard chase — never as a forced hole in the roofline. Dock Square and the ropewalk remain
+reachable but **off** the guided line. The re-author keeps the existing spine shape (`route.test.ts`
+pins `A_LEADS → B_SHAMBLES → C_ASCENT → D_ROOFLINE → E_LEAP → F_TREE → G_YARD`, with
+`B2_THRONG`/`D2_ROPEWALK` off it) and **adds** the printshop start (0), a **wharf section** (1) and
+the merchant interior — so the pinned section order gains a wharf section and the tests update with it.
 
 ---
 
@@ -175,8 +222,8 @@ across; trunk solid to 12 m (walk-around); tree awning 3.2 m splits the 6.4 m de
 HANG_DROPs. Leap-of-faith from the steeple gallery (drop ≥ 6 m, target radius 1.6 m). The elm is
 hand-authored, not Meshy (Meshy foliage was the shard defect). **Preserve.**
 
-**Connective crossovers (the no-ground closers, built as REAL props, Phase 1 geometry — placed but
-route-linked in Phase 2):**
+**Connective crossovers (the covert-line closers that connect the roof islands, built as REAL
+props, Phase 1 geometry — placed but route-linked in Phase 2):**
 - **G1 (printshop island → Shambles canopy tier):** a `roof-walk-board-long` (5.4 m) plank from the
   hay-wain SE corner (`HAY_WAIN_E`, top 2.2 m) to `STALL_0__CANOPY` (2.55 m) — a ~4 m span at
   matched height, RUN across + a 0.35 m STEP_UP onto the canopy. Reuses declared props; verified
@@ -215,6 +262,11 @@ From `packages/mission-m1/src/assets.ts` (all `EXISTING`, published):
   exists (`gen_door_kit_meshy.mjs`). **Renderer `InteriorStructure.tsx` is live** (used by the hub);
   nothing places an interior in the mission yet (the old placement lived in the deleted
   `chapter-boston-world`).
+- **Harbour / wharf (reuse — confirmed present on `main`):** `ship-brig-hero`, `ship-snow-background`,
+  `ship-sloop`, `rowboat`, `buoy`; the wharf kit (apron, pier modules, boardwalk,
+  `bldg-warehouse-wharf-a/b`, `timber-crane`, `bollard`, `rope-coil-large`, `cargo-net-bundle`,
+  `crate-mound/stack`, `barrel-group`, `fish-flakes-rack`); `dockhand-rigged`. The composed scene was
+  lost in the deleted redesign but every GLB survives — this dresses the beat-1 wharf crossing.
 - **Hero:** `liberty-elm-hero` (PRESERVE).
 
 ### C.1 Build list
@@ -228,9 +280,10 @@ From `packages/mission-m1/src/assets.ts` (all `EXISTING`, published):
 | 5 | **Merchant's house** interior (`int-shell-domestic-wide-b`) | REUSE (declare + place) | stop-2 interior | ~18 × 3.8 × 14 m | interior QA, affordances |
 | 6 | Merchant **upper-window/parlour balcony** deck | REUSE (place) | HANG_DROP entry (≤ 3.2 m) | y ~2.9–3.85, ≥ 1.0 m deep | affordances, clip-fidelity (hang-drop) |
 | 7 | **Military billeting prop set** (stacked muskets, bedrolls, packs, drum) | **NEW-GEN (Meshy)** | reads "quartered"; non-blocking dressing | small props ≤ 1.1 m; keep 0.75 m path clear | historical QA, placement, scale |
-| 8 | **G1 plank** (`roof-walk-board-long`) printshop→shambles | REUSE (place + link) | no-ground crossover | ~4 m span @ y 2.2–2.55 | placement, affordances, `verifyLink`, no-ground BFS |
-| 9 | **G2 plank** (`roof-walk-board-long`/`roof-plank-gantry`) shambles→scaffold | REUSE (place + link) | no-ground crossover | ~3.2 m span @ y 1.9→2.9 | placement, affordances, `verifyLink`, no-ground BFS |
+| 8 | **G1 plank** (`roof-walk-board-long`) printshop→shambles | REUSE (place + link) | covert crossover (connects roof islands) | ~4 m span @ y 2.2–2.55 | placement, affordances, `verifyLink`, covert-connectivity |
+| 9 | **G2 plank** (`roof-walk-board-long`/`roof-plank-gantry`) shambles→scaffold | REUSE (place + link) | covert crossover (connects roof islands) | ~3.2 m span @ y 1.9→2.9 | placement, affordances, `verifyLink`, covert-connectivity |
 | 10 | On-ramp **climb volumes** (`climbVolume`, `serves` the new links) | REUSE (author in `climbs.ts`) | non-ground on-ramps | ≤ 3.2 m rise; foot on crate/hay | `route.test`, affordances |
+| 11 | **Wharf zone** (place the wharf kit + ships for the beat-1 crossing) | REUSE (place + link) | deliberate exposed dock crossing | dock deck at water level; descent/ascent ramps ≤ 3.2 m | placement, affordances, playthrough, historical QA (rigging/period) |
 
 **Meshy is the only NEW-GEN here (item 7).** Everything structural is REUSE/EDIT — this honours
 "reuse before generate" and the Preserve-list (Section I).
@@ -306,16 +359,23 @@ Fixes ranked by the current defect severity, each labelled **pure-IK / pure-tuni
 Run only *after* Sections A–C land, so the graph is measured over the built world, not the current
 one. Targets and gates:
 
-1. **Continuous no-ground covert line.** Re-line the SAFE guided path over the built crossovers so
-   the **cheapest SAFE path start→`F_POST` has 0 ground nodes** and `F_POST` is reachable in the
-   directed no-ground BFS. Mechanism: SAFE elevated crossovers (G1/G2 planks + on-ramp climbs) and
-   demote the forced-ground drops off the elevated islands (`A_HAY→A_STREET`,
-   `A_ALLEY_CRATES→A_ALLEY_FLOOR`, `B_CRATES_B→B_STREET_E`) from SAFE to FAST so the guided line
-   cannot fall to the street. **G3 (`F_POST`→`G_SPAWN`) stays exempt** — the intentional exposure.
-2. **New no-ground gate test** (`packages/mission-m1/src/__tests__/noGround.test.ts`, unowned — no
-   grant): asserts (a) SAFE cheapest path start→post has 0 `surface === "GROUND"` nodes, (b) `F_POST`
-   is reachable in the no-ground BFS, (c) post→arena is *allowed* ground (regression guard both
-   ways). The audit flagged no such gate exists; this closes it so G1/G2 cannot silently reopen.
+1. **Connected covert rooftop line (connectivity, not a zero-ground count).** Per the owner's
+   refinement, the requirement is that the **elevated network is continuous enough to stay up**
+   across the run — not that the path touches zero ground. Re-line the guided path over the built
+   crossovers (G1/G2 planks + on-ramp climbs) so it runs roof-to-roof between authored beats, and
+   demote the *accidental* forced-ground drops off the elevated islands (`A_HAY→A_STREET`,
+   `A_ALLEY_CRATES→A_ALLEY_FLOOR`, `B_CRATES_B→B_STREET_E`) so the line cannot fall to the street by
+   default. **Authored ground touches are intentional and allowed:** the **wharf crossing (beat 1)**,
+   each **drop-to-contact**, and the **elm→yard chase (G3)**. There is **no tracked line-of-sight
+   system** — rooftop reads as covert by convention, the street as exposed.
+2. **Covert-connectivity gate** (`packages/mission-m1/src/__tests__/covertLine.test.ts`, unowned —
+   no grant): asserts (a) the elevated network is **connected** from the printshop start to `F_POST`
+   — a roof-to-roof path exists that touches ground only at nodes tagged `authoredGroundBeat` (the
+   wharf crossing, the drop-to-contacts, the climax); (b) `F_POST` is reachable over that network;
+   (c) **no *untagged* forced-ground node** sits on the cheapest guided path (an accidental hole in
+   the roofline fails the gate). This replaces the brittle "zero ground nodes" idea with "the roofs
+   connect and every ground touch is on purpose," and closes the audit's finding that no such gate
+   exists so the G1/G2 islands cannot silently reopen.
 3. **Existing gates, all green:** `traversability.test.ts` (`verifyLink` OK on every link — the hard
    one, since new planks/climbs must pass the shipped physics), `route.test.ts` /
    `routeFlow.test.ts` / `wayfind.test.ts` (they pin the guided-line section order and the
@@ -328,7 +388,7 @@ one. Targets and gates:
 4. **Baseline held:** typecheck / lint / full suite **2889 / 0**.
 
 **Known Phase-2 interaction to sequence (flagged, not solved here):** the wired encounters gate
-`REACHED_DUEL` on participation and arm on a **ground** trigger; a fully no-ground *guided* line
+`REACHED_DUEL` on participation and arm on a **ground** trigger; a fully elevated *guided* line
 does not pass through them, so the guided line needs authored **drop-to-contact waypoints** at each
 stop (the Stage-1 loop work) or `check-playthrough` soft-locks. World-build first; loop-wiring +
 this waypointing is the following stage.
@@ -429,8 +489,10 @@ is missing → report to owner (that item becomes NEW-GEN / Mixamo-pull).
 7. Route-link the crossovers + on-ramp `climbVolume`s (`route.ts`/`route2.ts`/`climbs.ts`) and
    re-line SAFE off the forced-ground drops. **Gate:** `traversability.test.ts` (`verifyLink` all
    OK), `route.test.ts`/`routeFlow.test.ts`/`wayfind.test.ts` green. **Stop.**
-8. Add `noGround.test.ts`; run the no-ground BFS. **Gate:** **0 SAFE ground nodes, `F_POST`
-   reachable off-ground**, G3 exempt. **Stop.**
+8. Add `covertLine.test.ts`; run the covert-connectivity check. **Gate:** the elevated network is
+   **connected start→`F_POST`**, every ground touch on the guided line is a **tagged authored beat**
+   (wharf crossing, drop-to-contacts, G3 chase), and **no *untagged* forced-ground node** sits on
+   the cheapest guided path. **Stop.**
 9. Full gate: typecheck / lint / affected suites **2889/0** (+ new tests), all `assets:verify:*` at
    0 CRITICAL, `check-clip-fidelity`, and `check-playthrough` (with the drop-to-contact waypointing
    from the loop stage). **Bounded end:** report measured numbers; do not push/merge — orchestrator
