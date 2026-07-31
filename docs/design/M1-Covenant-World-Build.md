@@ -681,12 +681,32 @@ Fixes ranked by the current defect severity, each labelled **pure-IK / pure-tuni
    (skin-proud), then solve. The needed correction is 0.265 m < the 0.4 m guard, so the solver
    keeps it — the foot seats on the face. Files: `parkourIk.ts` (held). *Verify:* `check-clip-fidelity`
    HANG_DROP clip-through → ≤ CLIP_THROUGH (0.05 m), clears SEVERE.
+   > **MEASURED 31 Jul — this candidate is DISPROVEN; do not re-attempt it as a one-liner.** The fix
+   > was implemented (project a penetrating `footPin` out via `exitFaceToward` toward the hips before
+   > it becomes the IK target) and measured against the shipped harness: HANG_DROP clip-through went
+   > **26.5 → 27.7 cm (marginally WORSE)**, still SEVERE, and was reverted (tree clean). Why it fails,
+   > traced in the harness: (a) `exitFaceToward` projects along the axis of largest |hips − box-centre|,
+   > which for a wall-facing descent is the **vertical** axis, not the wall normal — so the pin is
+   > pushed *up the face*, not *out of it*; (b) the reported `maxPen` is the deepest penetration over
+   > the **whole trajectory and both feet**, and the clip orients the foot SEGMENT (ankle→toe) into the
+   > wall, so seating only the toe end-effector leaves the mid-foot buried. The real fix needs the
+   > projection **axis forced to the wall normal** and likely a foot-segment (not just end-effector)
+   > constraint, measured against `check-clip-fidelity` each step. **Not a world-build blocker:**
+   > HANG_DROP is a clip-fidelity (animation-fidelity) item; the route is completable via the shipped
+   > physics regardless, so this is sequenced as dedicated clip/IK work, not gating Section H.
 2. **Mantle 97 % overrun (cosmetic) — PURE-TUNING, no bake.** CLIMB_UP window 900 ms; mantle
    content 3729 ms needs 4.14× (capped at 4.0× → 97 %). **Fix:** widen `durationsMs.CLIMB_UP`
    900 → ~940 ms (3729/940 = 3.97× ≤ 4.0 → 100 %). Files: `parkour/tuning.ts` (held). **CAUTION:**
    the paused `mission-world` jump-hang branch also edits `tuning.ts`; keep this one-line change in
    its **own commit** so that future rebase stays clean. (Alternative: a shorter mantle re-bake —
    not worth a bake for a 3 % cosmetic gain.)
+   > **TRACED 31 Jul — not presentation-only; it shifts the motion hash.** `durationsMs.CLIMB_UP` is
+   > read by `parkour/select.ts` (the sim's verb selection) and by `mission-m1` `ACTION_MS`/`traversal.ts`
+   > (traversability budgets), so widening the window lengthens the authored CLIMB_UP hold in the sim
+   > and changes body position per tick — the replay/PvP digest and any pinned route timings move with
+   > it. So this "one-liner" must be landed **with** a determinism/route rebaseline (run the full
+   > engine-world + mission-m1 suites and update pinned hashes), not treated as a cosmetic tweak. The
+   > overrun is FLAGGED (97 %), not SEVERE, so it is low priority relative to that cost.
 3. **The four landing overruns (LAND_RUN 44 %, ROLL 67 %, HARD 89 %, RECEIVED 55 %) — NEEDS BAKE
    (Blender trim).** The windows are control-feel and must **not** be widened (tuning note); the
    clips must be **shorter re-baked takes**. `landRun`/`dropRoll`/`landHard`/`leapOfFaithLand` are
