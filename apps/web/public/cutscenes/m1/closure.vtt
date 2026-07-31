@@ -1,10 +1,11 @@
 WEBVTT
 
 NOTE
-Captions for the File 1 harbour reconstruction. Rendered by the player into
-the module's own subtitle band, never burned into the picture, so the clip
-keeps ONE caption layer shared with the narration beats that follow it.
-Generated from the assembly's cues.json, the same source as the burned master.
+Captions for the File 1 harbour reconstruction (v2, blended/mouth-fixed cut).
+Rendered by the player into the module's own subtitle band, never burned into
+the picture, so the clip keeps ONE caption layer shared with the narration
+beats around it. Generated from the assembly's cues-v2.json, the same source
+the burned-in master was made from.
 
 1
 00:00:00.500 --> 00:00:03.600
@@ -23,17 +24,17 @@ IRIS: Every ship, until Boston paid for what a few men had done.
 IRIS: The order did not stop to ask who was guilty.
 
 5
-00:00:15.670 --> 00:00:18.600
+00:00:18.850 --> 00:00:21.780
 DOCKWORKER: I never laid a hand on their tea.
 
 6
-00:00:19.450 --> 00:00:22.150
+00:00:22.630 --> 00:00:25.330
 DOCKWORKER: Fifteen years I've hauled on this wharf,
 
 7
-00:00:22.150 --> 00:00:26.950
+00:00:25.330 --> 00:00:30.130
 DOCKWORKER: and now the King's shut the water on every soul in Boston,
 
 8
-00:00:27.600 --> 00:00:29.400
+00:00:30.780 --> 00:00:32.580
 DOCKWORKER: even the loyal ones.

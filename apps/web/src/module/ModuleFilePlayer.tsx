@@ -43,21 +43,22 @@ const CONTROLS_IDLE_MS = 3200;
 /**
  * A file plays in up to three acts.
  *
- *   CLIP    — the card's generated reconstruction, when it has one, played whole
- *             and with its own soundtrack. Only a card carrying a `scene.video`
- *             with a real `src` ever enters this phase; every other card (and
- *             every framing screen) starts in PLAYING exactly as it always did.
  *   PLAYING — the authored narration beats over the card's historical stills.
+ *             IRIS introducing the file and its document: the setup.
+ *   CLIP    — the card's generated reconstruction, when it has one, played whole
+ *             and with its own soundtrack: what the setup was for. Only a card
+ *             carrying a `scene.video` with a real `src` reaches this phase;
+ *             every other card, and every framing screen, goes straight on.
  *   CHECK   — the mastery question, when the director calls for one.
  *
- * The clip is its own phase rather than an overlay on PLAYING because the two
+ * The clip is its own act rather than an overlay on PLAYING because the two
  * carry different soundtracks and different subtitles. Running them together
  * meant the browser voice talked over the clip's voiceover, the caption band
- * showed narration that did not match the speech being heard, and the scene's
- * beat timeline — which knows nothing about the MP4 — cut the picture off
- * partway through. Sequencing them keeps one voice and one caption layer on at
- * a time, lets the clip run to its own duration, and gives the stills the
- * screen back afterwards instead of replacing them.
+ * showed narration that did not match the speech being heard, the scene's beat
+ * timeline — which knows nothing about the MP4 — cut the picture off partway
+ * through, and the stills never appeared at all. In sequence, one voice and one
+ * caption layer are on at a time, the clip runs to its own duration, and the
+ * document gets its own moment before the reconstruction of it.
  */
 type FilePhase = "CLIP" | "PLAYING" | "CHECK";
 
@@ -73,9 +74,50 @@ type FilePhase = "CLIP" | "PLAYING" | "CHECK";
  * the content would mean a new key on `ModuleVideo`, and that type and its
  * loader (`moduleFormat.ts`, `moduleContent.ts`) belong to another lane.
  */
-function captionsPathFor(src: string): string | undefined {
+export function captionsPathFor(src: string): string | undefined {
   const vtt = src.replace(/\.(mp4|webm|mov|m4v)$/i, ".vtt");
   return vtt === src ? undefined : vtt;
+}
+
+/**
+ * The text of a clip's active caption cue, for drawing in our own subtitle band.
+ *
+ * The track is held `hidden` — loaded and firing cue changes, but never drawn by
+ * the browser — so a clip is captioned exactly once, by the band the narration
+ * uses, and the two can never both be on screen. Shared with the lesson intro so
+ * there is one implementation of that rule rather than two that can drift.
+ */
+export function useActiveCueText(
+  videoRef: MutableRefObject<HTMLVideoElement | null>,
+  active: boolean,
+): string {
+  const [text, setText] = useState("");
+  useEffect(() => {
+    if (!active) {
+      setText("");
+      return undefined;
+    }
+    const track = videoRef.current?.textTracks[0];
+    if (!track) return undefined;
+    track.mode = "hidden";
+    const readActiveCue = () => {
+      const cues = track.activeCues;
+      if (!cues || cues.length === 0) {
+        setText("");
+        return;
+      }
+      setText(
+        Array.from(cues)
+          .map((cue) => ("text" in cue ? String((cue as VTTCue).text) : ""))
+          .join(" ")
+          .trim(),
+      );
+    };
+    readActiveCue();
+    track.addEventListener("cuechange", readActiveCue);
+    return () => track.removeEventListener("cuechange", readActiveCue);
+  }, [videoRef, active]);
+  return text;
 }
 
 /** What a finished file reports: its cue is acknowledged, and the check it
@@ -129,7 +171,7 @@ export function ModuleFilePlayer(props: {
   const clip = card.scene?.video?.src ? card.scene.video : undefined;
 
   const [segIndex, setSegIndex] = useState(0);
-  const [phase, setPhase] = useState<FilePhase>(clip ? "CLIP" : "PLAYING");
+  const [phase, setPhase] = useState<FilePhase>("PLAYING");
   const [checkMastered, setCheckMastered] = useState(props.alreadyMastered ?? false);
 
   const [paused, setPaused] = useState(false);
@@ -146,8 +188,6 @@ export function ModuleFilePlayer(props: {
 
   // ---- The clip's own playback state, all of it scoped to the CLIP phase. --
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  /** The active caption cue, drawn in the shared subtitle band. */
-  const [clipCaption, setClipCaption] = useState("");
   /** 0..1 through the clip, for the progress line. */
   const [clipFraction, setClipFraction] = useState(0);
   /** The MP4's real duration, which is what the CLIP phase runs on. */
@@ -163,12 +203,12 @@ export function ModuleFilePlayer(props: {
   const controllerRef = useRef<ModuleVoiceoverController | null>(null);
   if (controllerRef.current === null) controllerRef.current = provider.create();
 
-  // The card's scene finished. The shot director makes the SAME decision it
-  // always did — a mastery check the run has not answered interrupts here — only
-  // now "the deck rolls on" is the Archive unlocking the next file rather than an
-  // automatic advance, so anything that is not SHOW_CHECK means this file is done
-  // and control returns to the browser.
-  const handleSceneEnd = useCallback(() => {
+  // The file has shown everything it has to show. The shot director makes the
+  // SAME decision it always did — a mastery check the run has not answered
+  // interrupts here — only now "the deck rolls on" is the Archive unlocking the
+  // next file rather than an automatic advance, so anything that is not
+  // SHOW_CHECK means this file is done and control returns to the browser.
+  const presentationEnded = useCallback(() => {
     const action = directorOnSceneEnd(
       props.definition,
       deckIndex,
@@ -182,6 +222,21 @@ export function ModuleFilePlayer(props: {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card, deckIndex, checkMastered, props.definition]);
+
+  /** Whether the clip has already had its turn, so it plays once per sitting. */
+  const clipPlayedRef = useRef(false);
+
+  // The narration and its document are the SETUP; the clip is what they set up.
+  // So a file with a clip runs IRIS and the document first, hands the frame to
+  // the clip, and only then asks its question.
+  const handleSceneEnd = useCallback(() => {
+    if (clip && !clipPlayedRef.current) {
+      clipPlayedRef.current = true;
+      setPhase("CLIP");
+      return;
+    }
+    presentationEnded();
+  }, [clip, presentationEnded]);
 
   // ---- The cinematic timeline: a clamped rAF cursor across the card's shots.
   useEffect(() => {
@@ -255,13 +310,33 @@ export function ModuleFilePlayer(props: {
   // Nothing below runs for a card without a produced clip: every effect leaves
   // immediately unless the card is in CLIP, and no card reaches CLIP without one.
 
-  /** The clip is over (played out, or skipped): hand the card to its stills. */
+  /** The clip is over (played out, or skipped): the file asks its question. */
   const endClip = useCallback(() => {
+    if (phase !== "CLIP") return;
     videoRef.current?.pause();
-    setClipCaption("");
     setClipFraction(1);
-    setPhase((current) => (current === "CLIP" ? "PLAYING" : current));
-  }, []);
+    presentationEnded();
+  }, [phase, presentationEnded]);
+
+  // Learn the clip's length while the narration is still running, so the
+  // progress line spans both acts from the start instead of jumping when the
+  // clip mounts. Warming the browser's cache here also means the clip is ready
+  // to play the moment the document beat ends.
+  useEffect(() => {
+    const src = clip?.src;
+    if (!src || clipSeconds > 0) return undefined;
+    const probe = document.createElement("video");
+    probe.preload = "metadata";
+    const onMetadata = () => {
+      if (Number.isFinite(probe.duration)) setClipSeconds(probe.duration);
+    };
+    probe.addEventListener("loadedmetadata", onMetadata);
+    probe.src = src;
+    return () => {
+      probe.removeEventListener("loadedmetadata", onMetadata);
+      probe.removeAttribute("src");
+    };
+  }, [clip, clipSeconds]);
 
   // Play it, with sound, and keep it in step with the transport.
   //
@@ -293,33 +368,6 @@ export function ModuleFilePlayer(props: {
       void element.play().catch(() => {});
     });
   }, [clip, phase, paused, muted]);
-
-  // Draw the clip's caption cues in the module's OWN subtitle band. The track is
-  // held `hidden` — loaded and firing cue changes, but not drawn by the browser
-  // — so the clip is captioned exactly once, in the band the narration uses.
-  useEffect(() => {
-    const element = videoRef.current;
-    if (!clip || phase !== "CLIP" || !element) return undefined;
-    const track = element.textTracks[0];
-    if (!track) return undefined;
-    track.mode = "hidden";
-    const readActiveCue = () => {
-      const active = track.activeCues;
-      if (!active || active.length === 0) {
-        setClipCaption("");
-        return;
-      }
-      setClipCaption(
-        Array.from(active)
-          .map((cue) => ("text" in cue ? String((cue as VTTCue).text) : ""))
-          .join(" ")
-          .trim(),
-      );
-    };
-    readActiveCue();
-    track.addEventListener("cuechange", readActiveCue);
-    return () => track.removeEventListener("cuechange", readActiveCue);
-  }, [clip, phase]);
 
   // A detached media element can go on playing, so leaving the file mid-clip
   // silences it explicitly rather than trusting the unmount.
@@ -353,14 +401,14 @@ export function ModuleFilePlayer(props: {
     sceneEndedRef.current = durations.length === 0;
     setSegIndex(0);
     setPaused(false);
-    // A file with a clip replays from the clip, which is where it opened.
-    setClipCaption("");
+    // Replaying the file replays the whole file, clip included.
     setClipFraction(0);
+    clipPlayedRef.current = false;
     if (videoRef.current) videoRef.current.currentTime = 0;
-    setPhase(clip ? "CLIP" : "PLAYING");
+    setPhase("PLAYING");
     lastSpokenRef.current = null;
     controllerRef.current?.stop();
-  }, [durations.length, clip]);
+  }, [durations.length]);
 
   const skipScene = useCallback(() => {
     // Skipping the clip lands on the narration rather than past the whole file.
@@ -438,6 +486,7 @@ export function ModuleFilePlayer(props: {
   // One progress line across both acts, weighted by their real lengths, so the
   // clip does not read as the whole file and the bar never jumps backwards.
   const narrationMs = durations.reduce((sum, value) => sum + value, 0);
+  const clipCaption = useActiveCueText(videoRef, phase === "CLIP");
   const clipMs = clipSeconds * 1000;
   const totalMs = clipMs + narrationMs;
   const narrationFraction =
@@ -446,8 +495,8 @@ export function ModuleFilePlayer(props: {
     totalMs === 0
       ? 1
       : phase === "CLIP"
-        ? (clipFraction * clipMs) / totalMs
-        : Math.min(1, (clipMs + narrationFraction * narrationMs) / totalMs);
+        ? Math.min(1, (narrationMs + clipFraction * clipMs) / totalMs)
+        : (narrationFraction * narrationMs) / totalMs;
 
   // ONE caption layer, always: the clip's own cues while it plays, the
   // narration beat afterwards. The clip is the no-subs master, so nothing is
@@ -489,9 +538,9 @@ export function ModuleFilePlayer(props: {
         </div>
       )}
 
-      {/* The generated clip, played whole and with sound before the card's
-          stills take the frame. A pending clip has no source, never enters the
-          CLIP phase, and renders nothing rather than a broken element. */}
+      {/* The generated clip, played whole and with sound once the document beat
+          has set it up. A pending clip has no source, never enters the CLIP
+          phase, and renders nothing rather than a broken element. */}
       {phase === "CLIP" && clip && (
         <ModuleVideoStage
           video={clip}

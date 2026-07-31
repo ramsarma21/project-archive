@@ -8,3 +8,48 @@
   justify-items: start;
   text-align: left;
 }
+
+/* ---- The LESSON intake (LessonIntro.tsx) --------------------------------
+   Unlike the game-open intake, this one has a produced clip and no presenter,
+   so the video is the scene rather than a panel beside one: it fills the frame
+   and the chrome floats over it. Letterboxed rather than cropped — the shots
+   are composed, and cropping them to the viewport would cut the framing. */
+.mod-lesson-intro-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+  z-index: 1;
+}
+.mod-lesson-intro-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+/* The provenance mark. A generated scene is never offered as a record, so it
+   carries the same claim a case file's clip does, kept clear of the caption
+   band and the transport. */
+.mod-lesson-intro-tag {
+  position: absolute;
+  left: 22px;
+  bottom: 26px;
+  z-index: 6;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background: rgba(96, 58, 158, 0.82);
+  color: #f3e9ff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.pa-high-contrast .mod-lesson-intro-tag {
+  background: #000;
+  border: 1px solid #fff;
+  color: #fff;
+}
+@media (max-width: 720px) {
+  .mod-lesson-intro-tag { left: 12px; bottom: 18px; }
+}
