@@ -101,7 +101,7 @@ const HARBOUR_WATER = { y: WATER_Y, color: "#9c9b8f", size: 1400, rough: 0.55 };
 // two tall ships close on the LEFT (x≈-13/-28), gear on the RIGHT, rope-rail edge
 // at z≈-6, more ships hazy to the horizon, low sun far -Z.
 const harbourSet = () => [
-  { key: "colonial-wharf-apron", pos: [2, 0, 27], rotY: 0, targetLen: 82, axis: "x", base: 0 },
+  { key: "colonial-wharf-apron", pos: [2, 0, 27], rotY: 0, targetLen: 82, axis: "x", base: 0, isDeck: true },
   { key: "wharf-pier-module", pos: [-6, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
   { key: "wharf-pier-module", pos: [0, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
   { key: "wharf-pier-module", pos: [6, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
@@ -532,10 +532,10 @@ const SCENES = {
     instances: [
       ...harbourSet(),
       // dockworker weary by his gear (left), 3/4 to camera; an empty net beside him.
-      { key: "dockhand-rigged", pos: [-2.6, 0, 1.9], rotY: 1.7, fitHeight: 1.8, clip: "work2", t: 0.4 },
-      { key: "cargo-net-bundle", pos: [-3.6, 0, 2.8], rotY: 0.3, targetLen: 1.2, axis: "y", base: 0 },
+      { key: "dockhand-rigged", pos: [-2.6, 0, 1.9], rotY: 1.7, fitHeight: 1.8, clip: "work2", t: 0.4, onDeck: true },
+      { key: "cargo-net-bundle", pos: [-3.6, 0, 2.8], rotY: 0.3, targetLen: 1.2, axis: "y", base: 0, onDeck: true },
       // the tradesman in profile, gesturing out at the shut ships to the left.
-      { key: "agitator-rigged", pos: [0.6, 0, 0.5], rotY: 4.3, fitHeight: 1.82, clip: "argu1", t: 0.6 },
+      { key: "agitator-rigged", pos: [0.6, 0, 0.5], rotY: 4.3, fitHeight: 1.82, clip: "argu1", t: 0.6, onDeck: true },
     ],
   },
 };
@@ -666,6 +666,10 @@ camera.lookAt(...SCENE.camera.look);
 
 const loader = new GLTFLoader();
 
+// The plank-deck TOP in world Y, recorded when the apron (isDeck) is placed, so
+// rigs flagged onDeck stand on the deck surface instead of its underside (y=0).
+let deckTopY = null;
+
 function bbox(root) {
   root.updateMatrixWorld(true);
   const box = new THREE.Box3();
@@ -680,6 +684,27 @@ function bbox(root) {
     }
   });
   return box;
+}
+
+// True lowest WORLD y of a POSED skinned rig. computeBoundingBox() / the bind-
+// pose box (above) ignore the active clip, so a stance that lowers the feet below
+// the bind pose would seat the rig too high and punch its feet through the deck.
+// getVertexPosition() bakes the current bone pose; localToWorld puts it in world.
+const _vtx = new THREE.Vector3();
+function posedMinY(root) {
+  root.updateMatrixWorld(true);
+  let min = Infinity;
+  root.traverse((o) => {
+    if (o.isSkinnedMesh && o.geometry?.attributes?.skinIndex) {
+      const pos = o.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        o.getVertexPosition(i, _vtx);
+        o.localToWorld(_vtx);
+        if (_vtx.y < min) min = _vtx.y;
+      }
+    }
+  });
+  return Number.isFinite(min) ? min : 0;
 }
 
 async function place(inst) {
@@ -728,20 +753,29 @@ async function place(inst) {
   root.rotation.set(inst.rotX ?? 0, inst.rotY ?? 0, inst.rotZ ?? 0);
   box = bbox(root);
 
-  // Vertical seat: props/rigs sit their base on inst.base; ships sink so the
-  // keel (box.min.y) lands at inst.keel.
-  const targetBase = inst.keel != null ? inst.keel : (inst.base ?? 0);
-  root.position.y += targetBase - box.min.y;
+  // Vertical seat. A rig uses its TRUE posed foot minimum (the bind-pose box
+  // misses an animated stance and lets the feet sink); everything else uses its
+  // box. Ships sink to inst.keel; a rig flagged onDeck stands on the recorded
+  // plank-deck TOP (not y=0, the deck's underside); otherwise base is inst.base.
+  const isRig = KEY_DIR[inst.key] === "characters";
+  const seatMinY = isRig ? posedMinY(root) : box.min.y;
+  const targetBase =
+    inst.keel != null ? inst.keel :
+    inst.onDeck && deckTopY != null ? deckTopY :
+    (inst.base ?? 0);
+  root.position.y += targetBase - seatMinY;
   root.position.x = inst.pos[0];
   root.position.z = inst.pos[2];
 
   scene.add(root);
   const fin = bbox(root);
+  if (inst.isDeck) deckTopY = fin.max.y; // plank-deck TOP for later onDeck rigs
   diag.push({
     key: inst.key,
     natural: [round(size.x), round(size.y), round(size.z)],
     scale: round(scale),
     drawn: [round(fin.max.x - fin.min.x), round(fin.max.y - fin.min.y), round(fin.max.z - fin.min.z)],
+    ...(isRig ? { footY: round(posedMinY(root)), seatBase: round(targetBase) } : {}),
     clips: gltf.animations ? gltf.animations.map((c) => c.name) : [],
   });
 }
