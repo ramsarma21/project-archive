@@ -500,6 +500,16 @@ export const LINKS: RouteLink[] = [
   }),
 
   // -- E --------------------------------------------------------------------
+  // STEEPLE ASCENT — kept as the proven spiral (D_MEETING_ROOF -> ridge 11.2 ->
+  // louvre 14.0 -> gallery 15.8) as the green fallback. The owner's ≤1.9 m ring
+  // re-mass is BLOCKED ON THE ASSET WORKER'S STEEPLE REGEN and flagged: the ridge
+  // monitor MEETING_RIDGE (11.2, proven meeting-house geometry, must not move) and
+  // the louvre sill LOUVRE_SILL (14.0) are full-width decks 2.8 m apart, and
+  // `crossesPlatform` forbids a body's head (feet+STAND_HEIGHT 1.55) from piercing
+  // a ledge deck — so no intermediate ring fits between them (needs ≥3.1 m) and a
+  // ring cannot skip a spanning deck either. A clean ≤1.9 m ring chain needs the
+  // regen to REPLACE LOUVRE_SILL's spanning collision with a ring stack on the
+  // shaft's south annulus (clear of the ridge monitor). See docs/process/M1-STATUS.md.
   link("D_MEETING_ROOF", "E_RIDGE", "CLIMB", "SAFE", "CLIMB", { ignore: ["HOLLIS_MEETING"] }),
   link("E_RIDGE", "E_LOUVRE", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),
   link("E_LOUVRE", "E_GALLERY", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),

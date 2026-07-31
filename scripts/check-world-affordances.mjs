@@ -157,6 +157,18 @@ const KNOWN_DEBT = new Map([
   ["DECK:WHARF_WAREHOUSE_A__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -4.84, note: "PENDING-REGEN: warehouse-wharf-a roof mesh far below its 5.35 box (wide footprint); descent's first landing. Regen delivers roof deck at box." }],
   ["DECK:WHARF_WAREHOUSE_B__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -1.37, note: "PENDING-REGEN: warehouse-wharf-b roof/gallery mesh ~1.4m below its 5.35 box; ascent's top mantle target. Regen delivers oversailed gallery at box." }],
   ["CLIMB_TO:CLIMBVOL_WHARF_ASC_2->WHARF_ASC_ROOF", { category: "missing-or-short", rank: 3, band: 0.00, delta: -1.88, note: "PENDING-REGEN: the mantle onto warehouse-wharf-b's 5.35 gallery reads the short mesh (~1.9m below); resolves with the same regen as DECK:WHARF_WAREHOUSE_B__ROOF." }],
+  // --- TOWN HOUSE repair-scaffold staging staircase (owner-accepted 31-Jul). The
+  // ≤1.9 m mantle chain 5.6 -> 12.4 is a STAGGERED STAIRCASE of solid staging
+  // blocks (masons' materials boarded onto the putlog frame), the same shape as
+  // the proven wharf ascent: each block OVERLAPS the one below for support and
+  // OVERHANGS it for the next lip. Two measured artifacts of that shape, neither a
+  // hole and neither on the route's standing spots (the golden nodes stand on the
+  // CLEAR part of each block): the first block sits on the 5.60 staging plank so it
+  // occludes ~17% of that deck, and the crate-MOUND steps (alternated with
+  // crate-STACK so the clusterer draws each block on its own) crown ~0.5 m proud of
+  // their flat mantle plane — the collision top is flat and the mantle lands on it.
+  ["DECK:SCAFFOLD_D2", { category: "flat-plane-limit", rank: 1, band: 0.83, delta: 0.00, note: "The first staging block (SCAFF_STEP_A) sits on the 5.60 scaffold plank, occluding ~17% of it; the golden nodes C_SCAFF_2/2S stand on the clear 83%. 100% has surface." }],
+  ["MASS_TOP:SCAFF_STEP_B", { category: "cover-proud", rank: 1, band: 0.56, delta: 0.51, note: "crate-mound staging step crowns ~0.5m proud of its 9.0 mantle plane; the collision top is flat at 9.0 and the mantle lands on it (solid geometry backs the plane)." }],
   // --- MERCHANT facade: PENDING-REGEN (owner-accepted 31-Jul). The bldg-merchant
   // mesh draws its south front ~2.1m below the authored storeys, so the re-massed
   // covert climb-in (a ≤1.9m mantle chain up the merchant's front) reads no surface

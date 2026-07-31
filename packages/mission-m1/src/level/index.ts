@@ -17,6 +17,12 @@ import { ROPEWALK_GEOMETRY, ROPEWALK_LIGHT } from "./ropewalk.js";
 import { WHARF_GEOMETRY, WHARF_LIGHT } from "./wharf.js";
 import { LINKS_2, NODES_2 } from "./route2.js";
 import { WHARF_CLIMBS, WHARF_LINKS, WHARF_NODES } from "./wharfRoute.js";
+import {
+  EAST_COVERT_CLIMBS,
+  EAST_COVERT_GEOMETRY,
+  EAST_COVERT_LINKS,
+  EAST_COVERT_NODES,
+} from "./eastCovert.js";
 import { ARENA } from "./duelArena.js";
 
 export const SECTIONS: SectionSpec[] = [
@@ -125,6 +131,7 @@ export const M1_EFFIGY_RUN: MissionLevel = {
     ...DOCK_SQUARE_GEOMETRY.masses,
     ...MERCHANT_GEOMETRY.masses,
     ...ROPEWALK_GEOMETRY.masses,
+    ...EAST_COVERT_GEOMETRY.masses,
   ],
   decks: [
     ...GEOMETRY.decks,
@@ -132,13 +139,14 @@ export const M1_EFFIGY_RUN: MissionLevel = {
     ...DOCK_SQUARE_GEOMETRY.decks,
     ...MERCHANT_GEOMETRY.decks,
     ...ROPEWALK_GEOMETRY.decks,
+    ...EAST_COVERT_GEOMETRY.decks,
   ],
   ramps: [...GEOMETRY.ramps],
-  climbs: [...CLIMBS, ...WHARF_CLIMBS],
+  climbs: [...CLIMBS, ...WHARF_CLIMBS, ...EAST_COVERT_CLIMBS],
   ladders: LADDERS,
   grips: GRIPS,
-  nodes: [...NODES, ...WHARF_NODES, ...NODES_2],
-  links: [...LINKS, ...WHARF_LINKS, ...LINKS_2],
+  nodes: [...NODES, ...WHARF_NODES, ...NODES_2, ...EAST_COVERT_NODES],
+  links: [...LINKS, ...WHARF_LINKS, ...LINKS_2, ...EAST_COVERT_LINKS],
   patrols: PATROLS,
   diversions: DIVERSIONS,
   blend: BLEND,
