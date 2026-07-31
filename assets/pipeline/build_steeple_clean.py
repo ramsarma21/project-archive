@@ -289,8 +289,10 @@ for sx in (-CORE, CORE):
         solid_box(sx - 0.18 if sx > 0 else sx, sx + 0.18 if sx < 0 else sx,
                   sy - 0.18 if sy > 0 else sy, sy + 0.18 if sy < 0 else sy,
                   1.1, 13.6, IT, faces="all", tile=1.0)
-# string-course ledges every ~2 m: the six-hold south-face climb / putlog offsets
-for h in (3.0, 5.0, 7.0, 9.0, 11.0, 13.0):
+# string-course ledges (thin core-face bands, putlog offsets) — kept BELOW the
+# MEETING_RIDGE monitor (11.2) so none sits at/above it; the climb chain above the
+# ridge is the SOUTH-annulus ledge stack, not a full-perimeter band.
+for h in (3.0, 5.0, 7.0, 9.0):
     solid_box(-CORE - 0.16, CORE + 0.16, -CORE - 0.16, CORE + 0.16, h - 0.12, h, IT,
               faces=("+z", "-z", "+x", "-x", "+y", "-y"), tile=1.0)
 # louvred belfry openings 14.2..15.1 on each face (recessed dark slats)
@@ -301,10 +303,40 @@ for (a, b, c, d, fc) in [(-1.3, 1.3, CORE, CORE, "+y"), (-1.3, 1.3, -CORE, -CORE
     else:
         solid_box(a, a, c, d, 14.2, 15.1, ILV, faces=(fc,), tile=1.0)
 
-# ---- LOUVRE_SILL ring @ 14.0 (widest, x/d +/-3.7; pins the box) ----------------
-# Open standable ring (no parapet: the verifier grids the whole authored rect, and
-# a rail there is "art above the plane" that also crouches the ring's headroom).
-ring_deck(-3.7, 3.7, -3.7, 3.7, -CORE, CORE, -CORE, CORE, 14.0, 0.5, IT)
+# ---- BELFRY base skirt @ ~14.0 (was the full-width LOUVRE_SILL landable ring) --
+# The old ring was a full-width (+/-3.7) SPANNING standable deck at 14.0 whose
+# collision conflicted with the MEETING_RIDGE monitor (11.2). Replaced by a STEEP
+# sloped cornice skirt: it still pins the 7.4 box at +/-3.7 and gives the belfry
+# oversail read, but its top is a ~34deg slope (up<0.85) so it is NOT a standable
+# ring — the affordance grid finds no flat face here. The standable chain moves to
+# the SOUTH annulus below. The builder authors NO full-width deck at 14.0.
+SK_OUT, SK_IN, SK_TZ, SK_BZ = 3.7, 2.2, 14.0, 13.0
+# THREE-sided sloped cornice (north -y, east +x, west -x). The SOUTH (+y) face is
+# deliberately LEFT OPEN so no decorative cornice ever overhangs the climb ledges.
+# north (-y):
+quad((-SK_OUT, -SK_OUT, SK_BZ), (SK_OUT, -SK_OUT, SK_BZ), (SK_OUT, -SK_IN, SK_TZ), (-SK_OUT, -SK_IN, SK_TZ), IT, [(0, 0), (3.7, 0), (3.7, 1), (0, 1)])
+# east (+x):
+quad((SK_OUT, -SK_OUT, SK_BZ), (SK_OUT, SK_OUT, SK_BZ), (SK_IN, SK_OUT, SK_TZ), (SK_IN, -SK_OUT, SK_TZ), IT, [(0, 0), (3.7, 0), (3.7, 1), (0, 1)])
+# west (-x):
+quad((-SK_OUT, SK_OUT, SK_BZ), (-SK_OUT, -SK_OUT, SK_BZ), (-SK_IN, -SK_OUT, SK_TZ), (-SK_IN, SK_OUT, SK_TZ), IT, [(0, 0), (3.7, 0), (3.7, 1), (0, 1)])
+# vertical drip fascia on those three sides (firms the +/-3.7 box pin on N/E/W)
+solid_box(-SK_OUT, SK_OUT, -SK_OUT, -SK_OUT, SK_BZ - 0.35, SK_BZ, IL, faces=("-y",), tile=1.0)
+solid_box(SK_OUT, SK_OUT, -SK_OUT, SK_OUT, SK_BZ - 0.35, SK_BZ, IL, faces=("+x",), tile=1.0)
+solid_box(-SK_OUT, -SK_OUT, -SK_OUT, SK_OUT, SK_BZ - 0.35, SK_BZ, IL, faces=("-x",), tile=1.0)
+
+# ---- SOUTH-annulus standable RING STACK: the mantle chain 11.2 -> 15.8 ----------
+# +y is the south / clock face. Each ledge is a flat standable slab projecting SOUTH
+# of the shaft to the box edge (y=3.7), so it is the OUTERMOST thing on the south
+# face and is never overhung by cornice — only by the NEXT chain ledge (proper
+# mantle spacing). Chain (<=1.9 m): ridge 11.2 -> 13.0 (1.8) -> 14.7 (1.7) -> the
+# 15.8 leap gallery's south node (1.1). These also pin the +y half of the 7.4 box.
+def south_ledge(ztop, thick=0.24, y_out=3.7, hw=2.0):
+    solid_box(-hw, hw, CORE, y_out, ztop - thick, ztop, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
+    # jettied corbel bracket under the ledge (no top/back face -> flush to slab/core)
+    solid_box(-hw + 0.12, hw - 0.12, CORE, y_out - 0.3, ztop - 0.62, ztop - thick, IT, faces=("-z", "+y", "+x", "-x"), tile=1.0)
+
+south_ledge(13.0)
+south_ledge(14.7)
 
 # ---- STEEPLE_GALLERY @ 15.8 (+/-2.7; the leap take-off), lantern hole -----------
 # Thin deck (0.2) so its underside at 15.6 clears 1.55 m over the louvre sill.
@@ -389,7 +421,7 @@ for axis, got, dec in (("width", size[0], WBOX), ("height", size[2], HBOX), ("de
 if abs(centre[0]) > 0.03 or abs(centre[1]) > 0.03 or abs(lo[2]) > 0.02:
     raise SystemExit(f"bbox not centred on axis at base 0 (centre {centre[0]:+.3f},{centre[1]:+.3f}, minZ {lo[2]:.3f})")
 tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
-log(f"tris {tris}  verts {len(obj.data.vertices)}  rings 14.0/15.8/18.2/20.6  spire->30")
+log(f"tris {tris}  verts {len(obj.data.vertices)}  south-chain 13.0/14.7 -> gallery 15.8, then 18.2/20.6  spire->30")
 
 os.makedirs(os.path.dirname(OUT_GLB), exist_ok=True)
 bpy.ops.object.select_all(action="DESELECT"); obj.select_set(True); bpy.context.view_layer.objects.active = obj
