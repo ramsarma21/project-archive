@@ -212,7 +212,7 @@ test("no airborne tick grazes a canopy/roof deck edge it cannot land on", () => 
 });
 
 test("a controlled fall into the cart/wall corner lands on the cart, never inside it", () => {
-  // CART_3 (topY 0.95) is now flush to the SUGAR_HOUSE south wall. A capsule
+  // CART_3 (topY 0.95) is now flush to the merchant's south wall. A capsule
   // coming straight down at its back corner must come to rest ON the cart top,
   // never grounded inside it or the wall.
   let motion = createGroundedState({ x: 37.65, y: 6, z: -2.85 }, 0);
@@ -244,18 +244,20 @@ test("a controlled fall into the cart/wall corner lands on the cart, never insid
   );
 });
 
-test("every corrected prop is flush to the GAOL/SUGAR_HOUSE wall behind it — no sub-capsule gap", () => {
+test("every corrected prop is flush to the GAOL/MERCHANT wall behind it — no sub-capsule gap", () => {
   const byId = new Map(world.blockers.map((b) => [b.id, b]));
   const gaol = byId.get("GAOL")!;
-  const sugar = byId.get("SUGAR_HOUSE")!;
+  // The sugar house is retired; CART_3 / SHAMBLES_CRATES_B now back onto the
+  // merchant's south wall, which sits on the same z=-3.2 the sugar house did.
+  const merchantS = byId.get("MERCHANT_WALL_S_SPANDREL")!;
   // [prop, wall face it backs onto, axis] — the gap between the two must be <= 0.
   const seams: Array<[string, number, "eastToWallW" | "northToWallS"]> = [
     ["ALLEY_CRATES", gaol.minX, "eastToWallW"], // east face -> GAOL west wall (x=17)
     ["ALLEY_OVERSHOOT_CRATES", gaol.minX, "eastToWallW"],
     ["CART_0", gaol.maxZ, "northToWallS"], // north face -> GAOL south wall (z=-3.2)
     ["CART_1", gaol.maxZ, "northToWallS"],
-    ["CART_3", sugar.maxZ, "northToWallS"], // north face -> SUGAR_HOUSE south wall
-    ["SHAMBLES_CRATES_B", sugar.maxZ, "northToWallS"],
+    ["CART_3", merchantS.maxZ, "northToWallS"], // north face -> merchant south wall
+    ["SHAMBLES_CRATES_B", merchantS.maxZ, "northToWallS"],
   ];
   for (const [id, wallFace, axis] of seams) {
     const p = byId.get(id)!;
@@ -281,7 +283,7 @@ test("sprinting into each corrected seam neither embeds nor wedges", () => {
     // East of PASSAGE_HOIST (the duck beam, x 24.4-26.9), which a standing body
     // must crouch under and which is not what this seam probe is about.
     { name: "CART_1", start: { x: 27.4, y: 0, z: -0.6 }, dir: { x: 0, z: -1 } },
-    // Sugar house frontage: sprint north into CART_3 / SHAMBLES_CRATES_B.
+    // Merchant frontage: sprint north into CART_3 / SHAMBLES_CRATES_B.
     { name: "CART_3", start: { x: 37.6, y: 0, z: -0.6 }, dir: { x: 0, z: -1 } },
     { name: "CRATES_B", start: { x: 39.2, y: 0, z: -0.6 }, dir: { x: 0, z: -1 } },
   ];

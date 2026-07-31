@@ -391,15 +391,11 @@ decks.push(
 // The south side of the market opens into Dock Square (see dockSquare.ts).
 // There is deliberately no building here: the high line has to end somewhere.
 
-building({
-  id: "SUGAR_HOUSE",
-  section: "B_SHAMBLES",
-  asset: "bldg-warehouse-street",
-  rect: rect(34, 41, -17.2, -3.2),
-  roofY: BAND.LEADS,
-  tags: ["north-row"],
-  note: "The sugar house closes the north side; the market's high line dies against it.",
-});
+// The sugar house that used to close the north side (bldg-warehouse-street, x
+// 34..41, roof at the leads) is SUPERSEDED by the merchant's house — the second
+// enterable interior — which is authored in merchant.ts as a generated Georgian
+// facade at x 33..46 with its south wall on the same z=-3.2 the carts back onto.
+// The market's high line now crosses to the merchant's eave by the G-A plank.
 
 // 4.2m apart with 2.8m canopies: a 1.4m hop between each. The spacing sits on
 // the chain controller's tuned window, so the canopy run pays out as one move
@@ -444,7 +440,7 @@ stallXs.forEach((x, index) => {
 });
 
 // The parked carts back onto the north-row wall (the GAOL runs x 17-30, the
-// SUGAR_HOUSE x 34-41, both with their south face at z=-3.2). Where a wall is
+// MERCHANT'S HOUSE x 33-46, both with their south face at z=-3.2). Where a wall is
 // behind a cart the cart's back face is set flush to it (z=-3.2); left at -2.8 it
 // stood 0.40m proud of the wall, a slot narrower than the 0.70m capsule that a
 // body pushing north into it could neither enter nor clear. `hand-cart` is a
@@ -452,8 +448,8 @@ stallXs.forEach((x, index) => {
 // drawn cart deepens with the box and no misleading gap opens behind it. The
 // SOUTH face stays at -1.2, so the 1.6m street lane and the GAOL_BARRELS vault
 // gap in front of the carts are untouched. CART_2 (x 30.2-32.6) sits in the open
-// break between the gaol and the sugar house with no wall behind it, so its back
-// stays at -2.8.
+// break between the gaol and the merchant's house with no wall behind it, so its
+// back stays at -2.8.
 const cartXs = [19.6, 25.4, 30.2, 36.4];
 const cartBackZ = [-3.2, -3.2, -2.8, -3.2];
 cartXs.forEach((x, index) => {
@@ -496,7 +492,7 @@ masses.push(
   prop({
     id: "SHAMBLES_CRATES_B",
     section: "B_SHAMBLES",
-    // Back face flush to the sugar house's south wall (z=-3.2), closing the 0.40m
+    // Back face flush to the merchant's south wall (z=-3.2), closing the 0.40m
     // sub-capsule slot behind it. `crate-mound` is a BLOCK module, so the drawn
     // mound fills the deepened collider with no visible gap; the crossover top
     // (B_CRATES_B at z=-2.0) is unaffected.

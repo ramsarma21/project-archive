@@ -49,6 +49,7 @@ TEX = 2048
 CONFIG = {
     "bldg-printshop": dict(body_bay=3.0, body_storey=3.2, brick=(0.40, 0.19, 0.15)),
     "bldg-townhouse-1713": dict(body_bay=3.1, body_storey=3.4, brick=(0.44, 0.34, 0.28)),
+    "bldg-merchant": dict(body_bay=3.1, body_storey=3.4, brick=(0.46, 0.30, 0.24)),
 }
 CFG = CONFIG.get(KEY, dict(body_bay=3.0, body_storey=3.2, brick=(0.42, 0.22, 0.16)))
 

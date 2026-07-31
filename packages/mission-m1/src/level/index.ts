@@ -12,6 +12,7 @@ import {
   PRECISION,
 } from "./opposition.js";
 import { DOCK_LIGHT, DOCK_SQUARE_GEOMETRY } from "./dockSquare.js";
+import { MERCHANT_GEOMETRY } from "./merchant.js";
 import { ROPEWALK_GEOMETRY, ROPEWALK_LIGHT } from "./ropewalk.js";
 import { LINKS_2, NODES_2 } from "./route2.js";
 import { ARENA } from "./duelArena.js";
@@ -119,11 +120,13 @@ export const M1_EFFIGY_RUN: MissionLevel = {
   masses: [
     ...GEOMETRY.masses,
     ...DOCK_SQUARE_GEOMETRY.masses,
+    ...MERCHANT_GEOMETRY.masses,
     ...ROPEWALK_GEOMETRY.masses,
   ],
   decks: [
     ...GEOMETRY.decks,
     ...DOCK_SQUARE_GEOMETRY.decks,
+    ...MERCHANT_GEOMETRY.decks,
     ...ROPEWALK_GEOMETRY.decks,
   ],
   ramps: [...GEOMETRY.ramps],
