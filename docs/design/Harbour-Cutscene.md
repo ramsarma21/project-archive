@@ -571,3 +571,225 @@ that model's cost. Kling and Veo are already at/near their floor on fal.
   credentials vs BytePlus ModelArk (international) for Seedance direct.
 - **Prices move weekly.** Re-verify the two or three models/platforms that survive the bake-off
   before the owner commits spend.
+
+---
+
+# Runway send-package (reference-anchored, ready to paste/upload)
+
+**This is the package the owner pastes/uploads into the Runway Max web UI.** It is
+reference-anchored: each shot ships with a PNG **rendered from our own production GLBs** so the
+video model matches the game's exact art style, palette and staging instead of inventing a
+generic dockside. Produced on branch `workflow/harbour-refs`.
+
+**What changed since the shot list above:** the harbour is **not** prompt-only. Ships, masts and
+the whole wharf kit exist in the current tree (`apps/web/public/world/props/`) and were composed
+into the reference frames below, so **Shot 1 is now reference-anchored, not prompt-driven** (owner's
+memory of "the first full Boston world had the entire harbor rendered" was correct — the assets
+survive on `main`; only the deleted redesign's *composed scene* is gone, and it was rebuilt here
+from the same GLBs per `World-Design-Bible.md` §"THE WHARF" + §7). See the asset verdict at the end.
+
+## Reference images — render these from our GLBs, upload to Runway
+
+Rendered by `assets/pipeline/shot_harbour_refs.mjs` (a self-served Playwright + Three harness — no
+dev server, no port; adapts the `shot_rig_clipsheet.mjs` architecture). 16:9, 2560×1440.
+Re-run with `node assets/pipeline/shot_harbour_refs.mjs` (or `SHOT=shot1 …`).
+
+| Shot | Upload this file | What the frame anchors (from our GLBs) | What stays prompt-driven |
+|---|---|---|---|
+| 1 (wide) | `assets/reference/harbour-cutscene/shot1.png` | Wharf apron/pier, warehouses, **moored square-rigged ships + forest of masts** (`ship-brig-hero`, `ship-snow-background`, `ship-sloop`, `rowboat`), crane, crates/barrels/rope/fish-flakes, water + overcast palette | The **two Royal Navy warships (broadside, gunports)** across the harbour mouth — we have merchant hulls, no man-of-war asset; the model adds them, in our style |
+| 2 (mid) | `assets/reference/harbour-cutscene/shot2.png` | **Our character style** — `dockhand-rigged` (×2), `townsman-rigged`, `goodwife-rigged` in period working dress, idle on the planks; barrels, rope coil; moored brig + masts behind | The specific props-in-hand (an *uncast net*); a porter *seated on a capstan* (rigs have `sitIdle`/`sitTalk` but no capstan-height seat was staged — they stand idle) |
+| 3 (close) | `assets/reference/harbour-cutscene/shot3.png` | **The dockworker rig head-and-shoulders** — `dockhand-rigged`: weathered face, stubble, off-white linen shirt, brown wool waistcoat, faded red neck kerchief; anchored ship soft in the fog behind | The **knit cap** (rig is bare-headed); the eyeline-to-water and mouth motion |
+
+Confidence: Shots 1–3 dockside/character look = **reference-anchored (high)**. Warship gunport
+detailing, handheld net, knit cap, seated pose = **prompt-driven (flagged)** — we do **not** have
+those assets; the prompt asks the model to add them in our style. Do not imply we have warships.
+
+## Shared style prefix (already folded into each shot prompt below)
+
+```
+Stylized 3D rendered cinematic, real-time game-engine look: clean 3D character and vessel models,
+PBR materials, soft global illumination, gentle volumetric harbour haze. NOT photoreal, NOT
+live-action, NOT a documentary, no hyperreal skin. Match the art style, materials, muted colour
+palette and staging of the uploaded reference image exactly — it is a frame rendered from our
+actual game. Setting: the waterfront of colonial Boston, June 1774; overcast flat grey daylight,
+muted maritime palette, grey-green water; accurate 18th-century detail (period ships, rigging,
+dockside gear, dress).
+```
+
+---
+
+### Shot 1 — WIDE: the port shut (~5–6 s)
+
+**Upload:** `assets/reference/harbour-cutscene/shot1.png` — mode **Image → Video**, as the
+**first/start frame** (the push-in begins from our composed harbour frame).
+
+**Prompt (paste whole):**
+
+```
+Stylized 3D rendered cinematic, real-time game-engine look: clean 3D character and vessel models,
+PBR materials, soft global illumination, gentle volumetric harbour haze. NOT photoreal, NOT
+live-action, NOT a documentary, no hyperreal skin. Match the art style, materials, muted colour
+palette and staging of the uploaded reference image exactly — it is a frame rendered from our
+actual game. Setting: the waterfront of colonial Boston, June 1774; overcast flat grey daylight,
+muted maritime palette, grey-green water.
+Wide high-angle establishing shot looking down a long wooden wharf into a shut harbour: a dense
+forest of tall bare ship masts, sails furled and gasketed on the yards; moored square-rigged
+merchant vessels lying motionless; an idle timber crane, empty handcarts, stacked crates and
+barrels left unmoved on the plank apron; a timber warehouse along the wharf. Across the harbour
+mouth in the far water, two Royal Navy warships lie at anchor broadside-on, gunports visible,
+blockading. Nothing works — no loading, no crew, no one moving; a couple of gulls drift. The
+camera slowly dollies forward, a gentle push-in toward the dead wharf; only the water, a gull and
+faint rigging sway move.
+Must NOT appear: on-screen text, signage, lettering, captions, numbers, logos, watermarks; any
+modern object; bright saturated colour; cartoon or anime styling; photoreal skin.
+```
+
+**Runway settings:** Image→Video · **Gen-4.5** for drafts (relaxed/unlimited on Max) · **16:9**,
+1080p · **duration 5 s** (try 10 s for a slower push) · **audio OFF** (we dub) · lock a **seed**
+once the look is right (reuse it for 2 and 3) · camera control: slow **push-in**.
+
+**VO (post-dub — NOT sent to Runway), IRIS over Shot 1:**
+> "June, 1774. For the tea thrown into this harbour, Parliament closed the whole of it — every
+> wharf, every ship — until Boston paid for what a few men had done."
+
+---
+
+### Shot 2 — MID: the people it idled (~5–6 s)
+
+**Upload:** `assets/reference/harbour-cutscene/shot2.png` — mode **Image → Video**, first/start
+frame (the track begins from our line of idled workers).
+
+**Prompt (paste whole):**
+
+```
+Stylized 3D rendered cinematic, real-time game-engine look: clean 3D character and vessel models,
+PBR materials, soft global illumination, gentle volumetric harbour haze. NOT photoreal, NOT
+live-action, NOT a documentary, no hyperreal skin. Match the art style, materials, muted colour
+palette and staging of the uploaded reference image exactly — it is a frame rendered from our
+actual game. Setting: the waterfront of colonial Boston, June 1774; overcast flat grey daylight,
+muted maritime palette, grey-green water.
+Eye-level shot on the wharf planks: a short line of idle 18th-century working people standing
+still — a fisherman holding an uncast net, a porter, a cooper beside a stack of his own barrels,
+and a woman — in plain 1774 working dress (linen shirts, wool waistcoats, leather aprons, buckled
+shoes, knit and cocked caps). Faces worried, weary, banked anger; no one is working because there
+is no work. Behind them a moored square-rigged ship and a forest of bare masts over grey water —
+the shut port. The camera tracks slowly along the line of idled workers (or holds a slow
+over-the-shoulder past them toward the anchored ships). Characters shift their weight and move
+their mouths as if murmuring; audio not needed.
+Must NOT appear: on-screen text, signage, lettering, captions, numbers, logos, watermarks; any
+modern object; bright saturated colour; cartoon or anime styling; photoreal skin.
+```
+
+**Runway settings:** Image→Video · **Gen-4.5** · **16:9**, 1080p · **duration 5 s** · **audio OFF**
+· same locked **seed** · camera control: slow lateral **track** (or over-the-shoulder).
+
+**VO (post-dub), IRIS over the cut into Shot 2:**
+> "The order did not stop to ask who was guilty."
+
+---
+
+### Shot 3 — CLOSE: one ruined man (~5 s, hold a beat longer for the dubbed line)
+
+**Upload:** `assets/reference/harbour-cutscene/shot3.png` — mode **Image → Video**, first/start
+frame (the rack focus begins from our dockworker head-and-shoulders).
+
+**Prompt (paste whole):**
+
+```
+Stylized 3D rendered cinematic, real-time game-engine look: clean 3D character and vessel models,
+PBR materials, soft global illumination, gentle volumetric harbour haze. NOT photoreal, NOT
+live-action, NOT a documentary, no hyperreal skin. Match the art style, materials, muted colour
+palette and staging of the uploaded reference image exactly — it is a frame rendered from our
+actual game. Setting: the waterfront of colonial Boston, June 1774; overcast flat grey daylight,
+muted maritime palette, grey-green water.
+Tight close-up on a weathered male dockworker in his forties — stubble, tired eyes, off-white
+linen shirt, brown wool waistcoat, faded red neck kerchief, a knit cap — looking out over the
+water and speaking quietly, mouth moving mid-sentence. Shallow depth of field; behind him, soft
+focus, an anchored square-rigged Royal Navy warship and its rigging. A slow rack focus shifts
+sharpness from his face to the ship and back; otherwise a locked, minimal close-up. Audio not
+needed — mouth movement only.
+Must NOT appear: on-screen text, signage, lettering, captions, numbers, logos, watermarks; any
+modern object; bright saturated colour; cartoon or anime styling; photoreal skin.
+```
+
+**Runway settings:** Image→Video · **Gen-4.5** · **16:9**, 1080p · **duration 5 s** · **audio OFF**
+· same locked **seed** · camera control: minimal move + **rack focus**.
+
+**VO (post-dub), DOCKWORKER over Shot 3 (diegetic, plain, bitter):**
+> "I never laid a hand on their tea. Fifteen year I've hauled on this wharf. Now there's not a
+> ship to unload, and the King's shut the water on every soul in Boston — the honest man with the
+> guilty."
+
+---
+
+## Step-by-step in Runway Max
+
+1. **New generation → Image to Video** (Gen-4.5).
+2. **Upload the reference image** for the shot (Shot 1 → `shot1.png`, Shot 2 → `shot2.png`,
+   Shot 3 → `shot3.png`) as the **first / init frame**.
+3. **Paste the shot's full prompt** into the prompt box (the blocks above already include the
+   style prefix and the "must not appear" clause).
+4. **Settings:** 16:9 · 1080p · duration 5 s (Shot 1 may go 10 s for a slower push) · **audio OFF**
+   · set the camera move (push-in / track / rack focus) · **lock a seed** after the first good take
+   and reuse it across all three so the palette and characters carry between cuts.
+5. **Generate the 3 shots**, one per reference image; regenerate freely (relaxed is unlimited on
+   Max) and accept one take each — human review is the real anti-slop gate.
+6. **Download the three MP4s and hand them back.** The orchestrator stitches them with `ffmpeg`
+   to ~15–17 s (cut on motion settling; hold Shot 3 a beat longer for the dubbed line), then drops
+   the result into the `ModuleVideo` slot (one line in File 1's scene). TTS voice + ambient +
+   subtitles are added in post; the clip is generated **silent**.
+
+## Bake-off first (Shot 1: Kling vs Seedance, inside Runway's bundled models)
+
+Before committing the look, generate **Shot 1 three ways from the same `shot1.png` + prompt**:
+**Gen-4.5**, **Kling 3.0**, and **Seedance 2.0** (all bundled in the Runway dashboard), audio off.
+Judge **by eye against the game** which best preserves our stylized GLB palette and staging with the
+least drift — the one thing no spec sheet can settle (Deliverable A). Kling wins on 1080p /
+multi-shot-in-one-call / cost; Seedance is the stylization leader and may hold our look better.
+Whichever holds the house style with least drift wins the lesson; use it for Shots 2–3.
+
+## Two gates before it ships (unchanged, from Deliverable B)
+
+- **Historical QA** by eye: mid-1770s ship rig (not Napoleonic), 1774 working dress, wharf
+  construction, and — the prompt-driven layer — that any warships read as period men-of-war with no
+  anachronisms or stray modern shapes.
+- **Provenance:** the finished clip is a **`PROJECT_RECONSTRUCTION`** and must be classified as one;
+  the primary source for File 1 stays the Committee-of-Correspondence circular still, not the clip.
+
+---
+
+# Appendix — harbour/ship asset verdict (investigated on `workflow/harbour-refs`)
+
+**Verdict: the harbour and ships EXIST NOW in the working tree — nothing needs recovering.** The
+owner's memory is correct. Shot 1 is reference-anchored, not prompt-driven (except the warship
+gunport layer, flagged above).
+
+**Present now** in `apps/web/public/world/` (confirmed on `main` @ `440677c`):
+- **Ships / masts:** `props/ship-brig-hero.glb` (hero two-masted brig, **furled sails**, ~26 m
+  hull), `props/ship-snow-background.glb` (anchored square-rigger, furled sails), `props/ship-sloop.glb`
+  (single-masted sloop, furled), `props/rowboat.glb`, `props/buoy.glb`.
+- **Wharf kit:** `colonial-wharf-apron`, `colonial-wharf-boardwalk`, `wharf-pier-module`,
+  `wharf-boardwalk-plank`, `colonial-wharf-pier-finger`, `wharf-rope-rail-{straight,corner,end}`,
+  `bldg-warehouse-wharf-a`/`-b`, `timber-crane`, `bollard`, `rope-coil-large`, `cargo-net-bundle`,
+  `crate-mound`, `crate-stack`, `barrel-group`, `fish-flakes-rack`, `ropewalk-laying-rig` (all
+  `props/*.glb`).
+- **Dockside cast:** `characters/dockhand-rigged.glb` (the fisherman/porter/close dockworker),
+  plus `goodwife-`, `townsman-`, `townswoman-`, `agitator-`, `towncrier-rigged.glb`.
+- **Layout/scale of record:** `World-Design-Bible.md` §"THE WHARF" (Town Wharf x −160..−118, water
+  to south/west at y≈−1.1, hero brig + anchored snow + sloop + rowboats, warehouses on the north
+  side) and §7 "Water & ships." Meshy normalizes GLBs to ~1.9 m; real size is applied at placement
+  (`assets/pipeline/write_wharf_manifest.mjs` notes: brig scale ~26 m).
+
+**Recoverable-from-history (not needed):** the *composed* "full Boston world" the owner remembers
+was the redesign tracked at commit **`9f9a4d0`** ("track the redesigned game and its world assets",
+2026-07-26), whose world/engine lived in the since-deleted `packages/chapter-boston-world` +
+`engine-world` `RunnerMap.tsx`. That composed **scene** was removed in cleanup (the `qa_*` scripts
+importing `chapter-boston(-world)` were deleted on `m1-prune` `232d25c`), but **every harbour ASSET
+above survives on `main`** — so this task rebuilt the scene from the live GLBs rather than
+recovering the old package. If a ready-made composed harbour is ever wanted, `git show 9f9a4d0`
+and the `engine-world` world files are the recovery point.
+
+**Genuinely absent:** a Royal-Navy **warship with visible gunports** (our three hulls are merchant
+brig/snow/sloop); a **handheld fishing net** prop; a **knit cap** on the dockhand rig; a
+capstan-height **seat** for a seated pose. These four are the prompt-driven layer in the package
+above and are called out as such.
