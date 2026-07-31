@@ -30,6 +30,29 @@ at a whole town, innocent and guilty together.
 
 ---
 
+# PILOT VALIDATED (31 Jul) — concept proven; learnings for the real cutscene
+
+The two-character wharf beat was generated (Kling 3.0 Pro via Runway, close push-in) and the owner's
+verdict is that it looks **excellent** — the pipeline (our GLB render → style-locked Gemini polish →
+Kling image-to-video) is **proven**. We do NOT redo this test; carry these learnings into the actual
+cutscene production (starting tomorrow, File 1):
+
+- **Back-facing / occluded characters DRIFT — the one clear defect to design around.** The agitator
+  was posed **back-to-camera** (gesturing at the ships), so the model had no front reference and
+  **invented his front as the camera pushed in** (he grew phantom hair by the end). RULE: any
+  character whose identity must hold should be **staged facing or three-quarter to camera** in the
+  shot, OR given **multi-angle references** (front/side/back — Kling Elements) so the model knows the
+  unseen sides. Never rely on a single back-facing view for an identity-critical character.
+- **Frame-chaining is the expansion path.** Build a longer clip as short segments, each seeded from
+  the previous clip's **Last Video Frame**, then stitch — gives continuity + small credit-safe
+  generations + a checkpoint per segment. Watch cumulative drift over many hops; re-anchor on a fresh
+  asset-rendered frame if it wanders.
+- **The look comes from the pipeline, not the raw refs.** Raw GLB renders look rough alone; the
+  style-locked Gemini polish (never painterly, never photoreal) + Kling delivers the game-cinematic
+  look. Keep refs as clean, open-armed, unoccluded identity anchors.
+
+---
+
 # Small first test (iterate before the full clip)
 
 **Do this before generating the full clip.** Production runs on **Runway Max (Gen-4.5)** for
