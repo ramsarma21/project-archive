@@ -32,13 +32,14 @@ at a whole town, innocent and guilty together.
 
 # Small first test (iterate before the full clip)
 
-**Do this one shot before generating anything else.** The owner validated Kling 3.0
-image-to-video (a screenshot of one of our own 3D assets as the init frame → clean
-3D-game-asset motion), and the method is **iterative**: prove Kling on the smallest useful shot,
-judge it, *then* expand — so credits are not spent on a full sequence that drifts. The smallest
-useful test is **one shot only: the establishing wide of the shut harbour** (dead port, nothing
-moving). It seeds off a frame rendered from our **actual** GLBs, so it is the truest test of
-whether Kling holds the game's art style and palette.
+**Do this before generating the full clip.** The owner validated image-to-video on Kling (a
+screenshot of one of our 3D assets → clean 3D-game motion); production runs on **Runway Max
+(Gen-4.5)**, and the method is **iterative**: prove the model on the smallest useful shot, judge it,
+*then* expand — so credits are not spent on a full sequence that drifts. Two small tests are worth
+running, both seeded off frames rendered from our **actual** GLBs: **(1)** the establishing wide of
+the shut harbour — does the model hold our art style in motion; and **(2)** a **character
+identity-lock** via Runway References — does *our* character survive into a generation, the thing a
+plain start-frame test never covers.
 
 **These frames are re-done, correctly.** The earlier `shot1/2/3.png` were composed wrong (owner's
 call — they did not match the real scene) and are **not** used here. The frames below were
@@ -50,52 +51,69 @@ the water's edge, and a **low hazy sun over open water**. (Note the mood is the 
 haze, *not* the flat overcast the older prompts below describe — the prompt here matches the frame
 actually uploaded.)
 
-## Upload to Kling 3.0 (mode: Image → Video)
+## Picture naming — how to tag each reference in Runway
 
-- **Init / first frame — required:** `assets/reference/harbour-cutscene/test/establishing.png`
-  — the composed **1920×1080 (16:9)** establishing wide, rendered from our GLBs. The push/drift
-  begins from this exact frame.
-- **Element reference — optional, recommended:**
-  `assets/reference/harbour-cutscene/test/ref-brig.png` — the hero brig on a clean field, to lock
-  the ship's shape/style across the motion. Kling 3.0 takes a start-frame **plus** an element
-  reference; enabling refs ~**doubles** the per-second rate (see pricing), so it is fine to skip it
-  on the first cheap draft and add it once the look is close.
+Runway References are strongest at **characters and locations** (object/style support is weaker), so
+tag those and lean on the init frame for ships. Save each picture in the References panel (hover →
+**tag** → name → Enter); the name is what you type as `@name` in prompts, and it persists across
+sessions.
 
-## Kling 3.0 prompt (paste whole)
+| Picture (in `test/`) | Tag it in Runway as | Type | Note |
+|---|---|---|---|
+| `establishing.png` | — (do **not** tag) | scene seed | this is the **Image-to-Video init frame**, not an `@`-reference |
+| `ref-player.png` | `@player` | character | strong |
+| `ref-dockhand.png` | `@dockhand` | character | strong |
+| `ref-wharf.png` | `@wharf` | location | strong |
+| `ref-brig.png` | `@brig` | ship | weaker — Runway favours characters/locations; the init frame carries ships better |
+
+Keep the scheme **one word, lowercase**, matching our cast/place names. Going forward: characters
+`@abigail @thomas @pike @clarke @rider @constable`; locations `@printshop @shambles @townhouse
+@meetinghouse @elm @yard`. Name the files to match the tag (`player.png`, `dockhand.png`, …) so the
+library stays legible.
+
+## Test 1 — the establishing scene (Runway Gen-4.5, Image → Video, no references)
+
+Upload `assets/reference/harbour-cutscene/test/establishing.png` as the image. The art style is
+already in the frame, so the prompt is only the motion:
 
 ```
-Stylized 3D rendered cinematic, real-time game-engine look: clean 3D character and vessel models,
-PBR materials, soft global illumination, gentle volumetric haze. NOT photoreal, NOT live-action,
-NOT a documentary, no hyperreal skin. Match the art style, materials, muted colour palette, staging
-and lighting of the uploaded reference image exactly — it is a frame rendered from our actual game.
-Establishing wide of a shut colonial-Boston harbour, June 1774, under a low hazy sun over open
-water. A long weathered plank wharf fills the foreground; two tall square-rigged merchant ships lie
-moored close on the left, sails furled and gasketed, masts and rigging still; more ships sit
-anchored in the hazy distance; an idle timber crane and a leaning ladder stand to the right;
-barrels, coiled rope and drying racks are left unmoved on the deck; a rope rail runs along the
-water's edge. The port is dead — nothing works, no cargo moving, no crew, no loading. Only the
-water, one drifting gull and a faint sway of rigging move. The camera makes ONE slow, gentle
-push-in (or a slow lateral drift) toward the still wharf and the anchored ships. Soft warm haze,
-muted maritime palette, grey-green water, period-accurate 1774 detail.
-No baked-in text of any kind anywhere in the frame: no signage, lettering, labels, captions,
-subtitles, numbers, logos or watermarks.
-Must NOT appear: any on-screen text or subtitles; any modern object; photoreal or hyperreal human
-skin; bright saturated colour; cartoon or anime styling; fantasy elements; anyone working, walking
-or moving cargo.
+Slow, gentle push-in over a still, shuttered 1774 Boston harbour at dawn. Everything is quiet and
+idle — no crew, no cargo, nothing loading. Only faint motion: a slow shimmer on grey-green water,
+thin drifting haze, one distant gull, the barest sway of furled rigging. Hold the uploaded frame's
+stylized 3D game-render look, muted palette and low warm haze exactly. One continuous camera move
+only — no shake, no orbit, no crash-zoom. No new objects, no people appearing, no text or captions
+anywhere.
 ```
+Settings: Gen-4.5 · **16:9** · **~5 s** for the test (10 s once it holds) · one gentle move · silent
+(audio is dubbed in post).
 
-## Kling settings
+## Test 2 — character identity-lock (Runway References) — the useful one
 
-- **Mode / aspect / res:** Image → Video · **16:9** · 1080p.
-- **Duration:** **~5 s** for the test (the cheapest useful validation; try 10 s only once the look
-  holds, for a slower push).
-- **Camera move:** exactly **one gentle move** — a slow **push-in** or a slow lateral **drift**. No
-  orbit, no whip, no crash-zoom; the stillness is the shot.
-- **Seed:** run a couple of drafts; when one holds our look, **lock that seed** and reuse it when you
-  expand, so the palette and staging carry into the next shots.
-- **Audio: OFF.** Generate **silent** — audio (TTS voice + ambient + our subtitle overlay) is added
-  in post, per the owner's decision. **No mouth movement is needed** for an establishing wide (no
-  speaking figure on screen), so lip-sync is irrelevant here.
+This tests what the start-frame shot doesn't: whether **our** character survives into a generation.
+Two steps.
+
+**Step A — make the keyframe (Image tool).** Drag `ref-dockhand.png` into References, tag it
+`dockhand`. Prompt (uses `@dockhand`):
+```
+@dockhand standing on the weathered plank deck of a shuttered 1774 Boston wharf, coiling a rope,
+idle — no cargo moving. Behind him, tall square-rigged merchant ships lie moored with furled sails;
+a low hazy sun over calm grey-green water. Keep @dockhand's exact face, hair and 1774 clothing from
+the reference. Stylized 3D rendered game-engine look, PBR materials, soft global illumination, muted
+maritime palette — not photoreal, no photographic skin, no live-action. No text, signage, captions,
+logos or modern objects anywhere.
+```
+Judge the image: does the dockhand still look like ours? If yes, identity-lock works — that is the
+result we need before building any character-driven cutscene.
+
+**Step B — animate it.** Hover the good image → **camera icon** → Image-to-Video. The character is
+baked into the keyframe now, so the prompt is just motion:
+```
+Slow push-in as the dockworker finishes coiling the rope and glances up. Minimal ambient motion —
+water shimmer, faint haze, a slight sway of rigging. One gentle camera move, no shake. Silent, no
+text.
+```
+Settings: Gen-4.5 · **16:9** · **~5 s** · up to **3 references** per generation · silent. The clip's
+**last frame** seeds the next shot (the chaining pipeline).
 
 ## VO for post-dub (NOT sent to Kling)
 
@@ -105,11 +123,11 @@ Added later as TTS + our own subtitle overlay; trim to the shot length. IRIS, ca
 
 ## If this looks right, expand to →
 
-Keep the locked seed and add the next iteration — **Shot 2**, a slow track along a line of idled
-dockhands on the planks (seed a mid frame; add `test/ref-dockhand.png` / `test/ref-player.png` as
-element references to hold identity), then the **Shot 3** close on one ruined dockworker — i.e. the
-full three-cut sequence and prompts already specified in **Deliverable B** and the **send-package**
-below. Validate the look on this one wide first; only then spend on the rest.
+Add the next shots, chaining each from the previous clip's **last frame** (Runway's Image-to-Video
+seeds cleanly from it) — **Shot 2**, a slow track along a line of idled dockhands (`@dockhand` /
+`@player` held via References), then **Shot 3**, a close on one ruined dockworker — i.e. the full
+three-cut sequence and prompts already specified in **Deliverable B** and the **send-package**
+below. Validate the wide **and** the identity-lock first; only then spend on the rest.
 
 ---
 
