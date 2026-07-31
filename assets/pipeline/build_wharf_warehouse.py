@@ -77,6 +77,7 @@ SPEC = {
         front_setback=1.1,         # >= 0.7 m oversail (brief)
         cargo_w=2.4, cargo_h=2.6,
         loft_w=1.8,
+        portal_w=4.4,              # loading-bay opening in the front plane (rest = solid brick flanks)
     ),
     "bldg-warehouse-wharf-a": dict(
         W=14.0, H=9.0, D=9.0,      # wharf.ts WHARF_WAREHOUSE_A rect 14x9, topY 9
@@ -88,7 +89,7 @@ SPEC = {
         pentice_y=2.9,
         pentice_thick=0.22,
         pentice_width=12.4,
-        hoist_y=7.0,
+        hoist_y=6.9,
         loft_head=7.0,
         roof="gambrel",
         roof_deck=7.4,             # gambrel lower eave / start of the ridge walk
@@ -99,6 +100,7 @@ SPEC = {
         front_setback=1.0,         # >= 0.6 m oversail (brief)
         cargo_w=3.6, cargo_h=2.7,
         loft_w=2.6,
+        portal_w=8.0,              # loading-bay opening in the front plane (rest = solid brick flanks)
     ),
 }
 CFG = SPEC[KEY]
@@ -438,14 +440,46 @@ def window_grid(Wf, Hf, storey, bay, ww=1.2, wh=1.6, u_lo=0.6):
 X, Y, Z = Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1))
 hx, hz = W / 2, D / 2
 
-# ---- FRONT (+Y) loading front: cargo door + loft door in the set-back wall -----
-front_open = []
+# ---- FRONT (+Y) LOADING PORTAL in a SOLID BRICK FACADE ------------------------
+# PLAYTEST #2 FIX. Previously the WHOLE front wall was set back to FW, so the
+# entire face read as an open, carved-out recess with thin decks floating in it —
+# "a hole in the middle of the building". Now the front plane (hz) carries a SOLID
+# brick facade with brick corner flanks, and only a central LOADING PORTAL is
+# recessed: the loading wall sits back at FW behind the deck (solid, with the
+# cargo + loft doors as recessed openings), brick jambs return from the front plane
+# to that wall, and the covered eave is the lintel. The gallery/pentice decks live
+# INSIDE this framed covered bay — a real warehouse loading gallery, not a void.
 cw, ch = CFG["cargo_w"], CFG["cargo_h"]
-front_open.append((W / 2 - cw / 2, W / 2 + cw / 2, 0.0, ch, "door"))          # ground cargo bay
 lw = CFG["loft_w"]
-loft_door_head = min(CFG["loft_head"], CFG["roof_deck"] - 1.5)  # leave room for the sign board above
-front_open.append((W / 2 - lw / 2, W / 2 + lw / 2, CFG["gallery_y"], loft_door_head, "door"))  # loft loading door
-paneled_face(Vector((-hx, FW, 0.0)), X, Z, -Y, W, CFG["roof_deck"], front_open)
+gy = CFG["gallery_y"]
+rd_top = CFG["roof_deck"]
+PORTAL_W = CFG["portal_w"]
+hpw = PORTAL_W / 2
+PORTAL_TOP = rd_top - 0.18                        # opening head = the covered-eave soffit
+loft_door_head = min(CFG["loft_head"], PORTAL_TOP - 0.9)
+
+# solid brick corner flanks: a solid brick block from the set-back wall (FW) to the
+# front plane (hz), full height, on each side of the portal. The front facade is a
+# paneled brick face with recessed sash windows; the inner face is the deep jamb
+# reveal of the portal. (Facade drawn via paneled_face so the windows are true
+# cut-outs — no coincident proud boxes on the +Y plane, keeping the weld gate clean.)
+for sgn in (-1, 1):
+    fx0, fx1 = (hpw, hx) if sgn > 0 else (-hx, -hpw)
+    jamb = "-x" if sgn > 0 else "+x"              # face that looks INTO the portal
+    solid_box(fx0, fx1, FW, hz, 0.0, rd_top, IB, faces=(jamb, "+z"), tile=BRICK_TILE)
+    wc = (fx0 + fx1) / 2 - fx0                     # window centre in face-local coords
+    flank_open = [(wc - 0.55, wc + 0.55, 1.4, 3.0, "win"),
+                  (wc - 0.55, wc + 0.55, gy + 0.6, gy + 2.0, "win")]
+    paneled_face(Vector((fx0, hz, 0.0)), X, Z, -Y, fx1 - fx0, rd_top, flank_open)
+
+# the recessed LOADING WALL at FW (solid brick behind the deck) with the cargo bay
+# + loft door as recessed openings INTO the solid wall (not holes through)
+portal_open = [
+    (-cw / 2, cw / 2, 0.0, ch, "door"),                       # ground cargo bay
+    (-lw / 2, lw / 2, gy, loft_door_head, "door"),            # loft loading door
+]
+paneled_face(Vector((-hpw, FW, 0.0)), X, Z, -Y, PORTAL_W, PORTAL_TOP, portal_open)
+# (the solid brick flanks above already supply the deep jamb reveals at +/-hpw)
 
 # ---- BACK (-Y) and SIDES (+/-X): brick with sash grids ------------------------
 paneled_face(Vector((hx, -hz, 0.0)), -X, Z, Y, W, CFG["roof_deck"],
@@ -459,50 +493,45 @@ paneled_face(Vector((-hx, hz, 0.0)), -Y, Z, X, D, CFG["roof_deck"],
 # a slim stone string-course band at the gallery floor, wrapping the set-back
 # body (front is the gallery, so band the other three sides only)
 sc = CFG["gallery_y"]
-solid_box(-hx, hx, -hz, FW, sc - 0.12, sc, IT, faces=("+y", "-y", "+x", "-x", "-z"), tile=1.0)
+solid_box(-hx, hx, -hz, FW, sc - 0.12, sc, IT, faces=("-y", "+x", "-x"), tile=1.0)
+
+# The pentice + gallery decks now live INSIDE the framed portal (width = the portal
+# opening less a small margin off the jambs), so they read as the floors of a
+# covered loading bay rather than shelves stuck on an open recess.
+deck_w = PORTAL_W - 0.3
 
 # ---- ground PENTICE: a projecting flat loading canopy over the cargo door ------
-pw = CFG["pentice_width"]
 py = CFG["pentice_y"]
-solid_box(-pw / 2, pw / 2, FW, hz, py - CFG["pentice_thick"], py, ITM,
+solid_box(-deck_w / 2, deck_w / 2, FW, hz, py - CFG["pentice_thick"], py, ITM,
           faces=("+z", "-z", "+y", "-x", "+x"), tile=1.4)
-# fascia board hanging below the pentice front lip (the canopy read)
-solid_box(-pw / 2, pw / 2, hz - 0.06, hz, py - 0.42, py - CFG["pentice_thick"], ITM,
-          faces=("+y", "-y", "-x", "+x", "-z"), tile=1.0)
+solid_box(-deck_w / 2, deck_w / 2, hz - 0.06, hz, py - 0.42, py - CFG["pentice_thick"], ITM,
+          faces=("+y", "-y", "-x", "+x", "-z"), tile=1.0)                                     # fascia
 
 # ---- loft GALLERY deck at 5.35: projecting standable loft platform -------------
-gw = CFG["gallery_width"]
-gy = CFG["gallery_y"]
+gw = deck_w
 solid_box(-gw / 2, gw / 2, FW, hz, gy - CFG["gallery_thick"], gy, ITM,
           faces=("+z", "-z", "+y", "-x", "+x"), tile=1.4)
-# fascia board hanging below the gallery front lip
 solid_box(-gw / 2, gw / 2, hz - 0.06, hz, gy - 0.5, gy - CFG["gallery_thick"], ITM,
-          faces=("+y", "-y", "-x", "+x", "-z"), tile=1.0)
+          faces=("+y", "-y", "-x", "+x", "-z"), tile=1.0)                                     # fascia
 
-# ---- loading-gallery support posts: one column ground -> gallery (the read) -----
-# side faces only (top buried in the gallery slab, base on the apron), set back
-# from the front lip and passing THROUGH the pentice, so no face coincides with a
-# deck slab (the weld gate stays clean). Post count scales with the gallery width
-# so wide warehouses (wharf-a, 12.4 m) don't read as a sparse trestle.
-_np = max(2, int(round(gw / 3.2)))
-post_xs = sorted({round(x, 2) for x in list(np.linspace(-gw / 2 + 0.5, gw / 2 - 0.5, _np))
-                  + [-(cw / 2 + 0.7), (cw / 2 + 0.7)]})
+# ---- loading-gallery support posts: ground -> gallery, at the portal front lip --
+_np = max(2, int(round(gw / 2.6)))
+post_xs = sorted({round(x, 2) for x in np.linspace(-gw / 2 + 0.3, gw / 2 - 0.3, _np)})
 for pxp in post_xs:
-    solid_box(pxp - 0.09, pxp + 0.09, hz - 0.26, hz - 0.08, 0.0, gy - 0.02, ITM,
+    solid_box(pxp - 0.10, pxp + 0.10, hz - 0.28, hz - 0.08, 0.0, gy - 0.02, ITM,
               faces=("+x", "-x", "+y", "-y"), tile=1.0)
-# gallery guard rail on the FRONT lip only (a warehouse loft rail; low, clear of
-# the standing span so a body still lands the deck) — two thin posts + a top rail
+# gallery guard rail on the FRONT lip only (low; clear of the standing span)
 rail_top = gy + 0.5
 for rx in (-gw / 2 + 0.15, gw / 2 - 0.15, 0.0):
     solid_box(rx - 0.06, rx + 0.06, hz - 0.12, hz, gy, rail_top, ITM, faces=("+x", "-x", "+y", "-y", "+z"), tile=1.0)
 solid_box(-gw / 2, gw / 2, hz - 0.12, hz, rail_top - 0.08, rail_top, ITM, faces=("+z", "-z", "+y", "-y", "+x", "-x"), tile=1.0)
 
 # ---- HOIST BEAM: a projecting timber beam above the gallery (a hang hold) ------
+# It now hangs UNDER the covered eave (below), so it reads as a real hoist beam in
+# a covered loading gallery rather than a beam poking out of an open notch.
 hb = CFG["hoist_y"]
 solid_box(-0.16, 0.16, FW - 0.3, hz, hb, hb + 0.28, ITM, faces="all", tile=1.0)          # the projecting hoist beam
 solid_box(-0.22, 0.22, hz - 0.32, hz, hb - 0.34, hb, ITM, faces="all", tile=1.0)         # a pulley block at the tip
-# gable braces from wall to beam
-solid_box(-0.12, 0.12, FW - 0.05, FW + 0.4, hb + 0.28, hb + 0.6, IB, faces=("+x", "-x", "+y", "-y", "+z"), tile=1.0)
 
 if CFG["roof"] == "flat":
     # ---- flat leaded ROOF DECK over the body, with a low parapet + dormers -----
@@ -550,9 +579,26 @@ else:
         # external stone stair-stub against the loading front, beside the cargo
         # door and inside the box footprint: two treads, tops flat at STEP_UP and
         # 2xSTEP_UP (the intermediate mantle footing off the wharf deck).
-        sx0 = cw / 2 + 0.5
-        solid_box(sx0, sx0 + 1.9, FW, hz - 0.1, 0.0, 0.5, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
-        solid_box(sx0 + 0.5, sx0 + 1.9, FW, hz - 0.7, 0.5, 1.0, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
+        sx0 = cw / 2 + 0.4
+        sx1 = min(sx0 + 1.9, hpw - 0.15)          # keep the stair inside the portal opening
+        solid_box(sx0, sx1, FW, hz - 0.1, 0.0, 0.5, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
+        solid_box(sx0 + 0.5, sx1, FW, hz - 0.7, 0.5, 1.0, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
+
+# ---- COVERED EAVE over the loading loggia (playtest #2 fix) --------------------
+# The set-back loading front used to read as an OPEN NOTCH punched in the corner:
+# the roof stopped at the wall plane (FW), so the projecting gallery/pentice sat in
+# an open-topped recess you could see down into. Oversail the roof forward over the
+# loggia (FW -> front edge) so the gallery becomes a COVERED loading gallery against
+# a solid wall — a real warehouse loading front, not a hole. The gallery deck stays
+# at 5.35 and the roof deck at CFG['roof_deck'] (both drawn==collision, unmoved);
+# this only adds a covering slab over the previously-open strip.
+eave_z = CFG["roof_deck"]
+# lead soffit + top over the portal opening only (the brick flanks already roof the
+# FW->hz strip outside the portal), so the covered bay reads closed on top
+solid_box(-hpw, hpw, FW, hz, eave_z - 0.18, eave_z, IL, faces=("+z", "-z", "+y"), tile=1.3)
+# a timber head-beam across the top of the loading opening (the covered-bay lintel)
+solid_box(-hpw + 0.1, hpw - 0.1, FW, FW + 0.22, PORTAL_TOP - 0.30, PORTAL_TOP, ITM,
+          faces=("+y", "-x", "+x", "-z", "+z"), tile=1.2)
 
 if PHOTOREAL:
     # ======================= PHOTOREAL GEOMETRIC DETAIL =========================
@@ -609,16 +655,17 @@ if PHOTOREAL:
 
     # (5) painted SIGN board above the loft door (trim-edged body + textured face)
     sb0 = loft_door_head + 0.30
-    sb1 = min(CFG["roof_deck"] - 0.15, sb0 + 1.15)
-    sbw = min(W * 0.62, (sb1 - sb0) * 2.7)
+    sb1 = min(CFG["roof_deck"] - 0.40, sb0 + 1.15)
+    sbw = min(PORTAL_W - 0.6, (sb1 - sb0) * 2.7)
     solid_box(-sbw / 2 - 0.08, sbw / 2 + 0.08, FW, FW + 0.10, sb0 - 0.08, sb1 + 0.08,
               IT, faces=("+y", "-x", "+x", "+z", "-z"), tile=1.0)
     quad((-sbw / 2, FW + 0.11, sb0), (sbw / 2, FW + 0.11, sb0),
          (sbw / 2, FW + 0.11, sb1), (-sbw / 2, FW + 0.11, sb1), ISG,
          [(1, 0), (0, 0), (0, 1), (1, 1)])  # flip U: face is +Y, read left-to-right from the front
 
-    # (6) projecting stone CORNICE band along the front eave
-    solid_box(-hx, hx, FW, FW + 0.14, CFG["roof_deck"] - 0.30, CFG["roof_deck"] - 0.02,
+    # (6) projecting stone CORNICE band across the recessed loading wall (portal
+    # width only, so it is not buried inside the solid brick flanks)
+    solid_box(-hpw, hpw, FW, FW + 0.14, CFG["roof_deck"] - 0.52, CFG["roof_deck"] - 0.24,
               IT, faces=("+y", "+z", "-z", "-x", "+x"), tile=1.2)
 
     # (7) roof: a chimney CAP for a stronger silhouette (flat roof only)

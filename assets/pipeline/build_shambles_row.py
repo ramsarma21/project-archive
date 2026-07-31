@@ -44,8 +44,14 @@ CONCEPT_STONE = (0.62, 0.58, 0.52)
 W, H, D = 18.0, 5.6, 12.0
 hx, hz = W / 2, D / 2
 BAYS = 4                                   # shopfront units across the frontage
-# storeys: (wall-plane Y, z0, z1) — each higher storey jetties forward (+Y)
-YG, YZ1, YZ2 = 3.4, 3.9, 4.3
+# storeys: (wall-plane Y, z0, z1) — each higher storey jetties forward (+Y).
+# PLAYTEST #2 FIX: the storey walls used to sit ~1.4 m BEHIND their projecting
+# ledges, so each walkable ledge read as a thin shelf floating over a deep open
+# recess — "a hole in the middle". The walls are now brought forward to ~0.5 m
+# behind each ledge front, so there is a SOLID wall right behind every walkable
+# deck (pentice 2.55 / mid 4.05 / roof 5.6 all UNMOVED — drawn==collision), and the
+# ledges read as covered cornice-galleries against a solid jettied facade.
+YG, YZ1, YZ2 = 4.0, 4.3, 4.7
 PENTICE_Y, MID_Y, ROOF_Y = 2.55, 4.05, 5.6
 # progressive jetty: each higher canopy/ledge/roof reaches further toward the street
 PENTICE_FRONT, MID_FRONT, ROOF_FRONT = 4.8, 5.2, 5.6
