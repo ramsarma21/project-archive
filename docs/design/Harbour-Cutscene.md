@@ -43,6 +43,12 @@ cutscene production (starting tomorrow, File 1):
   character whose identity must hold should be **staged facing or three-quarter to camera** in the
   shot, OR given **multi-angle references** (front/side/back — Kling Elements) so the model knows the
   unseen sides. Never rely on a single back-facing view for an identity-critical character.
+- **Tight action scripting kills improvised nonsense.** Loose prompts let the model invent absurd
+  actions (in the pilot a character pulled hay out of his pocket). Specify each character's action
+  with concrete verbs + named objects, add an explicit "no other actions, no invented props" clause,
+  and keep each beat simple and short — less ambiguity, less room to improvise. The small-test-first +
+  human-review loop mops up the rest: regenerate the takes where it still does something dumb. Some
+  improvisation is inherent to gen video, which is why clips stay short and every take is reviewed.
 - **Frame-chaining is the expansion path.** Build a longer clip as short segments, each seeded from
   the previous clip's **Last Video Frame**, then stitch — gives continuity + small credit-safe
   generations + a checkpoint per segment. Watch cumulative drift over many hops; re-anchor on a fresh
