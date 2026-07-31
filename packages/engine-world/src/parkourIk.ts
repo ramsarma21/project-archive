@@ -160,6 +160,45 @@ export function exitFaceToward(
 }
 
 /**
+ * Exit a point from a solid SIDEWAYS — out the body-side VERTICAL face (x or z),
+ * never up or down the face. This is the wall normal for a foot braced against a
+ * wall, and it is the fix for the hang-drop: a foot penetrating geometry is
+ * standing against a WALL, and a wall is escaped along its horizontal normal.
+ * `exitFaceToward` chose the axis of largest |body − box centre|, which for a
+ * wall-facing hang-drop (hips above the box's y-midpoint) is the VERTICAL axis —
+ * so it pushed the foot UP the face and left the toe buried (measured 26.5 →
+ * 27.7 cm, worse). Restricting the exit to the two horizontal axes and taking the
+ * body-side face along the axis on which the body is most clearly to one side is
+ * the wall normal, and it seats the foot on the face (measured below CLIP_THROUGH).
+ * A degenerate case where the body sits over the box centre on both horizontal
+ * axes falls back to the nearer face so the exit is still finite.
+ */
+export function exitWallToward(
+  p: Vec3Like,
+  b: IkBox,
+  toward: Vec3Like,
+  skinM: number,
+): Vec3Like {
+  const cx = (b.min[0] + b.max[0]) / 2;
+  const cz = (b.min[2] + b.max[2]) / 2;
+  const dx = toward.x - cx, dz = toward.z - cz;
+  const out = { x: p.x, y: p.y, z: p.z };
+  // Pick the horizontal axis on which the body is most clearly off-centre — the
+  // one the wall's face lies across. Ties/degenerate (body over the centre) break
+  // toward whichever face of that axis is nearer the point, so a foot never exits
+  // through the far side of a wall it is only just inside.
+  const pickZ = Math.abs(dz) >= Math.abs(dx);
+  if (pickZ) {
+    const towardMax = dz !== 0 ? dz > 0 : b.max[2] - p.z <= p.z - b.min[2];
+    out.z = towardMax ? b.max[2] + skinM : b.min[2] - skinM;
+  } else {
+    const towardMax = dx !== 0 ? dx > 0 : b.max[0] - p.x <= p.x - b.min[0];
+    out.x = towardMax ? b.max[0] + skinM : b.min[0] - skinM;
+  }
+  return out;
+}
+
+/**
  * Where a hand should be pulled to. Returns null when the clip already has it
  * clear of every solid and (for a grip) out of reach of any hold — leave it be.
  */
@@ -209,11 +248,19 @@ export function footTarget(
   footPin: Vec3Like | null | undefined,
   opts: IkTargetOptions,
 ): Vec3Like | null {
-  if (footPin) return footPin;
+  // A plant anchor wins — but an authored pin (or the clip's own foot) can sit
+  // INSIDE the wall face it is braced against: the hang-drop anchor seats the
+  // capsule CENTRE on the face, so the foot is ~a body-radius deep. Projecting the
+  // penetrating point out of the wall BEFORE it becomes the IK target seats the
+  // foot on the face. A foot escapes a wall SIDEWAYS (`exitWallToward`, the
+  // horizontal wall normal), never up/down the face — see that function for why
+  // the earlier vertical-axis exit left the toe buried. A pin/foot already clear
+  // of every solid is used as-is; a clear unpinned foot is left to the clip.
+  const anchor = footPin ?? foot;
   let worstPen = 0;
   let worstBox: IkBox | null = null;
   for (const b of opts.boxes) {
-    const pen = penetration(foot, b);
+    const pen = penetration(anchor, b);
     if (pen > worstPen) {
       worstPen = pen;
       worstBox = b;
@@ -221,10 +268,10 @@ export function footTarget(
   }
   if (worstBox) {
     return opts.bodyCenter
-      ? exitFaceToward(foot, worstBox, opts.bodyCenter, opts.skinM)
-      : outset(foot, nearestSurfacePoint(foot, worstBox), opts.skinM);
+      ? exitWallToward(anchor, worstBox, opts.bodyCenter, opts.skinM)
+      : outset(anchor, nearestSurfacePoint(anchor, worstBox), opts.skinM);
   }
-  return null;
+  return footPin ?? null;
 }
 
 /** Push a boundary `surface` point a hair OUTWARD, away from the interior point
