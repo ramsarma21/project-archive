@@ -130,8 +130,8 @@ export const ASSETS: AssetRequirement[] = [
   // the intermediate footings of the descend/climb chain. The ships are idle,
   // non-standable dressing moored on the open-water (S/SW) edge — the shut port.
   { key: "colonial-wharf-boardwalk", status: "EXISTING", path: "world/props/colonial-wharf-boardwalk.glb", sizeM: [8.6, 0.35, 6.0], why: "The dead-wharf plank deck at y0 — the walkable crossing surface, tiled to cover the deck footprint (x -18..8, z 2..20).", standableAt: [0.35] },
-  { key: "bldg-warehouse-wharf-a", status: "EXISTING", path: "world/props/bldg-warehouse-wharf-a.glb", sizeM: [14, 9, 10], why: "The waterfront warehouse at the wharf's NW: its loading gallery at 5.35 is the descent step off the printshop leads (beat 1a)." },
-  { key: "bldg-warehouse-wharf-b", status: "EXISTING", path: "world/props/bldg-warehouse-wharf-b.glb", sizeM: [13, 8, 9], why: "The warehouse at the wharf's E: its gallery at 5.35 is the ascent step up onto the Shambles shed roof (beat 1g-1h)." },
+  { key: "bldg-warehouse-wharf-a", status: "EXISTING", path: "world/props/bldg-warehouse-wharf-a.glb", sizeM: [14, 9, 9], why: "The waterfront warehouse at the wharf's NW: its loading gallery at 5.35 is the descent step off the printshop leads (beat 1a). sizeM reconciled to the delivered photoreal mesh's own bounding box (14 x 9 x 9), so the draw box == the mesh and the placement gate's mesh check is clean." },
+  { key: "bldg-warehouse-wharf-b", status: "EXISTING", path: "world/props/bldg-warehouse-wharf-b.glb", sizeM: [7, 8, 9], why: "The warehouse at the wharf's E: its gallery at 5.35 is the ascent step up onto the Shambles shed roof (beat 1g-1h). sizeM reconciled to the delivered photoreal mesh's own bounding box (7 x 8 x 9); the old 13 m width was stale and drew the shed almost twice its real footprint." },
   // timber-crane is declared once, above (the yard cover). The wharf gibbet-crane
   // reuses that key; it is a single-entry mass sized by its own rect, so no second
   // declaration is needed (a duplicate key silently wins the ASSET_BY_KEY map).
