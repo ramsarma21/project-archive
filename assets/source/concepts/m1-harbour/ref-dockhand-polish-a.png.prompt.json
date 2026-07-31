@@ -1,0 +1,12 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Upscale and enhance THIS real-time 3D game-engine render of an 1774 Boston dockworker into a clean, good-looking, higher-fidelity version of the SAME stylized 3D game character. Keep the EXACT same character and identity: his face and short dark-brown hair, and his 1774 clothing — cream/off-white linen shirt with rolled sleeves, open brown leather waistcoat, coral-red neck kerchief knotted at the throat, dirt-stained tan knee breeches, dark grey ribbed wool stockings, black buckled shoes. Keep his standing pose, full-body framing, and the plain neutral grey studio background with the soft floor contact shadow. Sharpen and clean the textures; tighten the fabric, leather, linen and skin material definition; add soft cinematic studio lighting with a gentle key and a subtle rim. It must stay a stylized real-time 3D game character — a prettier, crisper version of the SAME game model — with low-poly-friendly forms and clean PBR game materials. Do NOT make it photoreal, NOT a photograph of a real person, NOT a muddy raw low-poly screenshot, NOT painterly, illustrated, hand-drawn or 2D. No text, no watermark, no new objects.",
+  "size": "1024x1024",
+  "edit": [
+    "assets/source/concepts/m1-harbour/ref-dockhand-glb.png"
+  ],
+  "generatedAt": "2026-07-31T07:23:41.858Z",
+  "files": [
+    "ref-dockhand-polish-a.png"
+  ]
+}

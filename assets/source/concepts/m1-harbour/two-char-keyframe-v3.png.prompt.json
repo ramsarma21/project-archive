@@ -1,0 +1,12 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Upscale and enhance THIS real-time 3D game-engine render of a shut 1774 Boston wharf at dawn into a prettier, higher-fidelity version of the SAME stylized 3D game. Keep it a real-time 3D game render and keep the SAME wide 16:9 landscape framing.\n\nMatch the render EXACTLY: the same camera, composition, layout, the two men's exact positions and poses, their FEET PLANTED FLAT ON THE PLANK DECK (do not move, lift or re-pose them; the feet must not sink into or float above the planks), the backdrop, the moored tall ships, the rope rail, the cargo-net bundle, and the low warm hazy dawn light and colours.\n\nRE-RENDER THE TWO DOCKWORKERS as clean, good-looking, higher-fidelity stylized 3D game characters — crisp faces, hair, skin, fabrics and leather, soft cinematic light, sharp material definition — clearly GOOD stylized 3D models, not the raw low-poly version. The man on the LEFT: a younger dockworker in a cream linen shirt, open brown leather waistcoat, coral-red neck kerchief, dirt-stained tan knee breeches, grey stockings and black shoes. The man on the RIGHT: an older tradesman in a dark maroon knit cap and a brown leather work apron over a linen shirt, black knee breeches, grey stockings and black shoes. Keep each man in his exact pose and position from the render.\n\nAlso complete the tall ships behind into fuller two-masted square-rigged vessels with furled sails on the yards (fix the skeletal rigging into believable but still game-style rigging), and add gentle hazy morning atmosphere and soft low-sun light.\n\nIt MUST still look like a real-time 3D game render — low-poly-friendly 3D CG look and PBR game materials. Do NOT make it painterly, illustrated, hand-drawn, sketched, a concept painting, or photoreal. No text, no signage, no watermark, no new people.",
+  "size": "1024x1024",
+  "edit": [
+    "assets/reference/harbour-cutscene/test/two-char.png"
+  ],
+  "generatedAt": "2026-07-31T07:29:27.324Z",
+  "files": [
+    "two-char-keyframe-v3.png"
+  ]
+}
