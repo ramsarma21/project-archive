@@ -591,11 +591,13 @@ test("the Shambles mark never sends a first run east through a solid stall", () 
 
 test("the Shambles mark reaches the Town House approach once the body has walked the SAFE route", () => {
   // The fix is route-contiguity, not a blacklist. Walk the body along the actual
-  // SAFE line — up the awning, across the canopies, down to the street and east
-  // to the exit — and the mark it refused from the stall front is offered once
-  // the body has genuinely arrived at the east exit. The guided line no longer
-  // doubles back into Dock Square from here; it heads straight for the foot of
-  // the Town House scaffold, so that is where the mark advances to.
+  // SAFE line and the mark it refused from the stall front is offered once the
+  // body has genuinely arrived. The SAFE line is now the COVERT roofline: up the
+  // awning, across the canopies, then INTO the merchant — climb the window
+  // balcony off the crate, through the SAFE parlour, and up onto the leads — and
+  // the mark heads for the foot of the Town House scaffold that the leads' east
+  // lip drops onto (G-B). It no longer drops to the street or loops through Dock
+  // Square, so the ground exit is off the guided line.
   const safe = createWayfinder(level, { guidanceLines: ["SAFE"] });
   const route = [
     "B_STREET_MID",
@@ -605,15 +607,15 @@ test("the Shambles mark reaches the Town House approach once the body has walked
     "B_CANOPY_3",
     "B_CANOPY_4",
     "B_CRATES_B",
-    "B_STREET_E",
-    "B_EXIT",
-    "C_SQUARE_N",
+    "M_LEDGE",
+    "M_EAVE",
+    "M_EAVE_E",
   ] as const;
   const arrived = walkMarkLive(safe, route, level.postNode);
   assert.ok(arrived, "a mark is committed at the Town House approach");
   assert.ok(
-    ["C_SQUARE_N", "C_SCAFF_FOOT", "C_SCAFF_1"].includes(arrived!.nodeId),
-    `at the east exit the mark should advance to the Town House scaffold approach, not stay behind: ${arrived!.nodeId}`,
+    ["M_EAVE_E", "C_SCAFF_2", "C_SCAFF_1", "C_SCAFF_FOOT", "C_SQUARE_N"].includes(arrived!.nodeId),
+    `at the leads' east lip the mark should advance to the Town House scaffold, not stay behind: ${arrived!.nodeId}`,
   );
 });
 
