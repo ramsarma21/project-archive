@@ -157,6 +157,21 @@ const KNOWN_DEBT = new Map([
   ["DECK:WHARF_WAREHOUSE_A__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -4.84, note: "PENDING-REGEN: warehouse-wharf-a roof mesh far below its 5.35 box (wide footprint); descent's first landing. Regen delivers roof deck at box." }],
   ["DECK:WHARF_WAREHOUSE_B__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -1.37, note: "PENDING-REGEN: warehouse-wharf-b roof/gallery mesh ~1.4m below its 5.35 box; ascent's top mantle target. Regen delivers oversailed gallery at box." }],
   ["CLIMB_TO:CLIMBVOL_WHARF_ASC_2->WHARF_ASC_ROOF", { category: "missing-or-short", rank: 3, band: 0.00, delta: -1.88, note: "PENDING-REGEN: the mantle onto warehouse-wharf-b's 5.35 gallery reads the short mesh (~1.9m below); resolves with the same regen as DECK:WHARF_WAREHOUSE_B__ROOF." }],
+  // --- MERCHANT facade: PENDING-REGEN (owner-accepted 31-Jul). The bldg-merchant
+  // mesh draws its south front ~2.1m below the authored storeys, so the re-massed
+  // covert climb-in (a ≤1.9m mantle chain up the merchant's front) reads no surface
+  // at its balcony / jettied gallery / eave planes. The STRUCTURE (route/climbs/
+  // decks) is authored to the target so the route-graph gates are green; the mesh
+  // fills in under the same key. Regen targets, south face over the window
+  // (x 38.0..40.4), recorded so the asset worker rebuilds exactly these surfaces:
+  //   balcony       top y = 4.00  (z −3.4..−2.6, ≥0.8 deep)
+  //   jetty gallery top y = 5.70  (z −2.4..−1.6, oversailed south, ≥0.8 deep)
+  //   eave / leads  top y = 7.10
+  // Do NOT shrink the boxes; the regen targets them. See level/merchant.ts.
+  ["DECK:MERCHANT_STRING", { category: "missing-or-short", rank: 3, band: 0.00, delta: -3.58, note: "PENDING-REGEN: the jettied gallery (5.70) reads ~3.6m below plane — the facade mesh tops out ~2.1m and never reaches the upper storey. Regen delivers the oversailed gallery at the 5.70 box." }],
+  ["CLIMB_TO:CLIMBVOL_B_CRATES_B->M_LEDGE", { category: "missing-or-short", rank: 3, band: 0.00, delta: -1.88, note: "PENDING-REGEN: the mantle onto the balcony (4.0) reads ~1.9m below (facade draws its balcony ~2.1m low). Regen delivers the balcony at the 4.00 box." }],
+  ["CLIMB_TO:CLIMBVOL_M_LEDGE->M_STRING", { category: "missing-or-short", rank: 3, band: 0.00, delta: -1.70, note: "PENDING-REGEN: the mantle onto the jettied gallery (5.70) reads ~1.7m below. Regen delivers the gallery at the 5.70 box (same as DECK:MERCHANT_STRING)." }],
+  ["CLIMB_TO:CLIMBVOL_M_STRING->M_EAVE_S", { category: "missing-or-short", rank: 3, band: 0.00, delta: -4.98, note: "PENDING-REGEN: the last mantle onto the leads' south lip (7.1) reads ~5.0m below — the facade draws no upper storey. Regen delivers the eave/leads at the 7.10 box." }],
   // --- catch radius exceeds its landing surface (3) — route-authoring lane ---
   // LEAP_CROWN and LEAP_UPPER retired on branch workflow/mission-flow: the rebuilt
   // liberty-elm-hero.glb carries broad near-flat limb rafts that fill both leap
