@@ -28,6 +28,19 @@ SEED = 74010918
 RNG = np.random.default_rng(SEED)
 TEX = 1024
 
+# PHOTOREAL: keep the clean, box-accurate, weld-clean jettied FORM and wear the
+# concept's real materials (row-shop-photoreal-concept.png): warm ground brick,
+# weathered lime-plaster + oak half-timbering, silver-grey timber ledges, dark
+# leaded/slate roof, stone trim — plus grime/streak/efflorescence. Base-colour-only
+# (the Blender 5.1 glTF writer emits normal maps BLACK; proven in test_normal_export).
+PHOTOREAL = os.environ.get("PHOTOREAL", "") not in ("", "0", "false")
+NO_NORMAL = os.environ.get("NO_NORMAL", "") not in ("", "0", "false")
+CONCEPT_BRICK = (0.46, 0.24, 0.19)
+CONCEPT_PLASTER = (0.72, 0.67, 0.57)
+CONCEPT_TIMBER = (0.44, 0.39, 0.33)
+CONCEPT_SLATE = (0.28, 0.30, 0.34)
+CONCEPT_STONE = (0.62, 0.58, 0.52)
+
 W, H, D = 18.0, 5.6, 12.0
 hx, hz = W / 2, D / 2
 BAYS = 4                                   # shopfront units across the frontage
@@ -84,11 +97,11 @@ def brick_fields(body):
     return np.clip(mortar * (1 - t) + rgb * t, 0, 1), 0.25 + 0.75 * mask
 
 
-def frame_fields(studs=3, rails=2):
+def frame_fields(studs=3, rails=2, plaster_base=(0.74, 0.70, 0.60)):
     """Half-timber: pale lime plaster with dark oak studs + rails (a tiled panel)."""
     n = TEX
     u = np.linspace(0, 1, n, endpoint=False)[None, :]; v = np.linspace(0, 1, n, endpoint=False)[:, None]
-    plaster = np.clip(np.array([0.74, 0.70, 0.60])[None, None, :] + (aniso(n, 60, 60, RNG) - 0.5)[..., None] * 0.08, 0, 1)
+    plaster = np.clip(np.array(plaster_base)[None, None, :] + (aniso(n, 60, 60, RNG) - 0.5)[..., None] * 0.08, 0, 1)
     oak = np.array([0.20, 0.13, 0.08])
     sw = 0.06
     vert = np.zeros((n, n))
@@ -131,6 +144,48 @@ def window_rgb():
 
 def flat_rgb(n, base, grain=0.06):
     return np.clip(np.array(base)[None, None, :] + (aniso(n, 40, 40, RNG) - 0.5)[..., None] * grain, 0, 1)
+
+
+# ---- photoreal weathering layers (applied only when PHOTOREAL) ----------------
+def add_grime(rgb):
+    """Vertical water-streaking, broad soot blotches, pale efflorescence flecks."""
+    n = rgb.shape[0]
+    out = rgb.copy()
+    out *= (0.74 + 0.26 * aniso(n, 150, 5, RNG))[..., None]        # long vertical runs
+    out *= (0.85 + 0.15 * aniso(n, 22, 22, RNG))[..., None]        # broad soot blotches
+    out *= np.linspace(1.0, 0.84, n)[:, None, None]                # sootier toward eaves
+    fle = aniso(n, 320, 320, RNG)                                  # lime efflorescence
+    out = np.where((fle > 0.88)[..., None], np.clip(out * 1.4 + 0.05, 0, 1), out)
+    return np.clip(out, 0, 1)
+
+
+def add_cracks(rgb, n_cracks=7):
+    n = rgb.shape[0]
+    out = rgb.copy()
+    for _ in range(n_cracks):
+        cx = int(RNG.integers(0, n)); w = int(RNG.integers(1, 3))
+        out[:, max(0, cx - w):cx + w] *= 0.5
+    return np.clip(out, 0, 1)
+
+
+def slate_rgb(base):
+    """Overlapping leaded/slate courses: staggered rows, per-slate tone, a shadow
+    line at each course head, a cold blue-grey tint."""
+    n = TEX; NR, NS = 11, 15
+    v = np.linspace(0, 1, n, endpoint=False)[:, None]; u = np.linspace(0, 1, n, endpoint=False)[None, :]
+    fr = v * NR; row = np.floor(fr); rf = fr - row
+    off = np.where(row % 2 == 0, 0.0, 0.5)
+    fs = u * NS + off; sl = np.floor(fs); sf = fs - sl
+    seed = np.sin(np.broadcast_to(row, (n, n)) * 11.1 + np.broadcast_to(sl, (n, n)) * 7.3) * 4373.1
+    var = seed - np.floor(seed)
+    base = np.array(base)
+    rgb = base[None, None, :] * (0.68 + 0.6 * var)[..., None]
+    rgb = np.clip(rgb + (aniso(n, 130, 130, RNG) - 0.5)[..., None] * 0.05, 0, 1)
+    head = np.broadcast_to(_ss(0.0, 0.07, rf), (n, n))
+    seam = _ss(0.0, 0.02, sf) * _ss(0.0, 0.02, 1 - sf)
+    rgb *= (0.55 + 0.45 * head)[..., None]
+    rgb *= (0.7 + 0.3 * seam)[..., None]
+    return np.clip(rgb, 0, 1)
 
 
 def _img(name, rgb):
@@ -181,18 +236,47 @@ def make_material(name, image, normal=None, rough=0.94, spec=0.16):
     return mat
 
 
-log("textures")
+# NORMAL-MAP EXPORT BUG (test_normal_export.py): the Blender 5.1 glTF writer emits
+# normal images BLACK regardless of authoring, while base-colour reimports fine, so
+# the brick renders unlit in Cycles. Ship base-colour-only; depth comes from real
+# geometry + the mortar/streak in the albedo. nrm() returns None for photoreal.
+def nrm(h):
+    if NO_NORMAL or PHOTOREAL:
+        return None
+    return make_normal(h)
+
+
+log("textures", "PHOTOREAL" if PHOTOREAL else "flat")
 bpy.ops.wm.read_factory_settings(use_empty=True)
-B_RGB, B_H = brick_fields((0.42, 0.20, 0.16))
-F_RGB, F_H = frame_fields()
-MAT_BRICK = make_material("brick", pack_jpeg("brick", B_RGB), normal=make_normal(B_H))
-MAT_FRAME = make_material("frame", pack_jpeg("frame", F_RGB), normal=make_normal(F_H))
-MAT_GLASS = make_material("glass", pack_jpeg("window", window_rgb()), rough=0.5, spec=0.25)
-MAT_TRIM = make_material("trim", pack_jpeg("trim", flat_rgb(TEX // 4, (0.78, 0.76, 0.70))), rough=0.9, spec=0.18)
-MAT_LEAD = make_material("lead", pack_jpeg("lead", flat_rgb(TEX // 4, (0.52, 0.53, 0.53))), rough=0.86, spec=0.2)
-MAT_TIMBER = make_material("timber", pack_jpeg("timber", plank_rgb((0.44, 0.33, 0.22))), rough=0.93, spec=0.12)
-MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", plank_rgb((0.30, 0.20, 0.13), vertical=True)), rough=0.94, spec=0.12)
+if PHOTOREAL:
+    B_RGB, B_H = brick_fields(CONCEPT_BRICK); B_RGB = add_grime(B_RGB)
+    F_RGB, F_H = frame_fields(plaster_base=CONCEPT_PLASTER); F_RGB = add_grime(F_RGB)
+    MAT_BRICK = make_material("brick", pack_jpeg("brick", B_RGB), normal=nrm(B_H), rough=0.95, spec=0.14)
+    MAT_FRAME = make_material("frame", pack_jpeg("frame", F_RGB), normal=nrm(F_H), rough=0.92, spec=0.12)
+    MAT_GLASS = make_material("glass", pack_jpeg("window", window_rgb()), rough=0.32, spec=0.45)
+    MAT_TRIM = make_material("trim", pack_jpeg("trim", flat_rgb(TEX // 2, CONCEPT_STONE, 0.12)), rough=0.86, spec=0.2)
+    MAT_LEAD = make_material("lead", pack_jpeg("lead", slate_rgb(CONCEPT_SLATE)), rough=0.5, spec=0.4)
+    MAT_TIMBER = make_material("timber", pack_jpeg("timber", add_cracks(plank_rgb(CONCEPT_TIMBER))), rough=0.9, spec=0.1)
+    MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", add_cracks(plank_rgb(tuple(c * 0.86 for c in CONCEPT_TIMBER), vertical=True))), rough=0.92, spec=0.1)
+else:
+    B_RGB, B_H = brick_fields((0.42, 0.20, 0.16))
+    F_RGB, F_H = frame_fields()
+    MAT_BRICK = make_material("brick", pack_jpeg("brick", B_RGB), normal=nrm(B_H))
+    MAT_FRAME = make_material("frame", pack_jpeg("frame", F_RGB), normal=nrm(F_H))
+    MAT_GLASS = make_material("glass", pack_jpeg("window", window_rgb()), rough=0.5, spec=0.25)
+    MAT_TRIM = make_material("trim", pack_jpeg("trim", flat_rgb(TEX // 4, (0.78, 0.76, 0.70))), rough=0.9, spec=0.18)
+    MAT_LEAD = make_material("lead", pack_jpeg("lead", flat_rgb(TEX // 4, (0.52, 0.53, 0.53))), rough=0.86, spec=0.2)
+    MAT_TIMBER = make_material("timber", pack_jpeg("timber", plank_rgb((0.44, 0.33, 0.22))), rough=0.93, spec=0.12)
+    MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", plank_rgb((0.30, 0.20, 0.13), vertical=True)), rough=0.94, spec=0.12)
 IB, IF, IW, IT, IL, ITM, ITV = 0, 1, 2, 3, 4, 5, 6
+# sign board material (painted board with baked serif signage); falls back to timber
+SIGN_PNG = os.environ.get("SIGN_PNG", "")
+if PHOTOREAL and SIGN_PNG and os.path.exists(SIGN_PNG):
+    _si = bpy.data.images.load(SIGN_PNG); _si.name = "sign"; _si.pack()
+    MAT_SIGN = make_material("sign", _si, rough=0.72, spec=0.22)
+else:
+    MAT_SIGN = MAT_TIMBER_V
+ISG = 7
 
 bm = bmesh.new()
 uv = bm.loops.layers.uv.new("UVMap")
@@ -319,7 +403,38 @@ for b in range(1, BAYS):
 for sx in (-hx + bay * 0.9, hx - bay * 0.9):
     solid_box(sx - 0.05, sx + 0.05, YZ1, MID_FRONT + 0.15, 3.35, 3.5, ITM, faces="all", tile=1.0)    # the arm (hang hold)
     solid_box(sx - 0.02, sx + 0.02, MID_FRONT, MID_FRONT + 0.15, 2.55, 3.35, ITM, faces="all", tile=1.0)  # the drop iron
-    solid_box(sx - 0.45, sx + 0.45, MID_FRONT + 0.05, MID_FRONT + 0.08, 2.55, 3.3, ITV, faces=("+y", "-y"), tile=1.0)  # sign board
+    # hanging sign board, textured both faces (photoreal painted board)
+    sy = MID_FRONT + 0.06; sm = ISG if (PHOTOREAL and SIGN_PNG) else ITV
+    quad((sx - 0.45, sy, 2.55), (sx + 0.45, sy, 2.55), (sx + 0.45, sy, 3.3), (sx - 0.45, sy, 3.3), sm,
+         [(1, 0), (0, 0), (0, 1), (1, 1)])                                        # street-facing (+y)
+    quad((sx + 0.45, sy + 0.03, 2.55), (sx - 0.45, sy + 0.03, 2.55), (sx - 0.45, sy + 0.03, 3.3), (sx + 0.45, sy + 0.03, 3.3), sm,
+         [(1, 0), (0, 0), (0, 1), (1, 1)])                                        # back face
+    solid_box(sx - 0.45, sx + 0.45, sy, sy + 0.03, 2.55, 3.3, IT, faces=("+x", "-x", "+z", "-z"), tile=1.0)  # board edge
+
+if PHOTOREAL:
+    # ======================= PHOTOREAL GEOMETRIC DETAIL =========================
+    # Timber corbel brackets under the projecting pentice + mid ledge front lips —
+    # the traditional shambles jetty bracket. Single-skin wedges offset off the wall
+    # plane so no coincident same-facing faces are introduced (weld gate stays clean).
+    def wedge(x0, x1, y_back, z_lo, y_lip, z_hi, mat):
+        vv = [bm.verts.new(Vector(p)) for p in (
+            (x0, y_back, z_lo), (x0, y_back, z_hi), (x0, y_lip, z_hi),
+            (x1, y_back, z_lo), (x1, y_back, z_hi), (x1, y_lip, z_hi))]
+        for idx in ((0, 1, 2), (3, 5, 4), (0, 2, 5, 3), (1, 4, 5, 2), (0, 3, 4, 1)):
+            try:
+                fdet = bm.faces.new([vv[i] for i in idx])
+            except ValueError:
+                continue
+            fdet.material_index = mat
+            for lp in fdet.loops:
+                p = lp.vert.co; lp[uv].uv = (p.x + p.y, p.z + 0.5 * p.y)
+
+    for b in range(BAYS + 1):
+        px = max(-hx + 0.35, min(hx - 0.35, -hx + b * bay))
+        # under the pentice lip
+        wedge(px - 0.10, px + 0.10, YG + 0.02, PENTICE_Y - 0.26 - 0.55, PENTICE_FRONT - 0.10, PENTICE_Y - 0.30, ITM)
+        # under the mid ledge lip
+        wedge(px - 0.09, px + 0.09, YZ1 + 0.02, MID_Y - 0.28 - 0.5, MID_FRONT - 0.10, MID_Y - 0.32, ITM)
 
 # ---- ground apron: pins bbox to the DECLARED box, centred, base 0 --------------
 solid_box(-hx, hx, -hz, hz, 0.0, 0.03, IT, faces="all", tile=1.5)
@@ -329,7 +444,7 @@ bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=1e-5)
 bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
 mesh = bpy.data.meshes.new(KEY); bm.to_mesh(mesh); bm.free()
 obj = bpy.data.objects.new(KEY, mesh)
-for m in (MAT_BRICK, MAT_FRAME, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V):
+for m in (MAT_BRICK, MAT_FRAME, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V, MAT_SIGN):
     obj.data.materials.append(m)
 for poly in obj.data.polygons:
     poly.use_smooth = False
