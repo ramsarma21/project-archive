@@ -46,6 +46,25 @@
 //                    "climb through the ceiling": the collision is a solid block
 //                    and the picture is a sliver inside it.
 //
+// WHAT IT DELIBERATELY DOES NOT BLOCK, by an explicit, narrow, LOUD allowlist —
+// never by lowering the fill bar, which would blind the gate everywhere at once:
+//   SPARSE_VESSELS   named rigged sailing ships (hull + masts + rigging) whose
+//                    collision box HEIGHT is set by the MAST for render scale, so
+//                    a hull-shaped mesh can never fill it. This is the same
+//                    "legitimately mostly air" case the size threshold already
+//                    exempts for a crane's jib — but a full-rigged ship is large
+//                    enough to clear that threshold, so it lands in the net and
+//                    false-reds. They are moored over open water the player cannot
+//                    reach, so the unfilled volume is not a reachable wall.
+//                    PERMANENT, keyed per art-asset, and structural.
+//   KNOWN_DEBT       a solid that under-fills for a reason that cannot be fixed in
+//                    this lane and is being fixed elsewhere — the wharf warehouses,
+//                    whose provisional broad-phase meshes are PENDING-REGEN.
+//                    TEMPORARY; retires the moment the regenerated mesh fills the box.
+// Both are MEASURED and printed loudly on every run with their fill, so neither can
+// ever make the gate look green while hiding a real invisible wall — the same
+// discipline check-world-scale.mjs's KNOWN_DEBT follows.
+//
 // Volumetric fill is one metric that catches position, scale AND rotation at
 // once, measured on the PUBLISHED bytes: a mesh that is offset, shrunk, or turned
 // the wrong way does not fill the solid it stands for, and the self-test proves
@@ -113,6 +132,50 @@ const SOLID_FILL_MIN = 0.5;
 /** How finely a solid's volume is sampled for occupancy. */
 const OCCUPANCY_GRID = 7;
 
+// -------------------------------------------------------- sparse-vessel exempt
+/**
+ * Rigged sailing vessels are legitimately mostly AIR — a hull, masts and rigging —
+ * and their collision box HEIGHT is set by the MAST (it has to be, for the render
+ * to scale to the rig), so a hull-shaped mesh can NEVER fill that box. That is the
+ * SAME category the size threshold already exempts for a crane's jib or a
+ * balustrade (isBuildingScale, below): a deliberate box simplification of a sparse
+ * object. A full-rigged ship simply exceeds BUILDING_MIN_AREA/HEIGHT, so it lands
+ * in the building-scale net and false-reds where the jib slips under it.
+ *
+ * This is a NARROW, per-asset allowlist, NOT a lowered global threshold. Only the
+ * three named art keys are exempt, so a genuine invisible wall on ANY other asset
+ * — including a future ship authored as a solid — is still caught. The self-test
+ * proves it: the same under-filling mesh reads EXEMPT as a named vessel and FAIL as
+ * a plain solid. It is keyed by the mass's art key (`mass.asset`), the key
+ * assets.ts and the collision sidecars already use.
+ *
+ * Why EXEMPT and not debt: this is PERMANENT and correct, not a divergence to fix.
+ * The vessels are moored over open harbour water the player cannot stand in or
+ * beside, so the unfilled volume is unreachable — there is no wall to run into.
+ * Every exempt row is still MEASURED and printed loudly, never silently skipped.
+ *
+ * Keyed by art-asset key.
+ */
+const SPARSE_VESSELS = new Map([
+  [
+    "ship-brig-hero",
+    "Hero brig — sparse rigged sailing vessel (hull + masts + rigging). Its collision " +
+      "box height is the MAST (needed for render scale), so a hull mesh cannot fill it; " +
+      "moored over open harbour water the player cannot reach, so the ~29% unfilled volume " +
+      "is not a reachable wall. Same 'mostly air by design' class as the crane's jib.",
+  ],
+  [
+    "ship-snow-background",
+    "Background snow — unboarded rigged vessel, hull-solid collider whose box height is the " +
+      "mast. ~35% fill; moored over unreachable open water. Mostly air by design, not an invisible wall.",
+  ],
+  [
+    "ship-sloop",
+    "Sloop — sparse rigged vessel (hull + deck + rigging). Box height set by the mast for " +
+      "render scale; ~47% fill; moored over unreachable open water. Mostly air by design, not a wall.",
+  ],
+]);
+
 // ---------------------------------------------------------------- known debt
 /**
  * A finding here is a KNOWN divergence that cannot ship clean yet and cannot be
@@ -122,9 +185,72 @@ const OCCUPANCY_GRID = 7;
  * discipline check-world-scale.mjs's KNOWN_DEBT and check-boundaries.mjs's
  * allowlists follow — a decision on the record, not a silence.
  *
- * Keyed by mass id.
+ * Unlike SPARSE_VESSELS this is TEMPORARY: each entry names why it under-fills and
+ * the exact condition that retires it. A debt row that starts reading `ok` (fills
+ * the box) is the signal to delete its entry.
+ *
+ * Keyed by mass id OR art-asset key — matched either way (isKnownDebt), because
+ * the wharf placements live on another branch and this lane cannot confirm which
+ * identifier the masses expose. Both identifiers name the same two warehouses, so
+ * accepting either does not widen the allowlist beyond those two objects.
  */
-const KNOWN_DEBT = new Map([]);
+const KNOWN_DEBT = new Map([
+  [
+    "WHARF_WAREHOUSE_A",
+    "PENDING-REGEN (temporary): bldg-warehouse-wharf-a currently ships a provisional " +
+      "solid-body broad-phase mesh (see assets/source/collision/bldg-warehouse-wharf-a.collision.json, " +
+      "pendingDoorContract). The photoreal warehouse with proper loading galleries that fills the box " +
+      "is being delivered under the same key. RETIRE this entry when the regenerated mesh syncs and the row reads ok.",
+  ],
+  [
+    "bldg-warehouse-wharf-a",
+    "PENDING-REGEN (temporary): alias of WHARF_WAREHOUSE_A by art key; see that entry.",
+  ],
+  [
+    "WHARF_WAREHOUSE_B",
+    "PENDING-REGEN (temporary): bldg-warehouse-wharf-b, identical to _A — a provisional broad-phase mesh; " +
+      "the regenerated warehouse that fills the box is pending under the same key. RETIRE when it syncs and the row reads ok.",
+  ],
+  [
+    "bldg-warehouse-wharf-b",
+    "PENDING-REGEN (temporary): alias of WHARF_WAREHOUSE_B by art key; see that entry.",
+  ],
+]);
+
+// ---------------------------------------------------------------- allowlists
+/** A named sparse rigged vessel: legitimately mostly air, permanently exempt. */
+function isSparseVessel(part) {
+  return SPARSE_VESSELS.has(part.asset);
+}
+/** Known PENDING-REGEN debt, matched by mass id OR art-asset key (see KNOWN_DEBT). */
+function isKnownDebt(part) {
+  return KNOWN_DEBT.has(part.id) || KNOWN_DEBT.has(part.asset);
+}
+/** The recorded reason for a debt row, by whichever identifier matched. */
+function debtReason(part) {
+  return KNOWN_DEBT.get(part.id) ?? KNOWN_DEBT.get(part.asset) ?? "";
+}
+
+/**
+ * The verdict for one measured solid, as a pure function of its fill and its
+ * allowlist membership — so the self-test exercises the SAME logic the gate
+ * ships rather than a second copy of it (the duplication this repo keeps paying
+ * for). Precedence puts fill first, so a vessel or debt row that fills its box
+ * reads `ok` and needs no entry — the retire signal.
+ *
+ *   ok      fills its collision (>= SOLID_FILL_MIN).
+ *   exempt  under-fills, but a named sparse vessel: mostly air, unreachable,
+ *           permanent. Reported loudly; never blocks.
+ *   debt    under-fills, but known PENDING-REGEN debt: temporary. Reported
+ *           loudly; never blocks.
+ *   fail    under-fills and is neither — a real invisible wall. BLOCKS.
+ */
+function verdictOf(row) {
+  if (row.fill >= SOLID_FILL_MIN) return "ok";
+  if (row.exempt) return "exempt";
+  if (row.debt) return "debt";
+  return "fail";
+}
 
 // ---------------------------------------------------------------- geometry
 const OPEN_MASS_HEIGHT_M = 12;
@@ -265,7 +391,8 @@ async function analyse() {
       fill: occ.fraction,
       deltaX: visibleSize[0] - collisionSize[0],
       deltaZ: visibleSize[2] - collisionSize[2],
-      debt: KNOWN_DEBT.has(part.id),
+      exempt: isSparseVessel(part),
+      debt: isKnownDebt(part),
     });
   }
   buildingRows.sort((a, b) => a.fill - b.fill);
@@ -369,9 +496,73 @@ function selfTest() {
     `aligned ${(filledFraction * 100).toFixed(0)}% vs sliver ${(sliverFraction * 100).toFixed(0)}%`,
   );
 
+  // ---- the allowlists: a narrow exemption must NOT blind the gate --------
+  // Break-it-to-prove-it. `sliverFraction` above is a REAL measured under-fill
+  // (~10% of the box) from the placement probe, not a made-up number. Classify
+  // that SAME fill three ways: only the allowlist membership changes. If the
+  // exemption had simply lowered the bar, the plain-solid case would stop
+  // failing — so the plain-solid FAIL is the whole proof the exemption is narrow.
+  console.log(
+    "\n  world-collision selftest: the allowlists. The SAME measured under-fill must\n" +
+      "  pass as a named vessel and STILL FAIL as a plain solid — a narrow exemption,\n" +
+      "  never a lowered bar; and known debt holds without blocking.",
+  );
+
+  const asVessel = verdictOf({ fill: sliverFraction, exempt: true, debt: false });
+  const asSolid = verdictOf({ fill: sliverFraction, exempt: false, debt: false });
+  const asDebt = verdictOf({ fill: sliverFraction, exempt: false, debt: true });
+
+  check(
+    "a sparse vessel under-filling its box is EXEMPT",
+    asVessel === "exempt",
+    `fill ${(sliverFraction * 100).toFixed(0)}% + vessel -> ${asVessel}`,
+  );
+  check(
+    "the SAME under-fill as a plain solid STILL FAILS (exemption did not blind the gate)",
+    asSolid === "fail",
+    `fill ${(sliverFraction * 100).toFixed(0)}% + plain solid -> ${asSolid}`,
+  );
+  check(
+    "known PENDING-REGEN debt holds (temporary, reported, not blocking)",
+    asDebt === "debt",
+    `fill ${(sliverFraction * 100).toFixed(0)}% + known debt -> ${asDebt}`,
+  );
+
+  // Fill wins over membership, so a vessel or debt that FILLS its box reads ok —
+  // the signal to retire its entry — and the exemption never masks a healthy solid.
+  check(
+    "a filled vessel reads ok, not exempt (retire signal intact)",
+    verdictOf({ fill: filledFraction, exempt: true, debt: false }) === "ok",
+    `aligned ${(filledFraction * 100).toFixed(0)}% + vessel -> ${verdictOf({ fill: filledFraction, exempt: true, debt: false })}`,
+  );
+
+  // The exemption is NARROW: exactly the three named ships, and nothing else. A
+  // typo'd key would silently un-exempt a vessel (false red); an over-broad key
+  // would leave a real building unguarded. Both directions are pinned here.
+  const namedVessels = ["ship-brig-hero", "ship-snow-background", "ship-sloop"];
+  check(
+    "the three named vessels are exempt; an ordinary building asset is not",
+    namedVessels.every((k) => isSparseVessel({ asset: k })) &&
+      !isSparseVessel({ asset: "bldg-warehouse-street" }),
+    `${namedVessels.filter((k) => isSparseVessel({ asset: k })).length}/3 vessels exempt; bldg-warehouse-street not`,
+  );
+
+  // The debt names the two wharf warehouses by mass id AND by art key (either may
+  // be what the masses expose on the wharf branch), and nothing generic.
+  check(
+    "both wharf warehouses are known debt (by id or key); a generic solid is not",
+    isKnownDebt({ id: "WHARF_WAREHOUSE_A", asset: "" }) &&
+      isKnownDebt({ id: "", asset: "bldg-warehouse-wharf-a" }) &&
+      isKnownDebt({ id: "WHARF_WAREHOUSE_B", asset: "" }) &&
+      isKnownDebt({ id: "", asset: "bldg-warehouse-wharf-b" }) &&
+      !isKnownDebt({ id: "SOME_SOLID", asset: "bldg-warehouse-street" }),
+    "warehouses A/B matched by id and by key; bldg-warehouse-street not",
+  );
+
   console.log(
     failed === 0
-      ? "world-collision selftest: OK (catches slivers and offsets; passes an aligned solid)"
+      ? "world-collision selftest: OK (catches slivers and offsets; passes an aligned solid;\n" +
+        "  a narrow vessel exemption that does NOT stop a plain solid from failing)"
       : `world-collision selftest: FAIL (${failed} case(s))`,
   );
   return failed;
@@ -423,7 +614,7 @@ for (const row of buildingRows) {
   const vs = `${row.visibleSize[0].toFixed(1)}×${row.visibleSize[2].toFixed(1)}`;
   const dx = row.deltaX.toFixed(1);
   const dz = row.deltaZ.toFixed(1);
-  const flag = row.debt ? "DEBT" : row.fill < SOLID_FILL_MIN ? "FAIL" : "ok  ";
+  const flag = { ok: "ok  ", exempt: "VESL", debt: "DEBT", fail: "FAIL" }[verdictOf(row)];
   console.log(
     `  ${row.id.padEnd(20)}${row.asset.padEnd(28)}${cs.padEnd(16)}${vs.padEnd(16)}` +
       `${dx.padEnd(8)}${dz.padEnd(8)}${(row.fill * 100).toFixed(0)}%  ${flag}`,
@@ -433,8 +624,7 @@ for (const row of buildingRows) {
 // ---------------------------------------------------------------- verdict
 const blocking = [];
 for (const row of buildingRows) {
-  if (row.fill >= SOLID_FILL_MIN) continue;
-  if (row.debt) continue;
+  if (verdictOf(row) !== "fail") continue;
   blocking.push({
     id: row.id,
     detail:
@@ -444,14 +634,28 @@ for (const row of buildingRows) {
   });
 }
 
-const debtHit = buildingRows.filter((r) => r.debt && r.fill < SOLID_FILL_MIN);
+// Both allowlists are printed loudly with their measured fill, never a silent
+// skip: an exemption or a debt that hides its number is how a gate goes green
+// over a real defect.
+const exemptHit = buildingRows.filter((r) => verdictOf(r) === "exempt");
+if (exemptHit.length) {
+  console.warn(
+    `\n  NOTE: ${exemptHit.length} sparse-vessel exemption(s) (permanent, mostly-air by design):`,
+  );
+  for (const row of exemptHit) {
+    console.warn(`    exempt: ${row.id}  ${row.asset}  (fill ${(row.fill * 100).toFixed(0)}%)`);
+    console.warn(`            ${SPARSE_VESSELS.get(row.asset)}`);
+  }
+}
+
+const debtHit = buildingRows.filter((r) => verdictOf(r) === "debt");
 if (debtHit.length) {
   console.warn(
-    `\n  WARNING: ${debtHit.length} known collision debt (loud, not suppressed):`,
+    `\n  WARNING: ${debtHit.length} known collision debt (temporary, loud, not suppressed):`,
   );
   for (const row of debtHit) {
-    console.warn(`    debt: ${row.id}  (fill ${(row.fill * 100).toFixed(0)}%)`);
-    console.warn(`          ${KNOWN_DEBT.get(row.id)}`);
+    console.warn(`    debt: ${row.id}  ${row.asset}  (fill ${(row.fill * 100).toFixed(0)}%)`);
+    console.warn(`          ${debtReason(row)}`);
   }
 }
 
@@ -473,5 +677,5 @@ if (blocking.length && !reportOnly) {
 
 console.log(
   `\nworld-collision: OK (${buildingRows.length} solids drawn into their collision; ` +
-    `${debtHit.length} known debt, loud above)`,
+    `${exemptHit.length} sparse-vessel exempt, ${debtHit.length} known debt, loud above)`,
 );
