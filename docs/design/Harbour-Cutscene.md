@@ -116,15 +116,18 @@ returns ~16:9 for landscape bases; crop as needed. Polish sidecars live in
 files).
 
 **Step B — animate it in Runway (Image → Video).** Upload `two-char-keyframe.png` as the init frame;
-optionally add `@dockhand` and `@agitator` as References to reinforce identity. Motion prompt = the
-beat:
+optionally add `@dockhand` and `@agitator` as References to reinforce identity. The camera pushes in
+**CLOSE** — a wide two-shot doesn't stress identity, so a close push-in is what actually verifies the
+characters hold consistency (owner, 31 Jul). Motion prompt:
 
 ```
-The dockworker sets down the empty net and looks up; the other man turns and gestures out at the
-shuttered, idle ships. Minimal ambient motion — faint water shimmer, thin drifting haze, the barest
-sway of furled rigging. One gentle camera move only, a slow push-in; no shake, no orbit. Hold the
-uploaded frame's stylized game-cinematic look, its two characters, muted palette and low warm haze
-exactly. No new people appearing, no text or captions anywhere. Silent.
+Slow, deliberate camera push-in from the wide two-shot to a TIGHT framing of the two men — ending
+close on their faces and upper bodies so their features read clearly. As the camera moves in: the
+dockworker sets down the empty net and looks up; the other man turns and gestures out at the
+shuttered, idle ships. Their faces, hair and clothing stay exactly consistent throughout. Minimal
+ambient motion — faint water shimmer, thin haze, a slight sway of rigging. One continuous push-in
+only, no shake, no orbit. Hold the uploaded frame's stylized 3D game-cinematic look, muted palette
+and low warm haze. No new people appearing, no text or captions anywhere. Silent.
 ```
 
 Settings: Gen-4.5 · **16:9** · **~5 s** · up to **3 References** · silent (audio dubbed in post).
