@@ -18,10 +18,17 @@
 // procedural — which the imported-visible-world asset rule explicitly permits.
 //
 // Run (from anywhere; reads three + playwright from the hub node_modules):
-//   node assets/pipeline/shot_harbour_refs.mjs
-//   SHOT=shot1 node assets/pipeline/shot_harbour_refs.mjs   # one shot
+//   node assets/pipeline/shot_harbour_refs.mjs                # every shot
+//   SHOT=test node assets/pipeline/shot_harbour_refs.mjs      # corrected deliverables -> test/
+//   SHOT=establishing node assets/pipeline/shot_harbour_refs.mjs
+//   SHOT=ref-brig,ref-player node assets/pipeline/shot_harbour_refs.mjs   # comma list
 //
-// Env: SHOT (shot1|shot2|shot3|all), OUT (dir), THREE_DIR, PUBLIC, PW (playwright index.mjs)
+// The corrected, photo-matched shots (establishing + ref-brig/wharf/dockhand/player)
+// carry `subdir: "test"` and render into assets/reference/harbour-cutscene/test/. The
+// legacy shot1/2/3 stay at the OUT root (the older Runway send-package still cites them).
+//
+// Env: SHOT (a shot key | comma list | "test" | "all"), OUT (base dir; a scene's
+//      subdir is appended), THREE_DIR, PUBLIC, PW (playwright index.mjs)
 
 import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, join, extname } from "node:path";
@@ -184,6 +191,173 @@ const SCENES = {
       { key: "ship-brig-hero", pos: [9, WATER_Y, -30], rotY: 1.7, targetLen: 26, axis: "maxH", keel: WATER_Y - 3.4 },
     ],
   },
+
+  // =========================================================================
+  // CORRECTED DELIVERABLES (write to test/). Matched by eye to the owner's real
+  // in-game photo assets/reference/harbour-cutscene/real-harbour-ingame.png:
+  // near eye-level third-person, player centred on a plank deck, two tall ships
+  // LARGE on the LEFT, working gear (crane, leaning ladder, crates, warehouse)
+  // on the RIGHT, a rope rail at the water's edge, low hazy sun over open water.
+  // =========================================================================
+
+  // ESTABLISHING WIDE — the shut harbour, 16:9, the frame that seeds the Kling test.
+  establishing: {
+    subdir: "test",
+    viewport: [1920, 1080], // 1920×1080 output, 2× supersampled, 16:9 production aspect
+    dsr: 2,
+    camera: { pos: [3.0, 2.8, 16.5], look: [-1.0, 1.25, -26], fov: 58 },
+    env: {
+      skyGradient: ["#b7c1c8", "#f1e8d6"], // cool crown -> warm hazy horizon
+      fog: ["#e9e0d1", 34, 250],           // warm haze swallows the far hulls
+      hemi: ["#ebe4d6", "#4a483f", 1.2],
+      sun: { pos: [-34, 24, 30], intensity: 0.92, color: "#ffeccb" },
+      sunGlow: { pos: [12, 2.2, -175], size: 140, intensity: 0.9 },
+      exposure: 1.1,
+      shadowSpan: 95,
+    },
+    water: { y: WATER_Y, color: "#9c9b8f", size: 1400, rough: 0.55 },
+    instances: [
+      // Plank deck: pushed back so its FRONT edge is the waterline (~z=-6); the
+      // ships beyond it float in water, not on the deck plane.
+      { key: "colonial-wharf-apron", pos: [2, 0, 27], rotY: 0, targetLen: 82, axis: "x", base: 0 },
+      // Low pilings just breaking the water + a rope rail on the deck edge, so the
+      // water and the ship hulls read behind it (the photo's open edge, not a wall).
+      { key: "wharf-pier-module", pos: [-6, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+      { key: "wharf-pier-module", pos: [0, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+      { key: "wharf-pier-module", pos: [6, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+      { key: "wharf-pier-module", pos: [12, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+      { key: "wharf-pier-module", pos: [18, 0, -6.6], rotY: 0, targetLen: 1.5, axis: "y", base: -0.85 },
+      { key: "wharf-rope-rail-straight", pos: [-6, 0, -6.2], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+      { key: "wharf-rope-rail-straight", pos: [2, 0, -6.2], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+      { key: "wharf-rope-rail-straight", pos: [10, 0, -6.2], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+      { key: "wharf-rope-rail-straight", pos: [18, 0, -6.2], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+      { key: "bollard", pos: [-10, 0, -5.8], rotY: 0, targetLen: 1.0, axis: "y", base: 0 },
+      { key: "bollard", pos: [24, 0, -5.8], rotY: 0, targetLen: 1.0, axis: "y", base: 0 },
+      // The lone figure on the open deck, looking out to sea (seen from behind).
+      { key: "playerboy-rigged", pos: [-1, 0, 3.5], rotY: 3.25, fitHeight: 1.74, clip: "idle", t: 1.0 },
+      // Two tall ships large + close on the LEFT, broadside, bows angled to the sun.
+      { key: "ship-brig-hero", pos: [-13, WATER_Y, -11], rotY: 0.28, targetLen: 27, axis: "maxH", keel: WATER_Y - 1.7 },
+      { key: "ship-snow-background", pos: [-28, WATER_Y, -15], rotY: 0.5, targetLen: 23, axis: "maxH", keel: WATER_Y - 1.6 },
+      // More ships in the background, hazy, center-right toward the horizon.
+      { key: "ship-snow-background", pos: [17, WATER_Y, -54], rotY: 1.95, targetLen: 22, axis: "maxH", keel: WATER_Y - 2.4 },
+      { key: "ship-sloop", pos: [31, WATER_Y, -46], rotY: 2.2, targetLen: 14, axis: "maxH", keel: WATER_Y - 1.4 },
+      { key: "ship-brig-hero", pos: [6, WATER_Y, -70], rotY: 1.6, targetLen: 26, axis: "maxH", keel: WATER_Y - 2.4 },
+      // Working gear on the RIGHT: idle crane, leaning ladder, crates, warehouse.
+      { key: "timber-crane", pos: [13, 0, -4], rotY: -0.5, targetLen: 6.2, axis: "y", base: 0 },
+      { key: "work-ladder-9", pos: [17, 0, -3], rotY: 0.15, rotZ: -0.34, targetLen: 4.4, axis: "y", base: 0 },
+      { key: "crate-stack", pos: [20, 0, 4.5], rotY: -0.3, targetLen: 2.4, axis: "maxH", base: 0 },
+      { key: "crate-mound", pos: [25, 0, 6], rotY: 0.35, targetLen: 2.8, axis: "maxH", base: 0 },
+      { key: "bldg-warehouse-wharf-a", pos: [30, 0, 7], rotY: Math.PI, targetLen: 15, axis: "maxH", base: 0 },
+      // Foreground clutter left unmoved: barrels, coiled rope, drying racks.
+      { key: "barrel-group", pos: [-6.5, 0, 4], rotY: 0.4, targetLen: 1.3, axis: "y", base: 0 },
+      { key: "barrel-group", pos: [-9, 0, 5.4], rotY: -0.2, targetLen: 1.2, axis: "y", base: 0 },
+      { key: "rope-coil-large", pos: [-1.5, 0, 6], rotY: 0, targetLen: 2.0, axis: "x", base: 0 },
+      { key: "cargo-net-bundle", pos: [25, 0, 3], rotY: 0.2, targetLen: 1.5, axis: "y", base: 0 },
+      { key: "fish-flakes-rack", pos: [-12, 0, 0.5], rotY: 0, targetLen: 5, axis: "x", base: 0 },
+      { key: "fish-flakes-rack", pos: [9, 0, 1], rotY: 0.1, targetLen: 5, axis: "x", base: 0 },
+      // Small craft at the pier.
+      { key: "rowboat", pos: [-8, WATER_Y, -8.5], rotY: 0.6, targetLen: 4.5, axis: "maxH", keel: WATER_Y - 0.35 },
+      { key: "buoy", pos: [4, WATER_Y, -13], rotY: 0, targetLen: 1.0, axis: "maxH", keel: WATER_Y - 0.3 },
+    ],
+  },
+
+  // REF — the hero brig, three-quarter, furled sails, hull on the water, clean field.
+  "ref-brig": {
+    subdir: "test",
+    viewport: [1920, 1080],
+    dsr: 2,
+    camera: { pos: [12, 5.5, 26], look: [-1, 5, -1], fov: 44 },
+    env: {
+      skyGradient: ["#c3c9cd", "#e3e2d8"],
+      fog: ["#e3e2d8", 70, 420],
+      hemi: ["#eef1f2", "#3b3e41", 1.2],
+      sun: { pos: [-26, 30, 32], intensity: 1.0, color: "#fff3e0" },
+      fill: { pos: [32, 14, 22], intensity: 0.5, color: "#e9eeff" },
+      exposure: 1.07,
+      shadowSpan: 42,
+    },
+    water: { y: WATER_Y, color: "#9a9a8f", size: 700, rough: 0.55 },
+    instances: [
+      { key: "ship-brig-hero", pos: [0, WATER_Y, 0], rotY: 1.32, targetLen: 26, axis: "maxH", keel: WATER_Y - 1.6 },
+    ],
+  },
+
+  // REF — the wharf/dock itself (no figures) so the dock look can be locked.
+  "ref-wharf": {
+    subdir: "test",
+    viewport: [1920, 1080],
+    dsr: 2,
+    camera: { pos: [-11, 3.3, 13], look: [7, 0.9, -8], fov: 52 },
+    env: {
+      skyGradient: ["#bcc5cb", "#ece4d5"],
+      fog: ["#e6ded0", 34, 220],
+      hemi: ["#e9e2d4", "#45443d", 1.15],
+      sun: { pos: [-30, 24, 28], intensity: 0.9, color: "#ffeccb" },
+      sunGlow: { pos: [10, 4, -150], size: 130, intensity: 0.85 },
+      exposure: 1.1,
+      shadowSpan: 70,
+    },
+    water: { y: WATER_Y, color: "#8f9088", size: 1200, rough: 0.62 },
+    instances: [
+      { key: "colonial-wharf-apron", pos: [4, 0, 2], rotY: 0, targetLen: 70, axis: "x", base: 0 },
+      { key: "colonial-wharf-boardwalk", pos: [2, 0.02, 12], rotY: 0, targetLen: 40, axis: "x", base: 0 },
+      { key: "colonial-wharf-pier-finger", pos: [16, 0, -10], rotY: Math.PI / 2, targetLen: 22, axis: "maxH", base: 0 },
+      { key: "wharf-rope-rail-straight", pos: [-2, 0, -6.4], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+      { key: "wharf-rope-rail-straight", pos: [6, 0, -6.4], rotY: 0, targetLen: 7, axis: "x", base: 0 },
+      { key: "bollard", pos: [-6, 0, -6], rotY: 0, targetLen: 1.0, axis: "y", base: 0 },
+      { key: "timber-crane", pos: [10, 0, -3.5], rotY: -0.4, targetLen: 6.2, axis: "y", base: 0 },
+      { key: "work-ladder-9", pos: [14, 0, -1], rotY: 0.2, rotZ: -0.3, targetLen: 3.6, axis: "y", base: 0 },
+      { key: "crate-stack", pos: [12, 0, 4], rotY: -0.3, targetLen: 2.4, axis: "maxH", base: 0 },
+      { key: "crate-mound", pos: [16, 0, 5.5], rotY: 0.35, targetLen: 2.8, axis: "maxH", base: 0 },
+      { key: "barrel-group", pos: [-1, 0, 4], rotY: 0.4, targetLen: 1.3, axis: "y", base: 0 },
+      { key: "rope-coil-large", pos: [3, 0, 5.5], rotY: 0, targetLen: 2.0, axis: "x", base: 0 },
+      { key: "cargo-net-bundle", pos: [19, 0, 6], rotY: 0.2, targetLen: 1.5, axis: "y", base: 0 },
+      { key: "fish-flakes-rack", pos: [-6, 0, 0], rotY: 0, targetLen: 5, axis: "x", base: 0 },
+      { key: "bldg-warehouse-wharf-a", pos: [22, 0, 6], rotY: Math.PI, targetLen: 15, axis: "maxH", base: 0 },
+      { key: "ship-brig-hero", pos: [-14, WATER_Y, -14], rotY: 0.6, targetLen: 26, axis: "maxH", keel: WATER_Y - 3.6 },
+      { key: "rowboat", pos: [-4, WATER_Y, -9], rotY: 0.6, targetLen: 4.5, axis: "maxH", keel: WATER_Y - 0.35 },
+    ],
+  },
+
+  // REF — a dockhand, full body, on a neutral seamless field (identity lock).
+  "ref-dockhand": {
+    subdir: "test",
+    viewport: [1200, 1600], // 1200×1600 output, 2× supersampled, 3:4 portrait
+    dsr: 2,
+    camera: { pos: [0, 1.02, 4.6], look: [0, 0.98, 0], fov: 30 },
+    env: {
+      sky: "#ccd0d2", // flat neutral seamless
+      hemi: ["#f1f3f4", "#40434a", 1.25],
+      sun: { pos: [-6, 9, 9], intensity: 0.95, color: "#fff3e0" },
+      fill: { pos: [7, 4, 7], intensity: 0.5, color: "#e8eeff" },
+      ground: { y: 0, color: "#c0c3c5", size: 60, rough: 0.98 },
+      exposure: 1.05,
+      shadowSpan: 6,
+    },
+    instances: [
+      { key: "dockhand-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.8, clip: "idle", t: 1.0 },
+    ],
+  },
+
+  // REF — the player character, full body, neutral seamless field (identity lock).
+  "ref-player": {
+    subdir: "test",
+    viewport: [1200, 1600], // 1200×1600 output, 2× supersampled, 3:4 portrait
+    dsr: 2,
+    camera: { pos: [0, 1.0, 4.5], look: [0, 0.95, 0], fov: 30 },
+    env: {
+      sky: "#ccd0d2",
+      hemi: ["#f1f3f4", "#40434a", 1.25],
+      sun: { pos: [-6, 9, 9], intensity: 0.95, color: "#fff3e0" },
+      fill: { pos: [7, 4, 7], intensity: 0.5, color: "#e8eeff" },
+      ground: { y: 0, color: "#c0c3c5", size: 60, rough: 0.98 },
+      exposure: 1.05,
+      shadowSpan: 6,
+    },
+    instances: [
+      { key: "playerboy-rigged", pos: [0, 0, 0], rotY: 0.2, fitHeight: 1.72, clip: "idle", t: 1.0 },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -219,7 +393,23 @@ canvas.style.height = VH + "px";
 document.body.appendChild(canvas);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(SCENE.env.sky);
+// Background: a procedural vertical gradient (sky/haze is explicitly allowed
+// procedural) when env.skyGradient=[topHex,bottomHex] is set, else a flat colour.
+// A cool-top / warm-horizon gradient plus warm fog is what reads as a low hazy
+// sun over open water — the mood in the owner's real in-game photo.
+if (SCENE.env.skyGradient) {
+  const [top, bot] = SCENE.env.skyGradient;
+  const cv = document.createElement("canvas"); cv.width = 8; cv.height = 512;
+  const g = cv.getContext("2d");
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, top); grad.addColorStop(1, bot);
+  g.fillStyle = grad; g.fillRect(0, 0, 8, 512);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  scene.background = tex;
+} else {
+  scene.background = new THREE.Color(SCENE.env.sky);
+}
 if (SCENE.env.fog) scene.fog = new THREE.Fog(SCENE.env.fog[0], SCENE.env.fog[1], SCENE.env.fog[2]);
 
 const [hs, hg, hi] = SCENE.env.hemi;
@@ -229,13 +419,40 @@ sun.position.set(...SCENE.env.sun.pos);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.camera.near = 1;
-sun.shadow.camera.far = 220;
-const S = 70;
+sun.shadow.camera.far = 260;
+const S = SCENE.env.shadowSpan ?? 70;
 sun.shadow.camera.left = -S; sun.shadow.camera.right = S;
 sun.shadow.camera.top = S; sun.shadow.camera.bottom = -S;
 sun.shadow.bias = -0.0006;
 scene.add(sun);
 scene.add(sun.target);
+
+// Optional soft fill (studio ref shots): a shadowless directional to open up the
+// side the sun leaves dark, so a single asset reads cleanly on a neutral field.
+if (SCENE.env.fill) {
+  const f = new THREE.DirectionalLight(new THREE.Color(SCENE.env.fill.color ?? "#ffffff"), SCENE.env.fill.intensity ?? 0.4);
+  f.position.set(...SCENE.env.fill.pos);
+  scene.add(f);
+}
+
+// Optional low-sun glow: an additive sprite far out over the water so the distant
+// hulls read as backlit through haze. Procedural light effect (allowed).
+if (SCENE.env.sunGlow) {
+  const sg = SCENE.env.sunGlow;
+  const cv = document.createElement("canvas"); cv.width = cv.height = 256;
+  const g = cv.getContext("2d");
+  const rad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  rad.addColorStop(0.0, "rgba(255,251,239,1)");
+  rad.addColorStop(0.22, "rgba(255,243,219,0.82)");
+  rad.addColorStop(0.55, "rgba(250,233,204,0.26)");
+  rad.addColorStop(1.0, "rgba(250,233,204,0)");
+  g.fillStyle = rad; g.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: sg.intensity ?? 1 }));
+  spr.position.set(...sg.pos);
+  spr.scale.setScalar(sg.size ?? 120);
+  scene.add(spr);
+}
 
 if (SCENE.water) {
   const w = SCENE.water;
@@ -247,6 +464,20 @@ if (SCENE.water) {
   water.position.y = w.y;
   water.receiveShadow = true;
   scene.add(water);
+}
+
+// Optional matte ground (studio ref shots): a neutral floor that catches a soft
+// contact shadow so a character/prop is seated, not floating, on a clean field.
+if (SCENE.env.ground) {
+  const gr = SCENE.env.ground;
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(gr.size ?? 200, gr.size ?? 200),
+    new THREE.MeshStandardMaterial({ color: new THREE.Color(gr.color ?? "#c4c7c9"), roughness: gr.rough ?? 0.95, metalness: 0.0 }),
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = gr.y ?? 0;
+  ground.receiveShadow = true;
+  scene.add(ground);
 }
 
 const camera = new THREE.PerspectiveCamera(SCENE.camera.fov, VW / VH, 0.05, 2000);
@@ -312,8 +543,9 @@ async function place(inst) {
   }
   root.scale.setScalar(scale);
 
-  // Rotate before we re-measure for the vertical seat.
-  root.rotation.y = inst.rotY ?? 0;
+  // Rotate before we re-measure for the vertical seat. rotX/rotZ let a ladder
+  // lean about its foot — the seat below drops the lowest point onto the deck.
+  root.rotation.set(inst.rotX ?? 0, inst.rotY ?? 0, inst.rotZ ?? 0);
   box = bbox(root);
 
   // Vertical seat: props/rigs sit their base on inst.base; ships sink so the
@@ -338,6 +570,8 @@ const KEY_DIR = {
   "dockhand-rigged": "characters", "townsman-rigged": "characters",
   "townswoman-rigged": "characters", "goodwife-rigged": "characters",
   "agitator-rigged": "characters", "towncrier-rigged": "characters",
+  "playerboy-rigged": "characters", "thomas-rigged": "characters",
+  "abigail-rigged": "characters",
 };
 function resolveKey(key) {
   const dir = KEY_DIR[key] ?? "props";
@@ -382,9 +616,14 @@ const browser = await chromium.launch({
   ],
 });
 
-const shots = (process.env.SHOT ?? "all") === "all"
-  ? Object.keys(SCENES)
-  : [process.env.SHOT];
+// The corrected, photo-matched deliverables render into the test/ subdir; the
+// legacy shot1/2/3 (kept for the older send-package) stay at the OUT root.
+const TEST_SHOTS = ["establishing", "ref-brig", "ref-wharf", "ref-dockhand", "ref-player"];
+const sel = process.env.SHOT ?? "all";
+const shots =
+  sel === "all" ? Object.keys(SCENES) :
+  sel === "test" ? TEST_SHOTS :
+  sel.split(",").map((s) => s.trim()).filter(Boolean);
 
 let currentSceneJson = "{}";
 const page = await browser.newPage();
@@ -432,7 +671,9 @@ for (const shot of shots) {
   const err = await page.evaluate("window.__error ?? null");
   if (err) console.log(`  ${shot} __error:`, err);
   await page.waitForTimeout(3500); // let JPEG textures decode + the render loop settle
-  const file = join(OUT, `${shot}.png`);
+  const outDir = scene.subdir ? join(OUT, scene.subdir) : OUT;
+  mkdirSync(outDir, { recursive: true });
+  const file = join(outDir, `${shot}.png`);
   await page.screenshot({ path: file, clip: { x: 0, y: 0, width: VW, height: VH } });
   const diag = await page.evaluate("window.__diag");
   console.log(`WROTE ${file}`);
