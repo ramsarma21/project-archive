@@ -32,7 +32,7 @@ function building(opts: Parameters<typeof structure>[0]): void {
   if (built.deck) decks.push(built.deck);
 }
 
-export const LEVEL_BOUNDS = rect(-8, 106, -30, 24);
+export const LEVEL_BOUNDS = rect(-22, 106, -30, 24);
 export const STREET = { minZ: -3.2, maxZ: 3.2 } as const;
 /** The Town House square, and the open corner where the elm stands. */
 export const SQUARE = rect(42, 62, -11.2, 11.2);

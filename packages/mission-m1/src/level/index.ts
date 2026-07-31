@@ -14,6 +14,7 @@ import {
 import { DOCK_LIGHT, DOCK_SQUARE_GEOMETRY } from "./dockSquare.js";
 import { MERCHANT_GEOMETRY } from "./merchant.js";
 import { ROPEWALK_GEOMETRY, ROPEWALK_LIGHT } from "./ropewalk.js";
+import { WHARF_GEOMETRY, WHARF_LIGHT } from "./wharf.js";
 import { LINKS_2, NODES_2 } from "./route2.js";
 import { ARENA } from "./duelArena.js";
 
@@ -119,12 +120,14 @@ export const M1_EFFIGY_RUN: MissionLevel = {
   sections: SECTIONS,
   masses: [
     ...GEOMETRY.masses,
+    ...WHARF_GEOMETRY.masses,
     ...DOCK_SQUARE_GEOMETRY.masses,
     ...MERCHANT_GEOMETRY.masses,
     ...ROPEWALK_GEOMETRY.masses,
   ],
   decks: [
     ...GEOMETRY.decks,
+    ...WHARF_GEOMETRY.decks,
     ...DOCK_SQUARE_GEOMETRY.decks,
     ...MERCHANT_GEOMETRY.decks,
     ...ROPEWALK_GEOMETRY.decks,
@@ -138,7 +141,7 @@ export const M1_EFFIGY_RUN: MissionLevel = {
   patrols: PATROLS,
   diversions: DIVERSIONS,
   blend: BLEND,
-  light: [...LIGHT, ...DOCK_LIGHT, ...ROPEWALK_LIGHT],
+  light: [...LIGHT, ...WHARF_LIGHT, ...DOCK_LIGHT, ...ROPEWALK_LIGHT],
   catches: CATCHES,
   precision: PRECISION,
   arena: ARENA,

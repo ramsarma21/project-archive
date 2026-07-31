@@ -121,6 +121,28 @@ export const ASSETS: AssetRequirement[] = [
   { key: "service-wall-end", status: "EXISTING", path: "world/props/service-wall-end.glb", sizeM: [0.6, 3.4, 1.0], why: "The Dock Square arcade piers." },
   { key: "bldg-row-clapboard-c", status: "EXISTING", path: "world/props/bldg-row-clapboard-c.glb", sizeM: [8, 7.1, 20], why: "The east side of Dock Square." },
   { key: "dockhand-rigged", status: "EXISTING", path: "world/characters/dockhand-rigged.glb", sizeM: [0.7, 1.75, 0.5], why: "The ropewalk's night man." },
+
+  // The dead-harbour wharf (beat 1) — the mission's one authored ground crossing.
+  // All GLBs already exist under world/props (verified on main); this is placement.
+  // The boardwalk is the walkable plank deck at y0 (the crossing surface); the
+  // warehouses carry the descent (NW) and ascent (SE) galleries at 5.35 that bridge
+  // the printshop leads and the Shambles shed to the deck; the crane + crates are
+  // the intermediate footings of the descend/climb chain. The ships are idle,
+  // non-standable dressing moored on the open-water (S/SW) edge — the shut port.
+  { key: "colonial-wharf-boardwalk", status: "EXISTING", path: "world/props/colonial-wharf-boardwalk.glb", sizeM: [8.6, 0.35, 6.0], why: "The dead-wharf plank deck at y0 — the walkable crossing surface, tiled to cover the deck footprint (x -18..8, z 2..20).", standableAt: [0.35] },
+  { key: "bldg-warehouse-wharf-a", status: "EXISTING", path: "world/props/bldg-warehouse-wharf-a.glb", sizeM: [14, 9, 10], why: "The waterfront warehouse at the wharf's NW: its loading gallery at 5.35 is the descent step off the printshop leads (beat 1a)." },
+  { key: "bldg-warehouse-wharf-b", status: "EXISTING", path: "world/props/bldg-warehouse-wharf-b.glb", sizeM: [13, 8, 9], why: "The warehouse at the wharf's E: its gallery at 5.35 is the ascent step up onto the Shambles shed roof (beat 1g-1h)." },
+  // timber-crane is declared once, above (the yard cover). The wharf gibbet-crane
+  // reuses that key; it is a single-entry mass sized by its own rect, so no second
+  // declaration is needed (a duplicate key silently wins the ASSET_BY_KEY map).
+  { key: "ship-brig-hero", status: "EXISTING", path: "world/props/ship-brig-hero.glb", sizeM: [24, 20, 6], why: "The tall rigged brig moored SW over open water — the hero ship of the dead harbour. Non-standable dressing." },
+  { key: "ship-snow-background", status: "EXISTING", path: "world/props/ship-snow-background.glb", sizeM: [20, 17, 5.5], why: "The snow moored SW behind the brig — background ship, non-standable dressing." },
+  { key: "ship-sloop", status: "EXISTING", path: "world/props/ship-sloop.glb", sizeM: [14, 15, 4.5], why: "The sloop moored to the S — non-standable dressing on the open-water edge." },
+  { key: "rowboat", status: "EXISTING", path: "world/props/rowboat.glb", sizeM: [3.0, 1.0, 1.4], why: "A ship's boat drawn up in the shallows at the wharf edge — dead-harbour dressing." },
+  { key: "buoy", status: "EXISTING", path: "world/props/buoy.glb", sizeM: [1.0, 1.2, 1.0], why: "A mooring buoy on the open water off the wharf — dead-harbour dressing." },
+  { key: "bollard", status: "EXISTING", path: "world/props/bollard.glb", sizeM: [0.5, 0.9, 0.5], why: "Mooring bollards along the wharf's water edge: an edge guard, not footing (non-standable)." },
+  { key: "wharf-rope-rail-straight", status: "EXISTING", path: "world/props/wharf-rope-rail-straight.glb", sizeM: [3.8, 1.0, 0.2], why: "The rope rail run along the wharf's seaward lip between the bollards — edge guard, non-standable." },
+  { key: "fish-flakes-rack", status: "EXISTING", path: "world/props/fish-flakes-rack.glb", sizeM: [3.0, 2.0, 1.4], why: "Split-cod drying racks on the wharf, standing empty — the fishery shut with the port. Dressing, non-standable." },
   { key: "well-pump", status: "EXISTING", path: "world/props/well-pump.glb", sizeM: [1.8, 1.9, 1.8], why: "The town pump: the sightline break that lets the blend take." },
   { key: "flintlock-pistol", status: "EXISTING", path: "world/props/flintlock-pistol.glb", sizeM: [0.35, 0.12, 0.05], why: "The duel weapon, socketed to the hand bone by the duel's weapon rig." },
 
