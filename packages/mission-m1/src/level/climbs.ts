@@ -31,23 +31,35 @@ export const CLIMBS: ClimbSpec[] = [
   // reveal onto the leads. Both are straight-up climbs the reader would not
   // otherwise offer (a ledge over a crate, a floor under an eave), so they are
   // written down here against the links they serve.
+  // Re-massed 31-Jul (owner: no ladders, no >1.9 m climbs). The 2.1 m crate→balcony
+  // is now a single 1.85 m mantle off the raised goods on-ramp (2.15); the 3.1 m
+  // balcony→eave splits in two onto the new string course (5.5).
   climbVolume({
     section: "B_SHAMBLES",
     serves: "B_CRATES_B->M_LEDGE",
     onto: "MERCHANT_BALCONY",
-    at: [39.2, 1.9, -2.0],
+    at: [39.2, 2.15, -2.0],
     halfX: 0.6,
     halfZ: 0.4,
-    note: "Standing on the Shambles crate under the merchant's open window; the balcony overhangs the crate, and going up is the climb-in. A foothold, not the whole ledge (the balcony is only 0.8 m deep).",
+    note: "On the Shambles goods on-ramp (2.15) under the merchant's open window; the balcony overhangs it, and the mantle up (1.85 m) is the climb-in.",
   }),
   climbVolume({
     section: "B_SHAMBLES",
-    serves: "M_LEDGE->M_EAVE",
-    onto: "MERCHANT__ROOF",
+    serves: "M_LEDGE->M_STRING",
+    onto: "MERCHANT_STRING",
     at: [39.2, 4.0, -2.8],
-    halfX: 1.0,
-    halfZ: 0.4,
-    note: "On the window balcony; the leads are one climb up the south face, riding the wall exterior clear of the roof edge.",
+    halfX: 0.6,
+    halfZ: 0.35,
+    note: "On the balcony; the jettied gallery is one mantle up and out over the street (4.0 → 5.5).",
+  }),
+  climbVolume({
+    section: "B_SHAMBLES",
+    serves: "M_STRING->M_EAVE_S",
+    onto: "MERCHANT__ROOF",
+    at: [39.2, 5.7, -2.0],
+    halfX: 0.6,
+    halfZ: 0.35,
+    note: "On the gallery; the leads' south lip is the last mantle (5.5 → 7.1).",
   }),
 
   // ---- C_ASCENT: the Town House, twice round and up the tower --------------

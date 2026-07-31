@@ -593,11 +593,11 @@ test("the Shambles mark reaches the Town House approach once the body has walked
   // The fix is route-contiguity, not a blacklist. Walk the body along the actual
   // SAFE line and the mark it refused from the stall front is offered once the
   // body has genuinely arrived. The SAFE line is now the COVERT roofline: up the
-  // awning, across the canopies, then INTO the merchant — climb the window
-  // balcony off the crate, through the SAFE parlour, and up onto the leads — and
-  // the mark heads for the foot of the Town House scaffold that the leads' east
-  // lip drops onto (G-B). It no longer drops to the street or loops through Dock
-  // Square, so the ground exit is off the guided line.
+  // awning, across the canopies, then INTO the merchant — a ≤1.9 m mantle chain up
+  // the window balcony off the goods on-ramp, up the jettied gallery, onto the
+  // leads (no ladders) — and the mark heads for the foot of the Town House scaffold
+  // that the leads' east lip drops onto (G-B). It no longer drops to the street or
+  // loops through Dock Square, so the ground exit is off the guided line.
   const safe = createWayfinder(level, { guidanceLines: ["SAFE"] });
   const route = [
     "B_STREET_MID",
@@ -608,6 +608,8 @@ test("the Shambles mark reaches the Town House approach once the body has walked
     "B_CANOPY_4",
     "B_CRATES_B",
     "M_LEDGE",
+    "M_STRING",
+    "M_EAVE_S",
     "M_EAVE",
     "M_EAVE_E",
   ] as const;

@@ -59,7 +59,7 @@ export const NODES: RouteNode[] = [
   node("B_EXIT", "B_SHAMBLES", [41.6, 0.0, -0.4], "GROUND", []),
 
   node("B_CRATES_FOOT", "B_SHAMBLES", [29.4, 0.0, -0.8], "GROUND", ["crossover"]),
-  node("B_CRATES_B", "B_SHAMBLES", [39.2, BAND.STACK, -2.0], "SHAMBLES_CRATES_B", ["crossover"]),
+  node("B_CRATES_B", "B_SHAMBLES", [39.2, 2.15, -2.0], "SHAMBLES_CRATES_B", ["crossover"]),
   node("B_CRATES_A", "B_SHAMBLES", [29.4, BAND.STACK, -2.3], "SHAMBLES_CRATES_A", ["crossover"]),
   node("B_CANOPY_FOOT", "B_SHAMBLES", [19.7, 0.0, -0.4], "GROUND", ["crossover"]),
 
@@ -72,8 +72,12 @@ export const NODES: RouteNode[] = [
   // projecting-balcony drop-in.
   node("M_LEDGE", "B_SHAMBLES", [39.2, 4.0, -2.8], "MERCHANT_BALCONY", ["merchant", "safe-interior", "ledge", "crossover"],
     "The merchant's window balcony, a solid ledge 4.0 m up directly over the Shambles crate — the covert climb-in off the high line."),
+  node("M_STRING", "B_SHAMBLES", [39.2, 5.7, -2.0], "MERCHANT_STRING", ["merchant", "ledge", "high-line"],
+    "The jettied gallery oversailing the street: the intermediate mantle between the balcony (4.0) and the leads (7.1), out south of the eave for headroom."),
   node("M_PARLOUR", "B_SHAMBLES", [39.0, 4.0, -5.0], "MERCHANT_PARLOUR__DECK", ["merchant", "safe-interior"],
     "The quartered parlour, a SAFE interior off the window balcony. The billeting reads occupation; the way on is back to the window and up onto the leads."),
+  node("M_EAVE_S", "B_SHAMBLES", [39.2, 7.1, -2.7], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
+    "The south lip of the merchant's leads, mantled onto off the jettied gallery — the top of the covert climb-in."),
   node("M_EAVE", "B_SHAMBLES", [39.2, 7.1, -3.5], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
     "The merchant's leads, climbed up the south face off the window balcony — clear of the drawn roof edge at z −3.2."),
   node("M_EAVE_E", "B_SHAMBLES", [42.2, 7.1, -6.0], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
@@ -329,7 +333,7 @@ export const LINKS: RouteLink[] = [
   // kept as the fallback): stay off the street, climb into the merchant, and cross
   // his leads to the Town House scaffold.
   link("B_CRATES_B", "M_LEDGE", "CLIMB", "SAFE", "CLIMB", {
-    note: "G-A: up the goods-ladder in the merchant's open window onto the balcony ledge — a vertical climb-in off the high line into the SAFE interior, no ground touch.",
+    note: "G-A: a single ≤1.9 m mantle off the Shambles goods on-ramp (2.15) onto the window balcony ledge (4.0) into the SAFE interior — no ground touch, no ladder.",
   }),
   link("M_LEDGE", "M_PARLOUR", "RUN", "SAFE", "RUN", {
     speedMps: 2.0,
@@ -339,8 +343,14 @@ export const LINKS: RouteLink[] = [
     speedMps: 2.0,
     note: "Back out of the parlour to the window balcony, the hub of the drop-in.",
   }),
-  link("M_LEDGE", "M_EAVE", "CLIMB", "SAFE", "CLIMB", {
-    note: "Up the south face off the balcony onto the leads — the climb rides the wall exterior, south of the drawn roof edge, so it tops onto the roof rather than through it.",
+  link("M_LEDGE", "M_STRING", "CLIMB", "SAFE", "CLIMB", {
+    note: "Up off the balcony onto the jettied gallery (4.0 → 5.5), out over the street south of the eave.",
+  }),
+  link("M_STRING", "M_EAVE_S", "CLIMB", "SAFE", "CLIMB", {
+    note: "Last mantle off the gallery onto the leads' south lip (5.5 → 7.1) — tops onto the roof, not through it. No ladder.",
+  }),
+  link("M_EAVE_S", "M_EAVE", "RUN", "SAFE", "RUN", {
+    note: "In off the south lip across the merchant's leads to the G-B take-off.",
   }),
   link("M_EAVE", "M_EAVE_E", "RUN", "SAFE", "RUN"),
   link("M_EAVE_E", "C_SCAFF_2", "DROP", "SAFE", "CHAIN_DROP", {

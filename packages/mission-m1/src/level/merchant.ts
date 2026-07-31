@@ -199,6 +199,44 @@ decks.push(
     tags: ["balcony", "ledge", "safe-interior", "start"],
     note: "The merchant's window balcony over the Shambles crate: the covert climb-in ledge into the quartered parlour.",
   }),
+  // --- The mantle-chain ledge (owner 31-Jul: the covert line is ≤1.9 m mantles, no
+  // ladders/tall climbs). The old exit (balcony 4.0 → eave 7.1, a 3.1 m laddered
+  // CLIMB) splits into two ≤1.9 m mantles onto a moulded string course at 5.5. The
+  // old climb-in (crate → balcony 4.0, a 2.1 m laddered CLIMB) is now a single 1.85 m
+  // mantle by raising the Shambles goods on-ramp to 2.15 (see geometry.ts
+  // SHAMBLES_CRATES_B) — no intermediate ledge needed, and none fits: a ledge
+  // between the 1.9 m crate and the 4.0 m balcony would either sit under the balcony
+  // overhang or over the crate, and lose its headroom either way.
+  //
+  // The intermediate is a JETTIED UPPER-STOREY GALLERY, not a flush string course:
+  // the 3.1 m storey between the balcony (4.0) and the eave (7.1) is shorter than two
+  // body-heights, so a ledge stacked flush on the facade has no headroom (the roof
+  // 7.1 or the balcony 4.0 sits inside a body-height of it). A believable Georgian
+  // jetty solves it: the gallery OVERSAILS the street SOUTH of the roof's own south
+  // edge (z −2.5, = MERCHANT_FOOT south −3.2 + JETTY 0.7), so a body on it has open
+  // sky overhead, not the eave. It projects to z −1.7 (a full jettied storey) and
+  // stands clear of the balcony node (z −2.8) below it.
+  //
+  // ASSET FLAG (pending-regen): the current bldg-merchant mesh already draws its
+  // balcony ~2.1 m and its roof/eave ~3.1 m BELOW their authored planes, so this new
+  // gallery reads short too until the merchant facade is regenerated to box. Target
+  // boxes for the regen (same key bldg-merchant, south face over the window
+  // x 38.0..40.4):
+  //   balcony       top y = 4.00  (z −3.4..−2.6, ≥0.8 deep)
+  //   jetty gallery top y = 5.70  (z −2.4..−1.6, oversailed south, ≥0.8 deep)
+  //   eave / roof   top y = 7.10
+  // Recorded as accepted debt in scripts/check-world-affordances.mjs. The STRUCTURE
+  // (decks/route) is authored to the target; do NOT shrink the boxes.
+  deck({
+    id: "MERCHANT_STRING",
+    section: "B_SHAMBLES",
+    asset: "bldg-merchant",
+    rect: rect(38.0, 40.4, -2.4, -1.6),
+    y: 5.7,
+    carriedBy: ["MERCHANT"],
+    tags: ["ledge", "gallery"],
+    note: "The jettied upper-storey gallery oversailing the street: the intermediate mantle (balcony 4.0 → 5.7 → eave 7.1) up the merchant's south front to the leads. Sits above the balcony-body head (STAND_HEIGHT 1.55) so it never clips the balcony below.",
+  }),
 );
 
 export const MERCHANT_GEOMETRY = { masses, decks } as const;

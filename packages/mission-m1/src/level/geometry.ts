@@ -498,8 +498,13 @@ masses.push(
     // (B_CRATES_B at z=-2.0) is unaffected.
     asset: "crate-mound",
     rect: rect(38.0, 40.4, -3.2, -1.2),
-    topY: BAND.STACK,
+    // Raised 1.9 → 2.15 (31-Jul) so the covert climb-in is a single ≤1.9 m mantle
+    // onto the merchant balcony (4.0): a taller pile of the merchant's received
+    // goods at his shopfront. The back face stays flush to the merchant's south wall
+    // (z −3.2) — only the height changed, so the penetration seam is unaffected.
+    topY: 2.15,
     tags: ["climb", "crossover"],
+    note: "The merchant's goods on-ramp: the taller pile the covert line mantles off, into the open upper window.",
   }),
   soffit({
     id: "PASSAGE_HOIST",

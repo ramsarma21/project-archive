@@ -32,28 +32,10 @@
 import type { GripPlacementSpec, LadderPlacementSpec } from "../types.js";
 
 export const LADDERS: LadderPlacementSpec[] = [
-  // ---- B_SHAMBLES: the merchant's house — the covert drop-in --------------
-  // The goods-ladder in the merchant's open window, off the Shambles crate up onto
-  // the projecting balcony. The climber is SOUTH of the ledge (outward +Z); the
-  // base sits under the ledge's south edge (z=-2.6) so the top-out (a radius in,
-  // north) lands ON the balcony deck (z −3.4..−2.6) rather than short of it.
-  {
-    id: "MERCHANT_WINDOW",
-    at: [39.2, 1.9, -2.6],
-    onto: "MERCHANT_BALCONY",
-    faceX: 0,
-    faceZ: 1,
-  },
-  // Off the balcony up the merchant's south FACE onto the leads. The climber is on
-  // the balcony south of the wall (outward +Z); the rise rides the wall exterior
-  // clear of the drawn roof edge (z=-3.2) and tops onto the roof.
-  {
-    id: "MERCHANT_EAVE",
-    at: [39.2, 4.0, -2.9],
-    onto: "MERCHANT__ROOF",
-    faceX: 0,
-    faceZ: 1,
-  },
+  // B_SHAMBLES / the merchant: the two goods-ladder climbs (crate→balcony,
+  // balcony→eave) were RETIRED 31-Jul. The covert climb-in is now a ≤1.9 m mantle
+  // chain up believable facade ledges (sill 2.95, balcony 4.0, string 5.5, eave
+  // 7.1) — no ladder. See level/climbs.ts and level/merchant.ts.
 
   // ---- C_ASCENT: the Town House, under repair -----------------------------
   // The mason's scaffold on the west front, its two stagings stacked. The safe
