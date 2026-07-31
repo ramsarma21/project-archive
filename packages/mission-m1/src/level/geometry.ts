@@ -19,7 +19,7 @@
 // and it is also exactly how the city was built.
 
 import { BAND, JETTY_M } from "../envelope.js";
-import { deck, inflate, prop, rect, soffit, structure } from "../authoring.js";
+import { deck, inflate, prop, rampStrips, rect, soffit, structure } from "../authoring.js";
 import type { DeckSpec, MassSpec, RampSpec } from "../types.js";
 
 const masses: MassSpec[] = [];
@@ -107,17 +107,17 @@ masses.push(
     landable: false,
     tags: ["structure", "north-row", "interior-shell", "shopfront"],
   }),
-  // Interior ceiling: caps the ground-floor room at 3.0 m so the body cannot clip
-  // up through the interior to the leads. Solid; the room is 0..3.0, enclosed and
-  // unreachable above.
+  // Interior ceiling over the REAR of the room only (z −16.9..−8). It caps the
+  // rear at 3.0 m so the body cannot clip up to the leads there; the FRONT bay
+  // (z −8..−3.2) is left double-height so the internal stair can rise to the 2.9 m
+  // gallery balcony with headroom (a 3.0 m ceiling over a 2.9 m balcony would bury
+  // the player's head). Overlaps the walls 0.2 m so it clusters into the one
+  // printshop draw (scenery.test "drawn once").
   prop({
     id: "PRINTSHOP_CEILING",
     section: "A_LEADS",
-    // Overlaps 0.2 m into each wall so it CLUSTERS into the one printshop object
-    // (a slab abutting the walls draws as a second bldg-printshop — scenery.test
-    // "drawn once"); the overlapped edges are buried inside the walls.
     asset: "bldg-printshop",
-    rect: rect(0.3, 12.7, -16.9, -3.4),
+    rect: rect(0.3, 12.7, -16.9, -8.0),
     baseY: PS_CEIL,
     topY: PS_CEIL + 0.15,
     landable: false,
@@ -133,6 +133,72 @@ decks.push(
     y: BAND.LOW_ROOF,
     carriedBy: ["PRINTSHOP"],
     tags: ["roof", "north-row", "start"],
+  }),
+);
+
+// Interior → stairs → balcony → leads. The internal stair rises in the open front
+// bay as stepped rampStrips (each strip ≤ freeStepUp, so the flow reader absorbs it
+// with no stair clip) to a gallery balcony at 2.9 m that runs out through the
+// shopfront gap, from which the exterior pentice (4.4) → sign (6.2) → leads (7.1,
+// A_START) chain climbs. This is the sanctioned ground→roof start. The strips are
+// invisible collision (asset rule allows it for ramps/stairs); a thin strip cannot
+// carry a stone-steps mesh, so a visible stair block is a later polish nicety.
+decks.push(
+  ...rampStrips({
+    id: "PRINTSHOP_STAIR",
+    section: "A_LEADS",
+    asset: null,
+    axis: "Z",
+    from: { at: -7.5, y: 0 },
+    to: { at: -5.0, y: 2.9 },
+    cross: 6.0,
+    halfWidth: 1.0,
+    tags: ["stairs"],
+  }),
+);
+masses.push(
+  // A full-width counting-room gallery along the front. It is a SOLID mezzanine
+  // (baseY 2.6..topY 2.9), not a one-way deck: the shop floor is an occupiable
+  // room directly beneath it, and a one-way deck there lets a body jumping in the
+  // room clip up through the gallery underside (the airborne deck-edge graze
+  // invariant). Solid, the mover simply stops that jump. Drawn by the printshop
+  // mesh (asset bldg-printshop → the generator lays the slab, TOP on 2.9) so a rail
+  // stands on real stone; overlaps the W/E walls 0.2 m so it clusters into the one
+  // printshop draw, and stays inside the footprint so it is inside the draw
+  // envelope. PRINTSHOP_BALCONY__DECK (route.ts, added at re-line) will be the
+  // null-asset landing surface on its top.
+  prop({
+    id: "PRINTSHOP_BALCONY",
+    section: "A_LEADS",
+    asset: "bldg-printshop",
+    rect: rect(0.3, 12.7, -5.0, -3.2),
+    baseY: 2.6,
+    topY: 2.9,
+    landable: false,
+    tags: ["structure", "balcony", "interior-shell"],
+    note: "The printer's gallery over the shop floor — the first off-ground surface. Reached by the internal stair; opens south onto the shopfront and the leads chain.",
+  }),
+  // Balustrade along the gallery's inner (north) edge, split around the stair
+  // head so the ascent is not railed off. Sits on the drawn gallery slab.
+  prop({
+    id: "PRINTSHOP_BALUSTRADE_W",
+    section: "A_LEADS",
+    asset: "churchyard-fence",
+    rect: rect(0.5, 4.8, -5.0, -4.8),
+    baseY: 2.9,
+    topY: 2.9 + 1.15,
+    landable: false,
+    tags: ["balustrade"],
+  }),
+  prop({
+    id: "PRINTSHOP_BALUSTRADE_E",
+    section: "A_LEADS",
+    asset: "churchyard-fence",
+    rect: rect(7.2, 12.5, -5.0, -4.8),
+    baseY: 2.9,
+    topY: 2.9 + 1.15,
+    landable: false,
+    tags: ["balustrade"],
   }),
 );
 

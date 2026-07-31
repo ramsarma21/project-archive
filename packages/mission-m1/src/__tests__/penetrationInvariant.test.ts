@@ -59,14 +59,17 @@ interface Violation {
   pos: { x: number; y: number; z: number };
 }
 
-// Deck strips of the yard-stage ramp are overlapping thin stair treads: a body
-// standing on one tread necessarily has the next tread's plane beside its chest,
-// which reads as a deck cut although the tread is a solid stair the body is ON,
-// not a roof/canopy edge it is passing through. This is a pre-existing modelling
-// artifact of representing a staircase as overlapping decks and is not a
-// player-visible clip; the deck-edge guard (which targets canopies and roofs)
-// deliberately does not touch it. It is excluded from the deck-graze gate below.
-const RAMP_DECK = /^YARD_STAGE_RAMP__S\d+$/;
+// Deck strips of a ramp/stair are overlapping thin treads: a body standing on
+// one tread necessarily has the next tread's plane beside its chest, which reads
+// as a deck cut although the tread is a solid stair the body is ON, not a
+// roof/canopy edge it is passing through. This is a modelling artifact of
+// representing a staircase as overlapping decks and is not a player-visible clip;
+// the deck-edge guard (which targets canopies and roofs) deliberately does not
+// touch a ramp. Every strip rampStrips() emits — the yard-stage ramp and the
+// printshop stair alike — carries the "ramp" tag, so exempt by that shared tag
+// rather than by one ramp's name.
+const isRampDeck = (deck: { tags: ReadonlySet<string> }): boolean =>
+  deck.tags.has("ramp");
 
 function fuzzSession(seed: number, ticks: number, out: Violation[], deckOut: Violation[]): void {
   const rand = rng(seed);
@@ -150,7 +153,7 @@ function fuzzSession(seed: number, ticks: number, out: Violation[], deckOut: Vio
         motion.pos.y,
         motion.capsuleHeight,
       );
-      if (deck && !RAMP_DECK.test(deck.id)) {
+      if (deck && !isRampDeck(deck)) {
         const ignore = motion.action?.ignore;
         if (!ignore?.has(deck.id)) {
           const peakFoot =

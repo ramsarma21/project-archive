@@ -304,6 +304,16 @@ if shell_walls:
             # gate. The underside at baseY is the ceiling the room sees.
             solid_box(cx0, cx1, cy0, cy1, b["baseY"], b["topY"], IT,
                       faces=("+z", "-z"), tile=1.0)
+    # interior mezzanine gallery slab(s): a mine 'balcony' blocker, drawn SOLID so
+    # the shop floor below has a real underside (a one-way deck there lets a body
+    # jumping in the room clip up through it). Top (the standing plane), underside,
+    # and the room-side (north, +y) lip are drawn; the x-ends are buried in the
+    # walls and the south face meets the wall recess, so neither is drawn (weld).
+    for b in blockers:
+        if "balcony" in b.get("tags", []):
+            gx0, gx1, gy0, gy1 = b_rect(b)
+            solid_box(gx0, gx1, gy0, gy1, b["baseY"], b["topY"], IT,
+                      faces=("+z", "-z", "+y"), tile=1.0)
     # leaded roof over the footprint (the leads) + ground apron (interior floor +
     # the bbox pin, same as the solid path below).
     solid_box(fbx0, fbx1, -fbz1, -fbz0, fh - 0.15, fh, IL, faces=("+z",), tile=1.2)
