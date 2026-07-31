@@ -12,6 +12,10 @@
 //   node assets/pipeline/gen_concept_image.mjs \
 //     --edit assets/source/concepts/dock.png --prompt "same dock at dusk" \
 //     --out assets/source/concepts/dock-dusk.png
+//   # multiple --edit references (identity + setting held together):
+//   node assets/pipeline/gen_concept_image.mjs \
+//     --edit backdrop.png --edit npc-a.png --edit npc-b.png \
+//     --prompt "the two men on the wharf ..." --out scene.png
 //
 // Env (.env at repo root): TRUEFOUNDRY_API_KEY (required),
 // TRUEFOUNDRY_BASE_URL (default https://tfy.promptlens.trilogy.com/v1),
@@ -49,7 +53,7 @@ function parseArgs(argv) {
     else if (arg === "--out") args.out = argv[++i];
     else if (arg === "--count") args.count = Math.max(1, Math.min(4, Number(argv[++i]) || 1));
     else if (arg === "--size") { args.size = argv[++i]; args.sizeExplicit = true; }
-    else if (arg === "--edit") args.edit = argv[++i];
+    else if (arg === "--edit") (args.edits ??= []).push(argv[++i]);
     else if (arg === "--model") args.modelOverride = argv[++i];
     else {
       console.error(`unknown argument: ${arg}`);
@@ -129,7 +133,7 @@ async function saveImages(data) {
     model,
     prompt: args.prompt,
     size: args.size,
-    edit: args.edit ?? null,
+    edit: args.edits ?? null,
     generatedAt: new Date().toISOString(),
     files: written.map((w) => basename(w.path)),
   }, null, 2));
@@ -196,15 +200,21 @@ async function generateViaChat(prompt) {
   return images;
 }
 
-if (args.edit) {
-  // Reference-based generation (style/scene consistency): /images/edits.
-  const sourcePath = resolve(args.edit);
-  const sourceExt = extname(sourcePath).toLowerCase();
-  const sourceMime = sourceExt === ".jpg" || sourceExt === ".jpeg" ? "image/jpeg" : "image/png";
+if (args.edits && args.edits.length) {
+  // Reference-based generation (style / scene / identity consistency): /images/edits.
+  // Multiple --edit sources are supported (e.g. two character concepts + a wharf
+  // backdrop) so identity and setting hold together. OpenAI-style `image[]` for
+  // more than one source; a plain `image` field for a single source (unchanged).
   const form = new FormData();
   form.append("model", model);
   form.append("prompt", args.prompt);
-  form.append("image", new Blob([readFileSync(sourcePath)], { type: sourceMime }), basename(sourcePath));
+  const field = args.edits.length > 1 ? "image[]" : "image";
+  for (const src of args.edits) {
+    const sourcePath = resolve(src);
+    const sourceExt = extname(sourcePath).toLowerCase();
+    const sourceMime = sourceExt === ".jpg" || sourceExt === ".jpeg" ? "image/jpeg" : "image/png";
+    form.append(field, new Blob([readFileSync(sourcePath)], { type: sourceMime }), basename(sourcePath));
+  }
   const response = await fetch(`${imagesBase}/images/edits`, {
     method: "POST",
     headers: authHeaders,

@@ -1,0 +1,10 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Cinematic concept art of a SHUT colonial-Boston harbour at dawn, June 1774 — a dead port, wide establishing view. A long weathered plank-deck wharf recedes toward the water; two tall two-masted square-rigged merchant ships are moored close along the wharf on the left, sails tightly furled and gasketed on the yards, dark tarred hulls with muted ochre sheer stripes, standing rigging and ratlines; more ships anchored hazy in the misty distance. On the deck: an idle timber gin-pole crane and a leaning wooden ladder on the right, wooden barrels, coiled tarred rope and a fish-drying flake rack left unmoved, a rope-and-post rail along the water's edge as a leading line. Low hazy sun low over calm grey-green water, soft volumetric morning haze, long soft light. Absolutely nothing working: no crew, no cargo moving, empty and still. Historically accurate 1774 working-class Boston; muted pewter, umber and ochre palette; weathered painted wood, tarred rope, wrought iron and canvas materials. Polished stylized game-cinematic concept-art look, richly detailed, atmospheric, NOT photoreal; no Victorian, no modern, no fantasy, no naval-warship or military elements; no text, no signage, no lettering, no numbers, no watermark, no people working.",
+  "size": "1536x864",
+  "edit": null,
+  "generatedAt": "2026-07-31T05:35:03.283Z",
+  "files": [
+    "backdrop-a.png"
+  ]
+}

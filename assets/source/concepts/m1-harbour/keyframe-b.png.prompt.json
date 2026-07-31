@@ -1,0 +1,14 @@
+{
+  "model": "gemini-group/gemini-3-pro-image-preview",
+  "prompt": "Cinematic game-concept keyframe, ~5-second cutscene beat on a SHUT colonial-Boston wharf at dawn, June 1774 — a dead port. TWO men on the weathered plank deck, mid-foreground, off-center, the shuttered harbour and moored tall ships behind. FOREGROUND LEFT = the ruined dockworker from the reference (off-white linen shirt, brown wool waistcoat, faded red neck kerchief, tar-stained breeches, gray stockings): crouched by an empty fishing net and coiled rope, shoulders low, looking away, defeated. RIGHT = the Crown tax clerk from the reference (dark grey wool tailcoat, black tricorne hat, white stock, black breeches, gray stockings): standing stiff and impassive, one hand gesturing coolly toward the idle shut ships, the official who has closed the port. Keep BOTH men's exact faces, hair, hats and 1774 clothing from the references; keep the wharf, ships, low hazy sun, muted palette and materials from the backdrop reference. Two square-rigged merchant ships moored with furled sails, more ships hazy in the distance, idle timber crane, barrels and rope left unmoved, rope-and-post rail at the water's edge; nothing working — the closure and its human cost. Historically accurate 1774 Boston, muted pewter/umber palette, weathered materials. Polished stylized game-cinematic look, soft haze, NOT photoreal; no Victorian, modern, fantasy or military; no text, signage, lettering, numbers or watermark.",
+  "size": "1024x1024",
+  "edit": [
+    "assets/source/concepts/m1-harbour/backdrop-a.png",
+    "assets/source/concepts/npc-dockhand.png",
+    "assets/source/concepts/npc-taxclerk.png"
+  ],
+  "generatedAt": "2026-07-31T05:42:37.231Z",
+  "files": [
+    "keyframe-b.png"
+  ]
+}
