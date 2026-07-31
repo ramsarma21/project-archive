@@ -20,6 +20,34 @@
   "_grants": "A temporary, exclusive, auditable claim on a contested or otherwise-owned path, so a file that must change has a legal path to changing without being permanently re-owned. While a grant stands, the named lane may write the listed paths (this overrides contested AND another lane's ownership); every OTHER lane is denied them, exactly as if that lane owned them. Honoured by lane-guard.sh and reported by scripts/check-lane-integrity.mjs. Each entry states the lane, the exact paths, a reason, and the date granted, so the grant is visible and can be retired when the work lands. Keep the list short: a grant that outlives its work should be deleted, and if a lane keeps needing a path, give it the path outright instead.",
   "grants": [
     {
+      "lane": "m1-evasion-loop",
+      "paths": [
+        "packages/mission-m1/**",
+        "apps/web/src/chapter/M1Scenery.tsx",
+        "apps/web/src/chapter/m1Mission.ts",
+        "packages/engine-world/src/parkourIk.ts",
+        "packages/engine-world/src/parkour/tuning.ts",
+        "packages/engine-world/src/parkour/clips.ts",
+        "apps/web/public/world/props/bldg-printshop.glb",
+        "apps/web/public/world/props/bldg-townhouse-1713.glb",
+        "apps/web/public/world/props/bldg-brick.glb",
+        "apps/web/public/world/props/bldg-row-brick-a.glb",
+        "apps/web/public/world/props/bldg-row-brick-b.glb",
+        "apps/web/public/world/props/bldg-row-clapboard-a.glb",
+        "apps/web/public/world/props/bldg-row-clapboard-b.glb",
+        "apps/web/public/world/props/bldg-row-clapboard-c.glb",
+        "assets/pipeline/*printshop*",
+        "assets/pipeline/*townhouse*",
+        "assets/pipeline/*brick*",
+        "assets/pipeline/*facade*",
+        "assets/pipeline/*ladder*",
+        "scripts/check-clip-fidelity.mjs",
+        "scripts/check-world-affordances.mjs"
+      ],
+      "reason": "FULL M1 WORLD BUILD (owner GO, 31 Jul): build/re-author the Covenant-mission world per docs/design/M1-Covenant-World-Build.md, with continuous physics/traversability verification and a final full-playthrough QA. m1-evasion-loop owns the M1 world surface for this build: packages/mission-m1/** (level layout, route, assets, compile/runtime/types, encounters, ladders), M1Scenery.tsx + m1Mission.ts (scene placement + mission wiring), the engine-world parkour files (HANG_DROP IK + mantle tuning + clips), the world-audit building GLBs + their pipeline globs (printshop Blender hollow-out + any building edits), the *ladder* pipeline, and the clip-fidelity/affordance QA scripts. REUSE-FIRST: most props + the wharf kit + ships + liberty-elm + interior shells are reused in place (placed via the level files, GLBs not edited) or are UNOWNED, so no grant is needed; assets/pipeline gen/bake/optimize/sync + assets/source + apps/web/public/world/{structures,characters/playerboy-rigged.glb} are UNOWNED and fall through to allow. NOT granted (worker flags if needed): engine-world/{contact,collision}.ts core (kept with mission-world so the guard's grant selftest stays green) and liberty-elm-hero.glb (mission-flow; the elm is repositioned via the level files, not edited). All other lanes are parked under the M1-only freeze, so this consolidation evicts no live worker. Granted 2026-07-31; supersedes the 2026-07-30 traversability-closure grant. Retire when the world build merges to main; then re-point lane-guard.sh's grant selftest cases.",
+      "granted": "2026-07-31"
+    },
+    {
       "lane": "m1-1774",
       "paths": [
         "apps/api/src/progression/content.ts",
@@ -44,10 +72,11 @@
         "apps/web/src/module/module.css",
         "apps/web/src/module/moduleShots.ts",
         "apps/web/src/module/SystemPresenter.tsx",
+        "apps/web/src/module/ModuleFilePlayer.tsx",
         "apps/web/package.json",
         "pnpm-lock.yaml"
       ],
-      "reason": "The holographic Archive room replaces the lesson index's flat DOM card list with a real 3D room (procedural shaders and postprocessing, which the asset rule explicitly permits for UI/Archive highlights). Deliberately the FIVE exact files it touches, not the apps/web/src/module/** glob: granting the glob is exclusive and therefore denies it to module-lesson and m1-lesson, which broke lane-guard's own ownership selftest case on ModulePlayer.tsx — the 'a grant overrides ownership in both directions' trap the map documents. A narrow grant records the writer without evicting the co-owners. apps/web/package.json and the CONTESTED pnpm-lock.yaml are included because the room needs @react-three/postprocessing, added via pnpm add in a worktree (the sanctioned path); the lockfile is contested precisely because a silent parallel edit there is unrecoverable, so this makes the change attributable. Granted by the orchestrator on 2026-07-30. Retire when the room merges — and note pnpm-lock.yaml returns to contested, denied to every lane, the moment it does. EXTENDED 2026-07-30: content/m1/module.json + its schema moved here from the retired m1-1774 content grant, for the IRIS naming, the game-open intro cutscene, and the lesson-opening ramp — the same worker owns the presenter/room and the deck it narrates. module.json is now granted ONLY to archive-room.",
+      "reason": "The holographic Archive room replaces the lesson index's flat DOM card list with a real 3D room (procedural shaders and postprocessing, which the asset rule explicitly permits for UI/Archive highlights). Deliberately the FIVE exact files it touches, not the apps/web/src/module/** glob: granting the glob is exclusive and therefore denies it to module-lesson and m1-lesson, which broke lane-guard's own ownership selftest case on ModulePlayer.tsx — the 'a grant overrides ownership in both directions' trap the map documents. A narrow grant records the writer without evicting the co-owners. apps/web/package.json and the CONTESTED pnpm-lock.yaml are included because the room needs @react-three/postprocessing, added via pnpm add in a worktree (the sanctioned path); the lockfile is contested precisely because a silent parallel edit there is unrecoverable, so this makes the change attributable. Granted by the orchestrator on 2026-07-30. Retire when the room merges — and note pnpm-lock.yaml returns to contested, denied to every lane, the moment it does. EXTENDED 2026-07-30: content/m1/module.json + its schema moved here from the retired m1-1774 content grant, for the IRIS naming, the game-open intro cutscene, and the lesson-opening ramp — the same worker owns the presenter/room and the deck it narrates. module.json is now granted ONLY to archive-room. EXTENDED 2026-07-31 with ModuleFilePlayer.tsx to finish the File 1 cutscene RUNTIME on the 'The closure' card: the content drop-in landed (module.json video block, PROJECT_RECONSTRUCTION, public/cutscenes/m1/closure.mp4), but the player hard-codes the <video> muted (VO + dockworker silent, browser TTS talks over it) and ends the card on the narration-beat duration (~21.02s) so the 30.67s clip is cut off mid-line and the document stills are hidden while it plays. archive-room owns the cutscene wiring, so it fixes the runtime: play the reconstruction video WITH its own audio (respecting browser autoplay policy), suppress the TTS narration beat while it plays, drive the card/PLAYING duration from the video length, and restore the Committee circular + mezzotint stills after it. Deliberately the ONE exact file, not the apps/web/src/module/** glob, so parked module-lesson/m1-lesson keep their other files. Retire when the cutscene work merges.",
       "granted": "2026-07-30"
     },
     {
