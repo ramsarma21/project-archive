@@ -1456,21 +1456,25 @@ decks.push(
     // the shaft face, which removes that soffit — so the departure now only needs
     // to stand at x >= 83.35 for its west shoulder to clear x 83.0.
     //
-    // Nothing can stand there. Measured off the delivered GLB, clearance above
-    // this 13.00 plane across the whole z 7.9-9.6 depth: "-" (open sky) out to
-    // x 83.1, then a flat 1.00 m from x 83.2 all the way east — the photoreal
-    // corner urn's base at 14.00, which the asset lane's own note used to rule OUT
-    // extending this ledge, and which applies just as much to the pair it shipped.
-    // A 1.55 m body is crouch-only out there; `verify_m1_steeple` puts the lowest
-    // ceiling at 0.58 m and calls 16.4% of the extended ledge crouch-only.
+    // THE URN WAS NEVER THE BLOCKER. This note claimed it was, on a column probe
+    // that read a flat 1.00 m ceiling east of x 83.2 and attributed it to the
+    // photoreal corner urn's base at 14.00. `2762dac` re-probed and found the urn
+    // base starts at x 84.14 — east of this ledge's 84.0 end and outside the climb
+    // column. The obstruction was the belfry base skirt's east (+x) sloped cornice
+    // wing spanning the full +y depth, now trimmed back to the shaft depth. A
+    // capsule sweep at r=0.35 clears >=1.90 m at every stance across x 83.0..84.0.
     //
-    // AUTHORED-HULL GATES CANNOT SEE THIS. The urn is drawn and carries no
-    // collision, so `routeAscent` drove the full four-hold chain green and every
-    // node passed its standable check with a node out at x 83.5. Only the
-    // mesh-reading verifier caught it. Do not re-wire this from a green ascent run.
+    // AUTHORED-HULL GATES STILL CANNOT SEE THIS CORRIDOR: both the urn and the
+    // cornice wing are drawn and carry no collision, so `routeAscent` drove the
+    // full four-hold chain green with a node out at x 83.5 while the mesh refused
+    // it. Do not re-wire this from a green ascent run. A column probe is also
+    // inadmissible for foliage — leaf cards are near-vertical, so only a swept
+    // capsule sees them; `check-drawn-penetration` is the instrument.
     //
-    // Collision inside the drawn surface is the safe direction, so the deck simply
-    // stops where a body can stand. It needs the urn moved or shortened; reported.
+    // The rect still stops at 83.0 because extending it is only half the job: the
+    // 1.7 / 1.1 spiral also needs an `E_LEDGE_E` node, which has never existed in
+    // any commit. Extending this rect alone would widen a stance nothing climbs
+    // from. See the dead-zone note in eastCovert.ts for what the pair requires.
     rect: rect(79.0, 83.0, 7.9, 9.6),
     y: BAND.STEEPLE_LEDGE_N,
     carriedBy: ["STEEPLE"],

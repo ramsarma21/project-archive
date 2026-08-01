@@ -566,14 +566,20 @@ export const LINKS: RouteLink[] = [
   // spans the shaft and neither is a ceiling over the other.
   //
   // THE CHAIN IS STILL ridge 11.2 -> north 13.0 -> gallery 15.8 AT 1.8 AND 2.8,
-  // and the 2.8 is still in the dead zone. The 1.8 / 1.7 / 1.1 spiral through the
-  // 14.7 east set-off remains UNAUTHORABLE, for a reason that survived the asset
-  // regen. See the pinnacle note on STEEPLE_LEDGE_N in geometry.ts: measured off
-  // the delivered mesh, everything east of x 83.1 on the 13.0 ledge has exactly
-  // 1.00 m of clearance above it, because the photoreal corner urn's base sits at
-  // 14.00 over the whole extension. The departure has to be at x >= 83.35 for the
-  // body's west shoulder to clear the trimmed gallery edge at 83.0, and there is
-  // nowhere in that range a 1.55 m body can stand.
+  // and the 2.8 is still in the dead zone — but NOT for the reason this comment
+  // used to give. It blamed the photoreal corner urn's base at 14.00 for roofing
+  // the whole eastern extension with 1.00 m of clearance. `2762dac` re-probed and
+  // disproved it: the urn base starts at x 84.14, outside the column, and the
+  // obstruction was the belfry base skirt's east cornice wing, now trimmed. The
+  // corridor is clear — a capsule sweep at r=0.35 holds >=1.90 m across
+  // x 83.0..84.0, and E_LEDGE_N->E_GALLERY now reads 0 penetration.
+  //
+  // What is left is not a measurement, it is the authoring: `E_LEDGE_E` has never
+  // existed as a node in any commit, so the 1.7 / 1.1 pair has nothing to route
+  // through. Landing it means placing that node, extending STEEPLE_LEDGE_N's rect
+  // east to 84.0 so the departure sits at x >= 83.35 (its west shoulder clears the
+  // trimmed gallery edge at 83.0 and the rise is near-vertical), and putting both
+  // new legs through the rising-arc check below.
   //
   // The middle step was refused for a day, and the reason is worth keeping because
   // it is a THIRD distinct way to author a climb that looks correct in every rect

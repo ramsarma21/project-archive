@@ -1194,19 +1194,12 @@ bough decks, both effigies, the awning catch, the `F_*` nodes and the nail stanc
 making for 0.244 m the night before a playtest. Whoever takes it should treat it as an asset job
 (canopy sprawl trimmed north of z ~7.5) rather than a level job.
 
-**Coupling nobody has costed, found while sizing the belfry wiring (1 Aug) — read before wiring it.**
-The asset lane cleared the belfry's mesh blocker in `2762dac` (the obstruction was the base skirt's
-east cornice wing, not the urn — the urn diagnosis in `eastCovert.ts` above is stale and should be
-corrected when that file is next opened), and the remaining step is to empty
-`STEEPLE_DEADZONE_CLIMBS`. **Its one remaining entry is `E_LEDGE_N->E_GALLERY` — the exact
-transition carrying the 0.244 m elm intrusion above.** So emptying the list does not just wire a
-landmark: it promotes a parked drawn-penetration from a disabled climb to a live one, on the ascent
-to the leap of faith, and the canopy trim it depends on has not landed. The two items were routed to
-different lanes as if independent and they are the same climb. Deliberately **not** wired on that
-basis; whoever takes it should either land the canopy trim first, or record a decision that 0.244 m
-of foliage clip on an enabled steeple climb is acceptable. Note also that `verify_m1_steeple` is red
-for an unrelated reason (the atlas count below), so it cannot be quoted as a clean pass for this
-work until that clears — read its mesh-pass lines specifically.
+**RESOLVED (1 Aug):** `e73290b` trimmed the north-rim canopy off the belfry corridor and
+`E_LEDGE_N->E_GALLERY` now reads **0 penetration** (clean, nearest solid 0.18 m). Both GLBs are
+synced into `apps/web`. Verified the way the asset lane insisted — a diff of the FULL 46-transition
+report across the sync, not a spot check — and it moves exactly one line: that transition goes
+`OFF 0.244 m -> clean`, the OFF count goes 1 -> 0, and every other figure including
+`F_LOW->F_CROWN` at 0.775 m is untouched.
 
 ### The 13 stale `apps/web` failures: 7 were the guided line, 6 are three other things (1 Aug)
 
@@ -1266,6 +1259,47 @@ and none was greened by a flag that stops it checking anything.
 One genuine player-facing residue worth a look: the authored **walk cap** is a safety cue at a lip
 over a fall, and off the guided line there is no committed leg to carry it, so a player who wanders
 onto the tie beam gets no cap.
+
+### The belfry dead zone is asset-clear but was NEVER AUTHORED — `E_LEDGE_E` does not exist (1 Aug)
+
+Briefs have twice described this as landing "the belfry wiring already authored and passing". **There
+is no such wiring.** `git log --all -S'node("E_LEDGE_E"'` returns nothing: that node has never
+existed as code in any commit on any branch, and neither has a `GOLDEN_LINE` entry for it. The
+1.8 / 1.7 / 1.1 spiral exists only as prose in `route.ts`, `geometry.ts` and `eastCovert.ts`. What
+looked like removed wiring in `72ec557`'s diff is comment text; that commit's own note says the 14.7
+set-off "IS drawn and IS authored (STEEPLE_LEDGE_E) but carries no node."
+
+So `STEEPLE_DEADZONE_CLIMBS` keeps its last entry, and the movement bar — no dead-zone step and no
+ladder on the golden path — is **not** met. What it now needs is authoring, not measurement:
+
+- place `E_LEDGE_E` on `STEEPLE_LEDGE_E` (`rect(83.0, 84.7, 9.6, 13.6)` at `BAND.STEEPLE_LEDGE_E`);
+- extend `STEEPLE_LEDGE_N`'s rect east `83.0 -> 84.0` so the departure sits at x >= 83.35, where its
+  west shoulder clears the trimmed gallery edge at 83.0 and the rise is near-vertical;
+- replace `E_LEDGE_N->E_GALLERY` with the 1.7 / 1.1 pair and splice the node into `GOLDEN_LINE`;
+- put **both** new legs through `authoredTrajectoryClear`, which refuses on the RISING ARC and has
+  already refused two attempts here.
+
+Deliberately not attempted at 03:00 against a "clean or not at all" bar: it is fresh authoring on the
+climax approach, the departure stance and the new node's coordinates are choices rather than
+recovered numbers, and the instrument that judges it has beaten two prior attempts. The asset side is
+genuinely clear now (r=0.35 capsule sweep holds >=1.90 m across x 83.0..84.0), so this is a
+well-posed job for a lane with room, not a blocked one.
+
+**Found while verifying, and pre-existing:** `E_RIDGE->E_LEDGE_N` — the leg immediately BELOW this
+one, on the golden path — is **CRITICAL, 0.945 m into STEEPLE**, the deepest named penetration in the
+report. Identical before and after the sync, so it is nobody's regression, but it means "the belfry
+chain is clean" cannot be claimed on the strength of the 14.7 corridor alone. The steeple trim did
+reduce how much body is buried there (~1.2 m -> ~0.6 m) without moving the 0.945 m depth.
+
+**Two instrument rules from the asset lane, recorded because no model can infer them:**
+
+- **A column probe is blind to foliage.** Leaf cards are near-vertical, so a vertical column reads
+  CLEAR through a canopy; only `check-drawn-penetration`'s swept capsule sees them. Measure with the
+  instrument that reported the defect. This is a fifth entry alongside the four silent-refusal modes.
+- **A canopy edit must be diffed across ALL 46 transitions.** The first trim attempt returned early
+  *before* the leaf cluster consumed its RNG, which re-rolled the downstream canopy, moved the crown
+  and silently deepened `F_LOW->F_CROWN` from 0.775 to 0.996 m. Nothing but the full-report diff
+  catches that; a keep-out must be RNG-neutral.
 
 ### FIXED: the visor briefing drew NO route at all, and one back-link did it (1 Aug)
 

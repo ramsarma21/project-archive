@@ -404,10 +404,24 @@ export const GOLDEN_LINE: readonly string[] = [
 //
 // The belfry survived its own asset regen. The 15.8 gallery's east oversail is now
 // pulled back to the shaft face, which was supposed to open the 1.8 / 1.7 / 1.1
-// spiral through the 14.7 east set-off — but the photoreal corner urn's base at
-// 14.00 roofs the whole eastern extension of the 13.0 ledge with 1.00 m of
-// clearance, and the departure has to stand out there. Measured off the delivered
-// mesh; see the pinnacle note in geometry.ts. It needs the urn moved, not the route.
+// spiral through the 14.7 east set-off.
+//
+// THE URN WAS NOT THE BLOCKER, and this comment said it was for a day. `2762dac`
+// re-probed the delivered mesh: the urn's base starts at worldX 84.14, east of the
+// 84.0 ledge end and outside the climb column entirely. The real obstruction was
+// the belfry base skirt's east (+x) sloped cornice wing, which spanned the full +y
+// depth over the extension; it is now trimmed back to the shaft depth, and a
+// capsule sweep at r=0.35 clears >=1.90 m at every stance across x 83.0..84.0.
+//
+// So the asset side is clear and the exemption below is no longer blocked by
+// geometry — it is blocked by the spiral never having been AUTHORED. `E_LEDGE_E`
+// has never existed as a node in any commit; the 1.7 / 1.1 pair is a design
+// recorded in comments only. Dropping this entry needs that node placed on
+// STEEPLE_LEDGE_E, the 13.0 ledge's rect extended east to 84.0 so the departure
+// sits at x >= 83.35, and both new legs put through `authoredTrajectoryClear`,
+// which refuses on the RISING ARC and has already refused two attempts here.
+// Do not re-wire it from a green ascent run: the urn and the cornice wing are
+// both drawn and uncollided, so authored-hull gates read this corridor as open.
 export const STEEPLE_DEADZONE_CLIMBS: readonly string[] = [
   "E_LEDGE_N->E_GALLERY",
 ];
