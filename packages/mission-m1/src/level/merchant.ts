@@ -167,11 +167,12 @@ decks.push(
     //   the regenerated gallery slab (z −3.4..−2.6, top 5.70) sits UNDER it, so
     //   the jetty roofed the new ledge at 1.40 m, under STAND_HEIGHT, and no body
     //   could have stood on the intermediate the whole chain turns on.
-    // The collision lip is the drawn lip: the climb reader uses this face to
-    // place the capsule's rise, so insetting it behind the mesh made the body
-    // rise through the visible eave before topping out. The gallery's standing
-    // point remains south of this edge with open headroom.
-    rect: { ...inflate(MERCHANT_FOOT, JETTY_M), maxZ: -3.25 },
+    // The collision lip is 0.10 m behind the drawn lip. That is the smallest
+    // inset which leaves a radius-wide standing centreline on the 0.80 m gallery:
+    // putting the deck at the exact drawn edge makes the roof overlap that
+    // centreline and the shipped reader cannot offer the climb. The capsule axis
+    // still rises south of the visible edge, so the drawn eave stays clear.
+    rect: { ...inflate(MERCHANT_FOOT, JETTY_M), maxZ: -3.35 },
     y: EAVE,
     carriedBy: ["MERCHANT"],
     tags: ["roof", "north-row", "eave"],
