@@ -327,18 +327,39 @@ solid_box(-SK_OUT, -SK_OUT, -SK_OUT, SK_OUT, SK_BZ - 0.35, SK_BZ, IL, faces=("-x
 # ---- ANNULUS standable RING STACK: the mantle chain 11.2 -> 15.8 ----------------
 # A ledge is a flat standable slab projecting OFF one shaft face to the box edge
 # (3.7), so it is the OUTERMOST thing on that face and is never overhung by cornice.
-# FIX: 13.0 and 14.7 were BOTH on the south face at the same footprint, so the 14.7
-# slab + its corbel (down to 14.08) roofed the 13.0 ledge with ~1.08 m headroom over
-# 82% of it — unstandable, and unfixable by height (a clear 14.7 needs a >=15.17 top,
-# making 13.0->15.17 a 2.17 m dead-zone rise). So the chain SPIRALS onto adjacent
-# faces: 13.0 stays SOUTH (+y), 14.7 moves to the EAST (+x) flank, which the 15.8
-# gallery's +/-2.7 edge does not cover (1.0 m of clear standable depth, open sky
-# above). Chain (<=1.9 m): ridge 11.2 -> south 13.0 (1.8) -> east 14.7 (1.7) ->
-# 15.8 gallery (1.1). South ledge pins +y=3.7; east ledge pins +x=3.7.
-def south_ledge(ztop, thick=0.24, y_out=3.7, hw=2.0):
-    solid_box(-hw, hw, CORE, y_out, ztop - thick, ztop, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
+# NOTE ON AXES: placed, this face's +y maps to world NORTH (worldZ = 11.6 - localY),
+# so `south_ledge` is the world-north set-off (deck STEEPLE_LEDGE_N) and `east_ledge`
+# (+x) is the world-east set-off (STEEPLE_LEDGE_E). worldX = 81 + localX.
+#
+# FIX 1 (spiral): 13.0 and 14.7 were BOTH on this +y face at one footprint, so the
+# 14.7 slab + its corbel roofed the 13.0 ledge (~1.08 m headroom). The chain spirals
+# onto adjacent faces: 13.0 on +y, 14.7 on +x.
+#
+# FIX 2 (the soffit that refused the belfry link): the 15.8 gallery's +/-2.7 edge
+# oversailed to worldX 83.7, roofing the 14.7 east ledge's western 0.7 m. A CLIMB
+# flies a 2-anchor eased-LINEAR diagonal, so a body rising to a 14.7 stance dragged
+# its west shoulder under that soffit at every node placement — measured 0.44-0.65 m
+# of head into the drawn gallery underside. Lowering 14.7 cannot clear it (the outer
+# fascia hangs to 15.46, forcing the ledge <=13.91 and the upper step to 1.9, the
+# dead-zone edge); moving the stance east clears the rise but strands it 3.9 m from
+# the gallery node at [80, 9.6]; and the +/-3.4 corner PINNACLE (base 14.0) blocks
+# extending the north ledge far enough east to depart east of an un-trimmed oversail.
+# So the fix is a PAIR, both needed and each verified:
+#   (i)  the gallery's EAST oversail is pulled back to the shaft face (ring_deck ox1
+#        2.7 -> 2.0), deleting soffit AND fascia over the east ledge. The leap take-
+#        off is the gallery's NORTH edge [80, 9.6], untouched; only the far east
+#        cantilever is lost.
+#   (ii) the 13.0 north ledge extends EAST to worldX 84.0 (x_hi=3.0, one step west of
+#        the pinnacle) so a body can depart directly below a central 14.7 stance and
+#        rise near-vertically, west shoulder clear of the shaft face.
+# Result: ridge 11.2 -> north 13.0 (1.8) -> east 14.7 (1.7) -> gallery 15.8 (1.1),
+# and the 14.7 stance (worldX ~83.4, clear standable zone 83.35-84.35) sits under
+# open sky. North ledge pins +y=3.7; east ledge pins +x=3.7.
+def south_ledge(ztop, thick=0.24, y_out=3.7, hw=2.0, x_hi=None):
+    x_hi = hw if x_hi is None else x_hi
+    solid_box(-hw, x_hi, CORE, y_out, ztop - thick, ztop, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
     # jettied corbel bracket under the ledge (no top/back face -> flush to slab/core)
-    solid_box(-hw + 0.12, hw - 0.12, CORE, y_out - 0.3, ztop - 0.62, ztop - thick, IT, faces=("-z", "+y", "+x", "-x"), tile=1.0)
+    solid_box(-hw + 0.12, x_hi - 0.12, CORE, y_out - 0.3, ztop - 0.62, ztop - thick, IT, faces=("-z", "+y", "+x", "-x"), tile=1.0)
 
 def east_ledge(ztop, thick=0.24, x_out=3.7, hw=2.0):
     # mirror of south_ledge onto the +x flank: projects EAST to the box edge, spans
@@ -346,13 +367,16 @@ def east_ledge(ztop, thick=0.24, x_out=3.7, hw=2.0):
     solid_box(CORE, x_out, -hw, hw, ztop - thick, ztop, IT, faces=("+z", "-z", "+x", "+y", "-y"), tile=1.0)
     solid_box(CORE, x_out - 0.3, -hw + 0.12, hw - 0.12, ztop - 0.62, ztop - thick, IT, faces=("-z", "+x", "+y", "-y"), tile=1.0)
 
-south_ledge(13.0)
+south_ledge(13.0, x_hi=3.0)
 east_ledge(14.7)
 
-# ---- STEEPLE_GALLERY @ 15.8 (+/-2.7; the leap take-off), lantern hole -----------
-# Thin deck (0.2) so its underside at 15.6 clears 1.55 m over the louvre sill.
+# ---- STEEPLE_GALLERY @ 15.8 (the leap take-off), lantern hole -------------------
+# Thin deck (0.2) so its underside at 15.6 clears the louvre sill. The EAST edge is
+# pulled in to +2.0 (flush with the shaft) rather than +2.7 (see FIX 2 above): the
+# +2.7 cantilever oversailed the 14.7 east ledge and refused the belfry climb. N/S/W
+# keep the +/-2.7 cantilever, so the leap take-off at the NORTH edge is unchanged.
 LX0, LX1, LY0, LY1 = 0.4, 1.6, -0.6, 0.6            # lantern footprint (shifted +1 x)
-ring_deck(-2.7, 2.7, -2.7, 2.7, LX0, LX1, LY0, LY1, 15.8, 0.2, IL)
+ring_deck(-2.7, 2.0, -2.7, 2.7, LX0, LX1, LY0, LY1, 15.8, 0.2, IL)
 
 # ---- lantern 15.8..20.6 (shifted +1 x): a SOLID closed drum (the collision is a
 # solid mass; verify_m1_placements needs the drawn art to fill it), with recessed
