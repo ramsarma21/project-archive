@@ -1194,6 +1194,20 @@ bough decks, both effigies, the awning catch, the `F_*` nodes and the nail stanc
 making for 0.244 m the night before a playtest. Whoever takes it should treat it as an asset job
 (canopy sprawl trimmed north of z ~7.5) rather than a level job.
 
+**Coupling nobody has costed, found while sizing the belfry wiring (1 Aug) — read before wiring it.**
+The asset lane cleared the belfry's mesh blocker in `2762dac` (the obstruction was the base skirt's
+east cornice wing, not the urn — the urn diagnosis in `eastCovert.ts` above is stale and should be
+corrected when that file is next opened), and the remaining step is to empty
+`STEEPLE_DEADZONE_CLIMBS`. **Its one remaining entry is `E_LEDGE_N->E_GALLERY` — the exact
+transition carrying the 0.244 m elm intrusion above.** So emptying the list does not just wire a
+landmark: it promotes a parked drawn-penetration from a disabled climb to a live one, on the ascent
+to the leap of faith, and the canopy trim it depends on has not landed. The two items were routed to
+different lanes as if independent and they are the same climb. Deliberately **not** wired on that
+basis; whoever takes it should either land the canopy trim first, or record a decision that 0.244 m
+of foliage clip on an enabled steeple climb is acceptable. Note also that `verify_m1_steeple` is red
+for an unrelated reason (the atlas count below), so it cannot be quoted as a clean pass for this
+work until that clears — read its mesh-pass lines specifically.
+
 ### The 13 stale `apps/web` failures: 7 were the guided line, 6 are three other things (1 Aug)
 
 **Corrects this entry's own earlier headline, "they are ONE cause, and it is not a defect."** That
