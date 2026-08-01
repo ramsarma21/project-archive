@@ -62,6 +62,21 @@ hx, hy = W / 2, RUN / 2
 # mirror these slices exactly. Each comment below is the WORLD z the slice lands
 # at, which is the number to compare against geometry.ts.)
 #
+# "MUST NOT OVERLAP" IS ABOUT THE NODE, NOT THE BOARDS, and reading it as the
+# boards cost the mission its only ascent. Consecutive lifts here overlap by
+# 0.4-0.8 m or abut exactly; what the overhead rule actually forbids is the lower
+# lift's ROUTE NODE standing inside the upper lift's footprint. The 7.30 lift was
+# the one exception — it stopped at world -4.00 while the 5.60 board below it ends
+# at -4.20, leaving 0.2 m of open air between the two boards over a 5.6 m fall to
+# the street. That is not an overhead problem, it is a HOLE: the reader answers a
+# lip with a fall behind it, so `rankVerbs` returned RUN_OFF alone and CLIMB_UP was
+# never a candidate from ANY standing spot on the 5.60 board (measured across its
+# whole 3.5 m length, 31-Jul). The golden line's only route to the Town House leads
+# was dead, and the playthrough wedged on this board. Pulling 7.30 north to -4.20
+# makes it ABUT 5.60 exactly, the way 1.85/3.70 already do, and every spot on the
+# lower board offers the mantle again. C_SCAFF_2S stands at world z -4.70, still
+# 0.5 m clear of the upper board's footprint, so the overhead rule is untouched.
+#
 # The chain: 0 -> 1.85 -> 3.70 -> 5.60 -> 7.30 -> 9.00 -> 10.70 -> 12.40, i.e.
 # rises of 1.85 / 1.85 / 1.90 / 1.70 / 1.70 / 1.70 / 1.70 — every one inside the
 # 1.9 m mantle limit and clear of the 1.9-3.1 m dead zone, with open sky over each
@@ -71,7 +86,7 @@ LIFTS = [
     (1.85, -1.05, 0.95),    # world z -3.00 .. -1.00  first step off the street
     (3.70, 0.95, 2.95),     # world z -5.00 .. -3.00
     (5.60, 2.15, 5.63),     # world z -7.68 .. -4.20  the G-B drop landing + run south
-    (7.30, -0.05, 1.95),    # world z -4.00 .. -2.00
+    (7.30, -0.05, 2.15),    # world z -4.20 .. -2.00  abuts 5.60; see the hole note
     (9.00, -1.65, 0.35),    # world z -2.40 .. -0.40
     (10.70, -3.25, -1.25),  # world z -0.80 ..  1.20
     (12.40, -4.85, -2.85),  # world z  0.80 ..  2.80  flush with the leads

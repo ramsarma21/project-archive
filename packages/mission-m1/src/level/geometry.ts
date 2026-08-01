@@ -815,6 +815,16 @@ masses.push(
 // lifts overlap only where the lower lift's route node does NOT stand, so every
 // step has open sky over the part the player stands on.
 //
+// THEY MUST ALSO NOT PART COMPANY, which is the other half of the same rule and
+// was missing until 31-Jul. D3 used to start at -4.0 while D2 ends at -4.2, so
+// 0.2 m of open air separated the two boards over a 5.6 m fall. The overhead rule
+// was satisfied and the climb still could not be taken: the reader answers a lip
+// with a fall behind it, and `rankVerbs` returned RUN_OFF alone — CLIMB_UP was not
+// a candidate from ANY spot on D2, measured across its whole 3.5 m length. That
+// killed the golden line's only ascent to the leads and wedged the playthrough on
+// this board. D3 now abuts D2 at -4.2, as 1.85/3.70 already do, and the mesh was
+// regenerated to match (the LIFTS row, not the rect, is the source of truth).
+//
 // The chain is 0 -> 1.85 -> 3.70 -> 5.60 -> 7.30 -> 9.00 -> 10.70 -> 12.40:
 // rises of 1.85 / 1.85 / 1.90 / 1.70 / 1.70 / 1.70 / 1.70, all inside the 1.9m
 // mantle limit and all clear of the 1.9-3.1m dead zone. The old 2.90 lift is
@@ -832,7 +842,7 @@ const SCAFFOLD_LIFTS: Array<{ id: string; y: number; z0: number; z1: number }> =
   { id: "SCAFFOLD_D1", y: 1.85, z0: -3.0, z1: -1.0 },
   { id: "SCAFFOLD_D1B", y: 3.7, z0: -5.0, z1: -3.0 },
   { id: "SCAFFOLD_D2", y: BAND.GALLERY, z0: -7.68, z1: -4.2 },
-  { id: "SCAFFOLD_D3", y: 7.3, z0: -4.0, z1: -2.0 },
+  { id: "SCAFFOLD_D3", y: 7.3, z0: -4.2, z1: -2.0 },
   { id: "SCAFFOLD_D4", y: 9.0, z0: -2.4, z1: -0.4 },
   { id: "SCAFFOLD_D5", y: 10.7, z0: -0.8, z1: 1.2 },
   { id: "SCAFFOLD_D6", y: BAND.LEADS, z0: 0.8, z1: 2.8 },
