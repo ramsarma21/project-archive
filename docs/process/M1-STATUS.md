@@ -846,7 +846,7 @@ Read this before concluding a green run means the game is correct.
 bough decks already cluster into one draw at the declared size, and nulling the boughs' asset
 would collapse it to a 1.8 m pole (`7353b82`, guarded).
 
-**Three authoring rules no gate states, and a ledge/deck author must satisfy all three.** Each is
+**Four authoring rules no gate states, and a ledge/deck author must satisfy all of them.** Each is
 a way the mover refuses a move that every static gate passes, so an asset can be box-accurate,
 weld-clean and drawn==collision and still not carry the route:
 1. **The overhead skip.** A mantle is refused when the target surface is overhead, and that test
@@ -866,6 +866,19 @@ weld-clean and drawn==collision and still not carry the route:
    gallery underside at every node placement, and moving the stance east to clear it stranded it from
    the next node — the fix had to delete the oversail *and* move the take-off. No gate sees this;
    only sweeping the real 2-anchor arc against the drawn soffit does.
+4. **Drawn-but-non-colliding decoration overhangs a ledge, and only the mesh pass sees it**
+   (steeple belfry, 1 Aug). The 13.0 ledge's east extension (FIX 2, worldX 84.0) rose straight
+   under the belfry base cornice's **east wing** — a sloped decorative skirt that is drawn and
+   carries no collision, so `routeAscent` and every authored-hull gate drove the four-hold chain
+   green; only `verify_m1_steeple`'s **mesh** pass refused. Clearance above the 13.0 top fell from
+   open sky to 1.00 m and down to 0.45 m at 84.0. The blocker was **not** the corner urn the first
+   diagnosis named (the urn base is worldX 84.14+, east of the 84.0 ledge end and outside the
+   column); it was the cornice, found only by re-probing. **Reflexive rule: after changing a
+   ledge's extent, raycast the clearance column over its WHOLE new extent — the blocker is
+   whatever the stance/arc passes under, which need not be the feature you were reasoning about,
+   and a drawn non-colliding cornice is invisible to every gate but the mesh pass.** Fix: trim the
+   cornice wing back to the shaft depth (one quad); the urn did not need moving (capsule sweep
+   confirmed >= 1.90 m at the tightest corner).
 
 **A mutation hunt found the suite's own blind spots** (`6cb600d`). Method: break the code a
 test claims to guard, and see whether the test still passes. Results, ranked:

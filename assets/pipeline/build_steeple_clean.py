@@ -313,10 +313,23 @@ for (a, b, c, d, fc) in [(-1.3, 1.3, CORE, CORE, "+y"), (-1.3, 1.3, -CORE, -CORE
 SK_OUT, SK_IN, SK_TZ, SK_BZ = 3.7, 2.2, 14.0, 13.0
 # THREE-sided sloped cornice (north -y, east +x, west -x). The SOUTH (+y) face is
 # deliberately LEFT OPEN so no decorative cornice ever overhangs the climb ledges.
+# FIX (1 Aug): omitting only the +y FACE was incomplete — the E/W wings still SPANNED
+# the full +/-3.7 depth, so their +y ends overhung the +y half where the north ledge
+# sits. That was invisible while the north ledge stopped at +x 2.0, but FIX 2 extended
+# it EAST to +x 3.0 (worldX 84.0) straight under this east wing: measured clearance
+# above the 13.0 top fell from open sky (worldX<=83.1) to 1.00 m and down to 0.45 m at
+# 84.0 — a sloped cornice underside (n=(0.55,0,0.83)), NOT the urn. verify_m1_steeple's
+# mesh pass caught it; no authored-hull gate can (the cornice is drawn, carries no
+# collision). So the east wing now stops at +y = CORE (2.0), completing the "+y open"
+# intent over the extended ledge. The west wing is untouched: the north ledge's west
+# end is +x -2.0, inboard of the -2.2 skirt start, so it never overhangs there.
+# LESSON: after changing a ledge's extent, re-probe the clearance column over its WHOLE
+# new extent, not just the moved part — the blocker is whatever the arc/stance passes
+# under, which need not be the feature you were reasoning about.
 # north (-y):
 quad((-SK_OUT, -SK_OUT, SK_BZ), (SK_OUT, -SK_OUT, SK_BZ), (SK_OUT, -SK_IN, SK_TZ), (-SK_OUT, -SK_IN, SK_TZ), IT, [(0, 0), (3.7, 0), (3.7, 1), (0, 1)])
-# east (+x):
-quad((SK_OUT, -SK_OUT, SK_BZ), (SK_OUT, SK_OUT, SK_BZ), (SK_IN, SK_OUT, SK_TZ), (SK_IN, -SK_OUT, SK_TZ), IT, [(0, 0), (3.7, 0), (3.7, 1), (0, 1)])
+# east (+x): north wing trimmed to +y = CORE so it clears the extended north ledge.
+quad((SK_OUT, -SK_OUT, SK_BZ), (SK_OUT, CORE, SK_BZ), (SK_IN, CORE, SK_TZ), (SK_IN, -SK_OUT, SK_TZ), IT, [(0, 0), (3.7, 0), (3.7, 1), (0, 1)])
 # west (-x):
 quad((-SK_OUT, SK_OUT, SK_BZ), (-SK_OUT, -SK_OUT, SK_BZ), (-SK_IN, -SK_OUT, SK_TZ), (-SK_IN, SK_OUT, SK_TZ), IT, [(0, 0), (3.7, 0), (3.7, 1), (0, 1)])
 # vertical drip fascia on those three sides (firms the +/-3.7 box pin on N/E/W)
