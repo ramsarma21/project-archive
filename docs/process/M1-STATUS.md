@@ -1007,6 +1007,29 @@ recoverable — but `fatalTraversal.test.ts` asserts it unconditionally and its 
 category is *unreachable*, so there is no way to record one as accepted debt without weakening the
 gate. Owner's ruling 31 Jul: do not add an allow-list.
 
+### ROUTE wedges at x≈45.6 and `ROPEWALK_STOP` never arms — PRE-EXISTING, A/B'd (31 Jul)
+
+`check-playthrough` ROUTE fails four checks: `ROPEWALK_STOP` never leaves DORMANT, the un-stick
+exhausts its budget, and the run only reaches x=46 of 60. **Not introduced by the 31-Jul
+checkpoint work: checking `7216217` back out into the same tree and re-running against the same
+server reproduces it identically** — same stop, same wedge, `lastSeen ... at x=45.6, z=-0.6
+heading for x=45 preview=NONE`.
+
+It is intermittent, and the intermittency is not (only) machine load. One full run on this branch
+mid-checkpoint was **ALL PASS with ROUTE at 76 s**; three later runs failed, with control
+resolution reading *healthy* (5 ticks/update median, 6 p95) — so this is not the load-contention
+mode the section below describes, which shows up as a degraded median. The signature is the one
+already flagged and never chased: the mark points the body **west, at a waypoint behind it**, with
+`preview=NONE`. Same shape as the recorded "aimed west (waypoint x=51) from x=61" note.
+
+x≈45 is the Town House scaffold corner, which is also where `C_SCAFF_FOOT`'s SAFE dead end
+re-routes the guided line (see Open). Worth treating as one problem rather than two.
+
+**Also failing at `7216217` and unrelated to this work: 13 of `apps/web`'s 765 tests**, all of them
+whole-SAFE-run drivers in `missionElmContinuation` / `missionRoute` and their siblings ("the full
+SAFE run never reached the duel"). Same class as the ROUTE wedge and probably the same cause.
+A/B'd the same way.
+
 ### `check-playthrough` needs a persistent server on IPv6, and the API for a full pass
 
 Three ways to waste twenty minutes on this gate:
