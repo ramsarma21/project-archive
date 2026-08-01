@@ -2,17 +2,19 @@
 # the wharf worker's two counting-house/warehouse rebuilds, driven directly by
 # the level's declared box + route bands rather than by a Meshy blob.
 #
-# WHY PROCEDURAL, NOT MESHY. The audit's dims.json shows the shipped Meshy
-# warehouses are organic masses whose natural plan is ~square (wharf-b 1.07 x
-# 1.08) while the declared box is wide-and-flat (13 x 9). A PROP contain-fit
-# takes the smallest box/mesh ratio, so it height-binds and draws a warped
-# narrow tower — and the loading gallery the wharf ascent MANTLES onto (y=5.35)
-# lands ~1.8 m low. No prompt fixes that: contain-fit cannot move a surface to a
-# route height, only author-at-true-scale can. So the mesh is pinned so its
-# natural bbox EQUALS the declared box (contain-fit 1.0) and the gallery/roof
-# decks are real horizontal faces whose TOP sits exactly on the authored band.
-# Same discipline as build_civic_facade.py: outer faces only, remove_doubles,
-# and a hard per-axis bbox guard, so the weld gate reads ~0.
+# WHY PROCEDURAL, AND WHY LOW SHEDS. A contain-fit takes the SMALLEST of the three
+# box/mesh ratios (uniform scale), so a mesh whose aspect differs from its box
+# gets scaled by its binding axis and leaves the others short. The level places
+# each shed by structure() with the mass topY == roofY, so the box is rect x roofY;
+# the roofs the wharf chain stands on are LOW (5.35 and 4.30). A tall warehouse
+# mesh in that low box height-binds and draws only a shrunk ridge band at roofY,
+# with the rest of the deck over invisible floor (the 31-Jul defect). Contain-fit
+# cannot move a surface to a route height; only author-at-true-scale can. So each
+# shed is authored at its BOX's true (low) proportions — natural bbox EQUALS the
+# declared box (contain-fit 1.0) — with the walkable leaded roof as a real
+# horizontal face at the LOCAL TOP (z=H), so it lands exactly on the authored deck
+# plane across the WHOLE footprint. Same discipline as build_civic_facade.py:
+# outer faces only, remove_doubles, and a hard per-axis bbox guard, weld ~0.
 #
 # Run: blender --background --python assets/pipeline/build_wharf_warehouse.py -- <key> <out.glb>
 import bpy
@@ -47,60 +49,56 @@ CONCEPT_STONE = (0.54, 0.51, 0.46)
 
 # ------------------------------------------------------------------ per-key spec
 # All lengths in metres, at true (contain-fit 1.0) scale. Front face is +Y and
-# carries the loading front (cargo door, projecting pentice + loft gallery, hoist
-# beam). `front_setback` is how far the main wall sits back from the front edge:
-# the pentice/gallery/hoist project across it, so the deck oversails the wall by
-# exactly that much (>= the brief's minimum). Heights are envelope.ts BAND values.
+# carries the loading front (cargo door, covered pentice canopy, loft door, hoist
+# beam). `front_setback` is how far the loading wall sits back from the front edge;
+# the covered eave oversails it, so the roof shelters a real loading loggia.
 #
-# BOX = the LEVEL'S ACTUAL PLACEMENT box (packages/mission-m1/src/level/wharf.ts),
-# not assets.ts sizeM, which is STALE: wharf.ts backdrop() draws each warehouse by
-# contain-fitting the asset into its own mass rect+roofY, and check-world-collision
-# measures fill against THAT. wharf-b is rect(-5,2,3,12) topY 8 => 7 x 8 x 9 (NOT
-# assets.ts [13,8,9]); wharf-a is rect(-19,-5,3,12) topY 9 => 14 x 9 x 9 (NOT
-# [14,9,10]). Building to sizeM drew wharf-b at 43% fill. Flagged for the owner.
+# WHY THESE ARE LOW SHEDS NOW (31 Jul rebuild). BOX = the LEVEL'S ACTUAL PLACEMENT
+# box (packages/mission-m1/src/level/wharf.ts): structure() sets the mass topY =
+# roofY and the roof deck y = roofY, so the placement box is rect x roofY and the
+# asset contain-fits into it. A contain-fit takes the SMALLEST of the three ratios
+# (uniform scale), so a TALL mesh in a low box height-binds: the old wharf-a was
+# built 14x9x9 against a rect(-10,0,-2,6) roofY 5.35 box (10 x 5.35 x 8), scale
+# 5.35/9 = 0.594, which shrank the footprint to 8.3 x 5.35 and drew only the
+# 3.0 m ridge walk (local z 9) at roofY as a 1.78 x 8.3 = ~14.8 m2 band — the
+# rest of the deck was invisible floor over the shrunk pitched roof. The deck
+# claims the whole footprint (narrowing it moves the take-off lips ~2.8 m inward
+# and breaks the descents), so the ART must fill the box, not the deck retreat to
+# the art. The ONLY fit that puts a standable surface at roofY across the whole
+# footprint is contain-fit 1.0 — natural bbox == box — so each shed is authored at
+# its box's true (low) proportions with the walkable roof at the LOCAL TOP (z=H),
+# and the box guard below pins bbox == W x H x D exactly.
+#
+# THE ROOF IS FLAT, and wharf-a's gambrel silhouette is a deliberate, reported
+# cost: roofY is the box cap, so a real pitched slope draws BELOW the collision
+# plane and recreates the invisible-floor lie on a deck that claims the whole
+# footprint. Both roofs are broad leaded walks at z=H across the full footprint;
+# wharf-a's variation is proportion + a pitched leaded eave-skirt folding below
+# the walk edge + gambrel-profiled gable ends (all <= H), not a raised ridge.
 SPEC = {
     "bldg-warehouse-wharf-b": dict(
-        W=7.0, H=8.0, D=9.0,       # wharf.ts WHARF_WAREHOUSE_B rect 7x9, topY 8
+        W=4.0, H=4.30, D=8.0,      # wharf.ts WHARF_WAREHOUSE_B rect(-2,2,6,14) roofY 4.30
         brick=(0.44, 0.20, 0.16),
-        ground_top=3.2,            # cargo-bay header
-        gallery_y=5.35,            # PENTICE band: the loft loading gallery deck
-        gallery_thick=0.34,
-        gallery_width=6.2,
-        pentice_y=2.9,             # SCAFFOLD_1 band: the ground loading pentice
-        pentice_thick=0.22,
-        pentice_width=6.2,
-        hoist_y=6.9,               # hoist-beam hang hold above the gallery
-        loft_head=6.9,
         roof="flat",
-        roof_deck=7.5,             # flat leaded roof deck (standable)
-        dormer_top=8.0,            # dormer ridge pins the box height
-        front_setback=1.1,         # >= 0.7 m oversail (brief)
-        cargo_w=2.4, cargo_h=2.6,
-        loft_w=1.8,
-        portal_w=4.4,              # loading-bay opening in the front plane (rest = solid brick flanks)
+        cargo_w=1.8, cargo_h=2.3,
+        loft_w=1.2,
+        pentice_y=2.55, pentice_thick=0.20, pentice_width=2.6,
+        hoist_y=3.65,
+        front_setback=0.85,        # covered-eave oversail over the loading loggia
+        portal_w=2.9,              # loading-bay opening (rest = solid brick flanks)
     ),
     "bldg-warehouse-wharf-a": dict(
-        W=14.0, H=9.0, D=9.0,      # wharf.ts WHARF_WAREHOUSE_A rect 14x9, topY 9
+        W=10.0, H=5.35, D=8.0,     # wharf.ts WHARF_WAREHOUSE_A rect(-10,0,-2,6) roofY 5.35
         brick=(0.47, 0.31, 0.23),
-        ground_top=3.3,
-        gallery_y=5.35,
-        gallery_thick=0.34,
-        gallery_width=12.4,
-        pentice_y=2.9,
-        pentice_thick=0.22,
-        pentice_width=12.4,
-        hoist_y=6.9,
-        loft_head=7.0,
-        roof="gambrel",
-        roof_deck=7.4,             # gambrel lower eave / start of the ridge walk
-        ridge_walk_y=9.0,          # standable ridge walk on top (pins box height)
-        ridge_walk_w=3.0,
-        dormer_top=9.0,
-        stair_stub=True,           # external stone stair-stub at STEP_UP
-        front_setback=1.0,         # >= 0.6 m oversail (brief)
-        cargo_w=3.6, cargo_h=2.7,
-        loft_w=2.6,
-        portal_w=8.0,              # loading-bay opening in the front plane (rest = solid brick flanks)
+        roof="walk",               # flat leaded roof-walk + pitched eave-skirt (see note)
+        eave_skirt=0.55,           # depth the leaded skirt folds below the walk edge
+        eave_inset=0.9,            # how far in the skirt reaches (the pitched read)
+        cargo_w=3.2, cargo_h=2.6,
+        loft_w=2.2,
+        pentice_y=2.85, pentice_thick=0.22, pentice_width=6.0,
+        hoist_y=4.55,
+        front_setback=1.0,         # covered-eave oversail over the loading loggia
+        portal_w=6.4,              # loading-bay opening (rest = solid brick flanks)
     ),
 }
 CFG = SPEC[KEY]
@@ -289,6 +287,62 @@ def slate_rgb(base):
     return np.clip(rgb, 0, 1), (0.4 + 0.6 * head).copy()
 
 
+def leaded_walk_rgb(across_len, along_len):
+    """A period LEADED ROOF-WALK read, mapped 0..1 across the whole deck so it does
+    not tile: standing-seam ROLLS at true ~0.72 m spacing (the defining feature that
+    reads 'built lead roof' not 'shingle tile'), lead-sheet cross welts, large-scale
+    tonal drift, water-streak / patina / soot weathering, and a fresher lead FLASHING
+    band at the deck perimeter. Baked directional shading on the rolls carries the
+    raised read without a normal map (the generator's normal path is disabled under
+    PHOTOREAL, see nrm()). Kills the flat-uniform 'Minecraft' plane the owner flagged."""
+    n = TEX
+    u = np.broadcast_to(np.linspace(0, 1, n, endpoint=False)[None, :], (n, n))   # across rolls (x)
+    v = np.broadcast_to(np.linspace(0, 1, n, endpoint=False)[:, None], (n, n))   # along rolls (y)
+    nrolls = max(3, int(round(across_len / 0.72)))
+    nwelts = max(2, int(round(along_len / 1.70)))
+
+    # standing-seam rolls across u
+    rw = 0.055
+    phase = (u * nrolls) - np.floor(u * nrolls)
+    seam_d = np.minimum(phase, 1 - phase)
+    crest = np.clip(1.0 - seam_d / rw, 0.0, 1.0); crest = crest * crest * (3 - 2 * crest)
+    flank = _ss(rw, rw * 2.4, seam_d) * _ss(rw * 2.4, rw, seam_d)                 # shadow band beside the roll
+
+    lead = np.array([0.35, 0.38, 0.41])
+    drift = aniso(n, 6, 5, RNG)                                                   # big soft tonal patches
+    col = lead[None, None, :] * (0.78 + 0.42 * drift)[..., None]
+
+    # per-bay + per-course weathering so the seam grid is NOT perfectly uniform
+    rid = np.floor(u * nrolls); cid = np.floor(v * nwelts)
+    bseed = np.sin(rid * 12.9 + cid * 4.7) * 43758.5; bvar = bseed - np.floor(bseed)
+    col *= (0.80 + 0.40 * bvar)[..., None]
+
+    patina = aniso(n, 26, 30, RNG)                                               # verdigris in the bays
+    pmask = (_ss(0.60, 0.86, patina) * (1 - crest))[..., None]
+    col = col * (1 - 0.45 * pmask) + np.array([0.30, 0.43, 0.35])[None, None, :] * (0.45 * pmask)
+
+    streak = aniso(n, 4, 150, RNG)                                               # water running down-slope (v)
+    col *= (0.82 + 0.20 * streak)[..., None]
+    soot = np.linspace(0.90, 1.0, n)[:, None, None]                              # sootier toward one end
+    col *= soot
+
+    col = col * (1 - 0.34 * flank[..., None])                                    # roll self-shadow
+    col = col * (0.90 + 0.55 * crest[..., None])                                 # roll crest catches light
+
+    wphase = (v * nwelts) - np.floor(v * nwelts); wd = np.minimum(wphase, 1 - wphase)
+    welt = np.clip(1 - wd / 0.02, 0, 1); welt = welt * welt * (3 - 2 * welt) * (1 - crest)
+    col = col * (1 - 0.20 * welt[..., None])                                     # faint lead-sheet joints
+
+    du = np.minimum(u, 1 - u); dv = np.minimum(v, 1 - v)
+    edge = np.minimum(du, dv)
+    flash = np.clip(1 - edge / 0.022, 0, 1); flash = flash * flash * (3 - 2 * flash) * 0.7
+    col = col * (1 - flash[..., None]) + np.array([0.46, 0.49, 0.52])[None, None, :] * flash[..., None]
+
+    fle = aniso(n, 300, 300, RNG)                                                # oxidation flecks
+    col = np.where((fle > 0.90)[..., None], np.clip(col * 1.28 + 0.03, 0, 1), col)
+    return np.clip(col, 0, 1)
+
+
 log("textures", "PHOTOREAL" if PHOTOREAL else "flat")
 bpy.ops.wm.read_factory_settings(use_empty=True)
 # NORMAL-MAP EXPORT BUG: a generated normal image exports BLACK through the glTF
@@ -323,6 +377,11 @@ else:
     MAT_LEAD = make_material("lead", pack_jpeg("lead", flat_rgb(TEX // 4, (0.52, 0.53, 0.53))), rough=0.86, spec=0.2)
     MAT_TIMBER = make_material("timber", pack_jpeg("timber", plank_rgb((0.46, 0.35, 0.24))), rough=0.93, spec=0.12)
     MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", plank_rgb((0.34, 0.24, 0.16), vertical=True)), rough=0.94, spec=0.12)
+# the roof-walk deck: a proper leaded roof-walk under PHOTOREAL, plain lead otherwise
+if PHOTOREAL:
+    MAT_ROOF = make_material("roofwalk", pack_jpeg("roofwalk", leaded_walk_rgb(W, D)), rough=0.55, spec=0.34)
+else:
+    MAT_ROOF = MAT_LEAD
 IB, IW, IT, IL, ITM, ITV = 0, 1, 2, 3, 4, 5
 # sign board material (painted board with baked serif signage); falls back to trim
 SIGN_PNG = os.environ.get("SIGN_PNG", "")
@@ -332,6 +391,7 @@ if PHOTOREAL and SIGN_PNG and os.path.exists(SIGN_PNG):
 else:
     MAT_SIGN = MAT_TRIM
 ISG = 6
+IRF = 7
 
 bm = bmesh.new()
 uv = bm.loops.layers.uv.new("UVMap")
@@ -441,163 +501,116 @@ X, Y, Z = Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1))
 hx, hz = W / 2, D / 2
 
 # ---- FRONT (+Y) LOADING PORTAL in a SOLID BRICK FACADE ------------------------
-# PLAYTEST #2 FIX. Previously the WHOLE front wall was set back to FW, so the
-# entire face read as an open, carved-out recess with thin decks floating in it —
-# "a hole in the middle of the building". Now the front plane (hz) carries a SOLID
-# brick facade with brick corner flanks, and only a central LOADING PORTAL is
-# recessed: the loading wall sits back at FW behind the deck (solid, with the
-# cargo + loft doors as recessed openings), brick jambs return from the front plane
-# to that wall, and the covered eave is the lintel. The gallery/pentice decks live
-# INSIDE this framed covered bay — a real warehouse loading gallery, not a void.
+# The front plane (hz) is a SOLID brick facade with brick corner flanks; only a
+# central LOADING PORTAL is recessed to the loading wall at FW, with the cargo bay
+# and (where the low storey allows) a loft door as recessed openings INTO that
+# solid wall — not holes through it. The covered eave (below) oversails FW->front
+# edge, so the loading bay reads as a covered loggia against a solid wall. The
+# building is a LOW shed: everything sits under the roof at z=H (== roofY).
 cw, ch = CFG["cargo_w"], CFG["cargo_h"]
 lw = CFG["loft_w"]
-gy = CFG["gallery_y"]
-rd_top = CFG["roof_deck"]
 PORTAL_W = CFG["portal_w"]
 hpw = PORTAL_W / 2
-PORTAL_TOP = rd_top - 0.18                        # opening head = the covered-eave soffit
-loft_door_head = min(CFG["loft_head"], PORTAL_TOP - 0.9)
+EAVE_Z = H - 0.16                                 # wall head / loggia soffit, just under the lead deck
+PORTAL_TOP = EAVE_Z - 0.06                        # loading-opening head = the covered-eave lintel
+py = CFG["pentice_y"]
+loft_door_head = EAVE_Z - 0.30
 
-# solid brick corner flanks: a solid brick block from the set-back wall (FW) to the
-# front plane (hz), full height, on each side of the portal. The front facade is a
-# paneled brick face with recessed sash windows; the inner face is the deep jamb
-# reveal of the portal. (Facade drawn via paneled_face so the windows are true
-# cut-outs — no coincident proud boxes on the +Y plane, keeping the weld gate clean.)
+# solid brick corner flanks from the set-back wall (FW) to the front plane (hz),
+# full height, each side of the portal; the front facade is a paneled brick face
+# with a recessed sash (a true cut-out, so no coincident proud boxes on +Y).
 for sgn in (-1, 1):
     fx0, fx1 = (hpw, hx) if sgn > 0 else (-hx, -hpw)
+    if fx1 - fx0 < 0.05:
+        continue
     jamb = "-x" if sgn > 0 else "+x"              # face that looks INTO the portal
-    solid_box(fx0, fx1, FW, hz, 0.0, rd_top, IB, faces=(jamb, "+z"), tile=BRICK_TILE)
+    solid_box(fx0, fx1, FW, hz, 0.0, EAVE_Z, IB, faces=(jamb, "+z"), tile=BRICK_TILE)
     wc = (fx0 + fx1) / 2 - fx0                     # window centre in face-local coords
-    flank_open = [(wc - 0.55, wc + 0.55, 1.4, 3.0, "win"),
-                  (wc - 0.55, wc + 0.55, gy + 0.6, gy + 2.0, "win")]
-    paneled_face(Vector((fx0, hz, 0.0)), X, Z, -Y, fx1 - fx0, rd_top, flank_open)
+    flank_open = []
+    if fx1 - fx0 > 1.3:
+        flank_open = [(wc - 0.5, wc + 0.5, 1.2, min(2.8, EAVE_Z - 0.5), "win")]
+    paneled_face(Vector((fx0, hz, 0.0)), X, Z, -Y, fx1 - fx0, EAVE_Z, flank_open)
 
-# the recessed LOADING WALL at FW (solid brick behind the deck) with the cargo bay
-# + loft door as recessed openings INTO the solid wall (not holes through)
-portal_open = [
-    (-cw / 2, cw / 2, 0.0, ch, "door"),                       # ground cargo bay
-    (-lw / 2, lw / 2, gy, loft_door_head, "door"),            # loft loading door
-]
+# the recessed LOADING WALL at FW (solid brick behind the loggia) with the cargo
+# bay + (if the storey is tall enough) a loft door as recessed openings INTO the
+# wall, not holes through it
+# NB: paneled_face's along-coord `a` runs 0..PORTAL_W from the portal's LEFT edge
+# (origin -hpw), so openings must be centred on a = PORTAL_W/2, not on 0.
+pc = PORTAL_W / 2
+portal_open = [(pc - cw / 2, pc + cw / 2, 0.0, ch, "door")]       # ground cargo bay
+if loft_door_head - (py + 0.1) > 0.7:
+    portal_open.append((pc - lw / 2, pc + lw / 2, py + 0.1, loft_door_head, "door"))   # loft loading door
 paneled_face(Vector((-hpw, FW, 0.0)), X, Z, -Y, PORTAL_W, PORTAL_TOP, portal_open)
-# (the solid brick flanks above already supply the deep jamb reveals at +/-hpw)
 
-# ---- BACK (-Y) and SIDES (+/-X): brick with sash grids ------------------------
-paneled_face(Vector((hx, -hz, 0.0)), -X, Z, Y, W, CFG["roof_deck"],
-             window_grid(W, CFG["roof_deck"], 2.7, 3.0))
-paneled_face(Vector((hx, -hz, 0.0)), Y, Z, -X, D, CFG["roof_deck"],
-             window_grid(D, CFG["roof_deck"], 2.7, 3.0))                       # +X (east)
-paneled_face(Vector((-hx, hz, 0.0)), -Y, Z, X, D, CFG["roof_deck"],
-             window_grid(D, CFG["roof_deck"], 2.7, 3.0))                       # -X (west)
+# ---- BACK (-Y) and SIDES (+/-X): brick with sash grids up to the wall head -----
+paneled_face(Vector((hx, -hz, 0.0)), -X, Z, Y, W, EAVE_Z, window_grid(W, EAVE_Z, 2.4, 3.0))
+paneled_face(Vector((hx, -hz, 0.0)), Y, Z, -X, D, EAVE_Z, window_grid(D, EAVE_Z, 2.4, 3.0))   # +X (east)
+paneled_face(Vector((-hx, hz, 0.0)), -Y, Z, X, D, EAVE_Z, window_grid(D, EAVE_Z, 2.4, 3.0))   # -X (west)
 
-# ---- corner quoins / string course for the Georgian read ----------------------
-# a slim stone string-course band at the gallery floor, wrapping the set-back
-# body (front is the gallery, so band the other three sides only)
-sc = CFG["gallery_y"]
-solid_box(-hx, hx, -hz, FW, sc - 0.12, sc, IT, faces=("-y", "+x", "-x"), tile=1.0)
+# ---- stone string-course band at the pentice floor, wrapping the body (3 sides)-
+solid_box(-hx, hx, -hz, FW, py - 0.12, py, IT, faces=("-y", "+x", "-x"), tile=1.0)
 
-# The pentice + gallery decks now live INSIDE the framed portal (width = the portal
-# opening less a small margin off the jambs), so they read as the floors of a
-# covered loading bay rather than shelves stuck on an open recess.
-deck_w = PORTAL_W - 0.3
-
-# ---- ground PENTICE: a projecting flat loading canopy over the cargo door ------
-py = CFG["pentice_y"]
+# ---- covered PENTICE: a projecting flat loading canopy over the cargo door -----
+# Decoration, NOT a route surface — the route stands on the roof only. It projects
+# across the set-back front so the loading bay reads as a real covered loggia.
+deck_w = min(CFG["pentice_width"], PORTAL_W - 0.3)
 solid_box(-deck_w / 2, deck_w / 2, FW, hz, py - CFG["pentice_thick"], py, ITM,
           faces=("+z", "-z", "+y", "-x", "+x"), tile=1.4)
-solid_box(-deck_w / 2, deck_w / 2, hz - 0.06, hz, py - 0.42, py - CFG["pentice_thick"], ITM,
+solid_box(-deck_w / 2, deck_w / 2, hz - 0.06, hz, py - 0.40, py - CFG["pentice_thick"], ITM,
           faces=("+y", "-y", "-x", "+x", "-z"), tile=1.0)                                     # fascia
-
-# ---- loft GALLERY deck at 5.35: projecting standable loft platform -------------
-gw = deck_w
-solid_box(-gw / 2, gw / 2, FW, hz, gy - CFG["gallery_thick"], gy, ITM,
-          faces=("+z", "-z", "+y", "-x", "+x"), tile=1.4)
-solid_box(-gw / 2, gw / 2, hz - 0.06, hz, gy - 0.5, gy - CFG["gallery_thick"], ITM,
-          faces=("+y", "-y", "-x", "+x", "-z"), tile=1.0)                                     # fascia
-
-# ---- loading-gallery support posts: ground -> gallery, at the portal front lip --
-_np = max(2, int(round(gw / 2.6)))
-post_xs = sorted({round(x, 2) for x in np.linspace(-gw / 2 + 0.3, gw / 2 - 0.3, _np)})
+# pentice support posts, ground -> pentice, at the front lip
+_np = max(2, int(round(deck_w / 2.6)))
+post_xs = sorted({round(x, 2) for x in np.linspace(-deck_w / 2 + 0.3, deck_w / 2 - 0.3, _np)})
 for pxp in post_xs:
-    solid_box(pxp - 0.10, pxp + 0.10, hz - 0.28, hz - 0.08, 0.0, gy - 0.02, ITM,
+    solid_box(pxp - 0.09, pxp + 0.09, hz - 0.24, hz - 0.06, 0.0, py - CFG["pentice_thick"] - 0.02, ITM,
               faces=("+x", "-x", "+y", "-y"), tile=1.0)
-# gallery guard rail on the FRONT lip only (low; clear of the standing span)
-rail_top = gy + 0.5
-for rx in (-gw / 2 + 0.15, gw / 2 - 0.15, 0.0):
-    solid_box(rx - 0.06, rx + 0.06, hz - 0.12, hz, gy, rail_top, ITM, faces=("+x", "-x", "+y", "-y", "+z"), tile=1.0)
-solid_box(-gw / 2, gw / 2, hz - 0.12, hz, rail_top - 0.08, rail_top, ITM, faces=("+z", "-z", "+y", "-y", "+x", "-x"), tile=1.0)
 
-# ---- HOIST BEAM: a projecting timber beam above the gallery (a hang hold) ------
-# It now hangs UNDER the covered eave (below), so it reads as a real hoist beam in
-# a covered loading gallery rather than a beam poking out of an open notch.
+# ---- HOIST BEAM: a projecting timber beam under the eave (a hang hold) ---------
 hb = CFG["hoist_y"]
-solid_box(-0.16, 0.16, FW - 0.3, hz, hb, hb + 0.28, ITM, faces="all", tile=1.0)          # the projecting hoist beam
-solid_box(-0.22, 0.22, hz - 0.32, hz, hb - 0.34, hb, ITM, faces="all", tile=1.0)         # a pulley block at the tip
+solid_box(-0.15, 0.15, FW - 0.3, hz, hb, hb + 0.26, ITM, faces="all", tile=1.0)          # the projecting hoist beam
+solid_box(-0.20, 0.20, hz - 0.30, hz, hb - 0.32, hb, ITM, faces="all", tile=1.0)         # a pulley block at the tip
 
-if CFG["roof"] == "flat":
-    # ---- flat leaded ROOF DECK over the body, with a low parapet + dormers -----
-    rd = CFG["roof_deck"]
-    solid_box(-hx, hx, -hz, FW, rd - 0.16, rd, IL, faces=("+z",), tile=1.3)             # the lead deck (standable top)
-    # low parapet round three sides (front open onto the gallery approach)
-    for (px0, px1, py0, py1) in [(-hx, hx, -hz, -hz + 0.18), (-hx, -hx + 0.18, -hz, FW), (hx - 0.18, hx, -hz, FW)]:
-        solid_box(px0, px1, py0, py1, rd, rd + 0.28, IL, faces=("+z", "-z", "+y", "-y", "+x", "-x"), tile=1.0)
-    # dormers: sills at STEP_UP (<=0.5 m) above the deck; ridge pins the box top
-    dt = CFG["dormer_top"]
-    for dx in (-hx * 0.5, hx * 0.5):
-        solid_box(dx - 1.0, dx + 1.0, FW - 2.2, FW - 0.8, rd, dt, ITM, faces=("+y", "-y", "+x", "-x"), tile=1.0)
-        solid_box(dx - 1.0, dx + 1.0, FW - 2.2, FW - 0.8, dt - 0.12, dt, IL, faces=("+z",), tile=1.0)   # dormer lead top
-        # dormer window
-        solid_box(dx - 0.55, dx + 0.55, FW - 0.82, FW - 0.8, rd + 0.35, dt - 0.25, IW, faces=("+y",), tile=1.0)
-    # chimney (kept below the dormer ridge)
-    solid_box(-1.0, -0.2, -1.4, -0.6, rd, dt - 0.2, IB, faces="all", tile=1.0)
-else:
-    # ---- GAMBREL roof with a standable ridge walk (wharf-a) --------------------
-    # Real double-pitched gambrel: steep lower slope eave->knuckle, shallow upper
-    # knuckle->ridge, a FLAT lead ridge walk on top (standable, pins the box top),
-    # and a brick gable n-gon closing each end so nothing sees through.
-    rd = CFG["roof_deck"]                     # eave height
-    rw = CFG["ridge_walk_y"]                   # ridge walk (top)
-    rh = CFG["ridge_walk_w"] / 2               # ridge half-width (depth of the walk)
-    yb, yf = -hz, FW                            # roof depth span (back wall, front wall)
-    yc = (yb + yf) / 2.0
-    half = (yf - yb) / 2.0
-    kn = half * 0.52                            # knuckle offset from centre
-    kz = rd + (rw - rd) * 0.5                   # knuckle height
+# ---- ROOF: a broad leaded WALK across the WHOLE footprint at z=H (== roofY) -----
+# The standable top is the box cap, so a contain-fit 1.0 lands it EXACTLY on the
+# authored deck plane over the FULL footprint — drawn == collision at every lip.
+# There is NO raised ridge: roofY is the cap, so a real gambrel would draw its
+# eaves BELOW the collision plane and re-open the invisible-floor defect on a deck
+# that claims the whole footprint. wharf-a's variation is a pitched leaded
+# eave-skirt folding BELOW the walk edge (visual only) + its broad low proportion.
+# the walk (standable top, z=H): ONE flat quad at exactly z=H spanning the whole
+# footprint, UV-mapped 0..1 across the deck (NOT tiled) so the leaded roof-walk
+# material reads once with rolls at true spacing and no repeat. Geometry is byte-
+# identical to the old single +z quad, so box / weld / bbox are unchanged.
+quad((-hx, -hz, H), (hx, -hz, H), (hx, hz, H), (-hx, hz, H), IRF,
+     [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
+# lead fascia closing the wall-head-to-deck gap on all four edges (below the top)
+for (ex0, ex1, ey0, ey1) in [(-hx, hx, -hz, -hz + 0.10), (-hx, hx, hz - 0.10, hz),
+                             (-hx, -hx + 0.10, -hz + 0.10, hz - 0.10), (hx - 0.10, hx, -hz + 0.10, hz - 0.10)]:
+    solid_box(ex0, ex1, ey0, ey1, EAVE_Z, H - 0.14, IL, faces=("+x", "-x", "+y", "-y"), tile=1.0)
 
-    def slope(y_a, z_a, y_b, z_b):              # a lead slope band across the full width
-        quad((-hx, yc + y_a, z_a), (hx, yc + y_a, z_a), (hx, yc + y_b, z_b), (-hx, yc + y_b, z_b), IL,
-             [(0, 0), (W / 1.2, 0), (W / 1.2, 1.6), (0, 1.6)])
-    slope(half, rd, kn, kz);   slope(kn, kz, rh, rw)      # front steep + shallow
-    slope(-half, rd, -kn, kz); slope(-kn, kz, -rh, rw)    # back steep + shallow
-    quad((-hx, yc - rh, rw), (hx, yc - rh, rw), (hx, yc + rh, rw), (-hx, yc + rh, rw), IL,
-         [(0, 0), (W, 0), (W, rh * 2), (0, rh * 2)])       # flat ridge walk (standable top)
-    # brick gable ends following the gambrel profile
-    prof = [(yc + half, rd), (yc + kn, kz), (yc + rh, rw), (yc - rh, rw), (yc - kn, kz), (yc - half, rd)]
-    for gx, nrm in ((hx, 1), (-hx, -1)):
-        pts = [(gx, y, z) for (y, z) in (prof if nrm > 0 else list(reversed(prof)))]
-        nface(pts, IB, [((y - yb) / 3.0, z / 3.0) for (y, z) in (prof if nrm > 0 else list(reversed(prof)))])
-    if CFG.get("stair_stub"):
-        # external stone stair-stub against the loading front, beside the cargo
-        # door and inside the box footprint: two treads, tops flat at STEP_UP and
-        # 2xSTEP_UP (the intermediate mantle footing off the wharf deck).
-        sx0 = cw / 2 + 0.4
-        sx1 = min(sx0 + 1.9, hpw - 0.15)          # keep the stair inside the portal opening
-        solid_box(sx0, sx1, FW, hz - 0.1, 0.0, 0.5, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
-        solid_box(sx0 + 0.5, sx1, FW, hz - 0.7, 0.5, 1.0, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
+if CFG["roof"] == "walk":
+    # wharf-a: a pitched leaded eave-skirt folding below the walk on the two long
+    # sides (+/-x) and the back (-y), for a shallow pitched (gambrel-ish) read.
+    # Drawn ENTIRELY below H, so no walkable surface drops off roofY. The FRONT
+    # (+y) edge is left clean — it is the take-off lip a body drops from northward
+    # onto the cargo mound.
+    sk = CFG["eave_skirt"]; ins = CFG["eave_inset"]
+    zt = H - 0.14; zb = zt - sk
+    for gx, d in ((-hx, 1), (hx, -1)):
+        xi = gx + d * ins
+        quad((gx, -hz, zt), (gx, hz, zt), (xi, hz, zb), (xi, -hz, zb), IL,
+             [(0, 0), (D, 0), (D, sk), (0, sk)])
+    quad((-hx, -hz, zt), (hx, -hz, zt), (hx, -hz + ins, zb), (-hx, -hz + ins, zb), IL,
+         [(0, 0), (W, 0), (W, sk), (0, sk)])
 
-# ---- COVERED EAVE over the loading loggia (playtest #2 fix) --------------------
-# The set-back loading front used to read as an OPEN NOTCH punched in the corner:
-# the roof stopped at the wall plane (FW), so the projecting gallery/pentice sat in
-# an open-topped recess you could see down into. Oversail the roof forward over the
-# loggia (FW -> front edge) so the gallery becomes a COVERED loading gallery against
-# a solid wall — a real warehouse loading front, not a hole. The gallery deck stays
-# at 5.35 and the roof deck at CFG['roof_deck'] (both drawn==collision, unmoved);
-# this only adds a covering slab over the previously-open strip.
-eave_z = CFG["roof_deck"]
-# lead soffit + top over the portal opening only (the brick flanks already roof the
-# FW->hz strip outside the portal), so the covered bay reads closed on top
-solid_box(-hpw, hpw, FW, hz, eave_z - 0.18, eave_z, IL, faces=("+z", "-z", "+y"), tile=1.3)
+# ---- COVERED EAVE over the loading loggia --------------------------------------
+# The loading front is set back to FW; oversail a lead soffit forward over the
+# portal opening (FW -> front edge) so the loading bay reads as a covered loggia
+# against a solid wall, not an open notch. Its underside at EAVE_Z-0.16 is the
+# loggia ceiling; the roof deck at z=H spans over it (the shed's true roof).
+solid_box(-hpw, hpw, FW, hz, EAVE_Z - 0.16, EAVE_Z, IL, faces=("+z", "-z", "+y"), tile=1.3)
 # a timber head-beam across the top of the loading opening (the covered-bay lintel)
-solid_box(-hpw + 0.1, hpw - 0.1, FW, FW + 0.22, PORTAL_TOP - 0.30, PORTAL_TOP, ITM,
+solid_box(-hpw + 0.1, hpw - 0.1, FW, FW + 0.20, PORTAL_TOP - 0.28, PORTAL_TOP, ITM,
           faces=("+y", "-x", "+x", "-z", "+z"), tile=1.2)
 
 if PHOTOREAL:
@@ -623,16 +636,18 @@ if PHOTOREAL:
             for lp in fdet.loops:
                 p = lp.vert.co; lp[uv].uv = (p.x + p.y, p.z + 0.5 * p.y)  # skew so no face is UV-degenerate
 
-    # (1) corbel brackets under the pentice and the loading gallery, at each post
+    has_loft = loft_door_head - (py + 0.1) > 0.7        # matches the portal-opening test above
+
+    # (1) corbel brackets under the covered pentice canopy, at each post
     for pxp in post_xs:
-        gbot = gy - CFG["gallery_thick"]
-        wedge(pxp - 0.10, pxp + 0.10, FW + 0.03, gbot - 0.85, hz - 0.15, gbot - 0.05, ITM)
         pbot = py - CFG["pentice_thick"]
-        wedge(pxp - 0.09, pxp + 0.09, FW + 0.03, pbot - 0.60, hz - 0.15, pbot - 0.05, ITM)
+        wedge(pxp - 0.09, pxp + 0.09, FW + 0.03, pbot - 0.55, hz - 0.15, pbot - 0.05, ITM)
 
     # (2) stone pilasters framing the cargo bay (apron -> under the pentice), proud
     for sgnp in (-1, 1):
         pxs = sgnp * (cw / 2 + 0.30)
+        if abs(pxs) + 0.20 > hpw - 0.02:                 # keep inside the portal opening
+            continue
         solid_box(pxs - 0.20, pxs + 0.20, FW, FW + 0.16, 0.05, py - CFG["pentice_thick"] - 0.06,
                   IT, faces=("+y", "-x", "+x", "+z"), tile=1.1)
 
@@ -647,30 +662,28 @@ if PHOTOREAL:
         solid_box(vx - hw, vx + hw, FW, FW + (0.16 if crown else 0.11), vz - hh, vz + hh,
                   IT, faces=("+y", "-x", "+x", "+z", "-z"), tile=1.0)
 
-    # (4) a projecting weather HOOD + brackets over the loft loading door
-    solid_box(-lw / 2 - 0.35, lw / 2 + 0.35, FW, FW + 0.55, loft_door_head, loft_door_head + 0.20,
-              ITM, faces=("+y", "-x", "+x", "+z", "-z"), tile=1.0)
-    for hxb in (-lw / 2 - 0.18, lw / 2 + 0.18):
-        wedge(hxb - 0.06, hxb + 0.06, FW + 0.03, loft_door_head - 0.5, FW + 0.5, loft_door_head - 0.02, ITM)
+    if has_loft:
+        # (4) a projecting weather HOOD + brackets over the loft loading door
+        solid_box(-lw / 2 - 0.30, lw / 2 + 0.30, FW, FW + 0.45, loft_door_head, loft_door_head + 0.18,
+                  ITM, faces=("+y", "-x", "+x", "+z", "-z"), tile=1.0)
+        for hxb in (-lw / 2 - 0.16, lw / 2 + 0.16):
+            wedge(hxb - 0.06, hxb + 0.06, FW + 0.03, loft_door_head - 0.45, FW + 0.42, loft_door_head - 0.02, ITM)
 
-    # (5) painted SIGN board above the loft door (trim-edged body + textured face)
-    sb0 = loft_door_head + 0.30
-    sb1 = min(CFG["roof_deck"] - 0.40, sb0 + 1.15)
-    sbw = min(PORTAL_W - 0.6, (sb1 - sb0) * 2.7)
-    solid_box(-sbw / 2 - 0.08, sbw / 2 + 0.08, FW, FW + 0.10, sb0 - 0.08, sb1 + 0.08,
-              IT, faces=("+y", "-x", "+x", "+z", "-z"), tile=1.0)
-    quad((-sbw / 2, FW + 0.11, sb0), (sbw / 2, FW + 0.11, sb0),
-         (sbw / 2, FW + 0.11, sb1), (-sbw / 2, FW + 0.11, sb1), ISG,
-         [(1, 0), (0, 0), (0, 1), (1, 1)])  # flip U: face is +Y, read left-to-right from the front
+    # (5) painted SIGN board on the loading wall (trim-edged body + textured face)
+    sb0 = (loft_door_head + 0.28) if has_loft else (ch + 0.30)
+    sb1 = min(EAVE_Z - 0.16, sb0 + 1.0)
+    if sb1 - sb0 > 0.35:
+        sbw = min(PORTAL_W - 0.6, (sb1 - sb0) * 2.7)
+        solid_box(-sbw / 2 - 0.08, sbw / 2 + 0.08, FW, FW + 0.10, sb0 - 0.08, sb1 + 0.08,
+                  IT, faces=("+y", "-x", "+x", "+z", "-z"), tile=1.0)
+        quad((-sbw / 2, FW + 0.11, sb0), (sbw / 2, FW + 0.11, sb0),
+             (sbw / 2, FW + 0.11, sb1), (-sbw / 2, FW + 0.11, sb1), ISG,
+             [(1, 0), (0, 0), (0, 1), (1, 1)])  # flip U: +Y face, read left-to-right from the front
 
     # (6) projecting stone CORNICE band across the recessed loading wall (portal
     # width only, so it is not buried inside the solid brick flanks)
-    solid_box(-hpw, hpw, FW, FW + 0.14, CFG["roof_deck"] - 0.52, CFG["roof_deck"] - 0.24,
+    solid_box(-hpw, hpw, FW, FW + 0.14, EAVE_Z - 0.44, EAVE_Z - 0.20,
               IT, faces=("+y", "+z", "-z", "-x", "+x"), tile=1.2)
-
-    # (7) roof: a chimney CAP for a stronger silhouette (flat roof only)
-    if CFG["roof"] == "flat":
-        solid_box(-1.08, -0.12, -1.48, -0.52, dt - 0.28, dt - 0.10, IT, faces="all", tile=1.0)
 
 # ---- ground apron: pins the bbox to the DECLARED box, centred, base 0 ----------
 solid_box(-hx, hx, -hz, hz, 0.0, 0.03, IT, faces="all", tile=1.5)
@@ -680,7 +693,7 @@ bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=1e-5)
 bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
 mesh = bpy.data.meshes.new(KEY); bm.to_mesh(mesh); bm.free()
 obj = bpy.data.objects.new(KEY, mesh)
-for m in (MAT_BRICK, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V, MAT_SIGN):
+for m in (MAT_BRICK, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V, MAT_SIGN, MAT_ROOF):
     obj.data.materials.append(m)
 for poly in obj.data.polygons:
     poly.use_smooth = False
@@ -693,11 +706,14 @@ centre = (lo + hi) / 2.0
 log(f"blender bbox {size[0]:.3f} x {size[1]:.3f} x {size[2]:.3f}  -> gltf {size[0]:.3f}(w) x {size[2]:.3f}(h) x {size[1]:.3f}(d)  declared {W}x{H}x{D}")
 for axis, got, dec in (("width", size[0], W), ("height", size[2], H), ("depth", size[1], D)):
     if abs(got - dec) > 0.02:
+        ai = {"width": 0, "depth": 1, "height": 2}[axis]
+        over = co[(co[:, ai] > hi[ai] - 0.01) | (co[:, ai] < lo[ai] + 0.01)]
+        log(f"OFFENDING {axis} verts near {lo[ai]:.3f}/{hi[ai]:.3f}:", over[:8].round(3).tolist())
         raise SystemExit(f"{axis} {got:.3f} != declared {dec}; contain-fit would move the route planes")
 if abs(centre[0]) > 0.02 or abs(centre[1]) > 0.02 or abs(lo[2]) > 0.02:
     raise SystemExit(f"bbox not centred on axis at base 0 (centre {centre[0]:+.3f},{centre[1]:+.3f}, minZ {lo[2]:.3f})")
 tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
-log(f"tris {tris}  verts {len(obj.data.vertices)}  gallery_top={CFG['gallery_y']}  roof={CFG['roof']}")
+log(f"tris {tris}  verts {len(obj.data.vertices)}  roof_top(z=H)={H}  roof={CFG['roof']}")
 
 os.makedirs(os.path.dirname(OUT_GLB), exist_ok=True)
 bpy.ops.object.select_all(action="DESELECT"); obj.select_set(True); bpy.context.view_layer.objects.active = obj

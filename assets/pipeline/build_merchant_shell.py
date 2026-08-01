@@ -124,6 +124,43 @@ def slate_rgb(base=(0.30, 0.31, 0.34)):
     return rgb
 
 
+def slate_walk_rgb(across_len, along_len):
+    """A maintained Georgian merchant roof, mapped 0..1 so it does not tile: a cool
+    blue-grey SLATE field in staggered courses with a central lead ROOF-WALK strip
+    (the 'leads') running along the ridge, lead flashing at the walk edges and the
+    perimeter. Cleaner and cooler than the working-wharf lead and warmer-toned than
+    a bare deck — a different building's roof. Streaks run crosswise to the wharf's."""
+    n = TEX
+    u = np.broadcast_to(np.linspace(0, 1, n, endpoint=False)[None, :], (n, n))   # down-slope (x)
+    v = np.broadcast_to(np.linspace(0, 1, n, endpoint=False)[:, None], (n, n))   # along ridge (y)
+    ncourse = max(6, int(round(across_len / 0.28)))
+    nslate = max(6, int(round(along_len / 0.24)))
+    fc = u * ncourse; course = np.floor(fc); cf = fc - course
+    off = np.where(course % 2 == 0, 0.0, 0.5)
+    fs = v * nslate + off; sl = np.floor(fs); sf = fs - sl
+    seed = np.sin(course * 11.1 + sl * 7.3) * 4373.1; sv = seed - np.floor(seed)
+    col = np.array([0.30, 0.33, 0.375])[None, None, :] * (0.80 + 0.34 * sv)[..., None]
+    head = _ss(0.0, 0.08, cf); seam = _ss(0.0, 0.02, sf) * _ss(0.0, 0.02, 1 - sf)
+    col *= (0.58 + 0.42 * head)[..., None]
+    col *= (0.72 + 0.28 * seam)[..., None]
+    col *= (0.86 + 0.24 * aniso(n, 7, 7, RNG))[..., None]                         # large tonal drift
+    # central lead ROOF-WALK strip along the ridge (v), centred in u
+    wh = float(np.clip(0.7 / max(across_len, 0.1), 0.05, 0.22))
+    dcen = np.abs(u - 0.5)
+    nroll = max(2, int(round(along_len / 0.72)))
+    rd = np.minimum((v * nroll) % 1.0, 1 - (v * nroll) % 1.0)
+    roll = np.clip(1 - rd / 0.06, 0, 1); roll = roll * roll * (3 - 2 * roll)
+    lead = np.array([0.44, 0.46, 0.49])[None, None, :] * (0.90 + 0.30 * aniso(n, 8, 8, RNG))[..., None]
+    lead = lead * (0.90 + 0.50 * roll[..., None])
+    col = np.where((dcen < wh)[..., None], lead, col)
+    col = np.where((np.abs(dcen - wh) < 0.012)[..., None], np.array([0.55, 0.57, 0.60])[None, None, :], col)  # walk-edge flashing
+    du = np.minimum(u, 1 - u); dv = np.minimum(v, 1 - v); edge = np.minimum(du, dv)
+    fl = np.clip(1 - edge / 0.02, 0, 1); fl = fl * fl * (3 - 2 * fl) * 0.7
+    col = col * (1 - fl[..., None]) + np.array([0.50, 0.52, 0.55])[None, None, :] * fl[..., None]   # perimeter flashing
+    col *= (0.88 + 0.16 * aniso(n, 150, 5, RNG))[..., None]                       # modest streaks, crosswise to wharf
+    return np.clip(col, 0, 1)
+
+
 def window_rgb():
     n = TEX // 2
     X = np.broadcast_to(np.linspace(0, 1, n)[None, :], (n, n)); Y = np.broadcast_to(np.linspace(0, 1, n)[:, None], (n, n))
@@ -197,7 +234,9 @@ MAT_SHUT = make_material("shutter", pack_jpeg("shutter", shutter_rgb()), rough=0
 MAT_TIMB = make_material("timber", pack_jpeg("timber", flat_rgb(TEX // 4, (0.30, 0.22, 0.15))), rough=0.9)
 MAT_LEAD = make_material("lead", pack_jpeg("lead", flat_rgb(TEX // 4, (0.50, 0.51, 0.52))), rough=0.85)
 MAT_SIGN = make_material("sign", pack_jpeg("sign", sign_rgb()), rough=0.8)
-IB, IST, ISL, IW, ISH, IT, IL, ISG = 0, 1, 2, 3, 4, 5, 6, 7
+# roof/leads deck: blue-grey slate field with a central lead roof-walk (see fn)
+MAT_ROOF = make_material("roofwalk", pack_jpeg("roofwalk", slate_walk_rgb(DECL[0], DECL[2])), rough=0.7, spec=0.28)
+IB, IST, ISL, IW, ISH, IT, IL, ISG, IRF = 0, 1, 2, 3, 4, 5, 6, 7, 8
 
 bm = bmesh.new()
 uv = bm.loops.layers.uv.new("UVMap")
@@ -390,7 +429,14 @@ box(px0, px1, min(pyn, pys), max(pyn, pys), PARLOUR - 0.15, PARLOUR, IT, faces=(
 # ---- leaded roof / eave @ 7.10 -----------------------------------------------
 # closed inset slab (0.05 off the walls so no face is coincident with a wall plane);
 # a closed volume orients its top normal up reliably for the drawn==collision check.
-box(bx(FX0) + 0.05, bx(FX1) - 0.05, min(by(FZ_N), by(FZ_S)) + 0.05, max(by(FZ_N), by(FZ_S)) - 0.05, EAVE - 0.15, EAVE, IL, faces="all", tile=1.2)
+# closed slab minus its +z; the +z leads are ONE flat quad at exactly EAVE, UV 0..1
+# across the deck (NOT tiled) so the slate+lead-walk material reads once. Geometry
+# identical to the closed slab's top -> tris/weld/bbox unchanged; the walk stays put.
+_rx0, _rx1 = bx(FX0) + 0.05, bx(FX1) - 0.05
+_ry0, _ry1 = min(by(FZ_N), by(FZ_S)) + 0.05, max(by(FZ_N), by(FZ_S)) - 0.05
+box(_rx0, _rx1, _ry0, _ry1, EAVE - 0.15, EAVE, IL, faces=("+x", "-x", "+y", "-y", "-z"), tile=1.2)
+quad((_rx0, _ry0, EAVE), (_rx1, _ry0, EAVE), (_rx1, _ry1, EAVE), (_rx0, _ry1, EAVE), IRF,
+     [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
 # eave cornice band (stone) just under the leads, oversailing south only (depth)
 box(bx(FX0), bx(FX1), by(FZ_S) - 0.14, by(FZ_S) + 0.02, EAVE - 0.28, EAVE - 0.10, IST, faces=("-y", "+z", "-z", "+x", "-x"), tile=1.0)
 
@@ -410,7 +456,7 @@ bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=1e-5)
 bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
 mesh = bpy.data.meshes.new(KEY); bm.to_mesh(mesh); bm.free()
 obj = bpy.data.objects.new(KEY, mesh)
-for m in (MAT_BRICK, MAT_STONE, MAT_SLATE, MAT_GLASS, MAT_SHUT, MAT_TIMB, MAT_LEAD, MAT_SIGN):
+for m in (MAT_BRICK, MAT_STONE, MAT_SLATE, MAT_GLASS, MAT_SHUT, MAT_TIMB, MAT_LEAD, MAT_SIGN, MAT_ROOF):
     obj.data.materials.append(m)
 for poly in obj.data.polygons:
     poly.use_smooth = False
