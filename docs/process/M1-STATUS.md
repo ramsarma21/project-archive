@@ -906,6 +906,46 @@ DOES — it drives the shipped physics at each authored link, and it is what cau
 staging climbs going dead. Use it, not the affordance gate, for any "can the player actually
 get up this" claim.
 
+### The overhead-refusal sweep: 12 raw hits, 2 real candidates, and why the count is not the answer (31 Jul)
+
+Swept mechanically after the rule turned up three times in one day (scaffold staging, merchant
+gallery, elm crown). The predicate is the exact `readRaisedSurface` condition: **the source node's
+(x,z) falls inside the target deck's rect, with a positive rise inside the climb ceiling.**
+
+Twelve authored CLIMB links match. **The raw count is misleading and must not be quoted as
+twelve defects** — matching the predicate is necessary but not sufficient, and there is direct
+evidence for that in both directions:
+
+- **A ladder defeats the skip.** `C_GALLERY_EMID->C_CLOCK` matches the predicate and provably
+  ARMS: `check-playthrough`'s refusal stance was re-pointed onto that exact ladder on 31 Jul and
+  passed in play ("no ladder and no grip means no climb" holds, i.e. it arms with the ladder
+  present). Seven of the twelve are ladder-served this way — CLOCK, CORNICE_E, TOWER_PLINTH,
+  LEANTO, RIDGE_W/RIDGE_S, LOUVRE.
+- **A GRIP apparently does not.** `F_LOW->F_CROWN` matches and has `GRIP_ELM_CROWN` on the target
+  surface, and it is the one we know FAILS in play (the body never enters CLIMB_UP). Why a ladder
+  rescues and a grip does not is **not traced** — do not build on it without reading the path.
+
+Of the five that are not ladder-served, three place the node EXACTLY on the rect boundary
+(`E_LOUVRE->E_GALLERY` at z 8.9 against z0 8.9; `E_LEANTO->E_MEETING_S` at z 16.3 against z1 16.3;
+and the boundary is inclusive in the predicate). A node on the boundary is standing AT THE LIP,
+which is correct authoring, so these are probably false positives — probably, not certainly.
+
+That leaves two genuine candidates:
+
+- **`F_LOW->F_CROWN`** (elm crown, 0.1 m inside x, well inside z) — confirmed failing in play, and
+  it blocks the mission climax. Owner's ruling 31 Jul: move the standing spot west of x 78.6, and
+  retire the volume AND `GRIP_ELM_CROWN`, because hauling up the bole on holds is the climbing the
+  movement vocabulary rejects. Headroom at the new spot must be verified with a MESH-READING
+  instrument: the file records a previous relocation here sweeping the body's head 0.81 m through
+  the drawn canopy.
+- **`C_CORNICE_S->C_LEADS_S`** (Town House leads) — node at z 6.25 against a rect ending at 6.5,
+  so 0.25 m genuinely inside, no ladder, and a 2.20 m rise that is also in the 1.9-3.1 m dead
+  zone. Unexamined. Suspicious on two counts at once.
+
+**Nothing in the 243-test suite catches any of this**, which is the point: the class fails silently
+at authoring time and surfaces only as a climb that never offers itself. Promoting the predicate to
+a real gate is tracked as its own item — a check that can fail is worth more than this paragraph.
+
 ### The edge brake holds a walk and loses a run, and a deck ends one capsule radius late (31 Jul)
 
 Measured off the regenerated scaffold, tick by tick, against the shipped `stepFlow`. Both halves
