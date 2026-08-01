@@ -1497,9 +1497,17 @@ def build_ridge_monitor():
     box = draw_box(key)
     length, height, depth = box[0], box[1], box[2]
     new_scene()
-    lead, _ = load_material("lead", 1024)
-    plank, plank_image = load_material("plank", 1024)
-    board, _ = load_material("board-ropewalk", 1024)
+    # 512, not 1024: the injected tangent normals (fix_glb_normals) are PNG at the
+    # albedo's resolution, and a 1024 normal is a ~2 MB PNG that JPEG cannot help —
+    # three of them made this prop 7.55 MB (7.38 MB texture) against the steeple's
+    # 1.91 MB for the same six-atlas layout. At 512 the normal drops to ~0.6 MB and
+    # the base JPEG to ~0.13 MB, bringing the monitor in line. This is a background
+    # roof prop seen from the deck below; 512 holds the detail that read at range.
+    # (Per-material px; the encode cache is keyed on px, so 1024 kit props are
+    # untouched.)
+    lead, _ = load_material("lead", 512)
+    plank, plank_image = load_material("plank", 512)
+    board, _ = load_material("board-ropewalk", 512)
     bands = plank_bands(plank_image)
     LEAD, PLANK, BOARD = 0, 1, 2
 
