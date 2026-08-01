@@ -34,15 +34,36 @@ function flatWorld(): CollisionWorld {
 
 const SEED = "0123456789abcdef0123456789abcdef";
 
+// The stop's authored beat, read from the encounter rather than pinned to a
+// coordinate: SHAMBLES_STOP moved onto the covert line's drop-to-contact at the
+// crate foot (B_CRATES_FOOT), so the tests place the player and watchers relative
+// to `trigger.at`/`speakerStandoff` and keep verifying the behaviour, not a spot.
+const SHAMBLES_ENC = encounterById("SHAMBLES_STOP");
+const BEAT: Vec3 = {
+  x: SHAMBLES_ENC.trigger.at[0],
+  y: 0,
+  z: SHAMBLES_ENC.trigger.at[2],
+};
+const SPEAKER_STANDOFF: Vec3 = {
+  x: SHAMBLES_ENC.trigger.speakerStandoff[0],
+  y: 0,
+  z: SHAMBLES_ENC.trigger.speakerStandoff[2],
+};
+const SECONDARY_STANDOFF: Vec3 = {
+  x: SHAMBLES_ENC.trigger.secondaryStandoff![0],
+  y: 0,
+  z: SHAMBLES_ENC.trigger.secondaryStandoff![2],
+};
+
 function shamblesInstance(): EncounterInstance {
   const enc = encounterById("SHAMBLES_STOP");
   return createEncounterInstance(enc, selectEncounterVariant(enc, SEED, 1));
 }
 
-/** The controlled watchers' live sim poses at their authored patrol posts. */
+/** The controlled watchers' live sim poses at their authored standoff posts. */
 const ACTOR_POSES = [
-  { id: "WATCH_SHAMBLES", pos: { x: 17.5, y: 0, z: -1.2 }, yaw: 0 },
-  { id: "SENTRY_GAOL", pos: { x: 24.2, y: 0, z: -2.9 }, yaw: 0 },
+  { id: "WATCH_SHAMBLES", pos: { ...SPEAKER_STANDOFF }, yaw: 0 },
+  { id: "SENTRY_GAOL", pos: { ...SECONDARY_STANDOFF }, yaw: 0 },
 ];
 
 interface DriveOptions {
@@ -63,7 +84,7 @@ function drive(
     world,
     tick,
     player: {
-      pos: opts.playerPos ?? { x: 16.6, y: 0, z: 0.4 },
+      pos: opts.playerPos ?? { ...BEAT },
       grounded: opts.grounded ?? true,
     },
     actorPoses: ACTOR_POSES,
@@ -99,7 +120,7 @@ test("the opening stop does not arm without a grounded drop", () => {
   // In the trigger radius but airborne: falling past, or hovering above it.
   const airborne = drive(instance, world, 0, {
     grounded: false,
-    playerPos: { x: 16.6, y: 4, z: 0.4 },
+    playerPos: { x: BEAT.x, y: 4, z: BEAT.z },
   });
   assert.equal(airborne.result.phase, "DORMANT");
   assert.equal(airborne.result.locksLocomotion, false);
@@ -147,7 +168,7 @@ test("a speaker who can never reach aborts APPROACH rather than soft-locking", (
   // hand control back, not sit in APPROACH forever while the mission clock drains.
   const world = flatWorld();
   const instance = shamblesInstance();
-  const player: Vec3 = { x: 16.6, y: 0, z: 0.4 };
+  const player: Vec3 = { ...BEAT };
   const step = (tick: number) =>
     stepEncounter(instance, {
       world,
@@ -219,10 +240,10 @@ test("approach locks locomotion, walks actors without teleport, and keeps suppor
 test("the speaker closes to conversational distance from the player, not a fixed standoff", () => {
   const world = flatWorld();
   const instance = shamblesInstance();
-  // Arm well OFF the trigger centre — at the west edge of the radius — the way a
+  // Arm well OFF the trigger centre — near the west edge of the radius — the way a
   // player running in actually trips it. A fixed world standoff would leave the
   // officer talking from metres away here; a player-relative approach must not.
-  const player: Vec3 = { x: 13.2, y: 0, z: 0.4 };
+  const player: Vec3 = { x: BEAT.x - 3.4, y: 0, z: BEAT.z };
   drive(instance, world, 0, { playerPos: player });
   const opened = driveUntil(
     instance,
@@ -245,12 +266,13 @@ test("a watcher stranded far by his kinematic patrol still comes up close, withi
   const world = flatWorld();
   const enc = encounterById("SHAMBLES_STOP");
   const instance = createEncounterInstance(enc, selectEncounterVariant(enc, SEED, 1));
-  const player: Vec3 = { x: 16.6, y: 0, z: 0.4 };
-  // The market-watch is 24m east, where his roaming patrol can leave him — far
-  // enough that a fixed 1.5 m/s straight walk could never close it in the budget.
+  const player: Vec3 = { ...BEAT };
+  // The market-watch is ~12m east of the beat, where his roaming patrol can leave
+  // him — far enough that a fixed 1.5 m/s straight walk could never close it in
+  // the budget, so only the origin clamp gets him up in time.
   const farPoses = [
-    { id: "WATCH_SHAMBLES", pos: { x: 40.6, y: 0, z: 0.4 }, yaw: 0 },
-    { id: "SENTRY_GAOL", pos: { x: 38.0, y: 0, z: -1.0 }, yaw: 0 },
+    { id: "WATCH_SHAMBLES", pos: { x: BEAT.x + 12, y: 0, z: BEAT.z + 1.2 }, yaw: 0 },
+    { id: "SENTRY_GAOL", pos: { x: BEAT.x + 10, y: 0, z: BEAT.z - 0.2 }, yaw: 0 },
   ];
   const drive = (tick: number) =>
     stepEncounter(instance, {
@@ -287,19 +309,19 @@ test("clutter on the direct line is re-pathed around, and the question never ope
   const world: CollisionWorld = {
     blockers: [
       // A cart across the lane between the officer (east) and the player (west).
-      wallFromRect("CART", 20, 0, 0.5, 1.0, { topY: 1.2 }),
+      wallFromRect("CART", BEAT.x + 3.6, BEAT.z, 0.5, 1.0, { topY: 1.2 }),
     ],
     platforms: [platformFromRect("FLOOR", -10, 100, -12, 40, 0)],
     bounds: { minX: -10, maxX: 100, minZ: -12, maxZ: 40 },
   };
   const enc = encounterById("SHAMBLES_STOP");
   const instance = createEncounterInstance(enc, selectEncounterVariant(enc, SEED, 1));
-  const player: Vec3 = { x: 16.6, y: 0, z: 0.4 };
+  const player: Vec3 = { ...BEAT };
   // Both watchers sit east of the cart, so the straight line to the player is
   // blocked for each of them.
   const blockedPoses = [
-    { id: "WATCH_SHAMBLES", pos: { x: 24.0, y: 0, z: 0.4 }, yaw: Math.PI },
-    { id: "SENTRY_GAOL", pos: { x: 25.0, y: 0, z: 1.2 }, yaw: Math.PI },
+    { id: "WATCH_SHAMBLES", pos: { x: BEAT.x + 6.6, y: 0, z: BEAT.z }, yaw: Math.PI },
+    { id: "SENTRY_GAOL", pos: { x: BEAT.x + 7.6, y: 0, z: BEAT.z + 0.8 }, yaw: Math.PI },
   ];
   const step = (tick: number) =>
     stepEncounter(instance, {

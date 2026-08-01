@@ -282,6 +282,41 @@ RESERVED_PADS.forEach((pad) => {
   );
 });
 
+// ===========================================================================
+// THE MARKET DROP-TO-CONTACT — the SHAMBLES_STOP beat, on the covert line.
+// ===========================================================================
+//
+// The guided covert line runs the market on the sheds and canopies, above the
+// crowd. The market-watch constable (SHAMBLES_STOP) stands on the cobbles, and
+// his stop is MANDATORY — traversal.ts gates REACHED_DUEL on encountersParticipated,
+// so a covert line that sailed over him on the canopies would soft-lock the duel.
+// So the golden line comes DOWN to him for the beat and climbs straight back up,
+// an authored drop-to-contact rather than a wander across the market floor.
+//
+// It is built on the PROVEN street climb-in and needs no new market geometry: the
+// line runs off stall 2's canopy (B_CANOPY_2) down to the crate foot where the
+// constable stops it (B_CRATES_FOOT, the stop's relocated trigger — see
+// encounters/bank.ts), then climbs the awning's overhanging south edge back onto
+// the canopy line (the shipped B_CRATES_FOOT -> B_CANOPY_2_S mantle) and jumps on
+// to stall 3. Descent and ascent take DISTINCT nodes (down B_CANOPY_2, up
+// B_CANOPY_2_S) so the guidance never has to re-offer a node it already banked —
+// the visited-set never sees the same node twice on the down-and-up.
+links.push(
+  link("B_CANOPY_2", "B_CRATES_FOOT", "DROP", "SAFE", "CHAIN_DROP", {
+    // A hang-drop, not a run-off: the goods stack (SHAMBLES_CRATES_A, top 1.9)
+    // sits directly south of the foot, so any running carry off the lip lands
+    // ON the crate — the reader grabs the awning edge and lowers straight down
+    // onto the cobbles just past it. speedMps is the assumed lip speed the
+    // static solver flies the arc at; 1.0 keeps the 2.55 m descent near-vertical
+    // so it clears the stack and lands on the foot, not the goods.
+    speedMps: 1.0,
+    note: "Drop-to-contact: off stall 2's canopy south edge, a controlled hang-drop down to the crate foot, where the market-watch stops the player on the cobbles (SHAMBLES_STOP).",
+  }),
+  link("B_CANOPY_2_S", "B_CANOPY_3", "JUMP", "SAFE", "LEAP", {
+    note: "Back up and on: after the stop, the awning-edge mantle (B_CRATES_FOOT -> B_CANOPY_2_S) regains the canopy line and this hop carries east to stall 3 — a forward rejoin, not a re-tread of the drop.",
+  }),
+);
+
 export const EAST_COVERT_GEOMETRY = { masses, decks } as const;
 export const EAST_COVERT_NODES = nodes;
 export const EAST_COVERT_LINKS = links;
@@ -363,4 +398,43 @@ export const GOLDEN_LINE: readonly string[] = [
 export const STEEPLE_DEADZONE_CLIMBS: readonly string[] = [
   "D_MEETING_ROOF->E_RIDGE",
   "E_RIDGE->E_LOUVRE",
+];
+
+// ===========================================================================
+// THE GUIDED LINE — the wayfound covert route the HUD/visor actually leads.
+// ===========================================================================
+//
+// GOLDEN_LINE above is the covert IDEAL: elevated spawn→post, every ascent a
+// ≤1.9 m mantle, checked by covertLine.test. The wayfinder needs two things that
+// ideal does not carry, so it is guided down THIS line instead:
+//
+//   * the authored DROP-TO-CONTACT at the market-watch. The golden ideal stays
+//     on the canopies over the constable and would sail over the MANDATORY
+//     SHAMBLES_STOP (traversal.ts gates REACHED_DUEL on encountersParticipated),
+//     soft-locking the duel; the guided line drops to him and climbs back (see
+//     the MARKET DROP-TO-CONTACT block above).
+//   * the post→yard chase. GOLDEN_LINE stops at the post; the wayfinder's second
+//     goal is the arena spawn, so the chase down the elm and through the yard
+//     crowd is appended here.
+//
+// The Shambles splice replaces the canopy-2→canopy-3 hop with the down-and-up
+// (B_CANOPY_2 → B_CRATES_FOOT → B_CANOPY_2_S → B_CANOPY_3); everything else is
+// GOLDEN_LINE verbatim, so the covert ideal and the guided line cannot drift.
+export const GOLDEN_GUIDED_LINE: readonly string[] = [
+  ...GOLDEN_LINE.flatMap((id) =>
+    id === "B_CANOPY_2"
+      ? ["B_CANOPY_2", "B_CRATES_FOOT", "B_CANOPY_2_S"]
+      : [id],
+  ),
+  "F_POST_STEP",
+  "F_LOW",
+  "F_AWNING",
+  "F_GROUND",
+  "F_STALL_BACK",
+  "F_CROWD_S",
+  "F_VAULT_IN",
+  "F_VAULT_OUT",
+  "F_CROWD_E",
+  "G_GATE",
+  "G_SPAWN",
 ];

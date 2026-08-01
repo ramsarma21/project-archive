@@ -139,10 +139,20 @@ const SHAMBLES: PerspectiveEncounter = {
       "He is a Crown man. He will wave you on only for a reason a King's officer would credit — Parliament's authority, or the colonies sharing the cost of a war fought for them — not for your opinion of the tax.",
   },
   trigger: {
-    at: [16.6, 0, 0.4],
+    // On the covert line's DROP-TO-CONTACT, at the market crate foot (B_CRATES_FOOT,
+    // 29.4,0,-0.8). The guided line no longer wanders the open market floor: it runs
+    // the sheds and canopies above the crowd and comes DOWN to the constable only
+    // here, off stall 2's canopy, then climbs the awning edge straight back up (see
+    // level/eastCovert.ts, the MARKET DROP-TO-CONTACT block). The stop used to sit at
+    // the market entrance (16.6,0,0.4) on the retired ground street the guided line
+    // took; it moved east onto the canopy line's natural touchdown, the same way
+    // ROPEWALK_STOP moved onto the built roofline. Still MANDATORY (traversal.ts gates
+    // REACHED_DUEL on encountersParticipated), and it arms the instant the player is
+    // grounded at the crate foot after the drop.
+    at: [29.4, 0, -0.8],
     radiusM: 3.6,
-    speakerStandoff: [18.2, 0, 0.9],
-    secondaryStandoff: [20.4, 0, -1.4],
+    speakerStandoff: [27.6, 0, -0.4],
+    secondaryStandoff: [31.4, 0, -0.2],
     requiresGroundedApproach: true,
   },
   reprieveWorldSeconds: 10,

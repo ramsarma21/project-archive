@@ -7,6 +7,7 @@ import {
   createWayfinder,
   crowdExtents,
   duelQuestionsForAttempt,
+  GOLDEN_GUIDED_LINE,
   LIBERTY_CORNER,
   m1DuelId,
   M1_ENCOUNTERS,
@@ -382,7 +383,15 @@ export function m1Instance(input: {
       // canonical route and the mission is guided down exactly it. The FAST/EXPERT
       // route DATA and the multi-line wayfinder machinery are retired separately
       // (they are inert once nothing ever guides along them); see the report.
-      createWayfinder(M1_EFFIGY_RUN, { guidanceLines: ["SAFE"] }),
+      createWayfinder(M1_EFFIGY_RUN, {
+        guidanceLines: ["SAFE"],
+        // Pin the mark to the authored covert line, not the cheapest SAFE path:
+        // the retired ground street through the Shambles is shorter and was
+        // leading the player down onto the open market floor. The guided line
+        // stays on the sheds and canopies and touches the cobbles only at the
+        // authored drop-to-contact. See WayfinderOptions.guidedLine.
+        guidedLine: GOLDEN_GUIDED_LINE,
+      }),
     ),
     beat,
     receivingTargets: receivingTargetsOf(M1_EFFIGY_RUN),

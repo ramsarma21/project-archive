@@ -316,6 +316,29 @@ export interface WayfinderOptions {
    * narrows the waypoint and never the number on the plate.
    */
   readonly guidanceLines?: readonly RouteLink["line"][];
+  /**
+   * An ORDERED, authored line the guidance must follow, given as node ids. When
+   * set, the guidance/distance graph is restricted to exactly the links between
+   * this line's adjacent nodes (on `guidanceLines`), so `cheapestPath` can only
+   * ever walk the authored line — it cannot pick a shorter side route the graph
+   * also happens to contain.
+   *
+   * This exists because "the cheapest SAFE path" and "the covert route the level
+   * is designed around" are not the same line. M1's Shambles has a retired ground
+   * street tagged SAFE that is geometrically shorter than the elevated golden line
+   * over the market sheds and canopies, so unrestricted guidance led the player
+   * down onto the open market floor — past the market-watch on the cobbles —
+   * exactly the "you're not supposed to be on the floor" the owner reported. The
+   * golden line is authored to touch the ground ONLY at its beats (the wharf
+   * crossing, the drop-to-contact at the market-watch, the elm→yard chase), so
+   * pinning guidance to it keeps the mark on the covert line and brings the player
+   * down only where the route means them to.
+   *
+   * Distance still reads honestly: it is measured along this same line, which is
+   * the route the player is actually being walked, so the plate cannot quote a
+   * shorter way the mark never offers.
+   */
+  readonly guidedLine?: readonly string[];
 }
 
 /**
@@ -449,8 +472,34 @@ export function createWayfinder(
   level: MissionLevel,
   options: WayfinderOptions = {},
 ): Wayfinder {
-  const graph = routeDistanceGraph(level);
   const guidanceLines = options.guidanceLines ?? EVERY_LINE;
+  // Guidance runs over the whole authored graph unless it is pinned to a single
+  // ordered line, in which case the graph is cut down to exactly that line's
+  // links so `cheapestPath` can only ever walk the covert route, never a shorter
+  // side path the level also contains. See WayfinderOptions.guidedLine. Distance
+  // reads off the same graph, so it reports the length of the line being walked.
+  const graph = ((): RouteGraph => {
+    const guidedLine = options.guidedLine;
+    if (!guidedLine) return routeDistanceGraph(level);
+    const allow = new Set(guidanceLines);
+    const wanted = new Set<string>();
+    for (let i = 0; i + 1 < guidedLine.length; i += 1) {
+      for (const link of level.links) {
+        if (
+          link.from === guidedLine[i] &&
+          link.to === guidedLine[i + 1] &&
+          allow.has(link.line)
+        ) {
+          wanted.add(link.id);
+          break;
+        }
+      }
+    }
+    return routeDistanceGraph({
+      ...level,
+      links: level.links.filter((link) => wanted.has(link.id)),
+    });
+  })();
   const nodes = level.nodes;
   const posOf = new Map(nodes.map((node) => [node.id, node.pos]));
   const sectionOf = new Map(nodes.map((node) => [node.id, node.section]));

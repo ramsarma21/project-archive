@@ -38,6 +38,7 @@ export {
 } from "./level/ground.js";
 export { LINKS, NODES, REFLEX_BEAT } from "./level/route.js";
 export { LINKS_2, NODES_2 } from "./level/route2.js";
+export { GOLDEN_GUIDED_LINE } from "./level/eastCovert.js";
 export { ARENA } from "./level/duelArena.js";
 export {
   BLEND,
