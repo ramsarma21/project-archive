@@ -42,7 +42,7 @@ rather than a judgement call made at merge time.
 | `mission-world` — jump-hang clip vocabulary (`ab007f2`, `07eb7d2`) | **post-demo polish/risk** — the route already works via ladder | preserve on branch; do **not** merge for the M1 demo without browser capture and route/ladder gates |
 | `duel-hud` +2 — interstitial retired, hit marker legible (granted, `dab549b`) | **M1-critical**, demo-facing | merge when gated |
 | `api-hunt` `ca2e345` — an outage round enforces the deterministic card half | **M1-critical** — the "told he was right when he was wrong" class | cherry-pick alone; it is the branch's oldest commit, below the PvP pair |
-| `mission-encounters` `c3db1b9` `33a7f2d` `76cfcc2` `5094c73` — question draw ordered by concept, winnability aimed at the fight M1 ships | **M1**, but current branch also has unsafe WIP | preserve; do **not** merge/cherry-pick current WIP until the hang below is resolved |
+| `mission-encounters` — question draw + winnability (the 4 committed commits) **and** the empty-ammo reload redesign (was uncommitted WIP) | **M1**, demo-facing | **DONE.** The 4 commits landed in consolidation; the empty-reload WIP is finished + merged `39b3c3f` (31 Jul) — see finding 4. Only the PvP netcode pair (below) stays future |
 | `boss-clip` +2 — hit confirmation: sound, stronger flinch, unified colour | **nice-to-have M1** (the fight reads as a fight) | merge after the criticals |
 | `module-lesson` `72ab1c9` — lesson checks vary by distractor pool, plus an **inert** remediation subset | **M1, carrying debt** | the variation is M1; the inert subset is the dead-but-plausible shape this file warns about — wire it or drop it, do not merge it inert |
 | `api-hunt` `a854ab9` `a459d89` — PvP card access and `/join` reasons | **future** | pause on branch |
@@ -64,13 +64,24 @@ rather than a judgement call made at merge time.
 3. **An uncommitted `infra/lib/project-archive-stack.ts` edit sits in the `mission-presentation`
    worktree**, and `infra/**` appears in no lane's globs, so it is unowned. Whoever left it should
    claim or discard it.
-4. **`workflow/mission-encounters` is not merge-ready after the boss duel WIP.** The reload-exposure
-   pass improved the correct-answer path, but the last edit (`directionToOpenLane` plus call sites)
-   leaves the duel suite hanging. The last known-good point is two edits earlier: 23s suite with one
-   `bossTactics.test.ts` failure (`exposedTicks` 179/360). The safe resume path is to revert only the
-   `policy.ts` addition and its two `bossAi.ts` call sites, then re-measure. The deeper M1 defect it
-   exposed is real and unresolved: firing uses eye-line LOS while balls are still eaten by cover, so
-   LOW-peek fights can look active while both sides shoot crates.
+4. **`workflow/mission-encounters`'s boss-duel WIP is FINISHED and MERGED — `main` `39b3c3f` (31 Jul),
+   under an explicit owner freeze exception.** The empty-ammo redesign (out-of-powder boss breaks
+   cover and reloads in the open instead of hiding) is on `main`. The earlier **"leaves the duel suite
+   hanging" claim was stale** — measured, the suite ran 181 pass / 0 fail / 1 todo with a single real
+   failure, `bossTactics.test.ts` `exposedTicks 179/360`: the boss took 181 ticks to round a wide wall
+   because `directionToOpenLane` only probes 2.2 m and returned null behind a 4 m wall, so it walked
+   into the wall and rounded it only via the reactive stall-detour. Fixed by `directionToBreakCover`
+   (a deterministic lateral break out of the screening cover's shadow, wired as a fallback ONLY when
+   `directionToOpenLane` returns null, so every already-solved case stays byte-identical): exposure
+   270/360, correct-answer path 11.5→4.5 rounds, correct-path anti-hang backstop 7/32→0/32. Gated on
+   the merged tree — build/test/typecheck/lint/verify:content/verify:units/assets:verify:* + **`check-playthrough`
+   ALL PASS**; the only `lane-integrity` red was environmental (the verify branch carrying the files;
+   `packages/duel` is in no clobber) and cleared on landing.
+   **Still open (`todo`, ARMED-path balance, NOT the empty reload):** the backstop is still reached on
+   rare harder-path seeds (ALT 1/32, WRONG 2/32); those paths are ~94% ARMED, 0% empty, so it is
+   cover-seeking + oracle close-in, not the exposed reload. `isExposedToShot` now distinguishes the
+   ball's lane from the eye line for the empty state, but ARMED/LOW firing still uses the raw line —
+   an owner balance call, deliberately not retuned to force the todo green.
 5. **`workflow/mission-world` jump-hang is preserved but not demo-critical.** The clock ledge already
    works on `main` via a ladder, so the branch replaces a working route action with an unproven one.
    Engine and clip-fidelity checks passed, but there is no browser capture, no completed `check-playthrough`,
