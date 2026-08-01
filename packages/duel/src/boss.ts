@@ -113,10 +113,24 @@ export const BOSS_AMMO_POLICIES: readonly BossAmmoPolicy[] = [
  *          open. Firing is gated by the real crouch/stand cover mechanic: tucked
  *          behind chest-high cover the sightline is blocked and the boss holds fire;
  *          standing to peek reopens it and it takes a shot.
- *   EMPTY  (ammo === 0) — retreat to a reachable, line-of-sight-blocking imported
- *          cover point, crouch behind it and hold, dodging an incoming ball if one
- *          is imminent and relocating (deterministically, once) only when the player
- *          closes inside `pressDistanceM` or the point stops occluding.
+ *   EMPTY  (ammo === 0) — BREAK cover and reload in the open, where the player can
+ *          answer. It walks at the player until a ball could actually reach it, then
+ *          plants, stands and works the reload for `reloadExposureTicks` — committed,
+ *          so it neither crouches nor dodges through that window — and strides in
+ *          again for `reloadPressTicks` before the next beat.
+ *
+ * THE EMPTY CASE USED TO BE THE OPPOSITE OF THAT, AND THE REVERSAL IS DELIBERATE.
+ * It retreated to a line-of-sight-blocking cover point, crouched, and held. That was
+ * built to the owner's original request — hide and duck when out of bullets — and it
+ * had two consequences he then played through. A boss behind cover is a boss the
+ * PLAYER cannot hit either, so on the correct-answer path (where the symmetric
+ * complement leaves the boss only 7 balls, and it therefore spends 27% of live
+ * combat empty) the player's damage collapsed exactly where their own magazine was
+ * largest: the fight ran 11.5 rounds against the wrong path's 5.8 and reached the
+ * 24-round anti-hang backstop on 7 of 32 seeds. And it made a liar of the duel's own
+ * text — a card reading "He drops behind cover to reload. A flintlock takes about
+ * that long" was deleted because the boss hid while empty and never once exposed
+ * itself to reload. This is that sentence, built.
  */
 export interface BossTacticalProfile {
   /**
@@ -137,16 +151,43 @@ export interface BossTacticalProfile {
   /** Ticks the boss stays tucked (crouched, occluded) between peeks. */
   readonly peekCooldownTicks: number;
   /**
-   * If the player closes inside this distance (metres) while the boss is holding
-   * empty cover, the boss relocates to a different valid cover or performs one
-   * bounded evasive dodge, rather than sitting still to be walked down.
+   * Ticks an empty boss stands planted in the open working its reload, per beat.
+   *
+   * THE WINDOW THE WHOLE EMPTY STATE EXISTS TO GIVE, so it is sized from both ends.
+   * Long enough to be a real opportunity: the player's own reload is 1.0s
+   * (FIRE_INTERVAL_SECONDS), so this has to clear one interval with room to aim, and
+   * the boss is committed through it — no dodge, no crouch. Short enough to read as
+   * a reload rather than as a boss that has stopped working, which is what pins it to
+   * the flintlock period the duel states elsewhere (LINE_OF_SIGHT_BREAK_SECONDS, the
+   * between-round reload break: "a flintlock takes about this long").
+   *
+   * Deliberately NOT imported from that constant. The two are the same fiction and
+   * the same length, but M1's boss takes cover before each question and therefore
+   * never runs the passive break at all — coupling this to a number M1 does not use
+   * would be a relationship that reads as real and is not.
+   */
+  readonly reloadExposureTicks: number;
+  /**
+   * Ticks the boss spends striding at the player between reload beats. Shorter than
+   * the beat, so an empty boss is mostly a planted target rather than a charge — but
+   * substantial, because the owner asked for an aggressive officer and a man out of
+   * powder who closes the distance is the aggressive reading of it.
+   *
+   * IT HAS A HARD FLOOR AT `STALL_WINDOW_TICKS` AND THIS IS NOT A FEEL NUMBER. The
+   * shared steering only re-routes around a wall after the body has wanted to move
+   * and gone nowhere for that window, and the reload beat resets the progress anchor
+   * every cycle — so a press shorter than the window cannot ever reach the detour,
+   * and a boss whose line to the player runs through a crate simply grinds on it for
+   * the whole beat, over and over. Measured at 0.5s: 36 consecutive ticks of wanting
+   * to move and going nowhere, repeatedly. `bossTactics.test.ts` pins the floor.
+   */
+  readonly reloadPressTicks: number;
+  /**
+   * How close the boss will press while empty, in metres. Inside this it holds the
+   * reload stance instead of advancing, so it plants at a striking distance rather
+   * than walking through the player.
    */
   readonly pressDistanceM: number;
-  /**
-   * Minimum ticks between forced relocations, so a player pressing continuously
-   * gets one deterministic response rather than a jittering boss.
-   */
-  readonly relocateGuardTicks: number;
 }
 
 /**
@@ -171,8 +212,13 @@ export const M1_BOSS_TACTICS: BossTacticalProfile = {
   // trade with, not less dangerous.
   peekAimTicks: Math.round(FIELD_TICK_HZ * 1.2),
   peekCooldownTicks: Math.round(FIELD_TICK_HZ * 0.4),
+  // A second and a half in the open per beat: one full player reload plus time to
+  // aim, and the flintlock period the duel names for the same action elsewhere.
+  reloadExposureTicks: Math.round(FIELD_TICK_HZ * 1.5),
+  // A second of striding between beats. Three times the steering's stall window, so
+  // a blocked line has room to re-route rather than grinding for the whole beat.
+  reloadPressTicks: Math.round(FIELD_TICK_HZ * 1.0),
   pressDistanceM: 4.5,
-  relocateGuardTicks: Math.round(FIELD_TICK_HZ * 0.8),
 };
 
 export interface BossProfile {

@@ -668,29 +668,36 @@ test("THE PEDAGOGICAL INVARIANT: a player who knows the history beats one who do
 //
 //   answers      rounds  wins  resolved on health  boss HP left
 //   WRONG           5.8   8/8                 8/8            0%
-//   ALTERNATING     6.4   8/8                 8/8            0%
-//   CORRECT        11.5   8/8                 6/8            7%
+//   ALTERNATING     5.5   8/8                 8/8            0%
+//   CORRECT         4.5   8/8                 8/8            0%
 //   WRONG sloppy   10.4   6/8                 6/8           16%
-//   CORRECT sloppy 12.0   8/8                 5/8           12%
+//   CORRECT sloppy  4.8   8/8                 8/8            0%
 //   WRONG passive   4.4   0/8                 8/8          100%
 //
-// The boss's own offence is in better shape than the tier curve suggests: it puts down a
-// passive player in 4.4 rounds where the bare profile needs 9.6. What is NOT healthy is
-// how the fight terminates, and the two assertions recording that are marked `todo` —
-// see the block above them.
+// THE CORRECT PATH USED TO HEAD THIS TABLE AT 11.5 ROUNDS AND 7% BOSS HEALTH LEFT, AND
+// THAT IS THE FIGHT THIS SECTION WAS WRITTEN AROUND. The empty boss hid behind cover to
+// reload, so on the correct path — where the symmetric complement leaves it only 7 balls
+// and it spends most of a round out of ammo — the player could not land the magazine
+// their correct answer had earned. The empty state now BREAKS cover and reloads in the
+// open (bossAi.ts `engageEmpty`/`pressOpponent`, and `directionToBreakCover` for the
+// far-approach flank), so the correct path is now the SHORTEST fight rather than the
+// longest: 4.5 rounds against the wrong path's 5.8, every seed resolved on health.
 //
-// AND EIGHT SEEDS UNDERSTATE IT. The eight-seed set reports the backstop being reached on
-// the correct path only; over the 32-seed set it is reached on all three, which is the
-// honest picture and the reason the `todo` block quotes both:
+// EIGHT SEEDS NO LONGER UNDERSTATE THE TERMINATION, BUT THEY STILL MISS A RESIDUAL. Over
+// the 32-seed set the correct-path backstop is gone entirely; a rare residual survives on
+// the two harder paths, and it is not the empty state — the wrong path spends ~94% of
+// live combat ARMED and 0% empty, so its two backstop seeds are the boss's cover-seeking
+// and the oracle's close-in, not the reload:
 //
 //   answers      rounds  wins    resolved on health  reached the 24-round backstop
-//   CORRECT        10.8  32/32              25/32     7/32
-//   ALTERNATING     8.6  32/32              29/32     3/32
-//   WRONG           7.9  32/32              30/32     2/32
+//   CORRECT         4.6  32/32              32/32     0/32   (was 10.8, 25/32, 7/32)
+//   ALTERNATING     5.8  32/32              31/32     1/32   (was  8.6, 29/32, 3/32)
+//   WRONG           7.9  32/32              30/32     2/32   (was  7.9, 30/32, 2/32)
 //
-// Twelve of those ninety-six fights ran out of rounds with both fighters alive. The
-// eight-seed figures are kept as the assertion set because they are what the rest of the
-// file uses and they already fail; the wider set is the measurement to quote.
+// Three of ninety-six fights now run out of rounds with both alive, down from twelve, and
+// all three are on paths the exposed reload barely touches. The correct-path assertion
+// below is therefore promoted to a real `test`; the all-paths termination one stays `todo`
+// for that residual, which is a balance call, not this lane's.
 
 test("the shipped-fight section really drives the shipped fight", () => {
   // THE STRUCTURAL GUARD, and it is the one that would have caught the original defect.
@@ -806,71 +813,76 @@ test("M1'S FIGHT GIVES A KNOWLEDGEABLE PLAYER A CLIMAX", () => {
   }
 });
 
-// THE TWO PROPERTIES M1'S SHIPPED FIGHT DOES NOT SATISFY.
+// THE PROPERTY M1'S SHIPPED FIGHT DOES NOT YET SATISFY — down from two.
 //
-// Both are marked `todo`, which in node:test means they RUN, print the real assertion
-// failure with the real numbers on every test run, and do not fail the suite. That is
-// deliberate and it is not a way of hiding them:
+// THE MECHANISM, traced rather than inferred, AND NOW LARGELY FIXED. SYMMETRIC_COMPLEMENT
+// gives the boss the MIRROR of the player's award: answer correctly and the player gets 14
+// while the boss gets 7. Seven balls is barely above `lowAmmoThreshold` (3), so the boss
+// drops into LOW and then EMPTY early in every correct-answer round. The EMPTY state used
+// to hide behind cover, and a boss behind cover is a boss the PLAYER cannot hit either, so
+// the player's damage collapsed on exactly the path where their magazine was largest — the
+// better a student answered, the longer the fight, and 7 of 32 seeds never finished it.
+// The empty boss now breaks cover and reloads in the open (bossAi.ts), so the correct path
+// is the shortest fight and its backstop hits are gone. The first todo below — "a correct
+// answer shortens the fight" — is therefore now a plain `test`.
 //
-//   - they are written as the invariant that SHOULD hold, not as a characterisation of
-//     the defect, so nothing here launders a broken fight into an expected one;
-//   - they execute, so the numbers cannot go quietly stale, and if the fight gets worse
-//     the printed figures move;
-//   - and the fix is a BALANCE decision that belongs to the owner, not to this lane. The
-//     owner has been explicit that he wants the boss aggressive, and every way of making
-//     these pass — more boss ammo on the correct path, less boss health, a shorter round
-//     ceiling, weaker cover-seeking — changes how the fight feels. Retuning until the
-//     gate goes green is exactly the move that produced the numbers this file just spent
-//     a header correcting.
+// WHAT REMAINS is the all-paths termination guard, and it stays `todo`:
 //
-// Promote each to a plain `test` the moment it holds.
+//   - it is written as the invariant that SHOULD hold, not as a characterisation of the
+//     defect, so nothing here launders a broken fight into an expected one;
+//   - it executes, so the numbers cannot go quietly stale, and if the fight gets worse the
+//     printed figures move;
+//   - and the residual is a BALANCE decision that belongs to the owner, not this lane. Over
+//     32 seeds the alternating path still reaches the backstop 1/32 and the wrong path 2/32
+//     — and the wrong path spends ~94% of live combat ARMED and 0% empty, so those seeds are
+//     the boss's cover-seeking and the oracle's close-in, NOT the exposed reload this lane
+//     rebuilt. The eight-seed set the assertion runs on misses them (0/8 on every path).
+//     Making it pass by retuning boss health, ammo or the round ceiling is exactly the move
+//     that produced the numbers this file spent a header correcting; converting it green on
+//     the eight seeds while the wide set it cites still fails is the "green because of which
+//     seeds you drew" defect the header warns about. So it stays todo until the residual is
+//     genuinely gone on the wide set, whoever closes it.
 //
-// THE MECHANISM, traced rather than inferred. SYMMETRIC_COMPLEMENT gives the boss the
-// MIRROR of the player's award: answer correctly and the player gets 14 while the boss
-// gets 7. Seven balls is barely above `lowAmmoThreshold` (3), so the boss drops into LOW
-// and then EMPTY early in every round, and both of those states are fought from cover —
-// measured 22% of live combat in LOW and 27% in EMPTY on the correct path, against 6%
-// and 0% on the wrong path. A boss behind cover is a boss the PLAYER cannot hit either,
-// so the player's damage output collapses on exactly the path where their magazine is
-// largest. Hence: the better a student answers, the longer the fight, and 2 of 8 seeds
-// never finish it at all.
+// Promote it to a plain `test` the moment it holds over WIDE_SEEDS.
 
-test(
-  "a correct answer shortens M1's fight",
-  { todo: "M1 defect: it lengthens it, 11.5 rounds against 5.8. Owner's call — see block above." },
-  () => {
-    const correct = shipped("CORRECT");
-    const wrong = shipped("WRONG");
-    assert.ok(
-      correct.rounds < wrong.rounds,
-      `M1: ${correct.rounds.toFixed(1)} rounds on a correct answer against ` +
-        `${wrong.rounds.toFixed(1)} on a wrong one. The economy pays in rounds ` +
-        "survived, so a correct answer must not buy a LONGER fight",
-    );
-  },
-);
+test("a correct answer shortens M1's fight", () => {
+  // WAS A `todo`: the hide-behind-cover empty boss made the correct path the LONGEST fight
+  // (11.5 rounds against 5.8). The exposed-reload rebuild inverted it — measured 4.5 rounds
+  // on a correct answer against 5.8 on a wrong one (4.6 against 7.9 over the 32-seed set) —
+  // so the economy pays in rounds survived again and this is the invariant, not the defect.
+  const correct = shipped("CORRECT");
+  const wrong = shipped("WRONG");
+  assert.ok(
+    correct.rounds < wrong.rounds,
+    `M1: ${correct.rounds.toFixed(1)} rounds on a correct answer against ` +
+      `${wrong.rounds.toFixed(1)} on a wrong one. The economy pays in rounds ` +
+      "survived, so a correct answer must not buy a LONGER fight",
+  );
+});
 
 test(
   "M1'S FIGHT ENDS ON HEALTH, NOT ON THE ANTI-HANG BACKSTOP",
   {
     todo:
-      "M1 defect: the 24-round ceiling is reached on every answer path — 7/32 correct, " +
-      "3/32 alternating, 2/32 wrong. Owner's call — see block above.",
+      "M1 residual: over 32 seeds the backstop is still reached 1/32 alternating and " +
+      "2/32 wrong (0/32 correct, down from 7). Balance call — see block above.",
   },
   () => {
     // `DUEL_ROUND_CEILING` is documented as unreachable in normal play, and reaching it
     // is the failure this whole file was rewritten around: a duel that ends on the
     // backstop is ~585 seconds of shooting plus two dozen untimed questions, which in a
-    // classroom is a match that outlasts the period. On the correct path it is reached
-    // by seeds 1 and 19, both times with the player alive and the boss still holding 20%
-    // and 33% of its bar — the player cannot finish it, so the clock does.
+    // classroom is a match that outlasts the period.
     //
-    // This assertion runs on the eight-seed set, where only the CORRECT path fails.
-    // Over 32 seeds all three paths fail (7, 3 and 2 of 32), so the wrong-answer path is
-    // not immune either and the eight seeds simply miss its two. Do not read a green
-    // ALTERNATING or WRONG line here as those paths being sound.
+    // The correct path — the one the hide-behind-cover boss stranded here, 7 of 32 seeds
+    // reaching the ceiling — is now clean: 0 of 32, once the empty boss breaks cover and
+    // reloads in the open. What remains is a rare residual on the two HARDER paths, and it
+    // is deliberately measured over WIDE_SEEDS rather than the eight the correct path was
+    // failing on, because those eight now pass on every path (0/8) and would hide it. The
+    // wrong path spends ~94% of live combat ARMED and 0% empty, so its two backstop seeds
+    // are the boss's cover-seeking and the oracle's close-in, not the exposed reload — a
+    // balance call, which is why this stays `todo`. Promote it when the wide set is clean.
     for (const path of ANSWER_PATHS) {
-      const result = shipped(path);
+      const result = shipped(path, undefined, undefined, WIDE_SEEDS);
       assert.equal(
         result.knockouts + result.deaths,
         result.runs,

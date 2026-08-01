@@ -19,6 +19,7 @@ import {
   advanceBossEngagement,
   bossTacticalState,
   createBossAiMemory,
+  STALL_WINDOW_TICKS,
   type BossAiMemory,
   type BossTacticalState,
 } from "../bossAi.js";
@@ -26,9 +27,9 @@ import { buildArena, CHEST_COVER_HEIGHT, referenceArena } from "../arena.js";
 import {
   combatView,
   createCombatState,
-  hasLineOfSight,
   intent,
   IDLE_INTENT,
+  isExposedToShot,
   loadMagazine,
   playerParams,
   stepCombat,
@@ -100,7 +101,16 @@ interface DriveResult {
   maxStallStreak: number;
   firedWhileEmpty: number;
   firedWithoutLos: number;
-  hiddenTicks: number;
+  /**
+   * Empty ticks in which the player could actually have hit the boss.
+   *
+   * ON THE BALL'S LANE, NOT THE EYE LINE, and the two genuinely differ: every piece of
+   * cover in the shipped yard is 1.30 m or taller while an aimed ball flies at a
+   * standing chest, 1.12 m, so a standing boss's eyes clear the crate and its chest
+   * does not. Measuring exposure with `hasLineOfSight` would score four of the yard's
+   * six cover points as exposed while no ball could reach the body.
+   */
+  exposedTicks: number;
   crouchedTicks: number;
   emptyTicks: number;
   maxIdleWhileEmptyExposed: number;
@@ -130,7 +140,7 @@ function driveBoss(
   let outOfBounds = 0;
   let firedWhileEmpty = 0;
   let firedWithoutLos = 0;
-  let hidden = 0;
+  let exposed = 0;
   let crouched = 0;
   let empty = 0;
   let idleExposed = 0;
@@ -193,20 +203,20 @@ function driveBoss(
       outOfBounds += 1;
     }
 
-    const losNow = hasLineOfSight(world, state.fighters.A, state.fighters.B);
+    const shootableNow = isExposedToShot(world, state.fighters.A, state.fighters.B);
     const crouchNow = state.fighters.B.motion.capsuleHeight < CROUCH_THRESHOLD;
     if (bossTacticalState(mem) === "EMPTY") {
       empty += 1;
-      if (!losNow) hidden += 1;
+      if (shootableNow) exposed += 1;
       if (crouchNow) crouched += 1;
-      // "No infinite idle while a tactical action is available": if the boss is
-      // empty AND still exposed, it must be doing SOMETHING toward safety — moving,
-      // dodging, or already crouching to hold. Standing still, exposed and idle is
-      // the failure.
-      const doingSomething =
-        wants > 0.05 || driven.intent.dodge || driven.intent.crouch || !losNow;
-      if (doingSomething) idleExposed = 0;
-      else idleExposed += 1;
+      // The reload beat, measured: consecutive ticks the boss stood in the open,
+      // shootable, and made no move. That is the OPPORTUNITY now rather than the
+      // failure, so what the assertions bound is its LENGTH — an unbounded one is a
+      // boss that has stopped working, and a zero-length one is no beat at all.
+      const planted =
+        wants <= 0.05 && !driven.intent.dodge && !driven.intent.crouch && shootableNow;
+      if (planted) idleExposed += 1;
+      else idleExposed = 0;
       maxIdleExposed = Math.max(maxIdleExposed, idleExposed);
     } else {
       idleExposed = 0;
@@ -222,7 +232,7 @@ function driveBoss(
     maxStallStreak: maxStall,
     firedWhileEmpty,
     firedWithoutLos,
-    hiddenTicks: hidden,
+    exposedTicks: exposed,
     crouchedTicks: crouched,
     emptyTicks: empty,
     maxIdleWhileEmptyExposed: maxIdleExposed,
@@ -306,14 +316,31 @@ test("the boss never intends a shot through cover (fire implies a real line)", (
   );
 });
 
-// ---- empty: seek cover, crouch, hold, resume --------------------------------
+// ---- empty: break cover, reload in the open, resume -------------------------
+//
+// THESE TWO TESTS USED TO ASSERT THE OPPOSITE, AND THE REVERSAL IS THE POINT.
+//
+// They read "out of ammo the boss reaches cover, breaks the line of sight and
+// crouches" and "an empty boss holds cover instead of repeatedly exposing itself",
+// and they were right about the code and wrong about the game. Hiding while empty was
+// built to the owner's first request and he then played the consequence: a boss behind
+// cover is a boss the PLAYER cannot hit either, so the correct-answer path — the one
+// where the symmetric complement leaves the boss only 7 balls and it therefore spends
+// most of a round empty — ran 10.8 rounds against the wrong path's 7.9 and reached the
+// 24-round anti-hang backstop on 7 of 32 seeds. The duel's own card said he steps out
+// to reload; he never did, and the card was deleted rather than the behaviour fixed.
+//
+// So the invariant is inverted, not deleted, and the shape is deliberately a BOUND
+// rather than a prohibition. "Never stand exposed and idle" is unsatisfiable for a
+// boss whose whole job here is to stand exposed and reload; "stand exposed and idle
+// for no longer than one reload beat" is the same fairness rule stated so that it can
+// still fail.
 
-test("out of ammo the boss reaches cover, breaks the line of sight and crouches", () => {
-  // One chest-high wall between the two. An empty boss must get behind it, crouch,
-  // and actually occlude the player's line — the crouch is what makes chest-high
-  // cover work.
+test("out of ammo the boss breaks cover and reloads where it can be shot", () => {
+  // One chest-high wall between the two. An empty boss must NOT settle behind it: it
+  // has to come out to where a ball could actually reach it, and stand while it does.
   const arena = buildArena({
-    arenaId: "EMPTY.HIDE",
+    arenaId: "EMPTY.BREAK",
     halfExtentX: 12,
     halfExtentZ: 12,
     cover: [{ id: "COVER.WALL", x: 0, z: 0, halfX: 2, halfZ: 0.5, topY: CHEST_COVER_HEIGHT }],
@@ -325,21 +352,24 @@ test("out of ammo the boss reaches cover, breaks the line of sight and crouches"
     360,
   );
   assert.equal(result.penetrationTicks, 0, "the boss penetrated cover getting there");
-  // It spends the majority of the empty window actually hidden and crouched, not
-  // sprinting around in the open.
+  // Hittable for most of the empty window, measured on the lane a ball actually
+  // flies rather than on the eye line — see `isExposedToShot`.
   assert.ok(
-    result.hiddenTicks > result.emptyTicks * 0.5,
-    `the boss was hidden only ${result.hiddenTicks}/${result.emptyTicks} empty ticks`,
+    result.exposedTicks > result.emptyTicks * 0.6,
+    `the boss was shootable in only ${result.exposedTicks}/${result.emptyTicks} empty ` +
+      "ticks. An empty boss that cannot be shot is the defect this state was rebuilt for",
   );
+  // And it does it standing. Crouching is what makes chest-high cover occlude, so a
+  // boss that drops while empty is hiding again by another name.
   assert.ok(
-    result.crouchedTicks > result.emptyTicks * 0.4,
-    `the boss crouched only ${result.crouchedTicks}/${result.emptyTicks} empty ticks`,
+    result.crouchedTicks < result.emptyTicks * 0.1,
+    `the boss crouched for ${result.crouchedTicks}/${result.emptyTicks} empty ticks`,
   );
 });
 
-test("an empty boss holds cover instead of repeatedly exposing itself", () => {
+test("the exposed reload is a bounded beat, not a boss that stopped working", () => {
   const arena = buildArena({
-    arenaId: "EMPTY.HOLD",
+    arenaId: "EMPTY.BEAT",
     halfExtentX: 12,
     halfExtentZ: 12,
     cover: [{ id: "COVER.WALL", x: 0, z: 0, halfX: 2, halfZ: 0.5, topY: CHEST_COVER_HEIGHT }],
@@ -350,16 +380,37 @@ test("an empty boss holds cover instead of repeatedly exposing itself", () => {
     () => IDLE_INTENT,
     360,
   );
-  // With a stationary player and one valid cover, the boss commits to it and does
-  // not thrash between destinations.
+  // The fairness rule the old prohibition was really about: a bounded stand, then
+  // movement. The bound is the profile's own beat plus the state debounce, so it
+  // tracks a retune of `reloadExposureTicks` instead of being a magic number.
+  const bound = M1_BOSS_TACTICS.reloadExposureTicks + M1_BOSS_TACTICS.reactionDelayTicks;
   assert.ok(
-    result.coverIdChanges <= 1,
-    `the boss switched committed cover ${result.coverIdChanges} times against a still player`,
+    result.maxIdleWhileEmptyExposed <= bound,
+    `the boss stood exposed and still for ${result.maxIdleWhileEmptyExposed} ticks ` +
+      `against a reload beat of ${bound}. Past the beat it is not reloading, it is stuck`,
   );
-  assert.equal(
-    result.maxIdleWhileEmptyExposed,
-    0,
-    "the boss stood exposed and idle while empty with cover available",
+  // And the stand really is a stand — the beat has to actually happen, or this test
+  // would pass just as well against a boss that never stops moving.
+  assert.ok(
+    result.maxIdleWhileEmptyExposed >= M1_BOSS_TACTICS.reloadExposureTicks * 0.5,
+    `the longest planted stretch was ${result.maxIdleWhileEmptyExposed} ticks, so no ` +
+      "readable reload beat is being played at all",
+  );
+});
+
+test("the press beat outlasts the steering's stall window", () => {
+  // A COUPLING, NOT A PREFERENCE, and it cost two failing patterns to find.
+  //
+  // `steer` only re-routes around a wall once the body has wanted to move and gone
+  // nowhere for `STALL_WINDOW_TICKS`, and the reload beat resets the progress anchor
+  // every cycle. So a press beat shorter than that window can never reach the detour:
+  // the boss grinds into the crate between it and the player for the whole beat,
+  // resets, and grinds again. Measured at a 0.5s press, that was 36 consecutive ticks
+  // of pushing into geometry, repeatedly.
+  assert.ok(
+    M1_BOSS_TACTICS.reloadPressTicks > STALL_WINDOW_TICKS,
+    `a ${M1_BOSS_TACTICS.reloadPressTicks}-tick press cannot reach a detour that needs ` +
+      `${STALL_WINDOW_TICKS} ticks of stall to trigger`,
   );
 });
 
@@ -475,16 +526,23 @@ for (const [name, make] of Object.entries(PATTERNS)) {
       result.maxStallStreak <= 30,
       `boss ground with no progress for ${result.maxStallStreak} ticks`,
     );
+    // The reload beat is bounded, whatever the player does. The bound is one beat
+    // plus the state debounce, so a player who charges, hides or flanks cannot turn
+    // the exposed reload into a boss standing still for the rest of the round —
+    // which, before the strafe-at-striking-distance branch, is exactly what an
+    // aggressive player produced: 1044 consecutive ticks.
+    const beat =
+      M1_BOSS_TACTICS.reloadExposureTicks + M1_BOSS_TACTICS.reactionDelayTicks;
     assert.ok(
-      result.maxIdleWhileEmptyExposed <= 30,
-      `boss stood exposed and idle for ${result.maxIdleWhileEmptyExposed} ticks while empty`,
+      result.maxIdleWhileEmptyExposed <= beat,
+      `boss stood exposed and still for ${result.maxIdleWhileEmptyExposed} ticks ` +
+        `against a reload beat of ${beat}`,
     );
-    // A player dragging the boss around must not make it strobe between cover
-    // points every tick. A change per two seconds of movement is competent
-    // repositioning; a change per tick is thrash.
+    // And it really does come out. A boss that stayed screened would satisfy every
+    // assertion above it — that is precisely how the hiding boss passed this suite.
     assert.ok(
-      result.coverIdChanges <= 40,
-      `boss switched committed cover ${result.coverIdChanges} times in 2000 ticks`,
+      result.exposedTicks > result.emptyTicks * 0.5,
+      `boss was shootable in only ${result.exposedTicks}/${result.emptyTicks} empty ticks`,
     );
   });
 }

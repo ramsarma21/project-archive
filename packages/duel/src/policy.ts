@@ -11,6 +11,7 @@
 // call site in machine.ts, because both are just a CombatIntent.
 
 import {
+  aimHeightFor,
   isDodging,
   intent,
   solveInterceptDirection,
@@ -174,6 +175,159 @@ export function directionToCover(view: CombatView): { x: number; z: number } | n
     }
   }
   return null;
+}
+
+/**
+ * A direction that OPENS the ball's lane to the opponent — the exact mirror of
+ * `directionToCover` above, on the same fixed heading ring, for the same reasons
+ * (deterministic, allocation-light, and an arena is a room rather than a level).
+ *
+ * WHY IT IS NOT SIMPLY "WALK AT THEM". A boss breaking cover with a crate between it
+ * and the player pushes squarely into the crate, and the shared steering only routes
+ * around an obstacle after twenty ticks of getting nowhere — so the honest-looking
+ * version spends a third of a second grinding on geometry before it starts going
+ * round, and against a wall wide enough it spends half the empty window screened.
+ * Measured on a 4 m wall dead between the two: shootable in 179 of 360 empty ticks
+ * with a straight approach. Probing for a step that actually clears the shot is both
+ * faster and what breaking cover means.
+ *
+ * IT TESTS THE BALL'S LANE, NOT THE EYE LINE. `segmentClear` at the shooter's eye
+ * height would accept stepping out to a spot where the boss can be SEEN and not hit,
+ * which behind 1.3 m cover is most of them — see `isExposedToShot`.
+ *
+ * Headings are scored by how directly they face the opponent, so an officer coming out
+ * comes AROUND the cover toward the player rather than to whichever side scans first.
+ * Null when no probed step clears the lane, and the caller then closes anyway.
+ */
+export function directionToOpenLane(view: CombatView): { x: number; z: number } | null {
+  const opponent = view.opponent.motion.pos;
+  const toOpponent = towards(view.self, view.opponent);
+  const laneY = aimHeightFor(view.self.motion);
+  let best: { x: number; z: number; score: number } | null = null;
+  for (const [dirX, dirZ] of COVER_PROBE_HEADINGS) {
+    const probe = {
+      x: view.self.motion.pos.x + dirX * COVER_PROBE_DISTANCE,
+      y: view.self.motion.pos.y,
+      z: view.self.motion.pos.z + dirZ * COVER_PROBE_DISTANCE,
+    };
+    if (!positionClear(view.world, probe, CAPSULE_RADIUS, STAND_HEIGHT)) continue;
+    const clear = segmentClear(
+      view.world,
+      { x: probe.x, y: laneY, z: probe.z },
+      { x: opponent.x, y: laneY, z: opponent.z },
+    );
+    if (!clear) continue;
+    const score = dirX * toOpponent.x + dirZ * toOpponent.z;
+    if (!best || score > best.score) best = { x: dirX, z: dirZ, score };
+  }
+  return best ? { x: best.x, z: best.z } : null;
+}
+
+/** Lateral scan resolution and reach when breaking out of a cover's shadow. */
+const LATERAL_BREAK_STEP_M = 0.4;
+const LATERAL_BREAK_MAX_M = 14;
+/**
+ * How much of the break heading points at the player rather than sideways. Small on
+ * purpose: the point of the break is to reduce the lane's crossing-offset as fast as
+ * possible, which is a purely PERPENDICULAR move, and the forward term is only there
+ * so the officer reads as flanking toward the player rather than strafing the width
+ * of the yard. Zero would expose just as fast; this is the aesthetic, not the fix.
+ */
+const BREAK_FORWARD_BIAS = 0.35;
+/** Seeded tiebreak between two equidistant shadow edges — never a live coin. */
+const SALT_BREAK_LANE = 404;
+
+/**
+ * A LATERAL direction out of the shadow of whatever cover screens the boss, for the
+ * far-approach case `directionToOpenLane` cannot solve.
+ *
+ * WHY THIS EXISTS. `directionToOpenLane` only knows a heading whose single 2.2 m step
+ * already clears the ball's lane. Behind a wall wider than that step no probe clears,
+ * it returns null, and the caller falls back to walking straight at the player — into
+ * the wall — clearing it only via the reactive 20-tick stall detour, half the empty
+ * window later. Measured on a 4 m wall dead between the two: shootable in 179 of 360
+ * empty ticks. The boss does not need to ROUND the wall, though; it needs to leave the
+ * wall's shadow, and the fastest way out of a shadow is straight across it.
+ *
+ * HOW. The lane clears once the boss steps far enough to either side that the segment
+ * from there to the player misses every blocker — the near edge of the shadow cone.
+ * So scan both perpendiculars for the smallest lateral displacement that opens the
+ * lane, head toward the nearer one (a seeded coin if they tie, as a wall dead ahead
+ * does), and fold in a little forward lean. It is measured against the WHOLE world by
+ * `segmentClear`, so it generalises to any number of cover points with no per-blocker
+ * geometry: the offset that opens the lane is the offset that clears all of them.
+ *
+ * IT TESTS THE BALL'S LANE, NOT THE EYE LINE (`aimHeightFor`), for the same reason
+ * `directionToOpenLane` and `isExposedToShot` do — a spot the boss can be seen from
+ * and not hit is not out of cover. Null when the boss is already exposed (nothing to
+ * break) or no reachable step to either side opens the lane; the caller then closes.
+ *
+ * Deterministic: only +,-,*,/,sqrt and seeded `fieldRandom`, no transcendental, so the
+ * break is a replay artefact exactly like every other heading the boss commits to.
+ */
+export function directionToBreakCover(
+  view: CombatView,
+  seed: number,
+): { x: number; z: number } | null {
+  const boss = view.self.motion.pos;
+  const player = view.opponent.motion.pos;
+  const laneY = aimHeightFor(view.self.motion);
+  const bounds = view.world.bounds;
+
+  const from = { x: boss.x, y: laneY, z: boss.z };
+  const to = { x: player.x, y: laneY, z: player.z };
+  // Already hittable: no shadow to break, let the caller press toward the player.
+  if (segmentClear(view.world, from, to)) return null;
+
+  const fx = player.x - boss.x;
+  const fz = player.z - boss.z;
+  const flen = planarLength(fx, fz);
+  if (flen < 1e-6) return null;
+  const ux = fx / flen;
+  const uz = fz / flen;
+  // The two lateral axes off the boss->player line.
+  const perpX = -uz;
+  const perpZ = ux;
+
+  // Smallest lateral step to `sign` that opens the lane, or Infinity if none does
+  // before the boss would run out of arena or reach.
+  const clearingOffset = (sign: number): number => {
+    const steps = Math.floor(LATERAL_BREAK_MAX_M / LATERAL_BREAK_STEP_M);
+    for (let step = 1; step <= steps; step++) {
+      const offset = step * LATERAL_BREAK_STEP_M;
+      const px = boss.x + perpX * sign * offset;
+      const pz = boss.z + perpZ * sign * offset;
+      // Do not flank out of the arena: past the bound this side is unavailable.
+      if (px < bounds.minX || px > bounds.maxX || pz < bounds.minZ || pz > bounds.maxZ) {
+        break;
+      }
+      // A stance the boss could not stand in tells us nothing about its lane; keep
+      // scanning outward rather than judging the side on it.
+      if (!positionClear(view.world, { x: px, y: boss.y, z: pz }, CAPSULE_RADIUS, STAND_HEIGHT)) {
+        continue;
+      }
+      if (segmentClear(view.world, { x: px, y: laneY, z: pz }, to)) return offset;
+    }
+    return Infinity;
+  };
+
+  const left = clearingOffset(1);
+  const right = clearingOffset(-1);
+  if (!Number.isFinite(left) && !Number.isFinite(right)) return null;
+
+  let sign: number;
+  if (Math.abs(left - right) < LATERAL_BREAK_STEP_M * 0.5) {
+    // Equidistant edges — a wall square between the two. Seeded so the side is fixed
+    // for a given fight rather than flipping tick to tick into a dither.
+    sign = fieldRandom(seed, 0, SALT_BREAK_LANE) < 0.5 ? 1 : -1;
+  } else {
+    sign = left <= right ? 1 : -1;
+  }
+
+  const bx = perpX * sign + ux * BREAK_FORWARD_BIAS;
+  const bz = perpZ * sign + uz * BREAK_FORWARD_BIAS;
+  const blen = planarLength(bx, bz) || 1;
+  return { x: bx / blen, z: bz / blen };
 }
 
 // ---- the reference skilled player ------------------------------------------
