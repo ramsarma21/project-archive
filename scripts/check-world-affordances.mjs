@@ -167,8 +167,6 @@ const KNOWN_DEBT = new Map([
   // occludes ~17% of that deck, and the crate-MOUND steps (alternated with
   // crate-STACK so the clusterer draws each block on its own) crown ~0.5 m proud of
   // their flat mantle plane — the collision top is flat and the mantle lands on it.
-  ["DECK:SCAFFOLD_D2", { category: "flat-plane-limit", rank: 1, band: 0.83, delta: 0.00, note: "The first staging block (SCAFF_STEP_A) sits on the 5.60 scaffold plank, occluding ~17% of it; the golden nodes C_SCAFF_2/2S stand on the clear 83%. 100% has surface." }],
-  ["MASS_TOP:SCAFF_STEP_B", { category: "cover-proud", rank: 1, band: 0.56, delta: 0.51, note: "crate-mound staging step crowns ~0.5m proud of its 9.0 mantle plane; the collision top is flat at 9.0 and the mantle lands on it (solid geometry backs the plane)." }],
   // --- MERCHANT facade: PENDING-REGEN (owner-accepted 31-Jul). The bldg-merchant
   // mesh draws its south front ~2.1m below the authored storeys, so the re-massed
   // covert climb-in (a ≤1.9m mantle chain up the merchant's front) reads no surface
@@ -208,8 +206,6 @@ const KNOWN_DEBT = new Map([
   ["MASS_TOP:COVER_BARRELS_SW", { category: "flat-plane-limit", rank: 1, band: 0.125, delta: -0.088, note: "round/clustered barrel-group top; crowns reach the plane, no continuous surface." }],
   ["MASS_TOP:TREE_STALL", { category: "flat-plane-limit", rank: 1, band: 0.200, delta: -0.041, note: "market-stall cluster top; crowns reach the plane, no continuous surface." }],
   ["MASS_TOP:YARD_STAGE", { category: "flat-plane-limit", rank: 1, band: 0.200, delta: -0.067, note: "warehouse-platform-scale cluster; crown reaches the plane, no continuous surface." }],
-  ["CLIMB_TO:CLIMBVOL_C_SCAFF_FOOT->C_SCAFF_1", { category: "flat-plane-limit", rank: 1, band: 0.750, delta: 0.000, note: "bldg-scaffold-run deck itself only ~75% covered (plank gaps / volume past the deck edge); the arrival is not laterally offset, so it is not rescued." }],
-  ["CLIMB_TO:CLIMBVOL_C_SCAFF_1->C_SCAFF_2", { category: "flat-plane-limit", rank: 1, band: 0.750, delta: 0.000, note: "bldg-scaffold-run deck itself only ~75% covered (plank gaps / volume past the deck edge); the arrival is not laterally offset, so it is not rescued." }],
   ["CLIMB_TO:CLIMBVOL_WHARF_ASC_1->WHARF_ASC_2", { category: "flat-plane-limit", rank: 1, band: 0.70, delta: -0.05, note: "wharf cargo mantle: crate-mound top drawn == collision (delta ~-0.03m), but the mantle's arrival footprint is laterally offset from the crate below it, so the offset heuristic reads ~78% not full. Mesh is present." }],
   // DECK:BOUGH_UPPER retired on branch workflow/mission-flow: the rebuilt
   // liberty-elm-hero.glb runs its limb raft in to the bole at the tier plane, so

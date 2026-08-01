@@ -38,22 +38,14 @@ export const LADDERS: LadderPlacementSpec[] = [
   // 7.1) — no ladder. See level/climbs.ts and level/merchant.ts.
 
   // ---- C_ASCENT: the Town House, under repair -----------------------------
-  // The mason's scaffold on the west front, its two stagings stacked. The safe
-  // way up is its own access ladder; the south bay reads perfectly as one.
-  {
-    id: "SCAFFOLD_1",
-    at: [44.8, 0, -6.4],
-    onto: "SCAFFOLD_D1",
-    faceX: 0,
-    faceZ: -1,
-  },
-  {
-    id: "SCAFFOLD_2",
-    at: [44.8, 2.9, -6.4],
-    onto: "SCAFFOLD_D2",
-    faceX: 0,
-    faceZ: -1,
-  },
+  // The two scaffold ladders were RETIRED 31-Jul with the staging regeneration.
+  // They existed because the staging was two full-run boards at 2.90 and 5.60, so
+  // the first two steps were 2.9m and 2.7m — both over the 1.9m mantle limit and
+  // both inside the 1.9-3.1m dead zone, which only a ladder could serve. The
+  // staging is now a staggered staircase of seven lifts (1.85 / 3.70 / 5.60 /
+  // 7.30 / 9.00 / 10.70 / 12.40, every rise <= 1.90m) drawn on real scaffold
+  // board, so the whole west front is climbed with mantles and nothing leans on
+  // it. See level/geometry.ts SCAFFOLD_LIFTS.
   // The east face of the tower storeys. The foot sits on the oversailing east
   // gallery/ledge, out past the wall at x=57.5, so the ladder leans WEST onto
   // the wall (+X outward). ladder-findings marked these AMBIGUOUS — the volume

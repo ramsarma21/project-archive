@@ -63,22 +63,15 @@ export const CLIMBS: ClimbSpec[] = [
   }),
 
   // ---- C_ASCENT: the Town House, twice round and up the tower --------------
-  climbVolume({
-    section: "C_ASCENT",
-    serves: "C_SCAFF_FOOT->C_SCAFF_1",
-    onto: "SCAFFOLD_D1",
-    at: [44.8, 0, -6.4],
-    halfX: 1.1,
-    note: "The south bay of the mason's scaffold. Standing in it and going up is what a scaffold is.",
-  }),
-  climbVolume({
-    section: "C_ASCENT",
-    serves: "C_SCAFF_1->C_SCAFF_2",
-    onto: "SCAFFOLD_D2",
-    at: [44.8, 2.9, -6.4],
-    halfX: 1.1,
-    note: "Second staging, same bay. The feet band is what keeps the two apart.",
-  }),
+  // The two scaffold climb volumes were REMOVED 31-Jul with the staging
+  // regeneration, and removing them is what makes the ascent work rather than
+  // what breaks it. A climb volume does not enable a deck mantle; it RESTRICTS
+  // one. `readRaisedSurface` refuses the ascent wherever a volume covers the
+  // surface and no ladder or grip validates it at that foot, and passes an
+  // ordinary lipped ledge straight through. With the ladders retired, a volume
+  // left behind would have refused every step on the new staging — silently, and
+  // only in play. The seven staging lifts are bare lipped board, which is what a
+  // scaffold is, and they need nothing here.
   climbVolume({
     section: "C_ASCENT",
     serves: "C_GALLERY_EMID->C_CLOCK",

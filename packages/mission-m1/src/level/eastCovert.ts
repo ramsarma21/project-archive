@@ -77,53 +77,39 @@ const climbs: ClimbSpec[] = [];
 // spiral are UNTOUCHED (reachable fallback; the Old Brick reflex beat still lives
 // on the gallery a deviating player climbs).
 
-// THE STAGING IS SOLID, NOT THIN DECK, and that is what lets it be laddderless.
-// The parkour reader only OFFERS a mantle a walking player can take when it meets
-// a SOLID FACE with a lip (its forward read walks at blockers; a thin deck has no
-// span and reads as empty air, so a deck-mantle must be validated by a ladder/grip
-// — exactly what the existing SCAFFOLD_D1/D2 needed and what the owner is retiring).
-// So the lift staging is a STAGGERED STAIRCASE of solid staging blocks (the
-// masons' materials boarded onto the putlog frame), the same shape as the proven
-// wharf ascent (crate steps + the warehouse mass): each block OVERLAPS the one
-// below for support and OVERHANGS it for the next lip, and each has OPEN SKY above
-// its clear top (the Town House mass is east at x >= 46.5, the next block is ahead
-// not overhead), so the chain escapes the dead-zone AND offers ≤1.9 m mantles with
-// no ladder. drawn == collision: crate-stack draws each block's standable top on
-// its plane, so there is NO pending-regen debt here.
+// THE STAGING IS DRAWN SCAFFOLD BOARD, and the crates that stood in for it are
+// gone. This is the correction of two claims that used to live here.
 //
-// The staircase sits on the SOUTH bays (z −4.0..1.6), clear of the G-B drop and
-// gallery jump at the north end (z ≈ −6.4), reached by a short run south along the
-// 5.60 staging (C_SCAFF_2 -> C_SCAFF_2S). Steps at 7.3 / 9.0 / 10.7 / 12.4.
-// Each step is a DISTINCT solid asset, so the scenery clusterer draws each on its
-// own (same-asset overlapping props merge into one draw and the upper ones read as
-// empty air — the wharf ascent avoids this the same way, alternating crate-stack
-// and crate-mound). Each block OVERLAPS the one below for support and OVERHANGS it
-// for the next lip; the route node stands on the clear (un-overhung) part of each.
+// The first claim was that a thin deck "reads as empty air, so a deck-mantle must
+// be validated by a ladder/grip". That was true once and is not now:
+// `readRaisedSurface` in parkour/probe.ts exists specifically to read a raised
+// PLATFORM as a ledge — "a scaffold staging two metres nine above the street was
+// invisible to the verb ladder" is its own commit note. A bare lipped deck is
+// offered on its own. What a ladder validates is the opposite case: a climb
+// VOLUME refuses unless a ladder or grip backs it, so the volumes came out too.
+//
+// The second was that solid blocks were needed for the lip, which is why the four
+// upper steps were `crate-stack`/`crate-mound` props — the "floating crates" the
+// owner called out against this wall. They are deleted. `bldg-scaffold-run` now
+// draws boarded staging at all seven planes, so the nodes stand on real scaffold.
+//
+// What actually governs the shape is the OVERHEAD rule: `readRaisedSurface` takes
+// `overhead = raisedAt(0)` and skips every hit with that id, so a lift directly
+// above the one you stand on is never offered. It reads authored deck RECTS, not
+// the mesh. Hence the stagger in geometry.ts SCAFFOLD_LIFTS and the matching
+// stagger in the generator; hence also that the node on each lift stands on the
+// part with open sky. Measured, and caught by traversability.test.ts refusing all
+// four staging climbs when the lifts were briefly authored full-run.
+//
+// The staircase sits on the SOUTH bays, clear of the G-B drop and gallery jump at
+// the north end (z ≈ −6.4), reached by a short run south along the 5.60 staging
+// (C_SCAFF_2 -> C_SCAFF_2S). Steps at 7.3 / 9.0 / 10.7 / 12.4.
 const SCAFF_STEPS = [
-  { id: "SCAFF_STEP_A", asset: "crate-stack", base: BAND.GALLERY, top: 7.3, r: rect(43.8, 45.8, -4.0, -2.0), node: "C_SCAFF_3", nodeZ: -3.5 },
-  { id: "SCAFF_STEP_B", asset: "crate-mound", base: 7.3, top: 9.0, r: rect(43.8, 45.8, -2.4, -0.4), node: "C_SCAFF_4", nodeZ: -2.1 },
-  { id: "SCAFF_STEP_C", asset: "crate-stack", base: 9.0, top: 10.7, r: rect(43.8, 45.8, -0.8, 1.2), node: "C_SCAFF_5", nodeZ: -0.5 },
-  { id: "SCAFF_STEP_D", asset: "crate-mound", base: 10.7, top: BAND.LEADS, r: rect(43.8, 45.8, 0.8, 2.8), node: "C_SCAFF_TOP", nodeZ: 1.1 },
+  { deck: "SCAFFOLD_D3", top: 7.3, node: "C_SCAFF_3", nodeZ: -3.5 },
+  { deck: "SCAFFOLD_D4", top: 9.0, node: "C_SCAFF_4", nodeZ: -2.1 },
+  { deck: "SCAFFOLD_D5", top: 10.7, node: "C_SCAFF_5", nodeZ: -0.5 },
+  { deck: "SCAFFOLD_D6", top: BAND.LEADS, node: "C_SCAFF_TOP", nodeZ: 1.1 },
 ] as const;
-
-SCAFF_STEPS.forEach((step, i) => {
-  masses.push(
-    prop({
-      id: step.id,
-      section: "C_ASCENT",
-      asset: step.asset,
-      rect: step.r,
-      baseY: step.base,
-      topY: step.top,
-      landable: true,
-      tags: ["scaffold", "staging", "cargo"],
-      note:
-        i === 0
-          ? "Masons' materials boarded onto the repair-scaffold staging: the first ≤1.9 m mantle step off the 5.6 landing, open sky above its clear top."
-          : undefined,
-    }),
-  );
-});
 
 nodes.push(
   node("C_SCAFF_2S", "C_ASCENT", [44.8, BAND.GALLERY, -4.7], "SCAFFOLD_D2", ["safe-line", "golden", "scaffold"],
@@ -131,7 +117,7 @@ nodes.push(
 );
 SCAFF_STEPS.forEach((step) => {
   nodes.push(
-    node(step.node, "C_ASCENT", [44.8, step.top, step.nodeZ], step.id,
+    node(step.node, "C_ASCENT", [44.8, step.top, step.nodeZ], step.deck,
       ["safe-line", "golden", "scaffold"],
       step.node === "C_SCAFF_TOP"
         ? "Top of the staging staircase, level with the leads: step off onto the Town House roof."

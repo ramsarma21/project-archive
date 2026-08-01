@@ -310,17 +310,24 @@ export const ASSETS: AssetRequirement[] = [
     key: "bldg-scaffold-run",
     status: "EXISTING",
     path: "world/props/bldg-scaffold-run.glb",
-    // Two decks and no mass, which is what sets the base.
+    // Seven staggered staging decks over a pair of sole-plate masses.
     //
-    // SCAFFOLD_D1 and SCAFFOLD_D2 share a footprint exactly, so `clusterSpans`
-    // makes them one object and `drawBox` takes the several-entry branch: the
-    // size is this field and the base is `max(maxY) - height`, i.e. 5.60 - 5.60
-    // = 0. So the declared height is also the statement that the scaffold
-    // stands on the street, and the top staging's boards ARE the top of the
-    // bounding box. Both of those are asserted by the build.
-    sizeM: [2.5, 5.6, 11.3],
-    standableAt: [2.9, 5.6],
-    why: "Repair scaffolding the length of the Town House's west front, and the safe way up it: putlog staging at 2.90 and 5.60 over an 11.3m run, 2.5m out from the wall. `bldg-scaffold` was standing in and cannot, and the reason is a run rather than a shape: that mesh is 1.90 x 1.34 x 1.90, which at this height is a single 2.5m square section, so a contain-fit into the run draws 2.50 x 1.77 x 2.50 — one bay of scaffolding under one end of eleven metres of staging the route walks. It is not squashed art, it is a quarter of the object. What is here now is six bays of standards, ledgers and putlogs over the 11.3m frontage with boarded staging at both authored planes, the top staging flush with the box top at 5.60.",
+    // The masses are not decoration. Seven decks on seven DIFFERENT rects would be
+    // seven clustered objects — for two DECKs `oneObject` is `sameFootprint` and
+    // nothing else — and the scaffold would be contain-fitted and drawn seven
+    // times. The decks declare `carriedBy` the sole plates instead, which joins
+    // them with no geometric test, and with a solid in the cluster `drawBox` bases
+    // the object at the solids' own minY (0.00) and takes its size from this
+    // field. The rects have to differ: a staggered staircase is the only shape the
+    // parkour reader will offer a mantle up, because a lift directly overhead is
+    // never offered. See level/geometry.ts SCAFFOLD_LIFTS.
+    //
+    // HEIGHT AND STAGING ARE ONE EDIT. Declaring 5.60 while the mesh is 12.40 tall
+    // contain-fits it to 45% and drops every board off its plane — measured: the
+    // affordance gate read SCAFFOLD_D1 2.87m below its plane and D2 5.57m below.
+    sizeM: [2.5, 12.4, 11.3],
+    standableAt: [1.85, 3.7, 5.6, 7.3, 9.0, 10.7, 12.4],
+    why: "Repair scaffolding the length of the Town House's west front, and the safe way up it: putlog staging at 2.90, 5.60, 7.30, 9.00, 10.70 and 12.40 over an 11.3m run, 2.5m out from the wall, topping out level with the leads. `bldg-scaffold` was standing in and cannot, and the reason is a run rather than a shape: that mesh is 1.90 x 1.34 x 1.90, which at this height is a single 2.5m square section, so a contain-fit into the run draws 2.50 x 1.77 x 2.50 — one bay of scaffolding under one end of eleven metres of staging the route walks. It is not squashed art, it is a quarter of the object. What is here now is six bays of standards, ledgers and putlogs over the 11.3m frontage with boarded staging at all six authored planes, the top staging flush with the box top at 12.40.",
   },
   {
     key: "work-ladder",

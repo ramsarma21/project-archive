@@ -799,23 +799,104 @@ masses.push(
 // The scaffold's poles are deliberately not colliders. They are thin, you are
 // meant to be able to run under the staging, and as blockers they would only
 // litter the north lane with knee-high hazards the player cannot see.
+// THE STAGING IS A STAIRCASE, AND THE STAGGER IS WHAT MAKES IT CLIMBABLE.
+//
+// A mantle is only offered onto a surface that is not already over the player's
+// head: `readRaisedSurface` takes `overhead = raisedAt(0)` and then skips every
+// hit carrying that id. It reads THESE RECTS, not the mesh. So while all six
+// lifts were authored on one full-run rect, the lift above was overhead from
+// everywhere on the lift below and the entire ascent was refused — measured, and
+// caught by `traversability.test.ts` refusing all four staging climbs. Full-run
+// stacked staging cannot be climbed at any spacing.
+//
+// So each lift is boarded over its own SLICE of the run, and these rects mirror
+// `assets/pipeline/build_scaffold_run.py`'s LIFTS table exactly (board tops
+// measured off the mesh at x 43.80..45.90 and the z spans below). Consecutive
+// lifts overlap only where the lower lift's route node does NOT stand, so every
+// step has open sky over the part the player stands on.
+//
+// The chain is 0 -> 1.85 -> 3.70 -> 5.60 -> 7.30 -> 9.00 -> 10.70 -> 12.40:
+// rises of 1.85 / 1.85 / 1.90 / 1.70 / 1.70 / 1.70 / 1.70, all inside the 1.9m
+// mantle limit and all clear of the 1.9-3.1m dead zone. The old 2.90 lift is
+// gone; it made the first two steps 2.9 and 2.7, both dead-zone, both laddered.
+//
+// NO CLIMB VOLUMES on these. A climb volume does not enable a deck mantle, it
+// RESTRICTS one: `readRaisedSurface` refuses the ascent where a volume covers the
+// surface and no ladder or grip validates it. A bare lipped ledge needs no volume
+// and is offered on its own, which is precisely what a scaffold board is.
+//
+// The numbering keeps D1/D2 on the street step and the 5.60 landing because the
+// route, the climbs and the playthrough check already name them in those roles;
+// D1B is the lift added between them.
+const SCAFFOLD_LIFTS: Array<{ id: string; y: number; z0: number; z1: number }> = [
+  { id: "SCAFFOLD_D1", y: 1.85, z0: -3.0, z1: -1.0 },
+  { id: "SCAFFOLD_D1B", y: 3.7, z0: -5.0, z1: -3.0 },
+  { id: "SCAFFOLD_D2", y: BAND.GALLERY, z0: -7.68, z1: -4.2 },
+  { id: "SCAFFOLD_D3", y: 7.3, z0: -4.0, z1: -2.0 },
+  { id: "SCAFFOLD_D4", y: 9.0, z0: -2.4, z1: -0.4 },
+  { id: "SCAFFOLD_D5", y: 10.7, z0: -0.8, z1: 1.2 },
+  { id: "SCAFFOLD_D6", y: BAND.LEADS, z0: 0.8, z1: 2.8 },
+];
+
+// The FOOTING, and the reason seven staggered rects still draw one scaffold.
+//
+// For two DECKs `oneObject` is `sameFootprint` and nothing else, so seven decks
+// on seven different rects would be seven clusters and the scaffold would be
+// contain-fitted and drawn seven times. `carriedBy` is the way out: it joins a
+// deck to a mass with no geometric test at all. The scaffold was the one
+// structure with no mass — deliberately, so the player can run under the staging
+// — which is exactly why it was trapped.
+//
+// These sit on the sole plates the mesh already draws: two 0.16m boards along the
+// long edges at a measured 0.060m, 3.62 m2 of up-facing timber pinning the
+// footprint to the declared box. So there is drawn timber under both of these,
+// which is the whole requirement — a collision mass with no mesh under it is an
+// invisible ledge.
+//
+// TWO DIAGONAL CORNERS, and both halves of that matter. The draw is anchored on
+// `unionRect` of the FOOTING, so the anchor has to reach all four extremes of the
+// declared footprint or the scaffold slides off the rect the player walks into (a
+// single west plate moves it 1.17m west). Diagonal corners reach all four with
+// 0.16m squares. And they have to be SQUARES rather than the full-length plates
+// tried first, because a mass is unconditionally a collider — `MassSpec` has no
+// non-colliding option — so full-length plates put a 6cm kerb down both sides of
+// the staging and the suite caught it at once: 273 grounded ticks ending inside a
+// solid, and four ground RUN links reporting "body does not fit" along the west
+// edge. The corners are the smallest thing that still anchors the draw.
+//
+// `landable: false`, so the affordance gate takes no MASS_TOP survey of a sill
+// nobody stands on, and at 0.06m the top is under the 0.08m a grounded step
+// absorbs: a drawn sill, not a ledge and not an obstacle.
+masses.push(
+  ...[
+    { id: "SCAFFOLD_SOLE_NE", x0: 45.94, x1: 46.1, z0: -7.7, z1: -7.54 },
+    { id: "SCAFFOLD_SOLE_SW", x0: 43.6, x1: 43.76, z0: 3.44, z1: 3.6 },
+  ].map((plate) =>
+    prop({
+      id: plate.id,
+      section: "C_ASCENT",
+      asset: "bldg-scaffold-run",
+      rect: rect(plate.x0, plate.x1, plate.z0, plate.z1),
+      baseY: 0,
+      topY: 0.06,
+      landable: false,
+      tags: ["scaffold"],
+    }),
+  ),
+);
+
 decks.push(
-  deck({
-    id: "SCAFFOLD_D1",
-    section: "C_ASCENT",
-    asset: "bldg-scaffold-run",
-    rect: rect(43.6, 46.1, -7.7, 3.6),
-    y: BAND.SCAFFOLD_1,
-    tags: ["scaffold"],
-  }),
-  deck({
-    id: "SCAFFOLD_D2",
-    section: "C_ASCENT",
-    asset: "bldg-scaffold-run",
-    rect: rect(43.6, 46.1, -7.7, 3.6),
-    y: BAND.GALLERY,
-    tags: ["scaffold"],
-  }),
+  ...SCAFFOLD_LIFTS.map((lift) =>
+    deck({
+      id: lift.id,
+      section: "C_ASCENT",
+      asset: "bldg-scaffold-run",
+      rect: rect(43.8, 45.9, lift.z0, lift.z1),
+      y: lift.y,
+      carriedBy: ["SCAFFOLD_SOLE_NE", "SCAFFOLD_SOLE_SW"],
+      tags: ["scaffold"],
+    }),
+  ),
 );
 
 // The body is `bldg-meeting-hollis`, not `church-meetinghouse`, and the collision

@@ -853,6 +853,45 @@ failing branch, so they are genuinely fine.
 
 ---
 
+### A mantle is REFUSED onto a deck that is overhead — read this before authoring any multi-level structure (31 Jul)
+
+The constraint that governs every stacked structure in this level, found while integrating the
+regenerated Town House scaffold. Nothing in the design docs accounted for it.
+
+`readRaisedSurface` in `packages/engine-world/src/parkour/probe.ts` takes
+`overhead = raisedAt(0)` — the highest support over the player's own feet, within the climb
+ceiling — and then **skips every hit carrying that same id**. It exists so that walking about
+under a scaffold does not offer a climb onto its middle. The consequence nobody had drawn out:
+
+- **It reads the level's AUTHORED deck rects, not the mesh.** Staggering the art changes
+  nothing; the rects are what decide.
+- **Therefore full-run stacked staging cannot be climbed at ANY spacing.** With every lift on
+  one full-run rect, the lift above is overhead from everywhere on the lift below, so no step
+  is ever offered. Widening the gap does not help: below 1.68 m the board above intrudes on
+  `STAND_HEIGHT`, and above it the lift is still overhead.
+- **A `climbVolume` does not enable a deck mantle, it RESTRICTS one.** The refusal at
+  probe.ts:502-511 fires where a volume covers the surface and no ladder or grip validates it
+  at that foot; a bare lipped ledge passes straight through. So retiring a ladder means
+  retiring its climb volume too, or the climb goes silently dead in play.
+- **`carriedBy` is the escape for a massless structure.** For two DECKs `oneObject` is
+  `sameFootprint` and nothing else, so staggered rects would split the draw into one
+  contain-fitted object per lift. A deck joins a MASS by `carriedBy` with no geometric test, so
+  one mass in the cluster fixes both the grouping and the base (`drawBox` bases on the solids'
+  own minY). The scaffold was trapped precisely because it was the one structure with no mass.
+  Note a mass is *unconditionally* a collider — `MassSpec` has no non-colliding option — so an
+  anchor has to be small and off the walking line, or it becomes an invisible kerb.
+
+Also corrected here: a comment in `eastCovert.ts` claimed a thin deck "reads as empty air, so a
+deck-mantle must be validated by a ladder/grip". That was true before `readRaisedSurface`
+existed and is now false — it is what motivated the four `crate-stack`/`crate-mound` staging
+steps, i.e. the "floating crates" the owner rejected.
+
+**Which instrument sees it.** The affordance gate does NOT: it measures mesh against plane and
+reported the staging perfectly healthy while every step was refused. `traversability.test.ts`
+DOES — it drives the shipped physics at each authored link, and it is what caught all four
+staging climbs going dead. Use it, not the affordance gate, for any "can the player actually
+get up this" claim.
+
 ## What each gate can and cannot see
 
 Read this before concluding a green run means the game is correct.

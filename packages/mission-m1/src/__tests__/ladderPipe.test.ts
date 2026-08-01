@@ -26,7 +26,7 @@ test("the real level authors its climb ladders, and every one resolves an ascent
   // The merchant's two goods-ladders were retired 31-Jul (its covert climb-in is a
   // ≤1.9 m mantle chain now, no ladder), so the count is down from 11 to 9. The
   // east-half ladders are being converted to mantle chains landmark by landmark.
-  assert.equal(world.ladders?.length, 9, "nine ladders forwarded into world.ladders (merchant window + reveal retired to a mantle chain)");
+  assert.equal(world.ladders?.length, 7, "seven ladders forwarded into world.ladders (merchant window + reveal, then both Town House scaffold ladders, retired to mantle chains)");
   // Every forwarded ladder is one the tested predicate accepts: a real served
   // surface and a top-out with standing clearance ("no ladder, no climb" armed,
   // not refused). This is what the mission-world lane will read to turn the rule
@@ -40,10 +40,14 @@ test("the real level authors its climb ladders, and every one resolves an ascent
 });
 
 test("a placed ladder is forwarded into world.ladders with its top resolved off the served surface", () => {
-  // SCAFFOLD_D1 is a real deck at y=2.9; place a ladder at its foot facing -Z.
+  // SCAFFOLD_D1 is a real deck at y=1.85 (the scaffold's first staging lift, after
+  // the 31-Jul regeneration moved it off the dead-zone 2.9); place a ladder at its
+  // foot facing -Z. This fixture only exercises the PIPE — that a placed ladder's
+  // top is measured off the surface it serves — so it invents its own placement
+  // rather than relying on a ladder the level still authors.
   const placement: LadderPlacementSpec = {
     id: "TEST_SCAFFOLD_LADDER",
-    at: [44.8, 0, -6.4],
+    at: [44.8, 0, -2.0],
     onto: "SCAFFOLD_D1",
     faceX: 0,
     faceZ: -1,
@@ -54,8 +58,8 @@ test("a placed ladder is forwarded into world.ladders with its top resolved off 
   assert.equal(world.ladders?.length, 1);
   const ladder = world.ladders![0]!;
   // The top is MEASURED off the served surface, not re-typed.
-  assert.equal(ladder.topY, 2.9);
-  assert.deepEqual(ladder.base, { x: 44.8, y: 0, z: -6.4 });
+  assert.equal(ladder.topY, 1.85);
+  assert.deepEqual(ladder.base, { x: 44.8, y: 0, z: -2.0 });
   assert.equal(ladder.toSurface, "SCAFFOLD_D1");
   // Defaults applied by the pipe.
   assert.equal(ladder.widthM, 0.6);
