@@ -1,10 +1,48 @@
-/* The intake cutscene reuses the lesson's cinematic chrome (mod-cine-*); only the
-   top bar differs. There is nothing behind the intro to return to, so it drops
-   the Archive/Leave pair for a left wordmark and a right-aligned Skip. */
+/* The intake cutscene is a finished film on the lesson's cinematic ground
+   (mod-cine-*); it keeps the top bar and drops the room, presenter and caption
+   chrome, because the picture already carries its own captions and title card.
+   There is nothing behind the intro to return to, so the top bar drops the
+   Archive/Leave pair for a left wordmark and a right-aligned Skip. */
 .mod-intro-top {
   grid-template-columns: 1fr auto;
 }
 .mod-intro-title {
   justify-items: start;
   text-align: left;
+}
+.mod-intro-controls {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Letterboxed rather than cropped: the burned-in captions sit near the bottom
+   edge and `cover` would cut them off on a viewport taller than 16:9. */
+.mod-intro-film {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #02060c;
+}
+
+/* The handoff. The film's last shot is the player's avatar face-on in the
+   Archive Hall — the hub's own opening view — so the dissolve is out to the
+   dark ground both share, not a cut to a different screen. */
+.mod-intro-film {
+  opacity: 1;
+  transition: opacity 700ms ease-in;
+}
+.mod-intro[data-leaving="true"] .mod-intro-film {
+  opacity: 0;
+}
+.mod-intro[data-leaving="true"] .mod-cine-top {
+  opacity: 0;
+}
+
+.pa-reduced-motion .mod-intro-film {
+  transition: none;
 }
