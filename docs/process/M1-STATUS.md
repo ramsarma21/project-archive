@@ -464,6 +464,29 @@ zero-evidence form pass (`1c4250f`).
 
 ## Open
 
+**Needs an owner decision, not more measurement**
+- **wharf-a's roof deck claims a footprint the mesh does not draw, and no honest rect is
+  authorable from the level side.** The mesh draws a shallow gable: a 1.78 m ridge cap at 5.35
+  (z 1.41..3.19, 14.8 m², measured off the placed GLB) pitching to ~4.55/4.70 aprons, under a deck
+  claiming the whole 10×8 at 5.35 — so ~85% of the deck is invisible floor up to 0.95 m above the
+  drawn pitch. **Narrowing it to the ridge was tried 31-Jul and reverted.** A drop's take-off is
+  the deck LIP, so narrowing moves both lips ~2.8 m inward and `traversability` reports both
+  descent hops landing on GROUND. Measured: printshop lip z −2.50 → ridge z 1.41 is 3.91 m on a
+  1.75 m drop, needing **6.55 m/s** against `RUN_SPEED` 4.6 — unreachable by any run-off, only by
+  a jump; ridge z 3.19 → mound z 7.00 is 3.81 m on a 3.00 m drop needing 4.87 m/s, and the mound
+  cannot move north past z 6.00 without intersecting the warehouse. No stepped chain down the
+  pitch either: the mass fills the footprint to 5.35, so every standing spot below that inside it
+  is embedded in the blocker. **The fork is (a) keep the full-footprint deck and its lie, or (b)
+  an asset that draws wharf-a's roof flat at its own top.**
+- **The general trap behind it, and behind wharf-b: `structure()` ties the mass top, the placement
+  box and the walkable deck to ONE number (`roofY`).** So a mesh whose principal walkable roof is
+  not at its own top cannot be authored honestly, and re-pointing the deck to chase the drawn roof
+  *moves the drawn roof*: dropping wharf-b's `roofY` 5.35 → 4.30 made height the binding axis of
+  the contain-fit, shrank the mesh ~6% and carried the flat roof from 4.30 to 4.05. That re-point
+  was still a large improvement (−1.05 → −0.27 at plane) and is kept, but it **cannot converge by
+  iterating `roofY`**, and the debt note that blamed the residue on the deck's jetty was wrong and
+  is corrected.
+
 **Would affect play now**
 - **`C_SCAFF_FOOT` is a SAFE dead end, and it has pushed the guided line off the B2 goods yard
   (`55e19d0`, OPEN).** Retiring the scaffold's ground ascent removed the only onward SAFE link
@@ -964,16 +987,21 @@ notice, because a gate that cannot fail is not evidence.
   steeple soffit above was found by `beginAuthored`'s deck test, and the elm's headroom by a direct
   GLB probe; neither is the driver's job.
 
-### `devEntry`'s drop-in silently overrides the facing you asked for — CONTESTED, not fixed (31 Jul)
+### `devEntry`'s drop-in silently overrode the facing you asked for — FIXED (`d887e2f`)
 
-`dropSpawn` in `apps/web/src/mission/devEntry.tsx` replaces the `toward=` yaw with the beat's own
-`facingYaw` whenever the drop lands within `stanceRadiusM` (2.4 m) of the beat stance — measured in
-**XZ only**, ignoring the beat's own 1 m `stanceHeightToleranceM`. The Liberty Elm stacks three
-tiers inside that radius, so a drop at `F_LOW` — 1.9 m *below* the stance — was silently aimed at
-the nail. Held W then walked the body into the bole, which is solid to 12 m, and the stage reported
-"the elm climb never arms" for a week. **The file is contested; this lane did not edit it.** The
-fix is one condition: require the height tolerance as well as the radius. `check-playthrough`'s BEAT
-stage works around it with `back=1.6`, which is recorded in the stage's own comment.
+`dropSpawn` in `apps/web/src/mission/devEntry.tsx` replaced the `toward=` yaw with the beat's own
+`facingYaw` whenever the drop landed within `stanceRadiusM` of the beat stance — measured in **XZ
+only**. Measured: the elm's `F_LOW` drop is 1.25 m from the stance in XZ, inside its 2.4 m radius,
+and 1.85 m below it, so it was silently aimed at the nail. Held W then walked the body into the
+bole, which is solid to 12 m, and the stage reported "the elm climb never arms" for a week — read
+as a parkour defect and briefed as one. Now the override also requires the feet within 0.6 m of
+the stance height, the tolerance `m1Mission.ts` already uses for the same question. The BEAT
+stage's `back=1.6` workaround is deleted: it passes with no back at all, and the climb takes 43
+sim ticks against 166 with the workaround in.
+
+**The general lesson, which outlives this file: a dev-path convenience that silently overrides an
+input is indistinguishable from a defect in the thing under test.** This one produced a wrong
+diagnosis that survived a week and shaped two briefs.
 
 ### The edge brake holds a walk and loses a run, and a deck ends one capsule radius late (31 Jul)
 
@@ -1007,28 +1035,42 @@ recoverable — but `fatalTraversal.test.ts` asserts it unconditionally and its 
 category is *unreachable*, so there is no way to record one as accepted debt without weakening the
 gate. Owner's ruling 31 Jul: do not add an allow-list.
 
-### ROUTE wedges at x≈45.6 and `ROPEWALK_STOP` never arms — PRE-EXISTING, A/B'd (31 Jul)
+### ROUTE wedged at x≈45.6 — FIXED (`77af03f`): a 0.2 m hole in the scaffold, not the wayfinder
 
-`check-playthrough` ROUTE fails four checks: `ROPEWALK_STOP` never leaves DORMANT, the un-stick
-exhausts its budget, and the run only reaches x=46 of 60. **Not introduced by the 31-Jul
-checkpoint work: checking `7216217` back out into the same tree and re-running against the same
-server reproduces it identically** — same stop, same wedge, `lastSeen ... at x=45.6, z=-0.6
-heading for x=45 preview=NONE`.
+The playthrough wedged on the Town House repair scaffold with `ROPEWALK_STOP` never armed. The
+body reached `C_SCAFF_2S` on the 5.60 staging and stopped: the mantle onto the 7.30 board was
+never offered, the edge brake answered the lip instead, and nine un-stick bursts got nothing.
 
-It is intermittent, and the intermittency is not (only) machine load. One full run on this branch
-mid-checkpoint was **ALL PASS with ROUTE at 76 s**; three later runs failed, with control
-resolution reading *healthy* (5 ticks/update median, 6 p95) — so this is not the load-contention
-mode the section below describes, which shows up as a degraded median. The signature is the one
-already flagged and never chased: the mark points the body **west, at a waypoint behind it**, with
-`preview=NONE`. Same shape as the recorded "aimed west (waypoint x=51) from x=61" note.
+**The 7.30 board stopped at world z −4.00 while the 5.60 board below it ends at −4.20**, leaving
+0.2 m of open air between them over a 5.6 m fall to the street. The reader answers a lip with a
+fall behind it, so `rankVerbs` returned `RUN_OFF` alone and `CLIMB_UP` was **not a candidate from
+any standing spot on the lower board** — swept all 15 samples across its 3.5 m length, all
+`RUN_OFF` before, all `CLIMB_UP` after. Every other consecutive pair of lifts abuts or overlaps by
+0.4–0.8 m; this was the only one that parted company. Fixed in the generator's LIFTS table and the
+mesh regenerated, so drawn still equals collision, with `SCAFFOLD_D3`'s rect mirroring it.
 
-x≈45 is the Town House scaffold corner, which is also where `C_SCAFF_FOOT`'s SAFE dead end
-re-routes the guided line (see Open). Worth treating as one problem rather than two.
+Three things worth keeping from how this was found:
 
-**Also failing at `7216217` and unrelated to this work: 13 of `apps/web`'s 765 tests**, all of them
-whole-SAFE-run drivers in `missionElmContinuation` / `missionRoute` and their siblings ("the full
-SAFE run never reached the duel"). Same class as the ROUTE wedge and probably the same cause.
-A/B'd the same way.
+- **It was none of the candidates.** Not the overhead rule, not a re-tread of a passed node
+  (the `SHAMBLES_STOP` shape), not the guided line re-routing at the scaffold corner. The
+  hypothesis that x≈45 was "the scaffold corner where the guided line re-routes" was in the brief
+  and was wrong; the guided line was correct throughout and the body was standing exactly on its
+  own waypoint.
+- **`traversability.test.ts` cannot see this class.** It refuses a climb the *overhead rule*
+  kills, which is why the staggered lifts are gated at all, but a gap between two boards leaves
+  every authored rect legal and every rise inside the mantle limit. The failure only exists in
+  the reader's verb ranking. `routeAscent.test.ts` drives real `stepFlow` up authored SAFE climbs
+  and would have caught it, had the scaffold chain been in its set.
+- **The generator's own comment caused it.** "Consecutive lifts must not overlap" is true of the
+  lower lift's route NODE and false of the boards; read as the boards, it produced the one
+  negative overlap in the table. Both files now say which.
+
+**The 13 `apps/web` failures are NOT this class** — the brief's premise, and it does not hold. Ten
+of them run identically with and without the scaffold fix (A/B'd, `missionSafeRun` /
+`missionElmContinuation` / `missionSafeRoute`), and they span the ropewalk tie beam, the hemp
+descent and capstan vault, the Dock Square goods vault and the gaol barrels — sections the
+scaffold is nowhere near. They remain pre-existing at `7216217` and **unchased**; nobody has yet
+established whether they are one cause or several.
 
 ### `check-playthrough` needs a persistent server on IPv6, and the API for a full pass
 
