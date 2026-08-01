@@ -892,6 +892,24 @@ weld-clean and drawn==collision and still not carry the route:
    mantle is byte-identical. The belfry dead-zone can drop its last entry once the level lane wires it.
    (The elm bakes its own 1024 bark normal and never runs through `fix_glb_normals`, so the
    `normalMax` stamp is inert here — no stamp added.)
+6. **On a shed whose roof-walk IS the box cap, roof "clutter" can only be material, not
+   geometry** (wharf roofs, 1 Aug). The owner's "Minecraft roofs" read is the flat uniform
+   repeating slate tile on the walkable decks. On the wharf warehouses the walk sits at `z=H ==
+   roofY == the placement box cap` (contain-fit 1.0 pins natural bbox == declared box; the
+   generator's own guard `SystemExit`s on >0.02 height drift). So a chimney/ridge/parapet/dormer
+   *above* the walk grows the bbox, fails the guard, and — worse — rescales the whole mesh so the
+   walk drops off `roofY`, re-opening the invisible-floor lie. **Above-walk built detail is
+   therefore impossible on these sheds without either lowering the walk (barred: moves a gated
+   deck) or making the roof genuinely pitched (the owner's reserved decision).** The in-scope fix
+   is material: `build_wharf_warehouse.py` now draws the walk as a period LEADED ROOF-WALK
+   (standing-seam rolls at true ~0.72 m spacing, cross welts, per-bay weathering, patina, water
+   streak, perimeter flashing, mapped 0..1 so it does not tile) instead of a tiled slate atlas.
+   Geometry byte-identical to shipped: bbox / tris (612, 430) / weldPairs (9, 4) / zeroUv 0 all
+   unchanged; only the top quad's material+UV changed. Chimneys/dormers belong on the TALLER
+   buildings (townhouse `C_LEADS`, the brick/clapboard rows `D_ROOFLINE`, printshop) whose roof
+   sits below their box cap — and those GLBs are `m1-evasion-loop`'s (globs `*brick* *facade*
+   *townhouse* *printshop*` + the named row GLBs), not this lane's. Roof-albedo path bakes no
+   normal (nrm() is disabled under PHOTOREAL), so no `normalMax` stamp applies.
 
 **A mutation hunt found the suite's own blind spots** (`6cb600d`). Method: break the code a
 test claims to guard, and see whether the test still passes. Results, ranked:

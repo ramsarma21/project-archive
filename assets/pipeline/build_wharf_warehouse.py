@@ -287,6 +287,62 @@ def slate_rgb(base):
     return np.clip(rgb, 0, 1), (0.4 + 0.6 * head).copy()
 
 
+def leaded_walk_rgb(across_len, along_len):
+    """A period LEADED ROOF-WALK read, mapped 0..1 across the whole deck so it does
+    not tile: standing-seam ROLLS at true ~0.72 m spacing (the defining feature that
+    reads 'built lead roof' not 'shingle tile'), lead-sheet cross welts, large-scale
+    tonal drift, water-streak / patina / soot weathering, and a fresher lead FLASHING
+    band at the deck perimeter. Baked directional shading on the rolls carries the
+    raised read without a normal map (the generator's normal path is disabled under
+    PHOTOREAL, see nrm()). Kills the flat-uniform 'Minecraft' plane the owner flagged."""
+    n = TEX
+    u = np.broadcast_to(np.linspace(0, 1, n, endpoint=False)[None, :], (n, n))   # across rolls (x)
+    v = np.broadcast_to(np.linspace(0, 1, n, endpoint=False)[:, None], (n, n))   # along rolls (y)
+    nrolls = max(3, int(round(across_len / 0.72)))
+    nwelts = max(2, int(round(along_len / 1.70)))
+
+    # standing-seam rolls across u
+    rw = 0.055
+    phase = (u * nrolls) - np.floor(u * nrolls)
+    seam_d = np.minimum(phase, 1 - phase)
+    crest = np.clip(1.0 - seam_d / rw, 0.0, 1.0); crest = crest * crest * (3 - 2 * crest)
+    flank = _ss(rw, rw * 2.4, seam_d) * _ss(rw * 2.4, rw, seam_d)                 # shadow band beside the roll
+
+    lead = np.array([0.35, 0.38, 0.41])
+    drift = aniso(n, 6, 5, RNG)                                                   # big soft tonal patches
+    col = lead[None, None, :] * (0.78 + 0.42 * drift)[..., None]
+
+    # per-bay + per-course weathering so the seam grid is NOT perfectly uniform
+    rid = np.floor(u * nrolls); cid = np.floor(v * nwelts)
+    bseed = np.sin(rid * 12.9 + cid * 4.7) * 43758.5; bvar = bseed - np.floor(bseed)
+    col *= (0.80 + 0.40 * bvar)[..., None]
+
+    patina = aniso(n, 26, 30, RNG)                                               # verdigris in the bays
+    pmask = (_ss(0.60, 0.86, patina) * (1 - crest))[..., None]
+    col = col * (1 - 0.45 * pmask) + np.array([0.30, 0.43, 0.35])[None, None, :] * (0.45 * pmask)
+
+    streak = aniso(n, 4, 150, RNG)                                               # water running down-slope (v)
+    col *= (0.82 + 0.20 * streak)[..., None]
+    soot = np.linspace(0.90, 1.0, n)[:, None, None]                              # sootier toward one end
+    col *= soot
+
+    col = col * (1 - 0.34 * flank[..., None])                                    # roll self-shadow
+    col = col * (0.90 + 0.55 * crest[..., None])                                 # roll crest catches light
+
+    wphase = (v * nwelts) - np.floor(v * nwelts); wd = np.minimum(wphase, 1 - wphase)
+    welt = np.clip(1 - wd / 0.02, 0, 1); welt = welt * welt * (3 - 2 * welt) * (1 - crest)
+    col = col * (1 - 0.20 * welt[..., None])                                     # faint lead-sheet joints
+
+    du = np.minimum(u, 1 - u); dv = np.minimum(v, 1 - v)
+    edge = np.minimum(du, dv)
+    flash = np.clip(1 - edge / 0.022, 0, 1); flash = flash * flash * (3 - 2 * flash) * 0.7
+    col = col * (1 - flash[..., None]) + np.array([0.46, 0.49, 0.52])[None, None, :] * flash[..., None]
+
+    fle = aniso(n, 300, 300, RNG)                                                # oxidation flecks
+    col = np.where((fle > 0.90)[..., None], np.clip(col * 1.28 + 0.03, 0, 1), col)
+    return np.clip(col, 0, 1)
+
+
 log("textures", "PHOTOREAL" if PHOTOREAL else "flat")
 bpy.ops.wm.read_factory_settings(use_empty=True)
 # NORMAL-MAP EXPORT BUG: a generated normal image exports BLACK through the glTF
@@ -321,6 +377,11 @@ else:
     MAT_LEAD = make_material("lead", pack_jpeg("lead", flat_rgb(TEX // 4, (0.52, 0.53, 0.53))), rough=0.86, spec=0.2)
     MAT_TIMBER = make_material("timber", pack_jpeg("timber", plank_rgb((0.46, 0.35, 0.24))), rough=0.93, spec=0.12)
     MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", plank_rgb((0.34, 0.24, 0.16), vertical=True)), rough=0.94, spec=0.12)
+# the roof-walk deck: a proper leaded roof-walk under PHOTOREAL, plain lead otherwise
+if PHOTOREAL:
+    MAT_ROOF = make_material("roofwalk", pack_jpeg("roofwalk", leaded_walk_rgb(W, D)), rough=0.55, spec=0.34)
+else:
+    MAT_ROOF = MAT_LEAD
 IB, IW, IT, IL, ITM, ITV = 0, 1, 2, 3, 4, 5
 # sign board material (painted board with baked serif signage); falls back to trim
 SIGN_PNG = os.environ.get("SIGN_PNG", "")
@@ -330,6 +391,7 @@ if PHOTOREAL and SIGN_PNG and os.path.exists(SIGN_PNG):
 else:
     MAT_SIGN = MAT_TRIM
 ISG = 6
+IRF = 7
 
 bm = bmesh.new()
 uv = bm.loops.layers.uv.new("UVMap")
@@ -515,7 +577,12 @@ solid_box(-0.20, 0.20, hz - 0.30, hz, hb - 0.32, hb, ITM, faces="all", tile=1.0)
 # eaves BELOW the collision plane and re-open the invisible-floor defect on a deck
 # that claims the whole footprint. wharf-a's variation is a pitched leaded
 # eave-skirt folding BELOW the walk edge (visual only) + its broad low proportion.
-solid_box(-hx, hx, -hz, hz, H - 0.14, H, IL, faces=("+z",), tile=1.3)                # the walk (standable top, z=H)
+# the walk (standable top, z=H): ONE flat quad at exactly z=H spanning the whole
+# footprint, UV-mapped 0..1 across the deck (NOT tiled) so the leaded roof-walk
+# material reads once with rolls at true spacing and no repeat. Geometry is byte-
+# identical to the old single +z quad, so box / weld / bbox are unchanged.
+quad((-hx, -hz, H), (hx, -hz, H), (hx, hz, H), (-hx, hz, H), IRF,
+     [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
 # lead fascia closing the wall-head-to-deck gap on all four edges (below the top)
 for (ex0, ex1, ey0, ey1) in [(-hx, hx, -hz, -hz + 0.10), (-hx, hx, hz - 0.10, hz),
                              (-hx, -hx + 0.10, -hz + 0.10, hz - 0.10), (hx - 0.10, hx, -hz + 0.10, hz - 0.10)]:
@@ -626,7 +693,7 @@ bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=1e-5)
 bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
 mesh = bpy.data.meshes.new(KEY); bm.to_mesh(mesh); bm.free()
 obj = bpy.data.objects.new(KEY, mesh)
-for m in (MAT_BRICK, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V, MAT_SIGN):
+for m in (MAT_BRICK, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V, MAT_SIGN, MAT_ROOF):
     obj.data.materials.append(m)
 for poly in obj.data.polygons:
     poly.use_smooth = False
