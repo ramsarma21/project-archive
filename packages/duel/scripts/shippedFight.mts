@@ -44,7 +44,7 @@ import {
   type CombatIntent,
   type CombatView,
 } from "../src/combat.js";
-import { FIELD_DT, fieldRandom } from "../src/engine.js";
+import { FIELD_DT, FIELD_TICK_HZ, fieldRandom } from "../src/engine.js";
 import { createDuel, reduceDuel, type DuelState, type PartialIntents } from "../src/machine.js";
 import { DEFAULT_ORACLE_OPTIONS, nearestThreat, oracleIntent } from "../src/policy.js";
 import {
@@ -52,11 +52,25 @@ import {
   PLAYER_MAX_HEALTH,
   REQUIRED_WRONG_PATH_MARGIN,
 } from "../src/tuning.js";
+import { DUEL_ROUND_CEILING } from "../src/structure.js";
 import { mintVerdict, type VerdictKind } from "../src/verdict.js";
 import type { DuelQuestionRef } from "../src/events.js";
 import type { DuelSide } from "../src/sides.js";
 
 const SEEDS = [1, 7, 19, 33, 101, 512, 4242, 90210] as const;
+
+/**
+ * The wide set, and the one measurement eight seeds cannot make.
+ *
+ * Reaching the round ceiling is a rare per-seed event, so a rate over eight runs is
+ * mostly a fact about which eight: the eight-seed set reported the backstop being hit
+ * on the correct path only, while over these 32 it was hit on all three answer paths.
+ * Constructed identically to `WIDE_SEEDS` in winnability.test.ts so the two agree.
+ */
+const WIDE_SEEDS = [
+  ...SEEDS,
+  ...Array.from({ length: 24 }, (_unused, index) => 1000 + index * 7919),
+] as const;
 
 /** M1's boss, exactly as the mission builds it. */
 const SHIPPED = bossProfileForTier(M1_BOSS_TIER, "BOS.MD01.BOSS.MEASURED", M1_BOSS_OVERRIDES);
@@ -105,6 +119,21 @@ interface RunMetrics {
   readonly bossDodges: number;
   readonly bossShotsFired: number;
   readonly bossHitsLanded: number;
+  readonly playerShotsFired: number;
+  /**
+   * Balls each side fired that a cover blocker ate before they reached anybody.
+   *
+   * THE MEASUREMENT THAT EXPLAINS THE BOSS'S 4% ACCURACY, and it is not a miss rate.
+   * A ball flies flat at the TARGET's chest, so a fighter shooting past cover taller
+   * than that chest feeds its own cover — which is what the low-ammo peek does:
+   * standing at a yard cover point clears the eye line (so `bossIntent` believes it
+   * has a shot) while leaving the ball's lane blocked by the very crate it is
+   * standing behind.
+   */
+  readonly bossShotsEatenByCover: number;
+  readonly playerShotsEatenByCover: number;
+  /** Boss shots fired in each tactical posture, so the waste can be attributed. */
+  readonly bossShotsByState: Record<BossTacticalState, number>;
 }
 
 function emptyByState(): Record<BossTacticalState, number> {
@@ -134,8 +163,14 @@ function runShipped(
   let bossPlantedTicks = 0;
   let bossPlantedStandingTicks = 0;
   let bossDodges = 0;
+  let bossShotsEatenByCover = 0;
+  let playerShotsEatenByCover = 0;
   const deadByState = emptyByState();
   const ticksByState = emptyByState();
+  const bossShotsByState = emptyByState();
+  // `SHOT_ABSORBED_BY_COVER` names the ball, not the shooter, so the firing side is
+  // carried forward from `SHOT_FIRED` rather than guessed.
+  const shooterOf = new Map<number, DuelSide>();
 
   let steps = 0;
   while (state.phase !== "DUEL_RESOLVED" && steps < 400_000) {
@@ -173,6 +208,14 @@ function runShipped(
     if (!result.ok) throw new Error(result.rejection.code);
     const next = result.state;
 
+    for (const event of result.events) {
+      if (event.type === "SHOT_FIRED") shooterOf.set(event.projectileId, event.side);
+      if (event.type === "SHOT_ABSORBED_BY_COVER") {
+        if (shooterOf.get(event.projectileId) === "B") bossShotsEatenByCover += 1;
+        else playerShotsEatenByCover += 1;
+      }
+    }
+
     if (engaged && before) {
       engagementTicks += 1;
       // The posture the reducer itself believes, read off the memory it just advanced.
@@ -190,6 +233,9 @@ function runShipped(
       }
       bossDodges += result.events.filter(
         (event) => event.type === "DODGE_STARTED" && event.side === "B",
+      ).length;
+      bossShotsByState[posture] += result.events.filter(
+        (event) => event.type === "SHOT_FIRED" && event.side === "B",
       ).length;
 
       const balls = next.combat.projectiles.length;
@@ -220,6 +266,10 @@ function runShipped(
     bossDodges,
     bossShotsFired: state.combat.fighters.B.shotsFired,
     bossHitsLanded: state.combat.fighters.B.hitsLanded,
+    playerShotsFired: state.combat.fighters.A.shotsFired,
+    bossShotsEatenByCover,
+    playerShotsEatenByCover,
+    bossShotsByState,
   };
 }
 
@@ -260,6 +310,17 @@ interface Agg {
   bossHealthLeft: number;
   playerHealthLeft: number;
   worstLoss: number;
+  /**
+   * Seconds of live combat per fight, and seconds of it that were dead air.
+   *
+   * THE FRACTION ALONE MISLEADS WHEN THE FIGHT'S LENGTH MOVES, which is exactly what
+   * the exposed reload did: it cut the correct path from 11.5 rounds to 4.8 while
+   * RAISING dead air's share, because a boss the player can always shoot at empties
+   * the player's magazine earlier in each round. Share went up, and the seconds a
+   * student actually spends with nothing to do went down. Report both.
+   */
+  engagementSeconds: number;
+  deadSeconds: number;
   deadFraction: number;
   deadInLow: number;
   lowFraction: number;
@@ -269,6 +330,11 @@ interface Agg {
   plantedStandingFraction: number;
   dodges: number;
   bossAccuracy: number;
+  /** Share of each side's fired balls that a cover blocker ate. */
+  bossEatenShare: number;
+  playerEatenShare: number;
+  /** Share of the boss's balls fired from the low-ammo peek stance. */
+  bossShotsFromLow: number;
 }
 
 function aggregate(
@@ -286,6 +352,8 @@ function aggregate(
     bossHealthLeft: 0,
     playerHealthLeft: 0,
     worstLoss: 0,
+    engagementSeconds: 0,
+    deadSeconds: 0,
     deadFraction: 0,
     deadInLow: 0,
     lowFraction: 0,
@@ -295,6 +363,9 @@ function aggregate(
     plantedStandingFraction: 0,
     dodges: 0,
     bossAccuracy: 0,
+    bossEatenShare: 0,
+    playerEatenShare: 0,
+    bossShotsFromLow: 0,
   };
   for (const seed of seeds) {
     const run = runShipped(path, seed, intents);
@@ -308,6 +379,8 @@ function aggregate(
     out.bossHealthLeft += run.bossHealthFraction / n;
     out.playerHealthLeft += run.playerHealth / n;
     const ticks = Math.max(1, run.engagementTicks);
+    out.engagementSeconds += run.engagementTicks / FIELD_TICK_HZ / n;
+    out.deadSeconds += run.deadTicks / FIELD_TICK_HZ / n;
     out.deadFraction += run.deadTicks / ticks / n;
     out.deadInLow += (run.deadTicks > 0 ? run.deadByState.LOW / run.deadTicks : 0) / n;
     out.lowFraction += run.ticksByState.LOW / ticks / n;
@@ -318,6 +391,11 @@ function aggregate(
     out.dodges += run.bossDodges;
     out.bossAccuracy +=
       (run.bossShotsFired > 0 ? run.bossHitsLanded / run.bossShotsFired : 0) / n;
+    const bossShots = Math.max(1, run.bossShotsFired);
+    out.bossEatenShare += run.bossShotsEatenByCover / bossShots / n;
+    out.playerEatenShare +=
+      run.playerShotsEatenByCover / Math.max(1, run.playerShotsFired) / n;
+    out.bossShotsFromLow += run.bossShotsByState.LOW / bossShots / n;
   }
   return out;
 }
@@ -392,10 +470,45 @@ for (const path of PATHS) balanceRows.push(balanceRow("sloppy", path, student.ge
 balanceRows.push(balanceRow("passive", "WRONG", passive));
 table(`BALANCE (${SEEDS.length} seeds, player health ${PLAYER_MAX_HEALTH})`, balanceRows);
 
+// The termination picture, on the set wide enough to measure it. `DUEL_ROUND_CEILING`
+// is documented as unreachable in normal play, so a non-zero column here is the
+// anti-hang backstop carrying the fight instead of guarding it.
+const terminationRows: string[][] = [
+  ["player", "answers", "rounds", "on health", "hit the backstop", "wins"],
+];
+for (const path of PATHS) {
+  const agg = aggregate(path, undefined, WIDE_SEEDS);
+  terminationRows.push([
+    "reference",
+    path,
+    agg.rounds.toFixed(1),
+    `${agg.resolvedOnHealth}/${agg.runs}`,
+    `${agg.runs - agg.resolvedOnHealth}/${agg.runs}`,
+    `${agg.wins}/${agg.runs}`,
+  ]);
+}
+for (const path of PATHS) {
+  const agg = aggregate(path, SLOPPY, WIDE_SEEDS);
+  terminationRows.push([
+    "sloppy",
+    path,
+    agg.rounds.toFixed(1),
+    `${agg.resolvedOnHealth}/${agg.runs}`,
+    `${agg.runs - agg.resolvedOnHealth}/${agg.runs}`,
+    `${agg.wins}/${agg.runs}`,
+  ]);
+}
+table(
+  `TERMINATION (${WIDE_SEEDS.length} seeds, ceiling ${DUEL_ROUND_CEILING} rounds)`,
+  terminationRows,
+);
+
 function tempoRow(label: string, path: AnswerPath, agg: Agg): string[] {
   return [
     label,
     path,
+    agg.engagementSeconds.toFixed(0),
+    agg.deadSeconds.toFixed(0),
     pct(agg.deadFraction),
     pct(agg.deadInLow),
     pct(agg.armedFraction),
@@ -405,6 +518,9 @@ function tempoRow(label: string, path: AnswerPath, agg: Agg): string[] {
     pct(agg.plantedStandingFraction),
     String(agg.dodges),
     pct(agg.bossAccuracy),
+    pct(agg.bossEatenShare),
+    pct(agg.bossShotsFromLow),
+    pct(agg.playerEatenShare),
   ];
 }
 
@@ -412,6 +528,8 @@ const tempoRows: string[][] = [
   [
     "player",
     "answers",
+    "combat s",
+    "dead s",
     "dead air",
     "dead in LOW",
     "in ARMED",
@@ -421,6 +539,9 @@ const tempoRows: string[][] = [
     "planted standing",
     "dodges",
     "boss acc",
+    "boss balls eaten",
+    "boss shots from LOW",
+    "player balls eaten",
   ],
 ];
 for (const path of PATHS) tempoRows.push(tempoRow("reference", path, reference.get(path)!));

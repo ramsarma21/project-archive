@@ -438,6 +438,50 @@ export function hasLineOfSight(
   return segmentClear(world, eyePosition(from.motion), eyePosition(to.motion));
 }
 
+/**
+ * The height an aimed ball flies at: the target's chest, clamped out of the floor
+ * and out of the sky.
+ *
+ * ONE definition, deliberately. `resolveFiring` spawns the ball at this height and
+ * `isExposedToShot` below asks whether a lane at this height is clear, so a second
+ * expression of it would be a predicate that quietly disagrees with the ballistics
+ * it claims to describe.
+ */
+export function aimHeightFor(target: MotionState): number {
+  return Math.min(
+    MAX_BULLET_HEIGHT_M,
+    Math.max(MIN_BULLET_HEIGHT_M, chestPosition(target).y),
+  );
+}
+
+/**
+ * Can a ball fired by `shooter` actually reach `target`, or does the world eat it?
+ *
+ * NOT `hasLineOfSight`, AND THE DIFFERENCE IS LOAD-BEARING RATHER THAN PEDANTIC.
+ * Sight is eye to eye. A ball flies FLAT at the target's chest (`aimHeightFor`),
+ * which is lower — 1.12 m standing against a 1.43 m eye. Behind the rope-walk
+ * yard's cover, every piece of which is 1.30 m or taller, a STANDING fighter's eyes
+ * clear the top while its chest does not, so the eye line reports an open shot at a
+ * body no ball can touch: measured true at four of the yard's six valid cover
+ * points, in both stances.
+ *
+ * That gap is why standing up is not a way out of cover and why the boss's exposed
+ * reload is gated on this rather than on sight — anything asking "is this fighter
+ * hittable" has to ask on the ball's lane.
+ */
+export function isExposedToShot(
+  world: CollisionWorld,
+  shooter: FighterState,
+  target: FighterState,
+): boolean {
+  const y = aimHeightFor(target.motion);
+  return segmentClear(
+    world,
+    { x: shooter.motion.pos.x, y, z: shooter.motion.pos.z },
+    { x: target.motion.pos.x, y, z: target.motion.pos.z },
+  );
+}
+
 export function distanceBetween(a: FighterState, b: FighterState): number {
   return planarLength(a.motion.pos.x - b.motion.pos.x, a.motion.pos.z - b.motion.pos.z);
 }
@@ -758,10 +802,7 @@ function resolveFiring(
   // is what makes crouching meaningful in both directions: a ball aimed at a
   // standing chest sails over a fighter who drops, and a ball aimed low is eaten
   // by the cover the shooter is trying to shoot past.
-  const aimHeight = Math.min(
-    MAX_BULLET_HEIGHT_M,
-    Math.max(MIN_BULLET_HEIGHT_M, chestPosition(target.motion).y),
-  );
+  const aimHeight = aimHeightFor(target.motion);
   const muzzle = chestPosition(shooter.motion);
   const interval = Math.max(
     1,

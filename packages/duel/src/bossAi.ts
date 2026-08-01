@@ -34,20 +34,25 @@ import {
   IDLE_INTENT,
   intent,
   isDodging,
+  isExposedToShot,
   type CombatIntent,
   type CombatView,
 } from "./combat.js";
 import {
   CAPSULE_RADIUS,
-  STAND_HEIGHT,
   fieldRandom,
   sweepXZ,
   type CollisionWorld,
   type Vec3,
 } from "./engine.js";
-import { bossIntent, coverApproachIntent, nearestThreat, COVER_ARRIVE_RADIUS_M } from "./policy.js";
 import {
-  bossCoverPoints,
+  bossIntent,
+  coverApproachIntent,
+  directionToBreakCover,
+  directionToOpenLane,
+  nearestThreat,
+} from "./policy.js";
+import {
   isBossInCoverAt,
   isCoverReachable,
   nearestBossCover,
@@ -79,7 +84,7 @@ const STALL_PROGRESS_M = 0.3;
  * found. It only ever gates the traverse case (`reroute`), so it does not touch the
  * measured engaged-combat behaviour.
  */
-const STALL_WINDOW_TICKS = 20;
+export const STALL_WINDOW_TICKS = 20;
 /** How many directions the escape scan considers. Every 30 degrees. */
 const AVOID_SCAN_DIRECTIONS = 12;
 /** Bonus for a scan direction that continues the current detour: anti-dither. */
@@ -88,6 +93,8 @@ const AVOID_CONTINUITY_BONUS = 0.35;
 const SALT_AVOID = 909;
 /** A dodge roll salt for the empty state, distinct from the engagement dodge. */
 const SALT_DODGE_EMPTY = 717;
+/** The strafe-direction salt for an empty boss circling at striking distance. */
+const SALT_PRESS_STRAFE = 431;
 
 // ---- ammo-aware tactical state ---------------------------------------------
 
@@ -154,16 +161,12 @@ export interface BossAiMemory {
    * deterministic function of the tick. -1 until the boss actually reaches cover.
    */
   readonly peekAnchorTick: number;
-  /** No forced empty-cover relocation before this tick: anti-thrash under pressure. */
-  readonly relocateGuardUntilTick: number;
   /**
-   * The tick the boss's committed empty-cover first stopped occluding (the player
-   * flanked it), or -1 while it is still hidden. A bounded reaction delay is measured
-   * from here before the boss scrambles to new cover: it is what stops the boss
-   * reacting to a lost line on the exact frame it is lost, and it is the window in
-   * which a flanking player actually gets to land shots.
+   * When the current empty-ammo reload cycle was anchored, so the reload/press beats
+   * are a deterministic function of the tick. -1 while the boss is still breaking
+   * cover — the beat cannot start until a ball could actually reach it.
    */
-  readonly coverExposedSinceTick: number;
+  readonly reloadAnchorTick: number;
 }
 
 export function createBossAiMemory(): BossAiMemory {
@@ -181,8 +184,7 @@ export function createBossAiMemory(): BossAiMemory {
     tacticalCandidate: null,
     tacticalStreak: 0,
     peekAnchorTick: -1,
-    relocateGuardUntilTick: 0,
-    coverExposedSinceTick: -1,
+    reloadAnchorTick: -1,
   };
 }
 
@@ -489,7 +491,10 @@ function aimAtOpponent(view: CombatView): { x: number; z: number } {
 /**
  * One tick of a tactical boss: pick a posture from the (debounced) ammo state and
  * drive the matching behaviour. ARMED is the ordinary engagement; LOW fights from
- * cover on a finite peek cycle; EMPTY retreats into cover and holds.
+ * cover on a finite peek cycle; EMPTY breaks cover and reloads in the open.
+ *
+ * Each state clears the OTHER's cycle anchor on the way in, so a posture change
+ * always starts its beats fresh rather than resuming a cycle from two states ago.
  */
 function advanceBossTactical(
   profile: BossProfile,
@@ -505,12 +510,31 @@ function advanceBossTactical(
 
   switch (debounced.state) {
     case "ARMED":
-      // Leaving the peek cycle behind: a fresh magazine fights in the open again.
-      return engageArmed(profile, view, seed, { ...memory, peekAnchorTick: -1 }, los);
+      // Leaving both cycles behind: a fresh magazine fights in the open again.
+      return engageArmed(
+        profile,
+        view,
+        seed,
+        { ...memory, peekAnchorTick: -1, reloadAnchorTick: -1 },
+        los,
+      );
     case "LOW":
-      return engageLowAmmo(profile, tactical, view, seed, memory, los);
+      return engageLowAmmo(
+        profile,
+        tactical,
+        view,
+        seed,
+        { ...memory, reloadAnchorTick: -1 },
+        los,
+      );
     case "EMPTY":
-      return engageEmpty(profile, tactical, view, seed, memory);
+      return engageEmpty(
+        profile,
+        tactical,
+        view,
+        seed,
+        { ...memory, peekAnchorTick: -1 },
+      );
   }
 }
 
@@ -639,11 +663,31 @@ function engageLowAmmo(
 }
 
 /**
- * EMPTY: never fire (there is nothing to fire), never stand exposed doing nothing.
- * Dodge an imminent ball if one is coming, otherwise retreat to a reachable,
- * line-of-sight-blocking imported-cover point and crouch behind it. Relocate — once,
- * deterministically — only when the point stops occluding or the player closes
- * inside `pressDistanceM`; if no other cover exists, take a single bounded dodge.
+ * EMPTY: break cover and reload where the player can answer.
+ *
+ * It never fires — there is nothing to fire, and no reload here produces a ball
+ * either: a round's magazine is earned by that round's question and nothing else
+ * grants one (see `openNextRoundOrResolve`). So this state is not about getting the
+ * boss shooting again. It is about what an out-of-powder officer is doing while he
+ * waits, and the answer is now the one the duel's own deleted card asserted: he
+ * comes out from behind the crate and works the ramrod in the open.
+ *
+ * Two beats, cycling, both of them exposed:
+ *
+ *   RELOAD  once a ball could reach it, plant, stand, face the player and work the
+ *           reload for `reloadExposureTicks`. COMMITTED: no crouch, no dodge. That
+ *           commitment is the opportunity, and it is the whole point of the state.
+ *   PRESS   otherwise — screened, or between beats — come out and close, along a
+ *           heading that keeps the shot open (`pressOpponent`). Dodging is allowed
+ *           here: crossing open ground is not the reload, and the armed boss dodges
+ *           there too.
+ *
+ * WHY THE GATE IS `isExposedToShot` AND NOT LINE OF SIGHT. Every piece of cover in
+ * the shipped yard is 1.30 m or taller and an aimed ball flies at a standing chest,
+ * 1.12 m. So standing up behind a crate is not leaving cover: the boss's eyes clear
+ * the top — the eye line reports an open shot — while every ball still lands in the
+ * timber. Gating on sight would have produced a boss that stood up, looked hittable,
+ * and was not.
  */
 function engageEmpty(
   profile: BossProfile,
@@ -652,125 +696,105 @@ function engageEmpty(
   seed: number,
   memoryIn: BossAiMemory,
 ): { intent: CombatIntent; memory: BossAiMemory } {
-  const dodged = tacticalDodge(profile, view, seed, memoryIn, SALT_DODGE_EMPTY);
-  if (dodged) return dodged;
-
   const aim = aimAtOpponent(view);
+  // Can the PLAYER hit the boss, on the lane a ball actually flies.
+  const exposed = isExposedToShot(view.world, view.opponent, view.self);
 
-  // Bounded reaction to being flanked. If the boss is already tucked behind a
-  // committed cover point and the player rounds it — the point stops occluding — the
-  // boss does NOT scramble on that exact tick. It holds its crouch for
-  // `reactionDelayTicks` first, which is both the fair "does not react instantly"
-  // rule and the window a flanking player uses to land shots on it. Only after that
-  // grace, or if pressed, does it fall through to reselect cover.
-  const current = memoryIn.committedCover;
-  let memory = memoryIn;
-  const pressedNow = view.distance < tactical.pressDistanceM;
-  if (current) {
-    const stillHidden = coverStillValid(view.world, current, view);
-    if (stillHidden) {
-      memory = { ...memory, coverExposedSinceTick: -1 };
-    } else {
-      const since =
-        memory.coverExposedSinceTick < 0 ? view.tick : memory.coverExposedSinceTick;
-      memory = { ...memory, coverExposedSinceTick: since };
-      const atCurrent =
-        Math.hypot(current.x - view.self.motion.pos.x, current.z - view.self.motion.pos.z) <=
-        COVER_ARRIVE_RADIUS_M * 1.5;
-      if (!pressedNow && atCurrent && view.tick - since < tactical.reactionDelayTicks) {
-        // Caught out, but not yet reacting: hold the crouch a beat and take the hits.
-        return {
-          intent: coverApproachIntent(view, current),
-          memory: resetAnchor(memory, view.self.motion.pos, view.tick),
-        };
-      }
-    }
-  }
-
-  memory = commitCover(view, memory);
-  let target = memory.committedCover;
-
-  if (!target) {
-    // The arena offers no valid cover at all: back away from the player rather than
-    // freeze, and let the machine's bounded break window terminate the round.
-    const away = { x: -aim.x, z: -aim.z };
-    const steered = steer(view, away.x, away.z, seed, memory, true);
-    return {
-      intent: intent({
-        moveX: steered.moveX,
-        moveZ: steered.moveZ,
-        sprint: true,
-        aimX: aim.x,
-        aimZ: aim.z,
-      }),
-      memory: steered.memory,
-    };
-  }
-
-  const atCover =
-    Math.hypot(target.x - view.self.motion.pos.x, target.z - view.self.motion.pos.z) <=
-    COVER_ARRIVE_RADIUS_M * 1.5;
-  if (atCover && pressedNow && view.tick >= memory.relocateGuardUntilTick) {
-    const alternate = alternateCover(view, target.coverId);
-    if (alternate) {
-      // Deterministically move to a different valid cover, guarded so a player who
-      // keeps closing gets one relocation, not a jitter between two points.
-      memory = {
-        ...memory,
-        committedCover: alternate,
-        relocateGuardUntilTick: view.tick + tactical.relocateGuardTicks,
+  if (exposed) {
+    // Anchor the cycle on the tick the lane opened, so the beats are a deterministic
+    // function of the tick exactly as the low-ammo peek's are.
+    const memory =
+      memoryIn.reloadAnchorTick < 0
+        ? { ...memoryIn, reloadAnchorTick: view.tick }
+        : memoryIn;
+    const period = Math.max(
+      1,
+      tactical.reloadExposureTicks + tactical.reloadPressTicks,
+    );
+    const cyclePos = (view.tick - memory.reloadAnchorTick) % period;
+    if (cyclePos < tactical.reloadExposureTicks) {
+      return {
+        intent: intent({ crouch: false, aimX: aim.x, aimZ: aim.z }),
+        memory: resetAnchor(memory, view.self.motion.pos, view.tick),
       };
-      target = alternate;
-    } else {
-      // Nowhere else to hide: one bounded evasive dodge away from the player. The
-      // dodge cooldown is what keeps this from repeating into a jitter.
-      const canDodge =
-        view.tick >= view.self.dodge.readyAtTick && !isDodging(view.self);
-      if (canDodge) {
-        return {
-          intent: intent({ moveX: -aim.x, moveZ: -aim.z, dodge: true, aimX: aim.x, aimZ: aim.z }),
-          memory: resetAnchor(
-            { ...memory, relocateGuardUntilTick: view.tick + tactical.relocateGuardTicks },
-            view.self.motion.pos,
-            view.tick,
-          ),
-        };
-      }
     }
+    return pressOpponent(profile, tactical, view, seed, memory, aim);
   }
 
-  const approach = coverApproachIntent(view, target);
-  if (Math.hypot(approach.moveX, approach.moveZ) < 1e-6) {
-    // Arrived: crouch-and-hold behind cover. `coverApproachIntent` already returns
-    // the crouch stance facing the player, with no fire.
-    return {
-      intent: approach,
-      memory: resetAnchor(memory, view.self.motion.pos, view.tick),
-    };
-  }
-  const steered = steer(view, approach.moveX, approach.moveZ, seed, memory, true);
-  return {
-    intent: { ...approach, moveX: steered.moveX, moveZ: steered.moveZ },
-    memory: steered.memory,
-  };
+  // Screened by something, so no beat is running: clear the anchor and come out.
+  return pressOpponent(
+    profile,
+    tactical,
+    view,
+    seed,
+    { ...memoryIn, reloadAnchorTick: -1 },
+    aim,
+  );
 }
 
-/** The nearest valid cover point that is NOT the one the boss is already using. */
-function alternateCover(view: CombatView, excludeCoverId: string): CoverPoint | null {
-  const boss = view.self.motion.pos;
-  const player = view.opponent.motion.pos;
-  const points = bossCoverPoints(
-    view.world,
-    boss,
-    player,
-    view.opponent.motion.capsuleHeight,
-    {
-      reachableFrom: boss,
-      capsuleHeight: view.self.motion.capsuleHeight,
-      blocked: [{ x: player.x, z: player.z, radius: CAPSULE_RADIUS }],
-    },
-  );
-  return points.find((point) => point.coverId !== excludeCoverId) ?? null;
+/**
+ * Come out, stay out, and close — one movement policy for both halves of the empty
+ * state, because they turned out to want the same thing. Never crouches and never
+ * fires: an empty boss on the move is still an empty boss in the open.
+ *
+ * IT CLOSES ALONG A HEADING THAT KEEPS THE SHOT OPEN rather than straight at the
+ * player, and that is not a refinement — it is a defect fix. Walking directly at the
+ * player from beside a crate walks the boss straight back behind it, so the first
+ * version of this oscillated in and out of the screen it had just left instead of
+ * pressing, and never came far enough out to be worth shooting at.
+ * `directionToOpenLane` picks the probed heading that faces the player most directly
+ * among those that leave the ball's lane clear, so breaking cover and closing are the
+ * same move. When nothing probed clears the lane — screened behind cover wider than
+ * the probe, which is where a straight approach grinds into the wall for half the
+ * empty window — `directionToBreakCover` heads laterally out of that cover's shadow
+ * instead; only with no flank to either side does the boss fall through to closing.
+ *
+ * IT CIRCLES RATHER THAN HOLDING ONCE INSIDE `pressDistanceM`, and the difference is
+ * not cosmetic either. Holding there was the first shape of this and it froze the boss
+ * outright: a player who charges keeps the distance under the threshold permanently,
+ * so "do not advance further" became "stand still for the rest of the round" —
+ * measured at 1044 consecutive ticks against an aggressive player, which is the
+ * infinite-idle failure this state was rebuilt to remove rather than to relocate.
+ */
+function pressOpponent(
+  profile: BossProfile,
+  tactical: BossTacticalProfile,
+  view: CombatView,
+  seed: number,
+  memory: BossAiMemory,
+  aim: { x: number; z: number },
+): { intent: CombatIntent; memory: BossAiMemory } {
+  const dodged = tacticalDodge(profile, view, seed, memory, SALT_DODGE_EMPTY);
+  if (dodged) return dodged;
+
+  let desired: { x: number; z: number };
+  if (view.distance <= tactical.pressDistanceM) {
+    // Already at striking distance: circle instead of walking through them. Seeded
+    // off the strafe period exactly as the armed boss's strafe is, so the direction
+    // is a deterministic function of the tick rather than a live coin flip.
+    const phase = Math.floor(view.tick / profile.strafePeriodTicks);
+    const flip = fieldRandom(seed, phase, SALT_PRESS_STRAFE) < 0.5 ? 1 : -1;
+    desired = { x: -aim.z * flip, z: aim.x * flip };
+  } else {
+    // A near step that already clears the lane if one exists; else break laterally
+    // out of the screening cover's shadow (the far-approach case a 2.2 m probe
+    // cannot see); else, with nothing to flank around, close straight in.
+    desired =
+      directionToOpenLane(view) ?? directionToBreakCover(view, seed) ?? aim;
+  }
+
+  const steered = steer(view, desired.x, desired.z, seed, memory, true);
+  return {
+    intent: intent({
+      moveX: steered.moveX,
+      moveZ: steered.moveZ,
+      sprint: true,
+      crouch: false,
+      aimX: aim.x,
+      aimZ: aim.z,
+    }),
+    memory: steered.memory,
+  };
 }
 
 // ---- the cover-approach driver ---------------------------------------------
