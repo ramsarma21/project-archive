@@ -974,10 +974,27 @@ notice, because a gate that cannot fail is not evidence.
   roofs its western 0.7 m; the north ledge below ENDS at x 83.0, so every trajectory crosses the
   overhang while rising and the head is 0.17-0.26 m through the soffit however the nodes are
   placed. Standing east of 83.7 is fine — that is the 1.0 m of open sky the regen aimed at — so
-  the deck is authored and simply carries no node. **Routed to the asset lane: start the 14.7 slab
-  at x 83.7, or stop the gallery short of it.** Until then the belfry is ridge -> 13.0 -> 15.8 at
-  1.8 and 2.8, one dead-zone step where one stood before, but landing on drawn stone instead of a
-  ring the mesh never drew.
+  the deck is authored and simply carries no node. Routed to the asset lane, which pulled the
+  gallery's east oversail back to the shaft face. **STILL NOT AUTHORABLE — see the next section.**
+- **The belfry's 14.7 set-off is on its THIRD failed attempt, and a green ascent run is what
+  nearly shipped it** (1 Aug). The regen removed the soffit that refused the rising arc, so the
+  departure now only needs to stand at x >= 83.35 for its west shoulder to clear the trimmed
+  gallery edge at 83.0, and the mesh duly draws the 13.0 ledge out to x 84.0. **Nothing can stand
+  out there.** Clearance above the 13.00 plane, sampled off the delivered GLB across the ledge's
+  whole z 7.9-9.6 depth: open sky to x 83.1, then a flat **1.00 m** from x 83.2 east — the
+  photoreal corner urn's base at 14.00, spanning the entire extension. That is the same urn the
+  asset lane's own note used to rule OUT extending this ledge; it applies just as much to the pair
+  it shipped, and the note did not carry it forward.
+
+  **What makes this worth reading twice: every instrument in the lane said yes.** `routeAscent`
+  drove the full four-hold chain (1.8 / 1.7 / 1.1) green, `traversability` passed each new node's
+  standable check with a node out at x 83.5, and the 246-test suite was clean. The urn is drawn and
+  carries no collision, so none of them can see it — only `verify_m1_steeple`'s mesh-reading
+  headroom pass, which called 16.4% of the extended ledge crouch-only with a lowest ceiling of
+  0.58 m. **A four-hold belfry chain reported green by the ascent driver is not evidence; only the
+  mesh verifier is admissible here.** Wiring reverted, mesh and the deck trim it requires shipped.
+  Needs the urn moved or shortened, not the route re-authored. Belfry stays ridge -> 13.0 -> 15.8
+  at 1.8 and 2.8, one dead-zone entry, on drawn stone.
 - **`O2_BARRICADE_WALL` stopped 0.6 m short of the merchant's south wall**, and 0.6 m is narrower
   than the 0.70 m capsule: a body in that slot was inside a solid whichever way it faced, 44
   consecutive ticks. As old as the barricade — the penetration fuzzer only reaches it when the
@@ -1034,6 +1051,38 @@ chain resets. There is no health, death or mission-fail on landing anywhere in t
 recoverable — but `fatalTraversal.test.ts` asserts it unconditionally and its only "accounted for"
 category is *unreachable*, so there is no way to record one as accepted debt without weakening the
 gate. Owner's ruling 31 Jul: do not add an allow-list.
+
+### Adding collision behind a roof lip can be FATAL, and the run-up is the whole variable (1 Aug)
+
+Found while making the meeting-house monitor's louvred housing solid (`d16406e`). The housing is
+drawn on the lead flat 1.30 m from `HOLLIS_MEETING__ROOF`'s jettied south lip, with an 8.20 m drop
+over that lip. `fatalTraversal` searches DOWN from a 2.40 m run-up for the longest one that stays
+on the deck, so a solid there caps every station behind that lip at **0.90 m** — and survival off
+this lip is decided almost entirely by run-up length. Swept station by station with the gate's own
+driver:
+
+- **≥ 2.10 m** — the edge brake arms in time, the body never leaves: fall **0.00 m**.
+- **1.20–2.00 m** — the body leaves and `TREE_AWNING` (3.20) catches it: **5.00 m**, under the 5.5 ceiling.
+- **≤ 1.10 m with a late dash** — `dash-end` fires at 0.15 × run-up, 0.135 m from the lip, and the
+  burst is still fully live as the body leaves. It **overshoots the awning** and hits the ground:
+  **8.20 m**. The only fatal station in 5485 driven trajectories.
+
+**Two fixes that look right and are both wrong.** Trimming the deck's south jetty to close the slot
+makes it *worse*, because shorter run-ups are more lethal, not less — and a flush lip fails
+`every roof deck oversails the mass beneath it` at 0.00 m of a required 0.35 m. Pulling the mass's
+south face north to buy run-up leaves the capsule standing 0.25–0.35 m inside drawn louvre.
+
+**Still open, and it is a placement decision.** The pass-through is real and load-bearing: today
+`D_MEETING_ROOF` stood *inside* the drawn housing and the run in from the west crossed it (both
+moved north in `d16406e` for the overhead rule anyway). The honest fix is to move the whole monitor
+**~1.15 m north** — south face to z 8.75, restoring a 2.40 m run-up, and nearer the roof's centre
+(drawn roof z 7.00–15.60) than z 7.60 is. That moves both deck rects, `E_RIDGE`, `E_RIDGE_W`,
+`E_MEETING_STEP`, `D_MEETING_ROOF`, `E_GAMBREL_S` and `S7_HOLLIS_NICHE`, and re-opens the steeple
+relationship (`E_RIDGE` would leave `STEEPLE_LEDGE_N`'s rect), so it needs its own re-mass and its
+own run of the 145 s gate. The footing that makes the monitor draw ONCE is separable and shipped.
+
+Generalises: **any new solid within ~2.4 m of a >5.5 m lip is a candidate fatal station**, and no
+gate warns before the fact. `fatalTraversal` catches it, at 145 s a run.
 
 ### ROUTE wedged at x≈45.6 — FIXED (`77af03f`): a 0.2 m hole in the scaffold, not the wayfinder
 

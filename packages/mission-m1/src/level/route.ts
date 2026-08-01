@@ -265,7 +265,7 @@ export const NODES: RouteNode[] = [
   node("E_RIDGE", "E_LEAP", [78.5, BAND.MEETING_RIDGE, 8.6], "MEETING_RIDGE", [],
     "The ridge foot of the steeple climb, pulled west off [79.5] so the reach up to the louvre sill threads clear of the elm's northern canopy sprawl (which reaches z8.8 over the belfry) rather than driving the body 0.46m into it. The ridge monitor runs the width of the roof, so the hold moves without leaving it."),
   node("E_LEDGE_N", "E_LEAP", [80.5, BAND.STEEPLE_LEDGE_N, 8.5], "STEEPLE_LEDGE_N", [],
-    "The belfry's north set-off, 1.8 m off the meeting-house ridge. Replaces E_LOUVRE, which stood on a 7.4 x 7.4 m ring at 14.0 the steeple mesh never drew — and which, spanning the whole shaft, was overhead from every point on the ridge below it. The 14.7 east set-off IS drawn and IS authored (STEEPLE_LEDGE_E) but carries no node: see the link note below for why the corner cannot be climbed."),
+    "The belfry's north set-off, 1.8 m off the meeting-house ridge. Replaces E_LOUVRE, which stood on a 7.4 x 7.4 m ring at 14.0 the steeple mesh never drew — and which, spanning the whole shaft, was overhead from every point on the ridge below it."),
   node("E_GALLERY", "E_LEAP", [80.0, BAND.STEEPLE_GALLERY, 9.6], "STEEPLE_GALLERY", ["leap-point"]),
   // The south-west corner of the lantern cornice. The ring is 0.8m of walkway now
   // rather than a 5.4m platform, so the position is the corner pad and not a
@@ -542,7 +542,7 @@ export const LINKS: RouteLink[] = [
   // continues straight onto it in one controlled drop over a ~1.6m lip-to-lip
   // gap, rather than dropping SOUTH into the ropewalk shed and climbing the
   // meeting house's far face back up. From the meeting roof the CLIMB chain
-  // (D_MEETING_ROOF -> E_MEETING_STEP -> E_RIDGE -> E_LEDGE_N -> E_LEDGE_E -> E_GALLERY) tops out
+  // (D_MEETING_ROOF -> E_MEETING_STEP -> E_RIDGE -> E_LEDGE_N -> E_GALLERY) tops out
   // at the gallery the leap of faith launches from. The ropewalk drop below
   // (D_SROOF_E -> D2_ROOF_W) stays authored, so the shed survives as an optional
   // dark-interior space; the guided line just no longer detours through it.
@@ -565,25 +565,36 @@ export const LINKS: RouteLink[] = [
   // belfry's set-offs are now staggered onto two different faces, so neither one
   // spans the shaft and neither is a ceiling over the other.
   //
-  // THE INTENDED CHAIN WAS ridge 11.2 -> north 13.0 -> east 14.7 -> gallery 15.8
-  // AT 1.8 / 1.7 / 1.1, AND THE MIDDLE STEP CANNOT BE FLOWN. Measured, not
-  // assumed: the 15.8 gallery oversails to x 83.7 and the 14.7 east set-off runs
-  // x 83.0..84.7, so the gallery roofs the ledge's western 0.7 m. Standing east of
-  // 83.7 is fine — that is the 1.0 m of open sky the regen was aimed at — but the
-  // north ledge ENDS at x 83.0, so every trajectory from it to the east ledge
-  // crosses the overhang while rising, and the head is 0.17-0.26 m through the
-  // gallery soffit at the crossing however the two nodes are placed. `beginAuthored`
-  // refuses it, correctly. Clearing it needs the drawn 14.7 slab to start at x 83.7
-  // rather than 83.0, or the gallery to stop short of it: an ASSET change, reported
-  // rather than authored around, because the alternative is a route that climbs
-  // through a church for the second time this week.
+  // THE CHAIN IS STILL ridge 11.2 -> north 13.0 -> gallery 15.8 AT 1.8 AND 2.8,
+  // and the 2.8 is still in the dead zone. The 1.8 / 1.7 / 1.1 spiral through the
+  // 14.7 east set-off remains UNAUTHORABLE, for a reason that survived the asset
+  // regen. See the pinnacle note on STEEPLE_LEDGE_N in geometry.ts: measured off
+  // the delivered mesh, everything east of x 83.1 on the 13.0 ledge has exactly
+  // 1.00 m of clearance above it, because the photoreal corner urn's base sits at
+  // 14.00 over the whole extension. The departure has to be at x >= 83.35 for the
+  // body's west shoulder to clear the trimmed gallery edge at 83.0, and there is
+  // nowhere in that range a 1.55 m body can stand.
   //
-  // So the shipped chain is ridge -> north 13.0 -> gallery 15.8 at 1.8 and 2.8. The
-  // 2.8 m step is in the dead zone and is listed as such in eastCovert.ts, which is
-  // still strictly better than what it replaces: the same 2.8 m used to land on a
-  // full-shaft ring at 14.0 that the mesh did not draw at all. STEEPLE_LEDGE_E stays
-  // authored because it IS drawn and a body can stand on it; it simply carries no
-  // node until the asset moves.
+  // The middle step was refused for a day, and the reason is worth keeping because
+  // it is a THIRD distinct way to author a climb that looks correct in every rect
+  // and never offers itself. Not the overhead skip, and not the verb-ranking gap
+  // that produced the scaffold hole: `authoredTrajectoryClear` refuses on the
+  // RISING ARC. It flies a two-anchor eased-linear diagonal and samples it for
+  // 1.50 m of head clearance (STAND_HEIGHT - 0.05), so the quantity that refuses
+  // is trajectory head clearance, NOT standing headroom — a body can stand at both
+  // ends of a climb with metres of sky above it and still be refused for what the
+  // diagonal between them passes under.
+  //
+  // Here the 15.8 gallery oversailed to x 83.7 over a 14.7 ledge running
+  // x 83.0..84.7, and the north ledge ended at 83.0, so every diagonal from it
+  // dragged the body's WEST SHOULDER (centre - 0.35) 0.44-0.65 m through the drawn
+  // soffit. Two single fixes were measured and both failed: starting the 14.7 slab
+  // at 83.7 moves neither the soffit nor the departure, and trimming the gallery
+  // alone strands the stance ~3.9 m from the leap node. It took the PAIR — the
+  // gallery's east oversail pulled back to the shaft face (N/S/W keep the ±2.7
+  // cantilever, so the dive off the north edge is untouched) and the 13.0 ledge
+  // extended east to x 84.0 so the body departs below a CENTRAL stance and rises
+  // near-vertically. Same node pair: 0.650 m of head through stone, to clear.
   // Two mantles where a 3.0m ladder climb used to be. 1.80 is inside
   // `mantleMaxHeightM` (1.90) with 0.10 to spare, and 1.20 is comfortable.
   //

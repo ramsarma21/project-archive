@@ -323,13 +323,9 @@ export const EAST_COVERT_CLIMBS = climbs;
 // the guidance/HUD lead it and covertLine.test.ts can verify its properties.
 //
 // Every CLIMB on it is a ≤1.9 m mantle EXCEPT one flagged dead-zone climb
-// (E_LEDGE_N->E_GALLERY 2.8 m), which waits on an ASSET measurement rather than
-// on level authoring. See the HOLLIS STEEPLE note above and the STEEPLE ASCENT
-// note in route.ts.
-//
-// The meeting-house ridge was the other one, and it is gone: the rebuilt monitor
-// splits 8.20 -> 11.20 into 1.80 + 1.20 across two staggered footprints, so the
-// last ladder on this line went with it.
+// (E_LEDGE_N->E_GALLERY 2.8 m). The meeting-house ridge was the other and is gone:
+// the rebuilt monitor splits 8.20 -> 11.20 into 1.80 + 1.20 across two staggered
+// footprints, and the last ladder on this line went with it.
 export const GOLDEN_LINE: readonly string[] = [
   // West end — the printshop leads and the dead-wharf crossing (the ground beat).
   "A_START",
@@ -401,10 +397,17 @@ export const GOLDEN_LINE: readonly string[] = [
 // ends before the clear part starts, so the climb crosses the soffit. See the
 // STEEPLE ASCENT note in route.ts; it needs the asset moved, not the route.
 //
-// The meeting-house ridge WAS the other entry and is now resolved rather than
-// exempted: the rebuilt `roof-ridge-monitor` draws a leaded step at 10.00 on a
-// footprint disjoint from the 11.20 walk, so the one 3.0 m rise is two mantles
-// and both ladders serving it are retired.
+// ONE ENTRY LEFT, the belfry's 2.8 m. The meeting-house ridge is resolved rather
+// than excused — the rebuilt `roof-ridge-monitor` draws a leaded step at 10.00 on a
+// footprint disjoint from the 11.20 walk, so its 3.0 m rise is two mantles and both
+// ladders serving it are retired.
+//
+// The belfry survived its own asset regen. The 15.8 gallery's east oversail is now
+// pulled back to the shaft face, which was supposed to open the 1.8 / 1.7 / 1.1
+// spiral through the 14.7 east set-off — but the photoreal corner urn's base at
+// 14.00 roofs the whole eastern extension of the 13.0 ledge with 1.00 m of
+// clearance, and the departure has to stand out there. Measured off the delivered
+// mesh; see the pinnacle note in geometry.ts. It needs the urn moved, not the route.
 export const STEEPLE_DEADZONE_CLIMBS: readonly string[] = [
   "E_LEDGE_N->E_GALLERY",
 ];

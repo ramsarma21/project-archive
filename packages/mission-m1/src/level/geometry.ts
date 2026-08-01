@@ -1444,6 +1444,33 @@ decks.push(
     id: "STEEPLE_LEDGE_N",
     section: "E_LEAP",
     asset: "steeple-meetinghouse-climbable",
+    // STOPS AT 83.0 THOUGH THE MESH NOW DRAWS TO 84.0, and the reason is the
+    // corner urn. This is the third attempt at the 1.8 / 1.7 / 1.1 spiral through
+    // the 14.7 east set-off and it is still not authorable.
+    //
+    // What the rise is actually refused by is the RISING ARC, not standing
+    // headroom: `authoredTrajectoryClear` samples a two-anchor eased-linear
+    // diagonal for 1.50 m of head clearance, and off a ledge ending at 83.0 the
+    // body's west shoulder (centre - 0.35) dragged 0.44-0.65 m through the
+    // gallery's drawn soffit. The regen pulls the gallery's east oversail back to
+    // the shaft face, which removes that soffit — so the departure now only needs
+    // to stand at x >= 83.35 for its west shoulder to clear x 83.0.
+    //
+    // Nothing can stand there. Measured off the delivered GLB, clearance above
+    // this 13.00 plane across the whole z 7.9-9.6 depth: "-" (open sky) out to
+    // x 83.1, then a flat 1.00 m from x 83.2 all the way east — the photoreal
+    // corner urn's base at 14.00, which the asset lane's own note used to rule OUT
+    // extending this ledge, and which applies just as much to the pair it shipped.
+    // A 1.55 m body is crouch-only out there; `verify_m1_steeple` puts the lowest
+    // ceiling at 0.58 m and calls 16.4% of the extended ledge crouch-only.
+    //
+    // AUTHORED-HULL GATES CANNOT SEE THIS. The urn is drawn and carries no
+    // collision, so `routeAscent` drove the full four-hold chain green and every
+    // node passed its standable check with a node out at x 83.5. Only the
+    // mesh-reading verifier caught it. Do not re-wire this from a green ascent run.
+    //
+    // Collision inside the drawn surface is the safe direction, so the deck simply
+    // stops where a body can stand. It needs the urn moved or shortened; reported.
     rect: rect(79.0, 83.0, 7.9, 9.6),
     y: BAND.STEEPLE_LEDGE_N,
     carriedBy: ["STEEPLE"],
@@ -1464,11 +1491,16 @@ decks.push(
     id: "STEEPLE_GALLERY",
     section: "E_LEAP",
     asset: "steeple-meetinghouse-climbable",
-    rect: rect(78.3, 83.7, 8.9, 14.3),
+    // EAST EDGE TRIMMED 83.7 -> 83.0, to the shaft face. This is the half of the
+    // belfry fix that removes the soffit rather than dodging it; the mesh's
+    // `ring_deck` outer oversail was pulled back on the east only, so N/S/W keep
+    // the ±2.7 cantilever and the leap take-off on the gallery's NORTH edge is
+    // untouched — the dive launches north into the elm, not east.
+    rect: rect(78.3, 83.0, 8.9, 14.3),
     y: BAND.STEEPLE_GALLERY,
     carriedBy: ["STEEPLE"],
     tags: ["leap-point"],
-    note: "The leap of faith: 5.7m of gap and 7.5m of fall into the crown of the elm.",
+    note: "The leap of faith: 5.7m of gap and 7.5m of fall into the crown of the elm. East oversail trimmed to the shaft face so the climb up the east flank is not under it.",
   }),
   // 2.8m, not 5.4m: a cornice round the lantern rather than a third gallery.
   //
