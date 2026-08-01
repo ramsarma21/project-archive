@@ -1464,12 +1464,32 @@ def build_ropewalk_shell():
 # an 8.6m building reads as a monitor rather than as a full gambrel, which is the
 # trade the owner took.
 #
-# The whole vertical budget is spent DOWNWARD from the plane, the same discipline
-# the plank and the fire board follow and for the same reason: `drawBox` hangs a
-# lone deck's dressing by its declared `standableAt`, so the mesh's top face is
-# the plane and everything else is under the boot. Nothing may stand above it —
-# no parapet, no ridge cresting, no finial — because the box top IS 11.20m and
-# anything over it is a metre of monitor drawn below where the player walks.
+# WHY IT IS NOW STEPPED — two roofs, not one. D_MEETING_ROOF (8.20) -> E_RIDGE
+# (11.20) was ONE 3.0m climb: too tall to mantle in a single move (the 1.9-3.1m
+# dead zone, so it needed a ladder) AND the climbing body's HEAD rose up THROUGH
+# the full-depth cornice/leadwork this monitor used to draw over the whole plan —
+# the 0.326m "climbing through a church", measured off the triangles by
+# check-drawn-penetration at world [75.72, 10.84, 9.16], squarely inside the old
+# cornice band (10.48-10.90). Both defects are the SAME geometry: a solid crown
+# drawn over the open air the climb rises through.
+#
+# The fix is a stepped monitor. The ridge WALK (11.20, the last surface before
+# the steeple) keeps the SOUTH half of the depth, over the louvred vent housing
+# that has something under it to carry it. The NORTH half drops to a lower leaded
+# ROOF standable at 10.00 — the intermediate the mantle chain needs — carried on
+# open posts so a body beneath it keeps ~1.7m of head. The two standable surfaces
+# sit on DISJOINT footprints (north step vs south walk), which is the stagger the
+# mantle rule requires: a ledge tucked directly under the ridge is refused as
+# "overhead" however right its height is. NOTHING is drawn over the north half
+# between 10.00 and the sky, and NOTHING over the south walk above 11.20, so the
+# climb onto the step and the mantle from it up onto the walk both rise through
+# open air. The level authors two decks to 10.00 and 11.20 on the two footprints;
+# see the integration note handed with the GLB.
+#
+# The heights are load-bearing arithmetic, not taste: `drawBox` hangs the mesh by
+# its declared `standableAt`, so the walk boards MUST top at height (11.20) and
+# the step boards at STEP_Z (10.00 = base 8.20 + 1.80). Both are AT their plane
+# or below it, never over.
 
 
 def build_ridge_monitor():
@@ -1496,42 +1516,41 @@ def build_ridge_monitor():
     EAVES_Z = height - 0.62
     CORNICE_Z = height - 0.30
     LEAD_Z = height - 0.03
+    # The intermediate: the north half's leaded roof is standable at 10.00, which
+    # is base 8.20 + 1.80. The mesh is built to a true height of 3.00 (walk boards
+    # top at `height`), so `finish` trues z by 1.0 and STEP_Z lands exactly there.
+    STEP_Z = 1.80
     # How far the louvred housing is set back from the plan on x. The cornice is
     # full width, so this is the shadow line that makes the monitor a built thing
     # rather than an extruded rectangle.
     BODY_IN = 0.17
 
-    # WHY THE HOUSING IS ONLY THE SOUTHERN HALF OF THE DEPTH
-    # -----------------------------------------------------
-    # The deck this dresses is 2.8m deep and its plane is at 11.20m, but the roof
-    # UNDER it at 8.20m is walked: `D_MEETING_ROOF` stands at world z 9.00 and
-    # `E_GAMBREL_S` at 10.20, both inside this footprint, and both are the foot of
-    # a climb up onto the walk. The first build filled all 2.8m solid, and the
-    # frame from E_GAMBREL_S — the owner's own named vantage — came back with the
-    # player standing INSIDE the louvres.
+    # THE DEPTH SPLIT, AND WHICH SIDE IS NORTH
+    # ----------------------------------------
+    # The exporter maps Blender +Y to game -Z, so game NORTH is Blender -Y and
+    # game SOUTH is Blender +Y; the split between the two roofs is Blender y=0,
+    # which is game z 9.00, the centre of this 2.8m-deep footprint. Every edge
+    # below is named for the game direction, never for the Blender sign — the
+    # first monitor put its housing on the wrong sign and drew it on the wrong
+    # side of the walk, caught only because the frame came back identical.
     #
-    # No solid form based at 8.20 and full-depth at 11.20 can leave headroom over
-    # z=9.00: a body standing there needs 1.9m of it 1.4m in from the north edge,
-    # and even a vertical face set back that far is a cantilever wider than what
-    # is left holding it up. So the monitor is what it would really have been on a
-    # roof with a walk on it — a louvred vent housing along the SOUTH side, and
-    # the rest of the walk carried on posts and joists over open air. The player
-    # arrives beside a post at the head of the climb instead of inside a wall.
+    #   SOUTH half (Blender y in [0, hy], game z 7.60..9.00): the louvred vent
+    #   housing, capped by the 11.20 ridge WALK — the last surface before the
+    #   steeple, and where E_RIDGE (game z 8.60) stands.
+    #   NORTH half (Blender y in [-hy, 0], game z 9.00..10.40): a lower leaded
+    #   ROOF standable at 10.00 on OPEN posts — the intermediate mantle ledge.
     #
-    # The leadwork above stays full-depth, and that half is not negotiable: the
-    # probe rays a 21 x 21 grid over the whole 9.4 x 2.8 rect at 11.20m.
-    #
-    # WHICH SIDE IS NORTH. The exporter maps Blender +Y to game -Z, so the game's
-    # NORTH — the side both route nodes stand on — is Blender -Y. The first
-    # attempt at this put the housing on -Y by name and built it on the wrong
-    # side of the walk; the frame from E_GAMBREL_S came back identical to the
-    # solid version, which is the only reason it was caught. Every edge below is
-    # therefore named for the game direction, never for the Blender sign.
+    # The walk is no longer full-depth. It was, and its full-depth cornice was the
+    # 0.326m clip; carrying it over the north half is exactly what put a solid
+    # crown over the air the climb rises through. Now the north half's only drawn
+    # thing above the roof it stands on is the 10.00 leadwork itself.
+    SPLIT_Y = 0.0              # game z 9.00, the seam between step (north) and walk (south)
     HOUSING_D = 1.30
     SOUTH_Y = hy               # game z 7.60, the far side from the route
     HOUSE_Y = hy - HOUSING_D   # game z 8.90, the housing's north face
-    NORTH_Y = -hy              # game z 10.40, the walk's outer edge
+    NORTH_Y = -hy              # game z 10.40, the step's outer edge
     POST = 0.075
+    RISER_D = 0.13             # the vent face between the step (10.00) and the walk (11.20)
 
     # The flashed apron where the housing meets the meeting house's lead flat at
     # 8.20m. Under the housing only: full depth here would be a 160mm lead kerb
@@ -1585,54 +1604,111 @@ def build_ridge_monitor():
         add_slat(mesh, uv_layer, (-frame_x - PROJ, -frame_x), y, z - DROP, z, THICK,
                  0, PLANK, TILE_M["plank"])
 
-    # The open half: posts on the walk's north edge carrying it, with a joist
-    # back to the housing over each one. Everything else here lives in the top
-    # 0.6m so a standing body passes under it, which is the whole reason this
-    # half is open at all.
-    for x in stiles_x:
-        add_box(mesh, uv_layer, (x - POST, NORTH_Y, 0.0), (x + POST, NORTH_Y + 2.0 * POST, EAVES_Z),
-                BOARD, TILE_M["board-ropewalk"], skip=("+z",),
-                tile_v=EAVES_Z)
-        add_box(mesh, uv_layer, (x - 0.055, NORTH_Y, EAVES_Z - 0.19),
-                (x + 0.055, HOUSE_Y, EAVES_Z), BOARD, TILE_M["board-ropewalk"],
-                skip=("+z",))
+    GUTTER = 0.24
 
-    # The cornice, full plan and full depth, on a bed mould stepped back to the
-    # frame. It oversails by BODY_IN, which throws the whole side into shadow
-    # from below — the one elevation of this object anybody looks at from the
-    # street is the underside of this.
-    add_box(mesh, uv_layer, (-hx + 0.09, -hy + 0.09, EAVES_Z - 0.10),
+    # ---- NORTH: the lower leaded roof, standable at 10.00, on open posts -------
+    # Posts on the north edge carry the step to STEP_Z and STOP there; the space
+    # below is left open, so a body under the step keeps ~1.7m of head and the
+    # mantle onto the step rises through air, not through a wall. NOTHING on this
+    # half is drawn above STEP_Z — that clear band is what the old full-depth
+    # cornice used to fill, and what the head climbing to the walk used to hit.
+    for x in stiles_x:
+        add_box(mesh, uv_layer, (x - POST, NORTH_Y, 0.0), (x + POST, NORTH_Y + 2.0 * POST, STEP_Z),
+                BOARD, TILE_M["board-ropewalk"], skip=("+z",), tile_v=STEP_Z)
+        # A joist back to the seam, kept in the top of the bay so the head room
+        # below the step stays open.
+        add_box(mesh, uv_layer, (x - 0.055, NORTH_Y, STEP_Z - 0.22),
+                (x + 0.055, SPLIT_Y, STEP_Z - 0.10), BOARD, TILE_M["board-ropewalk"],
+                skip=("+z", "-z"))
+
+    # The step's leaded roof: lead seamed over rolls with a boarded walk down its
+    # spine, top face AT the 10.00 plane. A gutter round the NORTH and the ends —
+    # never the south, which is the riser under the walk. Same section as the walk
+    # above it, a metre and a fifth lower.
+    STEP_LEAD_Z = STEP_Z - 0.03
+    STEP_BED_Z = STEP_Z - 0.10
+    add_box(mesh, uv_layer, (-hx, NORTH_Y, STEP_BED_Z), (hx, SPLIT_Y, STEP_LEAD_Z), LEAD,
+            TILE_M["lead"], skip=("-z",))
+    add_box(mesh, uv_layer, (-hx, NORTH_Y, STEP_LEAD_Z), (hx, NORTH_Y + GUTTER, STEP_Z),
+            LEAD, TILE_M["lead"])
+    for lo, hi in ((-hx, -hx + GUTTER), (hx - GUTTER, hx)):
+        add_box(mesh, uv_layer, (lo, NORTH_Y + GUTTER, STEP_LEAD_Z), (hi, SPLIT_Y, STEP_Z),
+                LEAD, TILE_M["lead"])
+    step_flat_x = hx - GUTTER
+    step_rolls = max(2, int(round((2.0 * step_flat_x) / 1.05)))
+    for index in range(1, step_rolls):
+        x = -step_flat_x + (2.0 * step_flat_x) * index / step_rolls
+        add_box(mesh, uv_layer, (x - 0.055, NORTH_Y + GUTTER, STEP_LEAD_Z),
+                (x + 0.055, SPLIT_Y - 0.02, STEP_Z), LEAD, TILE_M["lead"])
+    # A fascia hanging below the north and end edges so the low roof reads as a
+    # built eaves rather than a floating slab, kept below the standable top.
+    add_box(mesh, uv_layer, (-hx, NORTH_Y, STEP_BED_Z - 0.20),
+            (hx, NORTH_Y + 0.06, STEP_BED_Z + 0.02), BOARD, TILE_M["board-ropewalk"],
+            skip=("-z",))
+    # Two walk boards down the step's spine, top AT the plane, the grip the walk
+    # above has.
+    step_c = (NORTH_Y + GUTTER + SPLIT_Y) / 2.0
+    for index in range(2):
+        y0 = step_c - 0.33 + index * (0.33 + 0.008)
+        y1 = y0 + 0.33
+        strip = bands[RNG.randrange(len(bands))]
+        offset = RNG.uniform(0.0, 1.0)
+        before = len(mesh.faces)
+        add_box(mesh, uv_layer, (-step_flat_x, y0, STEP_LEAD_Z), (step_flat_x, y1, STEP_Z),
+                PLANK, TILE_M["plank"], skip=("-z",))
+        mesh.faces.ensure_lookup_table()
+        for face in list(mesh.faces)[before:]:
+            for vertex_loop in face.loops:
+                point = vertex_loop.vert.co
+                across = (point[1] - y0) / max(y1 - y0, 1e-6)
+                vertex_loop[uv_layer].uv = (
+                    strip[0] + across * (strip[1] - strip[0]),
+                    point[0] / TILE_M["plank"] + offset,
+                )
+
+    # The cornice, on the SOUTH walk only, on a bed mould stepped back to the
+    # frame. It oversails the south face and the ends and throws them into shadow
+    # from below; its NORTH edge stops at the seam, because a cornice carried on
+    # over the north half is exactly the crown the climb used to rise through.
+    add_box(mesh, uv_layer, (-hx + 0.09, SPLIT_Y, EAVES_Z - 0.10),
             (hx - 0.09, hy - 0.09, EAVES_Z + 0.02), BOARD, TILE_M["board-ropewalk"],
             skip=("+z", "-z"))
-    add_box(mesh, uv_layer, (-hx, -hy, EAVES_Z + 0.02), (hx, hy, CORNICE_Z),
+    add_box(mesh, uv_layer, (-hx, SPLIT_Y, EAVES_Z + 0.02), (hx, hy, CORNICE_Z),
             BOARD, TILE_M["board-ropewalk"], skip=("+z", "-z"))
 
-    # The leadwork, and the only 30mm of this object the route can feel. Same
-    # section as the gambrel walk it replaces: sheets seamed over rolls, a walk
-    # down the spine, and a flush gutter round the edge that carries the probe's
-    # outermost ray. Everything is AT the plane or below it, never over.
-    add_box(mesh, uv_layer, (-hx, -hy, CORNICE_Z), (hx, hy, LEAD_Z), LEAD,
+    # The riser: the boarded vent face between the step (10.00) and the walk
+    # (11.20), sitting on the SOUTH side of the seam so the mantle axis at the
+    # seam stays clear of it and butting the housing's north wall behind. It is
+    # the face a body pulls up when it mantles off the step onto the walk.
+    add_box(mesh, uv_layer, (-hx, SPLIT_Y, STEP_Z), (hx, HOUSE_Y + 0.11, EAVES_Z - 0.12),
+            BOARD, TILE_M["board-ropewalk"], skip=("+z", "-z"), tile_v=(EAVES_Z - STEP_Z))
+
+    # The WALK leadwork, over the SOUTH half only — 30mm of lead seamed over rolls
+    # with a boarded walk down the spine, top face AT 11.20. Gutter round the
+    # south and the ends; the north edge is the riser. Everything AT the plane or
+    # below it, never over.
+    add_box(mesh, uv_layer, (-hx, SPLIT_Y, CORNICE_Z), (hx, hy, LEAD_Z), LEAD,
             TILE_M["lead"], skip=("-z",))
-    GUTTER = 0.24
-    for lo, hi in ((-hy, -hy + GUTTER), (hy - GUTTER, hy)):
-        add_box(mesh, uv_layer, (-hx, lo, LEAD_Z), (hx, hi, height), LEAD, TILE_M["lead"])
+    add_box(mesh, uv_layer, (-hx, hy - GUTTER, LEAD_Z), (hx, hy, height), LEAD, TILE_M["lead"])
     for lo, hi in ((-hx, -hx + GUTTER), (hx - GUTTER, hx)):
-        add_box(mesh, uv_layer, (lo, -hy + GUTTER, LEAD_Z), (hi, hy - GUTTER, height),
+        add_box(mesh, uv_layer, (lo, SPLIT_Y, LEAD_Z), (hi, hy - GUTTER, height),
                 LEAD, TILE_M["lead"])
 
-    flat_x, flat_y = hx - GUTTER, hy - GUTTER
+    flat_x = hx - GUTTER
+    walk_y0, walk_y1 = SPLIT_Y + 0.02, hy - GUTTER
     rolls = max(2, int(round((2.0 * flat_x) / 1.05)))
     for index in range(1, rolls):
         x = -flat_x + (2.0 * flat_x) * index / rolls
-        add_box(mesh, uv_layer, (x - 0.055, -flat_y, LEAD_Z), (x + 0.055, flat_y, height),
+        add_box(mesh, uv_layer, (x - 0.055, walk_y0, LEAD_Z), (x + 0.055, walk_y1, height),
                 LEAD, TILE_M["lead"])
 
-    WALK_HALF = 0.33
+    WALK_HALF = 0.30
+    walk_c = (walk_y0 + walk_y1) / 2.0
     walk_boards = 3
     walk_gap = 0.008
     board_w = (2.0 * WALK_HALF - walk_gap * (walk_boards - 1)) / walk_boards
     for index in range(walk_boards):
-        y0 = -WALK_HALF + index * (board_w + walk_gap)
+        y0 = walk_c - WALK_HALF + index * (board_w + walk_gap)
         y1 = y0 + board_w
         strip = bands[RNG.randrange(len(bands))]
         offset = RNG.uniform(0.0, 1.0)
