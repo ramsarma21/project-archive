@@ -1077,6 +1077,28 @@ matching the shipped geometry, + normals = 2.3 MB. Recorded so it is not silentl
 ±3.4 pinnacles are also load-bearing on traversal: they block extending the belfry's north ledge far
 east, which is why the soffit fix trimmed the gallery instead — see the three authoring rules above.)
 
+**`fix_glb_normals` writes the normal at the ALBEDO's resolution, and a PNG cannot compress a
+normal — so every base-color-only bake ships a normal that dwarfs its geometry** (1 Aug). The
+derived tangent map is high-frequency noise; PNG-encoded it costs ~0.4 MB at 512, ~1.5 MB at 1024,
+~2.6 MB at 2048, while the same-res albedo JPEG is 10–30× smaller. Since the resolution is chosen
+for COLOUR fidelity, the normal silently rides along oversized. Audit of the ten branch GLBs found
+this on every hero facade: `bldg-row-shop` 5.48, `bldg-merchant` 4.57 (a 2048 brick normal alone was
+2.6 MB), `bldg-warehouse-wharf-a/b` 3.83/3.81 MB — **17.7 MB of which ~14 MB was normal PNG on ~0.3 MB
+of geometry.** Fixed per-prop by downsampling normals-only to 512 in place (BIN rebuilt, albedo +
+geometry byte-identical) → 7.2 MB, `e9bbbe0`; and the monitor at `5521b12`. Left at res with reasons:
+steeple normals stay 1024 (climbed landmark, read at arm's length on the belfry); duck-beam already
+512; scaffold/printshop have no normal payload; `billeting-pile`'s 3.17 MB is a Meshy ALBEDO atlas
+(no normal) — a separate albedo pass, out of scope here.
+
+**Pending recommendation for the owner (do not apply unilaterally — it touches a post-processor every
+asset depends on):** give `fix_glb_normals` a `--normal-max` (default **512**) that downsamples the
+derived normal before PNG-encode, so the trap closes for every FUTURE bake instead of being
+rediscovered per prop. Downside is bounded — it only ever reduces normal res, never albedo/geometry,
+and is overridable — but arm's-length props (interiors, the vault-height gate, and the climbed
+steeple) must then pass `--normal-max 1024`. JPEG-encoding normals was considered and rejected: it
+introduces chroma artefacts that decode to wrong surface directions. The problem is resolution, not
+format.
+
 **The gap that cost the most:** every collision *invariant* reads authored hulls, and the
 mover has never touched a GLB — `collision.ts`, `playerMotion.ts` and `traversalResolver.ts`
 are THREE-free and work on analytic rects. So a body can be provably outside every hull while
