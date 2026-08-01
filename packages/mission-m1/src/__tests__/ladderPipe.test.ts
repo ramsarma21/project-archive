@@ -26,9 +26,12 @@ test("the real level authors its climb ladders, and every one resolves an ascent
   // The merchant's two goods-ladders and both Town House scaffold ladders were
   // retired 31-Jul; the LOUVRE ladder went the same day with the full-shaft ring
   // it served, when the regenerated steeple's staggered set-offs turned that
-  // 2.8 m reach into mantles. 11 -> 9 -> 6. The east-half ladders are being
-  // converted to mantle chains landmark by landmark.
-  assert.equal(world.ladders?.length, 6, "six ladders forwarded into world.ladders (the merchant pair, both scaffold ladders and the belfry LOUVRE have all been retired to mantle chains)");
+  // 2.8 m reach into mantles. RIDGE_W and RIDGE_S went on 01-Aug when the rebuilt
+  // monitor split its 3.0 m rise into a 1.80 step and a 1.20 mantle — those two
+  // were the LAST LADDERS ON THE GOLDEN PATH, so the covert ideal is now jump,
+  // hand and mantle end to end. 11 -> 9 -> 6 -> 4. The four left all serve
+  // off-line spaces, not the covert route.
+  assert.equal(world.ladders?.length, 4, "four ladders forwarded into world.ladders (the merchant pair, both scaffold ladders, the belfry LOUVRE and the meeting-house RIDGE_W/RIDGE_S have all been retired to mantle chains)");
   // Every forwarded ladder is one the tested predicate accepts: a real served
   // surface and a top-out with standing clearance ("no ladder, no climb" armed,
   // not refused). This is what the mission-world lane will read to turn the rule

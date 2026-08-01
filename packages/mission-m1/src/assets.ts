@@ -197,8 +197,16 @@ export const ASSETS: AssetRequirement[] = [
     // sides and a leaded walk on top is what a New England meeting house put
     // over its roof to light and vent the hall, and it is period-plausible in a
     // way that a gambrel squeezed into a third of the plan would not be.
+    //
+    // TWO planes, because the mesh now draws two on disjoint footprints: the
+    // walk at local 3.0 (world 11.20) over the south louvred housing, and the
+    // leaded step at local 1.8 (world 10.00) on the north posts. `drawBox`'s
+    // hang takes the MAX, still 3.0, so the base stays pinned at 8.20 and
+    // nothing about the placement moves; declaring 1.8 is what makes placement
+    // and verify recognise the intermediate as a real surface rather than a
+    // deck floating inside the asset.
     sizeM: [9.4, 3.0, 2.8],
-    standableAt: [3.0],
+    standableAt: [1.8, 3.0],
     why: "The raised monitor on the Hollis Street meeting house: 3.0m of louvred timber standing on the lead flat at 8.20m and carrying the leaded walk at 11.20m, which is the last standable surface before the steeple climb. Before it, MEETING_RIDGE's dressing was 42mm of board hanging three metres clear of the building underneath it.",
   },
 

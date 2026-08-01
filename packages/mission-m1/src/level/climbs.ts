@@ -103,24 +103,16 @@ export const CLIMBS: ClimbSpec[] = [
     halfZ: 0.7,
     note: "Buttress to lean-to roof. The buttress top sits 1.6m inside the lean-to's boards.",
   }),
-  climbVolume({
-    section: "E_LEAP",
-    serves: "D_MEETING_ROOF->E_RIDGE",
-    onto: "MEETING_RIDGE",
-    at: [76.5, 8.2, 9.0],
-    halfX: 1.3,
-    halfZ: 1.3,
-    note: "Up the gambrel onto the ridge from the west; the ridge runs on past the player.",
-  }),
-  climbVolume({
-    section: "E_LEAP",
-    serves: "E_GAMBREL_S->E_RIDGE_W",
-    onto: "MEETING_RIDGE",
-    at: [78.0, 8.2, 10.2],
-    halfX: 1.2,
-    halfZ: 1.2,
-    note: "The same ridge from the south slope.",
-  }),
+  // The two MEETING_RIDGE volumes RETIRED 01-Aug with the RIDGE_W/RIDGE_S
+  // ladders they served, and retired IN THE SAME COMMIT deliberately. A volume
+  // that outlives its ladder does not fail loudly — it keeps answering
+  // `climbVolumeAt` for a chain that has been re-authored around it and silently
+  // refuses the new ascent. That is exactly how the merchant's covert entry was
+  // dead for a rebuild, and the LOUVRE note below warns about it too; this is
+  // the third time. Both volumes served the single 3.0m rise onto the walk,
+  // which is now the two mantles D_MEETING_ROOF -> E_MEETING_STEP -> E_RIDGE
+  // (and E_GAMBREL_S -> E_GAMBREL_STEP -> E_RIDGE_W on the south face). Both
+  // steps are ordinary lipped ledges in front of the body and need no volume.
   // The E_RIDGE->E_LOUVRE volume RETIRED 31-Jul with LOUVRE_SILL and the LOUVRE
   // ladder. The belfry set-offs are staggered onto separate faces now, so each
   // step is an ordinary lipped ledge in front of the body and needs nothing

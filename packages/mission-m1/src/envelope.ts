@@ -199,6 +199,11 @@ export const BAND = {
   CLOCK_LEDGE: 7.9,
   MID_ROOF: 9.6,
   CORNICE: 10.2,
+  // The monitor's north half, on open posts beside the walk rather than under
+  // it. It exists so 8.20 -> 11.20 is two mantles instead of one 3.0m ladder
+  // climb; the stagger onto a disjoint footprint is what keeps either target
+  // out from under the other. See geometry.ts.
+  MEETING_STEP: 10.0,
   MEETING_RIDGE: 11.2,
   // The belfry's two staggered set-offs, replacing the LOUVRE_SILL full-shaft
   // ring at 14.0 that the mesh never drew. See geometry.ts.

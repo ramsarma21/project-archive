@@ -89,27 +89,22 @@ export const LADDERS: LadderPlacementSpec[] = [
     faceX: 0,
     faceZ: -1,
   },
-  // The ridge monitor's WEST END face (x=75.3), off the meeting-house roof — the
-  // roof-walk site. The climb-volume foot (76.5) sits under the monitor, which is
-  // where the old bare climb rose straight through the drawn monitor; the ladder
-  // is set at the monitor's own west face so the body rides the outside of it, not
-  // through it. Foot just west of the edge, leaning east onto the ridge top.
-  {
-    id: "RIDGE_W",
-    at: [75.1, 8.2, 9.0],
-    onto: "MEETING_RIDGE",
-    faceX: -1,
-    faceZ: 0,
-  },
-  // The same ridge from the south slope, set at the monitor's SOUTH face (z=10.4):
-  // foot just south of the edge, leaning north onto the ridge top.
-  {
-    id: "RIDGE_S",
-    at: [78.0, 8.2, 10.6],
-    onto: "MEETING_RIDGE",
-    faceX: 0,
-    faceZ: 1,
-  },
+  // RIDGE_W and RIDGE_S RETIRED 01-Aug — THE LAST LADDERS ON THE GOLDEN PATH.
+  //
+  // They existed for one reason: the walk was 3.0m above the lead flat in a
+  // single rise, and no mantle reaches 3.0m. Both of them were also an admission
+  // about the art rather than the movement — the note kept here read "the old
+  // bare climb rose straight through the drawn monitor; the ladder is set at the
+  // monitor's own west face so the body rides the outside of it". A ladder as a
+  // workaround for geometry drawn across the climb's path.
+  //
+  // The rebuilt monitor removes the cause instead: the crown that filled that air
+  // is gone from the north half, the walk is the south half only, and a leaded
+  // step at 10.00 splits the rise into 1.80 + 1.20. Both are mantles, so the
+  // owner's ruling — jump, hand and mantle, not hauling up rungs — holds all the
+  // way from the ropewalk to the belfry. Their climb volumes went in the same
+  // commit; see climbs.ts for why that is not optional.
+  //
   // The LOUVRE ladder RETIRED 31-Jul with the sill it served. It existed because
   // ridge 11.2 -> sill 14.0 was a 2.8 m dead-zone rise onto a full-shaft ring; the
   // regenerated steeple staggers the belfry set-offs onto the north and east

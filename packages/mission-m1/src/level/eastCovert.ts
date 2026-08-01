@@ -253,7 +253,10 @@ const RESERVED_PADS: ReadonlyArray<{
   { id: "S4_MERCHANT_ALCOVE", section: "B_SHAMBLES", pos: [35.0, 4.0, -13.0], surface: "MERCHANT_PARLOUR__DECK", partner: "M_PARLOUR", why: "A SAFE interior nook where the billeting fills the room — occupation seen from inside." },
   { id: "S6_TOWNHOUSE_VISTA", section: "C_ASCENT", pos: [51.0, BAND.LEADS, 3.5], surface: "TOWNHOUSE__ROOF", partner: "C_LEADS_S", why: "The high mid-run vantage with the elm already in sight." },
   { id: "S5_ROOFLINE_LANDING", section: "D_ROOFLINE", pos: [62.4, BAND.LEADS, 5.6], surface: "SOUTH_ROW_A__ROOF", partner: "D_SROOF_W", why: "The landing that rewards the forced detour, overlooking the barricaded street below." },
-  { id: "S7_HOLLIS_NICHE", section: "E_LEAP", pos: [78.0, BAND.MEETING_RIDGE, 9.2], surface: "MEETING_RIDGE", partner: "E_RIDGE", why: "A roof-level niche at the endorsement stop before the steeple climb, clear of the shaft to the north-west." },
+  // Moved south from z 9.2 on 01-Aug. MEETING_RIDGE is now the monitor's south
+  // half only (z 7.60-9.00), so at 9.2 this pad stood 1.2 m off the surface it
+  // names, over the open post bay. Still RESERVED and still UNPOPULATED.
+  { id: "S7_HOLLIS_NICHE", section: "E_LEAP", pos: [78.0, BAND.MEETING_RIDGE, 8.3], surface: "MEETING_RIDGE", partner: "E_RIDGE", why: "A roof-level niche at the endorsement stop before the steeple climb, clear of the shaft to the north-west." },
 ];
 
 RESERVED_PADS.forEach((pad) => {
@@ -319,10 +322,14 @@ export const EAST_COVERT_CLIMBS = climbs;
 // shorter — so it is authored explicitly here rather than derived, and marked so
 // the guidance/HUD lead it and covertLine.test.ts can verify its properties.
 //
-// Every CLIMB on it is a ≤1.9 m mantle EXCEPT two flagged dead-zone climbs
-// (D_MEETING_ROOF->E_RIDGE 3.0 m, E_LEDGE_N->E_GALLERY 2.8 m), both of which now
-// wait on an ASSET measurement rather than on level authoring. See the HOLLIS
-// STEEPLE note above and the STEEPLE ASCENT note in route.ts.
+// Every CLIMB on it is a ≤1.9 m mantle EXCEPT one flagged dead-zone climb
+// (E_LEDGE_N->E_GALLERY 2.8 m), which waits on an ASSET measurement rather than
+// on level authoring. See the HOLLIS STEEPLE note above and the STEEPLE ASCENT
+// note in route.ts.
+//
+// The meeting-house ridge was the other one, and it is gone: the rebuilt monitor
+// splits 8.20 -> 11.20 into 1.80 + 1.20 across two staggered footprints, so the
+// last ladder on this line went with it.
 export const GOLDEN_LINE: readonly string[] = [
   // West end — the printshop leads and the dead-wharf crossing (the ground beat).
   "A_START",
@@ -373,6 +380,7 @@ export const GOLDEN_LINE: readonly string[] = [
   "D_MEETING_ROOF",
   // The Hollis steeple, up its staggered belfry set-offs to the 15.8 leap gallery,
   // then the dive.
+  "E_MEETING_STEP",
   "E_RIDGE",
   "E_LEDGE_N",
   "E_GALLERY",
@@ -393,10 +401,11 @@ export const GOLDEN_LINE: readonly string[] = [
 // ends before the clear part starts, so the climb crosses the soffit. See the
 // STEEPLE ASCENT note in route.ts; it needs the asset moved, not the route.
 //
-// The other entry is the meeting-house ridge, waiting on the asset lane's
-// `roof-ridge-monitor` measurement.
+// The meeting-house ridge WAS the other entry and is now resolved rather than
+// exempted: the rebuilt `roof-ridge-monitor` draws a leaded step at 10.00 on a
+// footprint disjoint from the 11.20 walk, so the one 3.0 m rise is two mantles
+// and both ladders serving it are retired.
 export const STEEPLE_DEADZONE_CLIMBS: readonly string[] = [
-  "D_MEETING_ROOF->E_RIDGE",
   "E_LEDGE_N->E_GALLERY",
 ];
 

@@ -1248,12 +1248,119 @@ decks.push(
     //
     // The monitor is 3.0m tall and standable at 3.0, which is what puts its
     // base at 11.20 - 3.00 = 8.20 exactly. See assets.ts.
+    //
+    // SOUTH HALF ONLY, and that is the whole of the 8.20 -> 11.20 fix. The walk
+    // used to claim the full 2.8m depth, which forced the climb up to it to be a
+    // single 3.0m rise; a 3.0m rise is not a mantle, so it had to be a ladder,
+    // and the monitor's old full-depth crown filled exactly the air that climb
+    // rose through (0.326m of head into the church, measured at [75.72, 10.84,
+    // 9.16]). The rebuilt mesh splits into two standable planes on DISJOINT
+    // footprints: this walk at 11.20 over the louvred housing (z 7.60-9.00) and
+    // MEETING_STEP at 10.00 on open posts (z 9.00-10.40). They abut at z 9.00
+    // and do not overlap, which is the only reason both mantles are offered at
+    // all — `readRaisedSurface` skips any target whose rect the standing spot is
+    // already inside.
+    //
+    // The housing under this walk is still DRAWN-ONLY, not solid. See the FOOTING
+    // comment below for what happened when it was made solid, and why that is a
+    // placement decision rather than a one-line mass.
     asset: "roof-ridge-monitor",
-    rect: rect(75.3, 84.7, 7.6, 10.4),
+    rect: rect(75.3, 84.7, 7.6, 9.0),
     y: BAND.MEETING_RIDGE,
-    carriedBy: ["HOLLIS_MEETING"],
+    carriedBy: ["HOLLIS_MEETING", "MEETING_SOLE_SW", "MEETING_SOLE_NE"],
     tags: ["roof-run"],
   }),
+  deck({
+    id: "MEETING_STEP",
+    section: "E_LEAP",
+    // The intermediate the two-mantle chain needs, and it is drawn: 9.6 m2 of
+    // up-facing lead at 10.00 across x 75.30-84.70, z 9.00-10.40, on the post
+    // row the mesh stands there. Nothing is drawn above it over that footprint,
+    // so a body on it has open sky to the ridge.
+    //
+    // Approached from its NORTH edge (z >= 10.40) rather than from under it, so
+    // the step is not overhead of its own take-off. The walk it climbs on to is
+    // SOUTH of it — beside, not above — for the same reason.
+    //
+    // ONLY ITS WEST BAY IS STANDABLE, and this cost a run of the suite to learn.
+    // The STEEPLE shaft is rect(79, 83, 9.6, 13.6) from the ground to 15.3, so it
+    // stands THROUGH this footprint across x 79-83: the drawn monitor and the
+    // drawn steeple interpenetrate over z 9.60-10.40 there, which predates this
+    // change. Usable strips are x 75.30-79.00 and x 83.00-84.70, and a node needs
+    // the capsule radius off the shaft on top of that (x <= 78.65). Both step
+    // nodes tried at x 79.2/79.6 reported "only 0.00m of standable surface".
+    asset: "roof-ridge-monitor",
+    rect: rect(75.3, 84.7, 9.0, 10.4),
+    y: BAND.MEETING_STEP,
+    carriedBy: ["HOLLIS_MEETING", "MEETING_SOLE_SW", "MEETING_SOLE_NE"],
+    tags: ["roof-run"],
+  }),
+);
+
+// THE FOOTING, and the reason two staggered rects still draw ONE monitor.
+//
+// For two DECKs `oneObject` is `sameFootprint` and nothing else, so the walk and
+// the step on their two disjoint rects would be two clusters, and a 9.4m monitor
+// would be contain-fitted into each 1.4m half and drawn twice, at half depth.
+// `carriedBy` joins a deck to a mass with no geometric test, which is exactly the
+// escape the scaffold's sole plates make for its seven staggered lifts — and for
+// the same underlying reason, a structure the player is meant to pass beside
+// rather than through.
+//
+// DIAGONAL CORNERS, and both halves of that matter. `pos` comes from `unionRect`
+// of the FOOTING — the solids standing on the object's base — not from the
+// cluster hull, so the anchor has to reach all four extremes of the declared
+// footprint or the monitor slides off the rect the player walks into. The
+// scaffold records the same trap: one west sole plate moved it 1.17m west. SW at
+// z 7.60 and NE at z 10.40 reach all four with 0.16m squares.
+//
+// On drawn timber, not invented: the mesh stands seven ~0.2m posts on the lead
+// flat at x centres 75.45, 77.0, 78.5, 80.0, 81.5, 83.0, 84.55, with feet in BOTH
+// the z 7.60-7.90 and z 10.20-10.40 rows. 0.06m tall, under the 0.08m a grounded
+// step absorbs, and `landable: false` — a drawn sill, not a ledge and not an
+// obstacle. Squares rather than full-length plates for the reason the scaffold
+// learned: a mass is unconditionally a collider, and a plate down either edge
+// would put a kerb across the whole lip the mantles take off from.
+//
+// WHICH diagonal is measured, not arbitrary. The NW corner was tried first and
+// the suite caught it in one run: the run in from D_MEETING_W passes (75.65,
+// 9.93), whose capsule box reaches z 10.28 and clipped a sill at 10.24 — "body
+// does not fit at t=0.47". `positionClear` separates axes, so a 0.06m sill near a
+// walking line is still a solid to it.
+//
+// WHY THIS IS A FOOTING AND NOT THE WHOLE HOUSING — the finding of this task, and
+// it is a real one. The south half genuinely is a louvred vent housing and today
+// a body walks clean through it: `D_MEETING_ROOF` used to STAND inside it and the
+// run in from the west crossed it, so the phantom pass-through is load-bearing.
+// Both of those moved north here anyway, so the solid looked free. It is not. It
+// stands 1.30m from this roof's jettied south lip, and an 8.20m drop is on the
+// other side of that lip. `findRunup` searches down from 2.40m and a solid there
+// caps it at 0.90m, and the run-up is what decides survival: driven off that lip,
+// a body with 2.10m+ BRAKES and never leaves (0.00m), one with 1.20-2.00m leaves
+// and is caught by TREE_AWNING at 3.20 (a 5.00m fall, under the 5.5 ceiling), and
+// one with 0.90m and a late dash overshoots the awning entirely and hits the
+// ground. Adding the housing made that the only fatal station in 5485 driven
+// trajectories. Trimming the deck's south jetty to close the slot makes it worse
+// on both counts — shorter run-ups are MORE lethal, and a flush lip fails the
+// "every roof deck oversails the mass beneath it" invariant at 0.00m of 0.35m.
+// The honest fix is to move the monitor ~1.15m north (south face to z 8.75, which
+// restores a 2.40m run-up and is nearer the roof's centre than where it sits
+// now), and that is a placement decision with its own re-mass, not part of this
+// one. Recorded in M1-STATUS.md.
+masses.push(
+  ...[
+    { id: "MEETING_SOLE_SW", x0: 75.3, x1: 75.46, z0: 7.6, z1: 7.76 },
+    { id: "MEETING_SOLE_NE", x0: 84.54, x1: 84.7, z0: 10.24, z1: 10.4 },
+  ].map((plate) => ({
+    id: plate.id,
+    section: "E_LEAP" as const,
+    asset: "roof-ridge-monitor",
+    rect: rect(plate.x0, plate.x1, plate.z0, plate.z1),
+    baseY: BAND.MEETING_EAVE,
+    topY: BAND.MEETING_EAVE + 0.06,
+    landable: false,
+    tags: ["structure", "roofline"],
+  })),
 );
 
 masses.push(

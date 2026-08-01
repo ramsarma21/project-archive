@@ -232,14 +232,21 @@ export const NODES: RouteNode[] = [
 
   node("D_NROOF_W", "D_ROOFLINE", [66.0, BAND.LOW_ROOF, -4.5], "ROW_N_A__ROOF", ["stealth-line"]),
   node("D_NROOF_E", "D_ROOFLINE", [72.6, BAND.LOW_ROOF, -8.0], "ROW_N_A__ROOF", ["stealth-line"]),
-  node("D_MEETING_ROOF", "D_ROOFLINE", [76.5, BAND.MEETING_EAVE, 9.0], "HOLLIS_MEETING__ROOF", []),
+  // NORTH of the monitor, not under it. It stood at z 9.0 — inside the vent
+  // housing's own footprint — which was survivable only while the housing had no
+  // collision, and is not the take-off the two-mantle chain needs either: the
+  // step's rect is z 9.00-10.40, so a body standing under it is standing under
+  // the surface it is trying to mantle on to and `readRaisedSurface` skips it.
+  // At z 11.0 the step is in front of the body and 0.60m clear of its rect.
+  node("D_MEETING_ROOF", "D_ROOFLINE", [77.2, BAND.MEETING_EAVE, 11.0], "HOLLIS_MEETING__ROOF", []),
   // The crossing's landing, on the west strip of the meeting-house roof. The
   // south row ends at x=71 (12.4m) and the meeting roof begins at x=73.3 (8.2m),
   // a ~1.6m lip-to-lip gap and a 4.2m drop — taken as a controlled run-off/roll,
   // not a running leap (a full leap carries past this strip onto the 11.2m ridge
   // monitor that covers the roof from x=75.3 east). The strip west of the monitor
   // is 2.0m of clear roof, wide enough to stand and land on; from here the body
-  // walks in under the monitor and climbs onto the steeple line. This is also the
+  // runs in along the monitor's north side — under its open post bay, 1.80m of
+  // headroom — and climbs the two staggered steps onto the steeple line. This is also the
   // node the relocated STAMP_SCOPE bill-sticker stop (ROPEWALK_STOP) is anchored
   // beside, on HOLLIS_MEETING__ROOF, now that the beat is on the roofline.
   node("D_MEETING_W", "D_ROOFLINE", [74.3, BAND.MEETING_EAVE, 9.0], "HOLLIS_MEETING__ROOF", ["lip"],
@@ -248,6 +255,13 @@ export const NODES: RouteNode[] = [
   // -- E: the leap ----------------------------------------------------------
   node("E_ELLIOT_ROOF", "E_LEAP", [77.0, BAND.MEETING_EAVE, -9.0], "ELLIOT_HOUSE__ROOF", ["stealth-line"]),
   node("E_ELLIOT_LIP", "E_LEAP", [79.0, BAND.MEETING_EAVE, -6.9], "ELLIOT_HOUSE__ROOF", ["lip"]),
+  // The monitor's north step, and the last ladder on the golden path goes with
+  // it. 8.20 -> 11.20 was one 3.0m rise, which no mantle reaches, so it was
+  // served by the RIDGE_W/RIDGE_S ladders; split into 1.80 + 1.20 it is two
+  // ordinary mantles. Placed toward the step's west end so it is a short reach
+  // from D_MEETING_ROOF and still a short reach on to E_RIDGE.
+  node("E_MEETING_STEP", "E_LEAP", [77.6, BAND.MEETING_STEP, 9.7], "MEETING_STEP", ["climb"],
+    "The leaded step over the monitor's open north bay, half way up to the walk."),
   node("E_RIDGE", "E_LEAP", [78.5, BAND.MEETING_RIDGE, 8.6], "MEETING_RIDGE", [],
     "The ridge foot of the steeple climb, pulled west off [79.5] so the reach up to the louvre sill threads clear of the elm's northern canopy sprawl (which reaches z8.8 over the belfry) rather than driving the body 0.46m into it. The ridge monitor runs the width of the roof, so the hold moves without leaving it."),
   node("E_LEDGE_N", "E_LEAP", [80.5, BAND.STEEPLE_LEDGE_N, 8.5], "STEEPLE_LEDGE_N", [],
@@ -528,7 +542,7 @@ export const LINKS: RouteLink[] = [
   // continues straight onto it in one controlled drop over a ~1.6m lip-to-lip
   // gap, rather than dropping SOUTH into the ropewalk shed and climbing the
   // meeting house's far face back up. From the meeting roof the CLIMB chain
-  // (D_MEETING_ROOF -> E_RIDGE -> E_LEDGE_N -> E_LEDGE_E -> E_GALLERY) tops out
+  // (D_MEETING_ROOF -> E_MEETING_STEP -> E_RIDGE -> E_LEDGE_N -> E_LEDGE_E -> E_GALLERY) tops out
   // at the gallery the leap of faith launches from. The ropewalk drop below
   // (D_SROOF_E -> D2_ROOF_W) stays authored, so the shed survives as an optional
   // dark-interior space; the guided line just no longer detours through it.
@@ -570,7 +584,25 @@ export const LINKS: RouteLink[] = [
   // full-shaft ring at 14.0 that the mesh did not draw at all. STEEPLE_LEDGE_E stays
   // authored because it IS drawn and a body can stand on it; it simply carries no
   // node until the asset moves.
-  link("D_MEETING_ROOF", "E_RIDGE", "CLIMB", "SAFE", "CLIMB", { ignore: ["HOLLIS_MEETING"] }),
+  // Two mantles where a 3.0m ladder climb used to be. 1.80 is inside
+  // `mantleMaxHeightM` (1.90) with 0.10 to spare, and 1.20 is comfortable.
+  //
+  // A note worth keeping for whoever makes the monitor's south half solid (see
+  // the FOOTING comment in geometry.ts): the second rise then needs that solid in
+  // its `ignore`. `authoredTrajectoryClear` refuses on the RISING ARC, not on
+  // standing headroom, and this arc leaves the step at z 9.70 and lands on the
+  // walk at z 8.60, so its last third is inside the housing it climbs on to. With
+  // the housing solid and unignored the link is refused and nothing says why; it
+  // surfaced as "beginAuthored refuses this affordance" and as a 0.100m capsule
+  // penetration, the same fact twice.
+  link("D_MEETING_ROOF", "E_MEETING_STEP", "CLIMB", "SAFE", "CLIMB", {
+    ignore: ["HOLLIS_MEETING"],
+    note: "Off the lead flat on to the monitor's north step. Taken from north of the step rather than from under it.",
+  }),
+  link("E_MEETING_STEP", "E_RIDGE", "CLIMB", "SAFE", "CLIMB", {
+    ignore: ["HOLLIS_MEETING"],
+    note: "Step to walk. The walk is the housing's roof, immediately south, so this is a mantle on to the thing beside you.",
+  }),
   link("E_RIDGE", "E_LEDGE_N", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),
   link("E_LEDGE_N", "E_GALLERY", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),
 

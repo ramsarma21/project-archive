@@ -100,7 +100,17 @@ export const NODES_2: RouteNode[] = [
   node("E_BUTTRESS", "E_LEAP", [75.4, 2.6, 16.2], "HOLLIS_BUTTRESS", ["climb"]),
   node("E_LEANTO", "E_LEAP", [75.4, 5.2, 16.3], "HOLLIS_LEANTO", ["climb"]),
   node("E_MEETING_S", "E_LEAP", [75.4, BAND.MEETING_EAVE, 13.8], "HOLLIS_MEETING__ROOF", ["climb"]),
-  node("E_GAMBREL_S", "E_LEAP", [78.0, BAND.MEETING_EAVE, 10.2], "HOLLIS_MEETING__ROOF", ["climb"]),
+  // The south-face climb's last hold, moved NORTH of the monitor's step for the
+  // same reason the golden line's take-off moved: it stood at z 10.2, inside the
+  // step's rect (9.00-10.40), so the surface it now has to mantle on to was
+  // directly overhead and would never have been offered. It also stood under
+  // geometry that had no collision until this change.
+  //
+  // Kept east of D_MEETING_ROOF (77.2) but only just, and NOT east of x 78.65.
+  // The step is 9.4m wide on paper and one 3.7m bay in practice, because the
+  // steeple shaft stands through its middle; see the MEETING_STEP note in
+  // geometry.ts. A first attempt at x 79.6 put this node inside the shaft.
+  node("E_GAMBREL_S", "E_LEAP", [78.0, BAND.MEETING_EAVE, 11.1], "HOLLIS_MEETING__ROOF", ["climb"]),
   node("E_RIDGE_W", "E_LEAP", [78.0, BAND.MEETING_RIDGE, 8.6], "MEETING_RIDGE", []),
 ];
 
@@ -225,9 +235,18 @@ export const LINKS_2: RouteLink[] = [
   // leg, which now lands on the ridge instead; without this the node and the
   // climb authored at it would be content nothing can get to.
   link("E_MEETING_S", "D_MEETING_ROOF", "RUN", "SAFE", "RUN"),
-  link("E_GAMBREL_S", "E_RIDGE_W", "CLIMB", "SAFE", "CLIMB", {
+  // The south face joins the golden line's step rather than getting its own. The
+  // one usable bay is 3.7m wide and two nodes in it would sit under a metre
+  // apart, which buys nothing: this line already shares D_MEETING_ROOF by the
+  // link above, and both lines converge on the ridge anyway. It keeps its own
+  // LANDING (E_RIDGE_W, west of E_RIDGE) so the two never top out on one node.
+  link("E_GAMBREL_S", "E_MEETING_STEP", "CLIMB", "SAFE", "CLIMB", {
     ignore: ["HOLLIS_MEETING"],
-    note: "Sixth and last hold of the south-face climb. From the ropewalk floor to the steeple gallery is 15.8m of pure vertical in six moves, which is a different beat from every horizontal metre before it.",
+    note: "Sixth hold of the south-face climb. From the ropewalk floor to the steeple gallery is 15.8m of pure vertical, which is a different beat from every horizontal metre before it.",
+  }),
+  link("E_MEETING_STEP", "E_RIDGE_W", "CLIMB", "SAFE", "CLIMB", {
+    ignore: ["HOLLIS_MEETING"],
+    note: "Seventh and last. The monitor's 3.0m used to be one rung-served climb; it is two mantles on this line as well as on the golden one.",
   }),
   link("E_RIDGE_W", "E_RIDGE", "RUN", "SAFE", "RUN"),
 ];
