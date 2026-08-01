@@ -324,19 +324,30 @@ solid_box(-SK_OUT, SK_OUT, -SK_OUT, -SK_OUT, SK_BZ - 0.35, SK_BZ, IL, faces=("-y
 solid_box(SK_OUT, SK_OUT, -SK_OUT, SK_OUT, SK_BZ - 0.35, SK_BZ, IL, faces=("+x",), tile=1.0)
 solid_box(-SK_OUT, -SK_OUT, -SK_OUT, SK_OUT, SK_BZ - 0.35, SK_BZ, IL, faces=("-x",), tile=1.0)
 
-# ---- SOUTH-annulus standable RING STACK: the mantle chain 11.2 -> 15.8 ----------
-# +y is the south / clock face. Each ledge is a flat standable slab projecting SOUTH
-# of the shaft to the box edge (y=3.7), so it is the OUTERMOST thing on the south
-# face and is never overhung by cornice — only by the NEXT chain ledge (proper
-# mantle spacing). Chain (<=1.9 m): ridge 11.2 -> 13.0 (1.8) -> 14.7 (1.7) -> the
-# 15.8 leap gallery's south node (1.1). These also pin the +y half of the 7.4 box.
+# ---- ANNULUS standable RING STACK: the mantle chain 11.2 -> 15.8 ----------------
+# A ledge is a flat standable slab projecting OFF one shaft face to the box edge
+# (3.7), so it is the OUTERMOST thing on that face and is never overhung by cornice.
+# FIX: 13.0 and 14.7 were BOTH on the south face at the same footprint, so the 14.7
+# slab + its corbel (down to 14.08) roofed the 13.0 ledge with ~1.08 m headroom over
+# 82% of it — unstandable, and unfixable by height (a clear 14.7 needs a >=15.17 top,
+# making 13.0->15.17 a 2.17 m dead-zone rise). So the chain SPIRALS onto adjacent
+# faces: 13.0 stays SOUTH (+y), 14.7 moves to the EAST (+x) flank, which the 15.8
+# gallery's +/-2.7 edge does not cover (1.0 m of clear standable depth, open sky
+# above). Chain (<=1.9 m): ridge 11.2 -> south 13.0 (1.8) -> east 14.7 (1.7) ->
+# 15.8 gallery (1.1). South ledge pins +y=3.7; east ledge pins +x=3.7.
 def south_ledge(ztop, thick=0.24, y_out=3.7, hw=2.0):
     solid_box(-hw, hw, CORE, y_out, ztop - thick, ztop, IT, faces=("+z", "-z", "+y", "+x", "-x"), tile=1.0)
     # jettied corbel bracket under the ledge (no top/back face -> flush to slab/core)
     solid_box(-hw + 0.12, hw - 0.12, CORE, y_out - 0.3, ztop - 0.62, ztop - thick, IT, faces=("-z", "+y", "+x", "-x"), tile=1.0)
 
+def east_ledge(ztop, thick=0.24, x_out=3.7, hw=2.0):
+    # mirror of south_ledge onto the +x flank: projects EAST to the box edge, spans
+    # the core depth y[-hw,hw]. Back face (-x, flush to core) omitted.
+    solid_box(CORE, x_out, -hw, hw, ztop - thick, ztop, IT, faces=("+z", "-z", "+x", "+y", "-y"), tile=1.0)
+    solid_box(CORE, x_out - 0.3, -hw + 0.12, hw - 0.12, ztop - 0.62, ztop - thick, IT, faces=("-z", "+x", "+y", "-y"), tile=1.0)
+
 south_ledge(13.0)
-south_ledge(14.7)
+east_ledge(14.7)
 
 # ---- STEEPLE_GALLERY @ 15.8 (+/-2.7; the leap take-off), lantern hole -----------
 # Thin deck (0.2) so its underside at 15.6 clears 1.55 m over the louvre sill.
