@@ -39,10 +39,44 @@ TEX = 1024
 W, RUN, HT = 2.5, 11.3, 12.4
 hx, hy = W / 2, RUN / 2
 
-# staging LIFTS — the walkable board TOPS (drawn==collision). 2.9 + 5.6 are the
-# existing lower planes; 7.3 / 9.0 / 10.7 / 12.4 continue the <=1.9 m mantle chain
-# to the leads. The top board top == HT (box top).
-LIFTS = [2.9, 5.6, 7.3, 9.0, 10.7, 12.4]
+# staging LIFTS — the walkable board TOPS (drawn==collision), each boarded over a
+# SLICE of the run rather than the whole of it, so the staging is a STAIRCASE.
+#
+# WHY THE SLICES ARE LOAD-BEARING (measured 31-Jul, and this supersedes the
+# full-run boarding this file shipped first). The parkour reader only offers a
+# mantle onto a surface that is NOT already over the player's head:
+# `readRaisedSurface` takes `overhead = raisedAt(0)` and then skips every hit with
+# that same id. It reads the level's AUTHORED deck rects, not this mesh. So when
+# every lift was boarded over the full 11.3 m run, the lift above was overhead
+# from everywhere on the lift below, and the whole ascent was refused — verified
+# by `traversability.test.ts`, which refused all four staging climbs the moment
+# the boards were authored honestly. Full-run stacked staging cannot be climbed at
+# ANY spacing; only a stagger fixes it, and the stagger has to be in the asset
+# because the authored rects have to match the mesh.
+#
+# (y is the run in the BLENDER frame, and `export_yup` FLIPS it: gltf z = -y, so
+# world z = -y - 2.05 for this rect's centre. Getting that sign wrong put the 5.60
+# landing at the south end of the run instead of the north, 7.8 m from the drop it
+# has to catch — measured, not guessed. Consecutive lifts must not overlap in the
+# run where the lower lift's route node stands, and the level's SCAFFOLD_D* rects
+# mirror these slices exactly. Each comment below is the WORLD z the slice lands
+# at, which is the number to compare against geometry.ts.)
+#
+# The chain: 0 -> 1.85 -> 3.70 -> 5.60 -> 7.30 -> 9.00 -> 10.70 -> 12.40, i.e.
+# rises of 1.85 / 1.85 / 1.90 / 1.70 / 1.70 / 1.70 / 1.70 — every one inside the
+# 1.9 m mantle limit and clear of the 1.9-3.1 m dead zone, with open sky over each
+# board's clear part. The old 2.90 lift is GONE: it made the first two steps 2.9
+# and 2.7, both in the dead zone, and both needed a ladder to be taken at all.
+LIFTS = [
+    (1.85, -1.05, 0.95),    # world z -3.00 .. -1.00  first step off the street
+    (3.70, 0.95, 2.95),     # world z -5.00 .. -3.00
+    (5.60, 2.15, 5.63),     # world z -7.68 .. -4.20  the G-B drop landing + run south
+    (7.30, -0.05, 1.95),    # world z -4.00 .. -2.00
+    (9.00, -1.65, 0.35),    # world z -2.40 .. -0.40
+    (10.70, -3.25, -1.25),  # world z -0.80 ..  1.20
+    (12.40, -4.85, -2.85),  # world z  0.80 ..  2.80  flush with the leads
+]
+LIFT_H = [h for (h, _, _) in LIFTS]
 
 POLE = 0.075                                   # standard / ledger cross-section (half)
 BOARD_T = 0.055                                # staging board thickness
@@ -215,7 +249,7 @@ solid_box(hx - 0.16, hx, -hy, hy, 0.0, 0.06, IPLANK, tile=1.4)
 
 # ---- per-lift LEDGERS, TRANSOMS, BOARDS, GUARD RAILS -------------------------
 board_x0, board_x1 = STDX[0] + POLE, STDX[1] - POLE       # deck span between the rows
-for li, h in enumerate(LIFTS):
+for li, (h, by0, by1) in enumerate(LIFTS):
     zt = h                                                # board TOP == authored plane
     zb = h - BOARD_T
     # ledgers run node-to-node along each standard row, just under the boards. Their
@@ -229,42 +263,72 @@ for li, h in enumerate(LIFTS):
     for sy in STDY:
         solid_box(board_x0, board_x1, sy - POLE, sy + POLE, zb - POLE, zb, IPOLE,
                   faces=("+y", "-y", "+z", "-z"), tile=0.5)
-    # boarded staging: NBOARD planks across the width, small gaps between them
+    # boarded staging: NBOARD planks across the width, small gaps between them.
+    # Boarded over THIS LIFT'S SLICE of the run only — see the LIFTS note. The
+    # ledgers and transoms above stay full-run, which is both correct scaffold and
+    # what keeps the frame reading as one continuous structure rather than a stack
+    # of disconnected boards.
     span = board_x1 - board_x0
     bw = (span - 0.02 * (NBOARD - 1)) / NBOARD
     for k in range(NBOARD):
         bx0 = board_x0 + k * (bw + 0.02)
-        solid_box(bx0, bx0 + bw, -hy + 0.02, hy - 0.02, zb, zt, IPLANK, tile=1.2)
+        solid_box(bx0, bx0 + bw, by0, by1, zb, zt, IPLANK, tile=1.2)
     # guard rail + mid rail on the OUTER row (kept inside the box; skip on top lift
-    # where the plane is the leads take-off)
+    # where the plane is the leads take-off). Rails and toe board follow the BOARD,
+    # so there is never a rail guarding a lift that has no staging under it.
     if h < HT - 0.5:
         gx = STDX[1]
         for gz in (h + 0.5, h + 1.0):
             if gz <= HT - POLE:
-                solid_box(gx - POLE, gx + POLE, STDY[0], STDY[-1], gz - POLE, gz + POLE, IPOLE,
+                solid_box(gx - POLE, gx + POLE, by0, by1, gz - POLE, gz + POLE, IPOLE,
                           faces=("+x", "-x", "+z", "-z"), tile=0.5)
         # toe board along the outer edge
-        solid_box(gx - POLE, gx + POLE, STDY[0], STDY[-1], zt, zt + 0.22, IPLANK,
+        solid_box(gx - POLE, gx + POLE, by0, by1, zt, zt + 0.22, IPLANK,
                   faces=("+x", "-x", "+z", "-z"), tile=0.8)
+    # END RAIL across the width at the SOUTH end of the 10.70 lift, and this one
+    # is a collider — the single documented exception to the non-colliding rule
+    # the rails otherwise follow (see the FACE braces note below).
+    #
+    # WHY ONLY HERE. `fatalTraversal.test.ts` drives a body off every reachable
+    # high edge at a walk, a run and three dash phases. Twelve stations failed,
+    # all of them leaving from THIS lip: the reader auto-offers CLIMB_UP, so a
+    # body driven off the 7.30 or 9.00 lift climbs the staircase and runs off the
+    # 10.70 board into a 10.70 m fall. The edge brake is not the answer and was
+    # measured: at a walk it arms at world z 0.83 and the body settles, but at a
+    # run it arms only once the capsule has cleared the board — 0.27 m past the
+    # lip — kills the horizontal velocity and drops the body straight down.
+    #
+    # It does NOT block the ascent. The mantle onto the 12.40 lift is entered at
+    # world z 0.80, north of this rail at 1.20, and the rail stands below that
+    # lift's plane, so a body that has made the step is above it.
+    #
+    # by0 is the SOUTH end of a lift's slice: world z = -by - 2.05, so the larger
+    # world z is the smaller by. The level mirrors this at SCAFFOLD_RAIL_D5_* in
+    # level/geometry.ts — two thin bars, not a slab, so the collision is the
+    # timber that is actually drawn and there is no invisible fill between them.
+    if abs(h - 10.70) < 1e-6:
+        for gz in (h + 0.5, h + 1.0):
+            solid_box(board_x0, board_x1, by0 - POLE, by0 + POLE, gz - POLE, gz + POLE, IPOLE,
+                      faces=("+y", "-y", "+z", "-z"), tile=0.5)
 
 # ---- FACE braces: zig-zag diagonals up the outer face (the scaffold read) -----
 gx = STDX[1]
-for li in range(len(LIFTS) - 2):                 # stop below the top lift so no brace overshoots HT
+for li in range(len(LIFT_H) - 2):                 # stop below the top lift so no brace overshoots HT
     y0d, y1d = STDY[0], STDY[-1]
     if li % 2 == 0:
-        diag(gx - POLE, gx + POLE, y0d, LIFTS[li] - 1.2 if li else 0.12, y1d, LIFTS[li + 1], IPOLE)
+        diag(gx - POLE, gx + POLE, y0d, LIFT_H[li] - 1.2 if li else 0.12, y1d, LIFT_H[li + 1], IPOLE)
     else:
-        diag(gx - POLE, gx + POLE, y1d, LIFTS[li] - 1.2, y0d, LIFTS[li + 1], IPOLE)
+        diag(gx - POLE, gx + POLE, y1d, LIFT_H[li] - 1.2, y0d, LIFT_H[li + 1], IPOLE)
 # a couple of low ground braces for the planted read (start above the sole plate)
-diag(gx - POLE, gx + POLE, STDY[0], 0.12, STDY[1], LIFTS[0], IPOLE)
+diag(gx - POLE, gx + POLE, STDY[0], 0.12, STDY[1], LIFT_H[0], IPOLE)
 
 # ---- END (gable) frames: cross-brace the two end bays in the x-z plane --------
 for sy in (STDY[0], STDY[-1]):
     # in the x-z plane at this y, a diagonal from near-wall foot to outer head of
     # the first lift, drawn as a thin box
     x0d, x1d = STDX[0], STDX[1]
-    for li in range(0, len(LIFTS) - 2, 2):       # keep gable braces clear of the top edge
-        za, zc = LIFTS[li] if li else 0.12, LIFTS[li + 1]
+    for li in range(0, len(LIFT_H) - 2, 2):       # keep gable braces clear of the top edge
+        za, zc = LIFT_H[li] if li else 0.12, LIFT_H[li + 1]
         # sweep a slim box along x from (x0d,za) to (x1d,zc)
         d = Vector((x1d - x0d, 0.0, zc - za)); L = d.length; d.normalize()
         nn = Vector((-d.z, 0.0, d.x)) * 0.045
@@ -288,7 +352,7 @@ for sy in (STDY[0], STDY[-1]):
 # junctions (so the band's faces never sit within the weld gate's coincide radius of
 # a ledger/transom face). Placed halfway between two lifts on the outer standards.
 LASH = 0.024
-mids = [(LIFTS[i] + LIFTS[i + 1]) / 2 for i in range(len(LIFTS) - 1)]
+mids = [(LIFT_H[i] + LIFT_H[i + 1]) / 2 for i in range(len(LIFT_H) - 1)]
 for sx in STDX:
     for sy in (STDY[0], STDY[len(STDY) // 2], STDY[-1]):
         for mz in mids:
@@ -315,7 +379,7 @@ for axis, got, dec in (("width", size[0], W), ("run", size[1], RUN), ("height", 
 if abs(centre[0]) > 0.02 or abs(centre[1]) > 0.02 or abs(lo[2]) > 0.02:
     raise SystemExit(f"bbox not centred on axis at base 0 (centre {centre[0]:+.3f},{centre[1]:+.3f}, minZ {lo[2]:.3f})")
 tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
-log(f"tris {tris}  verts {len(obj.data.vertices)}  lifts {LIFTS}")
+log(f"tris {tris}  verts {len(obj.data.vertices)}  lifts {LIFT_H}")
 
 os.makedirs(os.path.dirname(OUT_GLB), exist_ok=True)
 bpy.ops.object.select_all(action="DESELECT"); obj.select_set(True); bpy.context.view_layer.objects.active = obj
