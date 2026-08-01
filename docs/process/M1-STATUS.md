@@ -910,6 +910,17 @@ weld-clean and drawn==collision and still not carry the route:
    sits below their box cap — and those GLBs are `m1-evasion-loop`'s (globs `*brick* *facade*
    *townhouse* *printshop*` + the named row GLBs), not this lane's. Roof-albedo path bakes no
    normal (nrm() is disabled under PHOTOREAL), so no `normalMax` stamp applies.
+   **Extended 1 Aug to five roofs, varied BY BUILDING** (the owner's word was "flat and *uniform*", so five
+   identical lead walks would just swap one uniformity for another): `bldg-merchant` → blue-grey SLATE field
+   with a central lead ROOF-WALK strip + flashing; `bldg-row-shop` → weathered WOOD SHINGLE (warm, mossy);
+   the wharf pair stay working-wharf LEAD. All material+UV only on the existing top quad, geometry
+   byte-identical (merchant tris 1368 / weld 19, row-shop 624 / 12, both unchanged). Merchant and row-shop
+   DO run through `fix_glb_normals` (default 512 cap), so the roof gets a derived normal from the new albedo;
+   no generator normal, no `normalMax` stamp. **`bldg-warehouse-street` deliberately NOT touched:** it is a
+   23k-tri single-atlas Meshy import (weld 2223, built by `build_m1_flat_decks.sh` decimation, source
+   `bldg-row-brick-b.glb`) — no parametric roof face, no clean material+UV path; its roof is non-route-bearing
+   and already reads as a built seamed metal roof with a cornice (rendered 1 Aug), so it adds distinctness for
+   free. Retinting it is GLB atlas surgery on a blob — flagged for a later pass if wanted, not forced here.
 
 **A mutation hunt found the suite's own blind spots** (`6cb600d`). Method: break the code a
 test claims to guard, and see whether the test still passes. Results, ranked:

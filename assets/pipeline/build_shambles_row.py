@@ -194,6 +194,37 @@ def slate_rgb(base):
     return np.clip(rgb, 0, 1)
 
 
+def wood_shingle_rgb(across_len, along_len):
+    """Weathered WOOD-SHINGLE (cedar shake) roof, mapped 0..1 so it does not tile:
+    staggered courses, strong per-shingle tone with the odd split/curled shake, a
+    course-head overlap shadow, moss in the damp lower courses, soot toward one
+    gable and water streaking down-slope. Warm silvered brown so it reads clearly as
+    WOOD — a humble shop row — distinct from the wharf's lead and the merchant slate."""
+    n = TEX
+    u = np.broadcast_to(np.linspace(0, 1, n, endpoint=False)[None, :], (n, n))   # across (shingle width)
+    v = np.broadcast_to(np.linspace(0, 1, n, endpoint=False)[:, None], (n, n))   # up-slope (courses)
+    ncourse = max(5, int(round(along_len / 0.34)))
+    nshin = max(6, int(round(across_len / 0.20)))
+    fc = v * ncourse; course = np.floor(fc); cf = fc - course
+    coff = np.sin(course * 57.3) * 43758.5; coff = coff - np.floor(coff)         # per-course horizontal stagger
+    fs = u * nshin + coff; sh = np.floor(fs); sf = fs - sh
+    seed = np.sin(course * 12.9 + sh * 78.2) * 43758.5; sv = seed - np.floor(seed)
+    base = np.array([0.36, 0.30, 0.235])
+    col = base[None, None, :] * (0.66 + 0.64 * sv)[..., None]
+    col = np.where((sv < 0.14)[..., None], col * 0.58, col)                       # dark / curled shakes
+    head = _ss(0.80, 1.0, cf)                                                     # course-head overlap shadow
+    col *= (1 - 0.44 * head[..., None])
+    gap = np.clip(1 - np.minimum(sf, 1 - sf) / 0.02, 0, 1); gap = gap * gap * (3 - 2 * gap)
+    col *= (1 - 0.5 * gap[..., None])                                             # split grooves between shakes
+    col *= (0.86 + 0.28 * aniso(n, 5, 200, RNG))[..., None]                       # grain along the shake
+    moss = aniso(n, 26, 30, RNG); damp = _ss(0.55, 0.0, v)                        # mossy toward the eave
+    mmask = (_ss(0.60, 0.85, moss) * damp)[..., None]
+    col = col * (1 - 0.5 * mmask) + np.array([0.32, 0.40, 0.26])[None, None, :] * (0.5 * mmask)
+    col *= (0.82 + 0.20 * aniso(n, 4, 150, RNG))[..., None]                       # water streak down-slope
+    col *= np.linspace(0.90, 1.0, n)[None, :, None]                              # sootier toward one gable
+    return np.clip(col, 0, 1)
+
+
 def _img(name, rgb):
     h, w = rgb.shape[:2]
     rgba = np.concatenate([rgb, np.ones((h, w, 1))], 2)
@@ -274,6 +305,11 @@ else:
     MAT_LEAD = make_material("lead", pack_jpeg("lead", flat_rgb(TEX // 4, (0.52, 0.53, 0.53))), rough=0.86, spec=0.2)
     MAT_TIMBER = make_material("timber", pack_jpeg("timber", plank_rgb((0.44, 0.33, 0.22))), rough=0.93, spec=0.12)
     MAT_TIMBER_V = make_material("timberv", pack_jpeg("timberv", plank_rgb((0.30, 0.20, 0.13), vertical=True)), rough=0.94, spec=0.12)
+# the penthouse roof deck: weathered wood shingle under PHOTOREAL, plain lead otherwise
+if PHOTOREAL:
+    MAT_ROOF = make_material("shingle", pack_jpeg("shingle", wood_shingle_rgb(W, D / 2 + ROOF_FRONT)), rough=0.92, spec=0.08)
+else:
+    MAT_ROOF = MAT_LEAD
 IB, IF, IW, IT, IL, ITM, ITV = 0, 1, 2, 3, 4, 5, 6
 # sign board material (painted board with baked serif signage); falls back to timber
 SIGN_PNG = os.environ.get("SIGN_PNG", "")
@@ -283,6 +319,7 @@ if PHOTOREAL and SIGN_PNG and os.path.exists(SIGN_PNG):
 else:
     MAT_SIGN = MAT_TIMBER_V
 ISG = 7
+IROOF = 8
 
 bm = bmesh.new()
 uv = bm.loops.layers.uv.new("UVMap")
@@ -399,7 +436,12 @@ solid_box(-hx, -hx + 0.001, -hz, YZ2, MID_Y, 5.0, IF, faces=("-x",))
 solid_box(-hx, hx, YZ2, YZ2 + 0.35, MID_Y, MID_Y + 0.12, ITM, faces=("+y", "-y", "-z", "+x", "-x"), tile=1.0)  # jetty string course
 
 # ---- leaded penthouse ROOF DECK at 5.6 (standable, oversails floor 2) ----------
-solid_box(-hx, hx, -hz, ROOF_FRONT, ROOF_Y - 0.6, ROOF_Y, IL, faces=("+z", "+y", "-y", "+x", "-x"), tile=1.3)
+# roof deck: the +z walkable top is drawn as ONE flat quad at exactly ROOF_Y, UV
+# 0..1 across the deck (NOT tiled) so the wood-shingle material reads once, no
+# repeat. Geometry identical to the old single +z quad -> box/weld/bbox unchanged.
+solid_box(-hx, hx, -hz, ROOF_FRONT, ROOF_Y - 0.6, ROOF_Y, IL, faces=("+y", "-y", "+x", "-x"), tile=1.3)
+quad((-hx, -hz, ROOF_Y), (hx, -hz, ROOF_Y), (hx, ROOF_FRONT, ROOF_Y), (-hx, ROOF_FRONT, ROOF_Y), IROOF,
+     [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
 # a run of small ridge stacks between bays for the row read (kept <= ROOF_Y)
 for b in range(1, BAYS):
     cx = -hx + b * bay
@@ -450,7 +492,7 @@ bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=1e-5)
 bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
 mesh = bpy.data.meshes.new(KEY); bm.to_mesh(mesh); bm.free()
 obj = bpy.data.objects.new(KEY, mesh)
-for m in (MAT_BRICK, MAT_FRAME, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V, MAT_SIGN):
+for m in (MAT_BRICK, MAT_FRAME, MAT_GLASS, MAT_TRIM, MAT_LEAD, MAT_TIMBER, MAT_TIMBER_V, MAT_SIGN, MAT_ROOF):
     obj.data.materials.append(m)
 for poly in obj.data.polygons:
     poly.use_smooth = False
