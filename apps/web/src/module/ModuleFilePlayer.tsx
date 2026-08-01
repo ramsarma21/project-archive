@@ -594,7 +594,17 @@ export function ModuleFilePlayer(props: {
         </span>
       )}
 
-      <div className="mod-cine-caption" data-on={subtitlesOn ? "true" : "false"}>
+      {/* Text only, and only when there is a line. The element stays mounted
+          with no text rather than unmounting, because it is the accessible
+          caption: a live region that is added and removed is a live region a
+          screen reader may never announce. With the plate gone it has no box
+          to leave behind, and `data-empty` keeps the high-contrast plate off
+          an empty cue. */}
+      <div
+        className="mod-cine-caption"
+        data-on={subtitlesOn ? "true" : "false"}
+        data-empty={subtitleText.trim() ? "false" : "true"}
+      >
         <p
           className="mod-cine-caption-text"
           id={SUBTITLE_ID}

@@ -327,7 +327,13 @@
   text-transform: uppercase;
 }
 
-/* ---- Subtitle band: one short line at a time --------------------------- */
+/* ---- Subtitle band: one short line at a time ---------------------------
+   TEXT ONLY. No plate, no blur, no rounded panel — the band used to carry a
+   dark gradient and a 2.6em min-height, so an empty cue (between lines, or a
+   shot with no caption at all) left a dark bar sitting over the picture for
+   the whole clip. Legibility over a bright frame comes from an outline and a
+   shadow on the glyphs themselves, which cost nothing when there is no text:
+   with no box, an empty band is literally invisible. */
 .mod-cine-caption {
   position: absolute;
   left: 50%;
@@ -337,22 +343,21 @@
   transform: translateX(-50%);
   display: grid;
   place-items: center;
-  min-height: 2.6em;
-  padding: 12px 22px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(4, 16, 28, 0.34), rgba(2, 9, 16, 0.62));
-  backdrop-filter: blur(3px);
   pointer-events: none;
 }
 .mod-cine-caption[data-on="false"] { opacity: 0; }
 .mod-cine-caption-text {
   margin: 0;
-  color: #f2fbff;
+  color: #fff;
   font-size: 21px;
-  font-weight: 550;
+  font-weight: 600;
   line-height: 1.42;
   text-align: center;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7), 0 0 18px rgba(110, 190, 250, 0.28);
+  /* The stroke is painted BEHIND the fill, so it reads as an outline rather
+     than eating into the letterforms. */
+  paint-order: stroke fill;
+  -webkit-text-stroke: 3px rgba(0, 0, 0, 0.58);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 18px rgba(0, 0, 0, 0.5);
 }
 
 /* ---- Transport (auto-dims) --------------------------------------------- */
@@ -602,6 +607,75 @@
 /* The generated clip occupies the same dominant-media slot a focused still does. */
 .mod-cine-video video.mod-cine-visual-img { background: #000; }
 .mod-cine-leave-end { justify-self: end; }
+
+/* ---- The CLIP phase: the reconstruction takes the whole frame -----------
+   The document beat is a windowed card — IRIS on the left, the source panel on
+   the right — and that stays. The clip is not a document, it is the scene, so
+   when it plays it goes full-bleed and the card layout gets out of its way,
+   the same shape as the lesson intake cutscene. The chrome that stays is the
+   chrome you still need over a playing clip: the transport, the progress line,
+   the header, the captions, and the provenance.
+
+   Driven off the phase on the root rather than a second class on the figure,
+   so the layout cannot disagree with the phase the player is actually in. */
+.mod-cine[data-phase="CLIP"] .mod-cine-presenter,
+.mod-cine[data-phase="CLIP"] .mod-cine-presenter-name {
+  display: none;
+}
+.mod-cine[data-phase="CLIP"] .mod-cine-video {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: auto;
+  display: block;
+  gap: 0;
+  transform: none;
+  transition: none;
+  animation: none;
+  background: #000;
+}
+.mod-cine[data-phase="CLIP"] .mod-cine-video .mod-cine-visual-frame {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 0;
+  background: #000;
+  box-shadow: none;
+}
+.mod-cine[data-phase="CLIP"] .mod-cine-video .mod-cine-visual-img {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  /* Letterboxed, never cropped: the shots are composed. */
+  object-fit: contain;
+}
+/* The hologram furniture belongs to a document panel, not to a full-bleed
+   scene — corner brackets and the assemble sweep would frame the whole screen. */
+.mod-cine[data-phase="CLIP"] .mod-cine-video .mod-cine-visual-corner,
+.mod-cine[data-phase="CLIP"] .mod-cine-video .mod-cine-visual-sweep {
+  display: none;
+}
+/* Provenance stays on screen. A generated scene always says it is one, so the
+   plate moves to the corner rather than being dropped. */
+.mod-cine[data-phase="CLIP"] .mod-cine-video .mod-cine-visual-cap {
+  position: absolute;
+  left: 22px;
+  bottom: 24px;
+  z-index: 6;
+  max-width: min(48ch, 44vw);
+  gap: 3px;
+  padding: 8px 12px;
+}
+.mod-cine[data-phase="CLIP"] .mod-cine-video .mod-cine-visual-title { font-size: 12.5px; }
+.mod-cine[data-phase="CLIP"] .mod-cine-video .mod-cine-visual-src { font-size: 10px; }
+@media (max-width: 720px) {
+  .mod-cine[data-phase="CLIP"] .mod-cine-video .mod-cine-visual-cap {
+    left: 12px;
+    bottom: 16px;
+    max-width: calc(100% - 24px);
+  }
+}
 
 /* ===========================================================================
    The Archive ROOM — a 3D holographic case-file display (ArchiveRoom.tsx).
@@ -957,8 +1031,20 @@
 
 /* ---- High contrast ---------------------------------------------------- */
 .pa-high-contrast .mod { background: #000; }
-.pa-high-contrast .mod-cine-caption-text { color: #fff; text-shadow: none; }
-.pa-high-contrast .mod-cine-caption { background: #000; border: 1px solid #fff; }
+/* High contrast still wants a solid plate behind the words — but on the TEXT,
+   not the band, so it exists only where there are words. An empty cue paints
+   nothing here either. */
+.pa-high-contrast .mod-cine-caption { background: none; border: 0; }
+.pa-high-contrast .mod-cine-caption-text {
+  color: #fff;
+  text-shadow: none;
+  -webkit-text-stroke: 0;
+}
+.pa-high-contrast .mod-cine-caption[data-empty="false"] .mod-cine-caption-text {
+  padding: 8px 14px;
+  background: #000;
+  border: 1px solid #fff;
+}
 .pa-high-contrast .mod-cine-btn,
 .pa-high-contrast .mod-cine-leave { border: 2px solid #fff; background: #000; color: #fff; }
 .pa-high-contrast .mod-cine-check { border: 2px solid #fff; background: #000; }
@@ -972,7 +1058,7 @@
   .mod-cine-caption-text { font-size: 19px; }
 }
 @media (max-height: 720px) {
-  .mod-cine-caption { bottom: 84px; padding: 9px 18px; }
+  .mod-cine-caption { bottom: 84px; }
   .mod-cine-caption-text { font-size: 18px; }
   .mod-cine-controls { bottom: 16px; }
   .mod-cine-visual-img { max-height: 50vh; }

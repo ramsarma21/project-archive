@@ -151,7 +151,11 @@ export function LessonIntro(props: {
           file's clip does. It is never offered as a record of the period. */}
       <span className="mod-lesson-intro-tag">Reconstruction</span>
 
-      <div className="mod-cine-caption" data-on="true">
+      <div
+        className="mod-cine-caption"
+        data-on="true"
+        data-empty={caption.trim() ? "false" : "true"}
+      >
         <p className="mod-cine-caption-text" aria-live="polite" aria-atomic="true">
           {caption}
         </p>

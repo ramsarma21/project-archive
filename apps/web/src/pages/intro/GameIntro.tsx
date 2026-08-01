@@ -219,7 +219,11 @@ export function GameIntro(props: { reducedMotion: boolean; onDone: () => void })
 
       <span className="mod-cine-presenter-name">{IRIS.displayName}</span>
 
-      <div className="mod-cine-caption" data-on="true">
+      <div
+        className="mod-cine-caption"
+        data-on="true"
+        data-empty={segment?.text?.trim() ? "false" : "true"}
+      >
         <p className="mod-cine-caption-text" aria-live="polite" aria-atomic="true">
           {segment?.text ?? ""}
         </p>
