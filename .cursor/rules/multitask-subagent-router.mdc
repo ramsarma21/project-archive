@@ -10,20 +10,57 @@ root model). The orchestrator decides the tier silently and starts work; the use
 
 ## Model: implementers run Opus 5
 
-**Subagents that write code run `claude-opus-5-thinking-max`.** Not a cheaper tier.
+**Subagents that write code run Opus 5 at max thinking. While the root session is on Opus 5 max
+— it should be — get that by OMITTING the `model` parameter, so the subagent inherits the
+root's model.** Not a cheaper tier.
 
 The owner's reason, recorded: this project's work is coupled to context a brief cannot fully
 carry — which instrument lies, what has been disproven, why a compromise exists — and a weaker
 implementer spends that context re-deriving it or inheriting it wrongly. The extra cost is
-accepted deliberately.
+accepted deliberately. Reaffirmed 2026-07-31, with a condition attached: heavy lifting goes to
+Opus 5 **only behind a brief the worker cannot veer from** — exact files, exact numbers, an
+explicit out-of-scope list, and a named gate that can fail. See "An un-veerable brief" below.
 
-Why this line exists in the rule rather than only in a decision log: the owner made this call
-once and it was acknowledged in a commit message (`10bafb5`) that changed only the clip skill.
-The router was never edited, so every session afterwards read `claude-opus-4-8-thinking-high`
-here and dispatched it, for a full day, while the decision sat in prose nobody executes. A
-preference recorded outside the artifact that drives behaviour is not a preference the system
-has. Same failure as the lane guard, whose own header notes that ownership "was declared in
-prose and in task briefs, and neither is enforcement."
+Omission, not a slug, is the executable form of this rule, and the distinction is not cosmetic.
+The dispatch list offers no max-thinking Opus 5 — `claude-opus-5-thinking-medium` is the only
+Opus 5 on it, and the only `-max` on it is Opus 4.8 — so naming a slug explicitly *downgrades*
+a worker from the root's max thinking to medium. Name `claude-opus-5-thinking-medium` only when
+the root session is not on Opus 5, where it is an upgrade rather than a cut. This also means
+the rule is only as strong as the root: a session on a weaker model silently propagates that
+weakness to every worker it launches, and no rule can switch the root.
+
+`resume` ignores all of this — a resumed worker keeps the model it was launched with. A worker
+started under a weaker root stays weak for its entire life, so relaunch fresh rather than
+resume when the work is heavy.
+
+This one line has now drifted out of executable form twice. It named
+`claude-opus-5-thinking-max` until 2026-07-31, a slug no session could dispatch. Before that,
+the owner's original call was acknowledged only in a commit message (`10bafb5`) that changed
+the clip skill; the router itself was never edited, so every session afterwards read
+`claude-opus-4-8-thinking-high` here and dispatched it, for a full day. A preference recorded
+outside the artifact that drives behaviour is not a preference the system has — the same
+failure as the lane guard, whose own header notes that ownership "was declared in prose and in
+task briefs, and neither is enforcement."
+
+## An un-veerable brief
+
+The condition on the Opus 5 spend. A capable implementer with a loose brief does not stall —
+it improvises, plausibly, and the drift is only visible after the work lands. Every heavy brief
+carries all five:
+
+- **Exact numbers, never descriptions.** Every height, extent and coordinate as a literal
+  (`deck at 5.70, x33.3–41.7, z−3.2→−3.9`), never "a ledge around 5–6 m". Inventing a number
+  that looks reasonable is this repo's most common veer.
+- **A written out-of-scope list.** Name what the worker must *not* touch even if it looks
+  broken, and require it to be reported instead. Scope creep into a sibling's file is the
+  failure the lane guard catches late and a brief should catch early.
+- **The lane claimed first**, with the grant confirmed to cover every file the work needs.
+  A worker that hits a refusal mid-flight either stops or routes around it.
+- **A named gate that can fail**, quoted by command, as the pass bar — plus which instrument is
+  *inadmissible* for the claim at hand. Left unsaid, a worker reaches for the replay harness to
+  prove phasing, and it will lie to it.
+- **A checkpoint before the point of no return** on anything long: commit in stages and report
+  for review against the spec, rather than running to completion unobserved.
 
 ## Tiers
 
