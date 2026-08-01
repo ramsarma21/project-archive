@@ -223,16 +223,26 @@ const DUEL = {
   voidBotSkyMax: 0.5,
 };
 // REFUSAL — "no ladder, no climb", exercised in real play. Spawns at the foot of
-// the authored scaffold ladder (route node C_SCAFF_FOOT, the SCAFFOLD_D1 climb
-// volume) and drives the body up. With the ladder present a climb must ARM; with
-// every ladder AND grip stripped from the live collision world the same climb
-// volume must REFUSE — nothing offered, nothing performed. The stance is written
-// against OBSERVABLE behaviour (previewVerb / motion.phase / flow.verb /
-// verbsUsed), never the probe internals, because the engine lane is actively
-// changing parkour/probe.ts. Real ladder/grip coordinates come from
-// packages/mission-m1/src/level/ladders.ts, not invented here.
+// an authored ladder whose climb is gated by a climb VOLUME and drives the body
+// up. With the ladder present a climb must ARM; with every ladder AND grip
+// stripped from the live collision world the same climb volume must REFUSE —
+// nothing offered, nothing performed. The stance is written against OBSERVABLE
+// behaviour (previewVerb / motion.phase / flow.verb / verbsUsed), never the probe
+// internals, because the engine lane is actively changing parkour/probe.ts. Real
+// ladder/grip coordinates come from packages/mission-m1/src/level/ladders.ts, not
+// invented here.
+//
+// It stood on the Town House scaffold ladder until 31-Jul. That ladder and its
+// climb volume were both retired when the staging became a staggered <=1.9 m
+// mantle chain on drawn board, and a stance pointed at a deleted volume measures
+// nothing — so it moved to the CLOCK ladder, which is the same shape of thing:
+// ladders.ts CLOCK leans on the tower's east face at [58.3, 5.6, -4.0] onto
+// CLOCK_LEDGE, and climbs.ts authors the matching volume for
+// C_GALLERY_EMID->C_CLOCK. Pick a ladder+volume PAIR if this ever has to move
+// again: a bare lipped ledge has no volume, so it is offered with or without a
+// ladder and can prove nothing about refusal.
 const REFUSAL = {
-  at: "C_SCAFF_FOOT", toward: "C_SCAFF_1", climbSurface: "SCAFFOLD_D1",
+  at: "C_GALLERY_EMID", toward: "C_CLOCK", climbSurface: "CLOCK_LEDGE",
   bare: true,
   driveTicks: 360, // ~6 s of SIM: long enough that a refusal that leaks would have
                    // climbed by now, counted in sim ticks so a slow renderer that
