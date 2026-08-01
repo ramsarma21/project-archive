@@ -899,6 +899,56 @@ decks.push(
   ),
 );
 
+// THE ONE COLLIDING RAIL ON THIS SCAFFOLD, and the only one it needs.
+//
+// The scaffold's rails are otherwise deliberately non-colliding — thin timber the
+// player is meant to run under, which as blockers would litter the north lane with
+// knee-high hazards. That convention stands. This is the documented exception.
+//
+// It exists because `fatalTraversal.test.ts` failed twelve stations and every one
+// of them left from the SAME lip: the south edge of the 10.70 lift at z 1.20. The
+// reader offers CLIMB_UP automatically, so a body driven off the 7.30 or 9.00 board
+// climbs the staircase first and only then runs off the top of the run. (That is
+// also why the report named lifts whose own height is lower than the fall it
+// printed, and why the same hazard printed both 9.90 and 10.70 — the 4 s window
+// truncates one of them mid-air.)
+//
+// The edge brake cannot cover it, measured tick by tick: at a walk it arms at
+// z 0.83 and the body settles with a 0.00 m fall, but at a run it arms only at
+// z 1.47 — one CAPSULE_RADIUS past the lip, because a body stays grounded until
+// its capsule clears the board — zeroes the horizontal velocity and then drops
+// 10.70 m. Nothing is stale and no sub-threshold ledge is involved: the predicted
+// drop reads 6.58 m the whole way in. Arming it earlier is a `flow.ts` change with
+// engine-wide blast radius and is deliberately NOT taken here; see M1-STATUS.md.
+//
+// It does not block the ascent. The mantle onto the 12.40 lift is entered at
+// z 0.80, north of this rail, and both bars stand below 12.40, so a body that has
+// made the step is above them.
+//
+// TWO BARS, NOT A SLAB. The generator draws a guard rail and a mid rail (the outer
+// row's heights, h+0.5 and h+1.0, POLE=0.075 half-section) across the board width,
+// and these masses are those two bars and nothing else — a slab would collide the
+// open air between them, which is the defect class this rebuild exists to remove.
+// A capsule standing on the board spans 10.70-12.25 and meets both, so a running
+// body is stopped by timber that is actually there. See build_scaffold_run.py.
+masses.push(
+  ...[
+    { id: "SCAFFOLD_RAIL_D5_MID", baseY: 11.125, topY: 11.275 },
+    { id: "SCAFFOLD_RAIL_D5_TOP", baseY: 11.625, topY: 11.775 },
+  ].map((bar) =>
+    prop({
+      id: bar.id,
+      section: "C_ASCENT",
+      asset: "bldg-scaffold-run",
+      rect: rect(43.8, 45.9, 1.125, 1.275),
+      baseY: bar.baseY,
+      topY: bar.topY,
+      landable: false,
+      tags: ["scaffold"],
+    }),
+  ),
+);
+
 // The body is `bldg-meeting-hollis`, not `church-meetinghouse`, and the collision
 // rect is untouched: only the asset the mass is drawn with changed.
 //

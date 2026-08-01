@@ -115,23 +115,39 @@ export const NODES: RouteNode[] = [
     "The open ground north-west of the Town House, on the line to the scaffold."),
   node("C_SQUARE_NW", "C_ASCENT", [43.0, 0.0, -8.6], "GROUND", [],
     "Round the Town House's north-west corner. The island forces the choice: this lane, the south lane, or over the top."),
-  // The foot stays at z −6.4. It is a GROUND WAYPOINT ONLY: the ground ascent up
-  // the staging is NOT authored, and the note is here so the next reader does not
-  // re-derive why.
+  // THE GROUND ASCENT IS A BENT APPROACH, and the bend is not styling.
   //
-  // The staging's first lift is boarded at z −3.0..−1.0, and a mantle is refused
-  // onto a lift that is over the player's head, so the climb has to be entered
-  // from south of z −1.0 — about 5.9 m south of here. Moving this node there was
-  // tried and measured: it breaks two ground RUN links (C_SQUARE_NW and
-  // C_LANE_FOOT both stop with "body does not fit", the latter cutting the Town
-  // House corner at 48.39,−5.78) and it breaks SAFE-distance continuity across the
-  // branch crossings. The fallback needs its own bent approach rather than a moved
-  // node, which is a separate piece of authoring.
+  // The foot stays at z −6.4 because moving it was tried and measured: it breaks
+  // two ground RUN links (C_SQUARE_NW and C_LANE_FOOT both stop with "body does
+  // not fit", the latter cutting the Town House corner at 48.39,−5.78) and it
+  // breaks SAFE-distance continuity across the branch crossings. So the approach
+  // bends instead — south along the staging's face to C_SCAFF_APPROACH, then back
+  // north up the lifts.
   //
-  // Nothing on the golden line depends on it: that line drops onto the 5.60
-  // staging off the merchant's leads (M_EAVE_E -> C_SCAFF_2) and climbs from
-  // there, and the seven lifts are all drawn and all standable regardless.
+  // It has to run south first because a mantle is REFUSED onto a lift that is over
+  // the player's head, and the first lift is boarded at z −3.0..−1.0. Entering it
+  // means standing SOUTH of z −1.0 and climbing north onto its south lip. Every
+  // step of the chain is entered from the open-sky side for the same reason, which
+  // is why the node on each lift sits south of the lift above it:
+  //
+  //   C_SCAFF_APPROACH 0.00 -> C_SCAFF_1 1.85 -> C_SCAFF_1B 3.70 -> C_SCAFF_2 5.60
+  //
+  // Rises 1.85 / 1.85 / 1.90, all inside the 1.9 m mantle limit and none in the
+  // 1.9-3.1 m dead zone. No ladder, and no climb volume — a volume would RESTRICT
+  // these mantles rather than enable them (see level/climbs.ts).
+  //
+  // Leaving this unauthored cost more than it saved, and the reason is recorded in
+  // M1-STATUS.md: with no SAFE way up the staging from the street this node was a
+  // dead end with three links in and none out, the cheapest SAFE route to POST
+  // re-routed over the merchant, and the B2 goods-yard vault silently dropped off
+  // the guided line. A guided line is a GLOBAL quantity here.
   node("C_SCAFF_FOOT", "C_ASCENT", [44.8, 0.0, -6.4], "GROUND", ["safe-line"]),
+  node("C_SCAFF_APPROACH", "C_ASCENT", [44.8, 0.0, -0.5], "GROUND", ["safe-line"],
+    "South along the foot of the staging, clear of the first lift's boards overhead: the one place on the ground the climb can be entered from."),
+  node("C_SCAFF_1", "C_ASCENT", [44.8, 1.85, -2.0], "SCAFFOLD_D1", ["safe-line", "scaffold"],
+    "First lift of the staging. Open sky above — the lift above it is boarded further north."),
+  node("C_SCAFF_1B", "C_ASCENT", [44.8, 3.7, -3.5], "SCAFFOLD_D1B", ["safe-line", "scaffold"],
+    "Second lift. Same rule: stand south of the boards above and the mantle is offered."),
   node("C_SCAFF_2", "C_ASCENT", [44.8, BAND.GALLERY, -6.4], "SCAFFOLD_D2", ["safe-line"]),
 
   // -- C: the south lane, round the back of the island ----------------------
@@ -436,12 +452,17 @@ export const LINKS: RouteLink[] = [
   }),
   link("C_LANE_FOOT", "C_SCAFF_FOOT", "RUN", "SAFE", "RUN"),
 
-  // The two ground climb links are GONE with the ladders that served them. They
-  // were 0 -> 2.90 -> 5.60, i.e. rises of 2.9 and 2.7: both over the 1.9 m mantle
-  // limit, both inside the 1.9-3.1 m dead zone, and both therefore reliant on a
-  // ladder. The staging that replaced them climbs 1.85 / 1.85 / 1.90 on drawn
-  // board, but entering it from the ground needs an approach south of z −1.0 that
-  // this node cannot provide — see the note on C_SCAFF_FOOT.
+  // The ground ascent, bent south then back north up the lifts. It replaces two
+  // ladder climbs of 2.9 and 2.7 m — both over the mantle limit, both in the
+  // 1.9-3.1 m dead zone — with three mantles on drawn board. See the note on
+  // C_SCAFF_FOOT for why it bends rather than going straight up from the foot.
+  link("C_SCAFF_FOOT", "C_SCAFF_APPROACH", "RUN", "SAFE", "RUN", {
+    note: "South along the staging's face, under the boards, to the one spot the first lift can be climbed from.",
+  }),
+  link("C_SCAFF_APPROACH", "C_SCAFF_1", "CLIMB", "SAFE", "CLIMB"),
+  link("C_SCAFF_1", "C_SCAFF_1B", "CLIMB", "SAFE", "CLIMB"),
+  link("C_SCAFF_1B", "C_SCAFF_2", "CLIMB", "SAFE", "CLIMB"),
+
   link("C_SCAFF_2", "C_GALLERY_W", "JUMP", "SAFE", "LEAP"),
 
   link("C_GALLERY_STAIRHEAD", "C_LANE_PENTICE", "DROP", "SAFE", "CHAIN_DROP", {

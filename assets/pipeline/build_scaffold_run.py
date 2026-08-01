@@ -285,6 +285,31 @@ for li, (h, by0, by1) in enumerate(LIFTS):
         # toe board along the outer edge
         solid_box(gx - POLE, gx + POLE, by0, by1, zt, zt + 0.22, IPLANK,
                   faces=("+x", "-x", "+z", "-z"), tile=0.8)
+    # END RAIL across the width at the SOUTH end of the 10.70 lift, and this one
+    # is a collider — the single documented exception to the non-colliding rule
+    # the rails otherwise follow (see the FACE braces note below).
+    #
+    # WHY ONLY HERE. `fatalTraversal.test.ts` drives a body off every reachable
+    # high edge at a walk, a run and three dash phases. Twelve stations failed,
+    # all of them leaving from THIS lip: the reader auto-offers CLIMB_UP, so a
+    # body driven off the 7.30 or 9.00 lift climbs the staircase and runs off the
+    # 10.70 board into a 10.70 m fall. The edge brake is not the answer and was
+    # measured: at a walk it arms at world z 0.83 and the body settles, but at a
+    # run it arms only once the capsule has cleared the board — 0.27 m past the
+    # lip — kills the horizontal velocity and drops the body straight down.
+    #
+    # It does NOT block the ascent. The mantle onto the 12.40 lift is entered at
+    # world z 0.80, north of this rail at 1.20, and the rail stands below that
+    # lift's plane, so a body that has made the step is above it.
+    #
+    # by0 is the SOUTH end of a lift's slice: world z = -by - 2.05, so the larger
+    # world z is the smaller by. The level mirrors this at SCAFFOLD_RAIL_D5_* in
+    # level/geometry.ts — two thin bars, not a slab, so the collision is the
+    # timber that is actually drawn and there is no invisible fill between them.
+    if abs(h - 10.70) < 1e-6:
+        for gz in (h + 0.5, h + 1.0):
+            solid_box(board_x0, board_x1, by0 - POLE, by0 + POLE, gz - POLE, gz + POLE, IPOLE,
+                      faces=("+y", "-y", "+z", "-z"), tile=0.5)
 
 # ---- FACE braces: zig-zag diagonals up the outer face (the scaffold read) -----
 gx = STDX[1]
