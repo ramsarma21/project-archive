@@ -148,13 +148,14 @@ export const CLIMBS: ClimbSpec[] = [
   }),
 
   // ---- F_TREE: the Liberty Elm --------------------------------------------
-  climbVolume({
-    section: "F_TREE",
-    serves: "F_LOW->F_CROWN",
-    onto: "BOUGH_CROWN",
-    at: [78.7, 6.4, 0.4],
-    halfX: 1.0,
-    halfZ: 1.0,
-    note: "Low bough to crown. The crown overhangs the standing spot on every side.",
-  }),
+  // RETIRED 31-Jul with GRIP_ELM_CROWN. The note here used to read "the crown
+  // overhangs the standing spot on every side", which was written about the tree
+  // and was also an exact description of why the ascent had to be authored at
+  // all: F_LOW stood 0.1 m inside BOUGH_CROWN's own rect, so the forward read
+  // skipped the surface as overhead and only the vertical `readOverhead` fallback
+  // could offer it — behind a volume, and therefore behind a grip. F_LOW now
+  // stands at the crown's WEST RIM (x<78.6), where the crown is a face in front
+  // of the body and the 1.90 m rise is an ordinary mantle. Nothing is authored
+  // for it, which is the point: a volume RESTRICTS a deck mantle rather than
+  // enabling one, so leaving it behind would have refused the new climb.
 ];

@@ -256,6 +256,19 @@ const REFUSAL = {
 const BEAT = {
   at: "F_LOW", toward: "F_CROWN",
   bare: true,
+  // `back` IS LOAD-BEARING AND IT IS WORKING AROUND A DEV-PATH DEFECT.
+  // devEntry's `dropSpawn` overrides the requested `toward` yaw with the beat's
+  // own `facingYaw` whenever the drop lands within the beat's stanceRadiusM
+  // (2.4 m) of the stance — measured in XZ ONLY, ignoring the beat's own 1 m
+  // stanceHeightToleranceM. F_LOW is 1.9 m BELOW the stance and 1.25 m from it
+  // in XZ, so the override fired and this stage was driven at the nail rather
+  // than at the crown: held W walked the body into the elm bole (solid to 12 m)
+  // and stopped. It read as "the elm climb never arms", and it was the harness
+  // being pointed the wrong way. Backing the drop off 1.6 m along the climb line
+  // puts it outside the stance radius, so `toward` is honoured — and it gives
+  // the mantle the run-up a player arrives with. The real fix is a height test
+  // in devEntry.tsx, which is CONTESTED; reported, not edited here.
+  back: 1.6,
   crownY: 8.0, // BOUGH_CROWN band is 8.3; 8.0 is "arrived at the crown"
   climbTicks: 600,  // ~10 s of SIM to climb bough → crown (counted in sim ticks)
   settleTicks: 360, // ~6 s of SIM in the stance for the beat to arm
@@ -582,14 +595,15 @@ async function fetchGrading() {
 // Boot a mission-floor drop-in at a named route node and wait for the runtime to
 // tick. No GLB settle is needed here (these stages read the collision world and
 // motion, not the render census), so the wait is short.
-async function bootMissionAt(browser, at, toward, { settleMs = 2500, bare = false } = {}) {
+async function bootMissionAt(browser, at, toward, { settleMs = 2500, bare = false, back = 0 } = {}) {
   const page = await openPage(browser, DRIVE_VIEWPORT);
   const pageErrors = [];
   page.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));
   // Driven stages spawn in BARE mode so the sim is not slow-motioned by the GLB
   // render cost (see the SIM CLOCK note); the authored world they read is identical.
   const bareParam = bare ? "&bare=1" : "";
-  const url = `${BASE}/src/mission/floor.html?hold=0&at=${at}&toward=${toward}&encounterVerdict=correct${bareParam}`;
+  const backParam = back ? `&back=${back}` : "";
+  const url = `${BASE}/src/mission/floor.html?hold=0&at=${at}&toward=${toward}&encounterVerdict=correct${bareParam}${backParam}`;
   await page.goto(url, { waitUntil: "commit", timeout: 120000 });
   let up = false;
   for (let i = 0; i < 300; i++) {
@@ -1110,7 +1124,7 @@ async function stageRefusal(browser) {
 // ---------------------------------------------------------------------------
 async function stageBeat(browser) {
   log("\n[BEAT] the Liberty Elm crown is reachable by climbing, and the beat arms on arrival (bare; sim ticks)");
-  const { page, url, up } = await bootMissionAt(browser, BEAT.at, BEAT.toward, { bare: BEAT.bare });
+  const { page, url, up } = await bootMissionAt(browser, BEAT.at, BEAT.toward, { bare: BEAT.bare, back: BEAT.back });
   if (!up) {
     assert(false, "mission runtime comes up (elm beat)", `window.__floor never appeared at ${url}`);
     await page.close();

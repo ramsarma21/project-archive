@@ -138,17 +138,11 @@ export const GRIPS: GripPlacementSpec[] = [
     support: "HOLLIS_BUTTRESS",
     kind: "STEPPED_MASONRY",
   },
-  // F_LOW -> F_CROWN (the Liberty Elm): honest holds up the bole/boughs. It will
-  // not bolt a ladder to a tree, and the elm's own trunk (LIBERTY_ELM_TRUNK,
-  // solid to 12 m) is the structure gripped. The foot sits under the crown at
-  // (79, 2.6); the outward face points from the bole back at the climber.
-  {
-    id: "GRIP_ELM_CROWN",
-    at: [79.0, 6.4, 2.6],
-    onto: "BOUGH_CROWN",
-    faceX: -0.74,
-    faceZ: 0.67,
-    support: "LIBERTY_ELM_TRUNK",
-    kind: "BOUGHS",
-  },
+  // GRIP_ELM_CROWN (F_LOW -> F_CROWN) was RETIRED 31-Jul, with the climb volume
+  // it validated. It was an honest grip and it armed correctly; what was wrong
+  // was the move it bought. Hauling up a bole on holds is the climbing the
+  // movement vocabulary rejects — "jump hand and mantle is a cleaner thing to
+  // reproduce" — and it was only needed because F_LOW stood inside the crown's
+  // own footprint. F_LOW is now at the crown's west rim and the ascent is a
+  // plain 1.90 m mantle onto a bough against open sky. See level/climbs.ts.
 ];
