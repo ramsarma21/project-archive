@@ -248,7 +248,7 @@ const RESERVED_PADS: ReadonlyArray<{
   why: string;
 }> = [
   { id: "S1_PRINTSHOP_VANTAGE", section: "A_LEADS", pos: [4.5, BAND.LOW_ROOF, -9.0], surface: "PRINTSHOP__ROOF", partner: "A_START", why: "First safe vantage — the whole route and the shut harbour lie below." },
-  { id: "S2_WHARF_VANTAGE", section: "A_LEADS", pos: [-1.8, 5.35, 12.6], surface: "WHARF_WAREHOUSE_B__ROOF", partner: "WHARF_ASC_ROOF", why: "A ledge looking back over the dead port and its idle ships as you re-climb." },
+  { id: "S2_WHARF_VANTAGE", section: "A_LEADS", pos: [-1.8, 4.3, 12.6], surface: "WHARF_WAREHOUSE_B__ROOF", partner: "WHARF_ASC_ROOF", why: "A ledge looking back over the dead port and its idle ships as you re-climb." },
   { id: "S3_SHAMBLES_BREATH", section: "B_SHAMBLES", pos: [20.6, BAND.GALLERY, 3.6], surface: "MARKET_SHED__ROOF", partner: "B_SHED_MID", why: "A breath on the market high line, above the crowd, beside the drop-to-contact." },
   { id: "S4_MERCHANT_ALCOVE", section: "B_SHAMBLES", pos: [35.0, 4.0, -13.0], surface: "MERCHANT_PARLOUR__DECK", partner: "M_PARLOUR", why: "A SAFE interior nook where the billeting fills the room — occupation seen from inside." },
   { id: "S6_TOWNHOUSE_VISTA", section: "C_ASCENT", pos: [51.0, BAND.LEADS, 3.5], surface: "TOWNHOUSE__ROOF", partner: "C_LEADS_S", why: "The high mid-run vantage with the elm already in sight." },
@@ -334,6 +334,7 @@ export const GOLDEN_LINE: readonly string[] = [
   "WHARF_ASC_1",
   "WHARF_ASC_2",
   "WHARF_ASC_ROOF",
+  "WHARF_ASC_ROOF_E",
   "WHARF_SHED_W",
   // The Shambles high/mid line into the merchant (the SAFE interior drop-in).
   "B_SHED_MID",

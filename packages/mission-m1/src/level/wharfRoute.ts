@@ -36,10 +36,12 @@ export const WHARF_NODES: RouteNode[] = [
     "First mantle off the deck onto stacked dock cargo (1.64 m)."),
   node("WHARF_ASC_2", "A_LEADS", [-3.2, 3.5, 10.7], "WHARF_ASC_STEP2", ["wharf", "ascent"],
     "Second mantle onto the higher cargo, one step under the warehouse gallery."),
-  node("WHARF_ASC_ROOF", "A_LEADS", [-1.8, BAND.PENTICE, 10.7], "WHARF_WAREHOUSE_B__ROOF", ["wharf", "ascent", "high-line"],
-    "Mantle onto the warehouse loading gallery (5.35) — the top of the ascent, a step under the Shambles shed."),
-  node("WHARF_SHED_W", "B_SHAMBLES", [3.0, 5.6, 9.0], "MARKET_SHED__ROOF", ["high-line"],
-    "Onto the Shambles market-shed roof off the wharf warehouse — back on the covert high line."),
+  node("WHARF_ASC_ROOF", "A_LEADS", [-1.5, 4.3, 10.7], "WHARF_WAREHOUSE_B__ROOF", ["wharf", "ascent", "high-line"],
+    "Mantle onto the warehouse's flat roof (4.30) — the top of the cargo ascent, one more mantle under the Shambles shed. 4.30 is where the mesh draws its roof; the 5.35 this node used to claim was a box the asset never filled."),
+  node("WHARF_ASC_ROOF_E", "A_LEADS", [0.6, 4.3, 10.7], "WHARF_WAREHOUSE_B__ROOF", ["wharf", "ascent", "high-line"],
+    "The warehouse roof's east end, at the foot of the mantle onto the Shambles shed. It exists because the two roofs OVERLAP in x 1.3..2.7 with only 1.30 m of headroom under the shed, which is less than a body: the climb has to be taken from west of 1.3, and the cargo mantle lands 2 m west of here, so the roof is crossed on foot between them."),
+  node("WHARF_SHED_W", "B_SHAMBLES", [2.0, 5.6, 10.4], "MARKET_SHED__ROOF", ["high-line"],
+    "Onto the Shambles market-shed roof off the wharf warehouse — back on the covert high line. Pulled west and south to sit a mantle's length from the warehouse roof rather than five metres of it: the two roofs overlap in x 1.3..2.7, and 1.30 m of headroom under the shed is less than a body, so the climb has to start west of 1.3 and land east of it."),
 ];
 
 export const WHARF_LINKS: RouteLink[] = [
@@ -79,12 +81,21 @@ export const WHARF_LINKS: RouteLink[] = [
     // The warehouse the mantle tops onto is the climb's own hold, not a wall to
     // avoid — ignored so the sweep verifies against the world it moves through.
     ignore: ["WHARF_WAREHOUSE_B"],
-    note: "1g: the last mantle onto the far warehouse roof.",
+    note: "1g: the mantle onto the far warehouse roof (3.50 -> 4.30).",
   }),
-  // 1h: warehouse roof (5.35) → Shambles shed roof (5.6). STEP_UP 0.25.
-  link("WHARF_ASC_ROOF", "WHARF_SHED_W", "RUN", "SAFE", "STEP_UP", {
+  // 1h: warehouse roof (4.30) → Shambles shed roof (5.60). A 1.30 m MANTLE, not
+  // the old 0.25 m step: the warehouse roof is authored where the mesh draws it
+  // now, so the last hop onto the high line is a real pull rather than a kerb.
+  link("WHARF_ASC_ROOF", "WHARF_ASC_ROOF_E", "RUN", "SAFE", "RUN", {
     speedMps: 2.3,
-    note: "1h: a step up onto the market shed roof — back on the covert high line.",
+    note: "Across the warehouse roof to the foot of the shed mantle.",
+  }),
+  link("WHARF_ASC_ROOF_E", "WHARF_SHED_W", "CLIMB", "SAFE", "CLIMB", {
+    speedMps: 2.3,
+    // The shed the mantle tops onto is the climb's own hold, not a wall to avoid
+    // — the same ignore the cargo mantle below it carries for the warehouse.
+    ignore: ["MARKET_SHED"],
+    note: "1h: the last mantle onto the market shed roof — back on the covert high line.",
   }),
 
   // The high line east along the shed to the market's mid-line canopies, which
@@ -129,6 +140,6 @@ export const WHARF_CLIMBS: ClimbSpec[] = [
     at: [-3.2, 3.5, 10.7],
     halfX: 0.8,
     halfZ: 0.8,
-    note: "On the higher cargo; mantle onto the warehouse loading gallery.",
+    note: "On the higher cargo; mantle onto the warehouse's drawn flat roof.",
   }),
 ];

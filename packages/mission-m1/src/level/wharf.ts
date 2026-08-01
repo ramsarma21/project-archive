@@ -85,21 +85,29 @@ shed({
 // up off the port tops out onto the Shambles high line.
 // ---------------------------------------------------------------------------
 
-// Roof deck id: WHARF_WAREHOUSE_B__ROOF (the ascent's TOP MANTLE target — the
-// warehouse loading gallery at 5.35, oversailed by the jetty so the mantle tops
-// onto a lip standing proud of the wall).
-// ASSET FLAG (pending-regen): the current bldg-warehouse-wharf-b mesh draws its
-// roof ~1.8 m below this 5.35 box (affordance gate: CLIMBVOL_WHARF_ASC_2->
-// WHARF_ASC_ROOF surface ~1.77 m below plane). A separate asset worker is
-// regenerating this key WITH a real standable gallery at y≈5.35 + a flat roof
-// deck, delivered under the same key/box — at which point this mantle is
-// drawn == collision. The STRUCTURE (box, deck, route) is authored to the target.
+// Roof deck id: WHARF_WAREHOUSE_B__ROOF (the ascent's TOP MANTLE target).
+//
+// RE-POINTED 31-Jul FROM 5.35 TO 4.30, WHICH IS WHERE THE MESH ACTUALLY IS. The
+// pending-regen note that stood here said the mesh drew ~1.8 m below its 5.35
+// box and that a regen would deliver a gallery at the box. The regen came
+// (a72015e) and it did not: measured off the placed GLB, this asset tops out at
+// 4.57 and its one real plateau is 20.6 m2 of FLAT ROOF at 4.30 spanning the
+// whole footprint — nothing at 5.35 at all. The debt entry was written against a
+// promise rather than a delivery, and the affordance gate has been carrying it
+// as SEVERE (0% of footprint at plane) ever since.
+//
+// 4.30 is not a compromise, it is the better surface. 20.6 m2 of flat roof is a
+// traversal surface; a declared plane with no mesh at it is a body walking on
+// air, which is the whole class this rebuild exists to end. The ascent re-masses
+// cleanly around it and nothing is invented: cargo 3.50 -> roof 4.30 is 0.80 m,
+// and roof 4.30 -> Shambles shed 5.60 is 1.30 m. Both are mantles, where the old
+// numbers were 1.85 and 0.25.
 shed({
   id: "WHARF_WAREHOUSE_B",
   asset: "bldg-warehouse-wharf-b",
   rect: rect(-2, 2, 6, 14),
-  roofY: BAND.PENTICE, // 5.35 — a STEP_UP under the Shambles shed roof (5.6)
-  note: "The warehouse at the wharf's E, abutting the Shambles shed. Its 5.35 loading gallery is the top of the ascent, a step under the market shed roof.",
+  roofY: 4.3, // measured: the drawn flat roof, 20.6 m2 across the full footprint
+  note: "The warehouse at the wharf's E, abutting the Shambles shed. Its flat roof at 4.30 is the top of the cargo ascent and the mantle onto the market shed roof.",
 });
 
 // ---------------------------------------------------------------------------
