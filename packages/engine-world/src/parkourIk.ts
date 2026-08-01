@@ -131,6 +131,12 @@ export interface IkTargetOptions {
   footPins?: readonly (Vec3Like | null)[];
 }
 
+// The driven bone is the wrist, not the fingertips. Seating that bone on the
+// top plane puts the rendered hand above the ledge by the hand's own thickness,
+// which is the over-reach visible on mantles. A wrist eight centimetres below
+// the lip, on the body-side face, leaves the fingers hooked over the top.
+const GRIP_WRIST_BELOW_LIP_M = 0.08;
+
 /**
  * Push a penetrating point out through the box face on the BODY's side, moving
  * only the axis that separates the limb from the body and leaving the limb's
@@ -199,6 +205,36 @@ export function exitWallToward(
 }
 
 /**
+ * A climb-up grip for a wrist whose owner is still below the ledge. Null when
+ * this is not an upper-lip contact (a vault side, hang-drop wall, or hand far
+ * from the top), so those cases keep their ordinary nearest-surface solve.
+ */
+function ledgeWristTarget(
+  hand: Vec3Like,
+  b: IkBox,
+  opts: IkTargetOptions,
+): Vec3Like | null {
+  const body = opts.bodyCenter;
+  const topY = b.max[1];
+  if (
+    !body ||
+    body.y >= topY - GRIP_WRIST_BELOW_LIP_M ||
+    hand.y < topY - opts.gripReachM ||
+    hand.y > topY + opts.gripReachM
+  ) {
+    return null;
+  }
+  const topPoint = nearestSurfacePoint(hand, b);
+  if (Math.abs(topPoint.y - topY) > EPS) return null;
+  return exitWallToward(
+    { x: hand.x, y: topY - GRIP_WRIST_BELOW_LIP_M, z: hand.z },
+    b,
+    body,
+    opts.skinM,
+  );
+}
+
+/**
  * Where a hand should be pulled to. Returns null when the clip already has it
  * clear of every solid and (for a grip) out of reach of any hold — leave it be.
  */
@@ -217,6 +253,8 @@ export function handTarget(
     }
   }
   if (worstBox) {
+    const wrist = opts.gripHands ? ledgeWristTarget(hand, worstBox, opts) : null;
+    if (wrist) return wrist;
     // A hand exits by the shortest normal — a grip that has sunk into a lip pulls
     // straight back out of the face it clipped, not toward the hips (which for a
     // hand reaching UP would drag it down to the wall's foot).
@@ -234,6 +272,8 @@ export function handTarget(
     }
   }
   if (bestBox && best > EPS && best <= opts.gripReachM) {
+    const wrist = ledgeWristTarget(hand, bestBox, opts);
+    if (wrist) return wrist;
     return nearestSurfacePoint(hand, bestBox);
   }
   return null;
