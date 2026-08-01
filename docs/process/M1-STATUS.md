@@ -465,27 +465,30 @@ zero-evidence form pass (`1c4250f`).
 ## Open
 
 **Needs an owner decision, not more measurement**
-- **wharf-a's roof deck claims a footprint the mesh does not draw, and no honest rect is
-  authorable from the level side.** The mesh draws a shallow gable: a 1.78 m ridge cap at 5.35
-  (z 1.41..3.19, 14.8 m², measured off the placed GLB) pitching to ~4.55/4.70 aprons, under a deck
-  claiming the whole 10×8 at 5.35 — so ~85% of the deck is invisible floor up to 0.95 m above the
-  drawn pitch. **Narrowing it to the ridge was tried 31-Jul and reverted.** A drop's take-off is
-  the deck LIP, so narrowing moves both lips ~2.8 m inward and `traversability` reports both
-  descent hops landing on GROUND. Measured: printshop lip z −2.50 → ridge z 1.41 is 3.91 m on a
-  1.75 m drop, needing **6.55 m/s** against `RUN_SPEED` 4.6 — unreachable by any run-off, only by
-  a jump; ridge z 3.19 → mound z 7.00 is 3.81 m on a 3.00 m drop needing 4.87 m/s, and the mound
-  cannot move north past z 6.00 without intersecting the warehouse. No stepped chain down the
-  pitch either: the mass fills the footprint to 5.35, so every standing spot below that inside it
-  is embedded in the blocker. **The fork is (a) keep the full-footprint deck and its lie, or (b)
-  an asset that draws wharf-a's roof flat at its own top.**
-- **The general trap behind it, and behind wharf-b: `structure()` ties the mass top, the placement
-  box and the walkable deck to ONE number (`roofY`).** So a mesh whose principal walkable roof is
-  not at its own top cannot be authored honestly, and re-pointing the deck to chase the drawn roof
-  *moves the drawn roof*: dropping wharf-b's `roofY` 5.35 → 4.30 made height the binding axis of
-  the contain-fit, shrank the mesh ~6% and carried the flat roof from 4.30 to 4.05. That re-point
-  was still a large improvement (−1.05 → −0.27 at plane) and is kept, but it **cannot converge by
-  iterating `roofY`**, and the debt note that blamed the residue on the deck's jetty was wrong and
-  is corrected.
+- **wharf-a's roof is now FLAT rather than gambrel, and that is the owner's call to keep or
+  reverse.** The fork recorded here (keep the full-footprint deck and its lie, or take an asset
+  that draws the roof flat at its own top) was resolved by taking option (b): the asset lane
+  re-authored both sheds at box-true scale (`47be671`) and it is synced (`d0c69d4`). Measured off
+  the placed meshes: wharf-a's deck went 12% → **100%** of samples carried, wharf-b's drawn roof
+  4.031 → **4.300** under a 4.30 plane. Both decks stayed exactly where they were, so no take-off
+  lip moved and the descents still solve. The cost, which is the decision: a full-footprint
+  standable plane at `roofY` and a pitched roof are mutually exclusive when `roofY` is the box cap,
+  so wharf-a lost its gambrel silhouette. Reversing it means accepting a narrower deck and
+  re-solving the descents — the measurement that produced the fork already showed that breaks the
+  run. Reasoning in the asset lane's `wharf-warehouses.INTEGRATION.md`.
+- **The general trap behind it: `structure()` ties the mass top, the placement box and the walkable
+  deck to ONE number (`roofY`).** So a mesh whose principal walkable roof is not at its own top
+  cannot be authored honestly, and re-pointing the deck to chase the drawn roof *moves the drawn
+  roof*: dropping wharf-b's `roofY` 5.35 → 4.30 made height the binding axis of the contain-fit,
+  shrank the mesh ~6% and carried the flat roof from 4.30 to 4.05. It **cannot converge by
+  iterating `roofY`** — only author-at-true-scale fixes it, which is what shipped. The debt note
+  that blamed the residue on the deck's jetty was wrong and is corrected.
+  - **A jetty caveat for whoever next reads a deck's fill number.** `structure()` inflates every
+    roof deck past its mass by `JETTY_M` (0.7 m), so a deck rect is ALWAYS wider than any mesh can
+    draw and a narrow shed can never sample 100%. wharf-b reads 60% for exactly this reason: on a
+    4 m-wide shed the 5×5 grid puts two of five columns (x ±2.16) outside the 4 m footprint.
+    Arithmetic, not a hole — wharf-a's wider rect happens to land all 25 samples inside. Do not
+    chase a narrow deck's residual fill as a defect without doing this division first.
 
 **Would affect play now**
 - **`C_SCAFF_FOOT` is a SAFE dead end, and it has pushed the guided line off the B2 goods yard
@@ -1134,6 +1137,119 @@ Three ways to waste twenty minutes on this gate:
 - The DUEL stage opens a REAL graded attempt, so a full green needs the **API** up as well as the
   web server. A web-server-only run fails DUEL no matter what the world is doing. Worth knowing
   before calling the release bar met.
+
+### The harbour ships were boxed to how a ship LOOKS, and the exemption written for them names the wrong cause (1 Aug)
+
+`check-world-collision` failed on exactly these three and nothing else. Each box is now the drawn
+hull's own AABB (`8159c66`), measured off the placed GLBs:
+
+| ship | was boxed | drawn | fill |
+|---|---|---|---|
+| brig | 14 × **18** × 6 | 14.000 × **8.733** × 4.197 | 29% → 39% |
+| snow | 14 × **15** × 5 | 14.000 × **9.027** × 4.304 | 35% → 43% |
+| sloop | 14 × **14** × 4 | 14.000 × **9.849** × 2.747 | 47% → **55%, passes** |
+
+**The dominant lie was HEIGHT — 9.3 m of solid above the brig's masthead — and the gate's table
+prints only x-by-z, so the worst axis never appeared in its own output.** Read `--json` for the
+y column before believing a fill number is a footprint problem.
+
+**The retraction, and it matters because the fix is unmerged and would have shipped the wrong
+reason.** `SPARSE_VESSELS` on `workflow/mission-presentation` (`2d77fcb`) justifies itself with
+"its collision box HEIGHT is set by the MAST for render scale, so a hull mesh can never fill it."
+**That premise is false.** A prop contain-fits UNIFORMLY and **x** is the binding axis on all three
+(drawn x sits exactly on the box), so the box height never affected the drawn size at all: dropping
+the brig 18 → 8.8 left the mesh identical to four decimals. The height was simply over-authored.
+The exemption is still *warranted*, for a narrower reason it does not state — the hull TAPERS inside
+an axis-aligned rect whose x extent is **pinned to the drawn length by the contain-fit**, so
+shrinking x shrinks the whole ship and a pointed hull cannot fill a 14 m rectangle. Re-word it
+before merging, and note its `KNOWN_DEBT` half (the two wharf warehouses as PENDING-REGEN) is now
+**stale by its own retirement condition** — both fill 100%.
+
+Reachability, which bounds what the residue costs: the player is clamped to `LEVEL_BOUNDS` maxZ 24,
+so the snow (z 28.3+) is untouchable, and only the north 1.1 m of the brig and 1.4 m of the sloop
+lie in reach — faces that just moved 0.9 m and 0.6 m further out. Separately noted, not chased:
+**the ground plate is walkable to z 24**, i.e. out over the drawn harbour past the bollard-and-rope
+rail at z 19.
+
+### The elm/roof-walk penetration brief is STALE — the transition it names does not exist (1 Aug)
+
+Handed to me as "`LIBERTY_ELM_TRUNK`'s canopy penetrates the `D_MEETING_ROOF→E_RIDGE` walk by
+0.309 m at head height". Measured with `check-drawn-penetration` (the admissible instrument here —
+it drives the real mover against DRAWN meshes and self-tests that it can tell penetration from the
+contain-fit gap): **there is no `D_MEETING_ROOF→E_RIDGE` transition.** The chain is
+`D_MEETING_ROOF → E_MEETING_STEP → E_RIDGE`, and neither leg touches the elm. No 0.309 anywhere.
+
+The real remaining elm intrusion is **`E_LEDGE_N→E_GALLERY`, 0.244 m into `liberty-elm-hero` at
+[80.8, 13.3, 7.8]** during approach/settle, graded OFF — the mildest non-marginal band. The elm's
+other three (`F_LOW→F_CROWN` 0.775, `F_POST→F_POST_STEP` 0.577, `F_LOW→F_AWNING` 0.380) are
+inherent: you climb a tree by moving through its canopy, and no reposition fixes them.
+
+**No reposition was attempted, deliberately.** The intrusion sits on the belfry chain that is
+already parked on the drawn urn, `STEEPLE_LEDGE_N`'s north strip (z 7.90) is inside a canopy that
+reaches z 8.8, and the obvious cheap fix — sliding `E_LEDGE_N` south within its own deck, the
+precedent `E_RIDGE` set when it moved 79.5 → 78.5 for this same canopy — would push the node
+**into `STEEPLE_GALLERY`'s own rect** (z 8.90..14.30) and hand the mantle to the overhead-skip rule
+on the ascent to the leap of faith. Moving the elm instead moves the mission's terminal beat: three
+bough decks, both effigies, the awning catch, the `F_*` nodes and the nail stance. Not a trade worth
+making for 0.244 m the night before a playtest. Whoever takes it should treat it as an asset job
+(canopy sprawl trimmed north of z ~7.5) rather than a level job.
+
+### The 13 stale `apps/web` failures are ONE cause, and it is the guided line (1 Aug)
+
+Recorded here as "pre-existing and unchased; nobody has yet established whether they are one cause
+or several." **They are one cause, and it is not a defect.**
+
+`86396fc` pinned the wayfinder to `GOLDEN_GUIDED_LINE`. Traced in `wayfind.ts:481-502`:
+`createWayfinder` with `guidedLine` set **filters `level.links` down to exactly the consecutive
+pairs of that line and discards every other authored link.** A body standing on a node that is not
+on the line therefore has no links in the graph at all, so no leg can commit there —
+`legSpeedCap` returns `null`, no gateway arms, and guidance offers no vault or climb.
+
+**Ten of the thirteen are traced to the node level.** Each one in `missionSafeRoute` /
+`missionSafeRun` / `missionElmContinuation` drives guidance on a leg the line no longer contains:
+the ropewalk tie beam and the hemp/capstan descent (`D2_*`), the Dock Square goods vault and throng
+(`B2_*` — the very legs recorded above as having dropped off the line), the gaol barrels, and the
+tower's east face and clock ledge (the line goes up the `C_SCAFF_*` staging instead). They encode
+the pre-`86396fc` cheapest-SAFE route. `route.ts` says as much in its own voice about the ropewalk:
+it "stays authored… the guided line just no longer detours through it." Two representative
+assertions read verbatim: `speedCapMps=null` where 2.3 was expected (no committed leg off the line
+to carry a cap), and a held sprint failing to climb the east face (that chain is off the line).
+
+**The other three are the same class by subject, not yet opened assertion by assertion** — say so
+rather than counting them as traced: "the first attempt is guided down SAFE; a later attempt uses
+every line" and "the lines drawn are the fork, not the network" are both about which lines guidance
+selects and draws, which is precisely what the pinning changed; and "a naive forward run clears the
+Shambles ground lane" asserts the retired market GROUND lane, which the covert elevated line
+replaced (see the Market→Town House entry above).
+
+**Scope, measured:** `apps/web` is the ONLY red package in the repo — 13 failures, and every other
+package green — so `node scripts/run-tests.mjs` exits 1 at `72ec557` for this reason alone.
+
+This also explains the A/B that puzzled the earlier pass — ten run identically with and without the
+scaffold fix because that fix changed board geometry, not line membership.
+
+**The fix lives in `apps/web/test/`, which this lane does not own, so it is reported not made.** The
+recommendation for whoever does: do **not** delete the assertions. The legs are still authored and
+still playable, so construct the wayfinder in those tests *without* `guidedLine` — then they go on
+testing the side routes they were written for, and stop asserting guidance the game deliberately
+withdrew. One genuine player-facing residue worth a look while there: the authored **walk cap** is a
+safety cue at a lip over a fall, and off the guided line there is no committed leg to carry it, so a
+player who wanders onto the tie beam gets no cap.
+
+### `verify_m1_steeple` is RED at `72ec557`, on the texture atlas count (1 Aug)
+
+Named in the release bar and currently failing, which nothing else records. The single problem is
+`FAIL 6 texture atlases; a hero landmark ships one` — a property of
+`steeple-meetinghouse-climbable.glb` alone, which last changed at `72ec557` (the belfry sync), so it
+arrived with that commit. Everything else in the verifier is green: all five rings 100% underfoot,
+0 walking-on-air, headroom clear, and the `E_GALLERY→F_CROWN` dive corridor clear. It is an asset
+packaging job for the asset lane, not a world defect — but the gate is red, so a release cannot be
+called clean by quoting it.
+
+Also: the artifact mirror `~/Projects/project-archive-artifacts/m1-world-assets-out-2026-07-31/` is
+**stale for the wharf** — it holds the pre-rebuild GLBs (21:42) and not the 00:23 rebuild or its
+integration note. Read `/tmp/m1-world-assets-out/` for those, and do not treat the mirror as the
+delivery of record without checking mtimes.
 
 ## What each gate can and cannot see
 
