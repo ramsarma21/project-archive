@@ -261,6 +261,26 @@ masses.push(
 // legible. Non-standable dressing; the player never boards them. Fanned across
 // the harbour, clear of the deck and of one another, the two tall hulls against
 // the sky.
+//
+// EACH BOX IS THE DRAWN HULL'S OWN AABB, and it must stay that way. These three
+// were authored to the height a rigged ship LOOKS (brig 18) rather than the
+// height its mesh draws (8.73), so the solver carried 9.3 m of empty air above
+// the masthead and 1.8 m astern — the invisible-wall class, and the only three
+// `check-world-collision` failures in the level. Measured off the placed GLBs:
+//
+//   brig  drawn 14.000 x 8.733 x 4.197   was boxed 14 x 18 x 6   (29% fill)
+//   snow  drawn 14.000 x 9.027 x 4.304   was boxed 14 x 15 x 5   (35% fill)
+//   sloop drawn 14.000 x 9.849 x 2.747   was boxed 14 x 14 x 4   (47% fill)
+//
+// THE TRAP, if you retune these: a prop contain-fits UNIFORMLY, so the box
+// decides the drawn size. x is the binding axis on all three (drawn x sits
+// exactly on the box), which is the only reason shrinking y and z leaves the
+// ships drawn where they are. Each y/z below is the measured extent rounded UP
+// to the next 0.05 m, so its ratio stays looser than x's and x keeps binding.
+// Round one DOWN and that axis binds instead: the whole ship shrinks, and the
+// hull no longer fills the box you just authored for it.
+//
+// The z-centres are unchanged, so every hull is drawn exactly where it was.
 // ---------------------------------------------------------------------------
 
 masses.push(
@@ -268,8 +288,8 @@ masses.push(
     id: "WHARF_SHIP_BRIG",
     section: "A_LEADS",
     asset: "ship-brig-hero",
-    rect: rect(-18, -4, 22, 28),
-    topY: 18,
+    rect: rect(-18, -4, 22.875, 27.125), // z 4.25 about the old centre 25
+    topY: 8.8, // drawn 8.733
     landable: false,
     tags: ["waterfront", "ship"],
     note: "The hero brig, moored SW over open water. Rigged and idle — the dead harbour.",
@@ -278,8 +298,8 @@ masses.push(
     id: "WHARF_SHIP_SNOW",
     section: "A_LEADS",
     asset: "ship-snow-background",
-    rect: rect(-22, -8, 28, 33),
-    topY: 15,
+    rect: rect(-22, -8, 28.325, 32.675), // z 4.35 about the old centre 30.5
+    topY: 9.1, // drawn 9.027
     landable: false,
     tags: ["waterfront", "ship"],
     note: "The snow moored further out behind the brig.",
@@ -288,8 +308,8 @@ masses.push(
     id: "WHARF_SHIP_SLOOP",
     section: "A_LEADS",
     asset: "ship-sloop",
-    rect: rect(0, 14, 22, 26),
-    topY: 14,
+    rect: rect(0, 14, 22.6, 25.4), // z 2.80 about the old centre 24
+    topY: 9.9, // drawn 9.849
     landable: false,
     tags: ["waterfront", "ship"],
     note: "A sloop moored to the S.",
