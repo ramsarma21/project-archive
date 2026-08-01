@@ -879,6 +879,19 @@ weld-clean and drawn==collision and still not carry the route:
    and a drawn non-colliding cornice is invisible to every gate but the mesh pass.** Fix: trim the
    cornice wing back to the shaft depth (one quad); the urn did not need moving (capsule sweep
    confirmed >= 1.90 m at the tightest corner).
+5. **A generated canopy keep-out must be RNG-neutral, or it silently moves everything downstream**
+   (elm belfry, 1 Aug). `E_LEDGE_N->E_GALLERY` (the last `STEEPLE_DEADZONE_CLIMBS` entry) drove the
+   head **0.244 m** into the elm's north-rim leaf cards — measured by `check-drawn-penetration`'s
+   real-mover sweep, invisible to a vertical column probe because leaf cards are near-vertical. Fix:
+   extend `build_liberty_elm_v2.py`'s canopy keep-out (`over_belfry`, elm-local x −1.7..0.7 /
+   z +6.4..8.1 / h 12.6..16.2) to drop clusters in that corridor. **The trap:** an early `return` in
+   `add_leaf_cluster` skipped the cluster's per-quad `RNG_PY` draws, re-rolling the *entire* downstream
+   canopy — which moved the crown and deepened the (ignored) `F_LOW->F_CROWN` haul 0.775 → 0.996 m,
+   visible only by diffing the full penetration report. The keep-out consumes the same draws and emits
+   no faces instead. Verified: of 46 authored transitions **only the belfry changed** and the climax
+   mantle is byte-identical. The belfry dead-zone can drop its last entry once the level lane wires it.
+   (The elm bakes its own 1024 bark normal and never runs through `fix_glb_normals`, so the
+   `normalMax` stamp is inert here — no stamp added.)
 
 **A mutation hunt found the suite's own blind spots** (`6cb600d`). Method: break the code a
 test claims to guard, and see whether the test still passes. Results, ranked:

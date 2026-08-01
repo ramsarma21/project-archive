@@ -727,10 +727,44 @@ def over_deck(bx, by, bz):
     return False
 
 
+# The belfry climb E_LEDGE_N[80.5,13.0,8.5] -> E_GALLERY[80.0,15.8,9.6] is on the
+# NEIGHBOURING steeple, not on the elm's own tiers, so over_deck cannot see it — but
+# the crown's north rim sprawls to world z8.8 right over it, and the rising body's
+# head runs into the drawn canopy. Measured off the placed GLB with the real mover
+# (check-drawn-penetration): 0.244 m of axis INSIDE the leaf cards at world
+# (80.81, 13.35, 7.83), the only thing keeping E_LEDGE_N->E_GALLERY on
+# STEEPLE_DEADZONE_CLIMBS. Keep leaf clusters out of that climb's head corridor.
+#
+# The keep-out is in elm-LOCAL game coords (axis world (81, 0.8)): x -1.7..0.7 covers
+# the climb's x -1.0..-0.5 plus its 0.8 m run-up and a capsule radius each side; z
+# +6.4..+8.1 is the north rim the climb passes under (the elm's own draw stops at
+# z +8); height 12.6..16.2 spans the 13.0->15.8 climb and the head above it. It is a
+# narrow notch on the one rim that faces (and is largely occluded by) the steeple, so
+# the crown silhouette elsewhere is untouched. It is HEIGHT>=12.6 and NORTH (z>=6.4),
+# so it cannot reach the climax mantle onto the crown (F_LOW->F_CROWN, height 6.4-8.3
+# on the SOUTH-WEST rim at z<=1.1) — that beat and its clearance are left exactly.
+BELFRY = dict(x0=-1.7, x1=0.7, gz0=6.4, gz1=8.1, h0=12.6, h1=16.2)
+
+
+def over_belfry(bx, by, bz):
+    """True if (bx,by,bz) [Blender local: bx=gameX, by=-gameZ, bz=height] is in the
+    steeple belfry climb's head corridor, where the elm canopy must not intrude."""
+    gz = -by
+    return (BELFRY["x0"] <= bx <= BELFRY["x1"]
+            and BELFRY["gz0"] <= gz <= BELFRY["gz1"]
+            and BELFRY["h0"] <= bz <= BELFRY["h1"])
+
+
 def add_leaf_cluster(centre, size):
     cx, cy, cz = centre
     if over_deck(cx, cy, cz):
         return 0
+    # Drop clusters in the belfry climb corridor, but CONSUME THE SAME RNG a normal
+    # cluster would (ang/tilt/hw/hh below) and only skip the face creation. Returning
+    # early here instead would desync RNG_PY and re-roll every later cluster — which
+    # moved the crown canopy and made F_LOW->F_CROWN read 0.24 m deeper. Neutralising
+    # the draw keeps the whole rest of the canopy, crown included, byte-for-byte.
+    belfry = over_belfry(cx, cy, cz)
     made = 0
     for k in range(3):
         ang = k * math.pi / 3 + RNG_PY.uniform(-0.2, 0.2)
@@ -739,6 +773,8 @@ def add_leaf_cluster(centre, size):
         tilt = RNG_PY.uniform(-0.25, 0.25)
         hw = size * RNG_PY.uniform(0.8, 1.1)
         hh = size * RNG_PY.uniform(0.8, 1.1)
+        if belfry:
+            continue
         corners = [
             (-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh),
         ]
