@@ -35,8 +35,14 @@ const IDLE_BLEND_RATE = 1.2;
 const VELOCITY_SMOOTHING_RATE = 16;
 /** Ceiling on a flick, rad/s, so a fast sweep stays readable. */
 const MAX_VELOCITY = 12;
-/** Opening pose: a few degrees off square so it reads as three-dimensional. */
-const HOME_ANGLE = -0.34;
+/**
+ * Opening pose: square to the camera. The intro cuts to the player face-on and
+ * crossfades into the hub, so any yaw here shows up as the figure turning
+ * across the dissolve. Note this is the pose at mount only — the turntable
+ * resumes its ambient spin IDLE_RESUME_DELAY later, so "face-on at rest" is a
+ * property of the first beat, not a resting state.
+ */
+export const HOME_ANGLE = 0;
 /** Pixels of travel that count as "the player has found the drag". */
 const DRAG_INTENT_PX = 20;
 

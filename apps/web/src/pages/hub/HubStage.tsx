@@ -1,7 +1,6 @@
-import { Suspense, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { ContactShadows } from "@react-three/drei";
 import { RiggedCharacter } from "@pa/engine-world";
 import { stepTurntable, type TurntableSpin } from "./turntable.js";
 import type { MutableRefObject } from "react";
@@ -111,6 +110,7 @@ function Turntable(props: {
   reducedMotion: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null);
+  useMatteAvatar(groupRef);
 
   useFrame((_, delta) => {
     const yaw = stepTurntable(props.spin.current, delta, props.reducedMotion);
@@ -151,29 +151,115 @@ function StageCamera() {
  * silhouette the plate's centre glow gives us, and just strong enough that the
  * face is not a black cutout. Nothing casts a shadow — the floor is painted, so
  * there is no receiver, and the dais pool is what grounds the figure.
+ *
+ * The balance is deliberately weighted towards ambient and hemisphere. Those
+ * two carry irradiance only: they light the figure without ever adding a
+ * specular lobe. Directional and point lights do both, and it was the punchier
+ * first pass of them that lacquered the breeches and the linens — every wrinkle
+ * in the normal map caught a cyan highlight and clipped. The warm room this
+ * replaced ran *stronger* lights and got away with it because a warm highlight
+ * on brown wool is not a white patch; against a cool key it is. So the direct
+ * lights here are only as strong as the modelling needs, and the fill they gave
+ * up is paid back by the two that cannot blow out.
  */
 function ArchiveLighting() {
   return (
     <>
-      <ambientLight intensity={0.62} color="#9ec6dc" />
-      <hemisphereLight color="#cfeaff" groundColor="#0c1a24" intensity={0.55} />
+      <ambientLight intensity={1.62} color="#9ec6dc" />
+      <hemisphereLight color="#cfeaff" groundColor="#0c1a24" intensity={1.35} />
       {/* The hall's far glow, behind the character: the plate's own key. */}
-      <directionalLight position={[0, 2.4, -4.2]} color="#a8e6ff" intensity={2.6} />
+      <directionalLight position={[0, 2.4, -4.2]} color="#a8e6ff" intensity={1.25} />
       {/* Low front fill, so the face reads against that glow. */}
-      <directionalLight position={[0.7, 1.7, 3.4]} color="#cfe6ff" intensity={1.15} />
+      <directionalLight position={[0.7, 1.7, 3.4]} color="#cfe6ff" intensity={0.9} />
       {/* The record banks down the left and right of the plate. */}
-      <directionalLight position={[-4, 1.8, 0.6]} color="#57c4ff" intensity={0.7} />
-      <directionalLight position={[4, 1.8, 0.6]} color="#57c4ff" intensity={0.6} />
-      {/* The dais glow spilling up onto the legs. */}
+      <directionalLight position={[-4, 1.8, 0.6]} color="#57c4ff" intensity={0.34} />
+      <directionalLight position={[4, 1.8, 0.6]} color="#57c4ff" intensity={0.28} />
+      {/* The dais glow spilling up onto the legs. Kept weak: it sits at shin
+          height a few centimetres off the stockings, where inverse-square makes
+          a modest intensity enormous — this was what bleached the near leg. */}
       <pointLight
         position={[0, 0.42, TURNTABLE_Z]}
         color="#63d2ff"
-        intensity={3}
+        intensity={0.55}
         distance={4.2}
         decay={2}
       />
     </>
   );
+}
+
+/** Floor for the avatar's roughness, and ceiling for its metalness. */
+const MATTE_ROUGHNESS = 0.94;
+const MATTE_METALNESS = 0.04;
+
+/**
+ * Give the hub's avatar its own matte copy of the rig's materials.
+ *
+ * Two things force this to clone rather than edit in place. `skeletonClone`
+ * inside RiggedCharacter shares materials across every instance of a GLB, and
+ * it only clones them when a `tint` is passed, which the hub does not — so
+ * writing to them here would follow the character into the duel and the
+ * mission, lighting those scenes with the Archive's compromise. And the rig is
+ * owned by another lane; the fix has to live on this side of the boundary.
+ *
+ * What it changes: the whole rig is a single MeshStandardMaterial, shipped at
+ * roughness 0.5 and metalness 0 with no roughness or metalness map. Half
+ * roughness is a tight enough specular lobe that each wrinkle in the normal map
+ * returned its own highlight, and against a cool key those clipped to white.
+ * Flooring roughness widens the lobe until no single wrinkle can clip.
+ *
+ * It does NOT flatten the pale streaks still visible on the breeches and the
+ * stockings. Those survive with every directional and point light set to zero,
+ * which means they are painted into the base-colour texture by the cast bake,
+ * not lit here. Removing them needs a re-bake of playerboy-rigged, in the lane
+ * that owns it; no hub-side shading change can reach them.
+ */
+function useMatteAvatar(root: MutableRefObject<THREE.Group | null>) {
+  const owned = useRef<THREE.Material[]>([]);
+  const applied = useRef(false);
+
+  // The rig arrives through Suspense, so there is nothing to walk on the first
+  // frames. Retry until a mesh appears, then latch — the rig is not swapped.
+  useFrame(() => {
+    if (applied.current || !root.current) return;
+    let found = false;
+    root.current.traverse((object) => {
+      // Skinned meshes only: that is the whole rig, and it leaves alone the
+      // blob shadow RiggedCharacter draws, whose material React owns and would
+      // re-attach underneath us.
+      const mesh = object as THREE.SkinnedMesh;
+      if (!mesh.isSkinnedMesh) return;
+      found = true;
+      const sources = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const matte = sources.map((source) => {
+        const copy = source.clone() as THREE.MeshStandardMaterial;
+        owned.current.push(copy);
+        if (typeof copy.roughness === "number") {
+          // The maps go with the scalars. This bake ships neither, so today
+          // both lines are no-ops — but roughness is MULTIPLIED by the map's
+          // green channel, so a re-bake that added one would quietly undo the
+          // floor below and put the lacquer back.
+          copy.roughnessMap = null;
+          copy.roughness = Math.max(copy.roughness, MATTE_ROUGHNESS);
+        }
+        if (typeof copy.metalness === "number") {
+          copy.metalnessMap = null;
+          copy.metalness = Math.min(copy.metalness, MATTE_METALNESS);
+        }
+        copy.needsUpdate = true;
+        return copy;
+      });
+      mesh.material = Array.isArray(mesh.material) ? matte : matte[0]!;
+    });
+    if (found) applied.current = true;
+  });
+
+  useEffect(() => {
+    const materials = owned.current;
+    return () => {
+      for (const material of materials) material.dispose();
+    };
+  }, []);
 }
 
 export function HubStage(props: {
@@ -200,27 +286,24 @@ export function HubStage(props: {
         // Transparent, so the Archive Hall plate behind the canvas is what the
         // avatar and the dais stand in. No `<color attach="background">`.
         alpha: true,
-        toneMappingExposure: 1.14,
+        // 1.0, down from the 1.14 the dark room wanted to lift its floor out of
+        // ACES's toe. There is no floor in the scene any more — the plate paints
+        // it — so the only thing the extra exposure still reached was the
+        // avatar's highlights.
+        toneMappingExposure: 1,
       }}
     >
       <StageCamera />
       <Suspense fallback={null}>
         <ArchiveLighting />
-        {/* What grounds the avatar. The plate's floor is painted, so no light in
-            the scene can lay a shadow on it and the body would otherwise hover
-            over the hall — which is exactly what the first capture showed. A
-            real contact shadow is the case the asset rule keeps procedural, and
-            it beats a blob: it is the shape of the character, and it turns with
-            him on the turntable. */}
-        <ContactShadows
-          position={[0, 0.017, TURNTABLE_Z]}
-          scale={2.1}
-          resolution={512}
-          blur={1.7}
-          far={1.9}
-          opacity={1}
-          color="#01060b"
-        />
+        {/* Grounding is the soft blob RiggedCharacter draws under itself, plus
+            the dais pool. A drei <ContactShadows> used to sit here, and it was
+            drawing NOTHING: forced to scale 4, blur 0.4 and pure red it still
+            put not one pixel on the frame, so the earlier claim that it was
+            what grounded the avatar was wrong — the dais opacities were. It
+            cost a 512px depth pass and a blur every frame for that, so it is
+            gone. A character-shaped shadow would still beat the blob if anyone
+            wants to work out why the component is inert here. */}
         <SystemDais reducedMotion={props.reducedMotion} />
         <Turntable spin={props.spin} reducedMotion={props.reducedMotion} />
       </Suspense>
