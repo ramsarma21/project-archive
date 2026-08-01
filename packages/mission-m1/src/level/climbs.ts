@@ -31,36 +31,20 @@ export const CLIMBS: ClimbSpec[] = [
   // reveal onto the leads. Both are straight-up climbs the reader would not
   // otherwise offer (a ledge over a crate, a floor under an eave), so they are
   // written down here against the links they serve.
-  // Re-massed 31-Jul (owner: no ladders, no >1.9 m climbs). The 2.1 m crate→balcony
-  // is now a single 1.85 m mantle off the raised goods on-ramp (2.15); the 3.1 m
-  // balcony→eave splits in two onto the new string course (5.5).
-  climbVolume({
-    section: "B_SHAMBLES",
-    serves: "B_CRATES_B->M_LEDGE",
-    onto: "MERCHANT_BALCONY",
-    at: [39.2, 2.15, -2.0],
-    halfX: 0.6,
-    halfZ: 0.4,
-    note: "On the Shambles goods on-ramp (2.15) under the merchant's open window; the balcony overhangs it, and the mantle up (1.85 m) is the climb-in.",
-  }),
-  climbVolume({
-    section: "B_SHAMBLES",
-    serves: "M_LEDGE->M_STRING",
-    onto: "MERCHANT_STRING",
-    at: [39.2, 4.0, -2.8],
-    halfX: 0.6,
-    halfZ: 0.35,
-    note: "On the balcony; the jettied gallery is one mantle up and out over the street (4.0 → 5.5).",
-  }),
-  climbVolume({
-    section: "B_SHAMBLES",
-    serves: "M_STRING->M_EAVE_S",
-    onto: "MERCHANT__ROOF",
-    at: [39.2, 5.7, -2.0],
-    halfX: 0.6,
-    halfZ: 0.35,
-    note: "On the gallery; the leads' south lip is the last mantle (5.5 → 7.1).",
-  }),
+  // ALL THREE MERCHANT VOLUMES RETIRED 31-Jul, and leaving them behind is what
+  // killed the covert climb-in.
+  //
+  // They were authored when the chain was laddered. The re-mass that same day
+  // took the ladders out and left the volumes, which is precisely the mistake
+  // the C_ASCENT note below warns about: a climb volume does not ENABLE a deck
+  // mantle, it RESTRICTS one. With a volume over the foot and no ladder or grip
+  // to validate it, `readRaisedSurface` refuses at probe.ts:502-511 and the
+  // climb is silently never offered. Driving real stepFlow up the chain, the
+  // body sat on the Shambles crate at 2.15 and was offered BLOCKED, then
+  // RUN_OFF — the whole covert entry into the merchant's house was dead, and no
+  // gate in the tree said so. The three steps are ordinary lipped ledges now
+  // (parlour floor 4.00 → gallery 5.70 → eave 7.10, rises 1.85 / 1.70 / 1.40,
+  // every one inside the mantle band) and they need nothing here.
 
   // ---- C_ASCENT: the Town House, twice round and up the tower --------------
   // The two scaffold climb volumes were REMOVED 31-Jul with the staging
@@ -137,15 +121,11 @@ export const CLIMBS: ClimbSpec[] = [
     halfZ: 1.2,
     note: "The same ridge from the south slope.",
   }),
-  climbVolume({
-    section: "E_LEAP",
-    serves: "E_RIDGE->E_LOUVRE",
-    onto: "LOUVRE_SILL",
-    at: [78.5, 11.2, 8.6],
-    halfX: 1.2,
-    halfZ: 1.0,
-    note: "Off the ridge onto the louvre sill, under the belfry.",
-  }),
+  // The E_RIDGE->E_LOUVRE volume RETIRED 31-Jul with LOUVRE_SILL and the LOUVRE
+  // ladder. The belfry set-offs are staggered onto separate faces now, so each
+  // step is an ordinary lipped ledge in front of the body and needs nothing
+  // authored — and a volume left behind here would have refused all three, the
+  // way the merchant's leftovers did.
 
   // ---- F_TREE: the Liberty Elm --------------------------------------------
   // RETIRED 31-Jul with GRIP_ELM_CROWN. The note here used to read "the crown

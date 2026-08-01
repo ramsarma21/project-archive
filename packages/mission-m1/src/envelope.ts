@@ -200,7 +200,10 @@ export const BAND = {
   MID_ROOF: 9.6,
   CORNICE: 10.2,
   MEETING_RIDGE: 11.2,
-  LOUVRE_SILL: 14.0,
+  // The belfry's two staggered set-offs, replacing the LOUVRE_SILL full-shaft
+  // ring at 14.0 that the mesh never drew. See geometry.ts.
+  STEEPLE_LEDGE_N: 13.0,
+  STEEPLE_LEDGE_E: 14.7,
   LEADS: 12.4,
   TOWER_PLINTH: 15.2,
   STEEPLE_GALLERY: 15.8,

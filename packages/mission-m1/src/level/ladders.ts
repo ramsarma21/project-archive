@@ -110,14 +110,10 @@ export const LADDERS: LadderPlacementSpec[] = [
     faceX: 0,
     faceZ: 1,
   },
-  // Off the ridge onto the louvre sill under the belfry.
-  {
-    id: "LOUVRE",
-    at: [79.5, 11.2, 8.6],
-    onto: "LOUVRE_SILL",
-    faceX: -0.45,
-    faceZ: -0.89,
-  },
+  // The LOUVRE ladder RETIRED 31-Jul with the sill it served. It existed because
+  // ridge 11.2 -> sill 14.0 was a 2.8 m dead-zone rise onto a full-shaft ring; the
+  // regenerated steeple staggers the belfry set-offs onto the north and east
+  // faces, so the same ascent is three mantles and leans on nothing.
 ];
 
 // The two ascents a ladder should NOT serve, authored as GRIPS instead. Each

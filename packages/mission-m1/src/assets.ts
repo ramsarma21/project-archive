@@ -269,8 +269,8 @@ export const ASSETS: AssetRequirement[] = [
     // because 186mm of shortfall hides inside the reader's step-down tolerance. Only
     // the contain-fit check and the headroom check catch it.
     sizeM: [7.4, 30.0, 7.4],
-    standableAt: [14.0, 15.8, 18.2, 20.6],
-    why: "Hollis Street's steeple, and the take-off for both dives. ONE broad gallery, then a tall 1.2m lantern with a narrow cornice on it, then the weathervane balcony and a 9.4m spire — not four stacked galleries, which is what it was and which read as a pagoda. Ring ledges at louvre sill 14.0, gallery 15.8, lantern cornice 18.2 and vane balcony 20.6; the lower two at least 1.4m deep, the upper two 0.8m of walkway round the lantern and the spire.",
+    standableAt: [13.0, 14.7, 15.8, 18.2, 20.6],
+    why: "Hollis Street's steeple, and the take-off for both dives. ONE broad gallery, then a tall 1.2m lantern with a narrow cornice on it, then the weathervane balcony and a 9.4m spire — not four stacked galleries, which is what it was and which read as a pagoda. The belfry set-offs are STAGGERED onto different faces (north 13.0, east 14.7) rather than a full-shaft ring: a ring spans the whole shaft, so it roofs whatever is under it and no mantle onto it can ever be offered. Then gallery 15.8, lantern cornice 18.2 and vane balcony 20.6; the lower ones at least 1.0m of clear standable depth, the upper two 0.8m of walkway round the lantern and the spire.",
   },
   {
     key: "hay-wain-loaded",

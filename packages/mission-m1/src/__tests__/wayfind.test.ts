@@ -781,8 +781,8 @@ test("the meetinghouse climb advances D_MEETING_ROOF to the ridge/louvre", () =>
     "the mark remained held at the meeting-house roof after the ridge climb",
   );
   assert.ok(
-    ["E_RIDGE", "E_LOUVRE"].includes(afterClimb!.nodeId),
-    `the mark advanced to ${afterClimb!.nodeId}, not the ridge or louvre sill`,
+    ["E_RIDGE", "E_LEDGE_N"].includes(afterClimb!.nodeId),
+    `the mark advanced to ${afterClimb!.nodeId}, not the ridge or the belfry's north set-off`,
   );
 });
 
@@ -970,9 +970,10 @@ test("a leap gateway: the receiver arms <=0.35m from the lip but holds until the
   const eg = at("E_GALLERY");
   const galSurface = nodeById.get("E_GALLERY")!.surface;
   const crownSurface = nodeById.get("F_CROWN")!.surface;
-  // The body climbs the louvre onto the gallery: the CLIMB completes at
-  // E_GALLERY, which arms the leap-of-faith gateway whose take-off is the lip.
-  safe.advanceWaypoint(sampleAt("E_LOUVRE"), POST);
+  // The body climbs the belfry's north set-off onto the gallery: the CLIMB
+  // completes at E_GALLERY, which arms the leap-of-faith gateway whose take-off
+  // is the lip.
+  safe.advanceWaypoint(sampleAt("E_LEDGE_N"), POST);
   safe.advanceWaypoint(
     {
       pos: { x: eg.x, y: eg.y, z: eg.z - 1.0 },

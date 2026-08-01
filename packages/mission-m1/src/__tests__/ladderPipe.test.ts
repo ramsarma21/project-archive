@@ -23,10 +23,12 @@ test("the real level authors its climb ladders, and every one resolves an ascent
   const { world } = compileLevel(M1_EFFIGY_RUN);
   // The content landed: one ladder per route climb-up a ladder honestly serves
   // (the tree and the stone buttress are grips, not ladders — see level/ladders).
-  // The merchant's two goods-ladders were retired 31-Jul (its covert climb-in is a
-  // ≤1.9 m mantle chain now, no ladder), so the count is down from 11 to 9. The
-  // east-half ladders are being converted to mantle chains landmark by landmark.
-  assert.equal(world.ladders?.length, 7, "seven ladders forwarded into world.ladders (merchant window + reveal, then both Town House scaffold ladders, retired to mantle chains)");
+  // The merchant's two goods-ladders and both Town House scaffold ladders were
+  // retired 31-Jul; the LOUVRE ladder went the same day with the full-shaft ring
+  // it served, when the regenerated steeple's staggered set-offs turned that
+  // 2.8 m reach into mantles. 11 -> 9 -> 6. The east-half ladders are being
+  // converted to mantle chains landmark by landmark.
+  assert.equal(world.ladders?.length, 6, "six ladders forwarded into world.ladders (the merchant pair, both scaffold ladders and the belfry LOUVRE have all been retired to mantle chains)");
   // Every forwarded ladder is one the tested predicate accepts: a real served
   // surface and a top-out with standing clearance ("no ladder, no climb" armed,
   // not refused). This is what the mission-world lane will read to turn the rule

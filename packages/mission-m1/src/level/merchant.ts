@@ -160,11 +160,21 @@ decks.push(
     id: "MERCHANT__ROOF",
     section: "B_SHAMBLES",
     asset: null,
-    rect: inflate(MERCHANT_FOOT, JETTY_M),
+    // The standard JETTY_M lip on three sides, and NOT on the south front. Two
+    // measurements forced that, both off the placed mesh:
+    //   the drawn roof plateau stops at z −3.25, so the jetty's south 0.75 m was
+    //   authored roof over nothing — a lip a body can stand on and not see; and
+    //   the regenerated gallery slab (z −3.4..−2.6, top 5.70) sits UNDER it, so
+    //   the jetty roofed the new ledge at 1.40 m, under STAND_HEIGHT, and no body
+    //   could have stood on the intermediate the whole chain turns on.
+    // Pulled to the gallery's own north edge, which is also the parlour floor's
+    // south edge: one clean line at z −3.4 where the three tiers stack apart
+    // instead of over each other.
+    rect: { ...inflate(MERCHANT_FOOT, JETTY_M), maxZ: -3.8 },
     y: EAVE,
     carriedBy: ["MERCHANT"],
     tags: ["roof", "north-row", "eave"],
-    note: "The merchant's leads — the eave. G-B leaves from it to the Town House scaffold; the covert line climbs up here out of the parlour and the drop-in comes down over the south lip.",
+    note: "The merchant's leads — the eave. G-B leaves from it to the Town House scaffold; the covert line climbs up here off the jettied gallery and the drop-in comes down over the south lip.",
   }),
   // The landable route surface on the parlour, a null-asset deck coincident with
   // the drawn (non-landable) MERCHANT_PARLOUR mass top at 4.0. The mass draws the
@@ -174,31 +184,25 @@ decks.push(
     id: "MERCHANT_PARLOUR__DECK",
     section: "B_SHAMBLES",
     asset: null,
-    // Reaches the south wall line (z −3.4) at the aperture so it abuts the balcony.
-    rect: rect(33.8, 41.2, -16.4, -3.4),
+    // Runs out to z −2.6, which is where the mesh actually stops: the placed GLB
+    // draws ONE up-facing plateau at 4.00 spanning z −16.90..−2.60, the parlour
+    // floor and its projecting window course together. It used to be authored as
+    // two decks over that one slab, and the shorter of them (MERCHANT_BALCONY,
+    // 0.8 m deep) straddled the drawn window sill — a 0.12 m course the mesh
+    // carries 0.15 m proud at z −3.22..−3.10 — so one of its three samples read
+    // 4.15 and the affordance gate called it MARGINAL at 67%. Nothing was
+    // missing; the deck was small enough for a moulding to be a third of it.
+    // One drawn slab, one deck: the sill is now a 0.15 m step-over inside a
+    // 13.8 m floor, which is what it is.
+    rect: rect(33.8, 41.2, -16.4, -2.6),
     y: PARLOUR,
     carriedBy: ["MERCHANT_PARLOUR"],
     tags: ["floor", "safe-interior"],
   }),
-  // The projecting balcony (Option 1 — the covert drop-in ledge). The parlour
-  // floor reaches OUT through the open window, south of the wall over the Shambles
-  // crate-mound, so the G-A climb-in is a short VERTICAL mantle onto a solid ledge
-  // directly above the foot, then a flat step into the SAFE interior. Drawn by the
-  // merchant mesh (a bldg-merchant deck → the generator's deck-slab case, a SOLID
-  // slab); carriedBy MERCHANT so it clusters into the one merchant draw, which
-  // re-centres the draw symmetrically on the collision (declared depth grows to
-  // 14.6 to include it — the safe corner-stud re-centre). Abuts the parlour deck at
-  // z −3.4 (edge, no weld).
-  deck({
-    id: "MERCHANT_BALCONY",
-    section: "B_SHAMBLES",
-    asset: "bldg-merchant",
-    rect: rect(AP_X0, AP_X1, -3.4, -2.6),
-    y: PARLOUR,
-    carriedBy: ["MERCHANT"],
-    tags: ["balcony", "ledge", "safe-interior", "start"],
-    note: "The merchant's window balcony over the Shambles crate: the covert climb-in ledge into the quartered parlour.",
-  }),
+  // MERCHANT_BALCONY was folded into MERCHANT_PARLOUR__DECK above (see its note).
+  // The projecting window course it stood for is still there and still drawn; it
+  // is simply the south end of the one 4.00 slab rather than a second deck laid
+  // over the same triangles.
   // --- The mantle-chain ledge (owner 31-Jul: the covert line is ≤1.9 m mantles, no
   // ladders/tall climbs). The old exit (balcony 4.0 → eave 7.1, a 3.1 m laddered
   // CLIMB) splits into two ≤1.9 m mantles onto a moulded string course at 5.5. The
@@ -217,25 +221,34 @@ decks.push(
   // sky overhead, not the eave. It projects to z −1.7 (a full jettied storey) and
   // stands clear of the balcony node (z −2.8) below it.
   //
-  // ASSET FLAG (pending-regen): the current bldg-merchant mesh already draws its
-  // balcony ~2.1 m and its roof/eave ~3.1 m BELOW their authored planes, so this new
-  // gallery reads short too until the merchant facade is regenerated to box. Target
-  // boxes for the regen (same key bldg-merchant, south face over the window
-  // x 38.0..40.4):
-  //   balcony       top y = 4.00  (z −3.4..−2.6, ≥0.8 deep)
-  //   jetty gallery top y = 5.70  (z −2.4..−1.6, oversailed south, ≥0.8 deep)
-  //   eave / roof   top y = 7.10
-  // Recorded as accepted debt in scripts/check-world-affordances.mjs. The STRUCTURE
-  // (decks/route) is authored to the target; do NOT shrink the boxes.
+  // REGEN LANDED (08003ac) AND THE RECT MOVED ONTO IT. The pending-regen note that
+  // stood here aimed the gallery at z −2.4..−1.6, oversailed south of the old roof
+  // lip for headroom. The delivered mesh draws it at z −3.4..−2.6 across the whole
+  // front (x 33.3..41.7), measured off the placed GLB: one 6.7 m2 up-facing plateau
+  // at exactly 5.70, with the 0.20 m balcony hood and the redundant 5.65 string
+  // course gone. The rect follows the mesh rather than the other way round.
+  //
+  // The headroom the old oversail was buying is now bought by the ROOF pulling its
+  // south jetty back to z −3.4 (see MERCHANT__ROOF above) — which it owed the mesh
+  // anyway. The chain is therefore parlour floor (4.0) → gallery (5.70) → eave
+  // (7.10), 1.70 m and 1.40 m, both inside the mantle band, and each tier's
+  // footprint is clear of the one above it.
+  //
+  // The rect runs the full drawn front, not just the window bay. Outside the
+  // aperture (x 37.5..40.5) the south wall rises through the slab's north 0.2 m,
+  // so only the 0.6 m proud strip is walkable there — which is what a Georgian
+  // jetty is. `canStand` refuses the buried part on its own; nothing needs to
+  // exclude it, and narrowing the rect to the bay would leave 5.6 m of drawn
+  // ledge with no collision under it.
   deck({
     id: "MERCHANT_STRING",
     section: "B_SHAMBLES",
     asset: "bldg-merchant",
-    rect: rect(38.0, 40.4, -2.4, -1.6),
+    rect: rect(33.3, 41.7, -3.4, -2.6),
     y: 5.7,
     carriedBy: ["MERCHANT"],
     tags: ["ledge", "gallery"],
-    note: "The jettied upper-storey gallery oversailing the street: the intermediate mantle (balcony 4.0 → 5.7 → eave 7.1) up the merchant's south front to the leads. Sits above the balcony-body head (STAND_HEIGHT 1.55) so it never clips the balcony below.",
+    note: "The jettied upper-storey gallery across the merchant's south front: the intermediate mantle between the parlour floor (4.0) and the leads (7.1). Stood on in the window bay, where the wall below stops at the parlour and the slab is 0.8 m of clear depth.",
   }),
 );
 

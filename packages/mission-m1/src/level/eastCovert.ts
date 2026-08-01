@@ -153,31 +153,23 @@ links.push(
 // HOLLIS STEEPLE — FLAGGED, blocked on the asset worker's steeple regen.
 // ===========================================================================
 //
-// The owner wants the steeple ascent re-authored as a ≤1.9 m ring mantle chain
-// (asset worker regenerating steeple-meetinghouse-climbable with ≤1.9 m rings to
-// 15.8). That re-mass is NOT authored here; the proven spiral in route.ts
-// (D_MEETING_ROOF -> ridge 11.2 -> louvre 14.0 -> gallery 15.8) is kept as the
-// green fallback, because the current STEEPLE COLLISION makes a ≤1.9 m ring chain
-// impossible until the regen replaces it (verified against the shipped physics):
+// The steeple ascent IS the ≤1.9 m mantle chain now (regen 08003ac): ridge 11.2 ->
+// north set-off 13.0 -> east set-off 14.7 -> gallery 15.8, rises 1.8 / 1.7 / 1.1.
 //
-//   * MEETING_RIDGE (11.2) is the meeting-house roof monitor — proven geometry
-//     that must not move — a FULL-WIDTH deck spanning the steeple's north approach
-//     (x 75.3..84.7, z 7.6..10.4). LOUVRE_SILL (14.0) is likewise full-width
-//     (x 77.3..84.7, z 7.9..15.3).
-//   * `beginAuthored`/`crossesPlatform` forbid a climb trajectory — and a body's
-//     head (feet + STAND_HEIGHT 1.55) at the top of a climb — from piercing any
-//     deck that is not the climb's own start/dest. So a body standing on the ridge
-//     (head 12.75) may not have a ring within 1.55 m above it, and a ring below
-//     the louvre must sit <= 12.45; the ridge->louvre gap is only 2.8 m, so NO ring
-//     fits between them (it would need >= 3.1 m), and a ring cannot skip a spanning
-//     deck it would cross on the way up. (Both measured: every candidate ring
-//     placement was refused by beginAuthored.)
+// Why it could not be done before, kept because it is the general lesson and not a
+// steeple fact. The old chain climbed onto LOUVRE_SILL, a ring spanning the whole
+// shaft (x 77.3..84.7, z 7.9..15.3) at 14.0, and MEETING_RIDGE (11.2) is likewise
+// full-width across the steeple's north approach. `beginAuthored`/`crossesPlatform`
+// forbid a climb trajectory — and the body's head at the top of it — from piercing
+// any deck that is not the climb's own start or destination. Two full-width decks
+// 2.8 m apart therefore have NO room between them: an intermediate needs >= 3.1 m,
+// and a ring cannot skip a spanning deck it would cross on the way up. Every
+// candidate placement was refused by beginAuthored, measured.
 //
-// The fix is the regen delivering a ring stack that REPLACES LOUVRE_SILL's
-// spanning collision — rings on the shaft's south annulus (z > 13.6, clear of the
-// ridge monitor) up to a south node of the UNCHANGED 15.8 leap gallery. Authoring
-// that here, without the mesh, would be collision the art cannot draw AND a
-// re-mass of proven meeting-house geometry. Recorded in docs/process/M1-STATUS.md
+// The regen did not find the 3.1 m. It removed the premise: a ring is what makes a
+// deck span the shaft, and a set-off on ONE FACE does not. With the belfry's two
+// ledges on the north and east faces neither spans, neither roofs the other, and
+// the same 4.6 m of rise takes three ordinary mantles.
 // as the one genuine asset-coordination decision this build surfaced.
 
 // ===========================================================================
@@ -214,11 +206,19 @@ masses.push(
     id: "O2_BARRICADE_WALL",
     section: "B_SHAMBLES",
     asset: "service-wall-straight",
-    rect: rect(33.4, 34.0, -2.6, -1.1),
+    // Runs all the way to the merchant's south wall face at z −3.2. It used to
+    // stop at −2.6 and leave a 0.6 m slot against that wall, which is narrower
+    // than the 0.70 m capsule: a body that got into it was inside a solid
+    // whichever way it faced, and the penetration fuzzer caught exactly that at
+    // (34.0, 0, −2.85), 0.10 m in, for 44 consecutive ticks. Nothing was driving
+    // a body there before only because the fuzzer's random starts happen to move
+    // when the world bounds do — the slot is as old as the barricade. A barrier
+    // with a gap too small to walk through is a wedge, not a barrier.
+    rect: rect(33.4, 34.0, -3.2, -1.1),
     topY: 1.2,
     landable: false,
     tags: ["obstacle", "barricade", "dressing"],
-    note: "A posted barrier beside the cart; the billeted soldiers' barricade across the merchant block (O2).",
+    note: "A posted barrier beside the cart, closed against the merchant's south wall; the billeted soldiers' barricade across the merchant block (O2).",
   }),
 );
 
@@ -319,10 +319,10 @@ export const EAST_COVERT_CLIMBS = climbs;
 // shorter — so it is authored explicitly here rather than derived, and marked so
 // the guidance/HUD lead it and covertLine.test.ts can verify its properties.
 //
-// Every CLIMB on it is a ≤1.9 m mantle EXCEPT the two flagged steeple dead-zone
-// climbs (D_MEETING_ROOF->E_RIDGE 3.0 m, E_RIDGE->E_LOUVRE 2.8 m), which stay the
-// proven spiral until the asset worker's steeple regen replaces the LOUVRE_SILL
-// spanning collision (see the HOLLIS STEEPLE note above and M1-STATUS.md).
+// Every CLIMB on it is a ≤1.9 m mantle EXCEPT two flagged dead-zone climbs
+// (D_MEETING_ROOF->E_RIDGE 3.0 m, E_LEDGE_N->E_GALLERY 2.8 m), both of which now
+// wait on an ASSET measurement rather than on level authoring. See the HOLLIS
+// STEEPLE note above and the STEEPLE ASCENT note in route.ts.
 export const GOLDEN_LINE: readonly string[] = [
   // West end — the printshop leads and the dead-wharf crossing (the ground beat).
   "A_START",
@@ -343,6 +343,7 @@ export const GOLDEN_LINE: readonly string[] = [
   "B_CANOPY_4",
   "B_CRATES_B",
   "M_LEDGE",
+  "M_PARLOUR",
   "M_STRING",
   "M_EAVE_S",
   "M_EAVE",
@@ -369,21 +370,33 @@ export const GOLDEN_LINE: readonly string[] = [
   "D_SROOF_E",
   "D_MEETING_W",
   "D_MEETING_ROOF",
-  // The Hollis steeple (flagged spiral) up to the 15.8 leap gallery, then the dive.
+  // The Hollis steeple, up its staggered belfry set-offs to the 15.8 leap gallery,
+  // then the dive.
   "E_RIDGE",
-  "E_LOUVRE",
+  "E_LEDGE_N",
   "E_GALLERY",
   "F_CROWN",
   "F_POST",
 ];
 
-// The two golden-line climbs still in the dead-zone, pending the steeple regen.
-// covertLine.test.ts asserts these are the ONLY >1.9 m climbs on the golden line,
-// so when the regen lands and they are re-massed to rings, the exemption fails
-// loudly and is removed rather than quietly outliving its cause.
+// The golden-line climbs still in the dead-zone. covertLine.test.ts asserts these
+// are the ONLY >1.9 m climbs on the golden line, so an exemption cannot quietly
+// outlive its cause: when the last one is re-massed the list must shrink to empty
+// or the test fails on the leftover.
+//
+// `E_RIDGE->E_LOUVRE` was replaced, not resolved. The steeple regen (08003ac) split
+// its 2.8 m onto ridge -> 13.0 (1.8) and 13.0 -> 15.8 (2.8), so the phantom 14.0
+// ring is gone and one dead-zone step remains where there was one before. The
+// 14.7 east set-off that would have made it 1.7 / 1.1 is drawn and standable but
+// unreachable: the 15.8 gallery oversails its western 0.7 m and the north ledge
+// ends before the clear part starts, so the climb crosses the soffit. See the
+// STEEPLE ASCENT note in route.ts; it needs the asset moved, not the route.
+//
+// The other entry is the meeting-house ridge, waiting on the asset lane's
+// `roof-ridge-monitor` measurement.
 export const STEEPLE_DEADZONE_CLIMBS: readonly string[] = [
   "D_MEETING_ROOF->E_RIDGE",
-  "E_RIDGE->E_LOUVRE",
+  "E_LEDGE_N->E_GALLERY",
 ];
 
 // ===========================================================================

@@ -1305,14 +1305,43 @@ masses.push(
 );
 
 decks.push(
+  // LOUVRE_SILL is GONE, and the two ledges below replace it. It was a full-shaft
+  // ring at 14.0 — 7.4 x 7.4 m of authored floor with NO up-facing drawn face
+  // within 5 cm of the plane anywhere on it, which is why the affordance gate had
+  // it SEVERE at 24% and the climb onto it SEVERE at 15%. Worse than cosmetic: a
+  // ring spanning the whole shaft is overhead from everywhere on the ring below
+  // it, so it could never have carried a legal mantle chain either.
+  //
+  // The regenerated steeple (08003ac) draws two STAGGERED ledges instead, and the
+  // rects here are measured off the placed GLB rather than transcribed:
+  //   13.00, 6.8 m2, x[79.00, 83.00] z[7.90, 9.60]  — the north flank
+  //   14.70, 6.8 m2, x[83.00, 84.70] z[9.60, 13.60] — the east flank
+  // They share no footprint, so each is a face in front of the body on the one
+  // below rather than a ceiling over it, and the belfry climb spirals onto
+  // adjacent faces the way the tower ascent does. Stacking them was the original
+  // defect: at a shared footprint the 14.7 slab roofed the 13.0 ledge with 1.08 m
+  // of headroom, and it could not be fixed by lifting the upper one — clearing a
+  // standing body needs >=15.17, which makes 13.0 -> 15.17 a 2.17 m dead-zone
+  // rise.
   deck({
-    id: "LOUVRE_SILL",
+    id: "STEEPLE_LEDGE_N",
     section: "E_LEAP",
     asset: "steeple-meetinghouse-climbable",
-    rect: rect(77.3, 84.7, 7.9, 15.3),
-    y: BAND.LOUVRE_SILL,
+    rect: rect(79.0, 83.0, 7.9, 9.6),
+    y: BAND.STEEPLE_LEDGE_N,
     carriedBy: ["STEEPLE"],
-    tags: ["ledge", "ring"],
+    tags: ["ledge"],
+    note: "The belfry's north set-off, off the meeting-house ridge. 1.7 m deep, open sky above it now the full-shaft ring is gone.",
+  }),
+  deck({
+    id: "STEEPLE_LEDGE_E",
+    section: "E_LEAP",
+    asset: "steeple-meetinghouse-climbable",
+    rect: rect(83.0, 84.7, 9.6, 13.6),
+    y: BAND.STEEPLE_LEDGE_E,
+    carriedBy: ["STEEPLE"],
+    tags: ["ledge"],
+    note: "The east flank set-off. 1.7 m wide against the shaft, 1.0 m of it clear standable depth under open sky, and on a different face from the north ledge below so neither roofs the other.",
   }),
   deck({
     id: "STEEPLE_GALLERY",

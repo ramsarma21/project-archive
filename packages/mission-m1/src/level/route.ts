@@ -70,16 +70,16 @@ export const NODES: RouteNode[] = [
   // — steps into the quartered parlour (the SAFE interior, billeted), then climbs
   // out the window onto the leads to cross to the Town House. Option 1, the
   // projecting-balcony drop-in.
-  node("M_LEDGE", "B_SHAMBLES", [39.2, 4.0, -2.8], "MERCHANT_BALCONY", ["merchant", "safe-interior", "ledge", "crossover"],
-    "The merchant's window balcony, a solid ledge 4.0 m up directly over the Shambles crate — the covert climb-in off the high line."),
-  node("M_STRING", "B_SHAMBLES", [39.2, 5.7, -2.0], "MERCHANT_STRING", ["merchant", "ledge", "high-line"],
-    "The jettied gallery oversailing the street: the intermediate mantle between the balcony (4.0) and the leads (7.1), out south of the eave for headroom."),
+  node("M_LEDGE", "B_SHAMBLES", [39.2, 4.0, -2.8], "MERCHANT_PARLOUR__DECK", ["merchant", "safe-interior", "ledge", "crossover"],
+    "The merchant's projecting window course, 4.0 m up directly over the Shambles crate — the covert climb-in off the high line. It is the south end of the one drawn 4.00 slab, not a deck of its own. The ONWARD climb no longer starts here: the regenerated gallery at 5.70 sits directly over this course, so the next mantle is authored off M_PARLOUR, north of the gallery's footprint, where it is a face ahead instead of a ceiling."),
+  node("M_STRING", "B_SHAMBLES", [39.2, 5.7, -3.0], "MERCHANT_STRING", ["merchant", "ledge", "high-line"],
+    "The jettied gallery across the merchant's south front: the intermediate mantle between the parlour floor (4.0) and the leads (7.1). In the window bay, where the wall below stops at the parlour and the slab gives its full 0.8 m of depth."),
   node("M_PARLOUR", "B_SHAMBLES", [39.0, 4.0, -5.0], "MERCHANT_PARLOUR__DECK", ["merchant", "safe-interior"],
-    "The quartered parlour, a SAFE interior off the window balcony. The billeting reads occupation; the way on is back to the window and up onto the leads."),
-  node("M_EAVE_S", "B_SHAMBLES", [39.2, 7.1, -2.7], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
-    "The south lip of the merchant's leads, mantled onto off the jettied gallery — the top of the covert climb-in."),
-  node("M_EAVE", "B_SHAMBLES", [39.2, 7.1, -3.5], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
-    "The merchant's leads, climbed up the south face off the window balcony — clear of the drawn roof edge at z −3.2."),
+    "The quartered parlour, a SAFE interior in off the window. The billeting reads occupation; the way on is back to the window and up onto the leads."),
+  node("M_EAVE_S", "B_SHAMBLES", [39.2, 7.1, -4.3], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
+    "The south lip of the merchant's leads, mantled onto off the jettied gallery — the top of the covert climb-in. A body-radius-and-a-half in from the lip, which is now z −3.4 rather than −2.5: the roof's south jetty was authored over 0.75 m the mesh does not draw, and it was roofing the gallery below."),
+  node("M_EAVE", "B_SHAMBLES", [39.2, 7.1, -5.0], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
+    "The merchant's leads, in off the south lip — clear of both the lip and the drawn roof edge at z −3.25."),
   node("M_EAVE_E", "B_SHAMBLES", [42.2, 7.1, -6.0], "MERCHANT__ROOF", ["merchant", "eave", "high-line"],
     "The east lip of the leads, over the Town House scaffold — the take-off for the G-B crossing."),
 
@@ -250,7 +250,8 @@ export const NODES: RouteNode[] = [
   node("E_ELLIOT_LIP", "E_LEAP", [79.0, BAND.MEETING_EAVE, -6.9], "ELLIOT_HOUSE__ROOF", ["lip"]),
   node("E_RIDGE", "E_LEAP", [78.5, BAND.MEETING_RIDGE, 8.6], "MEETING_RIDGE", [],
     "The ridge foot of the steeple climb, pulled west off [79.5] so the reach up to the louvre sill threads clear of the elm's northern canopy sprawl (which reaches z8.8 over the belfry) rather than driving the body 0.46m into it. The ridge monitor runs the width of the roof, so the hold moves without leaving it."),
-  node("E_LOUVRE", "E_LEAP", [80.0, BAND.LOUVRE_SILL, 8.9], "LOUVRE_SILL", []),
+  node("E_LEDGE_N", "E_LEAP", [80.5, BAND.STEEPLE_LEDGE_N, 8.5], "STEEPLE_LEDGE_N", [],
+    "The belfry's north set-off, 1.8 m off the meeting-house ridge. Replaces E_LOUVRE, which stood on a 7.4 x 7.4 m ring at 14.0 the steeple mesh never drew — and which, spanning the whole shaft, was overhead from every point on the ridge below it. The 14.7 east set-off IS drawn and IS authored (STEEPLE_LEDGE_E) but carries no node: see the link note below for why the corner cannot be climbed."),
   node("E_GALLERY", "E_LEAP", [80.0, BAND.STEEPLE_GALLERY, 9.6], "STEEPLE_GALLERY", ["leap-point"]),
   // The south-west corner of the lantern cornice. The ring is 0.8m of walkway now
   // rather than a 5.4m platform, so the position is the corner pad and not a
@@ -364,21 +365,21 @@ export const LINKS: RouteLink[] = [
   // kept as the fallback): stay off the street, climb into the merchant, and cross
   // his leads to the Town House scaffold.
   link("B_CRATES_B", "M_LEDGE", "CLIMB", "SAFE", "CLIMB", {
-    note: "G-A: a single ≤1.9 m mantle off the Shambles goods on-ramp (2.15) onto the window balcony ledge (4.0) into the SAFE interior — no ground touch, no ladder.",
+    note: "G-A: a single 1.85 m mantle off the Shambles goods on-ramp (2.15) onto the merchant's projecting window course (4.0) and in over the sill — no ground touch, no ladder.",
   }),
   link("M_LEDGE", "M_PARLOUR", "RUN", "SAFE", "RUN", {
     speedMps: 2.0,
-    note: "Off the balcony through the open window into the quartered parlour, past the billeting — the SAFE room.",
+    note: "In across the quartered parlour, past the billeting — the SAFE room.",
   }),
   link("M_PARLOUR", "M_LEDGE", "RUN", "SAFE", "RUN", {
     speedMps: 2.0,
-    note: "Back out of the parlour to the window balcony, the hub of the drop-in.",
+    note: "Back out of the parlour to the window, the hub of the drop-in.",
   }),
-  link("M_LEDGE", "M_STRING", "CLIMB", "SAFE", "CLIMB", {
-    note: "Up off the balcony onto the jettied gallery (4.0 → 5.5), out over the street south of the eave.",
+  link("M_PARLOUR", "M_STRING", "CLIMB", "SAFE", "CLIMB", {
+    note: "Back out through the open window and up onto the jettied gallery (4.0 → 5.70). It starts INSIDE the parlour, not on the window course, and the stagger is why: the gallery's footprint runs z −3.4..−2.6, which is exactly where the parlour floor's ends, so from in here it is a face ahead — and from out on the course it would be a ceiling. The trajectory clears the window spandrel, whose top is the parlour floor itself.",
   }),
   link("M_STRING", "M_EAVE_S", "CLIMB", "SAFE", "CLIMB", {
-    note: "Last mantle off the gallery onto the leads' south lip (5.5 → 7.1) — tops onto the roof, not through it. No ladder.",
+    note: "Last mantle off the gallery onto the leads' south lip (5.70 → 7.10) — tops onto the roof, not through it. No ladder.",
   }),
   link("M_EAVE_S", "M_EAVE", "RUN", "SAFE", "RUN", {
     note: "In off the south lip across the merchant's leads to the G-B take-off.",
@@ -526,9 +527,9 @@ export const LINKS: RouteLink[] = [
   // meeting house begins at x=74 with its roof 4.2m lower, so the roofline
   // continues straight onto it in one controlled drop over a ~1.6m lip-to-lip
   // gap, rather than dropping SOUTH into the ropewalk shed and climbing the
-  // meeting house's far face back up. From the meeting roof the existing CLIMB
-  // chain (D_MEETING_ROOF -> E_RIDGE -> E_LOUVRE -> E_GALLERY) tops out at the
-  // gallery the leap of faith launches from. The ropewalk drop below
+  // meeting house's far face back up. From the meeting roof the CLIMB chain
+  // (D_MEETING_ROOF -> E_RIDGE -> E_LEDGE_N -> E_LEDGE_E -> E_GALLERY) tops out
+  // at the gallery the leap of faith launches from. The ropewalk drop below
   // (D_SROOF_E -> D2_ROOF_W) stays authored, so the shed survives as an optional
   // dark-interior space; the guided line just no longer detours through it.
   link("D_SROOF_E", "D_MEETING_W", "DROP", "SAFE", "CHAIN_DROP", {
@@ -540,19 +541,38 @@ export const LINKS: RouteLink[] = [
   }),
 
   // -- E --------------------------------------------------------------------
-  // STEEPLE ASCENT — kept as the proven spiral (D_MEETING_ROOF -> ridge 11.2 ->
-  // louvre 14.0 -> gallery 15.8) as the green fallback. The owner's ≤1.9 m ring
-  // re-mass is BLOCKED ON THE ASSET WORKER'S STEEPLE REGEN and flagged: the ridge
-  // monitor MEETING_RIDGE (11.2, proven meeting-house geometry, must not move) and
-  // the louvre sill LOUVRE_SILL (14.0) are full-width decks 2.8 m apart, and
-  // `crossesPlatform` forbids a body's head (feet+STAND_HEIGHT 1.55) from piercing
-  // a ledge deck — so no intermediate ring fits between them (needs ≥3.1 m) and a
-  // ring cannot skip a spanning deck either. A clean ≤1.9 m ring chain needs the
-  // regen to REPLACE LOUVRE_SILL's spanning collision with a ring stack on the
-  // shaft's south annulus (clear of the ridge monitor). See docs/process/M1-STATUS.md.
+  // STEEPLE ASCENT — the ≤1.9 m spiral, unblocked by the regen (08003ac).
+  //
+  // It was ridge 11.2 -> louvre 14.0 -> gallery 15.8, a 2.8 m dead-zone climb onto
+  // a full-shaft ring the mesh did not draw, and the note here recorded why no
+  // intermediate would fit: `crossesPlatform` forbids a body's head from piercing
+  // a ledge deck, so between two FULL-WIDTH decks 2.8 m apart there is no room for
+  // a third. The regen removes the premise rather than the arithmetic — the
+  // belfry's set-offs are now staggered onto two different faces, so neither one
+  // spans the shaft and neither is a ceiling over the other.
+  //
+  // THE INTENDED CHAIN WAS ridge 11.2 -> north 13.0 -> east 14.7 -> gallery 15.8
+  // AT 1.8 / 1.7 / 1.1, AND THE MIDDLE STEP CANNOT BE FLOWN. Measured, not
+  // assumed: the 15.8 gallery oversails to x 83.7 and the 14.7 east set-off runs
+  // x 83.0..84.7, so the gallery roofs the ledge's western 0.7 m. Standing east of
+  // 83.7 is fine — that is the 1.0 m of open sky the regen was aimed at — but the
+  // north ledge ENDS at x 83.0, so every trajectory from it to the east ledge
+  // crosses the overhang while rising, and the head is 0.17-0.26 m through the
+  // gallery soffit at the crossing however the two nodes are placed. `beginAuthored`
+  // refuses it, correctly. Clearing it needs the drawn 14.7 slab to start at x 83.7
+  // rather than 83.0, or the gallery to stop short of it: an ASSET change, reported
+  // rather than authored around, because the alternative is a route that climbs
+  // through a church for the second time this week.
+  //
+  // So the shipped chain is ridge -> north 13.0 -> gallery 15.8 at 1.8 and 2.8. The
+  // 2.8 m step is in the dead zone and is listed as such in eastCovert.ts, which is
+  // still strictly better than what it replaces: the same 2.8 m used to land on a
+  // full-shaft ring at 14.0 that the mesh did not draw at all. STEEPLE_LEDGE_E stays
+  // authored because it IS drawn and a body can stand on it; it simply carries no
+  // node until the asset moves.
   link("D_MEETING_ROOF", "E_RIDGE", "CLIMB", "SAFE", "CLIMB", { ignore: ["HOLLIS_MEETING"] }),
-  link("E_RIDGE", "E_LOUVRE", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),
-  link("E_LOUVRE", "E_GALLERY", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),
+  link("E_RIDGE", "E_LEDGE_N", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),
+  link("E_LEDGE_N", "E_GALLERY", "CLIMB", "SAFE", "CLIMB", { ignore: ["STEEPLE"] }),
 
   link("E_GALLERY", "F_CROWN", "LEAP_OF_FAITH", "SAFE", "LEAP_OF_FAITH", {
     target: "LEAP_CROWN",

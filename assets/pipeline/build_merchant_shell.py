@@ -340,8 +340,11 @@ for (cx, ox) in ((bx(FX0), +1), (bx(FX1), -1)):
         yf = "-y" if oy < 0 else "+y"
         box(min(cx, cx + ox * 0.45), max(cx, cx + ox * 0.45), min(cy, cy + oy * 0.30), max(cy, cy + oy * 0.30), 0.0, EAVE - 0.1, IST, faces=(xf, yf, "+z"), tile=1.0)
 
-# ---- string-courses (stone bands) at storey lines ----------------------------
-for zc in (PARLOUR - 0.05, GALLERY - 0.05):
+# ---- string-course (stone band) at the parlour storey line --------------------
+# Only the parlour band: the 5.70 storey line is now the jettied GALLERY slab
+# itself, and a band at the wall face there would poke above the gallery top and
+# lip its standable surface.
+for zc in (PARLOUR - 0.05,):
     box(bx(FX0), bx(FX1), by(FZ_S) - 0.10, by(FZ_S) + 0.02, zc, zc + 0.18, IST, faces=("-y", "+z", "-z"), tile=1.0)
 
 # ---- SOUTH parlour BALCONY @ 4.00 (projecting ledge, balustrade, hood) --------
@@ -358,21 +361,26 @@ rail_z = PARLOUR + 0.5
 for cxx in np.linspace(bxa0 + 0.1, bxa1 - 0.1, 5):
     box(cxx - 0.03, cxx + 0.03, ys_out, ys_out + 0.06, PARLOUR, rail_z, IT, faces=("+y", "-y", "+x", "-x"), tile=1.0)
 box(bxa0, bxa1, ys_out, ys_out + 0.08, rail_z, rail_z + 0.08, IT, faces="all", tile=1.0)
-# balcony hood (pediment) on brackets above the window head at ~PARLOUR+2.0
-hood_z = PARLOUR + 1.9
-box(bxa0 - 0.12, bxa1 + 0.12, ys - 0.55, ys + 0.02, hood_z, hood_z + 0.12, IST, faces=("+z", "-z", "-y", "+x", "-x"), tile=1.0)
-for cxx in (bxa0, bxa1):
-    box(cxx - 0.07, cxx + 0.07, ys - 0.5, ys, hood_z - 0.5, hood_z, IT, faces=("-z", "-y", "+x", "-x"), tile=1.0)
+# NB: the balcony hood/pediment (was at 5.90-6.02 spanning worldZ -3.22..-2.65)
+# is REMOVED. It sat 0.20 m directly above the corrected 5.70 gallery and roofed
+# it; it cannot be raised clear (5.70 + 1.55 stand = 7.25 > the 7.10 eave), so it
+# goes rather than moves.
 
-# ---- JETTIED GALLERY @ 5.70 (the new mantle-chain ledge) ---------------------
-# A jettied stone string-gallery oversailing the south face, top exactly 5.70,
-# spanning the facade so it reads as a projecting storey band and is standable.
-gx0, gx1 = bx(FX0) + 0.3, bx(FX1) - 0.3
-gy_out = by(FZ_S - 0.7)     # oversail 0.7 m south of the wall face
-box(gx0, gx1, min(ys, gy_out), max(ys, gy_out), GALLERY - 0.22, GALLERY, IST, faces=("+z", "-z", "-y", "+x", "-x"), tile=1.0)
-# jetty joists/brackets under the gallery (top face omitted -> flush to slab base)
+# ---- JETTIED GALLERY @ 5.70 (the mantle-chain ledge) -------------------------
+# FIX: the old `by(FZ_S - 0.7)` put -0.7 NORTH in this axis (by(z) = -(z+10.2)),
+# so the slab landed inside the wall/room. The gallery must oversail SOUTH like the
+# balcony. Authored to the level's measured collision: top 5.70, worldZ -3.4 -> -2.6
+# (0.8 m standable depth, 0.6 m proud of the -3.2 wall face). South edge -2.6 reuses
+# the balcony's depth extreme so the 15.2 pin (DECL) does not move. The -3.4 north
+# edge meets the parlour-floor south edge (also -3.4): the STAGGER that lets the
+# climb come UP off the parlour floor rather than being overhead-stacked.
+GAL_Z_OUT, GAL_Z_IN = BAL_Z_OUT, -3.4          # south edge (= balcony extreme) / 0.2 into room
+gx0, gx1 = bx(FX0) + 0.3, bx(FX1) - 0.3        # worldX 33.3 .. 41.7
+gy_out, gy_in = by(GAL_Z_OUT), by(GAL_Z_IN)
+box(gx0, gx1, min(gy_out, gy_in), max(gy_out, gy_in), GALLERY - 0.22, GALLERY, IST, faces="all", tile=1.0)
+# jetty joists/brackets under the PROUD part only (wall face -> south edge)
 for cxx in np.linspace(gx0 + 0.3, gx1 - 0.3, 6):
-    box(cxx - 0.06, cxx + 0.06, gy_out, ys, GALLERY - 0.5, GALLERY - 0.22, IT, faces=("-z", "-y", "+x", "-x"), tile=1.0)
+    box(cxx - 0.06, cxx + 0.06, gy_out, by(FZ_S), GALLERY - 0.5, GALLERY - 0.22, IT, faces=("-z", "-y", "+x", "-x"), tile=1.0)
 
 # ---- interior PARLOUR floor @ 4.00 -------------------------------------------
 px0, px1 = bx(33.3), bx(41.7)
