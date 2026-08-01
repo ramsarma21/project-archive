@@ -465,6 +465,20 @@ zero-evidence form pass (`1c4250f`).
 ## Open
 
 **Would affect play now**
+- **`C_SCAFF_FOOT` is a SAFE dead end, and it has pushed the guided line off the B2 goods yard
+  (`55e19d0`, OPEN).** Retiring the scaffold's ground ascent removed the only onward SAFE link
+  from that node: it now carries three inbound RUN links (`C_SQUARE_N`, `C_SQUARE_NW`,
+  `C_LANE_FOOT`) and nothing out. The cost is not local. With no SAFE way up the staging from the
+  street, the cheapest SAFE route to POST re-routes over the merchant, and the B2 goods-yard vault
+  drops off the guided line entirely — at `B2_PIER_GAP` the wayfinder now points at
+  `B_CRATES_B`/`M_LEDGE` instead of arming `B2_GOODS_IN->B2_GOODS_OUT`. That is the whole of the
+  `wayfind.test.ts` failure (38/39); it is NOT cross-file pollution, it reproduces with that file
+  run alone. Confirmed causally: restoring any SAFE climb chain out of `C_SCAFF_FOOT` returns it to
+  39/39. The honest fix is the deferred bent ground approach — a new node south of z −1.0 with the
+  climb onto `SCAFFOLD_D1`, NOT moving `C_SCAFF_FOOT` (measured: that breaks two ground RUN links
+  on the Town House corner and SAFE-distance continuity). Note for whoever takes it: a lane's
+  guided line is a GLOBAL quantity here, so deleting a spur in one branch can silently re-route
+  another.
 - **Market→Town House guided line now runs the covert ELEVATED line, with an authored
   drop-to-contact (`86396fc`).** The mark used to follow the cheapest SAFE path (the retired
   ground street), leading the player onto the market floor against the covert rule. Fixed by
@@ -891,6 +905,52 @@ reported the staging perfectly healthy while every step was refused. `traversabi
 DOES — it drives the shipped physics at each authored link, and it is what caught all four
 staging climbs going dead. Use it, not the affordance gate, for any "can the player actually
 get up this" claim.
+
+### The edge brake holds a walk and loses a run, and a deck ends one capsule radius late (31 Jul)
+
+Measured off the regenerated scaffold, tick by tick, against the shipped `stepFlow`. Both halves
+generalise to any deck standing in open air.
+
+`edgeBrakeMinDropM` is 5.5 and the tuning comment promises the reader "refuses to run off an edge
+and brakes instead". It does — at a WALK. Driven south off `SCAFFOLD_D5` (plane 10.70, authored
+lip z 1.2) the brake arms at z 0.83, kills the along-velocity, and the body settles: fall 0.00 m.
+At RUN the identical station arms only at z 1.47 with `brakeLipDistM = 0.00`, which is 0.27 m —
+one `CAPSULE_RADIUS` — PAST the lip, because a body stays grounded until its capsule clears the
+deck. The brake still zeroes the horizontal velocity, so the body then drops vertically 10.70 m
+to the street. Nothing is stale and no sub-threshold ledge is involved: the predicted drop reads
+6.58 m throughout, comfortably over the ceiling.
+
+So a `>5.5 m` lip on a massless deck is protected at a walk and not at a run, and the failure is
+invisible to anything that only tests walking.
+
+Two traps in reading the report, both of which cost time here:
+
+- **The named surface is not where the body falls from.** `fatalTraversal` names the STATION, and
+  the reader offers `CLIMB_UP` automatically, so a body driven off `SCAFFOLD_D3` (7.30) climbs the
+  staircase and leaves from `D5` (10.70). That is why a 9.00 lift reports a 10.70 m fall.
+- **`worstFallOff` truncates at 4 s.** The `D3` run reports 9.90 m because the window closed with
+  the body still airborne at y 0.80; it is the same 10.70 m fall, clipped, after ~200 ticks spent
+  climbing. Two different numbers, one hazard.
+
+A fall past the ceiling is `HARD`: `LANDING_RECOVERY_TICKS.HARD = 48` (a roll is 24) and the flow
+chain resets. There is no health, death or mission-fail on landing anywhere in the tree, so it is
+recoverable — but `fatalTraversal.test.ts` asserts it unconditionally and its only "accounted for"
+category is *unreachable*, so there is no way to record one as accepted debt without weakening the
+gate. Owner's ruling 31 Jul: do not add an allow-list.
+
+### `check-playthrough` needs a persistent server on IPv6, and the API for a full pass
+
+Three ways to waste twenty minutes on this gate:
+
+- The dev server must run in a **persistent** shell. Backgrounded inside the same shell call it
+  dies when the call returns, and the gate then reports "no dev web server reachable" — which
+  reads like the fix that was just applied is broken.
+- Vite binds **IPv6 only**, so the gate works against `localhost` and NOT `127.0.0.1`. Node's
+  `fetch` and `curl` disagree about which one `localhost` means, so a passing `curl` proves
+  nothing.
+- The DUEL stage opens a REAL graded attempt, so a full green needs the **API** up as well as the
+  web server. A web-server-only run fails DUEL no matter what the world is doing. Worth knowing
+  before calling the release bar met.
 
 ## What each gate can and cannot see
 
