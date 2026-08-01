@@ -4,7 +4,12 @@ import assert from "node:assert/strict";
 import { CAPSULE_RADIUS, canStand, supportBelow } from "@pa/engine-world/collision";
 import { RUN_SPEED, WALK_SPEED, createGroundedState } from "@pa/engine-world/playerMotion";
 import { FIELD_DT } from "@pa/engine-world/fieldSimulation";
-import { PARKOUR_TUNING, createFlowState, stepFlow } from "@pa/engine-world/parkour";
+import {
+  PARKOUR_TUNING,
+  createFlowState,
+  stepFlow,
+  type TraversalVerb,
+} from "@pa/engine-world/parkour";
 
 import { compileLevel } from "../compile.js";
 import { M1_EFFIGY_RUN } from "../level/index.js";
@@ -108,7 +113,11 @@ interface Outcome {
   endSurface: string | null;
 }
 
-function drive(descent: Descent, speed: number): Outcome {
+function drive(
+  descent: Descent,
+  speed: number,
+  guidedVerbs?: readonly TraversalVerb[],
+): Outcome {
   let motion = createGroundedState(
     { x: descent.startX, y: descent.startY, z: descent.startZ },
     Math.atan2(descent.dirX, descent.dirZ),
@@ -144,6 +153,13 @@ function drive(descent: Descent, speed: number): Outcome {
       flowEnabled: true,
       reducedMotion: false,
       receivingTargets: [],
+      ...(guidedVerbs
+        ? {
+            guidedAxisX: descent.dirX,
+            guidedAxisZ: descent.dirZ,
+            guidedVerbs,
+          }
+        : {}),
     });
     motion = result.motion;
     flow = result.flow;
@@ -180,6 +196,22 @@ test("the level authors reader-driven descents to check", () => {
     safe.length >= 6,
     `expected several SAFE descents; found ${safe.length}`,
   );
+});
+
+test("the final canopy's directed run-off lands on the Shambles crate", () => {
+  const descent = descents(new Set(["SAFE"])).find(
+    (candidate) =>
+      candidate.fromId === "B_CANOPY_4" &&
+      candidate.toId === "B_CRATES_B",
+  );
+  assert.ok(descent, "the final canopy drop is authored");
+  const outcome = drive(descent!, RUN_SPEED, ["RUN_OFF"]);
+  assert.equal(
+    outcome.reached,
+    true,
+    `the directed run-off ended on ${outcome.endSurface ?? "nothing"}, not SHAMBLES_CRATES_B`,
+  );
+  assert.equal(outcome.endSurface, "SHAMBLES_CRATES_B");
 });
 
 test("driving real stepFlow down every SAFE descent lands the body on the authored surface", () => {

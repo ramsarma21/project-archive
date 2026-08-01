@@ -1348,6 +1348,34 @@ test("falling to a deck below the receiver is not credited the drop's route prog
   );
 });
 
+// ---- the final Shambles canopy: run off onto the crate, never hang to street ----
+
+test("the final canopy drop holds a run-off-only gateway onto the crate", () => {
+  const safe = createWayfinder(level, { guidanceLines: ["SAFE"] });
+  const mark = walkMarkLive(
+    safe,
+    [
+      "B_STREET_MID",
+      "B_CRATES_FOOT",
+      "B_CANOPY_2_S",
+      "B_CANOPY_2",
+      "B_CANOPY_3",
+      "B_CANOPY_4",
+    ],
+    POST,
+  );
+  assert.equal(
+    mark?.gateway?.toNodeId,
+    "B_CRATES_B",
+    "the last canopy did not arm its directed drop onto the crate",
+  );
+  assert.deepEqual(
+    mark?.gateway?.allowedVerbs,
+    ["RUN_OFF"],
+    "the shallow offset drop allowed a vertical hang-drop to the street",
+  );
+});
+
 // ---- the ropewalk tie beam: a directed drop onto a narrow board owns its lip ----
 //
 // D2_ROOF_N -> D2_BEAM_MID is a SAFE CHAIN_DROP through the roof hatch onto the

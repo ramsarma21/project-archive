@@ -162,6 +162,16 @@ const LEAP_ARRIVE_M = 0.35;
 const NARROW_BOARD_SURFACES: ReadonlySet<string> = new Set(["ROPEWALK_TIE_BEAM"]);
 
 /**
+ * Receiver surfaces whose shallow offset is crossed by running off the lip, not
+ * by lowering vertically at it. The last Shambles canopy and its crate receiver
+ * overlap only on their diagonal approach: an unrestricted edge read prefers
+ * HANG_DROP, lowers straight to the street, and never reaches the crate. Holding
+ * this directed drop to RUN_OFF keeps the body on the authored axis and lands
+ * the visible receiver without changing any ordinary roof descent.
+ */
+const RUN_OFF_RECEIVER_SURFACES: ReadonlySet<string> = new Set(["SHAMBLES_CRATES_B"]);
+
+/**
  * How much more a metre of height counts than a metre of ground when deciding
  * which node the player is standing at.
  *
@@ -530,8 +540,26 @@ export function createWayfinder(
    */
   const gateways = new Map<
     string,
-    { linkId: string; from: string; to: string; kind: LinkKind; phase: "APPROACH" | "RECEIVER" }
+    {
+      linkId: string;
+      from: string;
+      to: string;
+      kind: LinkKind;
+      phase: "APPROACH" | "RECEIVER";
+      allowedVerbs: readonly TraversalVerb[];
+    }
   >();
+
+  /** The verb family for this concrete directed link. */
+  function actionVerbs(link: RouteLink): readonly TraversalVerb[] {
+    if (
+      link.kind === "DROP" &&
+      RUN_OFF_RECEIVER_SURFACES.has(surfaceOf.get(link.to) ?? "")
+    ) {
+      return ["RUN_OFF"];
+    }
+    return ACTION_VERBS[link.kind] ?? [];
+  }
 
   /**
    * Is this authored link a directed action gateway — a takeoff and a receiver a
@@ -541,15 +569,19 @@ export function createWayfinder(
    * DROP is the one that is not unconditional: an ordinary run-off onto a wide
    * deck keeps the old lead-the-receiver behaviour and is NOT a gateway, so the
    * south-row → ropewalk-roof descent still points the mark across the fall. A
-   * drop becomes a gateway only when its receiver is a NARROW BOARD — the tie
-   * beam — where overshoot is fatal and the lip must be owned so a competing
-   * automatic JUMP_GAP/LEAP cannot fling the body past the plank. Keyed on the
-   * authored surface class the speed cap already uses, not on any node id.
+   * drop becomes a gateway when its receiver is a NARROW BOARD, where overshoot
+   * is fatal, or the offset Shambles crate whose lip otherwise answers with a
+   * vertical hang-drop to the street. Both are keyed on authored receiver
+   * surfaces rather than route-node ids.
    */
   function isActionLink(link: RouteLink): boolean {
-    if (!(link.kind in ACTION_VERBS)) return false;
+    if (actionVerbs(link).length === 0) return false;
     if (link.kind === "DROP") {
-      return NARROW_BOARD_SURFACES.has(surfaceOf.get(link.to) ?? "");
+      const receiver = surfaceOf.get(link.to) ?? "";
+      return (
+        NARROW_BOARD_SURFACES.has(receiver) ||
+        RUN_OFF_RECEIVER_SURFACES.has(receiver)
+      );
     }
     return true;
   }
@@ -973,6 +1005,7 @@ export function createWayfinder(
     to: string;
     kind: LinkKind;
     phase: "APPROACH" | "RECEIVER";
+    allowedVerbs: readonly TraversalVerb[];
   };
 
   /**
@@ -1021,7 +1054,7 @@ export function createWayfinder(
         phase: state.phase,
         axisX: dx / axisLen,
         axisZ: dz / axisLen,
-        allowedVerbs: ACTION_VERBS[state.kind] ?? [],
+        allowedVerbs: state.allowedVerbs,
         riseM: receiverPos[1] - takeoffPos[1],
       },
     };
@@ -1048,7 +1081,7 @@ export function createWayfinder(
       gateways.delete(toNodeId);
       return null;
     }
-    const allowed = ACTION_VERBS[state.kind] ?? [];
+    const allowed = state.allowedVerbs;
     const completion = sample.completed;
     // A matching completion releases the gateway either by ARRIVING at the receiver
     // node or by LANDING ON THE RECEIVER'S OWN DECK. The surface half matters where
@@ -1141,6 +1174,7 @@ export function createWayfinder(
       to: candidate.to,
       kind: candidate.link.kind,
       phase: "APPROACH",
+      allowedVerbs: actionVerbs(candidate.link),
     };
     if (gatewayAtReceiver(state, from, takeoffPos, receiverPos, lines)) {
       state.phase = "RECEIVER";
