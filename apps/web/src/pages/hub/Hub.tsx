@@ -134,6 +134,10 @@ export function Hub(props: {
           (see the pointer-events rules in hub.css), which is what keeps an
           empty column from swallowing a drag aimed at the character. */}
       <div className="hub-stage">
+        {/* The Archive Hall, a generated 2D plate. It sits BEHIND a transparent
+            canvas rather than inside it, so `background-size: cover` handles the
+            viewport aspect; a scene.background texture would stretch instead. */}
+        <div className="hub-backdrop" aria-hidden="true" />
         <HubStage
           spin={turntable.spin}
           reducedMotion={props.reducedMotion}

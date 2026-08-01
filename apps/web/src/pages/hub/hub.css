@@ -32,9 +32,29 @@
   color: var(--hub-ink);
 }
 
-/* ---- 3D stage ----------------------------------------------------------- */
+/* ---- Stage: the Archive Hall plate, with the avatar composited over it ----
+   The hall is a generated 2D backdrop rather than geometry. The stage camera
+   never moves (the turntable yaws the character, not the view), so there is no
+   parallax for a flat plate to fail — and the Archive is UI chrome, where a
+   generated texture is what the asset rule asks for.
+
+   `cover` is what makes it survive the viewport: the plate is 16:9, and at a
+   narrow window it crops ~17% off each side. The hall's structure — the nave,
+   the vanishing point, the near record banks — is composed inside the middle
+   60% for exactly that reason, so the crop costs density and never the read. */
 .hub-stage { position: absolute; inset: 0; z-index: 0; }
-.hub-canvas { display: block; }
+.hub-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: #05080d;
+  background-image: url("/ui/hub-archive-hall.webp");
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+/* Transparent canvas: the avatar and the dais composite onto the plate. */
+.hub-canvas { display: block; position: relative; z-index: 1; }
 
 /* Sits over the whole canvas: a drag may start anywhere the room is visible.
    The panels above claim their own hit tests below. */
