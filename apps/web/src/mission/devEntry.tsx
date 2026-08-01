@@ -185,11 +185,21 @@ function Harness() {
     // Facing the work when the drop is on the bough, because otherwise which way
     // the harness happens to point decides whether the beat is available at all,
     // and that is not a thing to leave to luck.
+    //
+    // HEIGHT IS PART OF "ON THE BOUGH". The elm stacks two standing surfaces
+    // 1.9 m apart within 1.25 m of each other on the ground plane, so a planar
+    // test alone claimed a drop onto the LOW bough (F_LOW, y 6.4) was standing at
+    // the crown beat (F_POST, y 8.3) and pointed it at the work — which from down
+    // there is straight into the bole. That cost a day: the harness could not
+    // climb the elm, and the refusal was read as a parkour defect and briefed as
+    // one, when the body was simply walking at a trunk. Same 0.6 m tolerance the
+    // shipped stance check uses in m1Mission.ts, because it is the same question.
     const onTheBough =
       drop &&
       spec &&
       Math.hypot(drop.pos.x - spec.stance.x, drop.pos.z - spec.stance.z) <=
-        spec.stanceRadiusM;
+        spec.stanceRadiusM &&
+      Math.abs(drop.pos.y - spec.stance.y) <= 0.6;
     return drop
       ? {
           ...authored,

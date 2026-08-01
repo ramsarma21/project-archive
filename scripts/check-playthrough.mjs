@@ -256,19 +256,15 @@ const REFUSAL = {
 const BEAT = {
   at: "F_LOW", toward: "F_CROWN",
   bare: true,
-  // `back` IS LOAD-BEARING AND IT IS WORKING AROUND A DEV-PATH DEFECT.
-  // devEntry's `dropSpawn` overrides the requested `toward` yaw with the beat's
-  // own `facingYaw` whenever the drop lands within the beat's stanceRadiusM
-  // (2.4 m) of the stance — measured in XZ ONLY, ignoring the beat's own 1 m
-  // stanceHeightToleranceM. F_LOW is 1.9 m BELOW the stance and 1.25 m from it
-  // in XZ, so the override fired and this stage was driven at the nail rather
-  // than at the crown: held W walked the body into the elm bole (solid to 12 m)
-  // and stopped. It read as "the elm climb never arms", and it was the harness
-  // being pointed the wrong way. Backing the drop off 1.6 m along the climb line
-  // puts it outside the stance radius, so `toward` is honoured — and it gives
-  // the mantle the run-up a player arrives with. The real fix is a height test
-  // in devEntry.tsx, which is CONTESTED; reported, not edited here.
-  back: 1.6,
+  // `back` IS GONE, and that is the point. It was 1.6 m of workaround: devEntry's
+  // `dropSpawn` overrode the requested `toward` yaw with the beat's own
+  // `facingYaw` on an XZ-ONLY stance test, and F_LOW is 1.25 m from the stance in
+  // XZ (inside its 2.4 m radius) but 1.85 m below it — so this stage was driven at
+  // the nail instead of the crown, held W walked the body into the elm bole, and
+  // it read as "the elm climb never arms". devEntry now tests height too, so the
+  // drop is honoured from the bough and the stage exercises the real drop-in. The
+  // climb went from 166 sim ticks to 43 when the workaround came out.
+  back: 0,
   crownY: 8.0, // BOUGH_CROWN band is 8.3; 8.0 is "arrived at the crown"
   climbTicks: 600,  // ~10 s of SIM to climb bough → crown (counted in sim ticks)
   settleTicks: 360, // ~6 s of SIM in the stance for the beat to arm
