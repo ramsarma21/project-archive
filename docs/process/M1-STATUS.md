@@ -846,6 +846,27 @@ Read this before concluding a green run means the game is correct.
 bough decks already cluster into one draw at the declared size, and nulling the boughs' asset
 would collapse it to a 1.8 m pole (`7353b82`, guarded).
 
+**Three authoring rules no gate states, and a ledge/deck author must satisfy all three.** Each is
+a way the mover refuses a move that every static gate passes, so an asset can be box-accurate,
+weld-clean and drawn==collision and still not carry the route:
+1. **The overhead skip.** A mantle is refused when the target surface is overhead, and that test
+   reads authored deck rects — so a legal-height intermediate ledge tucked *under* the ledge above
+   it is refused no matter its height. Stagger onto its own footprint (the steeple belfry chain and
+   the ridge monitor both spiral for this reason).
+2. **The verb-ranking gap.** The verb comes from the obstacle, not the endpoint height difference;
+   a top too narrow to stand on reads CLIMB_OVER, and a rise into the 1.9–3.1 m dead-zone band reads
+   BLOCKED. A height that looks legal can resolve to the wrong verb or none.
+3. **`authoredTrajectoryClear` refuses on the rising ARC, not standing headroom** (steeple belfry,
+   31 Jul). A CLIMB flies a **2-anchor eased-linear diagonal** from take-off to stance
+   (`traversal.ts` pushes `[from, to]`); `authoredTrajectoryClear` samples it and refuses if
+   `headClearance < STAND_HEIGHT − 0.05` (1.55 − 0.05 = **1.50 m**) at any sample. So a ledge under
+   an oversail must be designed against the **arc**, not the stance: the rising body drags its west
+   shoulder (centre − CAPSULE_RADIUS 0.35) under the soffit through the whole high-feet part of the
+   climb even when it *stands* clear. On the steeple this measured 0.44–0.65 m of head into the drawn
+   gallery underside at every node placement, and moving the stance east to clear it stranded it from
+   the next node — the fix had to delete the oversail *and* move the take-off. No gate sees this;
+   only sweeping the real 2-anchor arc against the drawn soffit does.
+
 **A mutation hunt found the suite's own blind spots** (`6cb600d`). Method: break the code a
 test claims to guard, and see whether the test still passes. Results, ranked:
 
@@ -1032,6 +1053,16 @@ own output, not to the processing:
 Two were fixed by procedural authoring; the third is being. **Treat "regenerate it" as the option
 to justify, not the default** — asking the same generator for a better retry has failed three
 times, and the pipeline's contain-fit stage cannot repair a jagged surface.
+
+**`build_steeple_clean.py` needs `PHOTOREAL=1` or it silently ships a degraded landmark** (31 Jul).
+The env-less build emits a **302-tri base form**; the shipped, deck-gated mesh is the **454-tri**
+`PHOTOREAL=1` build (corner urn pinnacles at ±3.4, tower clock, belfry keystones) then
+`fix_glb_normals`. Anyone regenerating without the env var downgrades the steeple and nothing catches
+it — the same failure shape as the scaffold generator that would have rebuilt an unclimbable ascent
+from a stale copy. Verified: pristine env-less = 302 tris / 89 KB, `PHOTOREAL=1` = 454 tris / 6 meshes
+matching the shipped geometry, + normals = 2.3 MB. Recorded so it is not silently under-built. (The
+±3.4 pinnacles are also load-bearing on traversal: they block extending the belfry's north ledge far
+east, which is why the soffit fix trimmed the gallery instead — see the three authoring rules above.)
 
 **The gap that cost the most:** every collision *invariant* reads authored hulls, and the
 mover has never touched a GLB — `collision.ts`, `playerMotion.ts` and `traversalResolver.ts`
