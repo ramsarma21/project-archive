@@ -465,6 +465,33 @@ zero-evidence form pass (`1c4250f`).
 ## Open
 
 **Would affect play now**
+- **Market→Town House guided line now runs the covert ELEVATED line, with an authored
+  drop-to-contact (`86396fc`).** The mark used to follow the cheapest SAFE path (the retired
+  ground street), leading the player onto the market floor against the covert rule. Fixed by
+  giving the wayfinder an authored `guidedLine` (GOLDEN_GUIDED_LINE) and restricting its graph
+  to that line, so the mark can only lead along sheds/canopies and touches the cobbles only at
+  the beat. Verified in-engine (:5200): elevated mark with the constable on the cobbles below;
+  the beat arms ("Hold there") and points CLIMB UP back to the line. mission-m1 243/243,
+  affordances green.
+  - **Design change to know about:** SHAMBLES_STOP's trigger moved from the ground entrance
+    (16.6) east onto the canopy line's natural touchdown (B_CRATES_FOOT, 29.4,0,-0.8) — the
+    covert line enters the Shambles at B_SHED_MID (~x22.6) and never passes 16.6, so the stop
+    had to move onto the line the way ROPEWALK_STOP moved onto the roofline. The market-watch is
+    the same watcher; the machine clamps the speaker's approach origin near the player, so his
+    patrol post in opposition.ts was left as-is. encounterMachine.test now reads the beat from
+    the trigger instead of pinning 16.6.
+  - **Defect 3 (the "OVER THE TOP" brick-wall wedge, f0106) traced, NOT independently fixed.**
+    That "OVER THE TOP" is the King-lane yard-gate CLIMB_OVER (C_LANE_GATE_IN→C_LANE_GATE_OUT),
+    which the note itself calls the first climb-over on the OLD guaranteed path. In-engine:
+    SPRINTING over it fires the climb-over cleanly (body crosses the 51.4–51.9 gate in one
+    sample); WALKING into it wedges, because `parkour/select.ts`'s standstill branch only offers
+    the climb-over while `sprintHeld` (the deliberate held-key contract — NOT my lane, not flipped
+    for one gate without sign-off). The camera "buried in brick" is the chase camera clipping the
+    Town House / row brick in the tight King-lane corridor — a camera-collision issue in
+    `apps/web/src/mission/*` (CONTESTED, not edited). The routing cause is fixed above: the mark
+    no longer sends the player down this corridor (verified — at the gate the mark points "12m up,
+    Orange Street roofline"). Also flagged: the gate art (`int-partition-board-a`) draws far taller
+    than its 1.6 m climbable collision, reading as an unclimbable wall (asset/scenery scale).
 - **Ladders rebuilt and refusal is on (`8686ae6`) — but you can still walk through them.**
   The old GLB was a braced trestle (back tapering 0.57 m → 0.06 m), drawn bolt upright; new
   art gives two rails and N rungs at a fixed 0.30 m gauge, one GLB per rung count, so height
