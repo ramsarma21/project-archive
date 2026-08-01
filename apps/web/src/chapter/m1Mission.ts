@@ -324,9 +324,29 @@ export function m1Instance(input: {
    * string derived from the numeric seed keeps the harness deterministic.
    */
   attemptSeedHex?: string;
+  /**
+   * Which links guidance may walk. Omit it in production: it defaults to the one
+   * canonical covert line, and `createWayfinder` PRUNES the graph to exactly that
+   * line's links (wayfind.ts), which is the whole point — the mark can then only
+   * lead along the sheds and canopies.
+   *
+   * The consequence, which cost thirteen tests: a body standing on a node that is
+   * not on the line has NO links in the graph, so no leg can commit there. No
+   * gateway arms, no vault or climb is offered, and `legSpeedCap` returns null.
+   * The authored side routes (the ropewalk tie beam and hemp descent, the Dock
+   * Square goods vault, the gaol barrels, the tower's east face) are all still
+   * authored and still playable — guidance simply no longer detours through them.
+   *
+   * So a test that deliberately drives one of those legs passes `null` to get the
+   * full authored SAFE graph back. That is a HARNESS setting, not a behaviour
+   * change: it must never be null on a path a player reaches.
+   */
+  guidedLine?: readonly string[] | null;
   Scenery: MissionInstance["Scenery"];
 }): MissionInstance {
   const attemptSeedHex = input.attemptSeedHex ?? `floor-${input.seed >>> 0}`;
+  const guidedLine =
+    input.guidedLine === undefined ? GOLDEN_GUIDED_LINE : input.guidedLine;
   const compiled = compileLevel(M1_EFFIGY_RUN);
   // Bound once per attempt, because the patrol phase is drawn from the seed and
   // the predicate closes over it. See `coveredAtFor`.
@@ -390,7 +410,7 @@ export function m1Instance(input: {
         // leading the player down onto the open market floor. The guided line
         // stays on the sheds and canopies and touches the cobbles only at the
         // authored drop-to-contact. See WayfinderOptions.guidedLine.
-        guidedLine: GOLDEN_GUIDED_LINE,
+        ...(guidedLine ? { guidedLine } : {}),
       }),
     ),
     beat,

@@ -42,6 +42,9 @@ function firstAttempt(): MissionRuntime {
     missionId: M1_MISSION_ID,
     attemptOrdinal: 1,
     seed: 0xb057,
+    // The full authored SAFE graph, not the pinned covert line: these legs are
+    // authored and playable but no longer guided. See m1Instance's guidedLine.
+    guidedLine: null,
     Scenery: null,
   });
   const runtime = createMissionRuntime({ instance, seed: 0xb057 });
@@ -133,6 +136,8 @@ test("an alert on the ropewalk beam is not a final-court failure; one under the 
     missionId: M1_MISSION_ID,
     attemptOrdinal: 1,
     seed: 0xb057,
+    // As above: the full authored SAFE graph.
+    guidedLine: null,
     Scenery: null,
   });
   const alerted = {

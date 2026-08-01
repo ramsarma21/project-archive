@@ -1194,10 +1194,16 @@ bough decks, both effigies, the awning catch, the `F_*` nodes and the nail stanc
 making for 0.244 m the night before a playtest. Whoever takes it should treat it as an asset job
 (canopy sprawl trimmed north of z ~7.5) rather than a level job.
 
-### The 13 stale `apps/web` failures are ONE cause, and it is the guided line (1 Aug)
+### The 13 stale `apps/web` failures: 7 were the guided line, 6 are three other things (1 Aug)
 
-Recorded here as "pre-existing and unchased; nobody has yet established whether they are one cause
-or several." **They are one cause, and it is not a defect.**
+**Corrects this entry's own earlier headline, "they are ONE cause, and it is not a defect."** That
+was wrong, and the measurement that refuted it was made by acting on it: unpinning the graph in the
+three files fixed **7 of 13**, not 10, and the survivors turned out to have three separate causes —
+one of them a live player-facing defect. `apps/web` is now **6 red** (2898 tests repo-wide, 6
+failing, every other package green; `packages/mission-m1` 246/246). Fixed at `m1Instance`, whose
+`guidedLine` is now an optional parameter defaulting to `GOLDEN_GUIDED_LINE` — production behaviour
+is unchanged, and the three test files pass `guidedLine: null` at four call sites to get the full
+authored SAFE graph back.
 
 `86396fc` pinned the wayfinder to `GOLDEN_GUIDED_LINE`. Traced in `wayfind.ts:481-502`:
 `createWayfinder` with `guidedLine` set **filters `level.links` down to exactly the consecutive
@@ -1205,7 +1211,7 @@ pairs of that line and discards every other authored link.** A body standing on 
 on the line therefore has no links in the graph at all, so no leg can commit there —
 `legSpeedCap` returns `null`, no gateway arms, and guidance offers no vault or climb.
 
-**Ten of the thirteen are traced to the node level.** Each one in `missionSafeRoute` /
+**Seven are fixed by unpinning the harness.** Each one in `missionSafeRoute` /
 `missionSafeRun` / `missionElmContinuation` drives guidance on a leg the line no longer contains:
 the ropewalk tie beam and the hemp/capstan descent (`D2_*`), the Dock Square goods vault and throng
 (`B2_*` — the very legs recorded above as having dropped off the line), the gaol barrels, and the
@@ -1215,26 +1221,73 @@ it "stays authored… the guided line just no longer detours through it." Two re
 assertions read verbatim: `speedCapMps=null` where 2.3 was expected (no committed leg off the line
 to carry a cap), and a held sprint failing to climb the east face (that chain is off the line).
 
-**The other three are the same class by subject, not yet opened assertion by assertion** — say so
-rather than counting them as traced: "the first attempt is guided down SAFE; a later attempt uses
-every line" and "the lines drawn are the fork, not the network" are both about which lines guidance
-selects and draws, which is precisely what the pinning changed; and "a naive forward run clears the
-Shambles ground lane" asserts the retired market GROUND lane, which the covert elevated line
-replaced (see the Market→Town House entry above).
-
-**Scope, measured:** `apps/web` is the ONLY red package in the repo — 13 failures, and every other
-package green — so `node scripts/run-tests.mjs` exits 1 at `72ec557` for this reason alone.
-
-This also explains the A/B that puzzled the earlier pass — ten run identically with and without the
+This also explains the A/B that puzzled the earlier pass — they run identically with and without the
 scaffold fix because that fix changed board geometry, not line membership.
 
-**The fix lives in `apps/web/test/`, which this lane does not own, so it is reported not made.** The
-recommendation for whoever does: do **not** delete the assertions. The legs are still authored and
-still playable, so construct the wayfinder in those tests *without* `guidedLine` — then they go on
-testing the side routes they were written for, and stop asserting guidance the game deliberately
-withdrew. One genuine player-facing residue worth a look while there: the authored **walk cap** is a
-safety cue at a lip over a fall, and off the guided line there is no committed leg to carry it, so a
-player who wanders onto the tie beam gets no cap.
+**The six that remain are deliberately red, and they are not one class.** No assertion was deleted
+and none was greened by a flag that stops it checking anything.
+
+1. **`visorHold` "the lines drawn are the fork, not the network" — a live defect, and the most
+   valuable thing in this entry.** It does not fail on its legibility budget; it fails on
+   `plan.paths.length > 0`. **The visor briefing draws ZERO route polylines.** `guidedLine` cannot
+   be the cause and unpinning cannot mask it: `m1VisorSource()` reads all of `M1_EFFIGY_RUN.links`
+   directly and never consults the wayfinder. Traced to `chainPolylines`
+   (`apps/web/src/visor/visorPlan.ts:284-332`), which seeds a polyline only at a **head** node —
+   one with nothing arriving at it — and then requires that seed within `LINE_REACH_M` (10 m) of
+   spawn. A link **`S1_PRINTSHOP_VANTAGE -> A_START`** now arrives at `A_START`, so the spawn node
+   is no longer a head; the only two heads are `C_SQUARE_NW` and `C_GALLERY_STAIRHEAD`, both away
+   in section C, so both are rejected and the loop returns nothing. The `heads.length > 0` guard
+   means the "entirely a cycle" fallback that would have seeded `A_START` never runs. Measured:
+   SAFE=191 links, FAST=0, EXPERT=0, 5 links with both ends inside 10 m of spawn, `paths=0`.
+   **A first-attempt player is shown a visor hold with no route drawn on it, and no gate sees it.**
+   One back-link into the start node did that. Note also that FAST/EXPERT are now fully retired in
+   the level (zero links), so the test's own premise — a *fork* — is stale; whoever fixes this owes
+   a decision about what the hold should draw for one route, not just a repair.
+2. **`missionGroundLane` "a naive forward run clears the Shambles ground lane" — not guidance at
+   all.** It assigns `runtime.motion` directly at `B_STREET_W` and holds +x with **no mark read**,
+   so the graph is irrelevant and `guidedLine: null` changes nothing. Its own message names the
+   cause: *"it wedged in the lane (the gaol-barrel vault trap)"*. That is a traversal/collision
+   finding on an authored-but-unguided leg, and the guided line steers production clear of it, which
+   is why no gate catches it either.
+3. **`missionWayfinding` "the first attempt is guided down SAFE; a later attempt uses every line"
+   encodes a requirement the owner retired.** Its second assertion demands a retry widen to every
+   authored line; `m1Mission.ts` says in its own voice that there is ONE route and "a retry no
+   longer gets alternate marks", and the code passes `guidanceLines: ["SAFE"]` on every attempt with
+   no ordinal branch. Unsatisfiable without reviving retired machinery. Unpinning would green its
+   *first* assertion and leave the second red, so it was left alone: this one needs the owner's
+   call (re-point it at the one-route rule, or delete it), not a harness flag.
+4-6. **The three long end-to-end runs** — `missionSafeRoute`'s steeple-gallery dive,
+   `missionElmContinuation`'s full-run-composes, and `missionSafeRun`'s clock ledge — are still red
+   *after* unpinning, so the guided line was not their only cause. **Their second cause is not
+   traced to a location**, and that is stated rather than guessed: `missionSafeRun` fails on
+   `reachedLedge`, i.e. the drive never arrives, and a scratch drive of my own ended inside the
+   gaol-barrel x-band `[20.5, 24]` that item 2 names — suggestive of one shared wedge, but my
+   controller is not the tests' controller and is **not admissible** for that claim. Settling it
+   means instrumenting the tests' own drive for where it stops.
+
+One genuine player-facing residue worth a look: the authored **walk cap** is a safety cue at a lip
+over a fall, and off the guided line there is no committed leg to carry it, so a player who wanders
+onto the tie beam gets no cap.
+
+### `check-playthrough` is NOT all-pass in a lane worktree, at HEAD, for two environment reasons (1 Aug)
+
+Briefs are being written on "check-playthrough is currently **ALL PASS**". In this worktree it is
+not, and **it is not all-pass at clean `72ec557` either** — verified by stashing every edit and
+re-running, which produced the identical single failure. So this is environmental, not a regression,
+but a brief that quotes ALL PASS as the state to preserve is quoting something a worker cannot
+reproduce.
+
+- **The gate defaults to `:5273`, not `:5200`.** It refuses fast and prints the vite command to run.
+- **`.env` is gitignored, so it does not exist in any worktree.** `apps/api` then refuses to start
+  at all — "GRADING_RECEIPT_SECRET is unset and SESSION_SECRET is not available to derive from" —
+  which is correct behaviour and fatal to the DUEL stage. Copying the checkout's `.env` in gets the
+  API up; the file stays untracked and cannot be committed. This will bite every future worktree.
+- **The DUEL stage still fails even with the API up**, on "could not open a local session", which is
+  unresolved and needs whoever owns the duel harness. Every other stage passes: world, route order,
+  no penetration, yard, the ladder refusal pair, and all four elm-beat checks.
+
+The usable form of the release bar, then: the traversal stages are reproducible in a worktree and
+are the ones a level or route change can break; the DUEL stage needs the owner's full stack.
 
 ### `verify_m1_steeple` is RED at `72ec557`, on the texture atlas count (1 Aug)
 

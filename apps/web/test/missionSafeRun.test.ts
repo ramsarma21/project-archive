@@ -54,6 +54,10 @@ function firstAttemptRuntime(): MissionRuntime {
     missionId: M1_MISSION_ID,
     attemptOrdinal: 1, // SAFE-only guidance, the first-run case
     seed: 0xb057,
+    // The full authored SAFE graph, not the pinned covert line: this run drives
+    // authored side legs that guidance no longer detours through. See
+    // m1Instance's guidedLine.
+    guidedLine: null,
     Scenery: null,
   });
   const runtime = createMissionRuntime({ instance, seed: 0xb057 });

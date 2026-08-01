@@ -90,6 +90,11 @@ function firstAttemptRuntime(): MissionRuntime {
     missionId: M1_MISSION_ID,
     attemptOrdinal: 1, // SAFE-only guidance, the first-run case
     seed: 0xb057,
+    // The full authored SAFE graph, not the pinned covert line. This walk leaves
+    // that line, and a pinned wayfinder has no links off it to commit — see
+    // m1Instance's guidedLine. The legs below are authored and playable either
+    // way; only guidance narrowed.
+    guidedLine: null,
     Scenery: null,
   });
   return createMissionRuntime({ instance, seed: 0xb057 });
