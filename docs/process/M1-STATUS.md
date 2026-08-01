@@ -906,45 +906,74 @@ DOES — it drives the shipped physics at each authored link, and it is what cau
 staging climbs going dead. Use it, not the affordance gate, for any "can the player actually
 get up this" claim.
 
-### The overhead-refusal sweep: 12 raw hits, 2 real candidates, and why the count is not the answer (31 Jul)
+### The overhead-refusal sweep is SUPERSEDED — the predicate was a proxy, and driving the body replaced it (31 Jul)
 
-Swept mechanically after the rule turned up three times in one day (scaffold staging, merchant
-gallery, elm crown). The predicate is the exact `readRaisedSurface` condition: **the source node's
-(x,z) falls inside the target deck's rect, with a positive rise inside the climb ceiling.**
+The sweep matched twelve authored CLIMB links against the exact `readRaisedSurface` condition
+(source node's x,z inside the target deck's rect, positive rise inside the climb ceiling) and
+named two candidates. **Both of its conclusions were wrong, and measuring them is what produced
+the gate that now covers the class.** Kept as a correction, not as an open item.
 
-Twelve authored CLIMB links match. **The raw count is misleading and must not be quoted as
-twelve defects** — matching the predicate is necessary but not sufficient, and there is direct
-evidence for that in both directions:
+- **There is NO ladder-versus-grip asymmetry.** The sweep recorded it as untraced; it does not
+  exist. `readOverhead` (probe.ts:644) is the *designed fallback* for exactly this shape — a pure
+  vertical ascent whose standing spot is inside its target's footprint — and it consults ladders
+  and grips through the same `climbAffordanceAt` call at the same refusal. Driven at both,
+  `C_GALLERY_EMID->C_CLOCK` (ladder) and `F_LOW->F_CROWN` (grip) behave identically: CLIMB_UP
+  offered at rest and at sprint, over 23/36 and 24/36 headings.
+- **`F_LOW->F_CROWN` was not failing for the recorded reason.** The reader offered the climb. What
+  failed was the harness: devEntry's `dropSpawn` overrode the requested facing (see the defect
+  below), so the bot was driven into the elm bole instead of at the crown. Fixed at `02d549a`;
+  `check-playthrough` BEAT now passes in a real browser.
+- **`C_CORNICE_S->C_LEADS_S` is not a defect.** Driven with real `stepFlow` it climbs and the body
+  arrives on the leads: the read tops onto the `TOWNHOUSE` mass at 12.40, which *is* the leads. Its
+  2.20 m rise is inside the reader's CLIMB_UP band (the 1.9-3.1 m "dead zone" is an authoring
+  preference, not an engine refusal, and roughly a dozen links sit in it).
 
-- **A ladder defeats the skip.** `C_GALLERY_EMID->C_CLOCK` matches the predicate and provably
-  ARMS: `check-playthrough`'s refusal stance was re-pointed onto that exact ladder on 31 Jul and
-  passed in play ("no ladder and no grip means no climb" holds, i.e. it arms with the ladder
-  present). Seven of the twelve are ladder-served this way — CLOCK, CORNICE_E, TOWER_PLINTH,
-  LEANTO, RIDGE_W/RIDGE_S, LOUVRE.
-- **A GRIP apparently does not.** `F_LOW->F_CROWN` matches and has `GRIP_ELM_CROWN` on the target
-  surface, and it is the one we know FAILS in play (the body never enters CLIMB_UP). Why a ladder
-  rescues and a grip does not is **not traced** — do not build on it without reading the path.
+**The general lesson, which is why the predicate did not become the gate.** Matching the predicate
+is necessary and nowhere near sufficient: ten of the twelve hits are fine, seven served through the
+`readOverhead` fallback and three standing exactly on a rect boundary, which is a body at the lip
+and correct authoring. A check that cries wolf ten times in twelve gets muted. What landed instead
+is `packages/mission-m1/src/__tests__/routeAscent.test.ts` — the ascent half of `routeFlow`: drive
+real `stepFlow` UP every authored SAFE climb and require the body to arrive at the destination's
+height. It needs no exclusion list, and it found a defect the sweep could not see (below). It
+carries a mutation self-test that drops a bare climb volume over a foot and requires the driver to
+notice, because a gate that cannot fail is not evidence.
 
-Of the five that are not ladder-served, three place the node EXACTLY on the rect boundary
-(`E_LOUVRE->E_GALLERY` at z 8.9 against z0 8.9; `E_LEANTO->E_MEETING_S` at z 16.3 against z1 16.3;
-and the boundary is inclusive in the predicate). A node on the boundary is standing AT THE LIP,
-which is correct authoring, so these are probably false positives — probably, not certainly.
+### Three defects the ascent driver found on its first runs, and one it did not (31 Jul)
 
-That leaves two genuine candidates:
+- **The merchant's covert entry was DEAD, and the mesh was not why** (`c54316e`). Three climb
+  volumes outlived the ladders they were authored for — the 31-Jul re-mass took the ladders out and
+  left the volumes, and *a volume with no ladder or grip at the foot refuses the ascent rather than
+  enabling it*. The body sat on the Shambles crate and was offered BLOCKED, then RUN_OFF. Exactly
+  the mistake `climbs.ts` already warns about for the scaffold, made two files away. The affordance
+  gate had the surfaces healthy throughout.
+- **The steeple's regenerated 14.7 east set-off cannot be climbed onto, and it needs an ASSET
+  change.** The 15.8 gallery oversails to x 83.7 and the ledge runs x 83.0..84.7, so the gallery
+  roofs its western 0.7 m; the north ledge below ENDS at x 83.0, so every trajectory crosses the
+  overhang while rising and the head is 0.17-0.26 m through the soffit however the nodes are
+  placed. Standing east of 83.7 is fine — that is the 1.0 m of open sky the regen aimed at — so
+  the deck is authored and simply carries no node. **Routed to the asset lane: start the 14.7 slab
+  at x 83.7, or stop the gallery short of it.** Until then the belfry is ridge -> 13.0 -> 15.8 at
+  1.8 and 2.8, one dead-zone step where one stood before, but landing on drawn stone instead of a
+  ring the mesh never drew.
+- **`O2_BARRICADE_WALL` stopped 0.6 m short of the merchant's south wall**, and 0.6 m is narrower
+  than the 0.70 m capsule: a body in that slot was inside a solid whichever way it faced, 44
+  consecutive ticks. As old as the barricade — the penetration fuzzer only reaches it when the
+  world bounds move, which node edits do. Closed.
+- **What it did NOT catch, and cannot:** the ascent driver reads authored hulls like everything
+  else in the mover. It says nothing about whether the climb passes through drawn geometry. The
+  steeple soffit above was found by `beginAuthored`'s deck test, and the elm's headroom by a direct
+  GLB probe; neither is the driver's job.
 
-- **`F_LOW->F_CROWN`** (elm crown, 0.1 m inside x, well inside z) — confirmed failing in play, and
-  it blocks the mission climax. Owner's ruling 31 Jul: move the standing spot west of x 78.6, and
-  retire the volume AND `GRIP_ELM_CROWN`, because hauling up the bole on holds is the climbing the
-  movement vocabulary rejects. Headroom at the new spot must be verified with a MESH-READING
-  instrument: the file records a previous relocation here sweeping the body's head 0.81 m through
-  the drawn canopy.
-- **`C_CORNICE_S->C_LEADS_S`** (Town House leads) — node at z 6.25 against a rect ending at 6.5,
-  so 0.25 m genuinely inside, no ladder, and a 2.20 m rise that is also in the 1.9-3.1 m dead
-  zone. Unexamined. Suspicious on two counts at once.
+### `devEntry`'s drop-in silently overrides the facing you asked for — CONTESTED, not fixed (31 Jul)
 
-**Nothing in the 243-test suite catches any of this**, which is the point: the class fails silently
-at authoring time and surfaces only as a climb that never offers itself. Promoting the predicate to
-a real gate is tracked as its own item — a check that can fail is worth more than this paragraph.
+`dropSpawn` in `apps/web/src/mission/devEntry.tsx` replaces the `toward=` yaw with the beat's own
+`facingYaw` whenever the drop lands within `stanceRadiusM` (2.4 m) of the beat stance — measured in
+**XZ only**, ignoring the beat's own 1 m `stanceHeightToleranceM`. The Liberty Elm stacks three
+tiers inside that radius, so a drop at `F_LOW` — 1.9 m *below* the stance — was silently aimed at
+the nail. Held W then walked the body into the bole, which is solid to 12 m, and the stage reported
+"the elm climb never arms" for a week. **The file is contested; this lane did not edit it.** The
+fix is one condition: require the height tolerance as well as the radius. `check-playthrough`'s BEAT
+stage works around it with `back=1.6`, which is recorded in the stage's own comment.
 
 ### The edge brake holds a walk and loses a run, and a deck ends one capsule radius late (31 Jul)
 

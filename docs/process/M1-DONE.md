@@ -138,9 +138,20 @@ The owner's law: *"physics [must make] 1:1 sense to what can be done in real lif
 - **[x]** The elm beat arms from the pose a player actually arrives in.
 - **[x]** It is a reaction test, generous and large, not a precision test.
 - **[x]** The beat is reachable by climbing, asserted in real play: the gate drops in on the low
-  bough, climbs the elm grip to the crown, and requires the beat to arm from that arrival
-  (`08b4ec6`). The unit test still spawns on the bough, which is now acceptable because the gate
-  covers reachability.
+  bough, **mantles onto the crown from its west rim** and requires the beat to arm from that
+  arrival (`08b4ec6`, re-pointed `02d549a`). The unit test still spawns on the bough, which is
+  acceptable because the gate covers reachability.
+  - The ascent is no longer a grip climb. `F_LOW` stood 0.1 m *inside* `BOUGH_CROWN`'s own
+    footprint, which forced it through the vertical `readOverhead` fallback and therefore behind a
+    climb volume and `GRIP_ELM_CROWN`. It armed — but only over a 100° arc of headings, facing the
+    bole read BLOCKED, and hauling up a bole on holds is the vocabulary the owner rejected. From
+    the west rim the crown is a face 0.4 m ahead and the 1.90 m rise is an ordinary mantle, with
+    nothing authored. The spot was chosen on three measurements, one of them a direct GLB probe:
+    the drawn canopy clears the standing capsule column, where the old spot swept the head 0.332 m
+    through it.
+  - **Found and not fixed:** `F_POST_STEP`, the authored descent rim, still stands with the head
+    **0.186 m** inside the drawn canopy — the whole z = 0.4 line under the elm is a low-canopy
+    line. Moving it has its own history (route.ts records why it is at the post's own z).
 
 ## 8. Nothing silently regresses
 

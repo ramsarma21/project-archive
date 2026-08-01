@@ -138,10 +138,11 @@ export function M1HarbourWater(props: {
   useFrame((state) => {
     const mat = matRef.current;
     if (!mat) return;
-    if (!props.reducedMotion) {
-      mat.uniforms.uTime.value = state.clock.elapsedTime;
-    }
-    mat.uniforms.uBright.value = bright;
+    // `uniforms` is an index signature, so under noUncheckedIndexedAccess each
+    // lookup is possibly undefined however certain the shader source makes it.
+    const { uTime, uBright } = mat.uniforms;
+    if (uTime && !props.reducedMotion) uTime.value = state.clock.elapsedTime;
+    if (uBright) uBright.value = bright;
   });
 
   return (

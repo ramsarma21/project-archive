@@ -146,17 +146,21 @@ const KNOWN_DEBT = new Map([
   // than left describing a solved problem.
   ["MASS_TOP:ROPE_CAPSTAN", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.986, note: "rope-coil-large crown ~0.99m below its cover top; needs a taller vaultable asset through the pipeline." }],
   ["MASS_TOP:COVER_COILS_C", { category: "missing-or-short", rank: 2, band: 0.000, delta: -0.635, note: "rope-coil-large crown ~0.64m below its cover top; needs a taller vaultable asset through the pipeline." }],
-  // --- DEAD WHARF warehouses: PENDING-REGEN (owner-accepted 31-Jul). The two
-  // bldg-warehouse-wharf-a/b meshes draw their roof/loading-gallery well below the
-  // authored 5.35 box (A worse than B because A's footprint is wider, so contain-
-  // fit shrinks its height more). A separate asset worker is regenerating BOTH keys
-  // WITH a real oversailed standable gallery at y=5.35 + a flat roof deck, under the
-  // SAME key/box — at which point these resolve. The STRUCTURE (box/deck/route:
-  // wharf descent lands on A's roof, ascent mantles onto B's gallery) is authored to
-  // the target. Do NOT shrink the boxes; the regen targets them.
-  ["DECK:WHARF_WAREHOUSE_A__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -4.84, note: "PENDING-REGEN: warehouse-wharf-a roof mesh far below its 5.35 box (wide footprint); descent's first landing. Regen delivers roof deck at box." }],
-  ["DECK:WHARF_WAREHOUSE_B__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -1.37, note: "PENDING-REGEN: warehouse-wharf-b roof/gallery mesh ~1.4m below its 5.35 box; ascent's top mantle target. Regen delivers oversailed gallery at box." }],
-  ["CLIMB_TO:CLIMBVOL_WHARF_ASC_2->WHARF_ASC_ROOF", { category: "missing-or-short", rank: 3, band: 0.00, delta: -1.88, note: "PENDING-REGEN: the mantle onto warehouse-wharf-b's 5.35 gallery reads the short mesh (~1.9m below); resolves with the same regen as DECK:WHARF_WAREHOUSE_B__ROOF." }],
+  // --- DEAD WHARF warehouses. THE REGEN THESE THREE WERE WAITING FOR LANDED
+  // (a72015e) AND DID NOT DELIVER WHAT THE NOTES PROMISED, so the notes are
+  // rewritten against measurement rather than left describing a plan. Measured
+  // off the placed GLBs 31-Jul: wharf-a tops out at 5.35 with one 14.8 m2 ridge
+  // band AT the plane (z 1.41..3.19) over 4.55/4.70 aprons; wharf-b tops out at
+  // 4.57 with one 20.6 m2 flat roof at 4.30 and nothing at 5.35 at all. There is
+  // no taller roof on either asset, so "regen delivers a gallery at the box" was
+  // never going to happen and these are not pending anything.
+  //
+  // wharf-b is therefore AUTHORED DOWN onto its drawn roof (roofY 4.30, see
+  // level/wharf.ts) rather than held as debt: the ascent now mantles onto stone.
+  // Its two entries stay only to cover the jetty over-claim that is left.
+  ["DECK:WHARF_WAREHOUSE_A__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -4.84, note: "MEASURED -0.61 / 15% at plane, far better than this recorded -4.84 (which predates a72015e and is kept only as the never-exceed ceiling). NOT pending a regen: wharf-a's ridge IS drawn at 5.35, but as a 1.78 m band (z 1.41..3.19) under a deck claiming the whole footprint, so 85% of the deck is the 4.55/4.70 apron. Narrowing the deck onto the ridge is the honest rect and it RE-MASSES THE DESCENT — the mound the body drops to sits at z 7..10, outside the band — so it needs a decision on how a pitched roof is walked, not an asset." }],
+  ["DECK:WHARF_WAREHOUSE_B__ROOF", { category: "missing-or-short", rank: 3, band: 0.02, delta: -1.37, note: "Re-pointed 31-Jul from the phantom 5.35 to the drawn 4.30 flat roof; now -0.27 / 63% at plane, from 0%. What is left is the roof deck's own JETTY reaching past the mesh, not a missing roof." }],
+  ["CLIMB_TO:CLIMBVOL_WHARF_ASC_2->WHARF_ASC_ROOF", { category: "missing-or-short", rank: 3, band: 0.00, delta: -1.88, note: "The mantle onto wharf-b's roof, re-pointed with the deck above to the drawn 4.30. Same jetty residue." }],
   // --- TOWN HOUSE repair-scaffold staging staircase (owner-accepted 31-Jul). The
   // ≤1.9 m mantle chain 5.6 -> 12.4 is a STAGGERED STAIRCASE of solid staging
   // blocks (masons' materials boarded onto the putlog frame), the same shape as
