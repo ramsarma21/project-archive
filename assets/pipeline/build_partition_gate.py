@@ -219,6 +219,12 @@ for poly in obj.data.polygons:
     poly.use_smooth = False
 bpy.context.scene.collection.objects.link(obj)
 
+# Vault-height climb-over: the player is right on top of this gate as they vault it,
+# so its board/iron relief is read at arm's length. Opt out of fix_glb_normals' 512
+# default up to 1024. The stamp rides in the GLB (node extra) so a rebuild keeps it
+# without a remembered flag — enforcement in the artifact, not a note. (default=512.)
+obj["normalMax"] = 1024
+
 co = np.array([v.co[:] for v in obj.data.vertices])
 lo, hi = co.min(0), co.max(0); size = hi - lo; centre = (lo + hi) / 2.0
 log(f"blender bbox {size[0]:.3f} x {size[1]:.3f} x {size[2]:.3f}  -> gltf {size[0]:.3f}(w) x {size[2]:.3f}(h) x {size[1]:.3f}(d)  declared {W}x{H}x{RUN}")
@@ -233,5 +239,6 @@ log(f"tris {tris}  verts {len(obj.data.vertices)}  cap top (climb line) {CAP_TOP
 os.makedirs(os.path.dirname(OUT_GLB), exist_ok=True)
 bpy.ops.object.select_all(action="DESELECT"); obj.select_set(True); bpy.context.view_layer.objects.active = obj
 bpy.ops.export_scene.gltf(filepath=OUT_GLB, export_format="GLB", export_yup=True, export_animations=False,
-                          export_image_format="AUTO", export_jpeg_quality=90, export_tangents=True, use_selection=True)
+                          export_image_format="AUTO", export_jpeg_quality=90, export_tangents=True, use_selection=True,
+                          export_extras=True)  # carry the normalMax=1024 opt-in into the GLB for fix_glb_normals
 log("WROTE", OUT_GLB, os.path.getsize(OUT_GLB))

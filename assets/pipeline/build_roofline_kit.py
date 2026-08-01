@@ -544,8 +544,14 @@ def add_grid(mesh, uv_layer, points, material, tile, uv_offset=(0.0, 0.0), flip=
                 )
 
 
-def finish(mesh, name, materials, target, exact_z, out_name):
+def finish(mesh, name, materials, target, exact_z, out_name, normal_max=None):
     """Centre, pin the base to zero, hit the target box exactly, export.
+
+    `normal_max` stamps a `normalMax` node extra that fix_glb_normals reads to cap the
+    derived tangent normal (default 512). Leave it None for the roof props seen at range;
+    pass 1024 for a prop the player stands beside at arm's length (the ropewalk interior).
+    The cap then travels IN the GLB, so a future rebuild keeps the detail without anyone
+    remembering a flag — enforcement in the artifact, not a note.
 
     FittedGlb contain-fits on the smallest of the three box/mesh ratios and then
     bottom-aligns, so a millimetre of overshoot on ANY axis shrinks the whole
@@ -562,6 +568,8 @@ def finish(mesh, name, materials, target, exact_z, out_name):
     bpy.context.scene.collection.objects.link(obj)
     for material in materials:
         obj.data.materials.append(material)
+    if normal_max is not None:
+        obj["normalMax"] = int(normal_max)
 
     coords = np.array([v.co[:] for v in obj.data.vertices])
     lo, hi = coords.min(axis=0), coords.max(axis=0)
@@ -610,6 +618,7 @@ def finish(mesh, name, materials, target, exact_z, out_name):
         export_image_format="JPEG",
         export_jpeg_quality=80,
         use_selection=True,
+        export_extras=True,  # carry a normalMax opt-in (if any) into the GLB for fix_glb_normals
     )
     log(f"WROTE {path} {os.path.getsize(path)}")
     return path
@@ -1443,8 +1452,11 @@ def build_ropewalk_shell():
 
     bmesh.ops.remove_doubles(mesh, verts=list(mesh.verts), dist=1e-5)
     bmesh.ops.recalc_face_normals(mesh, faces=list(mesh.faces))
+    # Interior seen at arm's length (four walls + ceiling, "26 m2 seen from beside it"),
+    # so its boarding relief must hold up close: opt out of the 512 default up to 1024.
     return finish(
-        mesh, key, [board, lead, stone], box, exact_z=True, out_name=f"{key}.glb"
+        mesh, key, [board, lead, stone], box, exact_z=True, out_name=f"{key}.glb",
+        normal_max=1024,
     )
 
 

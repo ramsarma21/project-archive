@@ -1090,14 +1090,34 @@ steeple normals stay 1024 (climbed landmark, read at arm's length on the belfry)
 512; scaffold/printshop have no normal payload; `billeting-pile`'s 3.17 MB is a Meshy ALBEDO atlas
 (no normal) — a separate albedo pass, out of scope here.
 
-**Pending recommendation for the owner (do not apply unilaterally — it touches a post-processor every
-asset depends on):** give `fix_glb_normals` a `--normal-max` (default **512**) that downsamples the
-derived normal before PNG-encode, so the trap closes for every FUTURE bake instead of being
-rediscovered per prop. Downside is bounded — it only ever reduces normal res, never albedo/geometry,
-and is overridable — but arm's-length props (interiors, the vault-height gate, and the climbed
-steeple) must then pass `--normal-max 1024`. JPEG-encoding normals was considered and rejected: it
-introduces chroma artefacts that decode to wrong surface directions. The problem is resolution, not
-format.
+**Closed (owner-approved, 1 Aug):** `fix_glb_normals` now takes `--normal-max` (default **512**) and
+downsamples the derived normal before PNG-encode, so the trap closes for every FUTURE bake instead of
+being rediscovered per prop. The default fails *visibly* (a slightly soft normal anyone can see at
+arm's length) where the old behaviour failed *silently* (14 MB nobody saw until an audit) — the loud
+failure is preferred deliberately. Precedence: explicit `--normal-max` flag > generator stamp > 512.
+JPEG-encoding normals was considered and rejected: chroma artefacts decode to wrong surface directions,
+a worse and subtler failure than resolution. It only ever reduces normal res, never albedo/geometry.
+
+**The opt-in lives in the generators, not this note — the note is a record, the generators are the
+enforcement.** A prop the player reads at arm's length stamps a `normalMax` node extra (`obj["normalMax"]
+= 1024` + `export_extras=True`) that travels IN the GLB, and `fix_glb_normals` reads it, so a rebuild
+keeps the detail without anyone remembering a flag. This is the fix for the exact trap that cost a day
+once — a decision recorded in prose while the file that dispatches was never edited. Props opting into
+1024, each with its one-line reason:
+- **`build_steeple_clean.py`** (`steeple-meetinghouse-climbable`) — the one landmark the player is
+  physically *on* during the ascent (belfry chain, leap gallery); belfry brick/leadwork read at arm's length.
+- **`build_partition_gate.py`** (`int-partition-board-a`) — a vault-height climb-over; the body is right
+  on top of the board/iron as it vaults, so the relief is read up close.
+- **`build_roofline_kit.py` → `build_ropewalk_shell`** (`int-shell-ropewalk-a`) — an interior (four walls
+  + ceiling, ~26 m² seen from beside it), so its boarding relief is close-range. Threaded through the kit's
+  `finish(..., normal_max=1024)`; every other kit prop is `None` → 512, correct for a roof seen at range.
+
+Everything else takes the 512 default deliberately: the hero facades (`bldg-row-shop`, `bldg-merchant`,
+`bldg-warehouse-wharf-a/b`) and the ridge monitor are seen at traversal range where 512 is
+indistinguishable (proven by before/after renders in the audit); `duck-beam` was already 512;
+`scaffold`/`printshop` carry no normal payload; `billeting-pile` is a Meshy albedo (no normal). Verified
+end-to-end: the three opt-in generators stamp `normalMax:1024` into the exported GLB and `fix_glb_normals`
+reports `normal cap = 1024 (generator stamp)`; unstamped props report `512 (default)`.
 
 **The gap that cost the most:** every collision *invariant* reads authored hulls, and the
 mover has never touched a GLB — `collision.ts`, `playerMotion.ts` and `traversalResolver.ts`

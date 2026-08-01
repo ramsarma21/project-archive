@@ -460,6 +460,16 @@ for poly in obj.data.polygons:
     poly.use_smooth = False
 bpy.context.scene.collection.objects.link(obj)
 
+# Opt this landmark's derived normal OUT of fix_glb_normals' 512 default and up to 1024.
+# The steeple is the one asset the player is physically ON during the ascent (belfry chain,
+# leap gallery), read at arm's length, so its brick/leadwork relief has to hold up close;
+# every other facade is seen at traversal range where 512 is indistinguishable. The stamp
+# travels IN the GLB (node extra) and fix_glb_normals reads it, so a future rebuild keeps
+# 1024 without anyone remembering a flag — the decision lives in the artifact, not a note.
+# Enforcement, not prose: a --normal-max opt-in kept only in docs would silently soften this
+# landmark on the next rebuild, the exact trap that cost a day once. (default fixNorm=512.)
+obj["normalMax"] = 1024
+
 co = np.array([v.co[:] for v in obj.data.vertices])
 lo, hi = co.min(0), co.max(0); size = hi - lo; centre = (lo + hi) / 2.0
 log(f"blender bbox {size[0]:.3f} x {size[1]:.3f} x {size[2]:.3f}  -> gltf {size[0]:.3f}(w) x {size[2]:.3f}(h) x {size[1]:.3f}(d)  declared {WBOX}x{HBOX}x{DBOX}")
@@ -474,5 +484,6 @@ log(f"tris {tris}  verts {len(obj.data.vertices)}  south-chain 13.0/14.7 -> gall
 os.makedirs(os.path.dirname(OUT_GLB), exist_ok=True)
 bpy.ops.object.select_all(action="DESELECT"); obj.select_set(True); bpy.context.view_layer.objects.active = obj
 bpy.ops.export_scene.gltf(filepath=OUT_GLB, export_format="GLB", export_yup=True, export_animations=False,
-                          export_image_format="AUTO", export_jpeg_quality=90, export_tangents=True, use_selection=True)
+                          export_image_format="AUTO", export_jpeg_quality=90, export_tangents=True, use_selection=True,
+                          export_extras=True)  # carry the normalMax=1024 opt-in into the GLB for fix_glb_normals
 log("WROTE", OUT_GLB, os.path.getsize(OUT_GLB))

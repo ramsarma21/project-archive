@@ -14,7 +14,20 @@ darker -> recessed) and injects it as a real glTF normalTexture. The result is a
 correct, aligned normal map in the shipped GLB, verifiable by byte inspection and
 by an engine-style render.
 
-Run: python3 fix_glb_normals.py <in.glb> <out.glb> [--scale S] [--radius R] [--flip-y]
+Run: python3 fix_glb_normals.py <in.glb> <out.glb> [--scale S] [--radius R] [--flip-y] [--normal-max N]
+
+NORMAL RESOLUTION: the derived tangent map is written PNG, and a PNG cannot compress a
+normal (it is high-frequency noise), so it costs ~0.4 MB at 512, ~1.5 MB at 1024, ~2.6 MB
+at 2048 — while the same-res albedo JPEG is 10-30x smaller. The normal used to inherit the
+albedo's resolution, which is chosen for COLOUR fidelity, so every base-color-only bake
+silently shipped a normal far heavier than its geometry (14 MB of normal on 0.3 MB of mesh
+across four facades, 1 Aug audit). The derived normal is now capped: `--normal-max` (default
+512) resizes it before encode. 512 is indistinguishable at the range most props are seen
+from; arm's-length props (interiors, a vault-height gate, the climbed steeple) need 1024 and
+their GENERATORS stamp it into the GLB (a `normalMax` extra) so the cap travels with the
+asset and cannot be forgotten at invocation time. Precedence: explicit --normal-max flag >
+generator-stamped extra > 512 default. This only ever REDUCES normal resolution; it never
+touches albedo or geometry.
 """
 import sys, os, json, struct, io, argparse
 import numpy as np
@@ -75,6 +88,39 @@ def normal_from_albedo(pil_rgb, scale, radius, flip_y):
     return (enc * 255).astype(np.uint8)
 
 
+def cap_normal(u8, cap):
+    """Resize the derived normal so its longest edge is <= cap (LANCZOS). A normal
+    at 512 over a higher-res albedo is standard — relief is lower-frequency than colour."""
+    h, w = u8.shape[:2]
+    if max(w, h) <= cap:
+        return u8
+    nw = cap if w > cap else w
+    nh = cap if h > cap else h
+    return np.asarray(Image.fromarray(u8, "RGB").resize((nw, nh), Image.LANCZOS), np.uint8)
+
+
+def resolve_cap(gltf, cli):
+    """explicit --normal-max > generator-stamped `normalMax` extra > 512 default.
+
+    The stamp travels IN the asset because this script is run standalone per GLB with
+    no orchestrator, so an opt-in kept only as a remembered flag (or a note) would be
+    the same trap the audit found: a decision in prose nobody executes. A generator that
+    needs crisp normals at arm's length writes `normalMax` and the cap follows the art."""
+    if cli is not None:
+        return cli
+    def scan(objs):
+        for o in objs or []:
+            v = (o.get("extras") or {}).get("normalMax")
+            if v:
+                return int(v)
+        return None
+    for src in (gltf.get("asset", {}).get("extras", {}).get("normalMax"),
+                scan(gltf.get("nodes")), scan(gltf.get("meshes"))):
+        if src:
+            return int(src)
+    return 512
+
+
 def add_bufferview(gltf, bn, data):
     while len(bn) % 4:
         bn.append(0)
@@ -117,11 +163,22 @@ def main():
     ap.add_argument("--radius", type=float, default=6.0)
     ap.add_argument("--nscale", type=float, default=0.8, help="glTF normalTexture.scale")
     ap.add_argument("--flip-y", action="store_true")
+    ap.add_argument("--normal-max", type=int, default=None,
+                    help="cap the derived normal's longest edge; default 512, "
+                         "or the generator-stamped normalMax extra if present")
     args = ap.parse_args()
 
     gltf, bn = read_glb(args.inp)
     if gltf.get("buffers", [{}])[0].get("uri"):
         raise SystemExit("expected single embedded BIN buffer")
+    cap = resolve_cap(gltf, args.normal_max)
+    if args.normal_max is not None:
+        cap_src = "flag"
+    elif resolve_cap(gltf, None) != 512:
+        cap_src = "generator stamp"
+    else:
+        cap_src = "default"
+    print(f"normal cap = {cap} ({cap_src})")
 
     src_to_normal_tex = {}   # base-color image index -> normal texture index
     done = 0
@@ -138,7 +195,7 @@ def main():
             continue
         if src not in src_to_normal_tex:
             pil = load_image_from_bufferview(gltf, bn, gltf["images"][src])
-            nrm_u8 = normal_from_albedo(pil, args.scale, args.radius, args.flip_y)
+            nrm_u8 = cap_normal(normal_from_albedo(pil, args.scale, args.radius, args.flip_y), cap)
             nbv = add_bufferview(gltf, bn, png_bytes(nrm_u8))
             gltf.setdefault("images", []).append(
                 {"name": gltf["images"][src].get("name", "img") + "_n",
