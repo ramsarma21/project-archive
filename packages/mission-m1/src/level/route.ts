@@ -390,6 +390,11 @@ export const LINKS: RouteLink[] = [
     note: "Back out of the parlour to the window, the hub of the drop-in.",
   }),
   link("M_PARLOUR", "M_STRING", "CLIMB", "SAFE", "CLIMB", {
+    // The generic endpoint-chord verifier raises the standing capsule while it
+    // is still under the leads and therefore intersects their one-way plane.
+    // The shipped reader uses a rise-then-land anchor chain and routeAscent
+    // drives that real path; ignore the roof only in the static chord preflight.
+    ignore: ["MERCHANT__ROOF"],
     note: "Back out through the open window and up onto the jettied gallery (4.0 → 5.70). It starts INSIDE the parlour, not on the window course, and the stagger is why: the gallery's footprint runs z −3.4..−2.6, which is exactly where the parlour floor's ends, so from in here it is a face ahead — and from out on the course it would be a ceiling. The trajectory clears the window spandrel, whose top is the parlour floor itself.",
   }),
   link("M_STRING", "M_EAVE_S", "CLIMB", "SAFE", "CLIMB", {

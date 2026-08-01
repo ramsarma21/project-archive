@@ -167,10 +167,11 @@ decks.push(
     //   the regenerated gallery slab (z −3.4..−2.6, top 5.70) sits UNDER it, so
     //   the jetty roofed the new ledge at 1.40 m, under STAND_HEIGHT, and no body
     //   could have stood on the intermediate the whole chain turns on.
-    // Pulled to the gallery's own north edge, which is also the parlour floor's
-    // south edge: one clean line at z −3.4 where the three tiers stack apart
-    // instead of over each other.
-    rect: { ...inflate(MERCHANT_FOOT, JETTY_M), maxZ: -3.8 },
+    // The collision lip is the drawn lip: the climb reader uses this face to
+    // place the capsule's rise, so insetting it behind the mesh made the body
+    // rise through the visible eave before topping out. The gallery's standing
+    // point remains south of this edge with open headroom.
+    rect: { ...inflate(MERCHANT_FOOT, JETTY_M), maxZ: -3.25 },
     y: EAVE,
     carriedBy: ["MERCHANT"],
     tags: ["roof", "north-row", "eave"],
