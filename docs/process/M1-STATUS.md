@@ -1199,8 +1199,8 @@ making for 0.244 m the night before a playtest. Whoever takes it should treat it
 **Corrects this entry's own earlier headline, "they are ONE cause, and it is not a defect."** That
 was wrong, and the measurement that refuted it was made by acting on it: unpinning the graph in the
 three files fixed **7 of 13**, not 10, and the survivors turned out to have three separate causes —
-one of them a live player-facing defect. `apps/web` is now **6 red** (2898 tests repo-wide, 6
-failing, every other package green; `packages/mission-m1` 246/246). Fixed at `m1Instance`, whose
+one of them a live player-facing defect — since fixed, see the visor entry below. `apps/web` is now
+**5 red**, every other package green; `packages/mission-m1` 246/246. Fixed at `m1Instance`, whose
 `guidedLine` is now an optional parameter defaulting to `GOLDEN_GUIDED_LINE` — production behaviour
 is unchanged, and the three test files pass `guidedLine: null` at four call sites to get the full
 authored SAFE graph back.
@@ -1224,39 +1224,23 @@ to carry a cap), and a held sprint failing to climb the east face (that chain is
 This also explains the A/B that puzzled the earlier pass — they run identically with and without the
 scaffold fix because that fix changed board geometry, not line membership.
 
-**The six that remain are deliberately red, and they are not one class.** No assertion was deleted
+**The five that remain are deliberately red, and they are not one class.** No assertion was deleted
 and none was greened by a flag that stops it checking anything.
 
-1. **`visorHold` "the lines drawn are the fork, not the network" — a live defect, and the most
-   valuable thing in this entry.** It does not fail on its legibility budget; it fails on
-   `plan.paths.length > 0`. **The visor briefing draws ZERO route polylines.** `guidedLine` cannot
-   be the cause and unpinning cannot mask it: `m1VisorSource()` reads all of `M1_EFFIGY_RUN.links`
-   directly and never consults the wayfinder. Traced to `chainPolylines`
-   (`apps/web/src/visor/visorPlan.ts:284-332`), which seeds a polyline only at a **head** node —
-   one with nothing arriving at it — and then requires that seed within `LINE_REACH_M` (10 m) of
-   spawn. A link **`S1_PRINTSHOP_VANTAGE -> A_START`** now arrives at `A_START`, so the spawn node
-   is no longer a head; the only two heads are `C_SQUARE_NW` and `C_GALLERY_STAIRHEAD`, both away
-   in section C, so both are rejected and the loop returns nothing. The `heads.length > 0` guard
-   means the "entirely a cycle" fallback that would have seeded `A_START` never runs. Measured:
-   SAFE=191 links, FAST=0, EXPERT=0, 5 links with both ends inside 10 m of spawn, `paths=0`.
-   **A first-attempt player is shown a visor hold with no route drawn on it, and no gate sees it.**
-   One back-link into the start node did that. Note also that FAST/EXPERT are now fully retired in
-   the level (zero links), so the test's own premise — a *fork* — is stale; whoever fixes this owes
-   a decision about what the hold should draw for one route, not just a repair.
-2. **`missionGroundLane` "a naive forward run clears the Shambles ground lane" — not guidance at
+1. **`missionGroundLane` "a naive forward run clears the Shambles ground lane" — not guidance at
    all.** It assigns `runtime.motion` directly at `B_STREET_W` and holds +x with **no mark read**,
    so the graph is irrelevant and `guidedLine: null` changes nothing. Its own message names the
    cause: *"it wedged in the lane (the gaol-barrel vault trap)"*. That is a traversal/collision
    finding on an authored-but-unguided leg, and the guided line steers production clear of it, which
    is why no gate catches it either.
-3. **`missionWayfinding` "the first attempt is guided down SAFE; a later attempt uses every line"
+2. **`missionWayfinding` "the first attempt is guided down SAFE; a later attempt uses every line"
    encodes a requirement the owner retired.** Its second assertion demands a retry widen to every
    authored line; `m1Mission.ts` says in its own voice that there is ONE route and "a retry no
    longer gets alternate marks", and the code passes `guidanceLines: ["SAFE"]` on every attempt with
    no ordinal branch. Unsatisfiable without reviving retired machinery. Unpinning would green its
    *first* assertion and leave the second red, so it was left alone: this one needs the owner's
    call (re-point it at the one-route rule, or delete it), not a harness flag.
-4-6. **The three long end-to-end runs** — `missionSafeRoute`'s steeple-gallery dive,
+3-5. **The three long end-to-end runs** — `missionSafeRoute`'s steeple-gallery dive,
    `missionElmContinuation`'s full-run-composes, and `missionSafeRun`'s clock ledge — are still red
    *after* unpinning, so the guided line was not their only cause. **Their second cause is not
    traced to a location**, and that is stated rather than guessed: `missionSafeRun` fails on
@@ -1268,6 +1252,43 @@ and none was greened by a flag that stops it checking anything.
 One genuine player-facing residue worth a look: the authored **walk cap** is a safety cue at a lip
 over a fall, and off the guided line there is no committed leg to carry it, so a player who wanders
 onto the tie beam gets no cap.
+
+### FIXED: the visor briefing drew NO route at all, and one back-link did it (1 Aug)
+
+The first thing a player sees on a first attempt, drawing zero polylines, at `72ec557`. Found only
+because `visorHold`'s "the lines drawn are the fork" was on the stale-failure list and turned out
+**not** to be a guided-line casualty: it fails on `plan.paths.length > 0`, and `m1VisorSource()`
+reads `M1_EFFIGY_RUN.links` directly and never consults the wayfinder, so unpinning the harness
+could not have fixed it — it would have left the defect live and the test green.
+
+**Mechanism**, traced in `apps/web/src/visor/visorPlan.ts`: `chainPolylines` seeded a polyline only
+at a **head** node — one with nothing arriving at it — and then required that seed within
+`LINE_REACH_M` (10 m) of spawn. `S1_PRINTSHOP_VANTAGE -> A_START` arrives at the start node, so
+`A_START` was not a head; the only heads left were `C_SQUARE_NW` and `C_GALLERY_STAIRHEAD`, both
+away in section C, both rejected. The degenerate fallback was gated on `heads.length > 0`, i.e. on
+whether a head **exists** rather than whether one **drew**, so it never ran.
+
+That back-link is not a mistake to delete: reserved pads are authored with RUN links **both** ways
+by construction, so all seven will do this, and the pads are owner-reserved. The seeding was the
+defect. Three changes, all in `chainPolylines`:
+
+- **Seed at the route's DECLARED `startNodeId`**, not just at graph heads. "Nothing arrives here" was
+  a bad proxy for "the run begins here", and this is immune to any number of pads.
+- **The fallback now runs when nothing was DRAWN**, not when no head exists, and orders its
+  candidates by range to spawn. The old last resort took `[...outgoing.keys()].slice(0, 1)` — whichever
+  node the first authored link happened to leave from. In this level that is `A_START` by luck, so a
+  fallback-only fix would have worked here and silently depended on authoring order.
+- **A polyline may not double back onto a node it has already drawn.** Without this the fixed hold
+  drew a line leaving the player's feet and returning to them — the pad's own back-link as a closed
+  loop under the reticle, spending a quarter of the four-polyline budget saying nothing.
+
+Measured after: `paths=4, segments=7` against a budget of ≤4 and ≤12, all four seeded at spawn and
+running out to 2.5–12.0 m, all inside the 26 m near field. `visorHold` is 12/12. Note the budget is
+now exactly full at 4, so the next pad authored within 10 m of spawn will breach it.
+
+**Left alone deliberately:** FAST and EXPERT are now zero-link, so this test's premise — a *fork* —
+is stale. What the hold should draw when there is one route is a design decision on owner-reserved
+ground, and getting *a* route drawn is the defect fix.
 
 ### `check-playthrough` is NOT all-pass in a lane worktree, at HEAD, for two environment reasons (1 Aug)
 
@@ -1286,8 +1307,12 @@ reproduce.
   unresolved and needs whoever owns the duel harness. Every other stage passes: world, route order,
   no penetration, yard, the ladder refusal pair, and all four elm-beat checks.
 
-The usable form of the release bar, then: the traversal stages are reproducible in a worktree and
-are the ones a level or route change can break; the DUEL stage needs the owner's full stack.
+**Reconciling the two runs, owner-confirmed:** the earlier ALL PASS was against the owner's live
+stack, which has `.env` and a running API; a bare worktree has neither. Both observations are true,
+and the honest statement of the bar is that **every traversal stage passes in both, and the DUEL
+stage is environment-gated.** Quote it that way. A release bar that only passes on one machine is
+not a bar, and "ALL PASS" as a brief's premise sends a worker looking for a regression it did not
+cause — which is what happened here before the stash test settled it.
 
 ### `verify_m1_steeple` is RED at `72ec557`, on the texture atlas count (1 Aug)
 

@@ -286,6 +286,8 @@ function chainPolylines(
   positionOf: (id: string) => Vec3Tuple | undefined,
   drawable: (id: string) => boolean,
   canExpand: (id: string) => boolean,
+  startNodeId: string | null,
+  rangeTo: (id: string) => number | null,
 ): Array<{ ids: string[]; verb: string }> {
   const out: Array<{ ids: string[]; verb: string }> = [];
   const outgoing = new Map<string, VisorLink[]>();
@@ -298,9 +300,17 @@ function chainPolylines(
   }
 
   const heads = [...outgoing.keys()].filter((id) => !arrivals.has(id));
-  // A line that is entirely a cycle has no head; start it anywhere rather than
-  // dropping it silently.
-  const starts = heads.length > 0 ? heads : [...outgoing.keys()].slice(0, 1);
+  // The node the ROUTE DECLARES it starts at seeds a polyline whether or not
+  // anything arrives there, because "nothing arrives here" is a bad proxy for
+  // "the run begins here" and this level proved it. A reserved pad is authored
+  // with RUN links in BOTH directions by construction — onto the pad, and back
+  // off it to the golden line — so a single authored back-link is enough to drop
+  // the start node out of `heads`. `S1_PRINTSHOP_VANTAGE -> A_START` did exactly
+  // that, leaving the only heads up in Dock Square, both outside LINE_REACH_M of
+  // spawn, and the briefing drew NOTHING at all. Seeding the declared start
+  // survives any number of pads authored the same way.
+  const declared = startNodeId !== null && outgoing.has(startNodeId) ? [startNodeId] : [];
+  const starts = [...new Set([...declared, ...heads])];
 
   const walked = new Set<VisorLink>();
   const walk = (from: string, prefix: string[], verb: string): void => {
@@ -309,7 +319,14 @@ function chainPolylines(
           // A link survives only if BOTH ends are drawable, and the near end
           // already is by construction: half a jump annotated is worse than no
           // jump annotated, because it points at nothing.
-          (link) => !walked.has(link) && drawable(link.to),
+          //
+          // It must also not double back onto a node this polyline has already
+          // drawn. The pads are authored with RUN links both ways, so without
+          // this the hold drew a line that left the player's feet and returned to
+          // them — a closed loop under the reticle, spending a quarter of the
+          // four-polyline budget to say nothing. Truncating it leaves a stub that
+          // at least points at the pad.
+          (link) => !walked.has(link) && drawable(link.to) && !prefix.includes(link.to),
         )
       : [];
     if (next.length === 0) {
@@ -322,10 +339,31 @@ function chainPolylines(
     }
   };
 
-  for (const start of starts) {
-    if (!drawable(start) || !canExpand(start)) continue;
+  const seedFrom = (start: string): void => {
+    if (!drawable(start) || !canExpand(start)) return;
     const first = (outgoing.get(start) ?? [])[0];
     walk(start, [start], first?.verb ?? "RUN");
+  };
+
+  for (const start of starts) seedFrom(start);
+
+  // The last resort runs when nothing was DRAWN, not when no head EXISTS. Those
+  // are different conditions, and only the first one is the failure: a graph can
+  // have heads and still draw nothing when every head is out of reach, which the
+  // old `heads.length > 0` test could not see — so it drew an empty hold and
+  // reported success. Ordered by range so the pick is the nearest line out of
+  // where the player stands; the previous version took whichever node the first
+  // authored link happened to leave from, which was authoring order deciding
+  // what a player sees. One seed is a briefing, so stop at the first that draws.
+  if (out.length === 0) {
+    walked.clear();
+    const nearestFirst = [...outgoing.keys()]
+      .filter((id) => drawable(id) && canExpand(id))
+      .sort((a, b) => (rangeTo(a) ?? Infinity) - (rangeTo(b) ?? Infinity));
+    for (const start of nearestFirst) {
+      seedFrom(start);
+      if (out.length > 0) break;
+    }
   }
 
   return out.filter((chain) => chain.ids.every((id) => positionOf(id)));
@@ -363,6 +401,8 @@ function buildPaths(
       positionOf,
       drawable,
       canExpand,
+      source.startNodeId,
+      rangeTo,
     );
     chains.forEach((chain, index) => {
       const points = chain.ids.map((id) => lift(positionOf(id)!));
